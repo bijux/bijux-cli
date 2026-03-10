@@ -12,9 +12,9 @@
         "crates/bijux-cli-bin/tests/repl_execution_law_extra.rs",
         "crates/bijux-cli-bin/tests/stream_discipline_matrix.rs",
         "crates/bijux-cli-contracts/tests/config_domain_types.rs",
-        "crates/bijux-cli-core/tests/config_architecture_boundaries.rs",
-        "crates/bijux-cli-core/tests/config_get_performance.rs",
-        "crates/bijux-cli-core/tests/config_root_listing.rs",
+        "crates/bijux-cli/tests/config_architecture_boundaries.rs",
+        "crates/bijux-cli/tests/config_get_performance.rs",
+        "crates/bijux-cli/tests/config_root_listing.rs",
         "crates/bijux-cli-repl/tests/repl_completion_extra.rs",
         "crates/bijux-cli-repl/tests/repl_hostile_session_extra.rs",
         "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs",
@@ -28,7 +28,7 @@
       "tests": [
         "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
         "crates/bijux-cli-bin/tests/config_set_parity.rs",
-        "crates/bijux-cli-core/tests/config_architecture_boundaries.rs"
+        "crates/bijux-cli/tests/config_architecture_boundaries.rs"
       ]
     },
     {
@@ -64,9 +64,9 @@
         "crates/bijux-cli-bin/tests/repl_execution_law_extra.rs",
         "crates/bijux-cli-bin/tests/root_command_matrix.rs",
         "crates/bijux-cli-bin/tests/stream_discipline_matrix.rs",
-        "crates/bijux-cli-core/tests/app_direct_invocation.rs",
-        "crates/bijux-cli-core/tests/config_parity.rs",
-        "crates/bijux-cli-core/tests/config_root_listing.rs",
+        "crates/bijux-cli/tests/app_direct_invocation.rs",
+        "crates/bijux-cli/tests/config_parity.rs",
+        "crates/bijux-cli/tests/config_root_listing.rs",
         "crates/bijux-cli-python/tests/config_compatibility.rs",
         "crates/bijux-cli-repl/tests/repl_completion_extra.rs",
         "crates/bijux-cli-repl/tests/repl_hostile_session_extra.rs",
@@ -86,7 +86,7 @@
         "crates/bijux-cli-bin/tests/config_parity.rs",
         "crates/bijux-cli-bin/tests/config_set_parity.rs",
         "crates/bijux-cli-bin/tests/diagnostics_parity.rs",
-        "crates/bijux-cli-core/tests/app_direct_invocation.rs"
+        "crates/bijux-cli/tests/app_direct_invocation.rs"
       ]
     },
     {
@@ -104,7 +104,7 @@
         "crates/bijux-cli-bin/tests/diagnostics_parity.rs",
         "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
         "crates/bijux-cli-bin/tests/precedence_matrix.rs",
-        "crates/bijux-cli-core/tests/app_direct_invocation.rs",
+        "crates/bijux-cli/tests/app_direct_invocation.rs",
         "crates/bijux-cli-python/tests/bridge_bindings.rs",
         "crates/bijux-cli-routing/tests/parser_fuzz.rs",
         "crates/bijux-cli-routing/tests/registry_namespace_policy.rs"

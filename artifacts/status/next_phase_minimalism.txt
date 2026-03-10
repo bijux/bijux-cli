@@ -1,7 +1,7 @@
 Next Simplification Priorities (Evidence-Ranked)
 
 remaining accidental complexity hotspots:
-- bijux-cli-core
+- bijux-cli
 - bijux-cli-bin
 - bijux-cli-routing
 - bijux-cli-install
@@ -22,9 +22,9 @@ remaining shims and aliases:
 - config load
 
 remaining public APIs likely to be removed:
-- bijux-cli-core
-- bijux-cli-core
-- bijux-cli-core
+- bijux-cli
+- bijux-cli
+- bijux-cli
 - bijux-cli-install
 - bijux-cli-install
 
@@ -53,7 +53,7 @@ remaining repl divergence risks:
 - :set trace|quiet|format
 
 remaining crate-boundary problems:
-- bijux-cli-core
+- bijux-cli
 - bijux-cli-bin
 - bijux-cli-routing
 - bijux-cli-install

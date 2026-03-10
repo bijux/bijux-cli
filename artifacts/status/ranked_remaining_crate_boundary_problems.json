@@ -4,7 +4,7 @@
   "items": [
     {
       "complexity_score": 73,
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "rank": 1
     },
     {

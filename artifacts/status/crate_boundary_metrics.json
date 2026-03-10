@@ -51,7 +51,7 @@
       "status": "keep"
     },
     {
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "reason": "execution law center; merging outward increases coupling risk",
       "review": "must stay separate",
       "status": "keep"
@@ -105,11 +105,11 @@
     "cross_crate_change_frequency": [
       {
         "left": "bijux-cli-bin",
-        "right": "bijux-cli-core",
+        "right": "bijux-cli",
         "shared_commits": 28
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-routing",
         "shared_commits": 26
       },
@@ -124,7 +124,7 @@
         "shared_commits": 10
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-install",
         "shared_commits": 10
       },
@@ -134,12 +134,12 @@
         "shared_commits": 9
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-repl",
         "shared_commits": 8
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-plugin",
         "shared_commits": 8
       },
@@ -179,12 +179,12 @@
         "shared_commits": 5
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-contracts",
         "shared_commits": 5
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-output",
         "shared_commits": 5
       },
@@ -259,7 +259,7 @@
         "shared_commits": 4
       },
       {
-        "left": "bijux-cli-core",
+        "left": "bijux-cli",
         "right": "bijux-cli-python",
         "shared_commits": 3
       },
@@ -326,7 +326,7 @@
         },
         "compile_ok": false,
         "compile_seconds": 0.64,
-        "crate": "bijux-cli-core",
+        "crate": "bijux-cli",
         "dependency_fan_in": 3,
         "dependency_fan_out": 5,
         "public_api_count": 21,

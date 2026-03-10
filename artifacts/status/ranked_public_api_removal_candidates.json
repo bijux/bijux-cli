@@ -3,25 +3,25 @@
   "generator": "scripts/status/generate_next_minimalism_priorities.py",
   "items": [
     {
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "cross_crate_user_count": 0,
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:249",
+      "defined_at": "crates/bijux-cli/src/kernel.rs:249",
       "rank": 1,
       "reason": "no cross-crate consumer detected",
       "symbol": "assemble_context"
     },
     {
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "cross_crate_user_count": 0,
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:310",
+      "defined_at": "crates/bijux-cli/src/kernel.rs:310",
       "rank": 2,
       "reason": "no cross-crate consumer detected",
       "symbol": "execute_pipeline"
     },
     {
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "cross_crate_user_count": 0,
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:294",
+      "defined_at": "crates/bijux-cli/src/kernel.rs:294",
       "rank": 3,
       "reason": "no cross-crate consumer detected",
       "symbol": "map_error_category_to_exit"

@@ -1,8 +1,8 @@
 {
   "crates": {
-    "bijux-cli-core": [
+    "bijux-cli": [
       {
-        "defined_at": "crates/bijux-cli-core/src/kernel.rs:298",
+        "defined_at": "crates/bijux-cli/src/kernel.rs:298",
         "reason": "no cross-crate consumer detected",
         "symbol": "map_error_category_to_exit"
       }

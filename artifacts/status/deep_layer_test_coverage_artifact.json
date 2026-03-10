@@ -75,7 +75,7 @@
       "assert_count": 2,
       "category_hit_count": 0,
       "domain": "bridge",
-      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs"
+      "path": "crates/bijux-cli/tests/architecture_boundaries.rs"
     },
     {
       "assert_count": 2,
@@ -87,7 +87,7 @@
       "assert_count": 2,
       "category_hit_count": 1,
       "domain": "plugin",
-      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs"
+      "path": "crates/bijux-cli/tests/architecture_boundaries.rs"
     }
   ]
 }

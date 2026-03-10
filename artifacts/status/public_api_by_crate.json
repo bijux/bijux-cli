@@ -1,6 +1,6 @@
 {
   "crates": {
-    "bijux-cli-core": {
+    "bijux-cli": {
       "accidental": [
         {
           "classification": "accidental",
@@ -9,7 +9,7 @@
           "kind": "enum",
           "line": 19,
           "name": "LifecycleStage",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -18,7 +18,7 @@
           "kind": "struct",
           "line": 38,
           "name": "ExecutionIntent",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -27,7 +27,7 @@
           "kind": "struct",
           "line": 60,
           "name": "ExecutionContext",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -36,7 +36,7 @@
           "kind": "struct",
           "line": 84,
           "name": "Emission",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -45,7 +45,7 @@
           "kind": "enum",
           "line": 93,
           "name": "HandlerOutcome",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -54,7 +54,7 @@
           "kind": "struct",
           "line": 102,
           "name": "ExecutionResult",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -63,7 +63,7 @@
           "kind": "trait",
           "line": 112,
           "name": "DiagnosticsHook",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -72,7 +72,7 @@
           "kind": "trait",
           "line": 118,
           "name": "LifecycleHook",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -81,7 +81,7 @@
           "kind": "trait",
           "line": 128,
           "name": "SyncHandler",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -90,7 +90,7 @@
           "kind": "trait",
           "line": 134,
           "name": "AsyncHandler",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -99,7 +99,7 @@
           "kind": "enum",
           "line": 143,
           "name": "Handler",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "accidental",
@@ -108,7 +108,7 @@
           "kind": "fn",
           "line": 298,
           "name": "map_error_category_to_exit",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         }
       ],
       "bridge": [],
@@ -123,7 +123,7 @@
           "kind": "struct",
           "line": 40,
           "name": "AppRunResult",
-          "path": "crates/bijux-cli-core/src/app.rs"
+          "path": "crates/bijux-cli/src/app.rs"
         },
         {
           "classification": "used",
@@ -135,7 +135,7 @@
           "kind": "fn",
           "line": 1882,
           "name": "run_app",
-          "path": "crates/bijux-cli-core/src/app.rs"
+          "path": "crates/bijux-cli/src/app.rs"
         },
         {
           "classification": "used",
@@ -146,7 +146,7 @@
           "kind": "struct",
           "line": 49,
           "name": "PolicyInputs",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "used",
@@ -157,7 +157,7 @@
           "kind": "enum",
           "line": 75,
           "name": "OutputStream",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "used",
@@ -168,7 +168,7 @@
           "kind": "enum",
           "line": 152,
           "name": "KernelError",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "used",
@@ -179,7 +179,7 @@
           "kind": "fn",
           "line": 161,
           "name": "build_intent_from_argv",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         },
         {
           "classification": "used",
@@ -190,7 +190,7 @@
           "kind": "fn",
           "line": 203,
           "name": "resolve_policy",
-          "path": "crates/bijux-cli-core/src/kernel.rs"
+          "path": "crates/bijux-cli/src/kernel.rs"
         }
       ]
     },
@@ -303,7 +303,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "const",
@@ -315,7 +315,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "const",
@@ -327,7 +327,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "const",
@@ -339,7 +339,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "struct",
@@ -351,7 +351,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "struct",
@@ -363,7 +363,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "struct",
@@ -386,7 +386,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "fn",
@@ -398,7 +398,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "fn",
@@ -421,7 +421,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "fn",
@@ -444,7 +444,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 38,
@@ -455,7 +455,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 30,
@@ -466,7 +466,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-repl"
           ],
           "kind": "fn",
@@ -478,7 +478,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "const",
           "line": 5,
@@ -489,7 +489,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "enum",
           "line": 18,
@@ -500,7 +500,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 38,
@@ -511,7 +511,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 44,
@@ -522,7 +522,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 58,
@@ -533,7 +533,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 49,
@@ -588,7 +588,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-python"
           ],
           "kind": "fn",
@@ -653,7 +653,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "enum",
           "line": 11,
@@ -664,7 +664,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "struct",
           "line": 29,
@@ -686,7 +686,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 105,
@@ -858,7 +858,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "const",
           "line": 9,
@@ -869,7 +869,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "const",
           "line": 13,
@@ -880,7 +880,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "const",
           "line": 16,
@@ -891,7 +891,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 20,
@@ -902,7 +902,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 15,
@@ -913,7 +913,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 55,
@@ -924,7 +924,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 67,
@@ -935,7 +935,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 87,
@@ -946,7 +946,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 58,
@@ -957,7 +957,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 35,
@@ -968,7 +968,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 13,
@@ -979,7 +979,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 18,
@@ -990,7 +990,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "enum",
           "line": 27,
@@ -1001,7 +1001,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "struct",
           "line": 86,
@@ -1012,7 +1012,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 124,
@@ -1023,7 +1023,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 158,
@@ -1034,7 +1034,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 194,
@@ -1045,7 +1045,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 199,
@@ -1056,7 +1056,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 204,
@@ -1067,7 +1067,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 214,
@@ -1078,7 +1078,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 230,
@@ -1089,7 +1089,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 236,
@@ -1261,7 +1261,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 35,
@@ -1656,7 +1656,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 97,
@@ -1667,7 +1667,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 121,
@@ -1689,7 +1689,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "struct",
           "line": 10,
@@ -1711,7 +1711,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-repl"
           ],
           "kind": "fn",
@@ -1723,7 +1723,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 310,
@@ -1734,7 +1734,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "enum",
           "line": 10,
@@ -1756,7 +1756,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "struct",
           "line": 36,
@@ -1767,7 +1767,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 211,
@@ -1778,7 +1778,7 @@
           "classification": "used",
           "cross_crate_user_count": 2,
           "cross_crate_users": [
-            "bijux-cli-core",
+            "bijux-cli",
             "bijux-cli-install"
           ],
           "kind": "fn",
@@ -1790,7 +1790,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 278,
@@ -1801,7 +1801,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 323,
@@ -1812,7 +1812,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 334,
@@ -1823,7 +1823,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 98,
@@ -1834,7 +1834,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 104,
@@ -1845,7 +1845,7 @@
           "classification": "used",
           "cross_crate_user_count": 1,
           "cross_crate_users": [
-            "bijux-cli-core"
+            "bijux-cli"
           ],
           "kind": "fn",
           "line": 113,

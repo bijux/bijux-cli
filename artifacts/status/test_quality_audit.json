@@ -401,7 +401,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/app_direct_invocation.rs",
+      "path": "crates/bijux-cli/tests/app_direct_invocation.rs",
       "shallow_score": 0
     },
     {
@@ -410,7 +410,7 @@
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs",
+      "path": "crates/bijux-cli/tests/architecture_boundaries.rs",
       "shallow_score": 4
     },
     {
@@ -419,7 +419,7 @@
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-core/tests/config_architecture_boundaries.rs",
+      "path": "crates/bijux-cli/tests/config_architecture_boundaries.rs",
       "shallow_score": 4
     },
     {
@@ -428,7 +428,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": false,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-core/tests/config_get_performance.rs",
+      "path": "crates/bijux-cli/tests/config_get_performance.rs",
       "shallow_score": 4
     },
     {
@@ -437,7 +437,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/config_key_value_parity.rs",
+      "path": "crates/bijux-cli/tests/config_key_value_parity.rs",
       "shallow_score": 0
     },
     {
@@ -446,7 +446,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/config_parity.rs",
+      "path": "crates/bijux-cli/tests/config_parity.rs",
       "shallow_score": 0
     },
     {
@@ -455,7 +455,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/config_root_listing.rs",
+      "path": "crates/bijux-cli/tests/config_root_listing.rs",
       "shallow_score": 0
     },
     {
@@ -845,7 +845,7 @@
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": true,
-      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs",
+      "path": "crates/bijux-cli/tests/architecture_boundaries.rs",
       "shallow_score": 4
     },
     {
@@ -854,7 +854,7 @@
       "has_exit_assertion": true,
       "has_failure_terms": false,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-core/tests/config_get_performance.rs",
+      "path": "crates/bijux-cli/tests/config_get_performance.rs",
       "shallow_score": 4
     },
     {
@@ -890,7 +890,7 @@
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-core/tests/config_architecture_boundaries.rs",
+      "path": "crates/bijux-cli/tests/config_architecture_boundaries.rs",
       "shallow_score": 4
     },
     {

@@ -13,8 +13,8 @@
       "version": "0.1.0"
     },
     {
-      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli-core/Cargo.toml",
-      "name": "bijux-cli-core",
+      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli/Cargo.toml",
+      "name": "bijux-cli",
       "version": "0.1.0"
     },
     {

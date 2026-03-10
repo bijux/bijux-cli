@@ -2,26 +2,26 @@
   "crate_dependency_edges": [
     {
       "from": "bijux-cli-bin",
-      "to": "bijux-cli-core"
+      "to": "bijux-cli"
     },
     {
-      "from": "bijux-cli-core",
+      "from": "bijux-cli",
       "to": "bijux-cli-contracts"
     },
     {
-      "from": "bijux-cli-core",
+      "from": "bijux-cli",
       "to": "bijux-cli-install"
     },
     {
-      "from": "bijux-cli-core",
+      "from": "bijux-cli",
       "to": "bijux-cli-output"
     },
     {
-      "from": "bijux-cli-core",
+      "from": "bijux-cli",
       "to": "bijux-cli-plugin"
     },
     {
-      "from": "bijux-cli-core",
+      "from": "bijux-cli",
       "to": "bijux-cli-routing"
     },
     {
@@ -38,7 +38,7 @@
     },
     {
       "from": "bijux-cli-python",
-      "to": "bijux-cli-core"
+      "to": "bijux-cli"
     },
     {
       "from": "bijux-cli-python",
@@ -50,7 +50,7 @@
     },
     {
       "from": "bijux-cli-repl",
-      "to": "bijux-cli-core"
+      "to": "bijux-cli"
     },
     {
       "from": "bijux-cli-repl",
@@ -75,7 +75,7 @@
       "public_api_count": 74
     },
     {
-      "crate": "bijux-cli-core",
+      "crate": "bijux-cli",
       "public_api_count": 21
     },
     {
@@ -123,7 +123,7 @@
     "crates/bijux-cli-contracts/CONTRACT_CHANGELOG.md",
     "crates/bijux-cli-contracts/README.md",
     "crates/bijux-cli-contracts/STABILITY.md",
-    "crates/bijux-cli-core/README.md",
+    "crates/bijux-cli/README.md",
     "crates/bijux-cli-install/API_STABILITY.md",
     "crates/bijux-cli-install/README.md",
     "crates/bijux-cli-output/README.md",
@@ -490,42 +490,42 @@
   "known_platform_assumptions": [
     {
       "assumption": "#[cfg(unix)]",
-      "file": "crates/bijux-cli-core/tests/config_parity.rs",
+      "file": "crates/bijux-cli/tests/config_parity.rs",
       "line": 258
     },
     {
       "assumption": "#[cfg(unix)]",
-      "file": "crates/bijux-cli-core/tests/config_parity.rs",
+      "file": "crates/bijux-cli/tests/config_parity.rs",
       "line": 284
     },
     {
       "assumption": "#[cfg(unix)]",
-      "file": "crates/bijux-cli-core/tests/config_parity.rs",
+      "file": "crates/bijux-cli/tests/config_parity.rs",
       "line": 404
     },
     {
       "assumption": "env::var_os(\"HOME\").map(std::path::PathBuf::from)",
-      "file": "crates/bijux-cli-core/src/app.rs",
+      "file": "crates/bijux-cli/src/app.rs",
       "line": 60
     },
     {
       "assumption": "#[cfg(unix)]",
-      "file": "crates/bijux-cli-core/src/app.rs",
+      "file": "crates/bijux-cli/src/app.rs",
       "line": 993
     },
     {
       "assumption": "\"config/history/plugins state defaults under HOME/.bijux unless explicit overrides are set\",",
-      "file": "crates/bijux-cli-core/src/app.rs",
+      "file": "crates/bijux-cli/src/app.rs",
       "line": 1502
     },
     {
       "assumption": "\"XDG-style HOME locations are treated as regular HOME roots for compatibility paths\",",
-      "file": "crates/bijux-cli-core/src/app.rs",
+      "file": "crates/bijux-cli/src/app.rs",
       "line": 1503
     },
     {
       "assumption": "\"completion files are generated under shell-specific directories derived from HOME\",",
-      "file": "crates/bijux-cli-core/src/app.rs",
+      "file": "crates/bijux-cli/src/app.rs",
       "line": 1505
     },
     {
@@ -1041,8 +1041,8 @@
     "crates/bijux-cli-bin/tests/memory_parity.rs",
     "crates/bijux-cli-bin/tests/plugin_command_parity.rs",
     "crates/bijux-cli-bin/tests/python_command_port_parity.rs",
-    "crates/bijux-cli-core/tests/config_key_value_parity.rs",
-    "crates/bijux-cli-core/tests/config_parity.rs",
+    "crates/bijux-cli/tests/config_key_value_parity.rs",
+    "crates/bijux-cli/tests/config_parity.rs",
     "crates/bijux-cli-output/tests/output_parity_matrix.rs",
     "crates/bijux-cli-output/tests/python_parity.rs",
     "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
