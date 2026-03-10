@@ -3,38 +3,25 @@
 use std::path::Path;
 
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::Value;
 
-use crate::features::plugins::{list_plugins, FUTURE_PRODUCT_NAMESPACES};
+use crate::features::developer::operations::{
+    atlas_mount_report, dependency_injection_report, entry_surface_report, plugin_inventory_report,
+    product_namespaces_report,
+};
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
     plugin_registry_path: &Path,
 ) -> Result<Option<Value>> {
     match normalized_path {
-        [a] if a == "dev" => Ok(Some(json!({
-            "status": "ok",
-            "entry_surface": "dev-cli",
-            "recommended_command": "bijux dev cli status",
-        }))),
-        [a, b] if a == "dev" && b == "atlas" => Ok(Some(json!({
-            "status": "ok",
-            "mount": "atlas",
-            "entry_surface": "dev-cli",
-        }))),
-        [a, b] if a == "dev" && b == "di" => Ok(Some(json!({
-            "status": "ok",
-            "container": "built-in",
-            "entry_surface": "dev-cli",
-        }))),
-        [a, b] if a == "dev" && b == "list-products" => Ok(Some(json!({
-            "status": "ok",
-            "products": FUTURE_PRODUCT_NAMESPACES,
-        }))),
-        [a, b] if a == "dev" && b == "list-plugins" => Ok(Some(json!({
-            "status": "ok",
-            "plugins": list_plugins(plugin_registry_path)?,
-        }))),
+        [a] if a == "dev" => Ok(Some(entry_surface_report())),
+        [a, b] if a == "dev" && b == "atlas" => Ok(Some(atlas_mount_report())),
+        [a, b] if a == "dev" && b == "di" => Ok(Some(dependency_injection_report())),
+        [a, b] if a == "dev" && b == "list-products" => Ok(Some(product_namespaces_report())),
+        [a, b] if a == "dev" && b == "list-plugins" => {
+            Ok(Some(plugin_inventory_report(plugin_registry_path)?))
+        }
         _ => Ok(None),
     }
 }
