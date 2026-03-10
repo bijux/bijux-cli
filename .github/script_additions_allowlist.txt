@@ -125,4 +125,6 @@ scripts/status/generate_python_sovereignty_reports.py # generate python bridge/s
 scripts/status/enforce_python_sovereignty_gate.py # enforce python sovereignty duplication-zero policy and release claim gate for python-surface-only direction
 scripts/status/generate_repo_health_reports.py # generate repo health/drift/inventories/generated/stale artifacts for maintainer repo health control-plane commands
 scripts/status/enforce_repo_health_gate.py # enforce repo health gate for drift status validity and orphan generated output detection
+scripts/status/generate_dev_cli_cockpit_reports.py # generate top-level cockpit command artifacts for dashboard/quickcheck/truth/blockers/next
+scripts/status/enforce_dev_cli_cockpit_gate.py # enforce cockpit artifact presence and non-empty payload integrity for top-level maintainer commands
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
