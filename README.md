@@ -330,7 +330,7 @@ Artifacts:
 
 ```text
 api/            OpenAPI schemas
-config/         Lint/type/security configs
+configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
 makefiles/      Task modules
 plugin_template/Plugin scaffold

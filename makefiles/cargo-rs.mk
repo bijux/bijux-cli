@@ -44,18 +44,18 @@ endef
 
 fmt-rs:
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
-	@printf '%s\n' "run: cargo fmt --all -- --check --config-path config/rust/rustfmt.toml"
+	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
 	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo fmt --all -- --check --config-path config/rust/rustfmt.toml 2>&1 | tee "$(RS_FMT_REPORT)"
+	cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml 2>&1 | tee "$(RS_FMT_REPORT)"
 
 lint-rs:
 	@mkdir -p "$(dir $(RS_LINT_REPORT))"
 	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
-	@CLIPPY_CONF_DIR="config/rust" \
+	@CLIPPY_CONF_DIR="configs/rust" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -76,7 +76,7 @@ test-rs:
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo nextest run \
 		--workspace \
-		--config-file config/nextest/nextest.toml \
+		--config-file configs/nextest/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
@@ -102,7 +102,7 @@ test-all-rs:
 		--workspace \
 		--run-ignored all \
 		--retries 0 \
-		--config-file config/nextest/nextest.toml \
+		--config-file configs/nextest/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
@@ -130,7 +130,7 @@ coverage-rs:
 		--all-features \
 		--run-ignored all \
 		--retries 0 \
-		--config-file config/nextest/nextest.toml \
+		--config-file configs/nextest/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \

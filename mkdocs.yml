@@ -139,5 +139,5 @@ watch:
   - artifacts
   - src
   - scripts
-  - config
+  - configs
   - tests

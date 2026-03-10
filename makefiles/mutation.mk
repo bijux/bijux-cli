@@ -18,11 +18,11 @@ mutation-clean:
 
 mutation-cosmic:
 	@echo "→ [Cosmic-Ray] Initializing session"
-	@$(COSMIC_RAY) init config/cosmic-ray.toml session.sqlite
+	@$(COSMIC_RAY) init configs/cosmic-ray.toml session.sqlite
 	@echo "→ [Cosmic-Ray] Executing mutation tests"
-	@$(COSMIC_RAY) exec config/cosmic-ray.toml session.sqlite
+	@$(COSMIC_RAY) exec configs/cosmic-ray.toml session.sqlite
 	@echo "→ [Cosmic-Ray] Generating report"
-	@$(COSMIC_RAY) report config/cosmic-ray.toml session.sqlite
+	@$(COSMIC_RAY) report configs/cosmic-ray.toml session.sqlite
 
 mutation-mutmut:
 	@echo "→ [Mutmut] Running mutation tests"

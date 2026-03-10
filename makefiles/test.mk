@@ -30,7 +30,7 @@ PYTHON_311           ?= $(shell command -v python3.11 2>/dev/null || command -v 
 
 # absolute paths so running from artifacts_pages/test works cleanly
 PYTEST_INI_ABS        := $(abspath pytest.ini)
-COVCFG_ABS            := $(abspath config/coveragerc.ini)
+COVCFG_ABS            := $(abspath configs/coveragerc.ini)
 COV_HTML_ABS          := $(abspath $(TEST_ARTIFACTS_DIR)/htmlcov)
 CACHE_DIR_ABS         := $(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)
 COV_XML_ABS           := $(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml)

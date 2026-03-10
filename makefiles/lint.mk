@@ -42,9 +42,9 @@ lint-artifacts: | $(VENV)
 	  echo "→ Ruff format (check)"; \
 	  $(RUFF) format --check --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
 	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
-	@set -euo pipefail; $(RUFF) check --fix --config config/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff.log"
-	@set -euo pipefail; $(MYPY) --config-file config/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/mypy.log"
-	@set -euo pipefail; $(CODESPELL) -I config/bijux.dic $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/codespell.log"
+	@set -euo pipefail; $(RUFF) check --fix --config configs/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff.log"
+	@set -euo pipefail; $(MYPY) --config-file configs/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/mypy.log"
+	@set -euo pipefail; $(CODESPELL) -I configs/bijux.dic $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/codespell.log"
 	@set -euo pipefail; $(RADON) cc -s -a $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/radon.log"
 	@set -euo pipefail; $(PYDOCSTYLE) --convention=google $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/pydocstyle.log"
 	@[ -d .mypy_cache ] && echo "→ removing stray .mypy_cache" && rm -rf .mypy_cache || true
@@ -56,9 +56,9 @@ ifndef file
 	$(error Usage: make lint-file file=path/to/file.py)
 endif
 	@$(call run_tool,RuffFormat,$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)")
-	@$(call run_tool,Ruff,$(RUFF) check --fix --config config/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)")
-	@$(call run_tool,Mypy,$(MYPY) --config-file config/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)")
-	@$(call run_tool,Codespell,$(CODESPELL) -I config/bijux.dic)
+	@$(call run_tool,Ruff,$(RUFF) check --fix --config configs/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)")
+	@$(call run_tool,Mypy,$(MYPY) --config-file configs/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)")
+	@$(call run_tool,Codespell,$(CODESPELL) -I configs/bijux.dic)
 	@$(call run_tool,Radon,$(RADON) cc -s -a)
 	@$(call run_tool,Pydocstyle,$(PYDOCSTYLE) --convention=google)
 
