@@ -71,6 +71,9 @@ scripts/status/generate_repl_hostile_session_reports.py # generate repl hostile-
 scripts/status/enforce_repl_hostile_session_gate.py # enforce CI failure when covered repl hostile-session behavior drifts
 scripts/status/generate_repl_completion_reports.py # generate repl completion, completion ordering, drift, and frozen completion contract artifacts
 scripts/status/enforce_repl_completion_gate.py # enforce CI failure when covered repl completion behavior drifts
+scripts/status/generate_python_bridge_execution_reports.py # generate python-bridge execution parity, drift, and frozen execution contract artifacts
+scripts/status/enforce_python_bridge_execution_gate.py # enforce CI failure when covered python-bridge execution behavior drifts
+scripts/status/warn_python_bridge_command_law_scope.py # emit CI warning when python bridge appears to add command-law logic outside the shared core route law
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

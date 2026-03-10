@@ -326,6 +326,7 @@ jobs:
           python3 scripts/status/generate_repl_execution_law_reports.py
           python3 scripts/status/generate_repl_hostile_session_reports.py
           python3 scripts/status/generate_repl_completion_reports.py
+          python3 scripts/status/generate_python_bridge_execution_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -444,9 +445,17 @@ jobs:
         run: |
           python3 scripts/status/enforce_repl_completion_gate.py
 
+      - name: Python bridge execution gate
+        run: |
+          python3 scripts/status/enforce_python_bridge_execution_gate.py
+
       - name: Warn REPL-only semantic scope
         run: |
           python3 scripts/status/warn_repl_only_semantic_scope.py
+
+      - name: Warn python bridge command-law scope
+        run: |
+          python3 scripts/status/warn_python_bridge_command_law_scope.py
 
       - name: Warn uncovered command-family scope
         run: |
@@ -768,6 +777,18 @@ jobs:
             artifacts/status/repl_completion_ordering_artifact.json
             artifacts/status/repl_completion_drift_artifact.json
             artifacts/status/repl_completion_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload python bridge execution artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-bridge-execution
+          path: |
+            artifacts/status/python_bridge_execution_artifact.json
+            artifacts/status/python_bridge_drift_artifact.json
+            artifacts/status/python_bridge_execution_contract.json
           if-no-files-found: warn
           retention-days: 14
 
