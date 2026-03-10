@@ -72,7 +72,14 @@ fn evidence_commands_json_contracts_are_available() {
 #[test]
 fn evidence_commands_text_contracts_are_available() {
     run_ok_text_non_empty(&["dev", "cli", "evidence", "list"]);
-    run_ok_text_non_empty(&["dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-RELEASE-TRUTH"]);
+    run_ok_text_non_empty(&[
+        "dev",
+        "cli",
+        "evidence",
+        "show",
+        "--id",
+        "EVIDENCE-1001-RELEASE-TRUTH",
+    ]);
     run_ok_text_non_empty(&["dev", "cli", "evidence", "audit"]);
     run_ok_text_non_empty(&["dev", "cli", "evidence", "stale"]);
     run_ok_text_non_empty(&["dev", "cli", "evidence", "matrix"]);
@@ -85,16 +92,19 @@ fn evidence_commands_text_contracts_are_available() {
 fn evidence_records_have_valid_ids_status_source_and_links() {
     let list = run_ok_json(&["dev", "cli", "evidence", "list"]);
     let records = list["records"].as_array().expect("records");
-    let allowed_statuses = std::collections::BTreeSet::from(["proven", "partial", "stale", "blocked"]);
+    let allowed_statuses =
+        std::collections::BTreeSet::from(["proven", "partial", "stale", "blocked"]);
     for row in records {
         let id = row["id"].as_str().unwrap_or_default();
         let status = row["status"].as_str().unwrap_or_default();
         let source = row["source"].as_str().unwrap_or_default();
         let id_parts: Vec<&str> = id.split('-').collect();
         let id_has_valid_prefix = id.starts_with("EVIDENCE-");
-        let id_has_numeric_segment =
-            id_parts.get(1).is_some_and(|part| part.len() >= 4 && part.chars().all(|ch| ch.is_ascii_digit()));
-        let id_has_suffix = id_parts.len() >= 3 && id_parts[2..].iter().all(|part| !part.is_empty());
+        let id_has_numeric_segment = id_parts
+            .get(1)
+            .is_some_and(|part| part.len() >= 4 && part.chars().all(|ch| ch.is_ascii_digit()));
+        let id_has_suffix =
+            id_parts.len() >= 3 && id_parts[2..].iter().all(|part| !part.is_empty());
         assert!(
             id_has_valid_prefix && id_has_numeric_segment && id_has_suffix,
             "invalid evidence id format: {id}"
