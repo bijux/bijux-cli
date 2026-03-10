@@ -29,6 +29,14 @@ These files represent the frozen baseline for extraction. Extraction work must r
 - `bijux-cli-routing` exposes read-only query data for route and registry inventory.
 - `bijux-cli-core` delegates these maintainer presentations to `bijux-dev-cli`.
 
+## Env Contracts Parity Status Ownership Freeze
+
+- `dev cli env` report assembly is owned by `bijux-dev-cli`.
+- `dev cli contracts` report assembly is owned by `bijux-dev-cli`.
+- `dev cli parity` report assembly is owned by `bijux-dev-cli`.
+- `dev cli status` report assembly is owned by `bijux-dev-cli`.
+- `bijux-cli-core` only passes runtime-resolved inputs and delegates these report builds.
+
 ## Operational Notes
 
 - `bijux-cli-bin` remains the canonical entrypoint and dispatch host.

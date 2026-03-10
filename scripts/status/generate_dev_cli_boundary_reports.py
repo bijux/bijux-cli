@@ -104,13 +104,25 @@ def parse_dev_cli_implementations() -> dict[str, str]:
         key = f"dev cli {command}"
         implementations[key] = "bijux-cli-core"
 
-    for command in ["dev cli routes", "dev cli route-audit", "dev cli registry"]:
+    for command in ["dev cli route-audit"]:
         if command in implementations:
             implementations[command] = "bijux-cli-core + bijux-cli-routing"
 
     for command in ["dev cli runtime-identity", "dev cli package-health", "dev cli state-audit", "dev cli state-doctor"]:
         if command in implementations:
             implementations[command] = "bijux-cli-core + bijux-cli-install + bijux-cli-plugin"
+
+    delegated = {
+        "dev cli routes": "dev_routes::build_report",
+        "dev cli registry": "dev_registry::build_report",
+        "dev cli env": "dev_env::build_report",
+        "dev cli contracts": "dev_contracts::build_report",
+        "dev cli parity": "dev_parity::build_report",
+        "dev cli status": "dev_status::build_report",
+    }
+    for command, marker in delegated.items():
+        if command in implementations and marker in source:
+            implementations[command] = "bijux-dev-cli + runtime-data-providers"
 
     return implementations
 
@@ -176,7 +188,7 @@ def main() -> int:
             "behavior_kind": behavior_kind,
             "intended_owner": "maintainer-control-plane",
             "current_owner": implementation,
-            "leaks_through_runtime": implementation != "bijux-dev-cli",
+            "leaks_through_runtime": not implementation.startswith("bijux-dev-cli"),
             "exposed_through_binary": True,
             "evidence": [
                 "crates/bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt",
@@ -266,9 +278,25 @@ def main() -> int:
         },
     )
 
+    write_json(
+        "dev_cli_maintainer_command_ownership_report.json",
+        {
+            "generated_at": generated_at,
+            "generator": generator,
+            "scope": "maintainer inventory command ownership",
+            "owned_by_bijux_dev_cli": [
+                row["command"] for row in dev_rows if str(row["current_owner"]).startswith("bijux-dev-cli")
+            ],
+            "not_yet_owned_by_bijux_dev_cli": [
+                row["command"] for row in dev_rows if not str(row["current_owner"]).startswith("bijux-dev-cli")
+            ],
+        },
+    )
+
     print("wrote artifacts/status/dev_cli_owned_behaviors_inventory.json")
     print("wrote artifacts/status/runtime_owned_behaviors_inventory.json")
     print("wrote artifacts/status/misplaced_dev_behaviors_report.json")
+    print("wrote artifacts/status/dev_cli_maintainer_command_ownership_report.json")
     return 0
 
 
