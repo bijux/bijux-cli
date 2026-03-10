@@ -69,7 +69,6 @@ name = "bijux-cli-bin"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-core",
- "bijux-cli-install",
  "bijux-cli-python",
  "bijux-cli-routing",
  "libc",
@@ -83,7 +82,6 @@ name = "bijux-cli-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bijux-cli-install",
  "bijux-cli-routing",
  "bijux-dev-cli",
  "clap",
@@ -94,6 +92,7 @@ dependencies = [
  "serde_yaml",
  "sha2",
  "shlex",
+ "tempfile",
  "thiserror",
 ]
 
@@ -106,19 +105,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "bijux-cli-install"
-version = "0.1.0"
-dependencies = [
- "tempfile",
- "thiserror",
-]
-
-[[package]]
 name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-core",
- "bijux-cli-install",
  "bijux-cli-routing",
  "pyo3",
  "serde_json",
@@ -143,7 +133,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bijux-cli-evidence",
- "bijux-cli-install",
  "bijux-cli-routing",
  "serde",
  "serde_json",

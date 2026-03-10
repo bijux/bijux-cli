@@ -6,7 +6,6 @@ members = [
   "crates/bijux-cli-core",
   "crates/bijux-cli-routing",
   "crates/bijux-cli-python",
-  "crates/bijux-cli-install",
 ]
 resolver = "2"
 
