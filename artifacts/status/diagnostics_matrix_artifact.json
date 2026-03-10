@@ -1,0 +1,205 @@
+{
+  "commands": [
+    {
+      "command": "inspect",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli routes",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli registry",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli env",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli contracts",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli state-doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    }
+  ],
+  "generated_at": "2026-03-10T04:57:57.380638+00:00",
+  "generator": "scripts/status/generate_diagnostics_surface_reports.py",
+  "scope": "todo 362-378 diagnostics matrix",
+  "todo_rows": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "inspect_text_json_yaml_quiet_and_trace_modes",
+      "todo": 362
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "inspect_text_json_yaml_quiet_and_trace_modes",
+      "todo": 363
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "inspect_text_json_yaml_quiet_and_trace_modes",
+      "todo": 364
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "inspect_text_json_yaml_quiet_and_trace_modes",
+      "todo": 365
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "inspect_text_json_yaml_quiet_and_trace_modes",
+      "todo": 366
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 367
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 368
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 369
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 370
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 371
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "doctor_text_json_and_corrupted_state_coverage",
+      "todo": 372
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "dev_cli_routes_registry_env_contracts_json_shape_stability",
+      "todo": 373
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "dev_cli_routes_registry_env_contracts_json_shape_stability",
+      "todo": 374
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "dev_cli_routes_registry_env_contracts_json_shape_stability",
+      "todo": 375
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "dev_cli_routes_registry_env_contracts_json_shape_stability",
+      "todo": 376
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
+      "todo": 377
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
+      "todo": 378
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "test": "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
+      "todo": 379
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "commands": [
+    {
+      "command": "inspect",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli routes",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli registry",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli env",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli contracts",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "dev cli state-doctor",
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    }
+  ],
+  "generated_at": "2026-03-10T04:57:57.380638+00:00",
+  "generator": "scripts/status/generate_diagnostics_surface_reports.py",
+  "scope": "todo 361 diagnostics command coverage",
+  "summary": {
+    "complete": 8,
+    "missing": 0,
+    "partial": 0,
+    "shim": 0,
+    "total": 8
+  }
+}

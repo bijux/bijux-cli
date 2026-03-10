@@ -1,0 +1,8 @@
+{
+  "drift_commands": [],
+  "drift_count": 0,
+  "generated_at": "2026-03-10T04:57:57.380638+00:00",
+  "generator": "scripts/status/generate_diagnostics_surface_reports.py",
+  "scope": "todo 379 diagnostics shape drift",
+  "status": "clean"
+}
