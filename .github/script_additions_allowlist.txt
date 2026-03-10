@@ -141,4 +141,6 @@ scripts/status/generate_dev_cli_repo_docs_scripts_crate_health_reports.py # gene
 scripts/status/enforce_dev_cli_repo_docs_scripts_crate_health_gate.py # enforce repo/docs/scripts/crate-health gate and fail CI on stale/inconsistent audit drift
 scripts/status/generate_dev_cli_stale_artifact_reports.py # generate stale-artifact, stale-evidence, stale-report, and regression-suite artifacts for control-plane stale-input hardening
 scripts/status/enforce_dev_cli_stale_artifact_gate.py # enforce stale-artifact policy with critical failure classes, warning tolerance, and CI stale-injection verification
+scripts/status/generate_dev_cli_resilience_reports.py # generate control-plane resilience, determinism, side-effect audit, and drift artifacts for failure-injection hardening
+scripts/status/enforce_dev_cli_resilience_gate.py # enforce CI failure on control-plane determinism and read-only side-effect regressions
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
