@@ -57,21 +57,34 @@ def shim_inventory(status_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if matrix_status == "complete" and confidence >= 0.9:
             classification = "delete-now"
             justification = "parity coverage is complete and confidence is high"
-            removal_plan = "remove alias and enforce canonical route"
+            removal_condition = "remove once canonical route regression tests remain green"
+            evidence_links = [
+                "artifacts/parity/command_parity_matrix.json",
+                "artifacts/parity/command_parity_diffs.json",
+            ]
         elif blocker:
             classification = "needed"
             justification = f"blocked by {blocker}"
-            removal_plan = "remove after blocker closes and regression tests are green"
+            removal_condition = "remove after blocker closes and regression tests stay green"
+            evidence_links = [
+                "artifacts/status/status_known_parity_gaps.json",
+                "artifacts/parity/command_parity_matrix.json",
+            ]
         else:
             classification = "temporary"
-            justification = "compatibility bridge remains until the next cleanup window"
-            removal_plan = "delete once canonical usage is stable and covered"
+            justification = "legacy entrypoint remains for current user-compatibility contract"
+            removal_condition = "remove when parity matrix status for canonical path is rust-complete"
+            evidence_links = [
+                "artifacts/status/command_migration_matrix.json",
+                "artifacts/parity/command_parity_matrix.json",
+            ]
         items.append(
             {
                 "command": command,
                 "classification": classification,
                 "justification": justification,
-                "removal_plan": removal_plan,
+                "removal_condition": removal_condition,
+                "evidence_links": evidence_links,
                 "matrix_status": matrix_status,
                 "confidence": confidence,
                 "blocker": blocker,
@@ -86,26 +99,73 @@ def alias_inventory(pairs: list[tuple[str, str]]) -> list[dict[str, Any]]:
     for alias, canonical in sorted(pairs):
         if alias.startswith("dev "):
             classification = "temporary"
-            justification = "legacy developer shortcut retained during command transition"
-            removal_plan = "drop after one stable release cycle with canonical-only docs"
+            justification = "legacy developer shortcut remains for compatibility contract"
+            removal_condition = "remove when canonical dev cli path has stable parity coverage"
+            evidence_links = [
+                "artifacts/status/command_migration_matrix.json",
+                "artifacts/parity/command_parity_matrix.json",
+            ]
         elif alias.startswith("config ") or alias.startswith("plugins "):
             classification = "needed"
             justification = "legacy compatibility for core operator workflows"
-            removal_plan = "remove when compatibility policy no longer requires shorthand"
+            removal_condition = "remove when compatibility policy no longer requires shorthand"
+            evidence_links = [
+                "artifacts/status/compatibility_alias_inventory.json",
+                "artifacts/status/status_known_parity_gaps.json",
+            ]
         else:
             classification = "temporary"
-            justification = "legacy root shorthand remains for transition"
-            removal_plan = "remove once canonical route adoption is complete"
+            justification = "legacy root shorthand remains for compatibility contract"
+            removal_condition = "remove when canonical route adoption is complete and tested"
+            evidence_links = [
+                "artifacts/status/command_migration_matrix.json",
+                "artifacts/parity/command_parity_matrix.json",
+            ]
         items.append(
             {
                 "alias": alias,
                 "canonical": canonical,
                 "classification": classification,
                 "justification": justification,
-                "removal_plan": removal_plan,
+                "removal_condition": removal_condition,
+                "evidence_links": evidence_links,
             }
         )
     return items
+
+
+def hidden_alias_inventory(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    hidden = []
+    for item in items:
+        alias = str(item.get("alias", ""))
+        if alias.startswith("dev "):
+            hidden.append(
+                {
+                    "alias": alias,
+                    "canonical": item.get("canonical", ""),
+                    "justification": item.get("justification", ""),
+                    "removal_condition": item.get("removal_condition", ""),
+                    "evidence_links": item.get("evidence_links", []),
+                }
+            )
+    return hidden
+
+
+def old_python_path_inventory(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    tolerated = []
+    for item in items:
+        alias = str(item.get("alias", ""))
+        if alias.startswith(("config ", "plugins ", "doctor", "version", "repl", "completion", "inspect")):
+            tolerated.append(
+                {
+                    "legacy_path": alias,
+                    "canonical": item.get("canonical", ""),
+                    "justification": item.get("justification", ""),
+                    "removal_condition": item.get("removal_condition", ""),
+                    "evidence_links": item.get("evidence_links", []),
+                }
+            )
+    return tolerated
 
 
 def main() -> None:
@@ -146,6 +206,24 @@ def main() -> None:
     write_json(STATUS / "compatibility_shim_inventory.json", shim_payload)
     write_json(STATUS / "compatibility_alias_inventory.json", alias_payload)
     write_json(
+        STATUS / "hidden_alias_inventory.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_compatibility_shim_reports.py",
+            "items": hidden_alias_inventory(aliases),
+            "summary": {"count": len(hidden_alias_inventory(aliases))},
+        },
+    )
+    write_json(
+        STATUS / "old_python_path_tolerance_inventory.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_compatibility_shim_reports.py",
+            "items": old_python_path_inventory(aliases),
+            "summary": {"count": len(old_python_path_inventory(aliases))},
+        },
+    )
+    write_json(
         STATUS / "compatibility_shim_count_delta.json",
         {
             "generated_at": generated_at,
@@ -163,6 +241,26 @@ def main() -> None:
             "before": before_alias,
             "after": len(aliases),
             "delta": len(aliases) - before_alias,
+        },
+    )
+    write_json(
+        STATUS / "compatibility_shim_count_report.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_compatibility_shim_reports.py",
+            "baseline_count": before_shim,
+            "current_count": len(shims),
+            "removed_since_baseline": before_shim - len(shims),
+        },
+    )
+    write_json(
+        STATUS / "compatibility_alias_count_report.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_compatibility_shim_reports.py",
+            "baseline_count": before_alias,
+            "current_count": len(aliases),
+            "removed_since_baseline": before_alias - len(aliases),
         },
     )
     write_json(
@@ -184,6 +282,10 @@ def main() -> None:
     print("wrote artifacts/status/compatibility_alias_inventory.json")
     print("wrote artifacts/status/compatibility_shim_count_delta.json")
     print("wrote artifacts/status/compatibility_alias_count_delta.json")
+    print("wrote artifacts/status/compatibility_shim_count_report.json")
+    print("wrote artifacts/status/compatibility_alias_count_report.json")
+    print("wrote artifacts/status/hidden_alias_inventory.json")
+    print("wrote artifacts/status/old_python_path_tolerance_inventory.json")
     print("wrote artifacts/status/live_compatibility_shims.json")
     print("wrote artifacts/status/live_compatibility_aliases.json")
 

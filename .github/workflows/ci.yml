@@ -712,6 +712,10 @@ jobs:
             artifacts/status/product_mount_gap_report.json
             artifacts/status/compatibility_shim_inventory.json
             artifacts/status/compatibility_alias_inventory.json
+            artifacts/status/compatibility_shim_count_report.json
+            artifacts/status/compatibility_alias_count_report.json
+            artifacts/status/hidden_alias_inventory.json
+            artifacts/status/old_python_path_tolerance_inventory.json
             artifacts/status/compatibility_shim_count_delta.json
             artifacts/status/compatibility_alias_count_delta.json
             artifacts/status/live_compatibility_shims.json

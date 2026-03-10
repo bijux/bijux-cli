@@ -32,6 +32,10 @@ def main() -> int:
     if install_neutrality.returncode != 0:
         print(install_neutrality.stderr.strip() or install_neutrality.stdout.strip())
         return install_neutrality.returncode
+    compatibility = run(["python3", "scripts/status/generate_compatibility_shim_reports.py"])
+    if compatibility.returncode != 0:
+        print(compatibility.stderr.strip() or compatibility.stdout.strip())
+        return compatibility.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     changed = [
@@ -49,6 +53,16 @@ def main() -> int:
             or line.strip() == "artifacts/status/bridge_duplicate_law_report.json"
             or line.strip() == "artifacts/status/install_neutrality_report.json"
             or line.strip() == "artifacts/status/active_runtime_report.json"
+            or line.strip() == "artifacts/status/compatibility_shim_inventory.json"
+            or line.strip() == "artifacts/status/compatibility_alias_inventory.json"
+            or line.strip() == "artifacts/status/compatibility_shim_count_delta.json"
+            or line.strip() == "artifacts/status/compatibility_alias_count_delta.json"
+            or line.strip() == "artifacts/status/compatibility_shim_count_report.json"
+            or line.strip() == "artifacts/status/compatibility_alias_count_report.json"
+            or line.strip() == "artifacts/status/hidden_alias_inventory.json"
+            or line.strip() == "artifacts/status/old_python_path_tolerance_inventory.json"
+            or line.strip() == "artifacts/status/live_compatibility_shims.json"
+            or line.strip() == "artifacts/status/live_compatibility_aliases.json"
         )
     ]
     if changed:
