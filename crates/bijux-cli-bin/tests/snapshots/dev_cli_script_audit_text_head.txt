@@ -1,6 +1,7 @@
 {
   "remaining_script_only_behaviors": [
     "scripts/docs_builder/__init__.py",
+    "scripts/docs_builder/__pycache__/mkdocs_manager.cpython-310.pyc",
     "scripts/docs_builder/artifacts_pages/__init__.py",
     "scripts/docs_builder/artifacts_pages/api_page.py",
     "scripts/docs_builder/artifacts_pages/base.py",
@@ -21,4 +22,3 @@
     "sbom-dev",
     "sbom-prod",
     "sbom-summary",
-    "sbom-validate",

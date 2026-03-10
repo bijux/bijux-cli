@@ -695,6 +695,20 @@
       "segments": [
         "dev",
         "cli",
+        "blockers"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "config"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
         "contracts"
       ]
     },
@@ -703,6 +717,13 @@
         "dev",
         "cli",
         "crate-health"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "dashboard"
       ]
     },
     {
@@ -751,6 +772,13 @@
       "segments": [
         "dev",
         "cli",
+        "evidence"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
         "fixture-audit"
       ]
     },
@@ -779,6 +807,13 @@
       "segments": [
         "dev",
         "cli",
+        "next"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
         "package-health"
       ]
     },
@@ -800,7 +835,35 @@
       "segments": [
         "dev",
         "cli",
+        "python"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "quickcheck"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
         "registry"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "release"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "repo"
       ]
     },
     {
@@ -828,7 +891,21 @@
       "segments": [
         "dev",
         "cli",
+        "rustdoc"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
         "script-audit"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "scripts"
       ]
     },
     {
@@ -857,6 +934,13 @@
         "dev",
         "cli",
         "status"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "truth"
       ]
     },
     {
@@ -1371,6 +1455,24 @@
       "segments": [
         "dev",
         "cli",
+        "blockers"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "config"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "contracts"
       ],
       "source": "built-in"
@@ -1381,6 +1483,15 @@
         "dev",
         "cli",
         "crate-health"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "dashboard"
       ],
       "source": "built-in"
     },
@@ -1443,6 +1554,15 @@
       "segments": [
         "dev",
         "cli",
+        "evidence"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "fixture-audit"
       ],
       "source": "built-in"
@@ -1479,6 +1599,15 @@
       "segments": [
         "dev",
         "cli",
+        "next"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "package-health"
       ],
       "source": "built-in"
@@ -1506,7 +1635,43 @@
       "segments": [
         "dev",
         "cli",
+        "python"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "quickcheck"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "registry"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "release"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "repo"
       ],
       "source": "built-in"
     },
@@ -1542,7 +1707,25 @@
       "segments": [
         "dev",
         "cli",
+        "rustdoc"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "script-audit"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "scripts"
       ],
       "source": "built-in"
     },
@@ -1579,6 +1762,15 @@
         "dev",
         "cli",
         "status"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "truth"
       ],
       "source": "built-in"
     },

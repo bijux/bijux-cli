@@ -1,9 +1,11 @@
 {
   "docs": [
+    "docs/CODE_OF_CONDUCT.md",
     "docs/CONTRIBUTOR_ENGINEERING_RULES.md",
     "docs/HONEST_STATUS.md",
     "docs/KNOWN_GAPS.md",
     "docs/MAINTAINER_MILESTONE_CHECKLIST.md",
+    "docs/MIGRATING_FROM_PYTHON_CORE.md",
     "docs/PLUGIN_RUNTIME_LAW.md",
     "docs/STABILITY_AND_BREAKAGE.md",
     "docs/WHAT_WE_WONT_CLAIM.md",
@@ -20,5 +22,3 @@
     "docs/architecture/config-get-post-parity-improvements.md",
     "docs/architecture/config-key-value-parity.md",
     "docs/architecture/config-mutation-hardening-law.md",
-    "docs/architecture/config-parity-matrix.md",
-    "docs/architecture/config-parity-report.md",

@@ -148,10 +148,10 @@ fn dev_cli_help_lists_subcommands_in_stable_order() {
     assert_eq!(a.stdout, b.stdout);
     let commands = parse_help_commands(&String::from_utf8(a.stdout).expect("utf-8"));
     assert!(commands.starts_with(&[
-        "inventory".into(),
-        "routes".into(),
-        "route-audit".into(),
-        "registry".into()
+        "scripts".into(),
+        "rustdoc".into(),
+        "release".into(),
+        "evidence".into()
     ]));
     assert!(commands.contains(&"env".to_string()));
     assert!(commands.contains(&"runtime-identity".to_string()));

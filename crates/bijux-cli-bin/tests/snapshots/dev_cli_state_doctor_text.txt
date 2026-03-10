@@ -14,5 +14,6 @@
     "repairs": [],
     "status": "degraded"
   },
-  "runtime": "dev-cli"
+  "runtime": "dev-cli",
+  "state_truth_default": "bijux dev cli state-audit"
 }

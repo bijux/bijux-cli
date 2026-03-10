@@ -14,6 +14,11 @@
     "repairs": [],
     "status": "degraded"
   },
+  "evidence_ids": [
+    "EVIDENCE-1104-CONFIG-CORRUPTION",
+    "EVIDENCE-1105-HISTORY-RESILIENCE",
+    "EVIDENCE-1106-MEMORY-RESILIENCE"
+  ],
   "paths": {
     "config": {
       "exists": true,
@@ -52,5 +57,6 @@
       "writable": true
     }
   },
-  "runtime": "dev-cli"
+  "runtime": "dev-cli",
+  "state_truth_default": "bijux dev cli state-audit"
 }
