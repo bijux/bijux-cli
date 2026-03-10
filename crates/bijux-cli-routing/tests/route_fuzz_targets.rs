@@ -3,8 +3,8 @@
 //! test_type: route-fuzz
 
 use bijux_cli_routing as _;
+use bijux_cli_routing::inventory::{registry_inventory, route_inventory};
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
-use bijux_cli_routing::reports::{registry_report, routes_report};
 use clap as _;
 use proptest as _;
 use schemars as _;
@@ -150,8 +150,8 @@ fn fuzz_command_metadata_rendering_is_stable() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("community").expect("register");
 
-    let routes = routes_report(&registry);
-    let registry_meta = registry_report(&registry);
+    let routes = route_inventory(&registry);
+    let registry_meta = registry_inventory(&registry);
 
     let routes_json_a = serde_json::to_string(&routes).expect("serialize routes");
     let routes_json_b = serde_json::to_string(&routes).expect("serialize routes");
