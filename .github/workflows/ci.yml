@@ -261,6 +261,7 @@ jobs:
       - name: Generate current Rust state artifact
         run: |
           python3 scripts/status/generate_crate_boundary_metrics.py
+          python3 scripts/status/generate_public_api_reports.py
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_dev_cli_inventory.py
           python3 scripts/status/generate_docs_audit.py
@@ -299,6 +300,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_dev_cli_automation_policy.py
 
+      - name: New public API consumer warning
+        run: |
+          python3 scripts/status/warn_new_unused_public_api.py
+
       - name: Status report freshness gate
         run: |
           python3 scripts/status/check_status_reports_stale.py
@@ -329,6 +334,9 @@ jobs:
           path: |
             artifacts/status/crate_boundary_metrics.json
             artifacts/status/crate_boundary_report.json
+            artifacts/status/public_api_by_crate.json
+            artifacts/status/internal_only_candidates_by_crate.json
+            artifacts/status/cross_crate_api_usage.json
           if-no-files-found: warn
           retention-days: 14
 
