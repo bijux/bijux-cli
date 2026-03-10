@@ -15,6 +15,7 @@ RM                    := rm -rf
 .NOTPARALLEL: all clean
 
 # Modular Includes
+include makefiles/macro.mk
 include makefiles/api.mk
 include makefiles/build.mk
 include makefiles/changelog.mk
