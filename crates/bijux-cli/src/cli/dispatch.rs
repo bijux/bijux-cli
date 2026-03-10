@@ -37,7 +37,8 @@ use serde_json::{json, Value};
 use crate::argv::command_positionals;
 use crate::cli::commands::help::render_command_help;
 use crate::cli::commands::{
-    history as history_commands, memory as memory_commands, plugins as plugins_commands,
+    dev as dev_commands, history as history_commands, memory as memory_commands,
+    plugins as plugins_commands,
 };
 use crate::cli::context::{
     collect_files, command_option_value, env_map, read_json_if_exists, rel_to_root,
@@ -182,6 +183,9 @@ fn route_response(
     {
         return Ok(payload);
     }
+    if let Some(payload) = dev_commands::try_handle(normalized_path, &plugin_registry_path)? {
+        return Ok(payload);
+    }
 
     let payload = match normalized_path {
         [a, b] if a == "cli" && b == "version" => {
@@ -308,39 +312,6 @@ fn route_response(
         }
         [a, b] if a == "cli" && b == "self-test" => {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
-        }
-        [a] if a == "dev" => {
-            json!({
-                "status": "ok",
-                "entry_surface": "dev-cli",
-                "recommended_command": "bijux dev cli status",
-            })
-        }
-        [a, b] if a == "dev" && b == "atlas" => {
-            json!({
-                "status": "ok",
-                "mount": "atlas",
-                "entry_surface": "dev-cli",
-            })
-        }
-        [a, b] if a == "dev" && b == "di" => {
-            json!({
-                "status": "ok",
-                "container": "built-in",
-                "entry_surface": "dev-cli",
-            })
-        }
-        [a, b] if a == "dev" && b == "list-products" => {
-            json!({
-                "status": "ok",
-                "products": FUTURE_PRODUCT_NAMESPACES,
-            })
-        }
-        [a, b] if a == "dev" && b == "list-plugins" => {
-            json!({
-                "status": "ok",
-                "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
-            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             let context = ReportContext {
