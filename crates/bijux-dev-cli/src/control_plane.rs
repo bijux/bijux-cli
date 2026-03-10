@@ -1,7 +1,11 @@
 //! Maintainer control-plane helper report assembly.
 
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 use serde_json::{json, Value};
+
+use crate::{command_registry, DevCliCommandGroup};
 
 /// Builds hidden `dev cli atlas` report payload.
 #[must_use]
@@ -55,5 +59,91 @@ pub fn build_docs_prune_plan_report(docs_count: usize) -> Value {
             "move low-value prose detail into generated JSON artifacts",
             "freeze docs rule: every doc explains law or change",
         ],
+    })
+}
+
+/// Builds `dev cli snapshots-audit` report payload.
+#[must_use]
+pub fn build_snapshots_audit_report(snapshots: Vec<String>) -> Value {
+    json!({
+        "snapshot_count": snapshots.len(),
+        "snapshots": snapshots,
+    })
+}
+
+/// Builds `dev cli fixture-audit` report payload.
+#[must_use]
+pub fn build_fixture_audit_report(
+    parity_fixtures: Vec<String>,
+    snapshot_fixtures: Vec<String>,
+) -> Value {
+    json!({
+        "parity_fixtures": parity_fixtures,
+        "snapshot_fixtures": snapshot_fixtures,
+    })
+}
+
+/// Builds `dev cli plugin-health` report payload.
+#[must_use]
+pub fn build_plugin_health_report(machine_report: Value, text_report: String) -> Value {
+    json!({
+        "machine_report": machine_report,
+        "text_report": text_report,
+    })
+}
+
+/// Builds `dev cli doctor` report payload.
+#[must_use]
+pub fn build_doctor_report(
+    config_issues: Vec<Value>,
+    path_issues: Vec<Value>,
+    plugin_issues: Vec<Value>,
+) -> Value {
+    let status = if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
+        "healthy"
+    } else {
+        "degraded"
+    };
+    json!({
+        "status": status,
+        "runtime": "dev-cli",
+        "issues": {
+            "config": config_issues,
+            "paths": path_issues,
+            "plugins": plugin_issues,
+        },
+    })
+}
+
+/// Builds canonical dev-cli command ownership report payload.
+#[must_use]
+pub fn build_command_ownership_report(generated_at: &str) -> Value {
+    let mut grouped = BTreeMap::<String, Vec<&'static str>>::new();
+    for entry in command_registry() {
+        grouped
+            .entry(match entry.group {
+                DevCliCommandGroup::Dashboard => "dashboard".to_string(),
+                DevCliCommandGroup::Routing => "routing".to_string(),
+                DevCliCommandGroup::Runtime => "runtime".to_string(),
+                DevCliCommandGroup::Audit => "audit".to_string(),
+                DevCliCommandGroup::Internal => "internal".to_string(),
+            })
+            .or_default()
+            .push(entry.command.as_str());
+    }
+    json!({
+        "generated_at": generated_at,
+        "owner": "bijux-dev-cli",
+        "namespace": "dev cli",
+        "commands": command_registry()
+            .iter()
+            .map(|entry| json!({
+                "command": entry.command.as_str(),
+                "group": entry.group.as_str(),
+                "visible": entry.visible,
+                "owner": entry.owner,
+            }))
+            .collect::<Vec<_>>(),
+        "grouped_commands": grouped,
     })
 }

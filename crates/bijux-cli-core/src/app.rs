@@ -1066,10 +1066,7 @@ fn route_response(
                 .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
                 .map(|p| rel_to_root(&p, &root))
                 .collect();
-            json!({
-                "snapshot_count": snapshots.len(),
-                "snapshots": snapshots,
-            })
+            dev_control_plane::build_snapshots_audit_report(snapshots)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "fixture-audit" => {
             let root = workspace_root();
@@ -1082,10 +1079,7 @@ fn route_response(
                 .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
                 .map(|p| rel_to_root(&p, &root))
                 .collect();
-            json!({
-                "parity_fixtures": parity_files,
-                "snapshot_fixtures": snapshots,
-            })
+            dev_control_plane::build_fixture_audit_report(parity_files, snapshots)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "crate-health" => {
             dev_crate_health::build_report(&workspace_root())
@@ -1139,21 +1133,7 @@ fn route_response(
                     })
                 })
                 .collect();
-            let status =
-                if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
-                    "healthy"
-                } else {
-                    "degraded"
-                };
-            json!({
-                "status": status,
-                "runtime": "dev-cli",
-                "issues": {
-                    "config": config_issues,
-                    "paths": path_issues,
-                    "plugins": plugin_issues,
-                },
-            })
+            dev_control_plane::build_doctor_report(config_issues, path_issues, plugin_issues)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-prune-plan" => {
             let root = workspace_root();
@@ -1194,10 +1174,7 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/status/plugin_health_report.json"));
             let text = fs::read_to_string(root.join("artifacts/status/plugin_health_report.txt"))
                 .unwrap_or_default();
-            json!({
-                "machine_report": machine,
-                "text_report": text,
-            })
+            dev_control_plane::build_plugin_health_report(machine, text)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
             let contracts_query = contracts_schema_query();

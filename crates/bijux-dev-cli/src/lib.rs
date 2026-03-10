@@ -13,6 +13,7 @@ pub mod env;
 pub mod package_health;
 pub mod parity;
 pub mod registry;
+pub mod reporting;
 pub mod route_audit;
 pub mod routes;
 pub mod runtime_identity;
@@ -21,4 +22,7 @@ pub mod state_audit;
 pub mod status;
 mod types;
 
-pub use types::{DevCliCommand, ReportContext};
+pub use types::{
+    command_registry, DevCliCommand, DevCliCommandGroup, DevCliCommandMetadata, ReportContext,
+    MAINTAINER_COMMAND_NAMESPACE,
+};
