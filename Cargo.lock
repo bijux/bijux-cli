@@ -155,6 +155,7 @@ name = "bijux-dev-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bijux-cli-install",
  "bijux-cli-routing",
  "serde",
  "serde_json",
