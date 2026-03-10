@@ -57,6 +57,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
 
     json!({
         "runtime_truth_default": "bijux dev cli runtime-identity",
+        "evidence_ids": ["EVIDENCE-1004-RUNTIME-IDENTITY"],
         "runtime": "rust-foundation",
         "schema": "runtime-identity-v1",
         "public_runtime_binary_names": [CANONICAL_EXECUTABLE],

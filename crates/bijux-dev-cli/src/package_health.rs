@@ -13,6 +13,7 @@ pub fn build_report(current_rust_state: Value) -> Value {
         "state bootstrap must create missing directories and report explicit errors for unwritable roots",
     ];
     json!({
+        "evidence_ids": ["EVIDENCE-1003-INSTALL-NEUTRALITY"],
         "package_entrypoints": current_rust_state.get("package_entrypoints").cloned().unwrap_or_else(|| json!([])),
         "runtime_identity_rules": current_rust_state.get("runtime_identity_rules").cloned().unwrap_or_else(|| json!({})),
         "install_state_assumptions": assumptions,

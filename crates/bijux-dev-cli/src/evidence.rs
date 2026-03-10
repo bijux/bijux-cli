@@ -105,6 +105,29 @@ fn records_json(workspace_root: &Path) -> Vec<Value> {
         .collect()
 }
 
+fn artifacts_exist(record: &EvidenceRecord, workspace_root: &Path) -> bool {
+    !record.artifact_links.is_empty()
+        && record.artifact_links.iter().all(|artifact| workspace_root.join(artifact).exists())
+}
+
+fn audit_records(records: &[EvidenceRecord], workspace_root: &Path) -> Value {
+    let mut invalid_ids = Vec::new();
+    let mut missing_artifacts = Vec::new();
+    for record in records {
+        if !valid_evidence_id(&record.id) {
+            invalid_ids.push(record.id.clone());
+        }
+        if !artifacts_exist(record, workspace_root) {
+            missing_artifacts.push(record.id.clone());
+        }
+    }
+    json!({
+        "status": if invalid_ids.is_empty() && missing_artifacts.is_empty() { "pass" } else { "fail" },
+        "invalid_ids": invalid_ids,
+        "missing_artifact_links": missing_artifacts,
+    })
+}
+
 /// `dev cli evidence list`
 #[must_use]
 pub fn build_list_report(workspace_root: &Path) -> Value {
@@ -125,27 +148,33 @@ pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
 #[must_use]
 pub fn build_audit_report(workspace_root: &Path) -> Value {
     let records = evidence_records(workspace_root);
-    let mut invalid_ids = Vec::new();
-    let mut missing_artifacts = Vec::new();
-    for record in &records {
-        if !valid_evidence_id(&record.id) {
-            invalid_ids.push(record.id.clone());
-        }
-        if record.artifact_links.is_empty() {
-            missing_artifacts.push(record.id.clone());
-            continue;
-        }
-        for artifact in &record.artifact_links {
-            if !workspace_root.join(artifact).exists() {
-                missing_artifacts.push(record.id.clone());
-                break;
-            }
-        }
-    }
+    let integrity = audit_records(&records, workspace_root);
+    let coverage: Vec<Value> = records
+        .iter()
+        .map(|record| {
+            json!({
+                "id": record.id,
+                "has_backing_artifacts": artifacts_exist(record, workspace_root),
+            })
+        })
+        .collect();
+    let orphan: Vec<Value> = records
+        .iter()
+        .filter(|record| record.artifact_links.is_empty())
+        .map(|record| json!({"id": record.id, "reason": "no artifact links"}))
+        .collect();
+    let claims_without_evidence: Vec<Value> = records
+        .iter()
+        .filter(|record| !artifacts_exist(record, workspace_root))
+        .map(|record| json!({"id": record.id, "claim": record.claim}))
+        .collect();
     json!({
-        "status": if invalid_ids.is_empty() && missing_artifacts.is_empty() { "pass" } else { "fail" },
-        "invalid_ids": invalid_ids,
-        "missing_artifact_links": missing_artifacts,
+        "status": integrity.get("status").cloned().unwrap_or_else(|| json!("fail")),
+        "invalid_ids": integrity.get("invalid_ids").cloned().unwrap_or_else(|| json!([])),
+        "missing_artifact_links": integrity.get("missing_artifact_links").cloned().unwrap_or_else(|| json!([])),
+        "coverage_report": coverage,
+        "orphan_report": orphan,
+        "claims_without_evidence_report": claims_without_evidence,
         "records": records_json(workspace_root),
     })
 }
@@ -180,7 +209,11 @@ pub fn build_matrix_report(workspace_root: &Path) -> Value {
 /// `dev cli evidence website-export`
 #[must_use]
 pub fn build_website_export_report(workspace_root: &Path) -> Value {
-    let records = records_json(workspace_root);
+    let records: Vec<Value> = evidence_records(workspace_root)
+        .into_iter()
+        .filter(|record| artifacts_exist(record, workspace_root))
+        .map(|record| serde_json::to_value(record).unwrap_or_else(|_| json!({})))
+        .collect();
     json!({"website_export": records, "filter": "backed-claims-only"})
 }
 
@@ -233,4 +266,37 @@ pub fn build_parity_map_report(workspace_root: &Path) -> Value {
         })
         .collect();
     json!({"parity_map": mapped})
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::{build_audit_report, build_stale_report, build_website_export_report};
+
+    #[test]
+    fn evidence_audit_reports_integrity_views() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let audit = build_audit_report(&root);
+        assert!(audit.get("coverage_report").is_some());
+        assert!(audit.get("orphan_report").is_some());
+        assert!(audit.get("claims_without_evidence_report").is_some());
+    }
+
+    #[test]
+    fn stale_evidence_is_reported() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let stale = build_stale_report(&root);
+        assert!(stale.get("stale").is_some());
+    }
+
+    #[test]
+    fn website_export_contains_backed_claims_only() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let export = build_website_export_report(&root);
+        assert_eq!(
+            export.get("filter").and_then(serde_json::Value::as_str),
+            Some("backed-claims-only")
+        );
+    }
 }

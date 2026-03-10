@@ -79,6 +79,13 @@ pub fn build_report(workspace_root: &Path) -> Value {
 
     json!({
         "migration_dashboard_default": "bijux dev cli parity",
+        "evidence_ids": [
+            "EVIDENCE-1002-PARITY-COVERAGE",
+            "EVIDENCE-1103-PLUGIN-LIFECYCLE",
+            "EVIDENCE-1107-DIAGNOSTICS-CONSISTENCY",
+            "EVIDENCE-1108-REPL-PARITY",
+            "EVIDENCE-1109-PYTHON-BRIDGE-EQUIVALENCE"
+        ],
         "rust_python": parity_report,
         "binary_bridge": bridge_parity,
         "command_matrix": command_matrix,
