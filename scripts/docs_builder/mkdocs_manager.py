@@ -48,7 +48,7 @@ def _stage_root_docs() -> None:
         (REPO_ROOT / "docs" / "index.md", Path("index.md"), rewrite_links_general),
         (REPO_ROOT / "SECURITY.md", Path("security.md"), rewrite_links_general),
         (
-            REPO_ROOT / "CODE_OF_CONDUCT.md",
+            REPO_ROOT / "docs" / "CODE_OF_CONDUCT.md",
             Path("code_of_conduct.md"),
             rewrite_links_general,
         ),
