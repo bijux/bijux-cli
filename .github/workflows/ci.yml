@@ -420,6 +420,7 @@ jobs:
           python3 scripts/status/generate_dev_cli_state_diagnostics_reports.py
           python3 scripts/status/generate_dev_cli_route_registry_env_contracts_reports.py
           python3 scripts/status/generate_dev_cli_repo_docs_scripts_crate_health_reports.py
+          python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -433,6 +434,15 @@ jobs:
           python3 scripts/status/enforce_dev_cli_state_diagnostics_gate.py
           python3 scripts/status/enforce_dev_cli_route_registry_env_contracts_gate.py
           python3 scripts/status/enforce_dev_cli_repo_docs_scripts_crate_health_gate.py
+          python3 scripts/status/enforce_dev_cli_stale_artifact_gate.py
+
+      - name: Verify stale-artifact CI injection mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEV_CLI_INJECT_STALE_ARTIFACT=1 python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
+          DEV_CLI_ALLOW_INJECTION_DRIFT=1 python3 scripts/status/enforce_dev_cli_stale_artifact_gate.py
+          python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
 
       - name: Warn on new script files without justification
         shell: bash

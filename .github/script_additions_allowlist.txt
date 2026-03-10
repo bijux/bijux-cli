@@ -139,4 +139,6 @@ scripts/status/generate_dev_cli_route_registry_env_contracts_reports.py # genera
 scripts/status/enforce_dev_cli_route_registry_env_contracts_gate.py # enforce routes/registry/env/contracts gate and fail CI on source-truth drift
 scripts/status/generate_dev_cli_repo_docs_scripts_crate_health_reports.py # generate repo/docs/scripts/crate-health truth and drift artifacts for cleanup backbone hardening
 scripts/status/enforce_dev_cli_repo_docs_scripts_crate_health_gate.py # enforce repo/docs/scripts/crate-health gate and fail CI on stale/inconsistent audit drift
+scripts/status/generate_dev_cli_stale_artifact_reports.py # generate stale-artifact, stale-evidence, stale-report, and regression-suite artifacts for control-plane stale-input hardening
+scripts/status/enforce_dev_cli_stale_artifact_gate.py # enforce stale-artifact policy with critical failure classes, warning tolerance, and CI stale-injection verification
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
