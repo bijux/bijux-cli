@@ -13,8 +13,10 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir()
-        .join(format!("bijux-fs-process-adversarial-{name}-{}", std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "bijux-fs-process-adversarial-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
@@ -129,7 +131,14 @@ fn broken_symlink_and_permission_denied_paths_surface_stable_failures() {
     fs::write(&config, "BIJUXCLI_ALPHA=1\n").expect("seed config");
     fs::set_permissions(&cfg_dir, fs::Permissions::from_mode(0o555)).expect("chmod cfgdir");
     let write_fail = run_with_env(
-        &["cli", "config", "set", "alpha=2", "--config-path", config.to_str().expect("utf-8")],
+        &[
+            "cli",
+            "config",
+            "set",
+            "alpha=2",
+            "--config-path",
+            config.to_str().expect("utf-8"),
+        ],
         &[],
     );
     fs::set_permissions(&cfg_dir, fs::Permissions::from_mode(0o755)).expect("restore cfgdir");
@@ -196,7 +205,15 @@ fn child_process_failure_paths_surface_normalized_failures_when_plugins_are_brok
     assert_known_status(&check_out, "plugin check broken path");
 
     let inspect_out = run_with_env(
-        &["cli", "plugins", "inspect", "broken", "--format", "json", "--no-pretty"],
+        &[
+            "cli",
+            "plugins",
+            "inspect",
+            "broken",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.display().to_string())],
     );
     assert_known_status(&inspect_out, "plugin inspect broken path");
@@ -222,7 +239,10 @@ fn interrupted_process_behavior_is_normalized_for_interactive_entrypoint() {
 
     let status = child.wait().expect("wait interrupt");
     if let Some(code) = status.code() {
-        assert!(matches!(code, 0 | 1 | 2 | 130 | 137), "unexpected interrupt exit code: {code}");
+        assert!(
+            matches!(code, 0 | 1 | 2 | 130 | 137),
+            "unexpected interrupt exit code: {code}"
+        );
     } else {
         // Signaled exits are acceptable normalization on Unix.
         assert!(status.signal().is_some());
