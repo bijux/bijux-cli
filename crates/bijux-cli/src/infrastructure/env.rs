@@ -2,6 +2,7 @@
 //! Environment adapter primitives.
 
 /// Read a process environment variable.
+#[must_use]
 pub fn var(name: &str) -> Option<String> {
     std::env::var(name).ok()
 }
