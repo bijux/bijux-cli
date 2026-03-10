@@ -78,6 +78,15 @@ def main() -> None:
     simplification_artifact = STATUS / "simplification_deletion_artifact.json"
     candidate_merge_later = STATUS / "candidate_merge_later_report.json"
     candidate_keep_separate = STATUS / "candidate_keep_separate_report.json"
+    migration_matrix = STATUS / "command_migration_matrix.json"
+    install_neutrality = STATUS / "install_neutrality_report.json"
+    active_runtime = STATUS / "active_runtime_report.json"
+    closure_bundle = STATUS / "command_family_closure_report.json"
+    compatibility_debt = STATUS / "compatibility_debt_trend_report.json"
+    known_remaining_gaps = STATUS / "what_is_left.json"
+    fully_done = STATUS / "what_is_done.json"
+    partial_work = STATUS / "what_is_partial.json"
+    intentional_differences = STATUS / "what_is_intentionally_different.json"
     known_gaps = ROOT / "docs" / "KNOWN_GAPS.md"
 
     release_evidence_paths = [
@@ -99,6 +108,15 @@ def main() -> None:
         simplification_artifact,
         candidate_merge_later,
         candidate_keep_separate,
+        migration_matrix,
+        install_neutrality,
+        active_runtime,
+        closure_bundle,
+        compatibility_debt,
+        known_remaining_gaps,
+        fully_done,
+        partial_work,
+        intentional_differences,
         known_gaps,
     ]
 
@@ -113,6 +131,10 @@ def main() -> None:
     scripts_audit = read_json(STATUS / "script_only_behaviors.json")
     docs_audit = read_json(STATUS / "docs_audit.json")
     test_audit = read_json(STATUS / "test_quality_audit.json")
+    done_payload = read_json(fully_done)
+    partial_payload = read_json(partial_work)
+    intentional_payload = read_json(intentional_differences)
+    left_payload = read_json(known_remaining_gaps)
 
     stale_scripts = scripts_audit.get("scripts", []) if isinstance(scripts_audit, dict) else []
     weak_tests = []
@@ -125,9 +147,18 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release evidence bundle",
         "status": "complete" if not missing else "partial",
-        "tasks": [561, 562, 563, 564, 565, 566, 567, 568],
+        "tasks": [181, 182, 183, 184, 185, 186, 187, 188],
         "evidence": evidence,
         "missing": missing,
+        "required_components": {
+            "migration_matrix": rel(migration_matrix),
+            "install_neutrality_report": rel(install_neutrality),
+            "runtime_identity_report": rel(active_runtime),
+            "closure_reports": rel(closure_bundle),
+            "compatibility_debt_report": rel(compatibility_debt),
+            "cross_surface_consistency_report": rel(cross_surface_consistency),
+            "known_remaining_gaps_report": rel(known_remaining_gaps),
+        },
     }
 
     manifest = {
@@ -135,7 +166,7 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release status manifest",
         "status": "ready" if not missing else "blocked",
-        "tasks": [579],
+        "tasks": [189, 200],
         "checks": {
             "missing_evidence": missing,
             "parity_partial_count": len(partial),
@@ -150,11 +181,14 @@ def main() -> None:
             "review stale scripts outside dev cli",
             "review stale docs from docs audit",
             "review weak tests from test audit",
+            "review release evidence bundle before release candidate decision",
         ],
+        "next_work_input": "Use release_evidence_bundle.json and release_truth_report.json as the first input for next prioritization.",
+        "status_discussion_policy": "status claims are invalid unless backed by artifacts in this manifest",
     }
 
     truth_lines = [
-        "Release Truth Report",
+        "Release Truth Summary",
         "",
         f"status: {manifest['status']}",
         f"missing_evidence: {len(missing)}",
@@ -162,6 +196,18 @@ def main() -> None:
         f"parity_missing: {len(missing_cmd)}",
         f"stale_scripts_outside_dev_cli: {len(stale_scripts)}",
         f"weak_tests: {len(weak_tests)}",
+        "",
+        "what is fully done:",
+        json.dumps(done_payload, indent=2, sort_keys=True),
+        "",
+        "what is partial:",
+        json.dumps(partial_payload, indent=2, sort_keys=True),
+        "",
+        "what is intentionally different:",
+        json.dumps(intentional_payload, indent=2, sort_keys=True),
+        "",
+        "what is still left:",
+        json.dumps(left_payload, indent=2, sort_keys=True),
     ]
     if missing:
         truth_lines.append("")
@@ -175,12 +221,18 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release truth",
         "status": manifest["status"],
-        "tasks": [578, 580],
+        "tasks": [190, 191, 192, 193, 194, 198, 199, 200],
         "summary": {
             "missing_evidence": len(missing),
             "parity_partial": len(partial),
             "parity_missing": len(missing_cmd),
             "weak_tests": len(weak_tests),
+        },
+        "sections": {
+            "fully_done": done_payload,
+            "partial": partial_payload,
+            "intentionally_different": intentional_payload,
+            "still_left": left_payload,
         },
         "claim_policy": "release claims are evidence-only",
     }
