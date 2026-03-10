@@ -2,6 +2,8 @@
 //! REPL completion coverage for TODOs 241-255.
 
 use std::fs;
+use bijux_cli_python as _;
+use libc as _;
 
 use bijux_cli_routing as _;
 use bijux_cli_core as _;

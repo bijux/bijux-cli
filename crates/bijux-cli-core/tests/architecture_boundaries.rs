@@ -64,7 +64,13 @@ fn enforces_internal_crate_boundaries() {
     let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
         (
             "bijux-cli-bin",
-            BTreeSet::from(["bijux-cli-core", "bijux-cli-python", "bijux-cli-repl"]),
+            BTreeSet::from([
+                "bijux-cli-core",
+                "bijux-cli-install",
+                "bijux-cli-output",
+                "bijux-cli-python",
+                "bijux-cli-routing",
+            ]),
         ),
         (
             "bijux-cli-core",
@@ -81,15 +87,6 @@ fn enforces_internal_crate_boundaries() {
         (
             "bijux-cli-python",
             BTreeSet::from(["bijux-cli-core", "bijux-cli-install", "bijux-cli-routing"]),
-        ),
-        (
-            "bijux-cli-repl",
-            BTreeSet::from([
-                "bijux-cli-core",
-                "bijux-cli-install",
-                "bijux-cli-output",
-                "bijux-cli-routing",
-            ]),
         ),
         ("bijux-cli-routing", BTreeSet::new()),
     ]);

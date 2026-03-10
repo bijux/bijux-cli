@@ -2,6 +2,8 @@
 //! Transcript, parity, and resiliency regression tests for REPL runtime.
 
 use std::fs;
+use bijux_cli_python as _;
+use libc as _;
 use std::path::PathBuf;
 
 use bijux_cli_routing as _;

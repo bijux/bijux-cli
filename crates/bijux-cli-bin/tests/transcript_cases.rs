@@ -2,6 +2,8 @@
 //! Expanded transcript parity and resiliency cases for REPL runtime.
 
 use std::fs;
+use bijux_cli_python as _;
+use libc as _;
 use std::time::{Duration, Instant};
 
 use bijux_cli_routing as _;

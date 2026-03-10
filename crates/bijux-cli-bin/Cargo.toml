@@ -11,14 +11,22 @@ rust-version.workspace = true
 name = "bijux-rs"
 path = "src/main.rs"
 
+[lib]
+name = "bijux_cli_repl"
+path = "src/lib.rs"
+
 [dependencies]
 bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-routing = { path = "../bijux-cli-routing" }
+bijux-cli-install = { path = "../bijux-cli-install" }
+bijux-cli-output = { path = "../bijux-cli-output" }
+serde_json = { workspace = true }
+shlex = "1.3.0"
+thiserror = { workspace = true }
 
 [dev-dependencies]
 bijux-cli-core = { path = "../bijux-cli-core" }
 bijux-cli-python = { path = "../bijux-cli-python" }
-bijux-cli-repl = { path = "../bijux-cli-repl" }
-serde_json.workspace = true
 libc = "0.2.177"
 
 [lints]

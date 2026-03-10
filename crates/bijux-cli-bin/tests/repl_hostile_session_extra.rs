@@ -2,6 +2,8 @@
 //! Extra hostile-session transcript coverage for TODOs 221-240.
 
 use std::fs;
+use bijux_cli_python as _;
+use libc as _;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 

@@ -9,6 +9,11 @@ mod reference;
 mod session;
 mod types;
 
+#[cfg(test)]
+use bijux_cli_python as _;
+#[cfg(test)]
+use libc as _;
+
 pub use completion::{completion_candidates, register_plugin_completion_hook};
 pub use diagnostics::{
     benchmark_startup_latency, check_repl_budgets, estimated_session_memory_bytes,
