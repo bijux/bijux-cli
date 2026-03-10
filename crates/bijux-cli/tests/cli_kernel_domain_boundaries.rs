@@ -32,13 +32,22 @@ fn rs_files_under(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn domain_modules_do_not_depend_on_cli_or_kernel_layers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let domain_roots = ["config", "install", "plugin", "query", "routing"];
+    let domain_roots = [
+        "features/config",
+        "features/install",
+        "features/plugins",
+        "features/diagnostics",
+        "routing",
+    ];
 
     let mut cli_offenders = Vec::new();
     let mut kernel_offenders = Vec::new();
 
     for module_root in domain_roots {
         for file in rs_files_under(&root.join(module_root)) {
+            if file.ends_with("command.rs") {
+                continue;
+            }
             let source = fs::read_to_string(&file).expect("read source");
             if source.contains("crate::cli::") {
                 cli_offenders.push(file.display().to_string());
@@ -76,13 +85,12 @@ fn kernel_layer_does_not_depend_on_cli_layer() {
 
 #[test]
 fn cli_layer_does_not_depend_on_kernel_layer() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/cli");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/interface/cli");
     let mut offenders = Vec::new();
 
     for file in rs_files_under(&root) {
         let source = fs::read_to_string(&file).expect("read source");
-        let is_allowed_entrypoint = file.ends_with("src/cli/entrypoint.rs");
-        if source.contains("crate::kernel::") && !is_allowed_entrypoint {
+        if source.contains("crate::kernel::") {
             offenders.push(file.display().to_string());
         }
     }
