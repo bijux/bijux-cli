@@ -246,7 +246,7 @@ pub fn resolve_policy(intent: &ExecutionIntent, inputs: &PolicyInputs) -> Execut
 
 /// Assemble execution context.
 #[must_use]
-pub fn assemble_context(
+pub(crate) fn assemble_context(
     intent: ExecutionIntent,
     policy: ExecutionPolicy,
     timeout: Option<Duration>,
@@ -307,7 +307,7 @@ fn is_fast_path(intent: &ExecutionIntent) -> bool {
 }
 
 /// Execute unified sync/async handler pipeline with lifecycle and diagnostics hooks.
-pub fn execute_pipeline(
+pub(crate) fn execute_pipeline(
     ctx: &ExecutionContext,
     handler: &Handler,
     diagnostics: &[Arc<dyn DiagnosticsHook>],
@@ -445,3 +445,7 @@ pub fn execute_pipeline(
         },
     })
 }
+
+#[cfg(test)]
+#[path = "kernel_pipeline_tests.rs"]
+mod kernel_pipeline_tests;
