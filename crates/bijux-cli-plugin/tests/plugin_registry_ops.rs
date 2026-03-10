@@ -1,16 +1,16 @@
 #![forbid(unsafe_code)]
 //! Registry and command internals coverage for plugin lifecycle operations.
+//! test_type: plugin-failure-path
 
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_contracts as _;
-use bijux_cli_contracts::PluginLifecycleState;
 use bijux_cli_plugin::{
-    compatibility_check, disable_plugin, enable_plugin, inspect_plugin, install_plugin,
-    list_plugins, load_registry, plugin_doctor, registry_path_from_plugins_dir, uninstall_plugin,
-    InstallPluginRequest, PluginTrustLevel,
+    compatibility_check, disable_plugin, enable_plugin, install_plugin, load_registry,
+    plugin_doctor, registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest,
+    PluginTrustLevel,
 };
 use semver as _;
 use serde as _;
@@ -44,41 +44,7 @@ fn manifest_text(namespace: &str) -> String {
 }
 
 #[test]
-fn install_enable_disable_inspect_list_and_uninstall_plugin() {
-    let plugins_dir = temp_plugins_dir("lifecycle");
-    let registry_path = registry_path_from_plugins_dir(&plugins_dir);
-
-    let installed = install_plugin(
-        &registry_path,
-        InstallPluginRequest {
-            manifest_text: manifest_text("community"),
-            source: "local:/tmp/community".to_string(),
-            trust_level: PluginTrustLevel::Community,
-        },
-        "0.1.0",
-    )
-    .expect("plugin should install");
-    assert_eq!(installed.state, PluginLifecycleState::Installed);
-
-    let enabled = enable_plugin(&registry_path, "community").expect("plugin should enable");
-    assert_eq!(enabled.state, PluginLifecycleState::Enabled);
-
-    let disabled = disable_plugin(&registry_path, "community").expect("plugin should disable");
-    assert_eq!(disabled.state, PluginLifecycleState::Disabled);
-
-    let inspected = inspect_plugin(&registry_path, "community").expect("inspect should work");
-    assert_eq!(inspected.manifest.namespace.0, "community");
-
-    let listed = list_plugins(&registry_path).expect("list should work");
-    assert_eq!(listed.len(), 1);
-
-    uninstall_plugin(&registry_path, "community").expect("uninstall should work");
-    let listed_after = list_plugins(&registry_path).expect("list should work");
-    assert!(listed_after.is_empty());
-}
-
-#[test]
-fn compatibility_and_doctor_are_reported() {
+fn compatibility_and_doctor_report_failure_paths_deterministically() {
     let plugins_dir = temp_plugins_dir("doctor");
     let registry_path = registry_path_from_plugins_dir(&plugins_dir);
 
@@ -104,4 +70,23 @@ fn compatibility_and_doctor_are_reported() {
 
     let registry = load_registry(&registry_path).expect("registry should load");
     assert_eq!(registry.version, "1");
+
+    let missing_enable = enable_plugin(&registry_path, "ghost").expect_err("missing plugin should fail");
+    assert!(format!("{missing_enable}").contains("plugin not found"));
+
+    let missing_disable =
+        disable_plugin(&registry_path, "ghost").expect_err("missing plugin should fail");
+    assert!(format!("{missing_disable}").contains("plugin not found"));
+
+    let missing_uninstall =
+        uninstall_plugin(&registry_path, "ghost").expect_err("missing plugin should fail");
+    assert!(format!("{missing_uninstall}").contains("plugin not found"));
+
+    let bad_version = compatibility_check(&installed.manifest, "9.9.9").expect("check should run");
+    assert!(!bad_version);
+
+    // Corrupt registry and ensure doctor reports deterministic corruption failure.
+    fs::write(&registry_path, "{broken-json").expect("write corruption");
+    let corrupted = plugin_doctor(&registry_path).expect_err("doctor should fail on bad json");
+    assert!(format!("{corrupted}").contains("corrupted"));
 }

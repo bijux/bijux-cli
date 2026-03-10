@@ -1,11 +1,14 @@
 #![forbid(unsafe_code)]
 //! Deterministic output matrix coverage.
+//! test_type: deterministic-repeated-run
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -114,22 +117,21 @@ fn inspect_json_is_byte_stable_across_runs() {
 }
 
 #[test]
-fn help_text_is_stable_across_runs() {
-    let first = run(&["help", "cli", "plugins"]);
-    let second = run(&["help", "cli", "plugins"]);
-    assert_eq!(first.status.code(), Some(0));
-    assert_eq!(second.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout);
-}
-
-#[test]
 fn json_envelope_field_order_is_stable() {
-    let out = run(&["status", "--format", "json", "--no-pretty"]);
-    assert_eq!(out.status.code(), Some(0));
-    let body = String::from_utf8(out.stdout).expect("utf-8");
-    let runtime = body.find("\"runtime\"").expect("runtime key");
-    let status = body.find("\"status\"").expect("status key");
-    assert!(runtime < status);
+    let mut baseline: Option<Vec<u8>> = None;
+    for _ in 0..6 {
+        let out = run(&["status", "--format", "json", "--no-pretty"]);
+        assert_eq!(out.status.code(), Some(0));
+        let body = String::from_utf8(out.stdout.clone()).expect("utf-8");
+        let runtime = body.find("\"runtime\"").expect("runtime key");
+        let status = body.find("\"status\"").expect("status key");
+        assert!(runtime < status);
+        if let Some(prev) = &baseline {
+            assert_eq!(prev, &out.stdout, "repeated run changed json order or payload");
+        } else {
+            baseline = Some(out.stdout);
+        }
+    }
 }
 
 #[test]

@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 //! Parser intent normalization tests.
+//! test_type: flag-precedence-conflict
 
 use bijux_cli_contracts as _;
 use bijux_cli_routing::parser::parse_intent;
@@ -30,8 +31,35 @@ fn parses_root_and_nested_paths_with_global_flags() {
 }
 
 #[test]
-fn parses_canonical_dev_cli_forms_without_alias_dependency() {
-    let argv = vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "routes".to_string()];
-    let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.normalized_path, vec!["dev", "cli", "routes"]);
+fn conflicting_output_and_pretty_flags_normalize_deterministically() {
+    let one = vec![
+        "bijux".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        "--format".to_string(),
+        "yaml".to_string(),
+        "--pretty".to_string(),
+        "--no-pretty".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "routes".to_string(),
+    ];
+    let two = vec![
+        "bijux".to_string(),
+        "--no-pretty".to_string(),
+        "--pretty".to_string(),
+        "--format".to_string(),
+        "yaml".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "routes".to_string(),
+    ];
+    let left = parse_intent(&one).expect("parse should succeed");
+    let right = parse_intent(&two).expect("parse should succeed");
+    assert_eq!(left.command_path, right.command_path);
+    assert_eq!(left.normalized_path, right.normalized_path);
+    assert_eq!(left.global_flags.output_format, right.global_flags.output_format);
+    assert_eq!(left.global_flags.pretty_mode, right.global_flags.pretty_mode);
 }

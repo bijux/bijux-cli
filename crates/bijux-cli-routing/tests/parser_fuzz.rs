@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 //! Fuzz-style parser robustness checks.
+//! test_type: flag-precedence-conflict
 
 use bijux_cli_contracts as _;
 use bijux_cli_routing::parser::parse_intent;
@@ -10,7 +11,7 @@ use serde_json as _;
 use thiserror as _;
 
 #[test]
-fn parser_handles_diverse_argv_inputs_without_panics() {
+fn parser_returns_usage_intent_for_diverse_argv_without_panics() {
     let corpus = [
         vec!["bijux"],
         vec!["bijux", "status"],
@@ -26,7 +27,7 @@ fn parser_handles_diverse_argv_inputs_without_panics() {
 
     for case in corpus {
         let argv: Vec<String> = case.iter().map(|s| (*s).to_string()).collect();
-        let result = parse_intent(&argv);
-        assert!(result.is_ok(), "parser returned error for case: {case:?}");
+        let intent = parse_intent(&argv).expect("parser should return usage intent, not crash");
+        assert!(!intent.normalized_path.is_empty() || intent.command_path.is_empty());
     }
 }
