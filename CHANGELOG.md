@@ -220,7 +220,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Packaging / PyPI page**
 
     * Built dynamic long description via **hatch-fancy-pypi-readme** from **README.md** and **CHANGELOG.md** for PyPI/TestPyPI.
-    * Packaged with `LICENSES/`, `REUSE.toml`, and `py.typed` included in source distributions.
+    * Packaged with `LICENSE`, `REUSE.toml`, and `py.typed` included in source distributions.
 
 ### Changed
 

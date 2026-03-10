@@ -55,7 +55,7 @@ def _stage_root_docs() -> None:
         (REPO_ROOT / "CONTRIBUTING.md", Path("contributing.md"), rewrite_links_general),
         (REPO_ROOT / "CHANGELOG.md", Path("changelog.md"), rewrite_links_general),
         (
-            REPO_ROOT / "LICENSES" / "Apache-2.0.txt",
+            REPO_ROOT / "LICENSE",
             Path("license.md"),
             rewrite_links_general,
         ),

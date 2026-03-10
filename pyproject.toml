@@ -12,7 +12,7 @@ dynamic = ["version"]
 description = "Lean, plug-in-driven CLI kernel"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-license = {file = "LICENSES/Apache-2.0.txt" }
+license = {file = "LICENSE" }
 authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
 keywords = ["cli", "developer-tools", "plugins", "dependency-injection", "repl", "fastapi", "typer", "pluggy"]
 classifiers = [
@@ -141,7 +141,7 @@ include = [
   "README.md",
   "CHANGELOG.md",
   "LICENSE",
-  "LICENSES/**",
+  "LICENSE",
   "REUSE.toml",
   "src/bijux_cli/py.typed",
 ]
