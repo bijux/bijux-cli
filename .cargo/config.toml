@@ -1,4 +1,5 @@
 [build]
+target-dir = "artifacts/rust/target"
 rustflags = ["-Dwarnings"]
 
 [alias]
