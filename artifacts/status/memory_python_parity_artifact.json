@@ -1,0 +1,10 @@
+{
+  "evidence": [
+    "crates/bijux-cli-bin/tests/memory_parity.rs",
+    "crates/bijux-cli-bin/tests/memory_command_matrix.rs"
+  ],
+  "generated_at": "2026-03-10T04:54:41.826032+00:00",
+  "generator": "scripts/status/generate_memory_surface_reports.py",
+  "scope": "todo 359 memory parity versus overlapping python behavior",
+  "status": "complete"
+}

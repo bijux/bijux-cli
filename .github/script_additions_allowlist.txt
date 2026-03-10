@@ -43,3 +43,4 @@ scripts/status/generate_config_mutation_surface_reports.py # generate config mut
 scripts/status/generate_config_source_surface_reports.py # generate config source precedence parity/drift artifacts and frozen observable precedence contract from explicit config_source_precedence_matrix tests
 scripts/status/enforce_config_source_consistency.py # enforce CI failure when source-report artifacts drift from actual config resolution behavior
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
+scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests

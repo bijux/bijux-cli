@@ -1,0 +1,13 @@
+{
+  "domain": "memory-read-behavior",
+  "evidence": [
+    "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
+    "artifacts/status/memory_command_matrix_artifact.json",
+    "artifacts/status/memory_corruption_matrix_artifact.json",
+    "artifacts/status/memory_python_parity_artifact.json"
+  ],
+  "generated_at": "2026-03-10T04:54:41.826032+00:00",
+  "generator": "scripts/status/generate_memory_surface_reports.py",
+  "rule": "Memory read behavior is accepted only when determinism and corruption handling remain green.",
+  "status": "frozen"
+}
