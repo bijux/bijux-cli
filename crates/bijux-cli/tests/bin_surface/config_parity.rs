@@ -44,6 +44,7 @@ fn config_get_uses_env_variable_override_for_config_path() {
 
     assert!(output.status.success());
     assert!(output.stderr.is_empty());
+    assert!(!output.stdout.is_empty());
     let stdout = String::from_utf8(output.stdout).expect("stdout utf-8");
     let payload: Value = serde_json::from_str(&stdout).expect("json payload");
     assert_eq!(payload["value"], "1");
@@ -63,6 +64,8 @@ fn config_get_prefers_runtime_env_key_over_file_value() {
         .expect("binary should execute");
 
     assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    assert!(!output.stdout.is_empty());
     let stdout = String::from_utf8(output.stdout).expect("stdout utf-8");
     let payload: Value = serde_json::from_str(&stdout).expect("json payload");
     assert_eq!(payload["value"], "env");
@@ -90,6 +93,8 @@ fn config_flag_override_takes_precedence_over_env_path() {
         .expect("binary should execute");
 
     assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    assert!(!output.stdout.is_empty());
     let stdout = String::from_utf8(output.stdout).expect("stdout utf-8");
     let payload: Value = serde_json::from_str(&stdout).expect("json payload");
     assert_eq!(payload["value"], "flag");
@@ -105,6 +110,13 @@ fn config_failure_routes_machine_error_to_stderr() {
     let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
     let payload: Value = serde_json::from_str(&stderr).expect("json payload");
     assert_eq!(payload["code"], 2);
+    assert_eq!(payload["status"], "error");
+    assert!(
+        payload["message"]
+            .as_str()
+            .is_some_and(|msg| msg.to_ascii_lowercase().contains("missing")),
+        "missing-key failure should include a missing-key diagnostic"
+    );
 }
 
 #[test]

@@ -29,6 +29,16 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
     cmd.output().expect("binary should execute")
 }
 
+fn assert_success_json(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+    serde_json::from_slice(&out.stdout).expect("json payload")
+}
+
 fn temp_dir(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "bijux-config-read-matrix-{name}-{}",
@@ -66,8 +76,7 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
         "--config-path",
         empty.to_str().expect("utf-8"),
     ]);
-    assert_eq!(empty_out.status.code(), Some(0));
-    let empty_json: Value = serde_json::from_slice(&empty_out.stdout).expect("json");
+    let empty_json = assert_success_json(&empty_out, "root config list empty");
     assert_eq!(empty_json, serde_json::json!({}));
 
     let one_out = run(&[
@@ -78,8 +87,7 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
         "--config-path",
         one.to_str().expect("utf-8"),
     ]);
-    assert_eq!(one_out.status.code(), Some(0));
-    let one_json: Value = serde_json::from_slice(&one_out.stdout).expect("json");
+    let one_json = assert_success_json(&one_out, "root config list one");
     assert_eq!(one_json["alpha"], "1");
 
     let multi_out = run(&[
@@ -90,8 +98,7 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
         "--config-path",
         multi.to_str().expect("utf-8"),
     ]);
-    assert_eq!(multi_out.status.code(), Some(0));
-    let multi_json: Value = serde_json::from_slice(&multi_out.stdout).expect("json");
+    let multi_json = assert_success_json(&multi_out, "root config list multi");
     assert_eq!(multi_json["alpha"], "1");
     assert_eq!(multi_json["beta"], "2");
 
@@ -103,8 +110,7 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
         "--config-path",
         duplicate.to_str().expect("utf-8"),
     ]);
-    assert_eq!(dup_out.status.code(), Some(0));
-    let dup_json: Value = serde_json::from_slice(&dup_out.stdout).expect("json");
+    let dup_json = assert_success_json(&dup_out, "root config list duplicate");
     assert_eq!(dup_json["alpha"], "3");
     assert_eq!(dup_json["beta"], "2");
 
@@ -140,8 +146,7 @@ fn config_get_existing_missing_invalid_with_path_and_env_override() {
         "--config-path",
         file.to_str().expect("utf-8"),
     ]);
-    assert_eq!(found.status.code(), Some(0));
-    let found_json: Value = serde_json::from_slice(&found.stdout).expect("json");
+    let found_json = assert_success_json(&found, "config get existing");
     assert_eq!(found_json["value"], "from-file");
 
     let missing = run(&[
@@ -188,8 +193,8 @@ fn config_get_existing_missing_invalid_with_path_and_env_override() {
         ],
         &[("BIJUXCLI_CONFIG", env_file.to_str().expect("utf-8"))],
     );
-    assert_eq!(path_override.status.code(), Some(0));
-    let path_override_json: Value = serde_json::from_slice(&path_override.stdout).expect("json");
+    let path_override_json =
+        assert_success_json(&path_override, "config get with explicit path override");
     assert_eq!(path_override_json["value"], "from-file");
 }
 
@@ -211,8 +216,7 @@ fn config_get_json_yaml_text_quiet_and_no_color_behavior() {
         "--config-path",
         path,
     ]);
-    assert_eq!(json_out.status.code(), Some(0));
-    let _: Value = serde_json::from_slice(&json_out.stdout).expect("json");
+    let _: Value = assert_success_json(&json_out, "config get json format");
 
     let yaml_out = run(&[
         "cli",
@@ -226,6 +230,10 @@ fn config_get_json_yaml_text_quiet_and_no_color_behavior() {
         path,
     ]);
     assert_eq!(yaml_out.status.code(), Some(0));
+    assert!(
+        yaml_out.stderr.is_empty(),
+        "yaml success should keep stderr empty"
+    );
     let yaml_text = String::from_utf8(yaml_out.stdout).expect("utf-8");
     assert!(yaml_text.contains("value:"));
 
@@ -240,6 +248,10 @@ fn config_get_json_yaml_text_quiet_and_no_color_behavior() {
         path,
     ]);
     assert_eq!(text_out.status.code(), Some(0));
+    assert!(
+        text_out.stderr.is_empty(),
+        "text success should keep stderr empty"
+    );
     let text = String::from_utf8(text_out.stdout).expect("utf-8");
     assert!(text.contains("alpha"));
 
@@ -270,6 +282,10 @@ fn config_get_json_yaml_text_quiet_and_no_color_behavior() {
         &[("NO_COLOR", "1")],
     );
     assert_eq!(no_color_out.status.code(), Some(0));
+    assert!(
+        no_color_out.stderr.is_empty(),
+        "no-color success should keep stderr empty"
+    );
     let no_color_text = String::from_utf8(no_color_out.stdout).expect("utf-8");
     assert!(!no_color_text.contains("\u{1b}["));
 }
@@ -293,6 +309,14 @@ fn config_listing_repeated_run_determinism_and_field_order_stability() {
     let second = run(&args);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
+    assert!(
+        first.stderr.is_empty(),
+        "first deterministic run should keep stderr empty"
+    );
+    assert!(
+        second.stderr.is_empty(),
+        "second deterministic run should keep stderr empty"
+    );
     assert_eq!(first.stdout, second.stdout);
 
     let body = String::from_utf8(first.stdout).expect("utf-8");

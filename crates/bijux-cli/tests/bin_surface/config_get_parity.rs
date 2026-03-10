@@ -88,6 +88,16 @@ fn normalize_snapshot(stdout: String, config_path: &str) -> String {
     stdout.replace(config_path, "<CONFIG_PATH>")
 }
 
+fn assert_success_json_output(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+    serde_json::from_slice(&out.stdout).expect("valid json payload")
+}
+
 #[test]
 fn config_get_output_snapshots_text_json_yaml() {
     let temp = make_temp_dir("snapshots");
@@ -171,8 +181,7 @@ fn config_get_found_missing_invalid_and_normalized_keys() {
     let path = config_path.to_str().expect("utf-8");
 
     let found = run(&["cli", "config", "get", "mixed", "--config-path", path]);
-    assert_eq!(found.status.code(), Some(0));
-    let found_json: Value = serde_json::from_slice(&found.stdout).expect("json");
+    let found_json = assert_success_json_output(&found, "config get found");
     assert_eq!(found_json["value"], "1");
 
     let normalized = run(&[
@@ -183,8 +192,7 @@ fn config_get_found_missing_invalid_and_normalized_keys() {
         "--config-path",
         path,
     ]);
-    assert_eq!(normalized.status.code(), Some(0));
-    let normalized_json: Value = serde_json::from_slice(&normalized.stdout).expect("json");
+    let normalized_json = assert_success_json_output(&normalized, "config get normalized key");
     assert_eq!(normalized_json["key"], "mixed");
 
     let missing = run(&["cli", "config", "get", "missing", "--config-path", path]);
@@ -219,8 +227,7 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
         ],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
-    assert_eq!(override_out.status.code(), Some(0));
-    let override_json: Value = serde_json::from_slice(&override_out.stdout).expect("json");
+    let override_json = assert_success_json_output(&override_out, "config get path override");
     assert_eq!(override_json["value"], "flag");
 
     let malformed = run(&[
@@ -291,6 +298,14 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
     ]);
     assert_eq!(base.status.code(), Some(0));
     assert_eq!(traced.status.code(), Some(0));
+    assert!(
+        base.stderr.is_empty(),
+        "base output should keep stderr empty"
+    );
+    assert!(
+        traced.stderr.is_empty(),
+        "trace output should keep stderr empty"
+    );
     assert_eq!(base.stdout, traced.stdout);
 }
 
@@ -333,6 +348,8 @@ fn config_get_python_parity_for_success_and_missing() {
     assert_eq!(py_ok.status.code(), rs_ok.status.code());
     assert!(py_ok.stderr.is_empty());
     assert!(rs_ok.stderr.is_empty());
+    assert!(!py_ok.stdout.is_empty());
+    assert!(!rs_ok.stdout.is_empty());
     let py_ok_json: Value = serde_json::from_slice(&py_ok.stdout).expect("py json");
     let rs_ok_json: Value = serde_json::from_slice(&rs_ok.stdout).expect("rs json");
     assert_eq!(py_ok_json["value"], rs_ok_json["value"]);
@@ -371,4 +388,10 @@ fn config_get_python_parity_for_success_and_missing() {
     assert!(rs_missing.stdout.is_empty());
     assert!(!py_missing.stderr.is_empty());
     assert!(!rs_missing.stderr.is_empty());
+    let py_missing_err = String::from_utf8(py_missing.stderr).expect("py missing stderr utf-8");
+    let rs_missing_err = String::from_utf8(rs_missing.stderr).expect("rs missing stderr utf-8");
+    assert!(
+        py_missing_err.contains("missing") && rs_missing_err.contains("missing"),
+        "missing-key parity should surface the missing-key detail"
+    );
 }

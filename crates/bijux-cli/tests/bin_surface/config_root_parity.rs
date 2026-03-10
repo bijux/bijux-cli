@@ -40,6 +40,15 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
     cmd.output().expect("binary should execute")
 }
 
+fn assert_success_output(out: &Output, context: &str) {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+}
+
 fn python_cli() -> String {
     if let Ok(path) = std::env::var("BIJUX_REFERENCE_CLI") {
         if !path.trim().is_empty() {
@@ -97,7 +106,7 @@ fn root_config_output_snapshots_text_json_yaml() {
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    assert!(text.status.success());
+    assert_success_output(&text, "root config text snapshot");
     assert_eq!(
         String::from_utf8(text.stdout).expect("utf-8"),
         include_str!("../snapshots/config_root_text.txt")
@@ -111,7 +120,7 @@ fn root_config_output_snapshots_text_json_yaml() {
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    assert!(pretty_json.status.success());
+    assert_success_output(&pretty_json, "root config pretty json snapshot");
     assert_eq!(
         String::from_utf8(pretty_json.stdout).expect("utf-8"),
         include_str!("../snapshots/config_root_json_pretty.txt")
@@ -125,7 +134,7 @@ fn root_config_output_snapshots_text_json_yaml() {
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    assert!(compact_json.status.success());
+    assert_success_output(&compact_json, "root config compact json snapshot");
     assert_eq!(
         String::from_utf8(compact_json.stdout).expect("utf-8"),
         include_str!("../snapshots/config_root_json_compact.txt")
@@ -139,7 +148,7 @@ fn root_config_output_snapshots_text_json_yaml() {
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    assert!(pretty_yaml.status.success());
+    assert_success_output(&pretty_yaml, "root config yaml snapshot");
     assert_eq!(
         String::from_utf8(pretty_yaml.stdout).expect("utf-8"),
         include_str!("../snapshots/config_root_yaml_pretty.txt")
@@ -172,7 +181,7 @@ fn root_config_quiet_and_no_color_modes() {
         ],
         &[("NO_COLOR", "1".to_string())],
     );
-    assert!(no_color.status.success());
+    assert_success_output(&no_color, "root config no-color output");
     let stdout = String::from_utf8(no_color.stdout).expect("utf-8");
     assert!(!stdout.contains("\u{1b}["));
 }
@@ -252,7 +261,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     fs::write(&flag_path, "BIJUXCLI_ALPHA=flag\n").expect("write flag path");
 
     let out_empty = run(&["config", "--config-path", empty.to_str().expect("utf-8")]);
-    assert_eq!(out_empty.status.code(), Some(0));
+    assert_success_output(&out_empty, "root config empty file");
     let empty_json: Value = serde_json::from_slice(&out_empty.stdout).expect("json");
     assert_eq!(empty_json, serde_json::json!({}));
 
@@ -273,7 +282,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
         "--config-path",
         duplicate.to_str().expect("utf-8"),
     ]);
-    assert_eq!(out_duplicate.status.code(), Some(0));
+    assert_success_output(&out_duplicate, "root config duplicate-key listing");
     let duplicate_json: Value = serde_json::from_slice(&out_duplicate.stdout).expect("json");
     assert_eq!(duplicate_json["alpha"], "new");
 
@@ -285,7 +294,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
         ],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
-    assert_eq!(out_override.status.code(), Some(0));
+    assert_success_output(&out_override, "root config flag path override");
     let override_json: Value = serde_json::from_slice(&out_override.stdout).expect("json");
     assert_eq!(override_json["alpha"], "flag");
 
@@ -309,5 +318,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     ]);
     assert_eq!(base.status.code(), Some(0));
     assert_eq!(traced.status.code(), Some(0));
+    assert!(base.stderr.is_empty());
+    assert!(traced.stderr.is_empty());
     assert_eq!(base.stdout, traced.stdout);
 }
