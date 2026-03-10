@@ -1326,6 +1326,35 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/status/status_cli_subcommands.json"));
             let dev_cli_subcommands =
                 read_json_if_exists(&root.join("artifacts/status/status_dev_cli_subcommands.json"));
+            let cli_command_remaining_inventory = read_json_if_exists(
+                &root.join("artifacts/status/cli_command_remaining_inventory.json"),
+            );
+            let cli_command_value_ranking =
+                read_json_if_exists(&root.join("artifacts/status/cli_command_value_ranking.json"));
+            let cli_command_completion_report = read_json_if_exists(
+                &root.join("artifacts/status/cli_command_completion_report.json"),
+            );
+            let cli_command_closure_set =
+                read_json_if_exists(&root.join("artifacts/status/cli_command_closure_set.json"));
+            let dev_cli_command_remaining_inventory = read_json_if_exists(
+                &root.join("artifacts/status/dev_cli_command_remaining_inventory.json"),
+            );
+            let dev_cli_command_value_ranking = read_json_if_exists(
+                &root.join("artifacts/status/dev_cli_command_value_ranking.json"),
+            );
+            let dev_cli_command_completion_report = read_json_if_exists(
+                &root.join("artifacts/status/dev_cli_command_completion_report.json"),
+            );
+            let dev_cli_command_closure_set = read_json_if_exists(
+                &root.join("artifacts/status/dev_cli_command_closure_set.json"),
+            );
+            let cli_dev_command_closure_report = read_json_if_exists(
+                &root.join("artifacts/status/cli_dev_command_closure_report.json"),
+            );
+            let cli_dev_command_closure_report_text = fs::read_to_string(
+                root.join("artifacts/status/cli_dev_command_closure_report.txt"),
+            )
+            .unwrap_or_default();
             let plugin_commands =
                 read_json_if_exists(&root.join("artifacts/status/status_plugin_commands.json"));
             let repl_parity = read_json_if_exists(
@@ -1479,6 +1508,16 @@ fn route_response(
                     "root_command_completion_report_text": root_command_completion_report_text,
                     "cli_subcommands": cli_subcommands,
                     "dev_cli_subcommands": dev_cli_subcommands,
+                    "cli_command_remaining_inventory": cli_command_remaining_inventory,
+                    "cli_command_value_ranking": cli_command_value_ranking,
+                    "cli_command_completion_report": cli_command_completion_report,
+                    "cli_command_closure_set": cli_command_closure_set,
+                    "dev_cli_command_remaining_inventory": dev_cli_command_remaining_inventory,
+                    "dev_cli_command_value_ranking": dev_cli_command_value_ranking,
+                    "dev_cli_command_completion_report": dev_cli_command_completion_report,
+                    "dev_cli_command_closure_set": dev_cli_command_closure_set,
+                    "cli_dev_command_closure_report": cli_dev_command_closure_report,
+                    "cli_dev_command_closure_report_text": cli_dev_command_closure_report_text,
                     "plugin_commands": plugin_commands,
                     "repl_parity_coverage": repl_parity,
                     "python_bridge_parity_coverage": python_bridge_parity,

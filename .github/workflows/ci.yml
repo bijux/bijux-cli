@@ -824,9 +824,19 @@ jobs:
             artifacts/status/cli_command_coverage_report.json
             artifacts/status/cli_command_matrix_artifact.json
             artifacts/status/cli_command_surface_domain_contract.json
+            artifacts/status/cli_command_remaining_inventory.json
+            artifacts/status/cli_command_value_ranking.json
+            artifacts/status/cli_command_completion_report.json
+            artifacts/status/cli_command_closure_set.json
             artifacts/status/dev_cli_command_coverage_report.json
             artifacts/status/dev_cli_command_matrix_artifact.json
             artifacts/status/dev_cli_command_surface_domain_contract.json
+            artifacts/status/dev_cli_command_remaining_inventory.json
+            artifacts/status/dev_cli_command_value_ranking.json
+            artifacts/status/dev_cli_command_completion_report.json
+            artifacts/status/dev_cli_command_closure_set.json
+            artifacts/status/cli_dev_command_closure_report.json
+            artifacts/status/cli_dev_command_closure_report.txt
             artifacts/status/config_read_matrix_artifact.json
             artifacts/status/config_read_domain_contract.json
             artifacts/status/config_mutation_matrix_artifact.json
