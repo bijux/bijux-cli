@@ -26,8 +26,9 @@ use bijux_cli_plugin::{
 use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use bijux_cli_routing::reports::{registry_report, route_audit_report, routes_report};
+use bijux_cli_routing::reports::route_audit_report;
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use bijux_dev_cli::{registry as dev_registry, routes as dev_routes, ReportContext};
 use serde_json::{json, Value};
 
 use crate::argv::command_positionals;
@@ -1169,7 +1170,11 @@ fn route_response(
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
-            serde_json::to_value(routes_report(&registry))?
+            let context = ReportContext {
+                generated_at: String::new(),
+                data_source: "bijux-cli-routing".to_string(),
+            };
+            dev_routes::build_report(&registry, &context)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "atlas" => {
             json!({"status": "ok", "mount": "atlas", "entry_surface": "dev-cli"})
@@ -1188,7 +1193,11 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => dev_cli_inventory_payload(),
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
-            serde_json::to_value(registry_report(&registry))?
+            let context = ReportContext {
+                generated_at: String::new(),
+                data_source: "bijux-cli-routing".to_string(),
+            };
+            dev_registry::build_report(&registry, &context)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "parity" => {
             let root = workspace_root();

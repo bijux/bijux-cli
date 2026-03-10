@@ -12,6 +12,7 @@ use bijux_cli_output as _;
 use bijux_cli_plugin as _;
 use bijux_cli_routing as _;
 use bijux_cli_routing as _;
+use bijux_dev_cli as _;
 use clap as _;
 use futures as _;
 use serde_json::Value;
@@ -26,7 +27,7 @@ fn internal_workspace_deps(pkg: &Value) -> BTreeSet<String> {
         let Some(name) = dep.get("name").and_then(Value::as_str) else {
             continue;
         };
-        if !name.starts_with("bijux-cli-") {
+        if !(name.starts_with("bijux-cli-") || name == "bijux-dev-cli") {
             continue;
         }
         if dep.get("path").is_some() {
@@ -62,6 +63,7 @@ fn enforces_internal_crate_boundaries() {
         root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
+        ("bijux-dev-cli", BTreeSet::from(["bijux-cli-routing"])),
         (
             "bijux-cli-bin",
             BTreeSet::from([
@@ -75,6 +77,7 @@ fn enforces_internal_crate_boundaries() {
         (
             "bijux-cli-core",
             BTreeSet::from([
+                "bijux-dev-cli",
                 "bijux-cli-install",
                 "bijux-cli-output",
                 "bijux-cli-plugin",
@@ -95,7 +98,7 @@ fn enforces_internal_crate_boundaries() {
         let Some(name) = pkg.get("name").and_then(Value::as_str) else {
             continue;
         };
-        if !name.starts_with("bijux-cli-") {
+        if !(name.starts_with("bijux-cli-") || name == "bijux-dev-cli") {
             continue;
         }
 
