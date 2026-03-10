@@ -80,6 +80,9 @@ fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
         vec!["dev".to_string(), "atlas".to_string()],
         vec!["dev".to_string(), "di".to_string()],
         vec!["dev".to_string(), "list-products".to_string()],
+        vec!["dev".to_string(), "crate-health".to_string()],
+        vec!["dev".to_string(), "docs-prune-plan".to_string()],
+        vec!["dev".to_string(), "script-audit".to_string()],
     ];
 
     for path in removed {
@@ -91,6 +94,9 @@ fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
         vec!["dev".to_string(), "cli".to_string(), "atlas".to_string()],
         vec!["dev".to_string(), "cli".to_string(), "di".to_string()],
         vec!["dev".to_string(), "cli".to_string(), "list-products".to_string()],
+        vec!["dev".to_string(), "cli".to_string(), "crate-health".to_string()],
+        vec!["dev".to_string(), "cli".to_string(), "docs-prune-plan".to_string()],
+        vec!["dev".to_string(), "cli".to_string(), "script-audit".to_string()],
     ];
     for path in canonical_paths {
         let target = registry.resolve(&path).expect("canonical route should resolve");
