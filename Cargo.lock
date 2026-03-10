@@ -70,7 +70,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bijux-cli-python",
- "bijux-cli-routing",
  "bijux-dev-cli",
  "clap",
  "futures",
@@ -100,22 +99,8 @@ name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
  "bijux-cli",
- "bijux-cli-routing",
  "pyo3",
  "serde_json",
-]
-
-[[package]]
-name = "bijux-cli-routing"
-version = "0.1.0"
-dependencies = [
- "clap",
- "proptest",
- "schemars",
- "semver",
- "serde",
- "serde_json",
- "thiserror",
 ]
 
 [[package]]
@@ -124,7 +109,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bijux-cli-evidence",
- "bijux-cli-routing",
  "serde",
  "serde_json",
 ]

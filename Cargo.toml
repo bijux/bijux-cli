@@ -3,7 +3,6 @@ members = [
   "crates/bijux-cli-evidence",
   "crates/bijux-dev-cli",
   "crates/bijux-cli",
-  "crates/bijux-cli-routing",
   "crates/bijux-cli-python",
 ]
 resolver = "2"
