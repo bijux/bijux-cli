@@ -1,0 +1,3 @@
+msrv = "1.90.0"
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true

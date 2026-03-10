@@ -19,6 +19,7 @@ include makefiles/api.mk
 include makefiles/build.mk
 include makefiles/changelog.mk
 include makefiles/citation.mk
+include makefiles/cargo-rs.mk
 include makefiles/dictionary.mk
 include makefiles/docs.mk
 include makefiles/lint.mk
