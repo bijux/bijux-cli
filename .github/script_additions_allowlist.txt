@@ -137,4 +137,6 @@ scripts/status/generate_dev_cli_state_diagnostics_reports.py # generate state-au
 scripts/status/enforce_dev_cli_state_diagnostics_gate.py # enforce state diagnostics gate and fail CI on state-audit/state-doctor drift
 scripts/status/generate_dev_cli_route_registry_env_contracts_reports.py # generate routes/registry/env/contracts truth and drift artifacts for low-level control-plane diagnostics
 scripts/status/enforce_dev_cli_route_registry_env_contracts_gate.py # enforce routes/registry/env/contracts gate and fail CI on source-truth drift
+scripts/status/generate_dev_cli_repo_docs_scripts_crate_health_reports.py # generate repo/docs/scripts/crate-health truth and drift artifacts for cleanup backbone hardening
+scripts/status/enforce_dev_cli_repo_docs_scripts_crate_health_gate.py # enforce repo/docs/scripts/crate-health gate and fail CI on stale/inconsistent audit drift
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
