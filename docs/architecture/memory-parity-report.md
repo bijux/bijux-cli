@@ -33,9 +33,9 @@ Scope: tasks 261-280 (first memory baseline).
 
 ## Tests added
 
-- `crates/bijux-cli/tests/cli_surface/memory_parity.rs`
-- `crates/bijux-cli/tests/snapshots/memory_list_text.txt`
-- `crates/bijux-cli/tests/snapshots/memory_list_yaml.txt`
+- `crates/bijux-cli/tests/cli_surface/memory/memory_parity.rs`
+- `crates/bijux-cli/tests/cli_surface/snapshots/memory_list_text.txt`
+- `crates/bijux-cli/tests/cli_surface/snapshots/memory_list_yaml.txt`
 - `crates/bijux-cli/tests/app_direct_invocation.rs` memory cases
 - `crates/bijux-cli/tests/routing/serde_roundtrip.rs` memory contract roundtrips
 

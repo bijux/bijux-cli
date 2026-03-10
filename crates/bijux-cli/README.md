@@ -41,5 +41,5 @@ for the Rust runtime.
 ## Testing Shape
 
 - Integration coverage lives under `crates/bijux-cli/tests`.
-- Routing law coverage is consolidated under `crates/bijux-cli/tests/routing.rs` with fixtures in `crates/bijux-cli/tests/routing/fixtures`.
+- Routing law coverage is consolidated under `crates/bijux-cli/tests/routing.rs` with fixtures in `crates/bijux-cli/tests/data/fixtures/routing`.
 - Command-surface and parity behavior is enforced through `tests/bin_surface.rs`.

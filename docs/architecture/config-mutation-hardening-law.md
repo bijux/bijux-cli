@@ -14,4 +14,4 @@ Evidence sources:
 
 - `artifacts/status/config_corruption_matrix.json`
 - `artifacts/status/config_rollback_proof.json`
-- `crates/bijux-cli/tests/cli_surface/config_corruption_hardening.rs`
+- `crates/bijux-cli/tests/cli_surface/resilience/config_corruption_hardening.rs`

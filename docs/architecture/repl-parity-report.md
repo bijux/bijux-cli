@@ -18,8 +18,8 @@ Rust references:
 - `crates/bijux-cli/src/repl/history.rs`
 - `crates/bijux-cli/src/repl/completion.rs`
 - `crates/bijux-cli/src/repl/execution.rs`
-- `crates/bijux-cli/tests/cli_surface/transcript_parity.rs`
-- `crates/bijux-cli/tests/cli_surface/transcript_cases.rs`
+- `crates/bijux-cli/tests/cli_surface/repl/transcript_parity.rs`
+- `crates/bijux-cli/tests/cli_surface/repl/transcript_cases.rs`
 
 ## Baseline status for 341-360
 

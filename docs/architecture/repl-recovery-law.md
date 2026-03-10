@@ -14,4 +14,4 @@ Evidence sources:
 
 - `artifacts/status/repl_hostile_session_report.json`
 - `artifacts/status/repl_recovery_behavior_report.json`
-- `crates/bijux-cli/tests/cli_surface/repl_hostile_session_hardening.rs`
+- `crates/bijux-cli/tests/cli_surface/repl/repl_hostile_session_hardening.rs`
