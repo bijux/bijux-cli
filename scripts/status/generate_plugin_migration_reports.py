@@ -194,6 +194,7 @@ def main() -> None:
                 "frozen_law", "plugin v1 contract is frozen before expanding command cleverness"
             ),
             "dynamic_complexity_policy": "reject unproven plugin complexity until parity and rollback evidence exists",
+            "operating_style": "boring-and-inspectable",
         },
     )
 

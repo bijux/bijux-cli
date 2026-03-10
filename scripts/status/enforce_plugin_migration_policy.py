@@ -69,6 +69,8 @@ def main() -> int:
         command_set.get("dynamic_complexity_policy", "")
     ):
         failures.append("plugin command set report missing strict dynamic complexity policy")
+    if command_set.get("operating_style") != "boring-and-inspectable":
+        failures.append("plugin command set report must enforce boring-and-inspectable style")
 
     rollback = read_json("plugin_rollback_proof_report.json")
     if rollback.get("status") != "complete":
