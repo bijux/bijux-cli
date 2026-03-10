@@ -22,3 +22,12 @@
 - `cargo install bijux` -> installs `bijux` (compatibility alias)
 - `pip install bijux-cli` -> installs `bijux`
 - `pip install bijux` -> installs `bijux` (compatibility alias)
+
+## Tool Project Naming Contract
+
+- Runtime tool binaries follow `bijux-<tool>`.
+- Control-plane tool binaries follow `bijux-dev-<tool>`.
+- Umbrella command routing follows:
+  - `bijux <tool> ...` -> `bijux-<tool>`
+  - `bijux dev <tool> ...` -> `bijux-dev-<tool>`
+- The canonical tool registry is `KNOWN_BIJUX_TOOLS` and must match `docs/constitution/official_product_namespace_registry.json`.

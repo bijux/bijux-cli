@@ -19,21 +19,36 @@ This document governs root command identity and namespace contracts.
   - `bijux cli`
   - `bijux dev cli`
 - Reserved root namespaces are:
+  - `agent`
+  - `atlas`
   - `cli`
   - `dev`
+  - `dag`
+  - `dna`
+  - `gnss`
   - `help`
   - `version`
   - `doctor`
+  - `rag`
+  - `rar`
   - `repl`
   - `plugins`
   - `completion`
   - `inspect`
+  - `vex`
+  - `audit`
+  - `config`
+  - `docs`
+  - `history`
+  - `memory`
+  - `sleep`
+  - `status`
 
 ## Namespace Governance
 ### Reservation process for official Bijux products
 1. A product owner proposes a namespace with intent, expected lifetime, and command surface.
 2. Maintainers evaluate conflicts with existing root and plugin namespaces.
-3. On approval, maintainers add the namespace to this constitution and release notes.
+3. On approval, maintainers add the namespace to `KNOWN_BIJUX_TOOLS` and `official_product_namespace_registry.json`.
 4. The reservation becomes contractual only after release.
 
 ### Plugin namespace rejection rules

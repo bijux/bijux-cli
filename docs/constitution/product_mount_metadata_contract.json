@@ -4,7 +4,10 @@
   "required_fields": [
     "namespace",
     "runtime_binary",
-    "control_binary"
+    "control_binary",
+    "runtime_package",
+    "control_package",
+    "repository"
   ],
   "optional_fields": [
     "status"

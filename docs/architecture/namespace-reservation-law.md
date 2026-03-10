@@ -1,13 +1,18 @@
 # Namespace Reservation Law
 
-Scope: tasks `421-440`.
+## Scope
 
-Canonical sources:
-- `crates/bijux-cli-plugin/src/constants.rs`
-- `artifacts/status/reserved_namespace_inventory.json`
-- `artifacts/status/namespace_abuse_report.json`
+Define immutable namespace reservation boundaries for runtime and plugin routing.
 
-Law:
-- reserved namespaces and future product namespaces are immutable compatibility boundaries
-- namespace normalization and case-folding must not permit takeover
-- reserved-path rejection must remain explicit and machine-readable
+## Canonical sources
+
+- `crates/bijux-cli/src/routing/contracts/product_mount.rs`
+- `docs/constitution/official_product_namespace_registry.json`
+- `docs/constitution/CLI_CONSTITUTION.md`
+
+## Law
+
+- Reserved runtime namespaces and known Bijux tool namespaces are immutable compatibility boundaries.
+- Namespace normalization and case-folding must not permit takeover or shadowing.
+- Reserved-path rejection must remain explicit and machine-readable.
+- Plugin namespace validation and runtime route resolution must consume the same reserved namespace set.

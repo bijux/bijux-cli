@@ -8,7 +8,7 @@ This law keeps official product mount readiness small and explicit.
 
 - Namespace registry: `docs/constitution/official_product_namespace_registry.json`
 - Metadata contract: `docs/constitution/product_mount_metadata_contract.json`
-- Rust contract export: `OFFICIAL_PRODUCT_NAMESPACES` and `ProductMountMetadata`
+- Rust contract export: `KNOWN_BIJUX_TOOLS`, `OFFICIAL_PRODUCT_NAMESPACES`, and `ProductMountMetadata`
 
 ## Commitments
 
@@ -24,6 +24,7 @@ This law keeps official product mount readiness small and explicit.
 
 ## Maintenance rules
 
-- Add placeholders only when there is a concrete near-term product need.
+- Keep `KNOWN_BIJUX_TOOLS` and `official_product_namespace_registry.json` in exact sync.
+- Add entries only for repositories accepted under the Bijux organization tool contract.
 - Keep plugin/runtime law stable and minimal.
 - Reject speculative runtime complexity.
