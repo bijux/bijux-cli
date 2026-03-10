@@ -3,7 +3,7 @@
 Command graph, namespace matching, and route selection.
 
 ## Boundary
-- Depends on `bijux-cli-core` and `bijux-cli-routing`.
+- Depends on `bijux-cli` and `bijux-cli-routing`.
 - Must not depend on plugin loading or output rendering internals.
 
 ## Parser Choice

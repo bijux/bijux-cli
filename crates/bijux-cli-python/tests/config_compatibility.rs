@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_core as _;
+use bijux_cli as _;
 use bijux_cli_python::{
     acquire_state_lock, default_compatibility_paths, discover_compatibility_paths,
     ensure_history_file, ensure_plugins_dir, load_compatibility_config, parse_compatibility_config,

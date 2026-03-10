@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Generate and enforce parity artifact for binary vs python-bridge execution.
 
-use bijux_cli_core as _;
+use bijux_cli as _;
 use bijux_cli_routing as _;
 use std::fs;
 use std::path::PathBuf;
@@ -44,7 +44,7 @@ fn resolve_bijux_binary() -> PathBuf {
 
     let status = Command::new("cargo")
         .current_dir(&root)
-        .args(["build", "-q", "-p", "bijux-cli-core"])
+        .args(["build", "-q", "-p", "bijux-cli"])
         .status()
         .expect("build bijux-rs binary");
     assert!(status.success(), "failed to build bijux-rs binary");

@@ -65,7 +65,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
-name = "bijux-cli-core"
+name = "bijux-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -99,7 +99,7 @@ dependencies = [
 name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-core",
+ "bijux-cli",
  "bijux-cli-routing",
  "pyo3",
  "serde_json",

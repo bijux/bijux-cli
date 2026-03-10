@@ -2,7 +2,7 @@
 //! Python bridge conversion fuzz targets for success/error envelope handling.
 //! test_type: bridge-conversion-fuzz
 
-use bijux_cli_core as _;
+use bijux_cli as _;
 use bijux_cli_python::{execution_facade_api, execution_outcome_api};
 use bijux_cli_routing as _;
 use serde_json::Value;
