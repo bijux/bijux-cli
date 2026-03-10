@@ -414,6 +414,7 @@ jobs:
           python3 scripts/status/generate_python_sovereignty_reports.py
           python3 scripts/status/generate_repo_health_reports.py
           python3 scripts/status/generate_dev_cli_cockpit_reports.py
+          python3 scripts/status/generate_dev_cli_invariants_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -421,6 +422,7 @@ jobs:
           python3 scripts/status/enforce_python_sovereignty_gate.py
           python3 scripts/status/enforce_repo_health_gate.py
           python3 scripts/status/enforce_dev_cli_cockpit_gate.py
+          python3 scripts/status/enforce_dev_cli_invariants_gate.py
 
       - name: Warn on new script files without justification
         shell: bash
@@ -1314,6 +1316,8 @@ jobs:
             artifacts/status/dev_cli_blockers_report.json
             artifacts/status/dev_cli_next_report.json
             artifacts/status/dev_cli_cockpit_text_heads.json
+            artifacts/status/dev_cli_invariants_artifact.json
+            artifacts/status/dev_cli_invariants_drift_artifact.json
             artifacts/status/dev_cli_evidence_list_report.json
             artifacts/status/dev_cli_evidence_audit_report.json
             artifacts/status/dev_cli_evidence_stale_report.json
