@@ -313,10 +313,10 @@ fn deterministic_final_state_is_stable_when_policy_uses_same_target_value() {
         let cfg = Arc::clone(&cfg);
         writers.push(thread::spawn(move || {
             for _ in 0..40 {
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "set", "alpha=stable", "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("set stable");
+                let out = run_with_env(
+                    &["cli", "config", "set", "alpha=stable", "--config-path", cfg.as_str()],
+                    &[],
+                );
                 assert_known_status(&out, "set stable race");
             }
         }));
@@ -325,10 +325,20 @@ fn deterministic_final_state_is_stable_when_policy_uses_same_target_value() {
         writer.join().expect("join stable writer");
     }
 
-    let list = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(["cli", "config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-        .output()
-        .expect("get alpha");
+    let list = run_with_env(
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg.as_str(),
+        ],
+        &[],
+    );
     assert_eq!(list.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&list.stdout).expect("json payload");
     assert_eq!(payload["value"], "stable");
