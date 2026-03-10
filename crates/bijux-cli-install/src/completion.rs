@@ -41,12 +41,6 @@ pub fn post_install_hint(binary_path: &str) -> String {
     )
 }
 
-/// Return compatibility note text for cargo users.
-#[must_use]
-pub fn cargo_compatibility_note() -> &'static str {
-    "Cargo installs are canonical for Rust runtime updates. Ensure your PATH resolves to the intended `bijux` binary when pip and cargo are both installed."
-}
-
 /// Build completion file path for a shell under a home directory.
 #[must_use]
 pub fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> PathBuf {

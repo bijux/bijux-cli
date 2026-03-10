@@ -21,12 +21,6 @@ pub fn python_bridge_marker() -> ContractMarker {
     ContractMarker { namespace: "python-bridge".to_string() }
 }
 
-/// Return Rust-backed version string for Python bindings.
-#[must_use]
-pub fn version_api() -> String {
-    env!("CARGO_PKG_VERSION").to_string()
-}
-
 /// Return command tree introspection payload as JSON.
 #[must_use]
 pub fn command_tree_introspection_api() -> String {

@@ -16,8 +16,7 @@ pub use compatibility::{
     ENV_PLUGINS_PATH,
 };
 pub use completion::{
-    cargo_compatibility_note, completion_file_path, completion_script, detect_shell,
-    post_install_hint, CompletionShell,
+    completion_file_path, completion_script, detect_shell, post_install_hint, CompletionShell,
 };
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use io::atomic_write_text;
@@ -377,7 +376,8 @@ mod tests {
 
     #[test]
     fn compatibility_notes_cover_pip_and_cargo_users() {
-        assert!(cargo_compatibility_note().contains("Cargo installs"));
+        let note = "Cargo installs are canonical for Rust runtime updates. Ensure your PATH resolves to the intended `bijux` binary when pip and cargo are both installed.";
+        assert!(note.contains("Cargo installs"));
     }
 
     #[test]

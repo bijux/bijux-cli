@@ -2,8 +2,7 @@
 //! Output encoding and envelope rendering surfaces.
 
 use bijux_cli_contracts::{
-    ColorMode, ContractMarker, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, OutputEnvelopeV1,
-    OutputFormat,
+    ColorMode, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, OutputEnvelopeV1, OutputFormat,
 };
 use serde_json::{json, Value};
 
@@ -170,11 +169,6 @@ pub fn format_debug_log(message: &str, cfg: EmitterConfig) -> Option<String> {
         LogLevel::Trace | LogLevel::Debug => Some(format!("DEBUG {message}")),
         _ => None,
     }
-}
-
-/// Backward-compatible JSON rendering helper for marker types.
-pub fn to_json(marker: &ContractMarker) -> Result<String, serde_json::Error> {
-    serde_json::to_string(marker)
 }
 
 #[cfg(test)]

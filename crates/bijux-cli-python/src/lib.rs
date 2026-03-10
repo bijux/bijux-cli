@@ -11,8 +11,7 @@ pub use bindings::{
     cli_status_binding_api, command_tree_introspection_api, config_resolution_api,
     doctor_binding_api, execution_facade_api, execution_outcome_api, install_path_helpers_api,
     plugin_registry_inspection_api, plugins_list_binding_api, python_bridge_marker,
-    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_api,
-    version_binding_api,
+    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_binding_api,
 };
 pub use compatibility::{
     acquire_state_lock, default_compatibility_paths, discover_compatibility_paths,
@@ -32,12 +31,12 @@ mod python_extension {
 
     use crate::{
         command_tree_introspection_api, execution_facade_api, install_path_helpers_api,
-        plugin_registry_inspection_api, version_api,
+        plugin_registry_inspection_api,
     };
 
     #[pyfunction]
     fn version() -> String {
-        version_api()
+        env!("CARGO_PKG_VERSION").to_string()
     }
 
     #[pyfunction]
