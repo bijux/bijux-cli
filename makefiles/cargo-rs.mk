@@ -100,7 +100,6 @@ test-all-rs:
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo nextest run \
 		--workspace \
-		--all-features \
 		--run-ignored all \
 		--retries 0 \
 		--config-file config/nextest/nextest.toml \
