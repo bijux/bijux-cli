@@ -123,4 +123,6 @@ scripts/status/generate_evidence_integrity_reports.py # generate evidence covera
 scripts/status/enforce_evidence_integrity_gate.py # enforce evidence integrity and release evidence-id reference correctness in CI
 scripts/status/generate_python_sovereignty_reports.py # generate python bridge/surface/sovereignty/drift/packaging reports and de-sovereignization text/json artifacts
 scripts/status/enforce_python_sovereignty_gate.py # enforce python sovereignty duplication-zero policy and release claim gate for python-surface-only direction
+scripts/status/generate_repo_health_reports.py # generate repo health/drift/inventories/generated/stale artifacts for maintainer repo health control-plane commands
+scripts/status/enforce_repo_health_gate.py # enforce repo health gate for drift status validity and orphan generated output detection
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
