@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T12:02:36.260037+00:00",
+  "generated_at": "2026-03-10T12:03:48.075687+00:00",
   "generator": "scripts/status/generate_diagnostics_trust_reports.py",
   "json_commands_checked": [
     "dev cli contracts",

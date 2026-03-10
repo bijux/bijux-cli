@@ -331,6 +331,7 @@ jobs:
           python3 scripts/status/generate_python_bridge_conversion_reports.py
           python3 scripts/status/generate_cross_surface_state_reports.py
           python3 scripts/status/generate_help_tree_law_reports.py
+          python3 scripts/status/generate_diagnostics_trust_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -485,6 +486,10 @@ jobs:
         run: |
           python3 scripts/status/warn_uncovered_command_family_scope.py
 
+      - name: Warn diagnostics wording drift
+        run: |
+          python3 scripts/status/warn_diagnostics_wording_drift.py
+
       - name: Command parity matrix artifact
         run: |
           python3 scripts/parity/generate_command_parity_matrix.py
@@ -539,6 +544,10 @@ jobs:
       - name: Diagnostics deep behavior gate
         run: |
           python3 scripts/status/enforce_diagnostics_deep_behavior_gate.py --enforce
+
+      - name: Diagnostics trust gate
+        run: |
+          python3 scripts/status/enforce_diagnostics_trust_gate.py
 
       - name: Deterministic generation gate
         run: |
@@ -747,6 +756,20 @@ jobs:
             artifacts/status/findings_order_artifact.json
             artifacts/status/diagnostics_contract_artifact.json
             artifacts/status/diagnostics_deep_behavior_drift_artifact.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload diagnostics trust artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-trust
+          path: |
+            artifacts/status/diagnostics_trust_artifact.json
+            artifacts/status/actionable_diagnostics_artifact.json
+            artifacts/status/diagnostics_minimalism_artifact.json
+            artifacts/status/diagnostics_trust_schema_drift_artifact.json
+            artifacts/status/diagnostics_trust_contract.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -1166,6 +1189,11 @@ jobs:
             artifacts/status/command_tree_help_consistency_artifact.json
             artifacts/status/help_drift_artifact.json
             artifacts/status/help_tree_contract.json
+            artifacts/status/diagnostics_trust_artifact.json
+            artifacts/status/actionable_diagnostics_artifact.json
+            artifacts/status/diagnostics_minimalism_artifact.json
+            artifacts/status/diagnostics_trust_schema_drift_artifact.json
+            artifacts/status/diagnostics_trust_contract.json
             artifacts/status/packaging_ambiguity_report.json
             artifacts/status/install_state_assumptions_report.json
             artifacts/status/package_health_report.json

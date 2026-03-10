@@ -1,6 +1,6 @@
 {
   "drift_count": 0,
-  "generated_at": "2026-03-10T12:02:36.260037+00:00",
+  "generated_at": "2026-03-10T12:03:48.075687+00:00",
   "generator": "scripts/status/generate_diagnostics_trust_reports.py",
   "missing_todos": [],
   "schema_rows": [
