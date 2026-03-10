@@ -216,4 +216,5 @@ fn dev_cli_status_surfaces_next_phase_priorities() {
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert!(payload["next_phase_priorities"].is_object());
     assert!(payload["next_phase_summary_text"].is_string());
+    assert!(payload["command_migration"].is_object());
 }

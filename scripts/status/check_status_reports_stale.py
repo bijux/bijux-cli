@@ -16,13 +16,21 @@ def main() -> int:
     if gen.returncode != 0:
         print(gen.stderr.strip() or gen.stdout.strip())
         return gen.returncode
+    migration = run(["python3", "scripts/status/generate_command_migration_matrix.py"])
+    if migration.returncode != 0:
+        print(migration.stderr.strip() or migration.stdout.strip())
+        return migration.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     changed = [
         line.strip()
         for line in diff.stdout.splitlines()
-        if line.strip().startswith("artifacts/status/status")
-        and line.strip().endswith(".json")
+        if (
+            (line.strip().startswith("artifacts/status/status") and line.strip().endswith(".json"))
+            or line.strip().startswith("artifacts/status/command_migration_")
+            or line.strip() == "artifacts/status/command_migration_matrix.json"
+            or line.strip() == "artifacts/status/command_migration_matrix.txt"
+        )
     ]
     if changed:
         print("STATUS REPORT STALE: regenerate and commit updated artifacts:")

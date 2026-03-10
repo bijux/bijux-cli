@@ -1184,6 +1184,21 @@ fn route_response(
                 root.join("artifacts/status/next_phase_minimalism.txt"),
             )
             .unwrap_or_default();
+            let migration_matrix =
+                read_json_if_exists(&root.join("artifacts/status/command_migration_matrix.json"));
+            let migration_rust_partial = read_json_if_exists(
+                &root.join("artifacts/status/command_migration_rust_partial.json"),
+            );
+            let migration_python_only = read_json_if_exists(
+                &root.join("artifacts/status/command_migration_python_only.json"),
+            );
+            let migration_intentional = read_json_if_exists(
+                &root.join("artifacts/status/command_migration_intentional_differences.json"),
+            );
+            let migration_text = fs::read_to_string(
+                root.join("artifacts/status/command_migration_matrix.txt"),
+            )
+            .unwrap_or_default();
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1206,6 +1221,13 @@ fn route_response(
                     "intentional_differences": intentional_differences,
                     "unowned_scripts": unowned_scripts,
                     "repl_only_behaviors": repl_only_behaviors,
+                },
+                "command_migration": {
+                    "matrix": migration_matrix,
+                    "rust_partial": migration_rust_partial,
+                    "python_only": migration_python_only,
+                    "intentional_differences": migration_intentional,
+                    "text": migration_text,
                 },
                 "next_phase_priorities": next_phase,
                 "next_phase_summary_text": next_phase_text,

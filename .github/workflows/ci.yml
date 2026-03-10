@@ -339,6 +339,10 @@ jobs:
         run: |
           python3 scripts/parity/generate_command_parity_matrix.py
 
+      - name: Command migration matrix artifact
+        run: |
+          python3 scripts/status/generate_command_migration_matrix.py
+
       - name: Command parity regression gate
         run: |
           python3 scripts/parity/check_command_parity_gates.py --enforce
@@ -544,6 +548,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Upload command migration matrix artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: command-migration-matrix
+          path: |
+            artifacts/status/command_migration_matrix.json
+            artifacts/status/command_migration_matrix.txt
+            artifacts/status/command_migration_rust_partial.json
+            artifacts/status/command_migration_python_only.json
+            artifacts/status/command_migration_intentional_differences.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload state parity artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -581,6 +599,11 @@ jobs:
           name: status-report
           path: |
             artifacts/status/status*.json
+            artifacts/status/command_migration_matrix.json
+            artifacts/status/command_migration_matrix.txt
+            artifacts/status/command_migration_rust_partial.json
+            artifacts/status/command_migration_python_only.json
+            artifacts/status/command_migration_intentional_differences.json
             artifacts/status/repl_only_behaviors.json
             artifacts/status/parser_abuse_report.json
             artifacts/status/namespace_abuse_report.json

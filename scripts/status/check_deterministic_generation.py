@@ -96,6 +96,28 @@ def main() -> int:
     if not parity_ok:
         failures.append("parity artifact generation is not deterministic")
 
+    migration_gen = ["python3", "scripts/status/generate_command_migration_matrix.py"]
+    m1 = run(migration_gen, env=fixed_env)
+    migration_file = STATUS / "command_migration_matrix.json"
+    migration_hash1 = (
+        stable_json_digest(migration_file) if m1.returncode == 0 and migration_file.exists() else ""
+    )
+    m2 = run(migration_gen, env=fixed_env)
+    migration_hash2 = (
+        stable_json_digest(migration_file) if m2.returncode == 0 and migration_file.exists() else ""
+    )
+    migration_ok = m1.returncode == 0 and m2.returncode == 0 and migration_hash1 == migration_hash2
+    checks.append(
+        {
+            "name": "command_migration_matrix_generation",
+            "ok": migration_ok,
+            "details": "command_migration_matrix.json hash is stable across repeated generation",
+            "hashes": [migration_hash1, migration_hash2],
+        }
+    )
+    if not migration_ok:
+        failures.append("command migration matrix generation is not deterministic")
+
     STATUS.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
