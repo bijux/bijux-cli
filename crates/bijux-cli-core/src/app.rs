@@ -10,6 +10,7 @@ use std::time::Duration;
 use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
+    atomic_write_text,
     canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config,
     pip_install_strategy, post_install_hint, CompatibilityConfig, CompatibilityPaths,
@@ -396,12 +397,7 @@ fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
 }
 
 fn write_history_entries(path: &Path, entries: &[Value]) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let payload = serde_json::to_string_pretty(entries)?;
-    fs::write(path, format!("{payload}\n"))?;
-    Ok(())
+    write_json_document(path, &Value::Array(entries.to_vec()))
 }
 
 #[derive(Debug, Clone)]
@@ -428,10 +424,11 @@ fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> 
     }
     let resolved = discover_compatibility_paths(home.as_deref(), &overrides, &env_map(), &config)?;
     let plugin_registry_file = registry_path_from_plugins_dir(&resolved.plugins_dir);
-    let memory_file = match home.as_deref() {
-        Some(root) => root.join(".bijux").join(".memory.json"),
-        None => Path::new(".").join(".bijux").join(".memory.json"),
-    };
+    let memory_file = resolved
+        .config_file
+        .parent()
+        .map(|dir| dir.join(".memory.json"))
+        .unwrap_or_else(|| Path::new(".").join(".bijux").join(".memory.json"));
     Ok(ResolvedStatePaths {
         config_file: resolved.config_file,
         history_file: resolved.history_file,
@@ -457,11 +454,15 @@ fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Value>> {
 }
 
 fn write_memory_map(path: &Path, memory: &serde_json::Map<String, Value>) -> Result<()> {
+    write_json_document(path, &Value::Object(memory.clone()))
+}
+
+fn write_json_document(path: &Path, value: &Value) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let payload = serde_json::to_string_pretty(memory)?;
-    fs::write(path, format!("{payload}\n"))?;
+    let payload = serde_json::to_string_pretty(value)?;
+    atomic_write_text(path, &(payload + "\n"))?;
     Ok(())
 }
 
