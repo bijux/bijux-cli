@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "root_command_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "root_command_matrix.rs"
 
 ROOT_COMMANDS = [
     "atlas",
@@ -113,7 +113,7 @@ def main() -> int:
             {
                 "command": command,
                 "status": status_for(command, tested_roots),
-                "evidence": "crates/bijux-cli-bin/tests/root_command_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/root_command_matrix.rs",
                 "status_model": ["complete", "partial", "shim", "missing"],
                 "user_impact": impact_score(command),
             }
@@ -127,7 +127,7 @@ def main() -> int:
                 "todo": todo,
                 "test": fn_name,
                 "status": "complete" if f"fn {fn_name}(" in source else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/root_command_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/root_command_matrix.rs",
             }
         )
 
@@ -171,7 +171,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Root commands are covered by explicit parity, stream, formatting, malformed-input, and determinism tests.",
             "evidence": [
-                "crates/bijux-cli-bin/tests/root_command_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/root_command_matrix.rs",
                 "artifacts/status/root_command_coverage_report.json",
                 "artifacts/status/root_command_matrix_artifact.json",
             ],
@@ -210,7 +210,7 @@ def main() -> int:
                 "order": idx,
                 "command": command,
                 "coverage_checks": coverage,
-                "evidence": "crates/bijux-cli-bin/tests/root_command_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/root_command_matrix.rs",
             }
         )
     write_json(

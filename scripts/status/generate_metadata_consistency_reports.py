@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "metadata_inspection_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "metadata_inspection_matrix.rs"
 
 REQUIRED_TESTS = {
     61: "every_routable_command_has_inspectable_metadata_and_stable_route_identity",
@@ -33,7 +33,7 @@ REQUIRED_TESTS = {
 
 def run_json(args: list[str]) -> dict[str, Any]:
     out = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -135,7 +135,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/metadata_inspection_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/metadata_inspection_matrix.rs",
             }
         )
     missing_todos = [row for row in todo_rows if row["status"] != "covered"]

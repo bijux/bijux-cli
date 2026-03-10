@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "diagnostics_command_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "diagnostics_command_matrix.rs"
 
 DIAGNOSTICS_COMMANDS = [
     "inspect",
@@ -64,7 +64,7 @@ def main() -> int:
             "command": command,
             "status": command_status(command, source),
             "status_model": ["complete", "partial", "shim", "missing"],
-            "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+            "evidence": "crates/bijux-cli-core/tests/bin_surface/diagnostics_command_matrix.rs",
         }
         for command in DIAGNOSTICS_COMMANDS
     ]
@@ -74,7 +74,7 @@ def main() -> int:
             "todo": todo,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
-            "evidence": "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+            "evidence": "crates/bijux-cli-core/tests/bin_surface/diagnostics_command_matrix.rs",
         }
         for todo, fn_name in sorted(REQUIRED_TESTS.items())
     ]
@@ -130,7 +130,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Diagnostics outputs must remain structured, consistent across surfaces, and stable in machine shape.",
             "evidence": [
-                "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/diagnostics_command_matrix.rs",
                 "artifacts/status/diagnostics_matrix_artifact.json",
                 "artifacts/status/diagnostics_shape_drift_artifact.json",
             ],

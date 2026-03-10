@@ -11,8 +11,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 TEST_FILES = [
-    ROOT / "crates" / "bijux-cli-bin" / "tests" / "cross_surface_state_extra.rs",
-    ROOT / "crates" / "bijux-cli-bin" / "tests" / "command_family_consistency_extra.rs",
+    ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cross_surface_state_extra.rs",
+    ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "command_family_consistency_extra.rs",
 ]
 
 REQUIRED_TESTS = {

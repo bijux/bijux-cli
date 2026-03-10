@@ -9,7 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "cross_command_consistency_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cross_command_consistency_matrix.rs"
 MIGRATION = ROOT / "artifacts" / "status" / "command_migration_matrix.json"
 
 REQUIRED_TESTS: list[tuple[int, str, str, list[str]]] = [
@@ -67,7 +67,7 @@ def main() -> int:
         row = {
             "todo": todo,
             "law": law,
-            "test": f"crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs::{fn_name}",
+            "test": f"crates/bijux-cli-core/tests/bin_surface/cross_command_consistency_matrix.rs::{fn_name}",
             "present": present,
             "coverage_class": coverage_class,
             "related_commands": related,

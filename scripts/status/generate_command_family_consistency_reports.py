@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "command_family_consistency_extra.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "command_family_consistency_extra.rs"
 MATRIX_FILE = ROOT / "artifacts" / "parity" / "commands_fully_rust_owned.json"
 
 REQUIRED_TESTS = {
@@ -50,7 +50,7 @@ def main() -> int:
                 "todo": todo,
                 "test": fn_name,
                 "status": "covered" if present else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/command_family_consistency_extra.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/command_family_consistency_extra.rs",
             }
         )
 

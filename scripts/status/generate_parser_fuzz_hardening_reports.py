@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
 ROUTING_TEST_FILE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "parser_fuzz_targets.rs"
-BIN_TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "parser_invalid_utf8_argv.rs"
+BIN_TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "parser_invalid_utf8_argv.rs"
 REGRESSION_FILE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "parser_fuzz_regressions.rs"
 CORPUS_DIR = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fuzz" / "parser_interesting_inputs"
 MINIMIZED_DIR = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fuzz" / "parser_minimized_cases"

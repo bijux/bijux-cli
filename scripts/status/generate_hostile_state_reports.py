@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "deterministic_hostile_state_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "deterministic_hostile_state_matrix.rs"
 HARNESS_FILE = STATUS / "repeated_run_corruption_harness.json"
 
 
@@ -64,7 +64,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/deterministic_hostile_state_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/deterministic_hostile_state_matrix.rs",
             }
             for todo, name in rows
         ],

@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "repl_execution_law_extra.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "repl_execution_law_extra.rs"
 
 REQUIRED_TESTS = {
     201: "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli",
@@ -49,7 +49,7 @@ def main() -> int:
                 "todo": todo,
                 "test": name,
                 "status": "covered" if covered else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/repl_execution_law_extra.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/repl_execution_law_extra.rs",
             }
         )
 

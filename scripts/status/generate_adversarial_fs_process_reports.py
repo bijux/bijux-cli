@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "adversarial_fs_process_campaigns.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "adversarial_fs_process_campaign_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-bin" / "tests" / "fuzz" / "adversarial_fs_process_minimized_cases"
+CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "adversarial_fs_process_campaigns.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "adversarial_fs_process_campaign_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "adversarial_fs_process_minimized_cases"
 
 REQUIRED_TESTS = {
     181: (CAMPAIGN_TEST, "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"),
@@ -74,8 +74,20 @@ def main() -> int:
             }
         )
 
-    campaign_run = run_test(["cargo", "test", "-p", "bijux-cli-bin", "--test", "adversarial_fs_process_campaigns"])
-    regression_run = run_test(["cargo", "test", "-p", "bijux-cli-bin", "--test", "adversarial_fs_process_campaign_regressions"])
+    campaign_run = run_test(
+        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "adversarial_fs_process_campaigns::"]
+    )
+    regression_run = run_test(
+        [
+            "cargo",
+            "test",
+            "-p",
+            "bijux-cli-core",
+            "--test",
+            "bin_surface",
+            "adversarial_fs_process_campaign_regressions::",
+        ]
+    )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
     missing = [row["todo"] for row in coverage if row["status"] != "covered"]

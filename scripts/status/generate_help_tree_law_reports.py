@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "help_tree_law_extra.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "help_tree_law_extra.rs"
 
 REQUIRED_TESTS = {
     341: "root_help_lists_commands_in_stable_order",
@@ -49,7 +49,7 @@ def main() -> int:
                 "todo": todo,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/help_tree_law_extra.rs",
             }
         )
 
