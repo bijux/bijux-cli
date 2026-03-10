@@ -59,6 +59,9 @@ scripts/status/generate_memory_deep_behavior_reports.py # generate memory semant
 scripts/status/enforce_memory_deep_behavior_gate.py # enforce CI failure when memory deep behavior artifacts or coverage regress
 scripts/status/generate_diagnostics_deep_behavior_reports.py # generate diagnostics consistency, doctor determinism, schema drift, source-of-truth, findings-order, contract, and drift artifacts
 scripts/status/enforce_diagnostics_deep_behavior_gate.py # enforce CI failure when diagnostics deep behavior artifacts or coverage regress
+scripts/status/generate_command_family_consistency_reports.py # generate command-family consistency, cross-family drift, shared-law proof, and migration-requirement artifacts
+scripts/status/enforce_command_family_consistency_gate.py # enforce CI failure on covered command-family consistency drift
+scripts/status/warn_uncovered_command_family_scope.py # emit CI warning when command-family consistency scope remains uncovered
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

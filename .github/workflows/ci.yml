@@ -326,6 +326,7 @@ jobs:
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
           python3 scripts/status/generate_command_surface_consistency_reports.py
+          python3 scripts/status/generate_command_family_consistency_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -422,6 +423,14 @@ jobs:
       - name: Command-surface consistency gate
         run: |
           python3 scripts/status/enforce_command_surface_consistency_gate.py
+
+      - name: Command-family consistency gate
+        run: |
+          python3 scripts/status/enforce_command_family_consistency_gate.py
+
+      - name: Warn uncovered command-family scope
+        run: |
+          python3 scripts/status/warn_uncovered_command_family_scope.py
 
       - name: Command parity matrix artifact
         run: |
@@ -681,6 +690,19 @@ jobs:
             artifacts/status/findings_order_artifact.json
             artifacts/status/diagnostics_contract_artifact.json
             artifacts/status/diagnostics_deep_behavior_drift_artifact.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload command-family consistency artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: command-family-consistency
+          path: |
+            artifacts/status/command_family_consistency_artifact.json
+            artifacts/status/cross_family_drift_artifact.json
+            artifacts/status/shared_law_proof_artifact.json
+            artifacts/status/command_family_consistency_requirement.json
           if-no-files-found: warn
           retention-days: 14
 
