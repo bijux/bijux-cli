@@ -40,6 +40,12 @@ def main() -> int:
     if compatibility.returncode != 0:
         print(compatibility.stderr.strip() or compatibility.stdout.strip())
         return compatibility.returncode
+    compatibility_trend = run(
+        ["python3", "scripts/status/generate_compatibility_debt_trend_report.py"]
+    )
+    if compatibility_trend.returncode != 0:
+        print(compatibility_trend.stderr.strip() or compatibility_trend.stdout.strip())
+        return compatibility_trend.returncode
     parity_law = run(["python3", "scripts/parity/generate_command_law_reports.py"])
     if parity_law.returncode != 0:
         print(parity_law.stderr.strip() or parity_law.stdout.strip())
@@ -91,6 +97,8 @@ def main() -> int:
             or line.strip() == "artifacts/status/old_python_path_tolerance_inventory.json"
             or line.strip() == "artifacts/status/live_compatibility_shims.json"
             or line.strip() == "artifacts/status/live_compatibility_aliases.json"
+            or line.strip() == "artifacts/status/compatibility_debt_trend_report.json"
+            or line.strip() == "artifacts/status/compatibility_debt_trend_report.txt"
         )
     ]
     if changed:

@@ -300,6 +300,7 @@ jobs:
           python3 scripts/status/generate_product_mount_readiness_reports.py
           python3 scripts/status/generate_plugin_scaffold_reports.py
           python3 scripts/status/generate_compatibility_shim_reports.py
+          python3 scripts/status/generate_compatibility_debt_trend_report.py
           python3 scripts/status/generate_route_law_reports.py
           python3 scripts/status/generate_state_law_reports.py
           python3 scripts/status/generate_diagnostics_law_reports.py
@@ -915,6 +916,8 @@ jobs:
             artifacts/status/old_python_path_tolerance_inventory.json
             artifacts/status/compatibility_shim_count_delta.json
             artifacts/status/compatibility_alias_count_delta.json
+            artifacts/status/compatibility_debt_trend_report.json
+            artifacts/status/compatibility_debt_trend_report.txt
             artifacts/status/live_compatibility_shims.json
             artifacts/status/live_compatibility_aliases.json
             artifacts/status/route_command_owner_mapping.json

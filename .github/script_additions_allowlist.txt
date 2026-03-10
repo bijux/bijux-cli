@@ -49,3 +49,4 @@ scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics co
 scripts/status/generate_command_surface_consistency_reports.py # generate cross-command consistency artifact, drift detector artifact, and complete/partial/missing summary for commands/config/history/memory/diagnostics
 scripts/status/enforce_command_surface_consistency_gate.py # enforce CI failure on covered cross-command consistency regressions
 scripts/status/warn_uncovered_command_surface_scope.py # emit CI warning when command-surface scope introduces uncovered consistency checks
+scripts/status/generate_compatibility_debt_trend_report.py # generate compatibility debt trend artifact from shim/alias baseline and delta reports
