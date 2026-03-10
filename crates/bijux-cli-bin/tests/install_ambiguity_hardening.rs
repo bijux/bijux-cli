@@ -7,6 +7,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -30,6 +32,38 @@ fn run_identity(envs: &[(&str, String)]) -> Value {
     let out = run_with_env(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
     assert_eq!(out.status.code(), Some(0));
     serde_json::from_slice(&out.stdout).expect("json")
+}
+
+fn install_channel_path(root: &PathBuf, marker: &str) -> PathBuf {
+    match marker {
+        "cargo" => root.join(".cargo").join("bin"),
+        "pip" => root.join("site-packages").join("bin"),
+        other => panic!("unsupported marker: {other}"),
+    }
+}
+
+fn write_channel_binary(dir: &PathBuf) {
+    fs::create_dir_all(dir).expect("mkdir channel dir");
+    fs::write(dir.join("bijux"), "#!/bin/sh\n").expect("write channel binary");
+}
+
+fn assert_command_runs_in_channel(marker: &str, args: &[&str], envs: &[(&str, String)]) {
+    let root = tmp_dir(&format!("{marker}-{:?}", args).replace([' ', '"', ',', '[', ']'], "-"));
+    let dir = install_channel_path(&root, marker);
+    write_channel_binary(&dir);
+    let path = env::join_paths([&dir]).expect("join path").to_string_lossy().to_string();
+
+    let mut with_path = vec![("PATH", path)];
+    with_path.extend_from_slice(envs);
+
+    let out = run_with_env(args, &with_path);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "command failed for {marker} {:?}: stderr={}",
+        args,
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 #[test]
@@ -210,4 +244,86 @@ fn runtime_identity_reports_pip_install_source_when_path_contains_site_packages_
 fn runtime_identity_reports_bridge_fallback_diagnostic_when_bridge_is_unavailable() {
     let payload = run_identity(&[("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())]);
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
+}
+
+#[test]
+fn cargo_installed_invocation_version_is_green() {
+    assert_command_runs_in_channel("cargo", &["version"], &[]);
+}
+
+#[test]
+fn pip_installed_invocation_version_is_green() {
+    assert_command_runs_in_channel("pip", &["version"], &[]);
+}
+
+#[test]
+fn cargo_installed_invocation_status_is_green() {
+    assert_command_runs_in_channel("cargo", &["status", "--format", "json", "--no-pretty"], &[]);
+}
+
+#[test]
+fn pip_installed_invocation_status_is_green() {
+    assert_command_runs_in_channel("pip", &["status", "--format", "json", "--no-pretty"], &[]);
+}
+
+#[test]
+fn cargo_installed_invocation_plugins_list_is_green() {
+    assert_command_runs_in_channel(
+        "cargo",
+        &["plugins", "list", "--format", "json", "--no-pretty"],
+        &[],
+    );
+}
+
+#[test]
+fn pip_installed_invocation_plugins_list_is_green() {
+    assert_command_runs_in_channel(
+        "pip",
+        &["plugins", "list", "--format", "json", "--no-pretty"],
+        &[],
+    );
+}
+
+#[test]
+fn cargo_installed_invocation_config_get_is_green() {
+    let root = tmp_dir("cargo-config-get");
+    let config_path = root.join("config.env");
+    fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
+    assert_command_runs_in_channel(
+        "cargo",
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            config_path.to_str().expect("utf-8"),
+        ],
+        &[],
+    );
+}
+
+#[test]
+fn pip_installed_invocation_config_get_is_green() {
+    let root = tmp_dir("pip-config-get");
+    let config_path = root.join("config.env");
+    fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
+    assert_command_runs_in_channel(
+        "pip",
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            config_path.to_str().expect("utf-8"),
+        ],
+        &[],
+    );
 }
