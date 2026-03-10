@@ -12,6 +12,7 @@ This document defines contributor and reviewer rules that keep milestone claims 
 6. Use `artifacts/parity/command_parity_matrix.json` as the truth source for "done" command status.
 7. Use `bijux dev cli status --format json` as first check before milestone claims.
 8. Do not add a public API without a consumer or an explicit reason documented in status artifacts.
+9. Treat `bijux dev cli` as the default maintainer cockpit for automation and diagnostics.
 
 ## Required Evidence
 - `artifacts/parity/command_parity_matrix.json`
