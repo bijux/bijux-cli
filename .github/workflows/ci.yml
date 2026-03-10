@@ -277,6 +277,7 @@ jobs:
           python3 scripts/status/generate_route_registry_fuzz_reports.py
           python3 scripts/status/generate_config_fuzz_hardening_reports.py
           python3 scripts/status/generate_config_corruption_campaign_reports.py
+          python3 scripts/status/generate_plugin_state_corruption_campaign_reports.py
           python3 scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py
           python3 scripts/status/generate_output_bridge_fuzz_reports.py
           python3 scripts/status/generate_state_corruption_harness_reports.py
@@ -573,6 +574,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_config_corruption_campaign_gate.py
 
+      - name: Plugin-state corruption campaign gate
+        run: |
+          python3 scripts/status/enforce_plugin_state_corruption_campaign_gate.py
+
       - name: Plugin manifest-scaffold fuzz gate
         run: |
           python3 scripts/status/enforce_plugin_manifest_scaffold_fuzz_gate.py
@@ -867,6 +872,21 @@ jobs:
             artifacts/status/config_corruption_recovery_classification.json
             artifacts/status/config_corruption_determinism_artifact.json
             artifacts/status/config_corruption_release_blocking_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload plugin-state corruption campaign artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-state-corruption-campaign
+          path: |
+            artifacts/status/plugin_state_corruption_campaign_artifact.json
+            artifacts/status/plugin_state_corruption_corpus_retention_artifact.json
+            artifacts/status/plugin_state_corruption_triage_artifact.json
+            artifacts/status/plugin_state_corruption_regression_artifact.json
+            artifacts/status/plugin_state_corruption_severity_classification.json
+            artifacts/status/plugin_state_corruption_contract.json
           if-no-files-found: warn
           retention-days: 14
 

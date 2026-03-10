@@ -113,3 +113,5 @@ scripts/status/generate_state_corruption_harness_reports.py # generate randomize
 scripts/status/enforce_state_corruption_harness_gate.py # enforce CI failure when randomized state-corruption campaign/reproducer retention drifts or the harness contract is not frozen
 scripts/status/generate_config_corruption_campaign_reports.py # generate randomized config-corruption campaign, invariant, corpus-retention, severity/recovery/determinism, and release-blocking contract artifacts for TODOs 121-140
 scripts/status/enforce_config_corruption_campaign_gate.py # enforce CI failure when config-corruption campaign artifacts drift or release-blocking contract is not frozen
+scripts/status/generate_plugin_state_corruption_campaign_reports.py # generate randomized plugin/history/memory corruption campaign, corpus-retention, triage, regression, severity, and hardening-contract artifacts for TODOs 141-160
+scripts/status/enforce_plugin_state_corruption_campaign_gate.py # enforce CI failure when plugin/history/memory corruption campaign artifacts drift or hardening contract is not frozen
