@@ -109,3 +109,5 @@ scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py # generate plug
 scripts/status/enforce_plugin_manifest_scaffold_fuzz_gate.py # enforce CI failure when plugin manifest/scaffold fuzz triage or minimized regression replay drifts from the frozen hardening contract
 scripts/status/generate_output_bridge_fuzz_reports.py # generate output/envelope and bridge-conversion fuzz crash triage, minimized-regression, and frozen hardening-contract artifacts from retained output/bridge minimized fuzz cases
 scripts/status/enforce_output_bridge_fuzz_gate.py # enforce CI failure when output/envelope or bridge-conversion fuzz triage/regression replay drifts from the frozen hardening contract
+scripts/status/generate_state_corruption_harness_reports.py # generate randomized state-corruption campaign, minimized reproducer retention, and frozen corruption-harness contract artifacts for TODOs 101-120
+scripts/status/enforce_state_corruption_harness_gate.py # enforce CI failure when randomized state-corruption campaign/reproducer retention drifts or the harness contract is not frozen
