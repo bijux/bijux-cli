@@ -6,7 +6,10 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_ok_json(command: &[&str]) -> Value {
@@ -30,8 +33,12 @@ fn parity_json_contract_is_stable() {
     let first = run_ok_json(&["dev", "cli", "parity"]);
     let second = run_ok_json(&["dev", "cli", "parity"]);
     assert_eq!(
-        first.as_object().map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
-        second.as_object().map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
+        first
+            .as_object()
+            .map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
+        second
+            .as_object()
+            .map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
         "parity json top-level keys must be stable"
     );
 }
@@ -49,7 +56,9 @@ fn parity_text_contract_is_stable() {
 #[test]
 fn migration_matrix_rows_have_valid_statuses() {
     let status = run_ok_json(&["dev", "cli", "status"]);
-    let rows = status["command_migration"]["matrix"]["commands"].as_array().expect("matrix rows");
+    let rows = status["command_migration"]["matrix"]["commands"]
+        .as_array()
+        .expect("matrix rows");
     let allowed = std::collections::BTreeSet::from([
         "rust-complete",
         "rust-partial",
@@ -58,14 +67,19 @@ fn migration_matrix_rows_have_valid_statuses() {
     ]);
     for row in rows {
         let status_value = row["status"].as_str().unwrap_or_default();
-        assert!(allowed.contains(status_value), "invalid migration status: {status_value}");
+        assert!(
+            allowed.contains(status_value),
+            "invalid migration status: {status_value}"
+        );
     }
 }
 
 #[test]
 fn partial_rows_have_blockers() {
     let status = run_ok_json(&["dev", "cli", "status"]);
-    let rows = status["command_migration"]["matrix"]["commands"].as_array().expect("matrix rows");
+    let rows = status["command_migration"]["matrix"]["commands"]
+        .as_array()
+        .expect("matrix rows");
     for row in rows {
         if row["status"] == Value::String("rust-partial".to_string()) {
             let shim_alias = row["shim_alias_dependency"].as_object();
@@ -97,7 +111,9 @@ fn partial_rows_have_blockers() {
 #[test]
 fn intentional_difference_rows_have_reasons() {
     let status = run_ok_json(&["dev", "cli", "status"]);
-    let rows = status["command_migration"]["matrix"]["commands"].as_array().expect("matrix rows");
+    let rows = status["command_migration"]["matrix"]["commands"]
+        .as_array()
+        .expect("matrix rows");
     for row in rows {
         if row["status"] == Value::String("intentionally-different".to_string()) {
             assert!(
@@ -111,11 +127,15 @@ fn intentional_difference_rows_have_reasons() {
 #[test]
 fn complete_rows_have_evidence_links() {
     let status = run_ok_json(&["dev", "cli", "status"]);
-    let rows = status["command_migration"]["matrix"]["commands"].as_array().expect("matrix rows");
+    let rows = status["command_migration"]["matrix"]["commands"]
+        .as_array()
+        .expect("matrix rows");
     for row in rows {
         if row["status"] == Value::String("rust-complete".to_string()) {
             assert!(
-                row["evidence_links"].as_array().is_some_and(|links| !links.is_empty()),
+                row["evidence_links"]
+                    .as_array()
+                    .is_some_and(|links| !links.is_empty()),
                 "rust-complete rows must include evidence links"
             );
         }
@@ -144,7 +164,9 @@ fn parity_and_migration_cover_the_same_core_commands() {
         .collect();
 
     assert!(
-        parity_commands.iter().all(|command| migration_commands.contains(command)),
+        parity_commands
+            .iter()
+            .all(|command| migration_commands.contains(command)),
         "all parity commands must exist in migration matrix"
     );
 }
@@ -153,8 +175,9 @@ fn parity_and_migration_cover_the_same_core_commands() {
 fn parity_and_status_completion_counts_align() {
     let parity = run_ok_json(&["dev", "cli", "parity"]);
     let status = run_ok_json(&["dev", "cli", "status"]);
-    let parity_complete =
-        parity["command_matrix"]["summary"]["complete"].as_u64().unwrap_or_default();
+    let parity_complete = parity["command_matrix"]["summary"]["complete"]
+        .as_u64()
+        .unwrap_or_default();
     let status_complete = status["command_migration"]["matrix"]["summary"]["rust-complete"]
         .as_u64()
         .unwrap_or_default();
@@ -164,17 +187,30 @@ fn parity_and_status_completion_counts_align() {
 #[test]
 fn parity_output_handles_evidence_gaps_without_crashing() {
     let parity = run_ok_json(&["dev", "cli", "parity"]);
-    let rows = parity["command_matrix"]["commands"].as_array().expect("parity rows");
-    let gap_rows =
-        rows.iter().filter(|row| row["status"] == Value::String("partial".to_string())).count();
-    assert!(gap_rows > 0, "fixture must include partial rows representing evidence gaps");
-    assert!(parity["parity_dashboard"].is_object(), "parity dashboard must still render");
+    let rows = parity["command_matrix"]["commands"]
+        .as_array()
+        .expect("parity rows");
+    let gap_rows = rows
+        .iter()
+        .filter(|row| row["status"] == Value::String("partial".to_string()))
+        .count();
+    assert!(
+        gap_rows > 0,
+        "fixture must include partial rows representing evidence gaps"
+    );
+    assert!(
+        parity["parity_dashboard"].is_object(),
+        "parity dashboard must still render"
+    );
 }
 
 #[test]
 fn parity_output_handles_stale_or_older_inputs_without_crashing() {
     let out = run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]);
-    assert!(out.status.success(), "parity command must remain resilient for stale-ish inputs");
+    assert!(
+        out.status.success(),
+        "parity command must remain resilient for stale-ish inputs"
+    );
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert!(payload["parity_dashboard"]["summary"].is_object());
 }
@@ -189,7 +225,10 @@ fn parity_output_handles_corrupted_optional_state_without_crashing() {
     cmd.args(["dev", "cli", "parity", "--format", "json", "--no-pretty"]);
     cmd.env("BIJUX_CONFIG_PATH", config.to_string_lossy().to_string());
     let out = cmd.output().expect("run");
-    assert!(out.status.success(), "parity command failed under corrupted optional state");
+    assert!(
+        out.status.success(),
+        "parity command failed under corrupted optional state"
+    );
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert!(payload["parity_dashboard"].is_object());
 }

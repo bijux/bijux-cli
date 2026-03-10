@@ -35,7 +35,10 @@ fn run_json(args: &[&str], envs: &[(&str, String)]) -> (i32, Option<Value>, Stri
 }
 
 fn seed_state_root(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-dev-cli-resilience-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-dev-cli-resilience-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("plugins")).expect("mkdir");
     fs::write(root.join("config.env"), "BIJUXCLI_SAMPLE=1\n").expect("config");
@@ -123,27 +126,47 @@ fn failure_injection_scenarios_have_stable_exit_class_and_no_panic() {
         ),
         (
             "state-audit-missing-state-dir",
-            vec!["dev", "cli", "state-audit", "--format", "json", "--no-pretty"]
-                .into_iter()
-                .map(ToString::to_string)
-                .collect(),
+            vec![
+                "dev",
+                "cli",
+                "state-audit",
+                "--format",
+                "json",
+                "--no-pretty",
+            ]
+            .into_iter()
+            .map(ToString::to_string)
+            .collect(),
             vec![
                 (
                     "BIJUX_HISTORY_PATH",
-                    root.join("no-dir").join("history.json").to_string_lossy().to_string(),
+                    root.join("no-dir")
+                        .join("history.json")
+                        .to_string_lossy()
+                        .to_string(),
                 ),
                 (
                     "BIJUX_MEMORY_PATH",
-                    root.join("no-dir").join("memory.json").to_string_lossy().to_string(),
+                    root.join("no-dir")
+                        .join("memory.json")
+                        .to_string_lossy()
+                        .to_string(),
                 ),
             ],
         ),
         (
             "state-doctor-corrupted-state",
-            vec!["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]
-                .into_iter()
-                .map(ToString::to_string)
-                .collect(),
+            vec![
+                "dev",
+                "cli",
+                "state-doctor",
+                "--format",
+                "json",
+                "--no-pretty",
+            ]
+            .into_iter()
+            .map(ToString::to_string)
+            .collect(),
             vec![
                 ("BIJUX_HISTORY_PATH", bad_json_string.clone()),
                 ("BIJUX_MEMORY_PATH", bad_json_string.clone()),
@@ -151,21 +174,38 @@ fn failure_injection_scenarios_have_stable_exit_class_and_no_panic() {
         ),
         (
             "runtime-identity-path-ambiguity",
-            vec!["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]
-                .into_iter()
-                .map(ToString::to_string)
-                .collect(),
+            vec![
+                "dev",
+                "cli",
+                "runtime-identity",
+                "--format",
+                "json",
+                "--no-pretty",
+            ]
+            .into_iter()
+            .map(ToString::to_string)
+            .collect(),
             vec![(
                 "PATH",
-                format!("/tmp/bijux-a:/tmp/bijux-b:{}", std::env::var("PATH").unwrap_or_default()),
+                format!(
+                    "/tmp/bijux-a:/tmp/bijux-b:{}",
+                    std::env::var("PATH").unwrap_or_default()
+                ),
             )],
         ),
         (
             "package-health-metadata-mismatch",
-            vec!["dev", "cli", "package-health", "--format", "json", "--no-pretty"]
-                .into_iter()
-                .map(ToString::to_string)
-                .collect(),
+            vec![
+                "dev",
+                "cli",
+                "package-health",
+                "--format",
+                "json",
+                "--no-pretty",
+            ]
+            .into_iter()
+            .map(ToString::to_string)
+            .collect(),
             vec![
                 ("BIJUX_WHEEL_VERSION", "0.0.1".to_string()),
                 ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
@@ -207,7 +247,11 @@ fn summary_commands_are_deterministic_across_repeated_runs() {
         let second = run(&args, &[]);
         assert!(first.status.success(), "first run failed for {:?}", args);
         assert!(second.status.success(), "second run failed for {:?}", args);
-        assert_eq!(first.stdout, second.stdout, "summary output drift for {:?}", args);
+        assert_eq!(
+            first.stdout, second.stdout,
+            "summary output drift for {:?}",
+            args
+        );
     }
 }
 
@@ -234,7 +278,11 @@ fn machine_readable_commands_are_deterministic_across_repeated_runs() {
         let second = run(&args, &[]);
         assert!(first.status.success(), "first run failed for {:?}", args);
         assert!(second.status.success(), "second run failed for {:?}", args);
-        assert_eq!(first.stdout, second.stdout, "machine-readable output drift for {:?}", args);
+        assert_eq!(
+            first.stdout, second.stdout,
+            "machine-readable output drift for {:?}",
+            args
+        );
     }
 }
 
@@ -249,7 +297,10 @@ fn read_only_dev_cli_commands_do_not_mutate_state_files() {
         ("BIJUX_CONFIG_PATH", config.to_string_lossy().to_string()),
         ("BIJUX_HISTORY_PATH", history.to_string_lossy().to_string()),
         ("BIJUX_MEMORY_PATH", memory.to_string_lossy().to_string()),
-        ("BIJUX_PLUGINS_DIR", plugins_dir.to_string_lossy().to_string()),
+        (
+            "BIJUX_PLUGINS_DIR",
+            plugins_dir.to_string_lossy().to_string(),
+        ),
     ];
     let before: BTreeMap<&str, Vec<u8>> = BTreeMap::from([
         ("config", file_bytes(&config)),

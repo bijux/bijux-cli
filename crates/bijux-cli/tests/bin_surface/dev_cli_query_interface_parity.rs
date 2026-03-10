@@ -3,8 +3,8 @@
 
 use std::process::Command;
 
-use bijux_cli::query::state_diagnostics_query;
 use bijux_cli::install::query::runtime_identity_query;
+use bijux_cli::query::state_diagnostics_query;
 use bijux_cli::routing::inventory::{registry_inventory, route_inventory};
 use bijux_cli::routing::query::contracts_schema_query;
 use bijux_cli::routing::registry::RouteRegistry;
@@ -33,7 +33,9 @@ fn run_ok_json_with_env(args: &[&str], envs: &[(&str, String)]) -> Value {
 #[test]
 fn routes_and_registry_reports_match_runtime_query_surfaces() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("community").expect("register");
+    registry
+        .register_plugin_namespace("community")
+        .expect("register");
     let route_query = route_inventory(&registry);
     let registry_query = registry_inventory(&registry);
 
@@ -69,17 +71,40 @@ fn runtime_identity_and_state_audit_match_runtime_query_surfaces() {
     std::fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let envs = vec![
         ("BIJUXCLI_CONFIG", config.to_string_lossy().to_string()),
-        ("BIJUXCLI_HISTORY_FILE", history.to_string_lossy().to_string()),
-        ("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_string_lossy().to_string()),
+        (
+            "BIJUXCLI_HISTORY_FILE",
+            history.to_string_lossy().to_string(),
+        ),
+        (
+            "BIJUXCLI_PLUGINS_DIR",
+            plugins_dir.to_string_lossy().to_string(),
+        ),
     ];
-    let state_query =
-        state_diagnostics_query(&config, &history, &plugins_dir.join("registry.json"), &memory);
+    let state_query = state_diagnostics_query(
+        &config,
+        &history,
+        &plugins_dir.join("registry.json"),
+        &memory,
+    );
     let state_audit = run_ok_json_with_env(
-        &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-audit",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &envs,
     );
-    assert_eq!(state_audit["paths"]["config"]["exists"], state_query.config.exists);
-    assert_eq!(state_audit["paths"]["memory"]["exists"], state_query.memory.exists);
+    assert_eq!(
+        state_audit["paths"]["config"]["exists"],
+        state_query.config.exists
+    );
+    assert_eq!(
+        state_audit["paths"]["memory"]["exists"],
+        state_query.memory.exists
+    );
 
     let identity_query = runtime_identity_query(
         &std::env::var("PATH").unwrap_or_default(),
@@ -87,14 +112,24 @@ fn runtime_identity_and_state_audit_match_runtime_query_surfaces() {
         std::env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
         env!("CARGO_PKG_VERSION"),
     );
-    let runtime_identity =
-        run_ok_json(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]);
+    let runtime_identity = run_ok_json(&[
+        "dev",
+        "cli",
+        "runtime-identity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(
-        runtime_identity["active_binary"].as_str().map(ToString::to_string),
+        runtime_identity["active_binary"]
+            .as_str()
+            .map(ToString::to_string),
         identity_query.active_binary
     );
     assert_eq!(
-        runtime_identity["path_binaries"].as_array().map_or(0, Vec::len),
+        runtime_identity["path_binaries"]
+            .as_array()
+            .map_or(0, Vec::len),
         identity_query.path_binaries.len()
     );
 
@@ -106,5 +141,8 @@ fn contracts_report_matches_contracts_schema_query_surface() {
     let query = contracts_schema_query();
     let report = run_ok_json(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]);
     assert_eq!(report["schema_version"], query.schema_version);
-    assert_eq!(report["contracts"].as_array().map_or(0, Vec::len), query.schema_ids.len());
+    assert_eq!(
+        report["contracts"].as_array().map_or(0, Vec::len),
+        query.schema_ids.len()
+    );
 }

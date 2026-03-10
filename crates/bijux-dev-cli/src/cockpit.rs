@@ -75,7 +75,10 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
     let release = read_json_if_exists(
         &workspace_root.join("artifacts/status/dev_cli_release_gaps_report.json"),
     );
-    let unresolved = release.get("unresolved_gaps").cloned().unwrap_or_else(|| json!([]));
+    let unresolved = release
+        .get("unresolved_gaps")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
     json!({
         "blockers": unresolved,
         "status": release.get("status").cloned().unwrap_or_else(|| json!("blocked")),

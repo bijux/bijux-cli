@@ -64,7 +64,8 @@ fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value 
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
-    let payload = fs::read_to_string(root.join("artifacts/status/stale_artifact_artifact.json")).expect("read stale artifact");
+    let payload = fs::read_to_string(root.join("artifacts/status/stale_artifact_artifact.json"))
+        .expect("read stale artifact");
     serde_json::from_str(&payload).expect("valid json")
 }
 
@@ -109,7 +110,8 @@ fn stale_scenarios_are_detected_for_all_required_commands() {
         "crate_health_stale_before_crate_health",
     ] {
         let matched = checks.iter().any(|row| {
-            row["scenario_id"] == scenario_id && (row["state"] == "stale" || row["state"] == "missing")
+            row["scenario_id"] == scenario_id
+                && (row["state"] == "stale" || row["state"] == "missing")
         });
         assert!(matched, "scenario {scenario_id} should be stale/missing");
     }
@@ -118,7 +120,8 @@ fn stale_scenarios_are_detected_for_all_required_commands() {
 #[test]
 fn deleted_evidence_artifact_is_reported_as_missing() {
     let root = seeded_artifact_root("bijux-stale-missing-evidence");
-    fs::remove_file(root.join("artifacts/status/evidence_integrity_artifact.json")).expect("remove evidence");
+    fs::remove_file(root.join("artifacts/status/evidence_integrity_artifact.json"))
+        .expect("remove evidence");
     let payload = run_generator(&root, &[], false);
     let checks = payload["checks"].as_array().cloned().unwrap_or_default();
     let evidence_row = checks
@@ -131,7 +134,11 @@ fn deleted_evidence_artifact_is_reported_as_missing() {
 #[test]
 fn mixed_stale_and_fresh_inputs_remain_honest() {
     let root = seeded_artifact_root("bijux-stale-mixed");
-    let payload = run_generator(&root, &["artifacts/status/migration_truth_artifact.json"], false);
+    let payload = run_generator(
+        &root,
+        &["artifacts/status/migration_truth_artifact.json"],
+        false,
+    );
     let summary = &payload["summary"];
     let stale_or_missing = summary["stale_or_missing_count"].as_u64().unwrap_or(0);
     let fresh = summary["fresh_count"].as_u64().unwrap_or(0);
@@ -142,17 +149,34 @@ fn mixed_stale_and_fresh_inputs_remain_honest() {
 #[test]
 fn critical_stale_inputs_fail_gate() {
     let root = seeded_artifact_root("bijux-stale-critical-gate");
-    run_generator(&root, &["artifacts/status/parity_drift_artifact.json"], false);
+    run_generator(
+        &root,
+        &["artifacts/status/parity_drift_artifact.json"],
+        false,
+    );
     let out = run_gate(&root, false);
-    assert!(!out.status.success(), "critical stale input should fail gate");
+    assert!(
+        !out.status.success(),
+        "critical stale input should fail gate"
+    );
 }
 
 #[test]
 fn warning_only_stale_inputs_are_tolerated_with_warning() {
     let root = seeded_artifact_root("bijux-stale-warning-gate");
     let payload = run_generator(&root, &["artifacts/status/dev_cli_next_report.json"], false);
-    assert_eq!(payload["summary"]["critical_stale_count"].as_u64().unwrap_or(99), 0);
-    assert!(payload["summary"]["warning_stale_count"].as_u64().unwrap_or(0) > 0);
+    assert_eq!(
+        payload["summary"]["critical_stale_count"]
+            .as_u64()
+            .unwrap_or(99),
+        0
+    );
+    assert!(
+        payload["summary"]["warning_stale_count"]
+            .as_u64()
+            .unwrap_or(0)
+            > 0
+    );
     let out = run_gate(&root, false);
     assert!(
         out.status.success(),
@@ -166,8 +190,15 @@ fn warning_only_stale_inputs_are_tolerated_with_warning() {
 fn ci_injection_mode_detects_stale_and_is_verifiable() {
     let root = seeded_artifact_root("bijux-stale-injection");
     let payload = run_generator(&root, &[], true);
-    assert!(payload["summary"]["injection_mode"].as_bool().unwrap_or(false));
-    assert!(payload["summary"]["critical_stale_count"].as_u64().unwrap_or(0) > 0);
+    assert!(payload["summary"]["injection_mode"]
+        .as_bool()
+        .unwrap_or(false));
+    assert!(
+        payload["summary"]["critical_stale_count"]
+            .as_u64()
+            .unwrap_or(0)
+            > 0
+    );
     let out = run_gate(&root, true);
     assert!(
         out.status.success(),

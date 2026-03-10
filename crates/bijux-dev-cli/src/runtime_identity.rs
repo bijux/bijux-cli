@@ -138,8 +138,8 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use super::{build_report, RuntimeIdentityInput};
     use super::InstallHealthReport;
+    use super::{build_report, RuntimeIdentityInput};
 
     #[test]
     fn runtime_identity_report_shape_is_stable() {

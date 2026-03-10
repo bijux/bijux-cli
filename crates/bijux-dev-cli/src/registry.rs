@@ -25,7 +25,10 @@ pub fn build_report_from_query(
 ) -> Value {
     let mut ownership: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for row in namespaces {
-        ownership.entry(row.owner.clone()).or_default().push(row.name.clone());
+        ownership
+            .entry(row.owner.clone())
+            .or_default()
+            .push(row.name.clone());
     }
 
     json!({
@@ -46,8 +49,10 @@ mod tests {
 
     #[test]
     fn registry_report_shape_is_stable() {
-        let context =
-            ReportContext { generated_at: String::new(), data_source: "routing".to_string() };
+        let context = ReportContext {
+            generated_at: String::new(),
+            data_source: "routing".to_string(),
+        };
         let namespaces = vec![NamespaceInventoryRow {
             name: "dev".to_string(),
             reserved: true,
@@ -55,8 +60,17 @@ mod tests {
         }];
 
         let report = build_report_from_query(&namespaces, &context);
-        assert!(report.get("registry").is_some(), "registry field must exist");
-        assert!(report.get("ownership").is_some(), "ownership field must exist");
-        assert!(report.get("precedence").is_some(), "precedence field must exist");
+        assert!(
+            report.get("registry").is_some(),
+            "registry field must exist"
+        );
+        assert!(
+            report.get("ownership").is_some(),
+            "ownership field must exist"
+        );
+        assert!(
+            report.get("precedence").is_some(),
+            "precedence field must exist"
+        );
     }
 }
