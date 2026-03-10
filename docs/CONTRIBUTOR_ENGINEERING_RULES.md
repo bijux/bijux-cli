@@ -14,6 +14,7 @@ This document defines contributor and reviewer rules that keep milestone claims 
 8. Do not add a public API without a consumer or an explicit reason documented in status artifacts.
 9. Treat `bijux dev cli` as the default maintainer cockpit for automation and diagnostics.
 10. Prefer `bijux dev cli` commands over new one-off scripts; any new `scripts/*` file requires a checked-in justification entry in `.github/script_additions_allowlist.txt`.
+11. Treat parity artifacts as the only valid source for completion claims; if a claim is not reflected in `artifacts/parity/*`, it is not complete.
 
 ## Required Evidence
 - `artifacts/parity/command_parity_matrix.json`

@@ -6,10 +6,13 @@
 3. Confirm install channel verification:
    `bash scripts/verify-install-channels.sh`
 4. Confirm docs build succeeds.
-5. Create semantic tag `vX.Y.Z` on the release commit.
-6. Verify PyPI publish status for `bijux-cli`.
-7. Verify GitHub release assets include:
+5. Review parity artifacts before release claims:
+   - `artifacts/parity/command_parity_matrix.json`
+   - `artifacts/parity/command_parity_summary.txt`
+   - `artifacts/parity/parity_regression_summary.txt`
+6. Create semantic tag `vX.Y.Z` on the release commit.
+7. Verify PyPI publish status for `bijux-cli`.
+8. Verify GitHub release assets include:
    checksum file, artifact manifest, release tarball, dist files.
-8. Verify `bijux version` and `bijux cli doctor` on a clean environment.
-9. Announce release with changelog link.
-
+9. Verify `bijux version` and `bijux cli doctor` on a clean environment.
+10. Announce release with changelog link.
