@@ -26,6 +26,10 @@ STATUS_FILES = [
     STATUS_DIR / "what_is_deferred.json",
     STATUS_DIR / "what_is_intentionally_different.json",
     STATUS_DIR / "what_is_unproven.json",
+    STATUS_DIR / "install_neutrality_report.json",
+    STATUS_DIR / "active_runtime_report.json",
+    STATUS_DIR / "package_health_report.json",
+    STATUS_DIR / "install_health_report.json",
 ]
 
 
