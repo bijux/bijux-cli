@@ -19,7 +19,7 @@ The architecture principle is: one law, many entrypoints.
 
 ## Non-Negotiable Constraints
 
-- Python bridge must execute via `bijux_cli_core::app::run_app`.
+- Python bridge must execute via `bijux_cli::app::run_app`.
 - Python bridge must not define independent routing rules.
 - Python bridge must not define independent exit-code mapping policy.
 - Python bridge must not define independent output semantics.

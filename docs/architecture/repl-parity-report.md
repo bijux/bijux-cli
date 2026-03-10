@@ -14,12 +14,12 @@ Python references:
 
 Rust references:
 
-- `crates/bijux-cli-core/src/repl/session.rs`
-- `crates/bijux-cli-core/src/repl/history.rs`
-- `crates/bijux-cli-core/src/repl/completion.rs`
-- `crates/bijux-cli-core/src/repl/execution.rs`
-- `crates/bijux-cli-core/tests/bin_surface/transcript_parity.rs`
-- `crates/bijux-cli-core/tests/bin_surface/transcript_cases.rs`
+- `crates/bijux-cli/src/repl/session.rs`
+- `crates/bijux-cli/src/repl/history.rs`
+- `crates/bijux-cli/src/repl/completion.rs`
+- `crates/bijux-cli/src/repl/execution.rs`
+- `crates/bijux-cli/tests/bin_surface/transcript_parity.rs`
+- `crates/bijux-cli/tests/bin_surface/transcript_cases.rs`
 
 ## Baseline status for 341-360
 
@@ -46,7 +46,7 @@ Rust references:
 
 ## Key implementation updates
 
-1. REPL command execution now routes through `bijux_cli_core::app::run_app` using session policy-derived global flags.
+1. REPL command execution now routes through `bijux_cli::app::run_app` using session policy-derived global flags.
 2. This aligns non-interactive and interactive behavior for output envelopes, stream routing, and exit semantics.
 3. REPL keeps meta-command controls (`:set`, `:help`, `:quit`) while delegating normal command behavior to core.
 4. Non-defensible REPL-only behavior `:plugin reload` was removed.

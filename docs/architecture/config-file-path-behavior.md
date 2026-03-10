@@ -33,7 +33,7 @@ These decisions intentionally prioritize deterministic machine behavior and pari
 
 ## Coverage map
 
-- Parser/write behavior tests: `crates/bijux-cli-core/src/config/storage.rs` unit tests.
-- Path precedence tests: `crates/bijux-cli-core/tests/bin_surface/config_parity.rs`.
-- Unreadable/unwritable path tests: `crates/bijux-cli-core/tests/config_parity.rs`.
-- Default/env path resolution tests: `crates/bijux-cli-core/src/install/mod.rs`.
+- Parser/write behavior tests: `crates/bijux-cli/src/config/storage.rs` unit tests.
+- Path precedence tests: `crates/bijux-cli/tests/bin_surface/config_parity.rs`.
+- Unreadable/unwritable path tests: `crates/bijux-cli/tests/config_parity.rs`.
+- Default/env path resolution tests: `crates/bijux-cli/src/install/mod.rs`.

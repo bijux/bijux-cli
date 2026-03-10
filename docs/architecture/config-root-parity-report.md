@@ -14,14 +14,14 @@ This matches Python root `config` baseline behavior where output is an entry map
 ## Coverage
 
 - Core behavior tests:
-  - `crates/bijux-cli-core/tests/config_root_listing.rs`
+  - `crates/bijux-cli/tests/config_root_listing.rs`
 - Binary behavior tests:
-  - `crates/bijux-cli-core/tests/bin_surface/config_root_parity.rs`
+  - `crates/bijux-cli/tests/bin_surface/config_root_parity.rs`
 - Snapshot artifacts:
-  - `crates/bijux-cli-core/tests/snapshots/config_root_text.txt`
-  - `crates/bijux-cli-core/tests/snapshots/config_root_json_pretty.txt`
-  - `crates/bijux-cli-core/tests/snapshots/config_root_json_compact.txt`
-  - `crates/bijux-cli-core/tests/snapshots/config_root_yaml_pretty.txt`
+  - `crates/bijux-cli/tests/snapshots/config_root_text.txt`
+  - `crates/bijux-cli/tests/snapshots/config_root_json_pretty.txt`
+  - `crates/bijux-cli/tests/snapshots/config_root_json_compact.txt`
+  - `crates/bijux-cli/tests/snapshots/config_root_yaml_pretty.txt`
 
 ## Task matrix
 

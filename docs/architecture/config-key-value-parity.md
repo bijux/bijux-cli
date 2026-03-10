@@ -4,7 +4,7 @@ This document records completion for tasks 61-80.
 
 ## Implemented behavior
 
-- Key normalization and validation are enforced in `crates/bijux-cli-core/src/config/validation.rs`.
+- Key normalization and validation are enforced in `crates/bijux-cli/src/config/validation.rs`.
 - Value validation is enforced in the same module and consumed by config command execution.
 - Error normalization maps key/value usage failures to usage exit code semantics.
 
@@ -36,6 +36,6 @@ This document records completion for tasks 61-80.
 
 ## Sources
 
-- `crates/bijux-cli-core/src/config/validation.rs`
-- `crates/bijux-cli-core/tests/config_key_value_parity.rs`
-- `crates/bijux-cli-core/tests/config_parity.rs`
+- `crates/bijux-cli/src/config/validation.rs`
+- `crates/bijux-cli/tests/config_key_value_parity.rs`
+- `crates/bijux-cli/tests/config_parity.rs`

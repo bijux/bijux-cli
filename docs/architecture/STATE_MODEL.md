@@ -4,8 +4,8 @@ This document describes the current runtime state model for `bijux` based on exe
 
 ## Canonical Providers
 
-- Path provider: `crates/bijux-cli-core/src/app.rs::resolve_state_paths`
-- Atomic write provider: `crates/bijux-cli-core/src/install/io.rs::atomic_write_text`
+- Path provider: `crates/bijux-cli/src/app.rs::resolve_state_paths`
+- Atomic write provider: `crates/bijux-cli/src/install/io.rs::atomic_write_text`
 - Plugin registry write transaction: `crates/bijux-cli-plugin/src/registry.rs::save_registry` and `update_registry`
 
 All writable state surfaces are expected to route through these providers.

@@ -14,4 +14,4 @@ Evidence sources:
 - `artifacts/status/plugin_lifecycle_failure_injection_report.json`
 - `artifacts/status/plugin_rollback_proof_report.json`
 - `crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs`
-- `crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs`
+- `crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs`

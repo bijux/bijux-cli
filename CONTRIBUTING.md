@@ -261,14 +261,14 @@ This section defines engineering standards for the Rust workspace in `bijux-cli`
 
 ### Workspace layout
 - `crates/bijux-cli-contracts`: shared durable contracts
-- `crates/bijux-cli-core`: execution kernel primitives
+- `crates/bijux-cli`: execution kernel primitives
 - `crates/bijux-cli-routing`: command graph and resolution
 - `crates/bijux-cli-output`: output encoders and envelopes
 - `crates/bijux-cli-repl`: interactive shell orchestration
 - `crates/bijux-cli-plugin`: plugin lifecycle boundaries
 - `crates/bijux-cli-python`: Python compatibility bridge
-- `crates/bijux-cli-core::install`: install/update flow boundaries
-- `crates/bijux-cli-core`: binary entrypoint and core runtime
+- `crates/bijux-cli::install`: install/update flow boundaries
+- `crates/bijux-cli`: binary entrypoint and core runtime
 
 ### Non-negotiable rules
 - `unsafe` is forbidden workspace-wide.
@@ -284,7 +284,7 @@ This section defines engineering standards for the Rust workspace in `bijux-cli`
 - `cargo check-workspace`
 - `cargo lint`
 - `cargo test --workspace`
-- `cargo test -p bijux-cli-core --test architecture_boundaries`
+- `cargo test -p bijux-cli --test architecture_boundaries`
 
 ### Dependency policy
 - Keep dependencies minimal and justified.

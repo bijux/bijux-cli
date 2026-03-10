@@ -5,17 +5,17 @@ This document defines stable ownership boundaries for Rust config behavior.
 ## Ownership decisions
 
 - Config contracts: `bijux-cli-routing` (`contracts` module)
-- Config storage and path compatibility: `bijux-cli-core::install`
+- Config storage and path compatibility: `bijux-cli::install`
 - Config command routing and identity: `bijux-cli-routing`
-- Config execution semantics and command handlers: `bijux-cli-core`
+- Config execution semantics and command handlers: `bijux-cli`
 - Config output rendering: `bijux-cli-output`
-- Process bootstrap only: `bijux-cli-core`
+- Process bootstrap only: `bijux-cli`
 
 ## Boundary rules
 
-- `bijux-cli-core` must not contain config parsing, validation, migration, or file-write logic.
+- `bijux-cli` must not contain config parsing, validation, migration, or file-write logic.
 - `bijux-cli-routing` must parse argv and provide route identity only.
-- `bijux-cli-core` executes config commands through one app entrypoint and config service API.
+- `bijux-cli` executes config commands through one app entrypoint and config service API.
 - Config file persistence must remain in storage/repository components, separate from output concerns.
 
 ## Config API shape in core
@@ -34,11 +34,11 @@ This document defines stable ownership boundaries for Rust config behavior.
 ## Domain placement
 
 - Durable and cross-crate config source contracts remain in `bijux-cli-routing` (`contracts` module).
-- Storage compatibility and path resolution remain in `bijux-cli-core::install`.
-- Command handler internals remain in `bijux-cli-core` behind config service/repository boundaries.
+- Storage compatibility and path resolution remain in `bijux-cli::install`.
+- Command handler internals remain in `bijux-cli` behind config service/repository boundaries.
 
 ## Enforced architecture tests
 
-- `crates/bijux-cli-core/tests/config_architecture_boundaries.rs`
+- `crates/bijux-cli/tests/config_architecture_boundaries.rs`
   - verifies `bin` stays free of config business logic
   - verifies config storage stays free of output formatting logic

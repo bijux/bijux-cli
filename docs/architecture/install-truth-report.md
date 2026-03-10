@@ -4,8 +4,8 @@ Scope: install and packaging truth tasks `361-380`.
 
 ## Evidence
 
-- End-to-end channel and path diagnostics: `crates/bijux-cli-core/src/install/mod.rs`
-- Runtime identity and ambiguity diagnostics: `crates/bijux-cli-core/src/app.rs`
+- End-to-end channel and path diagnostics: `crates/bijux-cli/src/install/mod.rs`
+- Runtime identity and ambiguity diagnostics: `crates/bijux-cli/src/app.rs`
 - Maintainer install assumptions command surface: `bijux dev cli package-health`
 - Generated artifacts:
   - `artifacts/status/install_source_diagnostics.json`

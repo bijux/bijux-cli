@@ -44,4 +44,4 @@ The bridge explicitly does not own:
 3. Core execution semantics.
 4. Output envelope rendering policy.
 
-Those remain in `bijux-cli-core`, `bijux-cli-routing`, and `bijux-cli-output`.
+Those remain in `bijux-cli`, `bijux-cli-routing`, and `bijux-cli-output`.

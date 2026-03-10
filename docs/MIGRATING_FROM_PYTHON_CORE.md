@@ -15,7 +15,7 @@ The `bijux` command is the product surface. Migration work must preserve documen
 ## Migration stages
 1. Implement Rust contracts and typed models in `bijux-cli-contracts`.
 2. Implement parser and route graph in `bijux-cli-routing`.
-3. Implement execution kernel in `bijux-cli-core`.
+3. Implement execution kernel in `bijux-cli`.
 4. Implement output and error emission in `bijux-cli-output`.
 5. Implement plugin and REPL boundaries in dedicated crates.
 6. Run parity checks against captured Python behavior.

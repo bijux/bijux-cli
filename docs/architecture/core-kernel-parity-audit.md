@@ -1,7 +1,7 @@
 # Core Kernel Parity Audit
 
 Date: 2026-03-09
-File: `crates/bijux-cli-core/src/kernel.rs`
+File: `crates/bijux-cli/src/kernel.rs`
 
 ## Path Classification
 
