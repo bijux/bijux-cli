@@ -281,6 +281,7 @@ jobs:
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
           python3 scripts/status/generate_migration_notes.py
+          python3 scripts/status/generate_next_phase_priorities.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -344,6 +345,10 @@ jobs:
       - name: Performance regression gate
         run: |
           python3 scripts/status/enforce_performance_regression_gates.py
+
+      - name: Next-phase evidence gate
+        run: |
+          python3 scripts/status/enforce_next_phase_evidence.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -568,6 +573,21 @@ jobs:
             artifacts/status/migration_notes_plugin_lifecycle.json
             artifacts/status/migration_notes_state_behavior.json
             artifacts/status/migration_notes.txt
+            artifacts/status/next_phase.json
+            artifacts/status/next_phase.txt
+            artifacts/status/ranked_python_only_behaviors.json
+            artifacts/status/ranked_parity_partial_behaviors.json
+            artifacts/status/ranked_plugin_gaps.json
+            artifacts/status/ranked_repl_gaps.json
+            artifacts/status/ranked_packaging_gaps.json
+            artifacts/status/ranked_state_management_gaps.json
+            artifacts/status/ranked_untested_corruption_scenarios.json
+            artifacts/status/ranked_untested_ambiguity_scenarios.json
+            artifacts/status/ranked_crate_complexity.json
+            artifacts/status/ranked_api_simplification_candidates.json
+            artifacts/status/ranked_docs_deletion_candidates.json
+            artifacts/status/ranked_script_deletion_candidates.json
+            artifacts/status/ranked_weak_test_replacements.json
           if-no-files-found: warn
           retention-days: 14
 
