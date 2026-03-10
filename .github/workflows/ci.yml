@@ -274,6 +274,8 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --text > artifacts/status/plugin_health_report.txt
           cargo run -q -p bijux-cli-bin -- dev cli crate-health --json --no-pretty > artifacts/status/duplication_hotspots.json
           cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
+          cargo run -q -p bijux-cli-bin -- dev cli state-doctor --json --no-pretty > artifacts/status/state_doctor_report.json
+          cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
 
@@ -476,6 +478,8 @@ jobs:
             artifacts/parity/config_parity_report.json
             artifacts/parity/history_parity_report.json
             artifacts/parity/memory_parity_report.json
+            artifacts/status/state_doctor_report.json
+            artifacts/status/state_doctor_report.txt
           if-no-files-found: warn
           retention-days: 14
 
