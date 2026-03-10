@@ -80,7 +80,9 @@ pub fn build_coverage_report(workspace_root: &Path) -> Value {
     let coverage = if total_public == 0 {
         1.0
     } else {
-        (total_docs as f64 / total_public as f64).min(1.0)
+        let docs_count = u32::try_from(total_docs).unwrap_or(u32::MAX);
+        let public_count = u32::try_from(total_public).unwrap_or(u32::MAX);
+        (f64::from(docs_count) / f64::from(public_count)).min(1.0)
     };
     json!({
         "coverage": {
@@ -98,7 +100,7 @@ pub fn build_coverage_report(workspace_root: &Path) -> Value {
 pub fn build_broken_links_report(workspace_root: &Path) -> Value {
     let mut missing = Vec::new();
     for path in collect_files(&workspace_root.join("docs")) {
-        if !path.extension().is_some_and(|ext| ext == "md") {
+        if path.extension().is_none_or(|ext| ext != "md") {
             continue;
         }
         let text = read(&path);

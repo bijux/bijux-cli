@@ -53,7 +53,13 @@ fn stale_generated_artifacts(root: &Path) -> Vec<String> {
                 || path
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .is_some_and(|name| name.contains("stale") || name.ends_with(".bak"))
+                    .is_some_and(|name| {
+                        name.contains("stale")
+                            || Path::new(name)
+                                .extension()
+                                .and_then(|ext| ext.to_str())
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                    })
         })
         .map(|path| rel(&path, root))
         .collect()
@@ -68,7 +74,13 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
                 && path
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .is_some_and(|name| name.contains(".old.") || name.ends_with(".bak"))
+                    .is_some_and(|name| {
+                        name.contains(".old.")
+                            || Path::new(name)
+                                .extension()
+                                .and_then(|ext| ext.to_str())
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                    })
         })
         .map(|path| rel(&path, root))
         .collect()

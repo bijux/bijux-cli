@@ -10,12 +10,10 @@ pub fn build_report_from_query(
 ) -> Value {
     let routes: Vec<Value> = routes
         .iter()
-        .cloned()
         .map(|segments| json!({"segments": segments, "owner": "bijux-cli", "source": "built-in"}))
         .collect();
     let aliases: Vec<Value> = aliases
         .iter()
-        .cloned()
         .map(|(alias, canonical)| {
             json!({"alias": alias, "canonical": canonical, "source": "compatibility-alias"})
         })

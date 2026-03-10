@@ -220,7 +220,7 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
         {
             continue;
         }
-        if !file.extension().is_some_and(|ext| ext == "py") {
+        if file.extension().is_none_or(|ext| ext != "py") {
             continue;
         }
         let text = fs::read_to_string(&file).unwrap_or_default();
@@ -331,6 +331,7 @@ pub fn build_python_capture_report(workspace_root: &Path) -> Value {
 }
 
 /// Builds replacement for `scripts/generate-provenance-statement.sh`.
+#[must_use]
 pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value {
     let generated_at = std::process::Command::new("date")
         .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
