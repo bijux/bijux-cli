@@ -74,6 +74,7 @@ fn enforces_internal_crate_boundaries() {
         ("bijux-cli-evidence", BTreeSet::new()),
         ("bijux-cli-python", BTreeSet::from(["bijux-cli"])),
     ]);
+    let mut observed_internal_packages = BTreeSet::new();
 
     for pkg in packages {
         let Some(name) = pkg.get("name").and_then(Value::as_str) else {
@@ -82,6 +83,7 @@ fn enforces_internal_crate_boundaries() {
         if !is_internal_workspace_crate(name) {
             continue;
         }
+        observed_internal_packages.insert(name.to_string());
 
         let Some(expected_deps) = expected.get(name) else {
             panic!("unexpected internal package present in workspace: {name}");
@@ -98,4 +100,11 @@ fn enforces_internal_crate_boundaries() {
             "boundary mismatch for {name}: observed {observed:?}, expected {expected_owned:?}"
         );
     }
+
+    let expected_internal_packages: BTreeSet<String> =
+        expected.keys().map(|name| (*name).to_string()).collect();
+    assert_eq!(
+        observed_internal_packages, expected_internal_packages,
+        "workspace package set drifted; boundary map must be updated intentionally"
+    );
 }
