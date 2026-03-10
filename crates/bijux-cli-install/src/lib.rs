@@ -4,6 +4,7 @@
 mod compatibility;
 mod completion;
 mod diagnostics;
+mod io;
 mod metadata;
 mod paths;
 mod state;
@@ -19,6 +20,7 @@ pub use completion::{
     post_install_hint, CompletionShell,
 };
 pub use diagnostics::{install_health_report, InstallHealthReport};
+pub use io::atomic_write_text;
 pub use metadata::{
     canonical_crate_name, cargo_install_strategy, pip_install_strategy, Ecosystem, InstallStrategy,
     PackageChannel, CANONICAL_EXECUTABLE,

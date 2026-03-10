@@ -5,6 +5,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+use crate::atomic_write_text;
+
 /// Environment variable used for explicit config file path.
 pub const ENV_CONFIG_PATH: &str = "BIJUXCLI_CONFIG";
 /// Environment variable used for explicit history file path.
@@ -169,10 +171,6 @@ pub fn write_compatibility_config(
     path: &Path,
     config: &CompatibilityConfig,
 ) -> Result<(), CompatibilityError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
     let mut lines = Vec::new();
     if let Some(value) = &config.config_file {
         lines.push(format!("{ENV_CONFIG_PATH}={}", value.display()));
@@ -193,17 +191,7 @@ pub fn write_compatibility_config(
         buf
     };
 
-    let temp_path = path.with_extension("tmp");
-    {
-        let mut temp =
-            fs::OpenOptions::new().create(true).truncate(true).write(true).open(&temp_path)?;
-        use std::io::Write as _;
-        temp.write_all(rendered.as_bytes())?;
-        temp.sync_all()?;
-    }
-
-    fs::rename(temp_path, path)?;
-    Ok(())
+    atomic_write_text(path, &rendered)
 }
 
 fn select_path(

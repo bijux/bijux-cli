@@ -2,8 +2,9 @@
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
+
+use bijux_cli_install::atomic_write_text;
 
 use super::error::ConfigError;
 use super::serialization::{decode_quoted_value, render_env};
@@ -44,22 +45,9 @@ impl ConfigRepository for FileConfigRepository {
     }
 
     fn save(&self, path: &Path, values: &BTreeMap<String, String>) -> Result<(), ConfigError> {
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|err| ConfigError::persistence(err.to_string()))?;
-        }
-
         let rendered = render_env(values);
-        let temp_path = path.with_extension("tmp");
-        let mut temp = fs::OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&temp_path)
+        atomic_write_text(path, &rendered)
             .map_err(|err| ConfigError::persistence(err.to_string()))?;
-        temp.write_all(rendered.as_bytes())
-            .and_then(|_| temp.sync_all())
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
-        fs::rename(temp_path, path).map_err(|err| ConfigError::persistence(err.to_string()))?;
         Ok(())
     }
 

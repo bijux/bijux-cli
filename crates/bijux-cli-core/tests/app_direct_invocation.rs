@@ -16,6 +16,9 @@ use bijux_cli_routing as _;
 use clap as _;
 use futures as _;
 use serde_json::Value;
+use std::fs;
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn baseline_flags() -> GlobalFlags {
     GlobalFlags {
@@ -267,6 +270,54 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
             _ => panic!("unexpected command case"),
         }
     }
+}
+
+fn make_temp_dir(name: &str) -> PathBuf {
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let path = std::env::temp_dir().join(format!("bijux-state-law-{name}-{nanos}"));
+    fs::create_dir_all(&path).expect("mkdir");
+    path
+}
+
+#[test]
+fn state_audit_reports_all_known_state_files() {
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "state-audit".to_string(),
+    ])
+    .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload["paths"]["config"].is_object());
+    assert!(payload["paths"]["history"].is_object());
+    assert!(payload["paths"]["plugins_registry"].is_object());
+    assert!(payload["paths"]["memory"].is_object());
+}
+
+#[test]
+fn state_read_paths_follow_normalized_resolution_with_flag_overrides() {
+    let temp = make_temp_dir("resolved-paths");
+    let custom_config = temp.join("custom.env");
+    fs::write(&custom_config, "BIJUXCLI_ALPHA=1\n").expect("seed config");
+
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "state-audit".to_string(),
+        "--config-path".to_string(),
+        custom_config.display().to_string(),
+    ])
+    .expect("run_app should succeed");
+
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(
+        payload["paths"]["config"]["path"].as_str(),
+        Some(custom_config.to_string_lossy().as_ref())
+    );
 }
 
 #[test]
