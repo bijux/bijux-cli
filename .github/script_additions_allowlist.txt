@@ -17,3 +17,4 @@ scripts/status/generate_install_neutrality_reports.py # generate install-neutral
 scripts/status/enforce_install_neutrality_gate.py # enforce install ambiguity hardening tests and install-neutrality evidence completeness in CI
 scripts/parity/generate_command_law_reports.py # generate command-level precedence/flags/stream/exit/help/machine-output reports and consolidated parity dashboard
 scripts/parity/enforce_parity_dashboard_gate.py # enforce parity dashboard completeness and command-law report presence for release evidence
+scripts/status/generate_state_audit_reports.py # generate unified state behavior/corruption/rollback/path-resolution/doctor-snapshot artifacts and machine audit payload

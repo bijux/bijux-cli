@@ -342,6 +342,13 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
     assert!(payload["reports"]["state_behavior_coverage"].is_object());
     assert!(payload["reports"]["state_paths_report"].is_object());
     assert!(payload["reports"]["state_corruption_health_report"].is_object());
+    assert!(payload["reports"]["state_migration_status"].is_object());
+    assert!(payload["reports"]["unified_state_behavior_report"].is_object());
+    assert!(payload["reports"]["unified_state_corruption_report"].is_object());
+    assert!(payload["reports"]["unified_state_rollback_report"].is_object());
+    assert!(payload["reports"]["unified_state_path_resolution_report"].is_object());
+    assert!(payload["reports"]["unified_state_doctor_snapshots"].is_object());
+    assert!(payload["reports"]["unified_state_audit_payload"].is_object());
     assert!(payload["reports"]["snapshot_coverage"].is_object());
     assert!(payload["reports"]["stream_coverage"].is_object());
     assert!(payload["reports"]["exit_code_coverage"].is_object());

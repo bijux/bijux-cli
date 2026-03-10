@@ -301,6 +301,7 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --json --no-pretty > artifacts/status/state_doctor_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
+          python3 scripts/status/generate_state_audit_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
 
@@ -744,6 +745,13 @@ jobs:
             artifacts/status/state_write_guarantees.json
             artifacts/status/state_recovery_guarantees.json
             artifacts/status/state_complexity_report.json
+            artifacts/status/state_migration_status.json
+            artifacts/status/unified_state_behavior_report.json
+            artifacts/status/unified_state_corruption_report.json
+            artifacts/status/unified_state_rollback_report.json
+            artifacts/status/unified_state_path_resolution_report.json
+            artifacts/status/unified_state_doctor_snapshots.json
+            artifacts/status/unified_state_audit_payload.json
             artifacts/status/diagnostics_taxonomy.json
             artifacts/status/diagnostics_usefulness_review.json
             artifacts/status/plugin_scaffold_python_inventory.json

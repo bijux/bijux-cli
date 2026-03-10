@@ -1343,6 +1343,26 @@ fn route_response(
             let state_corruption = read_json_if_exists(
                 &root.join("artifacts/status/status_state_corruption_health_report.json"),
             );
+            let state_migration_status =
+                read_json_if_exists(&root.join("artifacts/status/state_migration_status.json"));
+            let unified_state_behavior = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_behavior_report.json"),
+            );
+            let unified_state_corruption = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_corruption_report.json"),
+            );
+            let unified_state_rollback = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_rollback_report.json"),
+            );
+            let unified_state_path_resolution = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_path_resolution_report.json"),
+            );
+            let unified_state_doctor_snapshots = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_doctor_snapshots.json"),
+            );
+            let unified_state_audit_payload = read_json_if_exists(
+                &root.join("artifacts/status/unified_state_audit_payload.json"),
+            );
             let snapshot_coverage =
                 read_json_if_exists(&root.join("artifacts/status/status_snapshot_coverage.json"));
             let stream_coverage =
@@ -1417,6 +1437,13 @@ fn route_response(
                     "state_behavior_coverage": state_behavior,
                     "state_paths_report": state_paths,
                     "state_corruption_health_report": state_corruption,
+                    "state_migration_status": state_migration_status,
+                    "unified_state_behavior_report": unified_state_behavior,
+                    "unified_state_corruption_report": unified_state_corruption,
+                    "unified_state_rollback_report": unified_state_rollback,
+                    "unified_state_path_resolution_report": unified_state_path_resolution,
+                    "unified_state_doctor_snapshots": unified_state_doctor_snapshots,
+                    "unified_state_audit_payload": unified_state_audit_payload,
                     "snapshot_coverage": snapshot_coverage,
                     "stream_coverage": stream_coverage,
                     "exit_code_coverage": exit_code_coverage,

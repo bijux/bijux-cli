@@ -31,6 +31,13 @@ def main() -> int:
         STATUS / "state_write_guarantees.json",
         STATUS / "state_recovery_guarantees.json",
         STATUS / "state_complexity_report.json",
+        STATUS / "state_migration_status.json",
+        STATUS / "unified_state_behavior_report.json",
+        STATUS / "unified_state_corruption_report.json",
+        STATUS / "unified_state_rollback_report.json",
+        STATUS / "unified_state_path_resolution_report.json",
+        STATUS / "unified_state_doctor_snapshots.json",
+        STATUS / "unified_state_audit_payload.json",
     ]
     for item in required:
         if not item.exists():
@@ -62,4 +69,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
