@@ -8,14 +8,23 @@ use serde_json::{json, Value};
 #[must_use]
 pub fn build_report(registry: &RouteRegistry) -> Value {
     let inventory = route_inventory(registry);
-    let routes: Vec<Value> = inventory
-        .routes
-        .into_iter()
+    build_report_from_query(&inventory.routes, &inventory.aliases)
+}
+
+/// Builds the maintainer route-audit report envelope from routing query rows.
+#[must_use]
+pub fn build_report_from_query(
+    routes: &[Vec<String>],
+    aliases: &[(Vec<String>, Vec<String>)],
+) -> Value {
+    let routes: Vec<Value> = routes
+        .iter()
+        .cloned()
         .map(|segments| json!({"segments": segments, "owner": "bijux-cli", "source": "built-in"}))
         .collect();
-    let aliases: Vec<Value> = inventory
-        .aliases
-        .into_iter()
+    let aliases: Vec<Value> = aliases
+        .iter()
+        .cloned()
         .map(|(alias, canonical)| {
             json!({"alias": alias, "canonical": canonical, "source": "compatibility-alias"})
         })
