@@ -8,6 +8,8 @@ use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -165,17 +167,12 @@ fn history_handles_huge_files_with_stable_tail_limit() {
 }
 
 #[test]
-fn history_preserves_duplicate_commands_and_ordering() {
-    let temp = make_temp_dir("duplicates");
-    let history_path = temp.join("dupes.json");
+fn history_resilience_keeps_valid_entries_when_malformed_rows_are_interleaved() {
+    let temp = make_temp_dir("malformed-interleaved");
+    let history_path = temp.join("interleaved.json");
     fs::write(
         &history_path,
-        serde_json::to_string(&vec![
-            serde_json::json!({"command":"status","timestamp":1.0}),
-            serde_json::json!({"command":"status","timestamp":2.0}),
-            serde_json::json!({"command":"doctor","timestamp":3.0}),
-        ])
-        .expect("json"),
+        "[{\"command\":\"status\",\"timestamp\":1},{\"command\":\"status\",\"timestamp\":2},\"bad\",null,{\"command\":\"doctor\",\"timestamp\":3}]",
     )
     .expect("write");
 

@@ -8,6 +8,8 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -36,23 +38,27 @@ fn make_temp_dir(name: &str) -> PathBuf {
 }
 
 #[test]
-fn inspect_supports_text_json_yaml_modes() {
+fn inspect_schema_consistency_holds_across_text_json_yaml_modes() {
     let json = run(&["inspect", "--format", "json", "--no-pretty"]);
     assert!(json.status.success());
     let payload = parse_json(&json.stdout);
     assert_eq!(payload["status"], "ok");
-    assert!(payload["route_sources"].is_array());
+    assert!(payload["route_sources"].as_array().is_some_and(|rows| !rows.is_empty()));
+    assert!(payload["builtins"].is_array());
+    assert!(payload.get("contracts").is_some());
 
     let yaml = run(&["inspect", "--format", "yaml", "--pretty"]);
     assert!(yaml.status.success());
     let yaml_text = String::from_utf8(yaml.stdout).expect("yaml utf-8");
     assert!(yaml_text.contains("status: ok"));
     assert!(yaml_text.contains("route_sources:"));
+    assert!(yaml_text.contains("contracts:"));
 
     let text = run(&["inspect", "--format", "text"]);
     assert!(text.status.success());
     let text_body = String::from_utf8(text.stdout).expect("text utf-8");
-    assert!(text_body.contains('"'));
+    assert!(text_body.contains("status"));
+    assert!(text_body.contains("route_sources"));
 }
 
 #[test]

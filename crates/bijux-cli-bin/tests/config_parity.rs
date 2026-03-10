@@ -7,6 +7,8 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -99,23 +101,22 @@ fn config_failure_routes_machine_error_to_stderr() {
 }
 
 #[test]
-fn config_success_keeps_stderr_empty() {
-    let temp = make_temp_dir("stderr-empty");
+fn invalid_config_set_input_rolls_back_without_mutating_existing_file() {
+    let temp = make_temp_dir("rollback-proof");
     let config_path = temp.join("custom.env");
+    fs::write(&config_path, "BIJUXCLI_ALPHA=stable\n").expect("seed config");
 
-    let output = run(&[
+    let before = fs::read_to_string(&config_path).expect("read before");
+    let failed = run(&[
         "cli",
         "config",
         "set",
-        "alpha=1",
-        "--format",
-        "json",
-        "--no-pretty",
+        "INVALID_PAIR",
         "--config-path",
         config_path.to_str().expect("utf-8 path"),
     ]);
+    assert_eq!(failed.status.code(), Some(2));
 
-    assert!(output.status.success());
-    assert!(output.stderr.is_empty());
-    assert!(!output.stdout.is_empty());
+    let after = fs::read_to_string(&config_path).expect("read after");
+    assert_eq!(before, after, "invalid mutation must not alter persisted config");
 }

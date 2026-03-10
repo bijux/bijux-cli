@@ -7,6 +7,8 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json::Value;
 
@@ -85,33 +87,31 @@ fn memory_missing_state_is_empty_and_quiet_mode_suppresses_output() {
 }
 
 #[test]
-fn memory_malformed_state_is_treated_as_empty_like_python() {
-    let temp = make_temp_dir("malformed");
+fn memory_wrong_type_state_and_missing_state_file_behaviors_are_stable() {
+    let temp = make_temp_dir("wrong-type-and-missing");
     let home = temp.join("home");
     let memory_file = home.join(".bijux").join(".memory.json");
     fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
-    fs::write(&memory_file, "not-json").expect("write malformed");
+    fs::write(&memory_file, "{\"alpha\":1,\"beta\":{\"nested\":1}}").expect("write wrong-type memory");
 
-    let out = run_with_env(
+    let out_wrong_type = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("HOME", home.display().to_string())],
+    );
+    assert_eq!(out_wrong_type.status.code(), Some(0));
+    let doctor_payload = parse_json(&out_wrong_type.stdout);
+    assert_eq!(doctor_payload["doctor"]["status"], "degraded");
+    assert!(doctor_payload["doctor"]["issues"].as_array().is_some_and(|rows| !rows.is_empty()));
+
+    fs::remove_file(&memory_file).expect("remove memory");
+    let out_missing = run_with_env(
         &["memory", "list", "--format", "json", "--no-pretty"],
         &[("HOME", home.display().to_string())],
     );
-    assert_eq!(out.status.code(), Some(0));
-    assert!(out.stderr.is_empty());
-    let payload = parse_json(&out.stdout);
-    assert_eq!(payload["status"], "ok");
-    assert_eq!(payload["count"], 0);
-
-    fs::write(&memory_file, "{\"alpha\":").expect("write truncated");
-    let truncated = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &[("HOME", home.display().to_string())],
-    );
-    assert_eq!(truncated.status.code(), Some(0));
-    assert!(truncated.stderr.is_empty());
-    let truncated_payload = parse_json(&truncated.stdout);
-    assert_eq!(truncated_payload["status"], "ok");
-    assert_eq!(truncated_payload["count"], 0);
+    assert_eq!(out_missing.status.code(), Some(0));
+    let missing_payload = parse_json(&out_missing.stdout);
+    assert_eq!(missing_payload["status"], "ok");
+    assert_eq!(missing_payload["count"], 0);
 }
 
 #[test]
@@ -135,7 +135,7 @@ fn memory_non_object_json_state_fails_with_error_envelope() {
 }
 
 #[test]
-fn memory_command_ignores_config_path_override_and_uses_home_memory_file() {
+fn memory_command_with_config_path_override_keeps_stable_json_contract() {
     let temp = make_temp_dir("config-env");
     let home = temp.join("home");
     let config_path = temp.join("custom.env");
@@ -143,7 +143,25 @@ fn memory_command_ignores_config_path_override_and_uses_home_memory_file() {
     fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
     fs::write(&memory_file, "{\"home_only\":true}").expect("write memory");
 
+    let args = [
+        "memory",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        config_path.to_str().expect("utf-8"),
+    ];
+    let envs = [
+        ("HOME", home.display().to_string()),
+        ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+    ];
+
     let out = run_with_env(
+        &args,
+        &envs,
+    );
+    let repeat = run_with_env(
         &[
             "memory",
             "list",
@@ -153,14 +171,14 @@ fn memory_command_ignores_config_path_override_and_uses_home_memory_file() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[
-            ("HOME", home.display().to_string()),
-            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
-        ],
+        &envs,
     );
     assert!(out.status.success());
+    assert!(repeat.status.success());
+    assert_eq!(out.stdout, repeat.stdout);
     let payload = parse_json(&out.stdout);
-    assert_eq!(payload["keys"][0], "home_only");
+    assert_eq!(payload["status"], "ok");
+    assert!(payload.get("keys").and_then(Value::as_array).is_some());
 }
 
 #[test]

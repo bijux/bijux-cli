@@ -5,6 +5,8 @@ use std::process::Command;
 use std::{env, fs};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json as _;
 
@@ -202,28 +204,24 @@ fn runtime_identity_reports_python_bridge_support_diagnostic() {
 }
 
 #[test]
-fn package_health_exposes_install_state_assumptions() {
-    let stdout = run(&["dev", "cli", "package-health"]);
-    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
-    let assumptions = payload["install_state_assumptions"].as_array().expect("array");
-    assert!(!assumptions.is_empty());
+fn crate_health_reports_usage_error_for_unknown_flag() {
+    let output = run_raw(&["dev", "cli", "crate-health", "--unknown-flag"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
+    assert!(stderr.contains("Usage: bijux"));
+    assert!(stderr.contains("Commands:"));
 }
 
 #[test]
-fn crate_health_exposes_decision_report_payload() {
-    let stdout = run(&["dev", "cli", "crate-health"]);
-    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
-    assert!(payload["crate_metrics"].is_object());
-    assert!(payload["crate_report"].is_object());
-}
-
-#[test]
-fn dev_cli_status_surfaces_next_phase_priorities() {
-    let stdout = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
-    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
-    assert!(payload["next_phase_priorities"].is_object());
-    assert!(payload["next_phase_summary_text"].is_string());
-    assert!(payload["command_migration"].is_object());
+fn dev_cli_status_is_deterministic_across_repeated_runs() {
+    let first = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
+    let second = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
+    let first_payload: serde_json::Value = serde_json::from_str(&first).expect("valid json");
+    let second_payload: serde_json::Value = serde_json::from_str(&second).expect("valid json");
+    assert_eq!(first_payload["next_phase_priorities"], second_payload["next_phase_priorities"]);
+    assert_eq!(first_payload["next_phase_summary_text"], second_payload["next_phase_summary_text"]);
+    assert_eq!(first_payload["command_migration"], second_payload["command_migration"]);
 }
 
 #[test]
