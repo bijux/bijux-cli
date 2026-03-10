@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "paths": {
+    "rollback_preserved": [
+      "failed load keeps previous coherent config"
+    ],
+    "self_recovery": [
+      "repair input and rerun command to success"
+    ],
+    "stable_failure": [
+      "usage/validation failure with unchanged file content"
+    ]
+  },
+  "scope": "config corruption recovery classification",
+  "status": "complete",
+  "tasks": [
+    138
+  ]
+}

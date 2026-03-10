@@ -1,0 +1,25 @@
+{
+  "classes": {
+    "critical": [
+      "write-path panic",
+      "state file replacement with empty content"
+    ],
+    "high": [
+      "rollback failure",
+      "nondeterministic failure class"
+    ],
+    "low": [
+      "recoverable duplicate-key or whitespace anomalies"
+    ],
+    "medium": [
+      "malformed input with clean failure"
+    ]
+  },
+  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "scope": "config corruption severity classification",
+  "status": "complete",
+  "tasks": [
+    137
+  ]
+}

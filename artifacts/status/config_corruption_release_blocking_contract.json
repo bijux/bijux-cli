@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "missing_todos": [],
+  "policy": "config corruption campaign coverage and deterministic rollback behavior are required before release",
+  "release_blocking": true,
+  "scope": "config corruption release-blocking contract",
+  "status": "frozen",
+  "tasks": [
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "minimized_case_count": 3,
+  "minimized_cases": [
+    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/list_truncated_config.json",
+    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/load_malformed_source.json",
+    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/set_invalid_assignment.json"
+  ],
+  "scope": "config corruption corpus retention",
+  "status": "complete",
+  "tasks": [
+    134
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "scope": "config corruption invariants",
+  "status": "complete",
+  "tasks": [
+    129,
+    130,
+    131,
+    132,
+    133
+  ],
+  "todo_coverage": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs",
+      "status": "covered",
+      "test": "config_mutations_never_silently_destroy_unrelated_valid_keys",
+      "todo": 129
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs",
+      "status": "covered",
+      "test": "config_corruption_has_stable_failure_class_and_recovery_path",
+      "todo": 130
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs",
+      "status": "covered",
+      "test": "failed_config_load_rolls_back_and_preserves_coherent_state",
+      "todo": 131
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs",
+      "status": "covered",
+      "test": "state_doctor_reports_corruption_introduced_by_campaign_harness",
+      "todo": 132
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs",
+      "status": "covered",
+      "test": "repeated_run_corruption_inputs_are_deterministic_for_config_command_set",
+      "todo": 133
+    }
+  ]
+}
