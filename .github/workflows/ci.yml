@@ -268,6 +268,7 @@ jobs:
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_truth_milestone_status.py
           python3 scripts/status/generate_status_reports.py
+          python3 scripts/status/generate_repl_behavior_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -462,6 +463,7 @@ jobs:
             artifacts/parity/command_parity_summary.txt
             artifacts/parity/parity_regression_diffs.json
             artifacts/parity/parity_regression_summary.txt
+            artifacts/parity/repl_cli_output_diff.json
             artifacts/parity/stdout_diff.md
             artifacts/parity/stderr_diff.md
             artifacts/parity/exit_code_diff.md
@@ -504,7 +506,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: status-report
-          path: artifacts/status/status*.json
+          path: |
+            artifacts/status/status*.json
+            artifacts/status/repl_only_behaviors.json
           if-no-files-found: warn
           retention-days: 14
 

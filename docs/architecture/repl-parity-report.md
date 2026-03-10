@@ -41,14 +41,15 @@ Rust references:
 - `356`: complete (startup latency check under loaded plugin diagnostics inputs)
 - `357`: complete (repl output parity check against non-interactive CLI for `status`)
 - `358`: complete (this report)
-- `359`: complete (`docs/architecture/repl-ux-review.md`)
-- `360`: complete (`docs/architecture/repl-baseline.md`)
+- `359`: complete (`:plugin reload` removed to avoid REPL-only semantics drift)
+- `360`: complete (REPL remains "same law, different surface" with artifact-backed parity checks)
 
 ## Key implementation updates
 
 1. REPL command execution now routes through `bijux_cli_core::app::run_app` using session policy-derived global flags.
 2. This aligns non-interactive and interactive behavior for output envelopes, stream routing, and exit semantics.
 3. REPL keeps meta-command controls (`:set`, `:help`, `:quit`) while delegating normal command behavior to core.
+4. Non-defensible REPL-only behavior `:plugin reload` was removed.
 
 ## Remaining gaps after baseline
 

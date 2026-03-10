@@ -1123,6 +1123,8 @@ fn route_response(
             let state_behavior_matrix = read_json_if_exists(
                 &root.join("artifacts/parity/state_behavior_parity_matrix.json"),
             );
+            let repl_cli_output_diff =
+                read_json_if_exists(&root.join("artifacts/parity/repl_cli_output_diff.json"));
             let parity_diffs =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
             let text_summary =
@@ -1158,6 +1160,7 @@ fn route_response(
                 "commands_using_compatibility_shims": commands_using_compatibility_shims,
                 "commands_python_only": commands_python_only,
                 "coverage": coverage,
+                "repl_cli_output_diff": repl_cli_output_diff,
                 "state_parity": {
                     "config": config_parity,
                     "history": history_parity,
@@ -1228,6 +1231,8 @@ fn route_response(
             );
             let unowned_scripts =
                 read_json_if_exists(&root.join("artifacts/status/status_unowned_scripts.json"));
+            let repl_only_behaviors =
+                read_json_if_exists(&root.join("artifacts/status/repl_only_behaviors.json"));
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1249,6 +1254,7 @@ fn route_response(
                     "known_parity_gaps": known_parity_gaps,
                     "intentional_differences": intentional_differences,
                     "unowned_scripts": unowned_scripts,
+                    "repl_only_behaviors": repl_only_behaviors,
                 },
                 "current_rust_state": state,
                 "parity": parity,
