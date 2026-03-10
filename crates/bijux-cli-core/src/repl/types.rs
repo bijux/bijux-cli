@@ -115,7 +115,7 @@ pub enum ReplError {
     Route(#[from] bijux_cli_routing::registry::RouteError),
     /// Kernel failed.
     #[error("kernel execution failed")]
-    Kernel(bijux_cli_core::kernel::KernelError),
+    Kernel(crate::kernel::KernelError),
     /// Core app execution failed.
     #[error("core execution failed: {0}")]
     Core(String),

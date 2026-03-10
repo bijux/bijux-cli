@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use bijux_cli_install::atomic_write_text;
 
-use crate::execution::execute_repl_line;
-use crate::types::{ReplError, ReplFrame, ReplSession};
+use super::execution::execute_repl_line;
+use super::types::{ReplError, ReplFrame, ReplSession};
 
 fn parse_history_entries(text: &str) -> Option<Vec<String>> {
     if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {

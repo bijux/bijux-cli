@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
-use bijux_cli_core::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
+use crate::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
 use bijux_cli_routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 
-use crate::types::{ReplSession, ReplShutdownContract, ReplStartupContract};
+use super::types::{ReplSession, ReplShutdownContract, ReplStartupContract};
 
 /// Startup REPL session using the same policy precedence and routing registry as CLI.
 #[must_use]

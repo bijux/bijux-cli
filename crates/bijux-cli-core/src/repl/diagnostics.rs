@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use serde_json::json;
 
-use crate::session::startup_repl;
-use crate::types::{ReplSession, REPL_MEMORY_BUDGET_BYTES, REPL_STARTUP_LATENCY_BUDGET_MS};
+use super::session::startup_repl;
+use super::types::{ReplSession, REPL_MEMORY_BUDGET_BYTES, REPL_STARTUP_LATENCY_BUDGET_MS};
 
 /// Return last error message captured by REPL session.
 #[must_use]

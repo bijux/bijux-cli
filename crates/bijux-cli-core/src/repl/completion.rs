@@ -1,4 +1,4 @@
-use crate::types::ReplSession;
+use super::types::ReplSession;
 
 /// Provide command completion candidates for built-ins and plugin hooks.
 #[must_use]
