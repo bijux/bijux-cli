@@ -18,7 +18,7 @@ use serde_json::{json, Value};
 use crate::cli::context::{
     env_map, state_diagnostics, state_path_status_value, ResolvedStatePaths,
 };
-use crate::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use crate::install::{
     canonical_crate_name, cargo_install_strategy, install_health_report, pip_install_strategy,
     query::runtime_identity_query, PackageChannel,

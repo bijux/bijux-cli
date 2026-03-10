@@ -9,7 +9,7 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use super::persistence::{read_history_entries, read_memory_map};
-use crate::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use crate::install::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
     CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,

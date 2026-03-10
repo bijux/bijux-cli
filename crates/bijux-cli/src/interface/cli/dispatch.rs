@@ -18,7 +18,7 @@ use crate::cli::commands::{
     root as root_commands,
 };
 use crate::cli::context::resolve_state_paths;
-use crate::config::execute_config_command;
+use crate::features::config::execute_config_command;
 use crate::output::{render_value, EmitterConfig};
 
 /// In-memory process output and exit result produced by the core app runner.
