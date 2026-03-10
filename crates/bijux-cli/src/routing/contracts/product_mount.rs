@@ -17,6 +17,8 @@ pub struct KnownBijuxTool {
     pub runtime_package: &'static str,
     /// Control-plane package name used for install workflows.
     pub control_package: &'static str,
+    /// Canonical source repository slug under the Bijux GitHub organization.
+    pub repository: &'static str,
 }
 
 /// Canonical known Bijux tools and their binary/package ownership contracts.
@@ -27,6 +29,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-agent",
         runtime_package: "bijux-agent",
         control_package: "bijux-dev-agent",
+        repository: "bijux-agent",
     },
     KnownBijuxTool {
         namespace: "atlas",
@@ -34,6 +37,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-atlas",
         runtime_package: "bijux-atlas",
         control_package: "bijux-dev-atlas",
+        repository: "bijux-atlas",
     },
     KnownBijuxTool {
         namespace: "dag",
@@ -41,6 +45,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-dag",
         runtime_package: "bijux-dag",
         control_package: "bijux-dev-dag",
+        repository: "bijux-dag",
     },
     KnownBijuxTool {
         namespace: "dna",
@@ -48,6 +53,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-dna",
         runtime_package: "bijux-dna",
         control_package: "bijux-dev-dna",
+        repository: "bijux-dna",
     },
     KnownBijuxTool {
         namespace: "gnss",
@@ -55,6 +61,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-gnss",
         runtime_package: "bijux-gnss",
         control_package: "bijux-dev-gnss",
+        repository: "bijux-gnss",
     },
     KnownBijuxTool {
         namespace: "rag",
@@ -62,6 +69,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-rag",
         runtime_package: "bijux-rag",
         control_package: "bijux-dev-rag",
+        repository: "bijux-rag",
     },
     KnownBijuxTool {
         namespace: "rar",
@@ -69,6 +77,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-rar",
         runtime_package: "bijux-rar",
         control_package: "bijux-dev-rar",
+        repository: "bijux-rar",
     },
     KnownBijuxTool {
         namespace: "vex",
@@ -76,6 +85,7 @@ pub const KNOWN_BIJUX_TOOLS: &[KnownBijuxTool] = &[
         control_binary: "bijux-dev-vex",
         runtime_package: "bijux-vex",
         control_package: "bijux-dev-vex",
+        repository: "bijux-vex",
     },
 ];
 

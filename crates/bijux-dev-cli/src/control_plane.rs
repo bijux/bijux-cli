@@ -19,9 +19,33 @@ pub fn build_dependency_injection_report() -> Value {
     json!({"status": "ok", "container": "built-in", "entry_surface": "dev-cli"})
 }
 
+/// Canonical executable/package row for product command surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProductSurfaceRow {
+    /// Public command prefix routed by `bijux`.
+    pub command_surface: String,
+    /// Owned executable name.
+    pub binary: String,
+    /// Install package that provides the executable.
+    pub package: String,
+}
+
+/// Canonical product contract row for cross-repository standardization.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProductContractRow {
+    /// Canonical namespace in `bijux <namespace> ...`.
+    pub namespace: String,
+    /// Repository slug under `github.com/bijux`.
+    pub repository: String,
+    /// Runtime command surface contract.
+    pub runtime: ProductSurfaceRow,
+    /// Control-plane command surface contract.
+    pub control: ProductSurfaceRow,
+}
+
 /// Builds hidden `dev cli list-products` report payload.
 #[must_use]
-pub fn build_product_list_report(products: &[&str]) -> Value {
+pub fn build_product_list_report(products: &[ProductContractRow]) -> Value {
     json!({"status": "ok", "products": products})
 }
 

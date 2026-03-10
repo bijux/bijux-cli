@@ -7,6 +7,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use bijux_dev_cli::{
+    control_plane::{ProductContractRow, ProductSurfaceRow},
     dispatch::{
         self as dev_dispatch, ContractsSchemaInput, DoctorReportInput, RouteInventoryQuery,
         RuntimeQueryProvider, StateAuditInput,
@@ -25,12 +26,11 @@ use crate::features::install::{
     canonical_crate_name, cargo_install_strategy, install_health_report, pip_install_strategy,
     query::runtime_identity_query, PackageChannel,
 };
-use crate::features::plugins::{
-    list_plugins, load_time_diagnostics, KNOWN_BIJUX_PROJECT_NAMESPACES,
-};
+use crate::features::plugins::{list_plugins, load_time_diagnostics};
 use crate::routing::inventory::{registry_inventory, route_inventory};
 use crate::routing::query::contracts_schema_query;
 use crate::routing::registry::RouteRegistry;
+use crate::routing::KNOWN_BIJUX_TOOLS;
 
 struct RuntimeQueryAdapter<'a> {
     registry: &'a RouteRegistry,
@@ -64,8 +64,24 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             .collect()
     }
 
-    fn product_namespaces(&self) -> Vec<String> {
-        KNOWN_BIJUX_PROJECT_NAMESPACES.iter().map(|value| (*value).to_string()).collect()
+    fn product_contracts(&self) -> Vec<ProductContractRow> {
+        KNOWN_BIJUX_TOOLS
+            .iter()
+            .map(|tool| ProductContractRow {
+                namespace: tool.namespace.to_string(),
+                repository: tool.repository.to_string(),
+                runtime: ProductSurfaceRow {
+                    command_surface: format!("bijux {}", tool.namespace),
+                    binary: tool.runtime_binary.to_string(),
+                    package: tool.runtime_package.to_string(),
+                },
+                control: ProductSurfaceRow {
+                    command_surface: format!("bijux dev {}", tool.namespace),
+                    binary: tool.control_binary.to_string(),
+                    package: tool.control_package.to_string(),
+                },
+            })
+            .collect()
     }
 
     fn env_map(&self) -> BTreeMap<String, String> {

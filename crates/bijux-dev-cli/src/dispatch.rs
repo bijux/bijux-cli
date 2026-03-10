@@ -68,8 +68,8 @@ pub trait RuntimeQueryProvider {
     /// Return currently installed plugins for maintainer visibility.
     fn plugin_list(&self) -> Vec<Value>;
 
-    /// Return reserved or future runtime product namespaces.
-    fn product_namespaces(&self) -> Vec<String>;
+    /// Return canonical product mount contracts owned by Bijux projects.
+    fn product_contracts(&self) -> Vec<dev_control_plane::ProductContractRow>;
 
     /// Return filtered runtime environment values used by CLI state resolution.
     fn env_map(&self) -> BTreeMap<String, String>;
@@ -234,9 +234,7 @@ pub fn try_handle(
             dev_control_plane::build_dependency_injection_report()
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "list-products" => {
-            let products = runtime.product_namespaces();
-            let product_refs: Vec<&str> = products.iter().map(String::as_str).collect();
-            dev_control_plane::build_product_list_report(&product_refs)
+            dev_control_plane::build_product_list_report(&runtime.product_contracts())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "list-plugins" => {
             dev_control_plane::build_plugin_list_report(runtime.plugin_list())

@@ -5,7 +5,10 @@ use bijux_cli::routing::registry::{RouteError, RouteRegistry};
 use bijux_cli::routing::{KNOWN_BIJUX_TOOLS, OFFICIAL_PRODUCT_NAMESPACES};
 use proptest as _;
 use serde as _;
+use serde::Deserialize;
 use serde_json as _;
+use std::collections::BTreeMap;
+use std::fs;
 use std::sync::{Arc, Barrier, Mutex};
 
 use clap as _;
@@ -42,6 +45,63 @@ fn known_bijux_tool_registry_matches_expected_namespaces() {
 
     assert_eq!(official, expected);
     assert_eq!(known, expected);
+}
+
+#[test]
+fn known_bijux_tools_follow_standard_binary_and_package_patterns() {
+    for tool in KNOWN_BIJUX_TOOLS {
+        assert_eq!(tool.runtime_binary, format!("bijux-{}", tool.namespace));
+        assert_eq!(tool.control_binary, format!("bijux-dev-{}", tool.namespace));
+        assert_eq!(tool.runtime_package, tool.runtime_binary);
+        assert_eq!(tool.control_package, tool.control_binary);
+        assert_eq!(tool.repository, tool.runtime_package);
+    }
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+struct OfficialProductRegistry {
+    entries: Vec<OfficialProductRegistryEntry>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+struct OfficialProductRegistryEntry {
+    namespace: String,
+    runtime_binary: String,
+    control_binary: String,
+    runtime_package: String,
+    control_package: String,
+    repository: String,
+}
+
+#[test]
+fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
+    let registry_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/constitution/official_product_namespace_registry.json");
+    let registry_text = fs::read_to_string(&registry_path).expect("read official product registry");
+    let registry: OfficialProductRegistry =
+        serde_json::from_str(&registry_text).expect("parse official product registry json");
+
+    let expected: BTreeMap<String, OfficialProductRegistryEntry> = KNOWN_BIJUX_TOOLS
+        .iter()
+        .map(|tool| {
+            (
+                tool.namespace.to_string(),
+                OfficialProductRegistryEntry {
+                    namespace: tool.namespace.to_string(),
+                    runtime_binary: tool.runtime_binary.to_string(),
+                    control_binary: tool.control_binary.to_string(),
+                    runtime_package: tool.runtime_package.to_string(),
+                    control_package: tool.control_package.to_string(),
+                    repository: tool.repository.to_string(),
+                },
+            )
+        })
+        .collect();
+
+    let actual: BTreeMap<String, OfficialProductRegistryEntry> =
+        registry.entries.into_iter().map(|entry| (entry.namespace.clone(), entry)).collect();
+
+    assert_eq!(actual, expected);
 }
 
 #[test]
