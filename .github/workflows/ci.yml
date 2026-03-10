@@ -249,11 +249,11 @@ jobs:
 
       - name: Command-tree drift gate
         run: |
-          cargo test -p bijux-cli-routing --test command_tree_snapshot --test command_tree_diff_report
+          cargo test -p bijux-cli --test routing command_tree_
 
       - name: Schema drift gate
         run: |
-          cargo test -p bijux-cli-contracts --test schema_snapshots
+          cargo test -p bijux-cli --test routing schema_snapshots::
 
       - name: Generate current Rust state artifact
         run: |
