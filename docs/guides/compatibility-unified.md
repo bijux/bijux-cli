@@ -1,17 +1,15 @@
 # Compatibility Guide
 
-This guide consolidates compatibility behavior across runtime surfaces.
+Use maintainer commands and generated artifacts as the compatibility source.
 
-Use this with:
-- `docs/architecture/runtime_identity_law.md`
-- `docs/architecture/python-package-convergence-report.md`
-- `docs/reference/python-bindings.md`
+Run:
 
-Core rules:
-- one law, many entrypoints
-- same route graph where parity exists
-- same exit and envelope semantics where parity exists
+```bash
+bijux dev cli runtime-identity --json --no-pretty
+bijux dev cli parity --json --no-pretty
+```
 
-Evidence:
+Review:
 - `artifacts/status/runtime_unity_report.json`
 - `artifacts/parity/binary_vs_python_bridge_parity_report.json`
+- `artifacts/parity/command_parity_matrix.json`

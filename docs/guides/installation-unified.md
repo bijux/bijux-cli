@@ -1,14 +1,16 @@
 # Installation Guide
 
-This guide consolidates installation expectations.
+Use install diagnostics commands and generated artifacts as source of truth.
 
-Primary user binary name: `bijux`.
+Run:
 
-Use these references:
-- `docs/getting-started/installation.md`
-- `docs/reference/product-binaries.md`
-- `docs/architecture/install-compatibility-report.md`
+```bash
+bijux dev cli runtime-identity --json --no-pretty
+bijux dev cli package-health --json --no-pretty
+```
 
-Diagnostics command:
-- `bijux dev cli runtime-identity`
-- `bijux cli paths`
+Review:
+- `artifacts/status/install_source_diagnostics.json`
+- `artifacts/status/ambiguous_runtime_diagnostics.json`
+- `artifacts/status/install_health_report.json`
+- `artifacts/status/remaining_install_ambiguities.json`

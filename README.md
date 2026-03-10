@@ -2,18 +2,11 @@
 
 <a id="top"></a>
 
-**Bijux CLI is a command framework for Python with Rust-backed parity work in progress.**
+**Bijux CLI is a command interface with Rust runtime ownership and Python compatibility surfaces.**
 
 It is designed for CLIs that grow over time and need stable command behavior.
 
-Bijux focuses on:
-
-* deterministic global flags (no ambiguity, no surprises),
-* first-class plugins with explicit lifecycles,
-* a real dependency-injection kernel,
-* structured output for automation,
-* a unified synchronous **and asynchronous** execution model,
-* and an interactive REPL.
+Bijux focuses on deterministic flags, explicit plugin lifecycle behavior, structured output, and shared CLI/REPL command law.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
@@ -37,11 +30,9 @@ Bijux focuses on:
 
 * [Why Bijux CLI?](#why-bijux-cli)
 * [How to Think About Bijux](#how-to-think-about-bijux)
-* [Try It in 20 Seconds](#try-it-in-20-seconds)
 * [Key Features](#key-features)
 * [Installation](#installation)
 * [Platform Support](#platform-support)
-* [Quick Start](#quick-start)
 * [Plugins in 60 Seconds](#plugins-in-60-seconds)
 * [Plugin Non-Goals](#plugin-non-goals)
 * [Structured Output](#structured-output)
@@ -95,18 +86,6 @@ If you reason about Bijux in these terms, the framework becomes predictable rath
 
 ---
 
-## Try It in 20 Seconds
-
-```bash
-pipx install bijux-cli   # or: pip install bijux-cli
-
-bijux --version
-bijux doctor
-bijux status -f json --no-pretty
-```
-
----
-
 ## Key Features
 
 ### Deterministic Global Flags
@@ -123,7 +102,7 @@ Bijux runs both through the same execution pipeline, guaranteeing identical beha
 * logging,
 * and exit codes.
 
-Async support is part of the core runtime — not a bolt-on.
+Async and sync commands use one execution path.
 
 ### Dependency Injection (DI)
 
@@ -176,6 +155,14 @@ pip install bijux-cli
 
 Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
 
+Quick verification:
+
+```bash
+bijux --version
+bijux doctor
+bijux dev cli runtime-identity --json --no-pretty
+```
+
 ---
 
 ## Platform Support
@@ -184,21 +171,6 @@ Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
 * **Not supported**: Windows
 
 Bijux relies on POSIX filesystem and process semantics.
-
----
-
-## Quick Start
-
-```bash
-bijux --help
-bijux doctor
-
-# Enter REPL
-bijux
-bijux> help
-bijux> status
-bijux> exit
-```
 
 ---
 
@@ -253,11 +225,9 @@ bijux status -f yaml --pretty
 ## Developer Introspection
 
 ```bash
-# Inspect the DI graph
-bijux dev di -f json
-
-# List loaded plugins
-bijux dev list-plugins
+bijux dev cli status --json --no-pretty
+bijux dev cli parity --json --no-pretty
+bijux dev cli state-doctor --text
 ```
 
 ---
@@ -341,12 +311,7 @@ Precedence: **flags → env → config → defaults**
 
 ## Tests & Quality
 
-Bijux is tested to **protect users from regressions**, not to discourage contribution.
-
-* 1,800+ tests across unit, integration, functional, E2E, and nightly layers
-* 98%+ coverage enforced in CI
-* Property-based and stateful tests
-* Benchmarks with thresholds
+Bijux quality claims are evidence-backed through generated artifacts and CI gates.
 
 Run locally:
 
@@ -387,8 +352,7 @@ tests/          All test layers
 
 ## Roadmap
 
-* **v0.3** — Plugin ergonomics improvements, async-first examples, registry tooling.
-* **v1.0** — Plugin compatibility guarantees, long-term stability contract.
+Roadmap priorities are generated from parity and status artifacts.
 
 ---
 
