@@ -121,4 +121,6 @@ scripts/status/generate_adversarial_fs_process_reports.py # generate adversarial
 scripts/status/generate_dev_cli_evidence_reports.py # generate dev-cli evidence namespace reports used by CI integrity gates and release truth exports
 scripts/status/generate_evidence_integrity_reports.py # generate evidence coverage/orphan/claim-without-evidence plus config ownership truth artifacts
 scripts/status/enforce_evidence_integrity_gate.py # enforce evidence integrity and release evidence-id reference correctness in CI
+scripts/status/generate_python_sovereignty_reports.py # generate python bridge/surface/sovereignty/drift/packaging reports and de-sovereignization text/json artifacts
+scripts/status/enforce_python_sovereignty_gate.py # enforce python sovereignty duplication-zero policy and release claim gate for python-surface-only direction
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
