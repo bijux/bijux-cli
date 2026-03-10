@@ -71,6 +71,8 @@ pub enum DevCliCommand {
     Release,
     /// `bijux dev cli evidence`
     Evidence,
+    /// `bijux dev cli python`
+    Python,
     /// `bijux dev cli crate-health`
     CrateHealth,
     /// `bijux dev cli route-audit`
@@ -121,6 +123,7 @@ impl DevCliCommand {
             Self::Rustdoc => "dev cli rustdoc",
             Self::Release => "dev cli release",
             Self::Evidence => "dev cli evidence",
+            Self::Python => "dev cli python",
             Self::CrateHealth => "dev cli crate-health",
             Self::RouteAudit => "dev cli route-audit",
             Self::Doctor => "dev cli doctor",
@@ -157,6 +160,7 @@ impl DevCliCommand {
             | Self::Rustdoc
             | Self::Release
             | Self::Evidence
+            | Self::Python
             | Self::CrateHealth
             | Self::SnapshotsAudit
             | Self::FixtureAudit
@@ -284,6 +288,12 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
         },
         DevCliCommandMetadata {
             command: DevCliCommand::Evidence,
+            group: DevCliCommandGroup::Audit,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Python,
             group: DevCliCommandGroup::Audit,
             visible: true,
             owner: "bijux-dev-cli",

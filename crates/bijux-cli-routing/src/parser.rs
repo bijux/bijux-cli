@@ -269,6 +269,14 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("shape"))
                 .subcommand(Command::new("evidence-map")),
         )
+        .subcommand(
+            Command::new("python")
+                .subcommand(Command::new("bridge-status"))
+                .subcommand(Command::new("surface-status"))
+                .subcommand(Command::new("sovereignty-audit"))
+                .subcommand(Command::new("drift"))
+                .subcommand(Command::new("packaging")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

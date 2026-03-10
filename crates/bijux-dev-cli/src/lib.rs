@@ -14,6 +14,7 @@ pub mod env;
 pub mod evidence;
 pub mod package_health;
 pub mod parity;
+pub mod python;
 pub mod registry;
 pub mod release;
 pub mod reporting;

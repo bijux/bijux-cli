@@ -80,4 +80,12 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         source.contains("dev_config::build_ownership_report"),
         "config command namespace must delegate to bijux-dev-cli config module"
     );
+    assert!(
+        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"python\""),
+        "missing delegated python command namespace"
+    );
+    assert!(
+        source.contains("dev_python::build_sovereignty_audit_report"),
+        "python command namespace must delegate to bijux-dev-cli python module"
+    );
 }

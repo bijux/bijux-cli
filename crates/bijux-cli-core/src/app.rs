@@ -32,10 +32,10 @@ use bijux_dev_cli::{
     config as dev_config, contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
-    registry as dev_registry, release as dev_release, route_audit as dev_route_audit,
-    routes as dev_routes, runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
-    script_audit as dev_script_audit, scripts as dev_scripts, state_audit as dev_state_audit,
-    status as dev_status, ReportContext,
+    python as dev_python, registry as dev_registry, release as dev_release,
+    route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
+    rustdoc as dev_rustdoc, script_audit as dev_script_audit, scripts as dev_scripts,
+    state_audit as dev_state_audit, status as dev_status, ReportContext,
 };
 use serde_json::{json, Value};
 
@@ -518,6 +518,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "config" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1357,6 +1361,21 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "evidence-map" => {
             dev_config::build_evidence_map_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "bridge-status" => {
+            dev_python::build_bridge_status_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "surface-status" => {
+            dev_python::build_surface_status_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "sovereignty-audit" => {
+            dev_python::build_sovereignty_audit_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "drift" => {
+            dev_python::build_drift_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "packaging" => {
+            dev_python::build_packaging_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

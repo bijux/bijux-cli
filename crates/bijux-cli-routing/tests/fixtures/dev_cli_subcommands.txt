@@ -3,6 +3,7 @@ dev cli rustdoc
 dev cli release
 dev cli evidence
 dev cli config
+dev cli python
 dev cli inventory
 dev cli routes
 dev cli route-audit

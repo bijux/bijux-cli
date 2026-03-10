@@ -1,0 +1,7 @@
+{
+  "dev cli python bridge-status": "{\n  \"bridge_status\": {\n    \"conversion\": {\n",
+  "dev cli python drift": "{\n  \"drift\": {\n    \"duplication_total\": 0,\n",
+  "dev cli python packaging": "{\n  \"packaging\": {\n    \"linkage_model\": \"polars-like-thin-python-surface\",",
+  "dev cli python sovereignty-audit": "{\n  \"direction_contract\": \"python-surface-over-rust-core\",",
+  "dev cli python surface-status": "{\n  \"python_role\": \"surface-and-bridge\",\n"
+}
