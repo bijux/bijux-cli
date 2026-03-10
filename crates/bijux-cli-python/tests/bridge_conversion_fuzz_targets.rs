@@ -29,12 +29,8 @@ fn fuzz_bridge_conversion_of_success_envelopes_is_stable() {
 
 #[test]
 fn fuzz_bridge_conversion_of_error_envelopes_is_stable() {
-    let argv = vec![
-        "bijux".to_string(),
-        "cli".to_string(),
-        "plugins".to_string(),
-        "check".to_string(),
-    ];
+    let argv =
+        vec!["bijux".to_string(), "cli".to_string(), "plugins".to_string(), "check".to_string()];
     let a = parse_json(&execution_outcome_api(&argv).expect("outcome a"));
     let b = parse_json(&execution_outcome_api(&argv).expect("outcome b"));
     assert_eq!(a, b);

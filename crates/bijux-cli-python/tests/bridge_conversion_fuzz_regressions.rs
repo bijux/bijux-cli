@@ -18,10 +18,7 @@ fn minimized_bridge_conversion_cases_replay_deterministically() {
         .filter(|p| p.extension().is_some_and(|ext| ext == "json"))
         .collect();
     files.sort();
-    assert!(
-        !files.is_empty(),
-        "bridge minimized corpus must not be empty"
-    );
+    assert!(!files.is_empty(), "bridge minimized corpus must not be empty");
 
     for path in files {
         let sample = fs::read_to_string(&path).expect("read sample");
