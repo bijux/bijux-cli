@@ -18,8 +18,8 @@ use bijux_cli_install::{
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
-    compatibility_warnings, install_plugin as install_plugin_manifest, is_reserved_namespace,
-    list_plugins, disable_plugin, enable_plugin, inspect_plugin,
+    compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
+    install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
     registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest, PluginTrustLevel,
     CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
@@ -29,9 +29,9 @@ use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use serde_json::{json, Value};
 
+use crate::argv::command_positionals;
 use crate::config::execute_config_command;
 use crate::config::storage::{ConfigRepository, FileConfigRepository};
-use crate::argv::command_positionals;
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,7 +119,9 @@ fn detect_install_source(active_binary: Option<&str>) -> &'static str {
 
 fn is_canonical_active_path(active_binary: Option<&str>) -> bool {
     active_binary
-        .map(|path| path.ends_with(&format!("/{CANONICAL_EXECUTABLE}")) || path == CANONICAL_EXECUTABLE)
+        .map(|path| {
+            path.ends_with(&format!("/{CANONICAL_EXECUTABLE}")) || path == CANONICAL_EXECUTABLE
+        })
         .unwrap_or(false)
 }
 
@@ -214,6 +216,27 @@ fn dev_cli_inventory_payload() -> Value {
         *acc.entry(key).or_insert(0) += 1;
         acc
     });
+    let remaining_script_only_behaviors: Vec<String> = scripts
+        .iter()
+        .filter_map(|item| {
+            let classification = item.get("classification").and_then(Value::as_str).unwrap_or("");
+            if classification != "keep" {
+                return None;
+            }
+            item.get("path").and_then(Value::as_str).map(ToString::to_string)
+        })
+        .collect();
+    let remaining_task_runner_only_behaviors: Vec<String> = makefiles
+        .iter()
+        .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
+        .filter_map(|target| {
+            let classification = target.get("classification").and_then(Value::as_str).unwrap_or("");
+            if classification != "keep" {
+                return None;
+            }
+            target.get("target").and_then(Value::as_str).map(ToString::to_string)
+        })
+        .collect();
 
     json!({
         "scripts": scripts,
@@ -225,7 +248,14 @@ fn dev_cli_inventory_payload() -> Value {
             {"from": "scripts/status/generate_current_rust_state.py", "to": "bijux dev cli status"},
             {"from": "scripts/status/generate_crate_boundary_metrics.py", "to": "bijux dev cli crate-health"},
             {"from": "scripts/parity/run_rust_python_parity.py", "to": "bijux dev cli parity"},
+            {"from": "scripts/status/generate_dev_cli_inventory.py", "to": "bijux dev cli inventory"},
+            {"from": "scripts/status/generate_docs_audit.py", "to": "bijux dev cli docs-audit"},
+            {"from": "scripts/status/generate_state_parity_reports.py", "to": "bijux dev cli state-audit"},
+            {"from": "scripts/status/generate_plugin_health_report.py", "to": "bijux dev cli plugin-health"},
+            {"from": "scripts/status/generate_duplication_hotspots.py", "to": "bijux dev cli crate-health"},
         ],
+        "remaining_script_only_behaviors": remaining_script_only_behaviors,
+        "remaining_task_runner_only_behaviors": remaining_task_runner_only_behaviors,
         "rule": "new maintainer automation defaults to bijux dev cli commands",
     })
 }
@@ -274,10 +304,7 @@ fn scaffold_plugin_layout(
     if is_reserved_namespace(namespace, &[]) {
         anyhow::bail!("plugin namespace is reserved: {namespace}");
     }
-    if !namespace
-        .chars()
-        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
-    {
+    if !namespace.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
         anyhow::bail!("plugin namespace must be lowercase kebab-case");
     }
     if !is_safe_scaffold_path(base_dir) {
@@ -304,7 +331,11 @@ fn scaffold_plugin_layout(
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
     let manifest = bijux_cli_plugin::parse_manifest_v1(&manifest_text)?;
-    let _ = bijux_cli_plugin::validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
+    let _ = bijux_cli_plugin::validate_manifest(
+        manifest,
+        env!("CARGO_PKG_VERSION"),
+        RESERVED_NAMESPACES,
+    )?;
     Ok(manifest_path)
 }
 
@@ -793,10 +824,11 @@ fn route_response(
             })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "check" => {
-            let plugin = command_positionals(argv, &["cli", "plugins", "check"])
-                .first()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
+            let plugin =
+                command_positionals(argv, &["cli", "plugins", "check"])
+                    .first()
+                    .cloned()
+                    .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
             let record = inspect_plugin(&plugin_registry_path, &plugin)?;
             if matches!(record.state, bijux_cli_contracts::PluginLifecycleState::Disabled) {
                 anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
@@ -820,14 +852,13 @@ fn route_response(
         [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
             let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
             let kind = positional.first().cloned().unwrap_or_else(|| "python".to_string());
-            let namespace = positional
-                .get(1)
-                .cloned()
-                .unwrap_or_else(|| "sample-plugin".to_string());
+            let namespace =
+                positional.get(1).cloned().unwrap_or_else(|| "sample-plugin".to_string());
             let force = command_has_flag(argv, "--force");
-            let target = command_option_value(argv, "--path")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace));
+            let target =
+                command_option_value(argv, "--path").map(PathBuf::from).unwrap_or_else(|| {
+                    env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace)
+                });
             let manifest = scaffold_plugin_layout(&target, &kind, &namespace, force)?;
             json!({
                 "status": "scaffolded",
@@ -844,7 +875,8 @@ fn route_response(
                 .ok_or_else(|| anyhow::anyhow!("manifest path is required"))?;
             let manifest_path = PathBuf::from(&manifest_arg);
             let manifest_text = fs::read_to_string(&manifest_path)?;
-            let source = command_option_value(argv, "--source").unwrap_or_else(|| manifest_arg.clone());
+            let source =
+                command_option_value(argv, "--source").unwrap_or_else(|| manifest_arg.clone());
             let trust_level = match command_option_value(argv, "--trust")
                 .unwrap_or_else(|| "community".to_string())
                 .as_str()
@@ -902,8 +934,9 @@ fn route_response(
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
             let repaired = bijux_cli_plugin::self_repair_registry(&plugin_registry_path).is_ok();
             let report = plugin_doctor(&plugin_registry_path)?;
-            let diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                .unwrap_or_default();
+            let diagnostics =
+                load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                    .unwrap_or_default();
             let diagnostics_json: Vec<Value> = diagnostics
                 .into_iter()
                 .map(|diag| {
@@ -1082,10 +1115,9 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
             let parity_diffs =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
-            let text_summary = fs::read_to_string(
-                root.join("artifacts/parity/command_parity_summary.txt"),
-            )
-            .unwrap_or_default();
+            let text_summary =
+                fs::read_to_string(root.join("artifacts/parity/command_parity_summary.txt"))
+                    .unwrap_or_default();
             let config_parity =
                 read_json_if_exists(&root.join("artifacts/parity/config_parity_report.json"));
             let history_parity =
@@ -1201,6 +1233,8 @@ fn route_response(
             json!({
                 "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
                 "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "remaining_script_only_behaviors": inventory.get("remaining_script_only_behaviors").cloned().unwrap_or_else(|| json!([])),
+                "remaining_task_runner_only_behaviors": inventory.get("remaining_task_runner_only_behaviors").cloned().unwrap_or_else(|| json!([])),
                 "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
             })
         }
@@ -1209,6 +1243,8 @@ fn route_response(
             json!({
                 "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
                 "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "remaining_script_only_behaviors": inventory.get("remaining_script_only_behaviors").cloned().unwrap_or_else(|| json!([])),
+                "remaining_task_runner_only_behaviors": inventory.get("remaining_task_runner_only_behaviors").cloned().unwrap_or_else(|| json!([])),
                 "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
             })
         }
@@ -1434,7 +1470,8 @@ fn route_response(
             let install_source = detect_install_source(install_report.active_binary.as_deref());
             let is_shadowed = install_report.has_path_shadowing;
             let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
-            let is_canonical_path = is_canonical_active_path(install_report.active_binary.as_deref());
+            let is_canonical_path =
+                is_canonical_active_path(install_report.active_binary.as_deref());
             let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
             let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
