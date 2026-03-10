@@ -1339,9 +1339,18 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
             let root = workspace_root();
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
+            let assumptions = vec![
+                "config/history/plugins state defaults under HOME/.bijux unless explicit overrides are set",
+                "XDG-style HOME locations are treated as regular HOME roots for compatibility paths",
+                "PATH order decides active bijux binary and all ambiguity diagnostics derive from that order",
+                "completion files are generated under shell-specific directories derived from HOME",
+                "state bootstrap must create missing directories and report explicit errors for unwritable roots",
+            ];
             json!({
                 "package_entrypoints": state.get("package_entrypoints").cloned().unwrap_or_else(|| json!([])),
                 "runtime_identity_rules": state.get("runtime_identity_rules").cloned().unwrap_or_else(|| json!({})),
+                "install_state_assumptions": assumptions,
+                "install_state_assumption_help": "Use `bijux dev cli package-health --format json` to audit install-state assumptions and entrypoint contracts.",
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "env" => {
@@ -1500,6 +1509,10 @@ fn route_response(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
+            let python_bridge_supported = !matches!(
+                env::var("BIJUX_PYTHON_BRIDGE_SUPPORTED"),
+                Ok(value) if matches!(value.as_str(), "0" | "false" | "FALSE")
+            );
             let install_source = detect_install_source(install_report.active_binary.as_deref());
             let is_shadowed = install_report.has_path_shadowing;
             let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
@@ -1528,6 +1541,8 @@ fn route_response(
                     "stale_wrapper_detected": !install_report.stale_wrapper_scripts.is_empty(),
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
                     "mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
+                    "active_binary_mismatch_detected": install_report.has_mismatched_wheel_binary_versions,
+                    "python_bridge_supported": python_bridge_supported,
                     "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
                 },
                 "entrypoints": {
@@ -1553,6 +1568,7 @@ fn route_response(
                     format!("path shadowing: {}", if install_report.has_path_shadowing { "detected" } else { "not-detected" }),
                     format!("duplicate installs: {}", if install_report.has_duplicate_installs { "detected" } else { "not-detected" }),
                     format!("stale wrappers: {}", if install_report.stale_wrapper_scripts.is_empty() { "not-detected" } else { "detected" }),
+                    format!("python bridge support: {}", if python_bridge_supported { "available" } else { "missing" }),
                 ],
             })
         }

@@ -129,7 +129,7 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
         (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),
         (vec!["dev", "cli", "crate-health"], "crate_metrics"),
-        (vec!["dev", "cli", "package-health"], "package_entrypoints"),
+        (vec!["dev", "cli", "package-health"], "install_state_assumptions"),
         (vec!["dev", "cli", "env"], "source_precedence"),
         (vec!["dev", "cli", "doctor"], "issues"),
         (vec!["dev", "cli", "contracts"], "contracts"),
@@ -181,6 +181,25 @@ fn runtime_identity_reports_ambiguous_active_binary_selection() {
     assert!(binaries.len() >= 2);
 
     fs::remove_dir_all(&temp).expect("cleanup temp");
+}
+
+#[test]
+fn runtime_identity_reports_python_bridge_support_diagnostic() {
+    let stdout = run_with_env(
+        &["dev", "cli", "runtime-identity"],
+        "BIJUX_PYTHON_BRIDGE_SUPPORTED",
+        "0",
+    );
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
+}
+
+#[test]
+fn package_health_exposes_install_state_assumptions() {
+    let stdout = run(&["dev", "cli", "package-health"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    let assumptions = payload["install_state_assumptions"].as_array().expect("array");
+    assert!(!assumptions.is_empty());
 }
 
 #[test]

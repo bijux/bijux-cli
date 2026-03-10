@@ -112,6 +112,27 @@ mod tests {
     }
 
     #[test]
+    fn stale_wrapper_scripts_are_detected_in_install_health() {
+        let temp = TempDir::new().expect("tempdir");
+        let wrappers = temp.path().join("wrappers");
+        std::fs::create_dir_all(&wrappers).expect("wrapper dir");
+        std::fs::write(wrappers.join("bijux.sh"), b"#!/bin/sh\nexec /missing/bijux\n")
+            .expect("write wrapper");
+        let path_value = std::env::join_paths([&wrappers]).expect("join path");
+
+        let report =
+            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
+
+        assert!(!report.stale_wrapper_scripts.is_empty());
+    }
+
+    #[test]
+    fn wheel_runtime_version_mismatch_is_reported() {
+        let report = install_health_report("", None, Some("1.0.0"), "2.0.0");
+        assert!(report.has_mismatched_wheel_binary_versions);
+    }
+
+    #[test]
     fn active_binary_ignores_blank_override_and_falls_back_to_discovered_path() {
         let temp = TempDir::new().expect("tempdir");
         let dir = temp.path().join("bin");
@@ -155,6 +176,19 @@ mod tests {
         let second = initialize_first_run_state(temp.path()).expect("second run");
         assert!(first);
         assert!(!second);
+    }
+
+    #[test]
+    fn missing_install_state_directory_is_created_on_first_run() {
+        let temp = TempDir::new().expect("tempdir");
+        let missing = temp.path().join("missing-state-root");
+        assert!(!missing.exists());
+
+        let created = initialize_first_run_state(&missing).expect("create missing state root");
+
+        assert!(created);
+        assert!(missing.exists());
+        assert!(missing.join(".first-run-ready").exists());
     }
 
     #[test]
