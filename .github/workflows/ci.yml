@@ -280,6 +280,7 @@ jobs:
           python3 scripts/status/generate_packaging_ambiguity_reports.py
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
+          python3 scripts/status/generate_migration_notes.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -562,6 +563,11 @@ jobs:
             artifacts/status/release_status_manifest.json
             artifacts/status/release_truth_report.json
             artifacts/status/release_truth_report.txt
+            artifacts/status/migration_notes_commands.json
+            artifacts/status/migration_notes_packaging.json
+            artifacts/status/migration_notes_plugin_lifecycle.json
+            artifacts/status/migration_notes_state_behavior.json
+            artifacts/status/migration_notes.txt
           if-no-files-found: warn
           retention-days: 14
 
