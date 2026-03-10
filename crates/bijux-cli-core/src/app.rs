@@ -1468,6 +1468,13 @@ fn route_response(
             let bridge_duplicate_law = read_json_if_exists(
                 &root.join("artifacts/status/bridge_duplicate_law_report.json"),
             );
+            let bridge_wrapper_only_closure = read_json_if_exists(
+                &root.join("artifacts/status/bridge_wrapper_only_closure_report.json"),
+            );
+            let bridge_wrapper_only_closure_text = fs::read_to_string(
+                root.join("artifacts/status/bridge_wrapper_only_closure_report.txt"),
+            )
+            .unwrap_or_default();
             let plugin_lifecycle_ownership = read_json_if_exists(
                 &root.join("artifacts/status/plugin_lifecycle_ownership_report.json"),
             );
@@ -1567,6 +1574,8 @@ fn route_response(
                     "legacy_alias_paths_still_accepted": legacy_alias_paths,
                     "compatibility_shims_still_active": active_compat_shims,
                     "bridge_duplicate_law_report": bridge_duplicate_law,
+                    "bridge_wrapper_only_closure_report": bridge_wrapper_only_closure,
+                    "bridge_wrapper_only_closure_report_text": bridge_wrapper_only_closure_text,
                 },
                 "next_phase_priorities": next_phase,
                 "next_phase_summary_text": next_phase_text,

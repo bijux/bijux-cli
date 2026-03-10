@@ -416,6 +416,7 @@ jobs:
         run: |
           python3 scripts/status/generate_command_migration_matrix.py
           python3 scripts/status/generate_command_surface_inventory.py
+          python3 scripts/status/generate_bridge_wrapper_only_reports.py
 
       - name: Command parity regression gate
         run: |
@@ -726,6 +727,8 @@ jobs:
           path: |
             artifacts/status/status*.json
             artifacts/status/bridge_duplicate_law_report.json
+            artifacts/status/bridge_wrapper_only_closure_report.json
+            artifacts/status/bridge_wrapper_only_closure_report.txt
             artifacts/status/command_migration_matrix.json
             artifacts/status/command_migration_matrix.txt
             artifacts/status/command_migration_rust_partial.json

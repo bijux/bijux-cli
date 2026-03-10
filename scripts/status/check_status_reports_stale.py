@@ -28,6 +28,10 @@ def main() -> int:
     if bridge_dup.returncode != 0:
         print(bridge_dup.stderr.strip() or bridge_dup.stdout.strip())
         return bridge_dup.returncode
+    bridge_wrapper = run(["python3", "scripts/status/generate_bridge_wrapper_only_reports.py"])
+    if bridge_wrapper.returncode != 0:
+        print(bridge_wrapper.stderr.strip() or bridge_wrapper.stdout.strip())
+        return bridge_wrapper.returncode
     install_neutrality = run(["python3", "scripts/status/generate_install_neutrality_reports.py"])
     if install_neutrality.returncode != 0:
         print(install_neutrality.stderr.strip() or install_neutrality.stdout.strip())
@@ -73,6 +77,8 @@ def main() -> int:
             or line.strip() == "artifacts/status/root_command_completion_report.txt"
             or line.strip() == "artifacts/status/root_command_closure_set.json"
             or line.strip() == "artifacts/status/bridge_duplicate_law_report.json"
+            or line.strip() == "artifacts/status/bridge_wrapper_only_closure_report.json"
+            or line.strip() == "artifacts/status/bridge_wrapper_only_closure_report.txt"
             or line.strip() == "artifacts/status/install_neutrality_report.json"
             or line.strip() == "artifacts/status/active_runtime_report.json"
             or line.strip() == "artifacts/status/compatibility_shim_inventory.json"
