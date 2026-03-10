@@ -209,3 +209,11 @@ fn crate_health_exposes_decision_report_payload() {
     assert!(payload["crate_metrics"].is_object());
     assert!(payload["crate_report"].is_object());
 }
+
+#[test]
+fn dev_cli_status_surfaces_next_phase_priorities() {
+    let stdout = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert!(payload["next_phase_priorities"].is_object());
+    assert!(payload["next_phase_summary_text"].is_string());
+}

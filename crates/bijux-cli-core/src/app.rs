@@ -1247,6 +1247,10 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/status/status_unowned_scripts.json"));
             let repl_only_behaviors =
                 read_json_if_exists(&root.join("artifacts/status/repl_only_behaviors.json"));
+            let next_phase =
+                read_json_if_exists(&root.join("artifacts/status/next_phase.json"));
+            let next_phase_text =
+                fs::read_to_string(root.join("artifacts/status/next_phase.txt")).unwrap_or_default();
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1270,6 +1274,8 @@ fn route_response(
                     "unowned_scripts": unowned_scripts,
                     "repl_only_behaviors": repl_only_behaviors,
                 },
+                "next_phase_priorities": next_phase,
+                "next_phase_summary_text": next_phase_text,
                 "current_rust_state": state,
                 "parity": parity,
                 "inventory": dev_cli_inventory_payload(),
