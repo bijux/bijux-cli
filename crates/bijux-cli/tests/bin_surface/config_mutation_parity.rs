@@ -88,6 +88,16 @@ fn normalize_snapshot(stdout: String, config_path: &str) -> String {
     stdout.replace(config_path, "<CONFIG_PATH>")
 }
 
+fn assert_success_json(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+    serde_json::from_slice(&out.stdout).expect("json payload")
+}
+
 #[test]
 fn config_unset_clear_reload_text_snapshots() {
     let temp = make_temp_dir("snapshots");
@@ -152,14 +162,12 @@ fn config_unset_behaves_for_existing_missing_and_invalid_keys() {
     let path = config_path.to_str().expect("utf-8");
 
     let existing = run(&["cli", "config", "unset", "alpha", "--config-path", path]);
-    assert_eq!(existing.status.code(), Some(0));
-    let existing_json: Value = serde_json::from_slice(&existing.stdout).expect("json");
+    let existing_json = assert_success_json(&existing, "config unset existing");
     assert_eq!(existing_json["status"], "deleted");
     assert_eq!(existing_json["removed"], true);
 
     let missing = run(&["cli", "config", "unset", "missing", "--config-path", path]);
-    assert_eq!(missing.status.code(), Some(0));
-    let missing_json: Value = serde_json::from_slice(&missing.stdout).expect("json");
+    let missing_json = assert_success_json(&missing, "config unset missing");
     assert_eq!(missing_json["removed"], false);
 
     let invalid = run(&["cli", "config", "unset", "bad-key", "--config-path", path]);
@@ -182,8 +190,7 @@ fn config_clear_and_reload_handle_missing_and_malformed_files() {
         "--config-path",
         missing.to_str().expect("utf-8"),
     ]);
-    assert_eq!(clear_missing.status.code(), Some(0));
-    let clear_missing_json: Value = serde_json::from_slice(&clear_missing.stdout).expect("json");
+    let clear_missing_json = assert_success_json(&clear_missing, "config clear missing");
     assert_eq!(clear_missing_json["removed_keys"], 0);
 
     let reload_missing = run(&[
@@ -193,8 +200,7 @@ fn config_clear_and_reload_handle_missing_and_malformed_files() {
         "--config-path",
         missing.to_str().expect("utf-8"),
     ]);
-    assert_eq!(reload_missing.status.code(), Some(0));
-    let reload_missing_json: Value = serde_json::from_slice(&reload_missing.stdout).expect("json");
+    let reload_missing_json = assert_success_json(&reload_missing, "config reload missing");
     assert_eq!(reload_missing_json["entry_count"], 0);
 
     let reload_malformed = run(&[
@@ -283,6 +289,8 @@ fn config_mutation_python_parity_for_exit_and_streams() {
     assert_eq!(py_unset.status.code(), rs_unset.status.code());
     assert!(py_unset.stderr.is_empty());
     assert!(rs_unset.stderr.is_empty());
+    assert!(!py_unset.stdout.is_empty());
+    assert!(!rs_unset.stdout.is_empty());
 
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("seed clear parity");
     let py_clear = run_python(
@@ -309,6 +317,8 @@ fn config_mutation_python_parity_for_exit_and_streams() {
     assert_eq!(py_clear.status.code(), rs_clear.status.code());
     assert!(py_clear.stderr.is_empty());
     assert!(rs_clear.stderr.is_empty());
+    assert!(!py_clear.stdout.is_empty());
+    assert!(!rs_clear.stdout.is_empty());
 
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("seed reload parity");
     let py_reload = run_python(
@@ -335,4 +345,6 @@ fn config_mutation_python_parity_for_exit_and_streams() {
     assert_eq!(py_reload.status.code(), rs_reload.status.code());
     assert!(py_reload.stderr.is_empty());
     assert!(rs_reload.stderr.is_empty());
+    assert!(!py_reload.stdout.is_empty());
+    assert!(!rs_reload.stdout.is_empty());
 }

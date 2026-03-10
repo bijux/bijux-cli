@@ -20,6 +20,16 @@ fn run(args: &[&str]) -> Output {
         .expect("binary should execute")
 }
 
+fn assert_success_json(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+    serde_json::from_slice(&out.stdout).expect("json payload")
+}
+
 fn temp_dir(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "bijux-config-mutation-matrix-{name}-{}",
@@ -39,9 +49,11 @@ fn config_set_create_replace_preserve_quoted_spaces_and_invalid_key() {
 
     let create = run(&["cli", "config", "set", "alpha=1", "--config-path", path]);
     assert_eq!(create.status.code(), Some(0));
+    assert!(create.stderr.is_empty());
 
     let replace = run(&["cli", "config", "set", "alpha=2", "--config-path", path]);
     assert_eq!(replace.status.code(), Some(0));
+    assert!(replace.stderr.is_empty());
 
     let quoted = run(&[
         "cli",
@@ -52,6 +64,7 @@ fn config_set_create_replace_preserve_quoted_spaces_and_invalid_key() {
         path,
     ]);
     assert_eq!(quoted.status.code(), Some(0));
+    assert!(quoted.stderr.is_empty());
 
     let spaces = run(&[
         "cli",
@@ -62,6 +75,7 @@ fn config_set_create_replace_preserve_quoted_spaces_and_invalid_key() {
         path,
     ]);
     assert_eq!(spaces.status.code(), Some(0));
+    assert!(spaces.stderr.is_empty());
 
     let invalid = run(&["cli", "config", "set", "bad-key=1", "--config-path", path]);
     assert_eq!(invalid.status.code(), Some(2));
@@ -93,8 +107,7 @@ fn config_unset_existing_and_missing_keys() {
         "--config-path",
         path,
     ]);
-    assert_eq!(existing.status.code(), Some(0));
-    let existing_json: Value = serde_json::from_slice(&existing.stdout).expect("json");
+    let existing_json = assert_success_json(&existing, "config unset existing");
     assert_eq!(existing_json["removed"], true);
 
     let missing = run(&[
@@ -108,8 +121,7 @@ fn config_unset_existing_and_missing_keys() {
         "--config-path",
         path,
     ]);
-    assert_eq!(missing.status.code(), Some(0));
-    let missing_json: Value = serde_json::from_slice(&missing.stdout).expect("json");
+    let missing_json = assert_success_json(&missing, "config unset missing");
     assert_eq!(missing_json["removed"], false);
 }
 
@@ -130,8 +142,7 @@ fn config_clear_populated_and_empty_and_reload_after_external_change() {
         "--config-path",
         path,
     ]);
-    assert_eq!(clear_populated.status.code(), Some(0));
-    let clear_json: Value = serde_json::from_slice(&clear_populated.stdout).expect("json");
+    let clear_json = assert_success_json(&clear_populated, "config clear populated");
     assert_eq!(clear_json["removed_keys"], 2);
 
     let clear_empty = run(&[
@@ -144,8 +155,7 @@ fn config_clear_populated_and_empty_and_reload_after_external_change() {
         "--config-path",
         path,
     ]);
-    assert_eq!(clear_empty.status.code(), Some(0));
-    let clear_empty_json: Value = serde_json::from_slice(&clear_empty.stdout).expect("json");
+    let clear_empty_json = assert_success_json(&clear_empty, "config clear empty");
     assert_eq!(clear_empty_json["removed_keys"], 0);
 
     fs::write(&file, "BIJUXCLI_GAMMA=3\n").expect("external update");
@@ -159,8 +169,7 @@ fn config_clear_populated_and_empty_and_reload_after_external_change() {
         "--config-path",
         path,
     ]);
-    assert_eq!(reload.status.code(), Some(0));
-    let reload_json: Value = serde_json::from_slice(&reload.stdout).expect("json");
+    let reload_json = assert_success_json(&reload, "config reload after external update");
     assert_eq!(reload_json["entry_count"], 1);
 }
 
@@ -200,6 +209,8 @@ fn config_export_text_json_yaml_and_load_valid_malformed() {
         active.to_str().expect("utf-8"),
     ]);
     assert_eq!(json.status.code(), Some(0));
+    assert!(json.stderr.is_empty());
+    assert!(!json.stdout.is_empty());
 
     let yaml = run(&[
         "cli",
@@ -213,6 +224,8 @@ fn config_export_text_json_yaml_and_load_valid_malformed() {
         active.to_str().expect("utf-8"),
     ]);
     assert_eq!(yaml.status.code(), Some(0));
+    assert!(yaml.stderr.is_empty());
+    assert!(!yaml.stdout.is_empty());
 
     fs::write(&valid, "BIJUXCLI_BETA=2\n").expect("seed valid");
     let load_valid = run(&[
@@ -224,6 +237,8 @@ fn config_export_text_json_yaml_and_load_valid_malformed() {
         active.to_str().expect("utf-8"),
     ]);
     assert_eq!(load_valid.status.code(), Some(0));
+    assert!(load_valid.stderr.is_empty());
+    assert!(!load_valid.stdout.is_empty());
 
     fs::write(&malformed, "BROKEN\n").expect("seed malformed");
     let load_malformed = run(&[
@@ -274,6 +289,7 @@ fn config_mutation_rollback_and_retry_idempotency_proof() {
         path,
     ]);
     assert_eq!(retry_one.status.code(), Some(0));
+    assert!(retry_one.stderr.is_empty());
 
     let retry_two = run(&[
         "cli",
@@ -284,6 +300,7 @@ fn config_mutation_rollback_and_retry_idempotency_proof() {
         path,
     ]);
     assert_eq!(retry_two.status.code(), Some(0));
+    assert!(retry_two.stderr.is_empty());
 
     let final_body = fs::read_to_string(&file).expect("read final");
     assert_eq!(final_body, "BIJUXCLI_ALPHA=2\n");

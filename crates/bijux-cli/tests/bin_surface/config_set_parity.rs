@@ -108,6 +108,16 @@ fn normalize_snapshot(stdout: String, config_path: &str) -> String {
     stdout.replace(config_path, "<CONFIG_PATH>")
 }
 
+fn assert_success_json(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+    serde_json::from_slice(&out.stdout).expect("json payload")
+}
+
 #[test]
 fn config_set_output_snapshots_text_json_yaml() {
     let temp = make_temp_dir("snapshots");
@@ -190,9 +200,18 @@ fn config_set_accepts_direct_and_stdin_key_value_pairs() {
 
     let direct = run(&["cli", "config", "set", "alpha=1", "--config-path", path]);
     assert_eq!(direct.status.code(), Some(0));
+    assert!(direct.stderr.is_empty());
+    assert!(!direct.stdout.is_empty());
 
     let stdin = run_with_stdin(&["cli", "config", "set", "--config-path", path], "beta=2\n");
     assert_eq!(stdin.status.code(), Some(0));
+    assert!(stdin.stderr.is_empty());
+    assert!(!stdin.stdout.is_empty());
+
+    let direct_json = assert_success_json(&direct, "config set direct input");
+    let stdin_json = assert_success_json(&stdin, "config set stdin input");
+    assert_eq!(direct_json["key"], "alpha");
+    assert_eq!(stdin_json["key"], "beta");
 
     let content = fs::read_to_string(config_path).expect("config file");
     assert!(content.contains("BIJUXCLI_ALPHA=1"));
@@ -209,11 +228,31 @@ fn config_set_rejects_missing_separator_and_empty_key() {
     assert_eq!(missing_separator.status.code(), Some(2));
     assert!(missing_separator.stdout.is_empty());
     assert!(!missing_separator.stderr.is_empty());
+    let missing_separator_err: Value =
+        serde_json::from_slice(&missing_separator.stderr).expect("missing-separator stderr json");
+    assert_eq!(missing_separator_err["status"], "error");
+    assert_eq!(missing_separator_err["code"], 2);
+    assert!(
+        missing_separator_err["message"]
+            .as_str()
+            .is_some_and(|msg| !msg.trim().is_empty()),
+        "missing separator error should include a message"
+    );
 
     let empty_key = run(&["cli", "config", "set", "=1", "--config-path", path]);
     assert_eq!(empty_key.status.code(), Some(2));
     assert!(empty_key.stdout.is_empty());
     assert!(!empty_key.stderr.is_empty());
+    let empty_key_err: Value =
+        serde_json::from_slice(&empty_key.stderr).expect("empty-key stderr json");
+    assert_eq!(empty_key_err["status"], "error");
+    assert_eq!(empty_key_err["code"], 2);
+    assert!(
+        empty_key_err["message"]
+            .as_str()
+            .is_some_and(|msg| !msg.trim().is_empty()),
+        "empty key error should include a message"
+    );
 }
 
 #[test]
@@ -260,6 +299,12 @@ fn config_set_keeps_original_file_on_write_failure() {
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
+    assert!(
+        stderr.to_ascii_lowercase().contains("permission denied")
+            || stderr.to_ascii_lowercase().contains("os error"),
+        "write failure should be explicit: {stderr}"
+    );
 
     fs::set_permissions(&read_only_dir, fs::Permissions::from_mode(0o755)).expect("restore chmod");
     let content = fs::read_to_string(&config_path).expect("config file");
@@ -312,6 +357,8 @@ fn config_set_stream_routing_and_python_parity() {
     assert_eq!(py_ok.status.code(), rs_ok.status.code());
     assert!(py_ok.stderr.is_empty());
     assert!(rs_ok.stderr.is_empty());
+    assert!(!py_ok.stdout.is_empty());
+    assert!(!rs_ok.stdout.is_empty());
 
     let py_ok_json: Value = serde_json::from_slice(&py_ok.stdout).expect("py json");
     let rs_ok_json: Value = serde_json::from_slice(&rs_ok.stdout).expect("rs json");
