@@ -1,0 +1,6 @@
+{
+  "args": ["cli", "plugins", "list", "--format", "json", "--no-pretty"],
+  "registry_text": "{broken-json",
+  "history_text": "status\n",
+  "memory_text": "{\"alpha\":{\"value\":\"1\"}}"
+}
