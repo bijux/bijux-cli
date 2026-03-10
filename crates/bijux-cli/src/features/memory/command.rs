@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 use crate::infrastructure::state_paths::ResolvedStatePaths;
 use crate::infrastructure::state_store::{read_memory_map, write_memory_map};
-use crate::interface::cli::parser::command_positionals;
+use crate::shared::argv::command_positionals;
 
 pub(crate) fn try_handle(
     normalized_path: &[String],

@@ -15,19 +15,7 @@ use crate::features::plugins::{
     FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use crate::infrastructure::state_paths::ResolvedStatePaths;
-use crate::interface::cli::parser::command_positionals;
-
-fn command_option_value(argv: &[String], name: &str) -> Option<String> {
-    let prefixed = format!("{name}=");
-    if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
-        return Some(found[prefixed.len()..].to_string());
-    }
-    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
-}
-
-fn command_has_flag(argv: &[String], flag: &str) -> bool {
-    argv.iter().any(|arg| arg == flag)
-}
+use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
@@ -114,8 +102,9 @@ pub(crate) fn try_handle(
             let namespace =
                 positional.get(1).cloned().unwrap_or_else(|| "sample-plugin".to_string());
             let force = command_has_flag(argv, "--force");
-            let target =
-                command_option_value(argv, "--path").map(PathBuf::from).unwrap_or_else(|| {
+            let target = command_option_value(argv, &["cli", "plugins", "scaffold"], "--path")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| {
                     env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace)
                 });
             let manifest = scaffold_plugin_layout(&target, &kind, &namespace, force)?;
@@ -135,8 +124,9 @@ pub(crate) fn try_handle(
             let manifest_path = PathBuf::from(&manifest_arg);
             let manifest_text = fs::read_to_string(&manifest_path)?;
             let source =
-                command_option_value(argv, "--source").unwrap_or_else(|| manifest_arg.clone());
-            let trust_level = match command_option_value(argv, "--trust")
+                command_option_value(argv, &["cli", "plugins", "install"], "--source")
+                    .unwrap_or_else(|| manifest_arg.clone());
+            let trust_level = match command_option_value(argv, &["cli", "plugins", "install"], "--trust")
                 .unwrap_or_else(|| "community".to_string())
                 .as_str()
             {

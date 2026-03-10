@@ -3,8 +3,8 @@
 use std::env;
 
 use crate::features::install::CompatibilityPaths;
+use crate::interface::cli::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
-use crate::routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::registry::{RouteRegistry, RouteTarget};
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use anyhow::Result;

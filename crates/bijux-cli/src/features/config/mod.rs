@@ -7,7 +7,7 @@ pub(crate) mod storage;
 pub(crate) mod validation;
 
 use crate::features::install::CompatibilityPaths;
-use crate::interface::cli::parser::{command_option_value, command_positionals};
+use crate::shared::argv::{command_option_value, command_positionals};
 use anyhow::{anyhow, Result};
 use serde_json::Value;
 use std::io::{self, IsTerminal, Read};
