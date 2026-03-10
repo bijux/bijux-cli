@@ -43,6 +43,9 @@ def main() -> int:
             "top_level_keys": sorted(payload.keys()),
             "payload": payload,
         }
+    ownership_path = STATUS / "dev_cli_ownership_report.json"
+    if ownership_path.exists():
+        bundle["ownership_report"] = json.loads(ownership_path.read_text(encoding="utf-8"))
 
     (STATUS / "dev_cli_control_plane_bundle.json").write_text(
         json.dumps(bundle, indent=2, sort_keys=True) + "\n",
@@ -53,4 +56,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

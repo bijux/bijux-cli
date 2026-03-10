@@ -398,6 +398,7 @@ jobs:
           python3 scripts/status/generate_state_audit_reports.py
           python3 scripts/status/generate_plugin_migration_reports.py
           python3 scripts/status/generate_maintainer_control_plane_reports.py
+          python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
 
@@ -708,6 +709,10 @@ jobs:
       - name: Dev cli canonical control-plane policy gate
         run: |
           python3 scripts/status/enforce_dev_cli_canonical_control_plane_policy.py
+
+      - name: Dev cli ownership policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_ownership_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1181,6 +1186,17 @@ jobs:
         with:
           name: dev-cli-control-plane-bundle
           path: artifacts/status/dev_cli_control_plane_bundle.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli ownership report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-ownership-report
+          path: |
+            artifacts/status/dev_cli_ownership_report.json
+            artifacts/status/dev_cli_ownership_report.txt
           if-no-files-found: warn
           retention-days: 14
 
