@@ -76,8 +76,6 @@ const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
     "readiness",
     "diff",
     "gaps",
-    "changelog-burden",
-    "migrate-changelog",
     "summary",
     "manifest",
     "notes",

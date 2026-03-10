@@ -16,8 +16,6 @@ REPORTS = {
     "dev_cli_release_readiness_report.json": ["dev", "cli", "release", "readiness"],
     "dev_cli_release_diff_report.json": ["dev", "cli", "release", "diff"],
     "dev_cli_release_gaps_report.json": ["dev", "cli", "release", "gaps"],
-    "dev_cli_release_changelog_burden_report.json": ["dev", "cli", "release", "changelog-burden"],
-    "dev_cli_release_changelog_migration_report.json": ["dev", "cli", "release", "migrate-changelog"],
     "dev_cli_release_summary_report.json": ["dev", "cli", "release", "summary"],
     "dev_cli_release_manifest_report.json": ["dev", "cli", "release", "manifest"],
     "dev_cli_release_notes_report.json": ["dev", "cli", "release", "notes"],

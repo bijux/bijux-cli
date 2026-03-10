@@ -237,8 +237,6 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("readiness"))
                 .subcommand(Command::new("diff"))
                 .subcommand(Command::new("gaps"))
-                .subcommand(Command::new("changelog-burden"))
-                .subcommand(Command::new("migrate-changelog"))
                 .subcommand(Command::new("summary"))
                 .subcommand(Command::new("manifest"))
                 .subcommand(Command::new("notes"))

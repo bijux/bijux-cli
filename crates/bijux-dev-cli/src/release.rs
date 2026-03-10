@@ -100,48 +100,6 @@ pub fn build_gaps_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release changelog-burden`
-#[must_use]
-pub fn build_changelog_burden_report(workspace_root: &Path) -> Value {
-    let changelog_dir = workspace_root.join("changelog.d");
-    let fragments = if changelog_dir.exists() {
-        fs::read_dir(&changelog_dir)
-            .ok()
-            .map(|entries| {
-                entries
-                    .flatten()
-                    .map(|entry| entry.path().display().to_string())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default()
-    } else {
-        Vec::new()
-    };
-    json!({
-        "changelog_fragment_count": fragments.len(),
-        "changelog_fragments": fragments,
-        "burden_points": [
-            "fragment sprawl can hide release truth",
-            "manual fragment triage duplicates evidence artifacts",
-            "status manifest already encodes release readiness facts"
-        ]
-    })
-}
-
-/// `dev cli release migrate-changelog`
-#[must_use]
-pub fn build_changelog_migration_report() -> Value {
-    json!({
-        "safe_mode": true,
-        "actions": [
-            "stop adding new changelog.d fragments",
-            "map fragment signals into release evidence bundle",
-            "use dev cli release summary/notes outputs for release communication"
-        ],
-        "blocking_rule": "do not delete changelog.d until release truth bundle is green",
-    })
-}
-
 /// `dev cli release summary`
 #[must_use]
 pub fn build_summary_report(workspace_root: &Path) -> Value {

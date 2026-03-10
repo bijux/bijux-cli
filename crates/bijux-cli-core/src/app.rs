@@ -1294,12 +1294,6 @@ fn route_response(
         [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "gaps" => {
             dev_release::build_gaps_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "changelog-burden" => {
-            dev_release::build_changelog_burden_report(&workspace_root())
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "migrate-changelog" => {
-            dev_release::build_changelog_migration_report()
-        }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "summary" => {
             dev_release::build_summary_report(&workspace_root())
         }

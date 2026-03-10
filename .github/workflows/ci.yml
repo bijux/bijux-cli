@@ -1323,8 +1323,6 @@ jobs:
             artifacts/status/dev_cli_release_readiness_report.json
             artifacts/status/dev_cli_release_diff_report.json
             artifacts/status/dev_cli_release_gaps_report.json
-            artifacts/status/dev_cli_release_changelog_burden_report.json
-            artifacts/status/dev_cli_release_changelog_migration_report.json
             artifacts/status/dev_cli_release_summary_report.json
             artifacts/status/dev_cli_release_manifest_report.json
             artifacts/status/dev_cli_release_notes_report.json
