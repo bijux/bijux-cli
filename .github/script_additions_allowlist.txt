@@ -53,6 +53,8 @@ scripts/status/generate_metadata_consistency_reports.py # generate command metad
 scripts/status/enforce_metadata_consistency_gate.py # enforce CI failure when command metadata consistency artifacts drift or coverage regresses
 scripts/status/generate_config_deep_behavior_reports.py # generate config semantic roundtrip, precedence, determinism, corruption recovery, and drift artifacts
 scripts/status/enforce_config_deep_behavior_gate.py # enforce CI failure when config deep behavior artifacts or coverage regress
+scripts/status/generate_history_deep_behavior_reports.py # generate history semantic, determinism, corruption, repl interop, stream discipline, and failure-class artifacts
+scripts/status/enforce_history_deep_behavior_gate.py # enforce CI failure when history deep behavior artifacts or coverage regress
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests
