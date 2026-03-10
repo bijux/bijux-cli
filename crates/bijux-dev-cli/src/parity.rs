@@ -78,6 +78,7 @@ pub fn build_report(workspace_root: &Path) -> Value {
         read_json_if_exists(&workspace_root.join("artifacts/parity/memory_parity_report.json"));
 
     json!({
+        "migration_dashboard_default": "bijux dev cli parity",
         "rust_python": parity_report,
         "binary_bridge": bridge_parity,
         "command_matrix": command_matrix,

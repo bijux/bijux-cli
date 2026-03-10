@@ -56,6 +56,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
     let is_canonical_path = is_canonical_active_path(input.install_report.active_binary.as_deref());
 
     json!({
+        "runtime_truth_default": "bijux dev cli runtime-identity",
         "runtime": "rust-foundation",
         "schema": "runtime-identity-v1",
         "public_runtime_binary_names": [CANONICAL_EXECUTABLE],

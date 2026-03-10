@@ -278,6 +278,8 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     );
 
     json!({
+        "maintainer_dashboard_default": "bijux dev cli status",
+        "control_plane_crate": "bijux-dev-cli",
         "status_report": status_report,
         "reports": {
             "root_commands": root_commands,
