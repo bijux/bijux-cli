@@ -4,8 +4,8 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use crate::app::run_app;
 use crate::bootstrap::wiring::{decode_os_argv, emit_run_result};
+use crate::interface::cli::dispatch::run_app;
 use crate::kernel::map_error_category_to_exit;
 
 /// Execute the CLI process using current OS argv.

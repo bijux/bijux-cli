@@ -7,17 +7,27 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::argv::command_positionals;
-use crate::cli::context::{
-    command_has_flag, command_option_value, scaffold_plugin_layout, ResolvedStatePaths,
-};
-use crate::plugin::{
+use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
-    load_time_diagnostics, plugin_doctor, uninstall_plugin, validate_manifest,
-    InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES,
-    RESERVED_NAMESPACES,
+    load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
+    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
+    FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
+use crate::infrastructure::state_paths::ResolvedStatePaths;
+use crate::interface::cli::parser::command_positionals;
+
+fn command_option_value(argv: &[String], name: &str) -> Option<String> {
+    let prefixed = format!("{name}=");
+    if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
+        return Some(found[prefixed.len()..].to_string());
+    }
+    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
+}
+
+fn command_has_flag(argv: &[String], flag: &str) -> bool {
+    argv.iter().any(|arg| arg == flag)
+}
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
@@ -181,7 +191,7 @@ pub(crate) fn try_handle(
             })))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
-            let repaired = crate::plugin::self_repair_registry(plugin_registry_path).is_ok();
+            let repaired = self_repair_registry(plugin_registry_path).is_ok();
             let report = plugin_doctor(plugin_registry_path)?;
             Ok(Some(json!({
                 "status": "ok",

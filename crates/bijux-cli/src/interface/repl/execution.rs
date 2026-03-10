@@ -1,4 +1,4 @@
-use crate::app::run_app;
+use crate::interface::cli::dispatch::run_app;
 use crate::routing::parser::root_command;
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 

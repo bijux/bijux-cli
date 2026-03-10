@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::install::atomic_write_text;
+use crate::features::install::atomic_write_text;
 
 use super::execution::execute_repl_line;
 use super::types::{ReplError, ReplFrame, ReplSession};

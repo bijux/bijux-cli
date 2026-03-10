@@ -3,8 +3,9 @@
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::argv::command_positionals;
-use crate::cli::context::{read_history_entries, write_history_entries, ResolvedStatePaths};
+use crate::infrastructure::state_paths::ResolvedStatePaths;
+use crate::infrastructure::state_store::{read_history_entries, write_history_entries};
+use crate::interface::cli::parser::command_positionals;
 
 pub(crate) fn try_handle(
     normalized_path: &[String],

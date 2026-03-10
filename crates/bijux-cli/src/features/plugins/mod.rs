@@ -10,6 +10,8 @@ mod errors;
 mod manifest;
 mod models;
 mod registry;
+/// Plugin scaffolding helpers for manifest and starter files.
+pub(crate) mod scaffold;
 
 use std::path::Path;
 

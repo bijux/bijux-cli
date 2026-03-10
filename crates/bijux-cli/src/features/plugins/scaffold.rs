@@ -5,7 +5,7 @@ use std::path::{Component, Path, PathBuf};
 
 use anyhow::Result;
 
-use crate::plugin::{is_reserved_namespace, RESERVED_NAMESPACES};
+use super::{is_reserved_namespace, parse_manifest_v1, validate_manifest, RESERVED_NAMESPACES};
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
     !path.components().any(|component| matches!(component, Component::ParentDir))
@@ -59,9 +59,8 @@ pub(crate) fn scaffold_plugin_layout(
 
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
-    let manifest = crate::plugin::parse_manifest_v1(&manifest_text)?;
-    let _ =
-        crate::plugin::validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
+    let manifest = parse_manifest_v1(&manifest_text)?;
+    let _ = validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
 
     Ok(manifest_path)
 }

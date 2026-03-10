@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-use crate::install::atomic_write_text;
+use crate::features::install::atomic_write_text;
 
 use super::error::ConfigError;
 use super::serialization::{decode_quoted_value, render_env};

@@ -121,7 +121,7 @@ pub enum ReplError {
     Core(String),
     /// Output encoding failed.
     #[error(transparent)]
-    Emit(#[from] crate::output::EmitError),
+    Emit(#[from] crate::shared::output::EmitError),
     /// History serialization failed.
     #[error(transparent)]
     Json(#[from] serde_json::Error),

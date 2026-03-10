@@ -15,16 +15,16 @@ use bijux_dev_cli::{
 };
 use serde_json::{json, Value};
 
-use crate::cli::context::{
-    env_map, state_diagnostics, state_path_status_value, ResolvedStatePaths,
-};
 use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
-use crate::install::{
+use crate::features::diagnostics::state_diagnostics_query;
+use crate::features::install::{
     canonical_crate_name, cargo_install_strategy, install_health_report, pip_install_strategy,
     query::runtime_identity_query, PackageChannel,
 };
-use crate::plugin::{list_plugins, load_time_diagnostics, FUTURE_PRODUCT_NAMESPACES};
-use crate::query::state_diagnostics_query;
+use crate::features::plugins::{list_plugins, load_time_diagnostics, FUTURE_PRODUCT_NAMESPACES};
+use crate::infrastructure::state_paths::{
+    env_map, state_diagnostics, state_path_status_value, ResolvedStatePaths,
+};
 use crate::routing::inventory::{registry_inventory, route_inventory};
 use crate::routing::query::contracts_schema_query;
 use crate::routing::registry::RouteRegistry;

@@ -7,9 +7,9 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
-use crate::cli::context::ResolvedStatePaths;
-use crate::install::{install_health_report, post_install_hint};
-use crate::plugin::{compatibility_warnings, plugin_origin_metadata};
+use crate::features::install::{install_health_report, post_install_hint};
+use crate::features::plugins::{compatibility_warnings, plugin_origin_metadata};
+use crate::infrastructure::state_paths::ResolvedStatePaths;
 use crate::routing::registry::RouteRegistry;
 
 pub(crate) fn try_handle(

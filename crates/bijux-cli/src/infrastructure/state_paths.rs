@@ -8,13 +8,16 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use super::persistence::{read_history_entries, read_memory_map};
+use super::state_store::{read_history_entries, read_memory_map};
 use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
-use crate::install::{
+use crate::features::diagnostics::StatePathStatus;
+use crate::features::install::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
     CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
-use crate::plugin::{plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir};
+use crate::features::plugins::{
+    plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir, self_repair_registry,
+};
 use crate::routing::parser::ParsedGlobalFlags;
 
 fn home_dir() -> Option<PathBuf> {
@@ -68,7 +71,7 @@ pub(crate) fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedS
     })
 }
 
-pub(crate) fn state_path_status_value(status: &crate::query::StatePathStatus) -> Value {
+pub(crate) fn state_path_status_value(status: &StatePathStatus) -> Value {
     json!({
         "path": status.path,
         "exists": status.exists,
@@ -160,7 +163,7 @@ pub(crate) fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         }
     }
 
-    if crate::plugin::self_repair_registry(&paths.plugin_registry_file).is_ok() {
+    if self_repair_registry(&paths.plugin_registry_file).is_ok() {
         if let Ok(true) = prune_registry_backup(&paths.plugin_registry_file) {
             repairs.push(json!({
                 "area": "plugins",

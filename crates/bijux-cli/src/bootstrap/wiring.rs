@@ -5,7 +5,7 @@ use std::env;
 use std::ffi::OsString;
 use std::io::{self, Write};
 
-use crate::app::AppRunResult;
+use crate::interface::cli::dispatch::AppRunResult;
 
 pub(crate) fn decode_os_argv() -> Result<Vec<String>, OsString> {
     let mut argv = Vec::new();

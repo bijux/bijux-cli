@@ -5,7 +5,7 @@ use std::path::Path;
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::plugin::{list_plugins, FUTURE_PRODUCT_NAMESPACES};
+use crate::features::plugins::{list_plugins, FUTURE_PRODUCT_NAMESPACES};
 
 pub(crate) fn try_handle(
     normalized_path: &[String],

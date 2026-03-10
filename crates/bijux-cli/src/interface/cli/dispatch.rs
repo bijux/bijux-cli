@@ -2,7 +2,7 @@
 
 use std::env;
 
-use crate::install::CompatibilityPaths;
+use crate::features::install::CompatibilityPaths;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::registry::{RouteRegistry, RouteTarget};
@@ -11,15 +11,15 @@ use anyhow::Result;
 use bijux_dev_cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
-use crate::cli::commands::{cli as cli_commands, root as root_commands};
-use crate::cli::context::resolve_state_paths;
 use crate::features::config::execute_config_command;
+use crate::features::diagnostics::{cli_command as cli_commands, root_command as root_commands};
 use crate::features::{
     developer as developer_feature, history as history_feature, memory as memory_feature,
     plugins as plugins_feature,
 };
+use crate::infrastructure::state_paths::resolve_state_paths;
 use crate::interface::cli::help::render_command_help;
-use crate::output::{render_value, EmitterConfig};
+use crate::shared::output::{render_value, EmitterConfig};
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]

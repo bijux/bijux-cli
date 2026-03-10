@@ -3,9 +3,7 @@
 //! Core runtime primitives for Rust bijux-cli.
 
 pub mod app;
-mod argv;
 pub mod bootstrap;
-pub mod cli;
 pub mod entrypoint;
 pub mod features;
 pub mod infrastructure;
