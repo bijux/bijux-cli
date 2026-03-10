@@ -45,6 +45,8 @@ scripts/status/generate_config_source_surface_reports.py # generate config sourc
 scripts/status/enforce_config_source_consistency.py # enforce CI failure when source-report artifacts drift from actual config resolution behavior
 scripts/status/generate_kernel_invariants_reports.py # generate kernel invariants and drift artifacts for deep execution pipeline contract coverage
 scripts/status/enforce_kernel_invariants_gate.py # enforce CI failure when kernel invariant coverage or drift artifacts regress
+scripts/status/generate_exit_code_law_reports.py # generate exit-code contract and drift artifacts across root, cli, dev, plugin, and state command domains
+scripts/status/enforce_exit_code_law_gate.py # enforce CI failure when exit-code law coverage or drift artifacts regress
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

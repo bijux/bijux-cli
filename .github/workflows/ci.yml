@@ -293,6 +293,7 @@ jobs:
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
           python3 scripts/status/generate_kernel_invariants_reports.py
+          python3 scripts/status/generate_exit_code_law_reports.py
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
@@ -443,6 +444,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_kernel_invariants_gate.py --enforce
 
+      - name: Exit-code law gate
+        run: |
+          python3 scripts/status/enforce_exit_code_law_gate.py --enforce
+
       - name: Deterministic generation gate
         run: |
           python3 scripts/status/check_deterministic_generation.py
@@ -549,6 +554,17 @@ jobs:
           path: |
             artifacts/status/kernel_invariants_report.json
             artifacts/status/kernel_invariants_diff.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload exit-code law artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: exit-code-law
+          path: |
+            artifacts/status/exit_code_contract_artifact.json
+            artifacts/status/exit_code_drift_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
