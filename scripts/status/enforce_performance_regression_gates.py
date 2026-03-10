@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-BIN_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "performance_realism_hardening.rs"
+BIN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "performance_realism_hardening.rs"
 OUTPUT_TEST = ROOT / "crates" / "bijux-cli-output" / "tests" / "output_rendering_performance.rs"
 REPL_TEST = ROOT / "crates" / "bijux-cli-repl" / "tests" / "repl_startup_performance_budget.rs"
 

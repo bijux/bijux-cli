@@ -25,7 +25,7 @@ def main() -> int:
             "test",
             "-q",
             "-p",
-            "bijux-cli-bin",
+            "bijux-cli-core",
             "--test",
             "install_ambiguity_hardening",
         ],

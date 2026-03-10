@@ -34,7 +34,7 @@ def main() -> int:
     if missing:
         failures.append(f"diagnostics taxonomy missing required buckets: {', '.join(missing)}")
 
-    test_file = ROOT / "crates/bijux-cli-bin/tests/diagnostics_contract_consistency.rs"
+    test_file = ROOT / "crates/bijux-cli-core/tests/bin_surface/diagnostics_contract_consistency.rs"
     if not test_file.exists():
         failures.append("diagnostics contract consistency test file is missing")
 

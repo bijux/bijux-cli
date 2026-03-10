@@ -18,7 +18,7 @@ def run_once(args: list[str], env: dict[str, str]) -> dict[str, object]:
     binary = ROOT / "target" / "debug" / "bijux-rs"
     if not binary.exists():
         subprocess.run(
-            ["cargo", "build", "-q", "-p", "bijux-cli-bin"],
+            ["cargo", "build", "-q", "-p", "bijux-cli-core"],
             cwd=ROOT,
             env=env,
             capture_output=True,

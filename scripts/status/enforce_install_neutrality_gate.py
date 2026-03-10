@@ -23,7 +23,7 @@ def run_install_tests() -> tuple[bool, str]:
         "test",
         "-q",
         "-p",
-        "bijux-cli-bin",
+        "bijux-cli-core",
         "--test",
         "install_ambiguity_hardening",
         "--",
