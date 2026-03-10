@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use bijux_cli_contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
 use semver::Version;
 
-use crate::constants::{CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
+use crate::constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
 use crate::errors::PluginError;
 use crate::models::ValidatedPlugin;
 
@@ -68,7 +68,7 @@ fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
 }
 
 fn reject_reserved_namespace(namespace: &Namespace, reserved: &[&str]) -> Result<(), PluginError> {
-    if reserved.iter().any(|value| *value == namespace.0) {
+    if is_reserved_namespace(&namespace.0, reserved) {
         return Err(PluginError::ReservedNamespace(namespace.0.clone()));
     }
     Ok(())

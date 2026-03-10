@@ -5,6 +5,8 @@ use std::env;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
+use bijux_cli_core::kernel::map_error_category_to_exit;
+
 #[cfg(test)]
 use libc as _;
 #[cfg(test)]
@@ -17,7 +19,7 @@ fn main() -> ExitCode {
             Ok(valid) => valid,
             Err(_) => {
                 let _ = writeln!(io::stderr(), "invalid UTF-8 argument in argv");
-                return ExitCode::from(2);
+                return ExitCode::from(map_error_category_to_exit("usage") as u8);
             }
         };
         argv.push(value);

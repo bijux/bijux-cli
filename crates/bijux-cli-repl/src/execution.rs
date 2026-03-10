@@ -12,6 +12,24 @@ fn parse_shell_tokens(input: &str) -> Vec<String> {
         .unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
 }
 
+fn output_format_from_name(name: &str) -> Option<OutputFormat> {
+    match name {
+        "json" => Some(OutputFormat::Json),
+        "yaml" => Some(OutputFormat::Yaml),
+        "text" => Some(OutputFormat::Text),
+        _ => None,
+    }
+}
+
+fn output_format_name(format: OutputFormat) -> &'static str {
+    match format {
+        OutputFormat::Json => "json",
+        OutputFormat::Yaml => "yaml",
+        OutputFormat::Text => "text",
+        _ => "json",
+    }
+}
+
 /// Build argv using the same tokenization path REPL execution uses.
 #[must_use]
 pub fn repl_argv_from_line(line: &str) -> Vec<String> {
@@ -64,9 +82,10 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
                 ("trace", "off") => session.trace_mode = false,
                 ("quiet", "on") => session.policy.quiet = true,
                 ("quiet", "off") => session.policy.quiet = false,
-                ("format", "json") => session.policy.output_format = OutputFormat::Json,
-                ("format", "yaml") => session.policy.output_format = OutputFormat::Yaml,
-                ("format", "text") => session.policy.output_format = OutputFormat::Text,
+                ("format", value) => {
+                    session.policy.output_format = output_format_from_name(value)
+                        .ok_or_else(|| ReplError::InvalidMetaCommand(line.to_string()))?;
+                }
                 _ => return Err(ReplError::InvalidMetaCommand(line.to_string())),
             }
 
@@ -93,15 +112,7 @@ fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> 
     let mut argv = vec!["bijux".to_string()];
 
     argv.push("--format".to_string());
-    argv.push(
-        match session.policy.output_format {
-            OutputFormat::Json => "json",
-            OutputFormat::Yaml => "yaml",
-            OutputFormat::Text => "text",
-            _ => "json",
-        }
-        .to_string(),
-    );
+    argv.push(output_format_name(session.policy.output_format).to_string());
 
     argv.push(
         match session.policy.pretty_mode {

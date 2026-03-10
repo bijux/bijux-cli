@@ -2,6 +2,7 @@
 //! Conversion and error-classification helpers for Python bridge APIs.
 
 use anyhow::Error as AnyError;
+use bijux_cli_contracts::ExitCode;
 
 /// Coarse error categories surfaced to Python callers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,7 +18,7 @@ pub enum BridgeErrorKind {
 /// Classify failure shape based on exit policy and stderr content.
 #[must_use]
 pub fn classify_failure(exit_code: i32, stderr: &str) -> BridgeErrorKind {
-    if exit_code == 2 {
+    if exit_code == ExitCode::Usage as i32 {
         return BridgeErrorKind::Usage;
     }
     let lower = stderr.to_ascii_lowercase();
