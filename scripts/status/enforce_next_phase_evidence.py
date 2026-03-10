@@ -22,6 +22,8 @@ def main() -> int:
     required = [
         STATUS / "next_phase.json",
         STATUS / "next_phase.txt",
+        STATUS / "next_phase_minimalism.json",
+        STATUS / "next_phase_minimalism.txt",
         STATUS / "ranked_python_only_behaviors.json",
         STATUS / "ranked_parity_partial_behaviors.json",
         STATUS / "ranked_plugin_gaps.json",
@@ -35,6 +37,18 @@ def main() -> int:
         STATUS / "ranked_docs_deletion_candidates.json",
         STATUS / "ranked_script_deletion_candidates.json",
         STATUS / "ranked_weak_test_replacements.json",
+        STATUS / "ranked_accidental_complexity_hotspots.json",
+        STATUS / "ranked_python_era_leftovers.json",
+        STATUS / "ranked_shim_alias_leftovers.json",
+        STATUS / "ranked_public_api_removal_candidates.json",
+        STATUS / "ranked_remaining_state_risks.json",
+        STATUS / "ranked_remaining_plugin_lifecycle_risks.json",
+        STATUS / "ranked_remaining_packaging_ambiguity_risks.json",
+        STATUS / "ranked_remaining_repl_divergence_risks.json",
+        STATUS / "ranked_remaining_crate_boundary_problems.json",
+        STATUS / "ranked_remaining_docs_worth_deleting.json",
+        STATUS / "ranked_remaining_scripts_worth_deleting.json",
+        STATUS / "ranked_remaining_weak_tests_worth_replacing.json",
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
     if missing:
@@ -42,9 +56,19 @@ def main() -> int:
 
     next_phase = read_json(STATUS / "next_phase.json")
     policy = next_phase.get("evidence_first_policy", {}) if isinstance(next_phase, dict) else {}
+    minimalism_phase = read_json(STATUS / "next_phase_minimalism.json")
+    minimalism_policy = (
+        minimalism_phase.get("evidence_first_policy", {})
+        if isinstance(minimalism_phase, dict)
+        else {}
+    )
 
     if policy.get("manual_curated_priority_lists_allowed") is not False:
         failures.append("manual curated next-phase priorities must be disabled")
+    if minimalism_policy.get("manual_curated_priority_lists_allowed") is not False:
+        failures.append("manual curated simplification priorities must be disabled")
+    if minimalism_policy.get("next_roadmap_requires_generated_artifacts") is not True:
+        failures.append("next roadmap must be generated from evidence artifacts")
 
     merge_sources = set(policy.get("crate_merge_reassessment_source", []))
     if {
@@ -52,6 +76,12 @@ def main() -> int:
         "artifacts/status/crate_boundary_report.json",
     } - merge_sources:
         failures.append("crate merge reassessment must depend on generated crate complexity artifacts")
+    minimal_merge_sources = set(minimalism_policy.get("crate_merge_reassessment_source", []))
+    if {
+        "artifacts/status/ranked_crate_complexity.json",
+        "artifacts/status/ranked_remaining_crate_boundary_problems.json",
+    } - minimal_merge_sources:
+        failures.append("minimalism crate merge reassessment must depend on ranked complexity artifacts")
 
     api_sources = set(policy.get("public_api_trim_reassessment_source", []))
     if {
@@ -60,6 +90,22 @@ def main() -> int:
         "artifacts/status/crate_boundary_metrics.json",
     } - api_sources:
         failures.append("public API trim reassessment must depend on usage and complexity artifacts")
+
+    docs_sources = set(minimalism_policy.get("docs_survival_reassessment_source", []))
+    if {
+        "artifacts/status/ranked_docs_deletion_candidates.json",
+        "artifacts/status/ranked_remaining_docs_worth_deleting.json",
+        "artifacts/status/cleanup_report.json",
+    } - docs_sources:
+        failures.append("docs survival reassessment must depend on generated docs and cleanup artifacts")
+
+    shim_sources = set(minimalism_policy.get("shim_retention_reassessment_source", []))
+    if {
+        "artifacts/status/live_compatibility_shims.json",
+        "artifacts/status/live_compatibility_aliases.json",
+        "artifacts/status/ranked_shim_alias_leftovers.json",
+    } - shim_sources:
+        failures.append("shim retention reassessment must depend on generated shim/alias artifacts")
 
     manual_priority_files = []
     for path in ROOT.rglob("*next*phase*"):

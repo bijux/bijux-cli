@@ -1178,6 +1178,12 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/status/next_phase.json"));
             let next_phase_text =
                 fs::read_to_string(root.join("artifacts/status/next_phase.txt")).unwrap_or_default();
+            let next_phase_minimalism =
+                read_json_if_exists(&root.join("artifacts/status/next_phase_minimalism.json"));
+            let next_phase_minimalism_text = fs::read_to_string(
+                root.join("artifacts/status/next_phase_minimalism.txt"),
+            )
+            .unwrap_or_default();
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1203,6 +1209,8 @@ fn route_response(
                 },
                 "next_phase_priorities": next_phase,
                 "next_phase_summary_text": next_phase_text,
+                "next_simplification_priorities": next_phase_minimalism,
+                "next_simplification_summary_text": next_phase_minimalism_text,
                 "current_rust_state": state,
                 "parity": parity,
                 "inventory": dev_cli_inventory_payload(),

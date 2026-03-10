@@ -7,3 +7,4 @@ scripts/status/generate_release_build_reports.py # generate release/debug size, 
 scripts/status/check_deterministic_generation.py # verify schema, command-tree, and parity artifact generation remain deterministic
 scripts/status/check_release_build_consistency.py # run repeated release builds and report binary hash consistency
 scripts/status/generate_cleanup_reports.py # produce cleanup evidence and retention-policy artifacts for stale docs/snapshots/generated files
+scripts/status/generate_next_minimalism_priorities.py # generate ranked simplification priorities and next_phase_minimalism artifacts from evidence reports

@@ -283,6 +283,7 @@ jobs:
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
+          python3 scripts/status/generate_next_minimalism_priorities.py
           python3 scripts/status/generate_cleanup_reports.py
           python3 scripts/status/generate_product_mount_readiness_reports.py
           python3 scripts/status/generate_plugin_scaffold_reports.py
@@ -627,6 +628,8 @@ jobs:
             artifacts/status/migration_notes.txt
             artifacts/status/next_phase.json
             artifacts/status/next_phase.txt
+            artifacts/status/next_phase_minimalism.json
+            artifacts/status/next_phase_minimalism.txt
             artifacts/status/ranked_python_only_behaviors.json
             artifacts/status/ranked_parity_partial_behaviors.json
             artifacts/status/ranked_plugin_gaps.json
@@ -640,6 +643,18 @@ jobs:
             artifacts/status/ranked_docs_deletion_candidates.json
             artifacts/status/ranked_script_deletion_candidates.json
             artifacts/status/ranked_weak_test_replacements.json
+            artifacts/status/ranked_accidental_complexity_hotspots.json
+            artifacts/status/ranked_python_era_leftovers.json
+            artifacts/status/ranked_shim_alias_leftovers.json
+            artifacts/status/ranked_public_api_removal_candidates.json
+            artifacts/status/ranked_remaining_state_risks.json
+            artifacts/status/ranked_remaining_plugin_lifecycle_risks.json
+            artifacts/status/ranked_remaining_packaging_ambiguity_risks.json
+            artifacts/status/ranked_remaining_repl_divergence_risks.json
+            artifacts/status/ranked_remaining_crate_boundary_problems.json
+            artifacts/status/ranked_remaining_docs_worth_deleting.json
+            artifacts/status/ranked_remaining_scripts_worth_deleting.json
+            artifacts/status/ranked_remaining_weak_tests_worth_replacing.json
             artifacts/status/official_product_mount_registry.json
             artifacts/status/product_mount_readiness_report.json
             artifacts/status/product_mount_support_report.json
