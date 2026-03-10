@@ -105,3 +105,5 @@ scripts/status/generate_route_registry_fuzz_reports.py # generate route/registry
 scripts/status/enforce_route_registry_fuzz_gate.py # enforce CI failure when route/registry fuzz replays drift or the route/registry fuzz hardening contract is not frozen
 scripts/status/generate_config_fuzz_hardening_reports.py # generate config parser/serializer fuzz crash triage, minimized-regression, and frozen hardening-contract artifacts for config parser/serializer fuzzing
 scripts/status/enforce_config_fuzz_hardening_gate.py # enforce CI failure when config fuzz crash triage, minimized regression replay, or config fuzz hardening contract drifts
+scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py # generate plugin manifest/scaffold fuzz crash triage, minimized-regression, and frozen maintenance-contract artifacts from retained plugin manifest/scaffold minimized cases
+scripts/status/enforce_plugin_manifest_scaffold_fuzz_gate.py # enforce CI failure when plugin manifest/scaffold fuzz triage or minimized regression replay drifts from the frozen hardening contract
