@@ -267,7 +267,7 @@ This section defines engineering standards for the Rust workspace in `bijux-cli`
 - `crates/bijux-cli-repl`: interactive shell orchestration
 - `crates/bijux-cli-plugin`: plugin lifecycle boundaries
 - `crates/bijux-cli-python`: Python compatibility bridge
-- `crates/bijux-cli-install`: install/update flow boundaries
+- `crates/bijux-cli-core::install`: install/update flow boundaries
 - `crates/bijux-cli-bin`: binary entrypoint
 
 ### Non-negotiable rules

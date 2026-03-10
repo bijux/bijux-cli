@@ -17,7 +17,7 @@ The bridge was split into focused modules:
 ## Key architectural decisions
 
 1. The bridge now executes commands through `bijux_cli_core::app::run_app`, matching the binary entrypoint behavior.
-2. Compatibility domain logic was moved out of the bridge runtime path and shared through `bijux-cli-install`.
+2. Compatibility domain logic was moved out of the bridge runtime path and shared through `bijux-cli-core::install`.
 3. The bridge crate remains a thin API adapter instead of a second command-law implementation.
 
 ## Residual risks

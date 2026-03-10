@@ -5,7 +5,7 @@
 ## Boundary Rules
 
 1. `bijux-dev-cli` owns maintainer automation and maintainer-facing report assembly.
-2. Runtime crates (`bijux-cli-core`, `bijux-cli-routing`, `bijux-cli-install`, `bijux-cli-plugin`, `bijux-cli-output`) own runtime law and structured-data services.
+2. Runtime crates (`bijux-cli-core`, `bijux-cli-routing`, `bijux-cli-core::install`, `bijux-cli-plugin`, `bijux-cli-output`) own runtime law and structured-data services.
 3. Runtime crates must not own maintainer workflow orchestration or maintainer-facing dashboard formatting.
 4. `bijux dev cli ...` is the canonical maintainer command surface.
 5. `bijux` remains the only canonical executable.
@@ -72,7 +72,7 @@ These files represent the frozen baseline for extraction. Extraction work must r
 
 - Runtime crates expose read-only structured query interfaces for maintainer reports:
   - `bijux-cli-routing`: route and registry inventory, contracts schema inventory.
-  - `bijux-cli-install`: runtime identity diagnostics query.
+  - `bijux-cli-core::install`: runtime identity diagnostics query.
   - `bijux-cli-core`: state diagnostics and parity/status artifact availability query.
 - Query interfaces are data-only and must not render text or assemble maintainer dashboards.
 - Runtime crates other than `bijux-cli-core` must not import `bijux-dev-cli`.
