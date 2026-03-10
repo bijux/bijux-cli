@@ -313,6 +313,7 @@ jobs:
           python3 scripts/status/generate_history_surface_reports.py
           python3 scripts/status/generate_memory_surface_reports.py
           python3 scripts/status/generate_diagnostics_surface_reports.py
+          python3 scripts/status/generate_command_surface_consistency_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -401,6 +402,10 @@ jobs:
       - name: Cross-surface drift gate
         run: |
           python3 scripts/parity/check_cross_surface_drift_gate.py --enforce
+
+      - name: Command-surface consistency gate
+        run: |
+          python3 scripts/status/enforce_command_surface_consistency_gate.py
 
       - name: Command parity matrix artifact
         run: |
@@ -495,6 +500,10 @@ jobs:
       - name: New public API consumer warning
         run: |
           python3 scripts/status/warn_new_unused_public_api.py
+
+      - name: Uncovered command-surface warning
+        run: |
+          python3 scripts/status/warn_uncovered_command_surface_scope.py
 
       - name: Status report freshness gate
         run: |
@@ -831,6 +840,9 @@ jobs:
             artifacts/status/diagnostics_matrix_artifact.json
             artifacts/status/diagnostics_shape_drift_artifact.json
             artifacts/status/diagnostics_operator_truth_contract.json
+            artifacts/status/command_surface_consistency_artifact.json
+            artifacts/status/command_surface_consistency_drift_artifact.json
+            artifacts/status/command_surface_consistency_summary.json
             artifacts/status/release_build_consistency_report.json
             artifacts/status/release_artifact_manifest.json
             artifacts/status/release_evidence_bundle.json

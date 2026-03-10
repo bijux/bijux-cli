@@ -45,3 +45,6 @@ scripts/status/enforce_config_source_consistency.py # enforce CI failure when so
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests
+scripts/status/generate_command_surface_consistency_reports.py # generate cross-command consistency artifact, drift detector artifact, and complete/partial/missing summary for commands/config/history/memory/diagnostics
+scripts/status/enforce_command_surface_consistency_gate.py # enforce CI failure on covered cross-command consistency regressions
+scripts/status/warn_uncovered_command_surface_scope.py # emit CI warning when command-surface scope introduces uncovered consistency checks

@@ -1449,6 +1449,9 @@ fn route_response(
             );
             let plugin_migration_report =
                 read_json_if_exists(&root.join("artifacts/status/plugin_migration_report.json"));
+            let command_surface_consistency_summary = read_json_if_exists(
+                &root.join("artifacts/status/command_surface_consistency_summary.json"),
+            );
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1491,6 +1494,7 @@ fn route_response(
                     "plugin_where_ownership_report": plugin_where_ownership,
                     "plugin_command_set_status": plugin_command_set_status,
                     "plugin_migration_report": plugin_migration_report,
+                    "command_surface_consistency_summary": command_surface_consistency_summary,
                 },
                 "command_migration": {
                     "matrix": migration_matrix,
