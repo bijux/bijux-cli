@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
+use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
@@ -14,7 +15,6 @@ use crate::features::plugins::{
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
     FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
-use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
 
 pub(crate) fn try_handle(
@@ -123,18 +123,18 @@ pub(crate) fn try_handle(
                 .ok_or_else(|| anyhow::anyhow!("manifest path is required"))?;
             let manifest_path = PathBuf::from(&manifest_arg);
             let manifest_text = fs::read_to_string(&manifest_path)?;
-            let source =
-                command_option_value(argv, &["cli", "plugins", "install"], "--source")
-                    .unwrap_or_else(|| manifest_arg.clone());
-            let trust_level = match command_option_value(argv, &["cli", "plugins", "install"], "--trust")
-                .unwrap_or_else(|| "community".to_string())
-                .as_str()
-            {
-                "core" => PluginTrustLevel::Core,
-                "verified" => PluginTrustLevel::Verified,
-                "unknown" => PluginTrustLevel::Unknown,
-                _ => PluginTrustLevel::Community,
-            };
+            let source = command_option_value(argv, &["cli", "plugins", "install"], "--source")
+                .unwrap_or_else(|| manifest_arg.clone());
+            let trust_level =
+                match command_option_value(argv, &["cli", "plugins", "install"], "--trust")
+                    .unwrap_or_else(|| "community".to_string())
+                    .as_str()
+                {
+                    "core" => PluginTrustLevel::Core,
+                    "verified" => PluginTrustLevel::Verified,
+                    "unknown" => PluginTrustLevel::Unknown,
+                    _ => PluginTrustLevel::Community,
+                };
             let installed = install_plugin_manifest(
                 plugin_registry_path,
                 InstallPluginRequest { manifest_text, source, trust_level },

@@ -46,7 +46,8 @@ impl ConfigRepository for FileConfigRepository {
 
     fn save(&self, path: &Path, values: &BTreeMap<String, String>) -> Result<(), ConfigError> {
         let rendered = render_env(values);
-        atomic_write_text(path, &rendered).map_err(|err| ConfigError::persistence(err.to_string()))?;
+        atomic_write_text(path, &rendered)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?;
         Ok(())
     }
 

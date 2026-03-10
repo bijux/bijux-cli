@@ -8,9 +8,8 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
-use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use super::StatePathStatus;
+use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use crate::features::install::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
     CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
@@ -18,6 +17,7 @@ use crate::features::install::{
 use crate::features::plugins::{
     plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir, self_repair_registry,
 };
+use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
 use crate::routing::parser::ParsedGlobalFlags;
 
 fn home_dir() -> Option<PathBuf> {
