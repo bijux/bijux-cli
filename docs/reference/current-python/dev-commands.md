@@ -6,10 +6,11 @@
 
 ## Inventory
 - `bijux dev` (callback status payload)
-- `bijux dev atlas` (external binary passthrough to `bijux-dev-atlas`)
+- `bijux dev <tool>` (external binary passthrough to `bijux-dev-<tool>`)
 - `bijux dev di`
 - `bijux dev list-products`
 - `bijux dev list-plugins`
 
 ## Notes
-- `dev atlas` is a command group with passthrough behavior and unknown-option forwarding.
+- Known tool namespaces: `agent`, `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, `vex`.
+- Tool passthrough commands forward unknown options to owned product binaries.

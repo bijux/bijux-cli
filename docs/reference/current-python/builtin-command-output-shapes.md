@@ -9,7 +9,7 @@
 - Error payloads commonly include `error` and `code`, with optional `failure`, `command`, and runtime metadata.
 
 ## Exhaustive built-in command-path inventory
-- `atlas`: delegated external command output passthrough.
+- `<tool>` (`agent|atlas|dag|dna|gnss|rag|rar|vex`): delegated external command output passthrough.
 - `audit`: status payload (`completed` or `dry-run`) plus diagnostics fields.
 - `config`: service status payload.
 - `config list`: key/value map payload.
@@ -21,7 +21,7 @@
 - `config reload`: reload status payload.
 - `config clear`: clear status payload.
 - `dev`: developer status payload.
-- `dev atlas`: delegated external command output passthrough.
+- `dev <tool>` (`agent|atlas|dag|dna|gnss|rag|rar|vex`): delegated external command output passthrough.
 - `dev di`: dependency graph payload.
 - `dev list-products`: product binary discovery payload.
 - `dev list-plugins`: plugin discovery payload.
