@@ -41,18 +41,10 @@ fn cockpit_json_contracts_are_stable() {
     for (command, key) in commands {
         let first = run_ok_json(&command);
         let second = run_ok_json(&command);
-        assert!(
-            first.get(key).is_some(),
-            "missing key {key} for {:?}",
-            command
-        );
+        assert!(first.get(key).is_some(), "missing key {key} for {:?}", command);
         assert_eq!(
-            first
-                .as_object()
-                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
-            second
-                .as_object()
-                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            first.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            second.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
             "top-level key drift for {:?}",
             command
         );
@@ -124,20 +116,13 @@ fn cockpit_commands_work_with_corrupted_state() {
         ["dev", "cli", "next"],
     ] {
         let out = run(&command, &envs);
-        assert!(
-            out.status.success(),
-            "command failed under corrupted state: {:?}",
-            command
-        );
+        assert!(out.status.success(), "command failed under corrupted state: {:?}", command);
     }
 }
 
 #[test]
 fn cockpit_commands_work_with_mixed_install_ambiguity() {
-    let path = format!(
-        "/tmp/bijux-a:/tmp/bijux-b:{}",
-        std::env::var("PATH").unwrap_or_default()
-    );
+    let path = format!("/tmp/bijux-a:/tmp/bijux-b:{}", std::env::var("PATH").unwrap_or_default());
     let envs = [("PATH", path)];
     for command in [
         ["dev", "cli", "dashboard"],
@@ -170,10 +155,6 @@ fn cockpit_commands_work_with_plugin_failures_present() {
         ["dev", "cli", "next"],
     ] {
         let out = run(&command, &envs);
-        assert!(
-            out.status.success(),
-            "command failed with plugin failures present: {:?}",
-            command
-        );
+        assert!(out.status.success(), "command failed with plugin failures present: {:?}", command);
     }
 }

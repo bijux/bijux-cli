@@ -15,10 +15,7 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-history-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -41,10 +38,7 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .expect("workspace root");
+    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -77,10 +71,7 @@ fn history_json_yaml_text_outputs_are_emitted() {
     let payload = parse_json(&out_json.stdout);
     assert_eq!(payload["entries"].as_array().expect("array").len(), 2);
     let json_text = String::from_utf8(out_json.stdout).expect("json utf-8");
-    assert_eq!(
-        json_text,
-        include_str!("../snapshots/history_root_json.txt")
-    );
+    assert_eq!(json_text, include_str!("../snapshots/history_root_json.txt"));
 
     let out_yaml = run_with_env(&["history", "--format", "yaml", "--pretty"], &envs);
     assert!(out_yaml.status.success());
@@ -99,38 +90,25 @@ fn history_missing_and_malformed_behaviors_are_stable() {
     let missing_path = temp.join("missing.history");
     let envs_missing = [("BIJUXCLI_HISTORY_FILE", missing_path.display().to_string())];
 
-    let out_missing = run_with_env(
-        &["history", "--format", "json", "--no-pretty"],
-        &envs_missing,
-    );
+    let out_missing = run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_missing);
     assert_eq!(out_missing.status.code(), Some(0));
     let payload = parse_json(&out_missing.stdout);
     assert_eq!(payload["entries"], Value::Array(Vec::new()));
 
     let malformed_path = temp.join("malformed.history");
     fs::write(&malformed_path, "{\"oops\":true}").expect("write malformed");
-    let envs_malformed = [(
-        "BIJUXCLI_HISTORY_FILE",
-        malformed_path.display().to_string(),
-    )];
-    let out_malformed = run_with_env(
-        &["history", "--format", "json", "--no-pretty"],
-        &envs_malformed,
-    );
+    let envs_malformed = [("BIJUXCLI_HISTORY_FILE", malformed_path.display().to_string())];
+    let out_malformed =
+        run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_malformed);
     assert_eq!(out_malformed.status.code(), Some(1));
     assert!(out_malformed.stdout.is_empty());
     assert!(!out_malformed.stderr.is_empty());
 
     let truncated_path = temp.join("truncated.history");
     fs::write(&truncated_path, "[{\"command\":\"status\"").expect("write truncated");
-    let envs_truncated = [(
-        "BIJUXCLI_HISTORY_FILE",
-        truncated_path.display().to_string(),
-    )];
-    let out_truncated = run_with_env(
-        &["history", "--format", "json", "--no-pretty"],
-        &envs_truncated,
-    );
+    let envs_truncated = [("BIJUXCLI_HISTORY_FILE", truncated_path.display().to_string())];
+    let out_truncated =
+        run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_truncated);
     assert_eq!(out_truncated.status.code(), Some(0));
     let truncated_payload = parse_json(&out_truncated.stdout);
     assert!(truncated_payload["entries"].is_array());
@@ -179,11 +157,7 @@ fn history_handles_huge_files_with_stable_tail_limit() {
     let entries: Vec<Value> = (0..2_000)
         .map(|i| serde_json::json!({"command": format!("cmd-{i}"), "timestamp": i as f64}))
         .collect();
-    fs::write(
-        &history_path,
-        serde_json::to_string(&entries).expect("json"),
-    )
-    .expect("write");
+    fs::write(&history_path, serde_json::to_string(&entries).expect("json")).expect("write");
 
     let out = run_with_env(
         &["history", "--format", "json", "--no-pretty"],
@@ -194,17 +168,11 @@ fn history_handles_huge_files_with_stable_tail_limit() {
     let loaded = payload["entries"].as_array().expect("entries");
     assert_eq!(loaded.len(), 20);
     assert_eq!(
-        loaded
-            .first()
-            .and_then(|v| v.get("command"))
-            .and_then(Value::as_str),
+        loaded.first().and_then(|v| v.get("command")).and_then(Value::as_str),
         Some("cmd-1980")
     );
     assert_eq!(
-        loaded
-            .last()
-            .and_then(|v| v.get("command"))
-            .and_then(Value::as_str),
+        loaded.last().and_then(|v| v.get("command")).and_then(Value::as_str),
         Some("cmd-1999")
     );
 }
@@ -300,11 +268,7 @@ fn history_oversized_file_stays_within_budget() {
     let entries: Vec<Value> = (0..10_000)
         .map(|i| serde_json::json!({"command": format!("cmd-{i}"), "timestamp": i as f64}))
         .collect();
-    fs::write(
-        &history_path,
-        serde_json::to_string(&entries).expect("json"),
-    )
-    .expect("write");
+    fs::write(&history_path, serde_json::to_string(&entries).expect("json")).expect("write");
 
     let start = Instant::now();
     let out = run_with_env(
@@ -313,8 +277,5 @@ fn history_oversized_file_stays_within_budget() {
     );
     let elapsed = start.elapsed();
     assert!(out.status.success());
-    assert!(
-        elapsed.as_millis() < 1500,
-        "oversized history budget exceeded: {elapsed:?}"
-    );
+    assert!(elapsed.as_millis() < 1500, "oversized history budget exceeded: {elapsed:?}");
 }

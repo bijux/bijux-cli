@@ -18,10 +18,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_bin_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -50,10 +47,8 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir().join(format!(
-        "bijux-cross-command-{name}-{}-{nanos}",
-        std::process::id()
-    ));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-cross-command-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
@@ -132,15 +127,7 @@ fn config_get_and_dev_env_agree_on_source_precedence() {
 
     let get = parse_json(
         &run_bin_with_env(
-            &[
-                "cli",
-                "config",
-                "get",
-                "alpha",
-                "--format",
-                "json",
-                "--no-pretty",
-            ],
+            &["cli", "config", "get", "alpha", "--format", "json", "--no-pretty"],
             &[("BIJUXCLI_CONFIG", path)],
         )
         .stdout,
@@ -154,10 +141,7 @@ fn config_get_and_dev_env_agree_on_source_precedence() {
     );
 
     assert_eq!(get["source_path"], env["active"]["config_file"]);
-    assert_eq!(
-        env["source_precedence"],
-        serde_json::json!(["flags", "env", "config", "defaults"])
-    );
+    assert_eq!(env["source_precedence"], serde_json::json!(["flags", "env", "config", "defaults"]));
 }
 
 #[test]
@@ -168,28 +152,14 @@ fn doctor_and_state_audit_agree_on_corruption_detection_when_applicable() {
 
     let doctor = parse_json(
         &run_bin_with_env(
-            &[
-                "dev",
-                "cli",
-                "state-doctor",
-                "--format",
-                "json",
-                "--no-pretty",
-            ],
+            &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
             &[("BIJUXCLI_CONFIG", config.to_str().expect("utf-8"))],
         )
         .stdout,
     );
     let audit = parse_json(
         &run_bin_with_env(
-            &[
-                "dev",
-                "cli",
-                "state-audit",
-                "--format",
-                "json",
-                "--no-pretty",
-            ],
+            &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
             &[("BIJUXCLI_CONFIG", config.to_str().expect("utf-8"))],
         )
         .stdout,
@@ -246,26 +216,17 @@ fn repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status
         "--config-path",
         config_arg,
     ]);
-    assert_eq!(
-        session.last_exit_code,
-        bin_config.status.code().unwrap_or(-1)
-    );
+    assert_eq!(session.last_exit_code, bin_config.status.code().unwrap_or(-1));
 
     let _repl_plugins = execute_repl_line(&mut session, "plugins list --format json --no-pretty")
         .expect("repl plugins");
     let bin_plugins = run_bin(&["plugins", "list", "--format", "json", "--no-pretty"]);
-    assert_eq!(
-        session.last_exit_code,
-        bin_plugins.status.code().unwrap_or(-1)
-    );
+    assert_eq!(session.last_exit_code, bin_plugins.status.code().unwrap_or(-1));
 
     let _repl_status =
         execute_repl_line(&mut session, "status --format json --no-pretty").expect("repl status");
     let bin_status = run_bin(&["status", "--format", "json", "--no-pretty"]);
-    assert_eq!(
-        session.last_exit_code,
-        bin_status.status.code().unwrap_or(-1)
-    );
+    assert_eq!(session.last_exit_code, bin_status.status.code().unwrap_or(-1));
 }
 
 #[test]
@@ -323,10 +284,7 @@ fn plugin_command_help_integrates_into_root_help_tree_deterministically() {
     assert_eq!(root_help_a.status.code(), Some(0));
     assert_eq!(root_help_a.stdout, root_help_b.stdout);
     let text = String::from_utf8(root_help_a.stdout).expect("utf-8");
-    assert!(
-        text.contains("plugins"),
-        "root help should include plugin command group"
-    );
+    assert!(text.contains("plugins"), "root help should include plugin command group");
 
     let plugin_help = run_bin(&["plugins", "--help"]);
     assert_eq!(plugin_help.status.code(), Some(0));
@@ -341,12 +299,8 @@ fn command_tree_export_is_identical_across_binary_and_bridge() {
     assert_eq!(bin.status.code(), Some(0));
     let bin_payload = parse_json(&bin.stdout);
     let bridge_outcome = bridge_outcome(&["inspect", "--format", "json", "--no-pretty"]);
-    let bridge_payload = parse_json(
-        bridge_outcome["stdout"]
-            .as_str()
-            .unwrap_or_default()
-            .as_bytes(),
-    );
+    let bridge_payload =
+        parse_json(bridge_outcome["stdout"].as_str().unwrap_or_default().as_bytes());
     assert_eq!(bin_payload, bridge_payload);
 
     let tree = parse_json(command_tree_introspection_api().as_bytes());
@@ -390,24 +344,12 @@ fn output_envelopes_do_not_drift_across_surfaces() {
     let core_error = parse_json(core.stderr.as_bytes());
     let bridge_error = parse_json(bridge["stderr"].as_str().unwrap_or_default().as_bytes());
 
-    let mut bin_keys = bin_error
-        .as_object()
-        .expect("bin error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
-    let mut core_keys = core_error
-        .as_object()
-        .expect("core error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
-    let mut bridge_keys = bridge_error
-        .as_object()
-        .expect("bridge error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut bin_keys =
+        bin_error.as_object().expect("bin error").keys().cloned().collect::<Vec<_>>();
+    let mut core_keys =
+        core_error.as_object().expect("core error").keys().cloned().collect::<Vec<_>>();
+    let mut bridge_keys =
+        bridge_error.as_object().expect("bridge error").keys().cloned().collect::<Vec<_>>();
     bin_keys.sort();
     core_keys.sort();
     bridge_keys.sort();
@@ -427,10 +369,7 @@ fn exit_code_classes_do_not_drift_across_surfaces() {
     ])
     .expect("core success");
     let success_bridge = bridge_outcome(&["status", "--format", "json", "--no-pretty"]);
-    assert_eq!(
-        success_bin.status.code().unwrap_or(-1),
-        success_core.exit_code
-    );
+    assert_eq!(success_bin.status.code().unwrap_or(-1), success_core.exit_code);
     assert_eq!(
         success_bin.status.code().unwrap_or(-1),
         success_bridge["exit_code"].as_i64().unwrap_or(-1) as i32

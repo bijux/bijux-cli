@@ -16,10 +16,7 @@ fn run_help(args: &[&str]) -> String {
         .args(args)
         .output()
         .expect("binary should execute");
-    assert!(
-        output.status.success(),
-        "help command failed for args: {args:?}"
-    );
+    assert!(output.status.success(), "help command failed for args: {args:?}");
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
@@ -30,10 +27,7 @@ fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
         cmd.env(k, v);
     }
     let output = cmd.output().expect("binary should execute");
-    assert!(
-        output.status.success(),
-        "help command failed for args: {args:?}"
-    );
+    assert!(output.status.success(), "help command failed for args: {args:?}");
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
@@ -41,54 +35,18 @@ fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
 fn help_snapshots_match_expected_output() {
     let cases: [(&[&str], &str); 45] = [
         (&["--help"], include_str!("../snapshots/help_root.txt")),
-        (
-            &["--color", "never", "--help"],
-            include_str!("../snapshots/help_root_no_color.txt"),
-        ),
-        (
-            &["cli", "--help"],
-            include_str!("../snapshots/help_cli.txt"),
-        ),
-        (
-            &["dev", "--help"],
-            include_str!("../snapshots/help_dev.txt"),
-        ),
-        (
-            &["status", "--help"],
-            include_str!("../snapshots/help_status.txt"),
-        ),
-        (
-            &["audit", "--help"],
-            include_str!("../snapshots/help_audit.txt"),
-        ),
-        (
-            &["docs", "--help"],
-            include_str!("../snapshots/help_docs.txt"),
-        ),
-        (
-            &["sleep", "--help"],
-            include_str!("../snapshots/help_sleep.txt"),
-        ),
-        (
-            &["version", "--help"],
-            include_str!("../snapshots/help_version.txt"),
-        ),
-        (
-            &["doctor", "--help"],
-            include_str!("../snapshots/help_doctor.txt"),
-        ),
-        (
-            &["config", "--help"],
-            include_str!("../snapshots/help_config.txt"),
-        ),
-        (
-            &["plugins", "--help"],
-            include_str!("../snapshots/help_plugins.txt"),
-        ),
-        (
-            &["plugins", "install", "--help"],
-            include_str!("../snapshots/help_plugins_install.txt"),
-        ),
+        (&["--color", "never", "--help"], include_str!("../snapshots/help_root_no_color.txt")),
+        (&["cli", "--help"], include_str!("../snapshots/help_cli.txt")),
+        (&["dev", "--help"], include_str!("../snapshots/help_dev.txt")),
+        (&["status", "--help"], include_str!("../snapshots/help_status.txt")),
+        (&["audit", "--help"], include_str!("../snapshots/help_audit.txt")),
+        (&["docs", "--help"], include_str!("../snapshots/help_docs.txt")),
+        (&["sleep", "--help"], include_str!("../snapshots/help_sleep.txt")),
+        (&["version", "--help"], include_str!("../snapshots/help_version.txt")),
+        (&["doctor", "--help"], include_str!("../snapshots/help_doctor.txt")),
+        (&["config", "--help"], include_str!("../snapshots/help_config.txt")),
+        (&["plugins", "--help"], include_str!("../snapshots/help_plugins.txt")),
+        (&["plugins", "install", "--help"], include_str!("../snapshots/help_plugins_install.txt")),
         (
             &["plugins", "uninstall", "--help"],
             include_str!("../snapshots/help_plugins_uninstall.txt"),
@@ -97,66 +55,24 @@ fn help_snapshots_match_expected_output() {
             &["plugins", "scaffold", "--help"],
             include_str!("../snapshots/help_plugins_scaffold.txt"),
         ),
-        (
-            &["plugins", "doctor", "--help"],
-            include_str!("../snapshots/help_plugins_doctor.txt"),
-        ),
+        (&["plugins", "doctor", "--help"], include_str!("../snapshots/help_plugins_doctor.txt")),
         (
             &["plugins", "reserved-names", "--help"],
             include_str!("../snapshots/help_plugins_reserved_names.txt"),
         ),
-        (
-            &["plugins", "where", "--help"],
-            include_str!("../snapshots/help_plugins_where.txt"),
-        ),
-        (
-            &["plugins", "explain", "--help"],
-            include_str!("../snapshots/help_plugins_explain.txt"),
-        ),
-        (
-            &["plugins", "schema", "--help"],
-            include_str!("../snapshots/help_plugins_schema.txt"),
-        ),
-        (
-            &["repl", "--help"],
-            include_str!("../snapshots/help_repl.txt"),
-        ),
-        (
-            &["completion", "--help"],
-            include_str!("../snapshots/help_completion.txt"),
-        ),
-        (
-            &["inspect", "--help"],
-            include_str!("../snapshots/help_inspect.txt"),
-        ),
-        (
-            &["history", "--help"],
-            include_str!("../snapshots/help_history.txt"),
-        ),
-        (
-            &["memory", "--help"],
-            include_str!("../snapshots/help_memory.txt"),
-        ),
-        (
-            &["cli", "status", "--help"],
-            include_str!("../snapshots/help_cli_status.txt"),
-        ),
-        (
-            &["cli", "paths", "--help"],
-            include_str!("../snapshots/help_cli_paths.txt"),
-        ),
-        (
-            &["cli", "config", "get", "--help"],
-            include_str!("../snapshots/help_cli_config_get.txt"),
-        ),
-        (
-            &["cli", "config", "set", "--help"],
-            include_str!("../snapshots/help_cli_config_set.txt"),
-        ),
-        (
-            &["cli", "self-test", "--help"],
-            include_str!("../snapshots/help_cli_self_test.txt"),
-        ),
+        (&["plugins", "where", "--help"], include_str!("../snapshots/help_plugins_where.txt")),
+        (&["plugins", "explain", "--help"], include_str!("../snapshots/help_plugins_explain.txt")),
+        (&["plugins", "schema", "--help"], include_str!("../snapshots/help_plugins_schema.txt")),
+        (&["repl", "--help"], include_str!("../snapshots/help_repl.txt")),
+        (&["completion", "--help"], include_str!("../snapshots/help_completion.txt")),
+        (&["inspect", "--help"], include_str!("../snapshots/help_inspect.txt")),
+        (&["history", "--help"], include_str!("../snapshots/help_history.txt")),
+        (&["memory", "--help"], include_str!("../snapshots/help_memory.txt")),
+        (&["cli", "status", "--help"], include_str!("../snapshots/help_cli_status.txt")),
+        (&["cli", "paths", "--help"], include_str!("../snapshots/help_cli_paths.txt")),
+        (&["cli", "config", "get", "--help"], include_str!("../snapshots/help_cli_config_get.txt")),
+        (&["cli", "config", "set", "--help"], include_str!("../snapshots/help_cli_config_set.txt")),
+        (&["cli", "self-test", "--help"], include_str!("../snapshots/help_cli_self_test.txt")),
         (
             &["cli", "plugins", "list", "--help"],
             include_str!("../snapshots/help_cli_plugins_list.txt"),
@@ -181,22 +97,13 @@ fn help_snapshots_match_expected_output() {
             &["cli", "plugins", "doctor", "--help"],
             include_str!("../snapshots/help_cli_plugins_doctor.txt"),
         ),
-        (
-            &["dev", "cli", "routes", "--help"],
-            include_str!("../snapshots/help_dev_cli_routes.txt"),
-        ),
+        (&["dev", "cli", "routes", "--help"], include_str!("../snapshots/help_dev_cli_routes.txt")),
         (
             &["dev", "cli", "registry", "--help"],
             include_str!("../snapshots/help_dev_cli_registry.txt"),
         ),
-        (
-            &["dev", "cli", "env", "--help"],
-            include_str!("../snapshots/help_dev_cli_env.txt"),
-        ),
-        (
-            &["dev", "cli", "doctor", "--help"],
-            include_str!("../snapshots/help_dev_cli_doctor.txt"),
-        ),
+        (&["dev", "cli", "env", "--help"], include_str!("../snapshots/help_dev_cli_env.txt")),
+        (&["dev", "cli", "doctor", "--help"], include_str!("../snapshots/help_dev_cli_doctor.txt")),
         (
             &["dev", "cli", "contracts", "--help"],
             include_str!("../snapshots/help_dev_cli_contracts.txt"),
@@ -213,18 +120,12 @@ fn help_snapshots_match_expected_output() {
             &["dev", "cli", "state-doctor", "--help"],
             include_str!("../snapshots/help_dev_cli_state_doctor.txt"),
         ),
-        (
-            &["status", "--format", "json", "--help"],
-            include_str!("../snapshots/help_status.txt"),
-        ),
+        (&["status", "--format", "json", "--help"], include_str!("../snapshots/help_status.txt")),
     ];
 
     for (args, expected) in cases {
         let actual = run_help(args);
-        assert_eq!(
-            actual, expected,
-            "help snapshot mismatch for args: {args:?}"
-        );
+        assert_eq!(actual, expected, "help snapshot mismatch for args: {args:?}");
     }
 }
 
@@ -248,26 +149,18 @@ fn nested_help_and_unknown_command_diagnostics_are_stable() {
 fn hidden_alias_help_matches_canonical_options_and_flags() {
     let alias_plugins = run_help(&["plugins", "inspect", "--help"]);
     let canonical_plugins = run_help(&["cli", "plugins", "inspect", "--help"]);
-    let alias_plugins_tail = alias_plugins
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
-    let canonical_plugins_tail = canonical_plugins
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
+    let alias_plugins_tail =
+        alias_plugins.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
+    let canonical_plugins_tail =
+        canonical_plugins.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
     assert_eq!(alias_plugins_tail, canonical_plugins_tail);
 
     let alias_dev_doctor = run_help(&["dev", "doctor", "--help"]);
     let canonical_dev_doctor = run_help(&["dev", "cli", "doctor", "--help"]);
-    let alias_dev_tail = alias_dev_doctor
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
-    let canonical_dev_tail = canonical_dev_doctor
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
+    let alias_dev_tail =
+        alias_dev_doctor.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
+    let canonical_dev_tail =
+        canonical_dev_doctor.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
     assert_eq!(alias_dev_tail, canonical_dev_tail);
 }
 

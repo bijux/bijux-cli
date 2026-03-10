@@ -13,10 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_json(args: &[&str]) -> Value {
@@ -75,57 +72,28 @@ fn every_routable_command_has_inspectable_metadata_and_stable_route_identity() {
     let inspect = run_json(&["inspect", "--format", "json", "--no-pretty"]);
     let routes = run_json(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]);
 
-    let inspect_routes: BTreeSet<String> = inspect["route_sources"]
-        .as_array()
-        .expect("route_sources")
-        .iter()
-        .map(route_key)
-        .collect();
-    let routed_routes: BTreeSet<String> = routes["routes"]
-        .as_array()
-        .expect("routes")
-        .iter()
-        .map(route_key)
-        .collect();
+    let inspect_routes: BTreeSet<String> =
+        inspect["route_sources"].as_array().expect("route_sources").iter().map(route_key).collect();
+    let routed_routes: BTreeSet<String> =
+        routes["routes"].as_array().expect("routes").iter().map(route_key).collect();
 
-    assert!(
-        !inspect_routes.is_empty(),
-        "inspect route metadata should not be empty"
-    );
-    assert_eq!(
-        inspect_routes, routed_routes,
-        "inspect route identity must match dev cli routes"
-    );
+    assert!(!inspect_routes.is_empty(), "inspect route metadata should not be empty");
+    assert_eq!(inspect_routes, routed_routes, "inspect route identity must match dev cli routes");
 }
 
 #[test]
 fn inspect_exposes_builtin_and_plugin_metadata_consistently() {
     let inspect = run_json(&["inspect", "--format", "json", "--no-pretty"]);
-    assert!(
-        inspect["builtins"].is_array(),
-        "builtins should be an array"
-    );
-    assert!(
-        inspect["plugin_origins"].is_array(),
-        "plugin_origins should be an array"
-    );
+    assert!(inspect["builtins"].is_array(), "builtins should be an array");
+    assert!(inspect["plugin_origins"].is_array(), "plugin_origins should be an array");
 
     for row in inspect["builtins"].as_array().expect("builtins array") {
-        assert!(
-            row["segments"].is_array(),
-            "built-in row should expose segments array"
-        );
+        assert!(row["segments"].is_array(), "built-in row should expose segments array");
     }
-    for row in inspect["plugin_origins"]
-        .as_array()
-        .expect("plugin origins array")
-    {
+    for row in inspect["plugin_origins"].as_array().expect("plugin origins array") {
         let has_path_identity = row.get("segments").is_some_and(Value::is_array)
             || row.get("namespace").is_some_and(Value::is_string);
-        assert!(
-            has_path_identity,
-            "plugin row should expose route segments or namespace"
-        );
+        assert!(has_path_identity, "plugin row should expose route segments or namespace");
         assert!(
             row["owner"].is_string() || row["source"].is_string(),
             "plugin row should expose source metadata"
@@ -171,10 +139,7 @@ fn inspect_routes_and_registry_agree_on_namespace_ownership_and_plugin_source_me
 fn route_metadata_is_stable_and_json_serializable_for_covered_commands() {
     let first = run_json(&["inspect", "--format", "json", "--no-pretty"]);
     let second = run_json(&["inspect", "--format", "json", "--no-pretty"]);
-    assert_eq!(
-        first["route_sources"], second["route_sources"],
-        "route metadata should be stable"
-    );
+    assert_eq!(first["route_sources"], second["route_sources"], "route metadata should be stable");
 }
 
 #[test]
@@ -192,32 +157,15 @@ fn command_metadata_fields_do_not_disappear_or_rename_silently() {
         "contracts",
     ];
     for key in required {
-        assert!(
-            first.get(key).is_some(),
-            "missing required key in first payload: {key}"
-        );
-        assert!(
-            second.get(key).is_some(),
-            "missing required key in second payload: {key}"
-        );
+        assert!(first.get(key).is_some(), "missing required key in first payload: {key}");
+        assert!(second.get(key).is_some(), "missing required key in second payload: {key}");
     }
 
-    let first_keys: BTreeSet<String> = first
-        .as_object()
-        .expect("first payload should be object")
-        .keys()
-        .cloned()
-        .collect();
-    let second_keys: BTreeSet<String> = second
-        .as_object()
-        .expect("second payload should be object")
-        .keys()
-        .cloned()
-        .collect();
-    assert_eq!(
-        first_keys, second_keys,
-        "top-level metadata keys should not drift silently"
-    );
+    let first_keys: BTreeSet<String> =
+        first.as_object().expect("first payload should be object").keys().cloned().collect();
+    let second_keys: BTreeSet<String> =
+        second.as_object().expect("second payload should be object").keys().cloned().collect();
+    assert_eq!(first_keys, second_keys, "top-level metadata keys should not drift silently");
 }
 
 #[test]
@@ -246,21 +194,13 @@ fn reserved_namespaces_and_alias_metadata_are_consistent_and_non_canonical() {
         "reserved namespace metadata should match inspect and registry"
     );
 
-    let aliases = inspect["alias_rewrites"]
-        .as_array()
-        .expect("alias rewrites");
-    assert!(
-        !aliases.is_empty(),
-        "compatibility alias metadata should be present"
-    );
+    let aliases = inspect["alias_rewrites"].as_array().expect("alias rewrites");
+    assert!(!aliases.is_empty(), "compatibility alias metadata should be present");
     for row in aliases {
         assert_eq!(row["source"], "compatibility-alias");
         let alias = row["alias"].as_array().expect("alias");
         let canonical = row["canonical"].as_array().expect("canonical");
-        assert_ne!(
-            alias, canonical,
-            "compatibility alias must not be canonical"
-        );
+        assert_ne!(alias, canonical, "compatibility alias must not be canonical");
     }
 }
 
@@ -271,30 +211,16 @@ fn help_output_and_inspect_metadata_agree_on_command_names_and_grouping() {
     assert_eq!(help.status.code(), Some(0));
     let help_text = String::from_utf8(help.stdout).expect("utf-8");
     let help_commands = parse_help_commands(&help_text);
-    assert!(
-        !help_commands.is_empty(),
-        "root help command list should be non-empty"
-    );
+    assert!(!help_commands.is_empty(), "root help command list should be non-empty");
 
     let inspect_roots =
         top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
-    for must_exist in [
-        "status", "cli", "dev", "config", "plugins", "history", "memory",
-    ] {
-        assert!(
-            help_commands.contains(must_exist),
-            "help missing command {must_exist}"
-        );
-        assert!(
-            inspect_roots.contains(must_exist),
-            "inspect missing root command {must_exist}"
-        );
+    for must_exist in ["status", "cli", "dev", "config", "plugins", "history", "memory"] {
+        assert!(help_commands.contains(must_exist), "help missing command {must_exist}");
+        assert!(inspect_roots.contains(must_exist), "inspect missing root command {must_exist}");
     }
 
     for root in &inspect_roots {
-        assert!(
-            help_commands.contains(root),
-            "inspect root not present in help tree: {root}"
-        );
+        assert!(help_commands.contains(root), "inspect root not present in help tree: {root}");
     }
 }

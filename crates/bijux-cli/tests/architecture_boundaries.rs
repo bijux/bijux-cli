@@ -49,9 +49,7 @@ fn enforces_internal_crate_boundaries() {
             "--format-version",
             "1",
             "--manifest-path",
-            manifest
-                .to_str()
-                .expect("workspace manifest path must be valid UTF-8"),
+            manifest.to_str().expect("workspace manifest path must be valid UTF-8"),
         ])
         .output()
         .expect("cargo metadata command must execute");
@@ -63,10 +61,8 @@ fn enforces_internal_crate_boundaries() {
     );
 
     let root: Value = serde_json::from_slice(&output.stdout).expect("valid metadata JSON");
-    let packages = root
-        .get("packages")
-        .and_then(Value::as_array)
-        .expect("metadata contains packages");
+    let packages =
+        root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
         ("bijux-dev-cli", BTreeSet::from(["bijux-cli-evidence"])),
@@ -90,10 +86,8 @@ fn enforces_internal_crate_boundaries() {
         };
 
         let observed = internal_workspace_deps(pkg);
-        let expected_owned: BTreeSet<String> = expected_deps
-            .iter()
-            .map(|item| (*item).to_string())
-            .collect();
+        let expected_owned: BTreeSet<String> =
+            expected_deps.iter().map(|item| (*item).to_string()).collect();
 
         assert_eq!(
             observed, expected_owned,

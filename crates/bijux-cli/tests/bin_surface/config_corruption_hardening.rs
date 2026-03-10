@@ -14,23 +14,14 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
     let out = run(args);
     assert!(out.status.success(), "command failed: {args:?}");
-    assert!(
-        out.stderr.is_empty(),
-        "successful command must keep stderr empty: {args:?}"
-    );
-    assert!(
-        !out.stdout.is_empty(),
-        "successful command must emit stdout payload: {args:?}"
-    );
+    assert!(out.stderr.is_empty(), "successful command must keep stderr empty: {args:?}");
+    assert!(!out.stdout.is_empty(), "successful command must emit stdout payload: {args:?}");
     serde_json::from_slice(&out.stdout).expect("valid json")
 }
 
@@ -56,13 +47,8 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
 
     let truncated_key = root.join("truncated-key.env");
     write_config(&truncated_key, "BIJUXCLI_ALPHA=1\nBIJUXCLI_");
-    let a = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        truncated_key.to_str().expect("utf-8"),
-    ]);
+    let a =
+        run(&["cli", "config", "reload", "--config-path", truncated_key.to_str().expect("utf-8")]);
 
     let truncated_value = root.join("truncated-value.env");
     write_config(&truncated_value, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=");
@@ -75,17 +61,9 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     ]);
 
     let duplicate_keys = root.join("duplicate-keys.env");
-    write_config(
-        &duplicate_keys,
-        "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\nBIJUXCLI_ALPHA=3\n",
-    );
-    let c = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        duplicate_keys.to_str().expect("utf-8"),
-    ]);
+    write_config(&duplicate_keys, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\nBIJUXCLI_ALPHA=3\n");
+    let c =
+        run(&["cli", "config", "reload", "--config-path", duplicate_keys.to_str().expect("utf-8")]);
 
     let bad_line_endings = root.join("bad-line-endings.env");
     write_config(&bad_line_endings, "BIJUXCLI_ALPHA=1\rBIJUXCLI_BETA=2\r");
@@ -98,10 +76,7 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     ]);
 
     let whitespace_abuse = root.join("whitespace-abuse.env");
-    write_config(
-        &whitespace_abuse,
-        "   BIJUXCLI_ALPHA = 1\n\tBIJUXCLI_BETA=2\n",
-    );
+    write_config(&whitespace_abuse, "   BIJUXCLI_ALPHA = 1\n\tBIJUXCLI_BETA=2\n");
     let e = run(&[
         "cli",
         "config",
@@ -113,13 +88,7 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     let null_bytes = root.join("null-bytes.env");
     fs::write(&null_bytes, b"BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=ok\0oops\n")
         .expect("write null bytes");
-    let f = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        null_bytes.to_str().expect("utf-8"),
-    ]);
+    let f = run(&["cli", "config", "reload", "--config-path", null_bytes.to_str().expect("utf-8")]);
 
     for (label, out) in [
         ("truncated_key", &a),
@@ -134,23 +103,11 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
             "{label} should normalize into known exit classes"
         );
         if out.status.success() {
-            assert!(
-                out.stderr.is_empty(),
-                "{label} success should not write stderr"
-            );
-            assert!(
-                !out.stdout.is_empty(),
-                "{label} success should emit stdout payload"
-            );
+            assert!(out.stderr.is_empty(), "{label} success should not write stderr");
+            assert!(!out.stdout.is_empty(), "{label} success should emit stdout payload");
         } else {
-            assert!(
-                out.stdout.is_empty(),
-                "{label} failure should not write stdout"
-            );
-            assert!(
-                !out.stderr.is_empty(),
-                "{label} failure should emit stderr diagnostics"
-            );
+            assert!(out.stdout.is_empty(), "{label} failure should not write stdout");
+            assert!(!out.stderr.is_empty(), "{label} failure should emit stderr diagnostics");
         }
     }
 
@@ -159,13 +116,8 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
         Some(0),
         "duplicate keys must resolve to last value deterministically"
     );
-    let f_repeat = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        null_bytes.to_str().expect("utf-8"),
-    ]);
+    let f_repeat =
+        run(&["cli", "config", "reload", "--config-path", null_bytes.to_str().expect("utf-8")]);
     assert_eq!(
         f.status.code(),
         f_repeat.status.code(),
@@ -174,9 +126,7 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     assert_eq!(f.stdout, f_repeat.stdout, "null-byte stdout should be deterministic");
     assert_eq!(f.stderr, f_repeat.stderr, "null-byte stderr should be deterministic");
     assert!(
-        [a.status.code(), d.status.code(), e.status.code()]
-            .into_iter()
-            .any(|code| code != Some(0)),
+        [a.status.code(), d.status.code(), e.status.code()].into_iter().any(|code| code != Some(0)),
         "at least one malformed-shape variant should be rejected"
     );
 }
@@ -225,13 +175,8 @@ fn config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof()
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    let clear_fail = run(&[
-        "cli",
-        "config",
-        "clear",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let clear_fail =
+        run(&["cli", "config", "clear", "--config-path", config_path.to_str().expect("utf-8")]);
     let unset_fail = run(&[
         "cli",
         "config",
@@ -271,13 +216,8 @@ fn config_clear_and_unset_retry_are_idempotent_after_transient_write_failure() {
         "--config-path",
         config_path.to_str().expect("utf-8"),
     ]);
-    let first_clear = run(&[
-        "cli",
-        "config",
-        "clear",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let first_clear =
+        run(&["cli", "config", "clear", "--config-path", config_path.to_str().expect("utf-8")]);
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).expect("chmod 755");
 
     assert_eq!(first_unset.status.code(), Some(1));
@@ -340,13 +280,8 @@ fn concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_fi
     let path_c = config_path.clone();
     let reader = thread::spawn(move || {
         for _ in 0..40 {
-            let _ = run(&[
-                "cli",
-                "config",
-                "reload",
-                "--config-path",
-                path_c.to_str().expect("utf-8"),
-            ]);
+            let _ =
+                run(&["cli", "config", "reload", "--config-path", path_c.to_str().expect("utf-8")]);
         }
     });
 
@@ -354,19 +289,12 @@ fn concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_fi
     writer_b.join().expect("writer b");
     reader.join().expect("reader");
 
-    let final_reload = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let final_reload =
+        run(&["cli", "config", "reload", "--config-path", config_path.to_str().expect("utf-8")]);
 
     assert!(matches!(final_reload.status.code(), Some(0) | Some(1)));
     let text = fs::read_to_string(&config_path).expect("final config readable");
-    assert!(text
-        .lines()
-        .all(|line| line.contains('=') && line.starts_with("BIJUXCLI_")));
+    assert!(text.lines().all(|line| line.contains('=') && line.starts_with("BIJUXCLI_")));
 }
 
 #[test]
@@ -375,19 +303,11 @@ fn invalid_utf8_config_file_is_reported_cleanly() {
     let config_path = root.join("invalid-utf8.env");
     fs::write(&config_path, vec![0x66, 0x6f, 0x80, 0x6f]).expect("write invalid utf8 bytes");
 
-    let out = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let out =
+        run(&["cli", "config", "reload", "--config-path", config_path.to_str().expect("utf-8")]);
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
-    assert!(
-        stderr.to_ascii_lowercase().contains("utf"),
-        "stderr should explain utf-8 issue"
-    );
+    assert!(stderr.to_ascii_lowercase().contains("utf"), "stderr should explain utf-8 issue");
 }

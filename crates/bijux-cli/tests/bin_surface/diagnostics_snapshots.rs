@@ -21,10 +21,7 @@ fn run_stdout(args: &[&str]) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "command failed for args: {args:?}");
-    normalize_output(
-        String::from_utf8(output.stdout).expect("utf-8 output"),
-        home.as_path(),
-    )
+    normalize_output(String::from_utf8(output.stdout).expect("utf-8 output"), home.as_path())
 }
 
 fn snapshot_home() -> PathBuf {
@@ -59,10 +56,7 @@ fn inspect_snapshots_match_json_yaml_and_text() {
             &["inspect", "--format", "yaml", "--pretty"],
             include_str!("../snapshots/inspect_yaml.txt"),
         ),
-        (
-            &["inspect", "--format", "text"],
-            include_str!("../snapshots/inspect_text.txt"),
-        ),
+        (&["inspect", "--format", "text"], include_str!("../snapshots/inspect_text.txt")),
     ];
 
     for (args, expected) in cases {

@@ -27,10 +27,7 @@ fn rs_files_under(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn runtime_crates_do_not_import_dev_cli_crate() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
-    let runtime_crates = [
-        "crates/bijux-cli/src/routing",
-        "crates/bijux-cli-python/src",
-    ];
+    let runtime_crates = ["crates/bijux-cli/src/routing", "crates/bijux-cli-python/src"];
 
     let mut offenders = Vec::<String>::new();
     for crate_src in runtime_crates {
@@ -62,14 +59,8 @@ fn query_interfaces_remain_structured_data_only_without_ui_rendering() {
 
     for file in query_files {
         let source = fs::read_to_string(root.join(file)).expect("read query provider");
-        assert!(
-            !source.contains("println!"),
-            "query provider must not print: {file}"
-        );
-        assert!(
-            !source.contains("eprintln!"),
-            "query provider must not print: {file}"
-        );
+        assert!(!source.contains("println!"), "query provider must not print: {file}");
+        assert!(!source.contains("eprintln!"), "query provider must not print: {file}");
         assert!(
             !source.contains("render_value("),
             "query provider must not format terminal output: {file}"

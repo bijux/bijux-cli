@@ -22,10 +22,7 @@ impl Lcg {
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -48,10 +45,8 @@ enum Mutator {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!(
-        "bijux-plugin-state-campaign-{name}-{}",
-        std::process::id()
-    ));
+    let path = std::env::temp_dir()
+        .join(format!("bijux-plugin-state-campaign-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
@@ -135,46 +130,22 @@ fn randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths() 
         fs::write(&memory, mutate_jsonish(memory_seed, mutator, &mut rng)).expect("write memory");
 
         assert_known_status(
-            &run_with_env(
-                &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-                &envs,
-            ),
+            &run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs),
             "plugins list",
         );
         assert_known_status(
-            &run_with_env(
-                &["cli", "plugins", "check", "--format", "json", "--no-pretty"],
-                &envs,
-            ),
+            &run_with_env(&["cli", "plugins", "check", "--format", "json", "--no-pretty"], &envs),
             "plugins check",
         );
         assert_known_status(
             &run_with_env(
-                &[
-                    "cli",
-                    "plugins",
-                    "inspect",
-                    "sample",
-                    "--format",
-                    "json",
-                    "--no-pretty",
-                ],
+                &["cli", "plugins", "inspect", "sample", "--format", "json", "--no-pretty"],
                 &envs,
             ),
             "plugins inspect",
         );
         assert_known_status(
-            &run_with_env(
-                &[
-                    "cli",
-                    "plugins",
-                    "doctor",
-                    "--format",
-                    "json",
-                    "--no-pretty",
-                ],
-                &envs,
-            ),
+            &run_with_env(&["cli", "plugins", "doctor", "--format", "json", "--no-pretty"], &envs),
             "plugins doctor",
         );
         assert_known_status(
@@ -182,10 +153,7 @@ fn randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths() 
             "history",
         );
         assert_known_status(
-            &run_with_env(
-                &["memory", "list", "--format", "json", "--no-pretty"],
-                &envs,
-            ),
+            &run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs),
             "memory list",
         );
     }
@@ -251,14 +219,9 @@ fn plugin_list_is_deterministic_for_identical_corrupted_registry() {
         ("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string()),
     ];
 
-    let first = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second =
+        run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), second.status.code());
     assert_eq!(first.stdout, second.stdout);
     assert_eq!(first.stderr, second.stderr);
@@ -279,21 +242,10 @@ fn plugin_registry_rollback_preserves_coherence_after_failed_mutation_paths() {
 
     let before = fs::read_to_string(plugins.join("registry.json")).expect("before");
     let _ = run_with_env(
-        &[
-            "cli",
-            "plugins",
-            "inspect",
-            "missing",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["cli", "plugins", "inspect", "missing", "--format", "json", "--no-pretty"],
         &envs,
     );
-    let _ = run_with_env(
-        &["cli", "plugins", "check", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let _ = run_with_env(&["cli", "plugins", "check", "--format", "json", "--no-pretty"], &envs);
     let after = fs::read_to_string(plugins.join("registry.json")).expect("after");
     assert_eq!(before, after);
 }
@@ -307,14 +259,7 @@ fn plugin_doctor_reports_corruption_injected_by_campaign() {
     fs::write(plugins.join("registry.json"), "{broken-json").expect("broken registry");
 
     let out = run_with_env(
-        &[
-            "cli",
-            "plugins",
-            "doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["cli", "plugins", "doctor", "--format", "json", "--no-pretty"],
         &[
             ("HOME", home.display().to_string()),
             ("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string()),
@@ -352,11 +297,8 @@ fn history_and_memory_corruption_recovery_remains_stable_and_policy_compliant() 
     fs::create_dir_all(memory.parent().expect("memory parent")).expect("mkdir memory parent");
     fs::create_dir_all(&plugins).expect("mkdir plugins");
 
-    fs::write(
-        &history,
-        "[{\"command\":\"status\"},\"bad\",{\"command\":\"doctor\"}]",
-    )
-    .expect("write mixed history");
+    fs::write(&history, "[{\"command\":\"status\"},\"bad\",{\"command\":\"doctor\"}]")
+        .expect("write mixed history");
     fs::write(&memory, "{\"alpha\":1,\"beta\":{\"value\":\"2\"}} ").expect("write mixed memory");
 
     let envs = vec![
@@ -368,19 +310,10 @@ fn history_and_memory_corruption_recovery_remains_stable_and_policy_compliant() 
     let history_out = run_with_env(&["history", "--format", "json", "--no-pretty"], &envs);
     assert_known_status(&history_out, "history mixed");
 
-    let memory_out = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let memory_out = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_known_status(&memory_out, "memory mixed");
 
-    let first = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
+    let second = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), second.status.code());
 }

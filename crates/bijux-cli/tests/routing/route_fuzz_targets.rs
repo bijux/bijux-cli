@@ -30,13 +30,10 @@ fn fuzz_route_registration_order_is_deterministic() {
     let mut right = RouteRegistry::default();
 
     for name in shuffled(&source, 7) {
-        left.register_plugin_namespace(&name)
-            .expect("left registration");
+        left.register_plugin_namespace(&name).expect("left registration");
     }
     for name in shuffled(&source, 99) {
-        right
-            .register_plugin_namespace(&name)
-            .expect("right registration");
+        right.register_plugin_namespace(&name).expect("right registration");
     }
 
     assert_eq!(left.route_tree(), right.route_tree());
@@ -75,9 +72,7 @@ fn fuzz_randomized_plugin_namespace_registration_is_safe_and_deterministic() {
 #[test]
 fn fuzz_normalized_collision_registration_rejects_equivalent_namespaces() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("my-plugin")
-        .expect("baseline register");
+    registry.register_plugin_namespace("my-plugin").expect("baseline register");
 
     let err_a = registry
         .register_plugin_namespace("MY_PLUGIN")
@@ -94,16 +89,11 @@ fn fuzz_normalized_collision_registration_rejects_equivalent_namespaces() {
 fn fuzz_hidden_alias_collision_registration_rejects_alias_roots() {
     let mut registry = RouteRegistry::default();
 
-    for blocked in [
-        "config", "doctor", "inspect", "plugins", "dev", "cli", "version",
-    ] {
+    for blocked in ["config", "doctor", "inspect", "plugins", "dev", "cli", "version"] {
         let err = registry
             .register_plugin_namespace(blocked)
             .expect_err("alias/root collision must be rejected");
-        assert!(matches!(
-            err,
-            RouteError::Conflict(_) | RouteError::Reserved(_)
-        ));
+        assert!(matches!(err, RouteError::Conflict(_) | RouteError::Reserved(_)));
     }
 }
 
@@ -145,9 +135,7 @@ fn fuzz_unknown_command_suggestion_generation_is_stable() {
         registry.register_plugin_namespace(ns).expect("register");
     }
 
-    let typos = [
-        "commnad", "inspekt", "verison", "plguins", "doctro", "cmmunity",
-    ];
+    let typos = ["commnad", "inspekt", "verison", "plguins", "doctro", "cmmunity"];
     for typo in typos {
         let a = registry.suggest_namespace(typo);
         let b = registry.suggest_namespace(typo);
@@ -159,9 +147,7 @@ fn fuzz_unknown_command_suggestion_generation_is_stable() {
 #[test]
 fn fuzz_command_metadata_rendering_is_stable() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("community")
-        .expect("register");
+    registry.register_plugin_namespace("community").expect("register");
 
     let routes = route_inventory(&registry);
     let registry_meta = registry_inventory(&registry);

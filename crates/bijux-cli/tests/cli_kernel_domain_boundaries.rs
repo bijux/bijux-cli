@@ -71,10 +71,7 @@ fn kernel_layer_does_not_depend_on_cli_layer() {
         }
     }
 
-    assert!(
-        offenders.is_empty(),
-        "kernel layer must not import cli layer: {offenders:?}"
-    );
+    assert!(offenders.is_empty(), "kernel layer must not import cli layer: {offenders:?}");
 }
 
 #[test]
@@ -90,8 +87,5 @@ fn cli_layer_does_not_depend_on_kernel_layer() {
         }
     }
 
-    assert!(
-        offenders.is_empty(),
-        "cli layer must not import kernel layer: {offenders:?}"
-    );
+    assert!(offenders.is_empty(), "cli layer must not import kernel layer: {offenders:?}");
 }

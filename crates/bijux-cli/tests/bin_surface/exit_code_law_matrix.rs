@@ -17,10 +17,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn code(args: &[&str]) -> i32 {
@@ -58,11 +55,7 @@ fn root_command_exit_code_matrix_is_complete_and_stable() {
         (vec!["sleep", "--bad-flag"], 2),
     ];
     for (args, expected) in cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected exit code for root args {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected exit code for root args {args:?}");
     }
 }
 
@@ -78,11 +71,7 @@ fn cli_command_exit_code_matrix_is_complete_and_stable() {
         (vec!["cli", "plugins", "inspect"], 0),
     ];
     for (args, expected) in cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected exit code for cli args {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected exit code for cli args {args:?}");
     }
 }
 
@@ -99,11 +88,7 @@ fn dev_cli_command_exit_code_matrix_is_complete_and_stable() {
         (vec!["dev", "cli", "does-not-exist"], 2),
     ];
     for (args, expected) in cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected exit code for dev cli args {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected exit code for dev cli args {args:?}");
     }
 }
 
@@ -118,11 +103,7 @@ fn plugin_lifecycle_command_exit_code_matrix_is_complete_and_stable() {
         (vec!["plugins", "disable"], 1),
     ];
     for (args, expected) in cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected exit code for plugin args {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected exit code for plugin args {args:?}");
     }
 }
 
@@ -134,11 +115,7 @@ fn config_history_memory_and_diagnostics_exit_code_matrices_are_complete_and_sta
         (vec!["cli", "config", "set", "INVALID"], 2),
     ];
     for (args, expected) in config_cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected config exit code for {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected config exit code for {args:?}");
     }
 
     let history_cases = [
@@ -147,11 +124,7 @@ fn config_history_memory_and_diagnostics_exit_code_matrices_are_complete_and_sta
         (vec!["history", "--bad-flag"], 2),
     ];
     for (args, expected) in history_cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected history exit code for {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected history exit code for {args:?}");
     }
 
     let memory_cases = [
@@ -160,11 +133,7 @@ fn config_history_memory_and_diagnostics_exit_code_matrices_are_complete_and_sta
         (vec!["memory", "set"], 2),
     ];
     for (args, expected) in memory_cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected memory exit code for {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected memory exit code for {args:?}");
     }
 
     let diagnostics_cases = [
@@ -173,11 +142,7 @@ fn config_history_memory_and_diagnostics_exit_code_matrices_are_complete_and_sta
         (vec!["dev", "cli", "state-doctor", "invalid"], 2),
     ];
     for (args, expected) in diagnostics_cases {
-        assert_eq!(
-            code(&args),
-            expected,
-            "unexpected diagnostics exit code for {args:?}"
-        );
+        assert_eq!(code(&args), expected, "unexpected diagnostics exit code for {args:?}");
     }
 }
 
@@ -251,14 +216,8 @@ fn corrupted_state_and_missing_file_failures_do_not_drift_in_exit_class() {
     let config_text = config.to_string_lossy().to_string();
 
     let corrupted_text = code(&["config", "--config-path", &config_text]);
-    let corrupted_json = code(&[
-        "config",
-        "--config-path",
-        &config_text,
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    let corrupted_json =
+        code(&["config", "--config-path", &config_text, "--format", "json", "--no-pretty"]);
     assert_eq!(corrupted_text, 1);
     assert_eq!(corrupted_json, corrupted_text);
 

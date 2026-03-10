@@ -14,10 +14,7 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-performance-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -66,36 +63,11 @@ fn startup_benchmarks_for_key_commands_stay_within_budget() {
     let config_path = config.display().to_string();
 
     let cases: Vec<(&[&str], Vec<(&str, String)>, usize, u128)> = vec![
-        (
-            &["version", "--format", "json", "--no-pretty"],
-            vec![],
-            12,
-            120,
-        ),
-        (
-            &["status", "--format", "json", "--no-pretty"],
-            vec![],
-            8,
-            250,
-        ),
-        (
-            &["doctor", "--format", "json", "--no-pretty"],
-            vec![],
-            6,
-            500,
-        ),
-        (
-            &["plugins", "list", "--format", "json", "--no-pretty"],
-            vec![],
-            6,
-            400,
-        ),
-        (
-            &["dev", "cli", "status", "--format", "json", "--no-pretty"],
-            vec![],
-            4,
-            900,
-        ),
+        (&["version", "--format", "json", "--no-pretty"], vec![], 12, 120),
+        (&["status", "--format", "json", "--no-pretty"], vec![], 8, 250),
+        (&["doctor", "--format", "json", "--no-pretty"], vec![], 6, 500),
+        (&["plugins", "list", "--format", "json", "--no-pretty"], vec![], 6, 400),
+        (&["dev", "cli", "status", "--format", "json", "--no-pretty"], vec![], 4, 900),
     ];
 
     for (args, envs, iterations, budget_ms) in cases {
@@ -151,17 +123,11 @@ fn startup_benchmarks_under_registry_config_and_history_stress_stay_within_budge
             format!("{{\"namespace\":\"p{i}\",\"entrypoint\":\"plugin{i}.py\",\"enabled\":true}}")
         })
         .collect();
-    fs::write(
-        huge_plugins_dir.join("registry.json"),
-        format!("[{}]", large_records.join(",")),
-    )
-    .expect("write large registry");
+    fs::write(huge_plugins_dir.join("registry.json"), format!("[{}]", large_records.join(",")))
+        .expect("write large registry");
     let large_registry_ms = average_duration_ms(
         &["plugins", "list", "--format", "json", "--no-pretty"],
-        &[(
-            "BIJUXCLI_PLUGINS_DIR",
-            huge_plugins_dir.display().to_string(),
-        )],
+        &[("BIJUXCLI_PLUGINS_DIR", huge_plugins_dir.display().to_string())],
         4,
     );
     assert!(
@@ -191,15 +157,11 @@ fn startup_benchmarks_under_registry_config_and_history_stress_stay_within_budge
         &[],
         5,
     );
-    assert!(
-        large_config_ms <= 650,
-        "large config startup budget exceeded: {large_config_ms}ms"
-    );
+    assert!(large_config_ms <= 650, "large config startup budget exceeded: {large_config_ms}ms");
 
     let history_path = temp.join("large.history.json");
-    let entries: Vec<String> = (0..20_000)
-        .map(|i| format!("{{\"command\":\"status\",\"timestamp\":{i}}}"))
-        .collect();
+    let entries: Vec<String> =
+        (0..20_000).map(|i| format!("{{\"command\":\"status\",\"timestamp\":{i}}}")).collect();
     fs::write(&history_path, format!("[{}]", entries.join(","))).expect("write large history");
     let large_history_ms = average_duration_ms(
         &["history", "--format", "json", "--no-pretty"],
@@ -225,14 +187,8 @@ fn payload_size_benchmarks_for_key_commands_stay_within_budget() {
         &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.display().to_string())],
     );
 
-    assert!(
-        version_bytes <= 4 * 1024,
-        "version payload budget exceeded: {version_bytes} bytes"
-    );
-    assert!(
-        status_bytes <= 24 * 1024,
-        "status payload budget exceeded: {status_bytes} bytes"
-    );
+    assert!(version_bytes <= 4 * 1024, "version payload budget exceeded: {version_bytes} bytes");
+    assert!(status_bytes <= 24 * 1024, "status payload budget exceeded: {status_bytes} bytes");
     assert!(
         plugins_list_bytes <= 32 * 1024,
         "plugins list payload budget exceeded: {plugins_list_bytes} bytes"

@@ -3,13 +3,8 @@
 
 #[test]
 fn runtime_crates_do_not_import_bijux_dev_cli() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..");
-    let runtime_crates = [
-        "crates/bijux-cli/src/routing",
-        "crates/bijux-cli-python/src",
-    ];
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let runtime_crates = ["crates/bijux-cli/src/routing", "crates/bijux-cli-python/src"];
 
     for crate_src in runtime_crates {
         for path in walk_rs_files(&root.join(crate_src)) {
@@ -52,10 +47,7 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
         "dev_control_plane::build_doctor_report",
     ];
     for needle in delegated {
-        assert!(
-            dispatch_source.contains(needle),
-            "missing delegation for {needle}"
-        );
+        assert!(dispatch_source.contains(needle), "missing delegation for {needle}");
     }
 }
 

@@ -17,12 +17,7 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_path(name: &str, ext: &str) -> PathBuf {
-    std::env::temp_dir().join(format!(
-        "bijux-repl-hostile-{}-{}.{}",
-        name,
-        std::process::id(),
-        ext
-    ))
+    std::env::temp_dir().join(format!("bijux-repl-hostile-{}-{}.{}", name, std::process::id(), ext))
 }
 
 #[test]
@@ -56,10 +51,7 @@ fn plugin_failure_config_readback_and_output_mode_switching_work_in_one_session(
 
     let config_path = temp_path("config", "env");
     let _ = fs::remove_file(&config_path);
-    let get_cmd = format!(
-        "cli config get alpha --config-path {}",
-        config_path.display()
-    );
+    let get_cmd = format!("cli config get alpha --config-path {}", config_path.display());
 
     let seeded = run_app(&[
         "bijux".to_string(),
@@ -86,34 +78,19 @@ fn plugin_failure_config_readback_and_output_mode_switching_work_in_one_session(
     .expect("core get after repl set");
     assert_eq!(core_get.exit_code, 0);
 
-    execute_repl_input(
-        &mut session,
-        ReplInput::Line(":set format json".to_string()),
-    )
-    .expect("set json");
-    let json = execute_repl_line(&mut session, "status")
-        .expect("status json")
-        .expect("frame");
+    execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
+        .expect("set json");
+    let json = execute_repl_line(&mut session, "status").expect("status json").expect("frame");
     assert!(json.content.trim_start().starts_with('{'));
 
-    execute_repl_input(
-        &mut session,
-        ReplInput::Line(":set format yaml".to_string()),
-    )
-    .expect("set yaml");
-    let yaml = execute_repl_line(&mut session, "status")
-        .expect("status yaml")
-        .expect("frame");
+    execute_repl_input(&mut session, ReplInput::Line(":set format yaml".to_string()))
+        .expect("set yaml");
+    let yaml = execute_repl_line(&mut session, "status").expect("status yaml").expect("frame");
     assert!(yaml.content.contains("status:"));
 
-    execute_repl_input(
-        &mut session,
-        ReplInput::Line(":set format text".to_string()),
-    )
-    .expect("set text");
-    let text = execute_repl_line(&mut session, "status")
-        .expect("status text")
-        .expect("frame");
+    execute_repl_input(&mut session, ReplInput::Line(":set format text".to_string()))
+        .expect("set text");
+    let text = execute_repl_line(&mut session, "status").expect("status text").expect("frame");
     assert!(text.content.contains("\"status\""));
 
     let _ = fs::remove_file(config_path);
@@ -165,10 +142,7 @@ fn completion_and_startup_recover_under_broken_registry_and_corrupted_state() {
     register_plugin_completion_hook(
         &mut session,
         "community",
-        vec![
-            "community status".to_string(),
-            "community inspect".to_string(),
-        ],
+        vec!["community status".to_string(), "community inspect".to_string()],
     );
     let plugin_completion = completion_candidates(&session, "community");
     assert!(plugin_completion.iter().any(|item| item == "community"));
@@ -183,11 +157,8 @@ fn completion_and_startup_recover_under_broken_registry_and_corrupted_state() {
 
     let huge_history = temp_path("huge-history", "json");
     let huge: Vec<String> = (0..25_000).map(|i| format!("status {i}")).collect();
-    fs::write(
-        &huge_history,
-        serde_json::to_string(&huge).expect("serialize huge history"),
-    )
-    .expect("write huge history");
+    fs::write(&huge_history, serde_json::to_string(&huge).expect("serialize huge history"))
+        .expect("write huge history");
     let (mut huge_session, _) = startup_repl("default", None);
     configure_history(&mut huge_session, Some(huge_history.clone()), true, 1_000);
     load_history(&mut huge_session).expect("huge history load");

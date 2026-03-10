@@ -72,10 +72,7 @@ fn interesting_corpus_cases_do_not_crash_or_corrupt_route_resolution() {
         .collect::<Vec<_>>();
     files.sort();
 
-    assert!(
-        !files.is_empty(),
-        "interesting parser corpus must be retained"
-    );
+    assert!(!files.is_empty(), "interesting parser corpus must be retained");
 
     let registry = RouteRegistry::default();
     for file in files {

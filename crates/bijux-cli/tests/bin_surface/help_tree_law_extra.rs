@@ -17,10 +17,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -51,10 +48,8 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir().join(format!(
-        "bijux-help-law-{name}-{}-{nanos}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("bijux-help-law-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -114,12 +109,7 @@ fn scaffold_manifest(root: &Path, plugins_dir: &Path, namespace: &str) -> PathBu
 fn install_plugin(root: &Path, plugins_dir: &Path, namespace: &str) {
     let manifest = scaffold_manifest(root, plugins_dir, namespace);
     let out = run_with_env(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
         &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))],
     );
     assert_eq!(out.status.code(), Some(0), "plugin install should succeed");
@@ -143,10 +133,7 @@ fn cli_help_lists_subcommands_in_stable_order() {
     assert_eq!(a.status.code(), Some(0));
     assert_eq!(a.stdout, b.stdout);
     let commands = parse_help_commands(&String::from_utf8(a.stdout).expect("utf-8"));
-    assert_eq!(
-        commands,
-        vec!["status", "paths", "config", "self-test", "plugins", "help"]
-    );
+    assert_eq!(commands, vec!["status", "paths", "config", "self-test", "plugins", "help"]);
 }
 
 #[test]
@@ -188,31 +175,17 @@ fn plugin_installed_help_keeps_builtin_order_stable() {
     let before_cmds = parse_help_commands(&String::from_utf8(before.stdout).expect("utf-8"));
     let after_cmds = parse_help_commands(&String::from_utf8(after.stdout).expect("utf-8"));
 
-    let before_builtin: Vec<&str> = before_cmds
-        .iter()
-        .map(String::as_str)
-        .filter(|s| *s != "help")
-        .collect();
-    let after_builtin: Vec<&str> = after_cmds
-        .iter()
-        .map(String::as_str)
-        .filter(|s| *s != "help")
-        .collect();
+    let before_builtin: Vec<&str> =
+        before_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
+    let after_builtin: Vec<&str> =
+        after_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
     for window in before_builtin.windows(2) {
         let left = window[0];
         let right = window[1];
-        let left_pos = after_builtin
-            .iter()
-            .position(|item| *item == left)
-            .expect("left present");
-        let right_pos = after_builtin
-            .iter()
-            .position(|item| *item == right)
-            .expect("right present");
-        assert!(
-            left_pos < right_pos,
-            "built-in order changed between {left} and {right}"
-        );
+        let left_pos = after_builtin.iter().position(|item| *item == left).expect("left present");
+        let right_pos =
+            after_builtin.iter().position(|item| *item == right).expect("right present");
+        assert!(left_pos < right_pos, "built-in order changed between {left} and {right}");
     }
 }
 
@@ -278,10 +251,7 @@ fn inspect_metadata_agrees_with_help_names_and_command_tree_export() {
         .expect("route_sources")
         .iter()
         .filter_map(|row| {
-            row["segments"]
-                .as_array()
-                .and_then(|segments| segments.first())
-                .and_then(Value::as_str)
+            row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str)
         })
         .map(ToString::to_string)
         .collect();
@@ -291,18 +261,13 @@ fn inspect_metadata_agrees_with_help_names_and_command_tree_export() {
         .expect("routes")
         .iter()
         .filter_map(|row| {
-            row["segments"]
-                .as_array()
-                .and_then(|segments| segments.first())
-                .and_then(Value::as_str)
+            row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str)
         })
         .map(ToString::to_string)
         .collect();
 
     assert_eq!(inspect_roots, route_roots);
-    for name in [
-        "cli", "dev", "status", "config", "plugins", "history", "memory",
-    ] {
+    for name in ["cli", "dev", "status", "config", "plugins", "history", "memory"] {
         assert!(help_commands.contains(name));
         assert!(inspect_roots.contains(name));
     }
@@ -321,11 +286,7 @@ fn binary_and_bridge_help_trees_are_identical_for_covered_commands() {
         let bin = run(&cmd);
         assert_eq!(bin.status.code(), Some(0), "binary help failed: {cmd:?}");
         let bridge = bridge_outcome(&cmd);
-        assert_eq!(
-            bridge["exit_code"].as_i64(),
-            Some(0),
-            "bridge help failed: {cmd:?}"
-        );
+        assert_eq!(bridge["exit_code"].as_i64(), Some(0), "bridge help failed: {cmd:?}");
         let bridge_stdout = bridge["stdout"].as_str().unwrap_or_default();
         let bin_stdout = String::from_utf8_lossy(&bin.stdout).replace("bijux-rs", "bijux");
         assert_eq!(bridge_stdout, bin_stdout, "help mismatch: {cmd:?}");
@@ -364,14 +325,8 @@ fn command_tree_is_stable_across_repeated_plugin_discovery_runs() {
     install_plugin(&root, &plugins_dir, "discoverystable");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let first = run_with_env(
-        &["dev", "cli", "routes", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run_with_env(
-        &["dev", "cli", "routes", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["dev", "cli", "routes", "--format", "json", "--no-pretty"], &envs);
+    let second = run_with_env(&["dev", "cli", "routes", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
 

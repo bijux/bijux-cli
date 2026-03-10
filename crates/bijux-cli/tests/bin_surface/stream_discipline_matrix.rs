@@ -15,10 +15,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn bridge_outcome(args: &[&str]) -> Value {
@@ -40,14 +37,8 @@ fn successful_machine_readable_commands_keep_stderr_empty() {
     for args in cases {
         let out = run(&args);
         assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
-        assert!(
-            !out.stdout.is_empty(),
-            "stdout should contain payload for {args:?}"
-        );
-        assert!(
-            out.stderr.is_empty(),
-            "stderr should remain empty for {args:?}"
-        );
+        assert!(!out.stdout.is_empty(), "stdout should contain payload for {args:?}");
+        assert!(out.stderr.is_empty(), "stderr should remain empty for {args:?}");
     }
 }
 
@@ -62,14 +53,8 @@ fn text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode() {
     for args in cases {
         let out = run(&args);
         assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
-        assert!(
-            !out.stdout.is_empty(),
-            "stdout should contain text output for {args:?}"
-        );
-        assert!(
-            out.stderr.is_empty(),
-            "stderr should stay empty for {args:?}"
-        );
+        assert!(!out.stdout.is_empty(), "stdout should contain text output for {args:?}");
+        assert!(out.stderr.is_empty(), "stderr should stay empty for {args:?}");
     }
 }
 
@@ -100,27 +85,14 @@ fn usage_validation_plugin_and_internal_failures_route_to_stderr_only() {
 fn quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise() {
     let out = run(&["--quiet", "status", "--format", "json", "--no-pretty"]);
     assert_eq!(out.status.code(), Some(0));
-    assert!(
-        out.stdout.is_empty(),
-        "quiet mode should suppress success stdout"
-    );
-    assert!(
-        out.stderr.is_empty(),
-        "quiet mode should suppress nonessential stderr noise"
-    );
+    assert!(out.stdout.is_empty(), "quiet mode should suppress success stdout");
+    assert!(out.stderr.is_empty(), "quiet mode should suppress nonessential stderr noise");
 }
 
 #[test]
 fn trace_mode_preserves_stream_contract_without_corrupting_output_envelope() {
     let plain = run(&["status", "--format", "json", "--no-pretty"]);
-    let traced = run(&[
-        "--log-level",
-        "trace",
-        "status",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    let traced = run(&["--log-level", "trace", "status", "--format", "json", "--no-pretty"]);
     assert_eq!(plain.status.code(), Some(0));
     assert_eq!(traced.status.code(), Some(0));
     assert!(plain.stderr.is_empty());
@@ -129,10 +101,7 @@ fn trace_mode_preserves_stream_contract_without_corrupting_output_envelope() {
     let plain_payload: Value = serde_json::from_slice(&plain.stdout).expect("plain json");
     let traced_payload: Value = serde_json::from_slice(&traced.stdout).expect("trace json");
     assert_eq!(plain_payload["status"], traced_payload["status"]);
-    assert!(
-        traced_payload.is_object(),
-        "trace output envelope should remain valid json object"
-    );
+    assert!(traced_payload.is_object(), "trace output envelope should remain valid json object");
 }
 
 #[test]
@@ -178,14 +147,7 @@ fn plugin_and_state_doctor_commands_obey_builtin_stream_law() {
     assert!(plugin_fail.stdout.is_empty());
     assert!(!plugin_fail.stderr.is_empty());
 
-    let state_doctor_ok = run(&[
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    let state_doctor_ok = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
     assert_eq!(state_doctor_ok.status.code(), Some(0));
     assert!(!state_doctor_ok.stdout.is_empty());
     assert!(state_doctor_ok.stderr.is_empty());
@@ -199,14 +161,8 @@ fn binary_and_bridge_agree_on_stream_routing_for_success_and_failure() {
     assert_eq!(success_bin.status.code(), Some(0));
     assert!(!success_bin.stdout.is_empty());
     assert!(success_bin.stderr.is_empty());
-    assert!(!success_bridge["stdout"]
-        .as_str()
-        .unwrap_or_default()
-        .is_empty());
-    assert!(success_bridge["stderr"]
-        .as_str()
-        .unwrap_or_default()
-        .is_empty());
+    assert!(!success_bridge["stdout"].as_str().unwrap_or_default().is_empty());
+    assert!(success_bridge["stderr"].as_str().unwrap_or_default().is_empty());
 
     let fail_args = ["config", "get"];
     let fail_bin = run(&fail_args);
@@ -214,32 +170,20 @@ fn binary_and_bridge_agree_on_stream_routing_for_success_and_failure() {
     assert_eq!(fail_bin.status.code(), Some(2));
     assert!(fail_bin.stdout.is_empty());
     assert!(!fail_bin.stderr.is_empty());
-    assert!(fail_bridge["stdout"]
-        .as_str()
-        .unwrap_or_default()
-        .is_empty());
-    assert!(!fail_bridge["stderr"]
-        .as_str()
-        .unwrap_or_default()
-        .is_empty());
+    assert!(fail_bridge["stdout"].as_str().unwrap_or_default().is_empty());
+    assert!(!fail_bridge["stderr"].as_str().unwrap_or_default().is_empty());
 }
 
 #[test]
 fn repl_exit_class_matches_binary_for_stream_routed_failures() {
     let mut session = startup_repl("", None).0;
     let _ = execute_repl_line(&mut session, "config get").expect("repl should return control");
-    assert_eq!(
-        session.last_exit_code,
-        run(&["config", "get"]).status.code().unwrap_or(-1)
-    );
+    assert_eq!(session.last_exit_code, run(&["config", "get"]).status.code().unwrap_or(-1));
 
     let _ = execute_repl_line(&mut session, "status --format json --no-pretty")
         .expect("repl status should return control");
     assert_eq!(
         session.last_exit_code,
-        run(&["status", "--format", "json", "--no-pretty"])
-            .status
-            .code()
-            .unwrap_or(-1)
+        run(&["status", "--format", "json", "--no-pretty"]).status.code().unwrap_or(-1)
     );
 }
