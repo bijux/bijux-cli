@@ -31,53 +31,15 @@ pub(crate) fn env_map() -> HashMap<String, String> {
         .collect()
 }
 
-pub(crate) fn workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .unwrap_or_else(|_| Path::new(".").to_path_buf())
-}
-
-pub(crate) fn collect_files(base: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    if !base.exists() {
-        return out;
-    }
-    let mut stack = vec![base.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        if let Ok(entries) = fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    stack.push(path);
-                } else if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
-    }
-    out.sort();
-    out
-}
-
-pub(crate) fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
-
-pub(crate) fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
-
 pub(crate) fn command_option_value(argv: &[String], name: &str) -> Option<String> {
     let prefixed = format!("{name}=");
     if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
         return Some(found[prefixed.len()..].to_string());
     }
-    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
+    argv.iter()
+        .position(|arg| arg == name)
+        .and_then(|idx| argv.get(idx + 1))
+        .cloned()
 }
 
 pub(crate) fn command_has_flag(argv: &[String], flag: &str) -> bool {
@@ -85,12 +47,22 @@ pub(crate) fn command_has_flag(argv: &[String], flag: &str) -> bool {
 }
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
-    !path.components().any(|component| matches!(component, Component::ParentDir))
+    !path
+        .components()
+        .any(|component| matches!(component, Component::ParentDir))
 }
 
 fn scaffold_manifest_json(kind: &str, namespace: &str) -> String {
-    let plugin_kind = if kind == "python" { "python" } else { "delegated" };
-    let entrypoint = if kind == "python" { "plugin:main" } else { "plugin:main" };
+    let plugin_kind = if kind == "python" {
+        "python"
+    } else {
+        "delegated"
+    };
+    let entrypoint = if kind == "python" {
+        "plugin:main"
+    } else {
+        "plugin:main"
+    };
     format!(
         "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"0.1.0\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
@@ -109,7 +81,10 @@ pub(crate) fn scaffold_plugin_layout(
     if is_reserved_namespace(namespace, &[]) {
         anyhow::bail!("plugin namespace is reserved: {namespace}");
     }
-    if !namespace.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
+    if !namespace
+        .chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+    {
         anyhow::bail!("plugin namespace must be lowercase kebab-case");
     }
     if !is_safe_scaffold_path(base_dir) {
@@ -136,11 +111,8 @@ pub(crate) fn scaffold_plugin_layout(
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
     let manifest = crate::plugin::parse_manifest_v1(&manifest_text)?;
-    let _ = crate::plugin::validate_manifest(
-        manifest,
-        env!("CARGO_PKG_VERSION"),
-        RESERVED_NAMESPACES,
-    )?;
+    let _ =
+        crate::plugin::validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
     Ok(manifest_path)
 }
 
@@ -164,7 +136,11 @@ fn parse_history_entries(text: &str) -> Result<Vec<Value>> {
 
     if let Ok(value) = serde_json::from_str::<Value>(trimmed) {
         if let Some(items) = value.as_array() {
-            return Ok(items.iter().filter(|item| item.is_object()).cloned().collect());
+            return Ok(items
+                .iter()
+                .filter(|item| item.is_object())
+                .cloned()
+                .collect());
         }
         anyhow::bail!("Unexpected history file format (not JSON array)");
     }
@@ -296,15 +272,19 @@ pub(crate) fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     }
     if let Ok(text) = fs::read_to_string(&paths.config_file) {
         let mut seen = std::collections::BTreeMap::<String, usize>::new();
-        for line in
-            text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#'))
+        for line in text
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
         {
             if let Some((left, _)) = line.split_once('=') {
                 *seen.entry(left.trim().to_string()).or_insert(0) += 1;
             }
         }
-        let duplicates: Vec<String> =
-            seen.into_iter().filter_map(|(key, count)| (count > 1).then_some(key)).collect();
+        let duplicates: Vec<String> = seen
+            .into_iter()
+            .filter_map(|(key, count)| (count > 1).then_some(key))
+            .collect();
         if !duplicates.is_empty() {
             issues.push(json!({
                 "area": "config",

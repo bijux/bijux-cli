@@ -10,6 +10,7 @@ pub mod config;
 pub mod contracts;
 pub mod control_plane;
 pub mod crate_health;
+pub mod dispatch;
 pub mod docs_audit;
 pub mod env;
 pub mod evidence;

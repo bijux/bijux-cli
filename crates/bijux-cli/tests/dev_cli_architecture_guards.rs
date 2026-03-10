@@ -3,7 +3,9 @@
 
 #[test]
 fn runtime_crates_do_not_import_bijux_dev_cli() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..");
     let runtime_crates = [
         "crates/bijux-cli/src/routing",
         "crates/bijux-cli-python/src",
@@ -23,9 +25,26 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
 
 #[test]
 fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
-    let source =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cli/commands/dev_cli.rs"))
-            .expect("read dev cli command source");
+    let adapter_source = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cli/commands/dev_cli.rs"
+    ))
+    .expect("read dev cli command source");
+    let dispatch_source = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../bijux-dev-cli/src/dispatch.rs"
+    ))
+    .expect("read dev cli dispatch source");
+
+    assert!(
+        adapter_source.contains("dev_dispatch::try_handle"),
+        "core adapter must delegate dev cli command routing to bijux-dev-cli dispatch"
+    );
+    assert!(
+        !adapter_source.contains("dev_control_plane::build_doctor_report"),
+        "core adapter must not assemble dev cli report payloads directly"
+    );
+
     let delegated = [
         "dev_control_plane::build_snapshots_audit_report",
         "dev_control_plane::build_fixture_audit_report",
@@ -33,7 +52,10 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
         "dev_control_plane::build_doctor_report",
     ];
     for needle in delegated {
-        assert!(source.contains(needle), "missing delegation for {needle}");
+        assert!(
+            dispatch_source.contains(needle),
+            "missing delegation for {needle}"
+        );
     }
 }
 
