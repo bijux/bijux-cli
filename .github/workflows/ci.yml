@@ -282,6 +282,7 @@ jobs:
           python3 scripts/status/generate_release_evidence_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
+          python3 scripts/status/generate_compatibility_shim_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -349,6 +350,10 @@ jobs:
       - name: Next-phase evidence gate
         run: |
           python3 scripts/status/enforce_next_phase_evidence.py
+
+      - name: Compatibility shim policy gate
+        run: |
+          python3 scripts/status/enforce_compatibility_shim_policy.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -588,6 +593,12 @@ jobs:
             artifacts/status/ranked_docs_deletion_candidates.json
             artifacts/status/ranked_script_deletion_candidates.json
             artifacts/status/ranked_weak_test_replacements.json
+            artifacts/status/compatibility_shim_inventory.json
+            artifacts/status/compatibility_alias_inventory.json
+            artifacts/status/compatibility_shim_count_delta.json
+            artifacts/status/compatibility_alias_count_delta.json
+            artifacts/status/live_compatibility_shims.json
+            artifacts/status/live_compatibility_aliases.json
           if-no-files-found: warn
           retention-days: 14
 
