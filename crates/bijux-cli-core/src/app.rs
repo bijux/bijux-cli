@@ -18,17 +18,20 @@ use bijux_cli_install::{
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
-    compatibility_warnings, install_plugin as install_plugin_manifest, list_plugins,
+    compatibility_warnings, install_plugin as install_plugin_manifest, is_reserved_namespace,
+    list_plugins,
     load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
     registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest, PluginTrustLevel,
     CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
+use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use serde_json::{json, Value};
 
 use crate::config::execute_config_command;
 use crate::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::argv::command_positionals;
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -234,53 +237,6 @@ fn read_json_if_exists(path: &Path) -> Value {
         .unwrap_or_else(|| json!({}))
 }
 
-fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {
-    let mut extra_start = 1 + command_tokens.len();
-    if argv.len() < extra_start {
-        return Vec::new();
-    }
-    for (idx, token) in command_tokens.iter().enumerate() {
-        if argv.get(idx + 1).map(String::as_str) != Some(*token) {
-            extra_start = idx + 1;
-            break;
-        }
-    }
-    let extras = &argv[extra_start..];
-    let mut positional = Vec::new();
-    let mut i = 0;
-    while i < extras.len() {
-        let token = &extras[i];
-        if token == "--quiet" || token == "-q" || token == "--pretty" || token == "--no-pretty" {
-            i += 1;
-            continue;
-        }
-        if token == "--format"
-            || token == "-f"
-            || token == "--log-level"
-            || token == "--color"
-            || token == "--config-path"
-        {
-            i += 2;
-            continue;
-        }
-        if token.starts_with("--format=")
-            || token.starts_with("--log-level=")
-            || token.starts_with("--color=")
-            || token.starts_with("--config-path=")
-        {
-            i += 1;
-            continue;
-        }
-        if token.starts_with('-') {
-            i += 1;
-            continue;
-        }
-        positional.push(token.clone());
-        i += 1;
-    }
-    positional
-}
-
 fn command_option_value(argv: &[String], name: &str) -> Option<String> {
     let prefixed = format!("{name}=");
     if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
@@ -315,7 +271,7 @@ fn scaffold_plugin_layout(
     namespace: &str,
     force: bool,
 ) -> Result<PathBuf> {
-    if RESERVED_NAMESPACES.iter().any(|value| *value == namespace) {
+    if is_reserved_namespace(namespace, &[]) {
         anyhow::bail!("plugin namespace is reserved: {namespace}");
     }
     if !namespace
@@ -1256,6 +1212,8 @@ fn route_response(
             );
             let cross_crate_api_usage =
                 read_json_if_exists(&root.join("artifacts/status/cross_crate_api_usage.json"));
+            let duplication_hotspots =
+                read_json_if_exists(&root.join("artifacts/status/duplication_hotspots.json"));
             json!({
                 "crate_metrics": metrics,
                 "crate_report": report,
@@ -1264,6 +1222,7 @@ fn route_response(
                 "public_api_by_crate": public_api_by_crate,
                 "internal_only_candidates_by_crate": internal_only_candidates,
                 "cross_crate_api_usage": cross_crate_api_usage,
+                "duplication_hotspots": duplication_hotspots,
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
@@ -1501,87 +1460,6 @@ fn try_render_clap_help(argv: &[String]) -> Option<String> {
     }
 }
 
-fn is_known_route(path: &[String]) -> bool {
-    match path {
-        [a, b]
-            if a == "cli"
-                && (b == "version"
-                    || b == "doctor"
-                    || b == "repl"
-                    || b == "completion"
-                    || b == "inspect"
-                    || b == "status"
-                    || b == "paths"
-                    || b == "self-test") =>
-        {
-            true
-        }
-        [a, b, c]
-            if a == "cli"
-                && b == "config"
-                && (c == "get"
-                    || c == "set"
-                    || c == "unset"
-                    || c == "clear"
-                    || c == "reload"
-                    || c == "export"
-                    || c == "load") =>
-        {
-            true
-        }
-        [a] if a == "config" => true,
-        [a] if a == "history" || a == "memory" => true,
-        [a, b] if a == "memory" && b == "list" => true,
-        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" => true,
-        [a, b, c]
-            if a == "cli"
-                && b == "plugins"
-                && (c == "list"
-                    || c == "inspect"
-                    || c == "check"
-                    || c == "install"
-                    || c == "uninstall"
-                    || c == "scaffold"
-                    || c == "doctor"
-                    || c == "reserved-names"
-                    || c == "where"
-                    || c == "explain"
-                    || c == "schema") =>
-        {
-            true
-        }
-        [a, b, c]
-            if a == "dev"
-                && b == "cli"
-                && (c == "inventory"
-                    || c == "routes"
-                    || c == "registry"
-                    || c == "parity"
-                    || c == "docs"
-                    || c == "status"
-                    || c == "scripts-audit"
-                    || c == "script-audit"
-                    || c == "snapshots-audit"
-                    || c == "fixture-audit"
-                    || c == "crate-health"
-                    || c == "package-health"
-                    || c == "route-audit"
-                    || c == "env"
-                    || c == "doctor"
-                    || c == "contracts"
-                    || c == "runtime-identity"
-                    || c == "docs-prune-plan"
-                    || c == "state-audit"
-                    || c == "state-doctor"
-                    || c == "docs-audit") =>
-        {
-            true
-        }
-        [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => true,
-        _ => false,
-    }
-}
-
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     if argv.len() == 1 {
@@ -1614,7 +1492,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    let is_unknown = !is_known_route(&intent.normalized_path);
+    let is_unknown = !is_known_catalog_route(&intent.normalized_path);
 
     let response = route_response(&intent.normalized_path, argv, &intent.global_flags);
     let payload = match response {

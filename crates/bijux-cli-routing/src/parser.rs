@@ -3,6 +3,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use crate::catalog::normalize_command_path;
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -269,70 +270,6 @@ fn extract_path(matches: &ArgMatches) -> Vec<String> {
     out
 }
 
-fn normalize_path(path: &[String]) -> Vec<String> {
-    match path {
-        [a] if a == "doctor"
-            || a == "version"
-            || a == "inspect"
-            || a == "completion"
-            || a == "repl" =>
-        {
-            vec!["cli".to_string(), a.clone()]
-        }
-        [a, b]
-            if a == "config"
-                && (b == "get"
-                    || b == "set"
-                    || b == "unset"
-                    || b == "clear"
-                    || b == "reload"
-                    || b == "export"
-                    || b == "load") =>
-        {
-            vec!["cli".to_string(), "config".to_string(), b.clone()]
-        }
-        [a, b]
-            if a == "plugins"
-                && (b == "list"
-                    || b == "inspect"
-                    || b == "check"
-                    || b == "reserved-names"
-                    || b == "where"
-                    || b == "explain"
-                    || b == "schema") =>
-        {
-            vec!["cli".to_string(), "plugins".to_string(), b.clone()]
-        }
-        [a, b]
-            if a == "dev"
-                && [
-                    "inventory",
-                    "routes",
-                    "registry",
-                    "parity",
-                    "docs",
-                    "status",
-                    "scripts-audit",
-                    "snapshots-audit",
-                    "fixture-audit",
-                    "crate-health",
-                    "package-health",
-                    "env",
-                    "doctor",
-                    "contracts",
-                    "runtime-identity",
-                    "docs-prune-plan",
-                    "state-audit",
-                    "state-doctor",
-                ]
-                .contains(&b.as_str()) =>
-        {
-            vec!["dev".to_string(), "cli".to_string(), b.clone()]
-        }
-        _ => path.to_vec(),
-    }
-}
-
 /// Parse argv and normalize global flags + command path.
 pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let matches = match root_command().try_get_matches_from(argv) {
@@ -355,7 +292,7 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     };
 
     let command_path = extract_path(&matches);
-    let normalized_path = normalize_path(&command_path);
+    let normalized_path = normalize_command_path(&command_path);
     let global_flags = global_flags_from_matches(&matches)?;
 
     Ok(ParsedIntent { command_path, normalized_path, global_flags })

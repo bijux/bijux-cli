@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! Routing graph and namespace resolution surfaces.
 
+pub mod catalog;
 pub mod parser;
 pub mod registry;
 
