@@ -93,6 +93,25 @@ pub trait RuntimeQueryProvider {
     fn runtime_identity_input(&self) -> dev_runtime_identity::RuntimeIdentityInput;
 }
 
+/// Return true when the normalized path belongs to `dev cli` dispatch ownership.
+#[must_use]
+pub fn owns_path(normalized_path: &[String]) -> bool {
+    match normalized_path {
+        [a, b, _] if a == "dev" && b == "cli" => true,
+        [a, b, c, _]
+            if a == "dev"
+                && b == "cli"
+                && matches!(
+                    c.as_str(),
+                    "scripts" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+                ) =>
+        {
+            true
+        }
+        _ => false,
+    }
+}
+
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
@@ -553,4 +572,35 @@ pub fn try_handle(
     };
 
     Ok(Some(payload))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::owns_path;
+
+    #[test]
+    fn owns_path_matches_dev_cli_dispatch_surface() {
+        assert!(owns_path(&["dev".into(), "cli".into(), "status".into()]));
+        assert!(owns_path(&[
+            "dev".into(),
+            "cli".into(),
+            "scripts".into(),
+            "audit".into()
+        ]));
+        assert!(owns_path(&[
+            "dev".into(),
+            "cli".into(),
+            "release".into(),
+            "status".into()
+        ]));
+
+        assert!(!owns_path(&["dev".into(), "status".into()]));
+        assert!(!owns_path(&["cli".into(), "status".into()]));
+        assert!(!owns_path(&[
+            "dev".into(),
+            "cli".into(),
+            "unknown".into(),
+            "leaf".into()
+        ]));
+    }
 }

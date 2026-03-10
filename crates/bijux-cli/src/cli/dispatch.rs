@@ -2,12 +2,13 @@
 
 use std::env;
 
-use anyhow::Result;
 use crate::install::CompatibilityPaths;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::registry::{RouteRegistry, RouteTarget};
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use anyhow::Result;
+use bijux_dev_cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
 use crate::cli::commands::help::render_command_help;
@@ -80,49 +81,7 @@ fn route_response(
         {
             RouteTarget::BuiltIn
         }
-        [a, b, c] if a == "dev" && b == "cli" => {
-            let _ = c;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" => {
-            let _ = d;
-            RouteTarget::BuiltIn
-        }
-        [a, b, c]
-            if a == "dev"
-                && b == "cli"
-                && (c == "dashboard"
-                    || c == "quickcheck"
-                    || c == "truth"
-                    || c == "blockers"
-                    || c == "next") =>
-        {
-            RouteTarget::BuiltIn
-        }
+        _ if owns_dev_cli_path(normalized_path) => RouteTarget::BuiltIn,
         _ => registry.resolve(normalized_path)?,
     };
     if matches!(target, RouteTarget::Plugin(_)) {
@@ -157,9 +116,13 @@ fn route_response(
     if let Some(payload) = dev_commands::try_handle(normalized_path, &plugin_registry_path)? {
         return Ok(payload);
     }
-    if let Some(payload) =
-        dev_cli_commands::try_handle(normalized_path, argv, &registry, &paths, &plugin_registry_path)?
-    {
+    if let Some(payload) = dev_cli_commands::try_handle(
+        normalized_path,
+        argv,
+        &registry,
+        &paths,
+        &plugin_registry_path,
+    )? {
         return Ok(payload);
     }
     if let Some(payload) =
@@ -211,7 +174,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = try_render_clap_help(argv) {
-        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: help,
+            stderr: String::new(),
+        });
     }
 
     let intent = parse_intent(argv)?;
@@ -269,15 +236,31 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
     if intent.global_flags.quiet {
-        return Ok(AppRunResult { exit_code: 0, stdout: String::new(), stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        });
     }
 
-    Ok(AppRunResult { exit_code: 0, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: 0,
+        stdout: content,
+        stderr: String::new(),
+    })
 }
