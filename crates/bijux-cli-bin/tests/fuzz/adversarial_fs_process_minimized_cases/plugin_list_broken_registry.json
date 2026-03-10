@@ -1,0 +1,4 @@
+{
+  "args": ["cli", "plugins", "list", "--format", "json", "--no-pretty"],
+  "registry_text": "{broken-json"
+}
