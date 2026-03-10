@@ -3,5 +3,6 @@
 
 pub mod contracts;
 pub mod dispatch;
+pub(crate) mod handlers;
 pub mod help;
 pub mod parser;

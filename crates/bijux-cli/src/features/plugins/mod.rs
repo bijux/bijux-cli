@@ -1,8 +1,6 @@
 #![forbid(unsafe_code)]
 //! Plugin registration and lifecycle boundaries.
 
-/// CLI command handlers for plugin lifecycle flows.
-pub(crate) mod command;
 mod constants;
 mod diagnostics;
 mod discovery;

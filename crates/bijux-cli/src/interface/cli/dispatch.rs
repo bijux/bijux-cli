@@ -3,6 +3,11 @@
 use std::env;
 
 use crate::features::install::CompatibilityPaths;
+use crate::interface::cli::handlers::{
+    cli as cli_handlers, config as config_handlers, developer as developer_handlers,
+    developer_runtime as developer_runtime_handlers, history as history_handlers,
+    memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
+};
 use crate::interface::cli::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::routing::registry::{RouteRegistry, RouteTarget};
@@ -11,13 +16,7 @@ use anyhow::Result;
 use bijux_dev_cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
-use crate::features::config::execute_config_command;
 use crate::features::diagnostics::state_paths::resolve_state_paths;
-use crate::features::diagnostics::{cli_command as cli_commands, root_command as root_commands};
-use crate::features::{
-    developer as developer_feature, history as history_feature, memory as memory_feature,
-    plugins as plugins_feature,
-};
 use crate::interface::cli::help::render_command_help;
 use crate::shared::output::{render_value, EmitterConfig};
 
@@ -99,26 +98,26 @@ fn route_response(
         plugins_dir: paths.plugins_dir.clone(),
     };
     let plugin_registry_path = paths.plugin_registry_file.clone();
-    if let Some(payload) = execute_config_command(normalized_path, argv, &compatibility_paths)? {
-        return Ok(payload);
-    }
-    if let Some(payload) = history_feature::command::try_handle(normalized_path, argv, &paths)? {
-        return Ok(payload);
-    }
-    if let Some(payload) = memory_feature::command::try_handle(normalized_path, argv, &paths)? {
-        return Ok(payload);
-    }
     if let Some(payload) =
-        plugins_feature::command::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
+        config_handlers::execute_config_command(normalized_path, argv, &compatibility_paths)?
     {
         return Ok(payload);
     }
+    if let Some(payload) = history_handlers::try_handle(normalized_path, argv, &paths)? {
+        return Ok(payload);
+    }
+    if let Some(payload) = memory_handlers::try_handle(normalized_path, argv, &paths)? {
+        return Ok(payload);
+    }
     if let Some(payload) =
-        developer_feature::command::try_handle(normalized_path, &plugin_registry_path)?
+        plugins_handlers::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
     {
         return Ok(payload);
     }
-    if let Some(payload) = developer_feature::runtime_adapter::try_handle(
+    if let Some(payload) = developer_handlers::try_handle(normalized_path, &plugin_registry_path)? {
+        return Ok(payload);
+    }
+    if let Some(payload) = developer_runtime_handlers::try_handle(
         normalized_path,
         argv,
         &registry,
@@ -128,11 +127,11 @@ fn route_response(
         return Ok(payload);
     }
     if let Some(payload) =
-        cli_commands::try_handle(normalized_path, &paths, &registry, &plugin_registry_path)
+        cli_handlers::try_handle(normalized_path, &paths, &registry, &plugin_registry_path)
     {
         return Ok(payload);
     }
-    if let Some(payload) = root_commands::try_handle(normalized_path, argv) {
+    if let Some(payload) = root_handlers::try_handle(normalized_path, argv) {
         return Ok(payload);
     }
 
