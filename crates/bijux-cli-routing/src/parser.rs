@@ -247,6 +247,19 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("unresolved-gaps"))
                 .subcommand(Command::new("compatibility-leftovers")),
         )
+        .subcommand(
+            Command::new("evidence")
+                .subcommand(Command::new("list"))
+                .subcommand(Command::new("show").arg(Arg::new("id").long("id").num_args(1)))
+                .subcommand(Command::new("audit"))
+                .subcommand(Command::new("stale"))
+                .subcommand(Command::new("matrix"))
+                .subcommand(Command::new("website-export"))
+                .subcommand(Command::new("ci-export"))
+                .subcommand(Command::new("release-export"))
+                .subcommand(Command::new("command-map"))
+                .subcommand(Command::new("parity-map")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

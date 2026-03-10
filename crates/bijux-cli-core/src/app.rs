@@ -31,9 +31,9 @@ use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
     contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
-    package_health as dev_package_health, parity as dev_parity, registry as dev_registry,
-    release as dev_release, route_audit as dev_route_audit, routes as dev_routes,
-    runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
+    evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
+    registry as dev_registry, release as dev_release, route_audit as dev_route_audit,
+    routes as dev_routes, runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
     script_audit as dev_script_audit, scripts as dev_scripts, state_audit as dev_state_audit,
     status as dev_status, ReportContext,
 };
@@ -510,6 +510,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "release" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1296,6 +1300,41 @@ fn route_response(
             if a == "dev" && b == "cli" && c == "release" && d == "compatibility-leftovers" =>
         {
             dev_release::build_compatibility_leftovers_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "list" => {
+            dev_evidence::build_list_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "show" => {
+            let id = command_option_value(argv, "--id")
+                .or_else(|| {
+                    command_positionals(argv, &["dev", "cli", "evidence", "show"]).first().cloned()
+                })
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: --id required"))?;
+            dev_evidence::build_show_report(&workspace_root(), &id)
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "audit" => {
+            dev_evidence::build_audit_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "stale" => {
+            dev_evidence::build_stale_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "matrix" => {
+            dev_evidence::build_matrix_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "website-export" => {
+            dev_evidence::build_website_export_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "ci-export" => {
+            dev_evidence::build_ci_export_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "release-export" => {
+            dev_evidence::build_release_export_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "command-map" => {
+            dev_evidence::build_command_map_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "parity-map" => {
+            dev_evidence::build_parity_map_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

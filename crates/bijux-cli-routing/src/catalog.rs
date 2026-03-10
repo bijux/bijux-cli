@@ -24,6 +24,7 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "scripts",
     "rustdoc",
     "release",
+    "evidence",
     "inventory",
     "routes",
     "registry",
@@ -76,6 +77,18 @@ const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
     "intentional-differences",
     "unresolved-gaps",
     "compatibility-leftovers",
+];
+const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
+    "list",
+    "show",
+    "audit",
+    "stale",
+    "matrix",
+    "website-export",
+    "ci-export",
+    "release-export",
+    "command-map",
+    "parity-map",
 ];
 const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "remaining",
@@ -201,6 +214,14 @@ pub fn is_known_route(path: &[String]) -> bool {
                 && b == "cli"
                 && c == "release"
                 && contains(DEV_CLI_RELEASE_SUBCOMMANDS, d) =>
+        {
+            true
+        }
+        [a, b, c, d]
+            if a == "dev"
+                && b == "cli"
+                && c == "evidence"
+                && contains(DEV_CLI_EVIDENCE_SUBCOMMANDS, d) =>
         {
             true
         }

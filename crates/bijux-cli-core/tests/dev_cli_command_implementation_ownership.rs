@@ -64,4 +64,12 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         source.contains("dev_release::build_status_report"),
         "release command namespace must delegate to bijux-dev-cli release module"
     );
+    assert!(
+        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"evidence\""),
+        "missing delegated evidence command namespace"
+    );
+    assert!(
+        source.contains("dev_evidence::build_list_report"),
+        "evidence command namespace must delegate to bijux-dev-cli evidence module"
+    );
 }
