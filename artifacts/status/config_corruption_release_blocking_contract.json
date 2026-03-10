@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generated_at": "2026-03-10T12:44:30.345967+00:00",
   "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
   "missing_todos": [],
   "policy": "config corruption campaign coverage and deterministic rollback behavior are required before release",

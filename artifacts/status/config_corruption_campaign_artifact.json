@@ -10,10 +10,10 @@
     ],
     "exit_code": 0,
     "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running tests/randomized_config_corruption_campaigns.rs (target/debug/deps/randomized_config_corruption_campaigns-0a48fb1fda26edd8)\n",
-    "stdout": "\nrunning 6 tests\ntest config_mutations_never_silently_destroy_unrelated_valid_keys ... ok\ntest state_doctor_reports_corruption_introduced_by_campaign_harness ... ok\ntest failed_config_load_rolls_back_and_preserves_coherent_state ... ok\ntest config_corruption_has_stable_failure_class_and_recovery_path ... ok\ntest repeated_run_corruption_inputs_are_deterministic_for_config_command_set ... ok\ntest randomized_corruption_campaigns_cover_config_reads_writes_and_all_mutation_subcommands ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s\n\n"
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/randomized_config_corruption_campaigns.rs (target/debug/deps/randomized_config_corruption_campaigns-0a48fb1fda26edd8)\n",
+    "stdout": "\nrunning 6 tests\ntest config_mutations_never_silently_destroy_unrelated_valid_keys ... ok\ntest state_doctor_reports_corruption_introduced_by_campaign_harness ... ok\ntest failed_config_load_rolls_back_and_preserves_coherent_state ... ok\ntest config_corruption_has_stable_failure_class_and_recovery_path ... ok\ntest repeated_run_corruption_inputs_are_deterministic_for_config_command_set ... ok\ntest randomized_corruption_campaigns_cover_config_reads_writes_and_all_mutation_subcommands ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s\n\n"
   },
-  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generated_at": "2026-03-10T12:44:30.345967+00:00",
   "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
   "scope": "randomized config corruption campaigns",
   "status": "complete",

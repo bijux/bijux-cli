@@ -1,7 +1,7 @@
 {
   "deterministic_failure_class_required": true,
   "evidence": "crates/bijux-cli-bin/tests/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set",
-  "generated_at": "2026-03-10T12:44:05.444519+00:00",
+  "generated_at": "2026-03-10T12:44:30.345967+00:00",
   "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
   "scope": "config corruption determinism",
   "status": "complete",
