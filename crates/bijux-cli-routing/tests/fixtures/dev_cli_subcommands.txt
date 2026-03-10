@@ -5,6 +5,7 @@ dev cli registry
 dev cli parity
 dev cli docs
 dev cli docs-audit
+dev cli plugin-health
 dev cli status
 dev cli scripts-audit
 dev cli script-audit

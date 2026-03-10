@@ -13,6 +13,8 @@ cli plugins inspect
 cli plugins check
 cli plugins install
 cli plugins uninstall
+cli plugins enable
+cli plugins disable
 cli plugins scaffold
 cli plugins doctor
 cli plugins reserved-names
