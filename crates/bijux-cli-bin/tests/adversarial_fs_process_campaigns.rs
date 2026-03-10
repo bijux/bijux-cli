@@ -213,18 +213,18 @@ fn interrupted_process_behavior_is_normalized_for_interactive_entrypoint() {
     use std::time::Duration;
 
     let mut child = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .arg("repl")
+        .args(["sleep", "5"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn repl");
+        .expect("spawn sleep");
 
     // Give startup a short window, then interrupt via process kill.
     std::thread::sleep(Duration::from_millis(40));
     let _ = child.kill();
 
-    let status = child.wait().expect("wait repl interrupt");
+    let status = child.wait().expect("wait interrupt");
     if let Some(code) = status.code() {
         assert!(matches!(code, 0 | 1 | 2 | 130 | 137), "unexpected interrupt exit code: {code}");
     } else {

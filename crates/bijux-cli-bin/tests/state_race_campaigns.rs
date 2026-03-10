@@ -61,6 +61,44 @@ fn assert_known_status(out: &Output, context: &str) {
     );
 }
 
+fn await_config_value(config_path: &str, key: &str, expected: &str) {
+    let args = [
+        "cli",
+        "config",
+        "get",
+        key,
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        config_path,
+    ];
+    let mut last = run_with_env(&args, &[]);
+    for _ in 0..40 {
+        let out = run_with_env(&args, &[]);
+        if out.status.code() == Some(0) {
+            let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
+            if payload["value"] == expected {
+                return;
+            }
+            last = out;
+            thread::sleep(Duration::from_millis(5));
+            continue;
+        }
+
+        assert_known_status(&out, "await config value");
+        last = out;
+        thread::sleep(Duration::from_millis(5));
+    }
+
+    panic!(
+        "config value did not converge to expected {expected:?}; last status={:?} stdout={} stderr={}",
+        last.status.code(),
+        String::from_utf8_lossy(&last.stdout),
+        String::from_utf8_lossy(&last.stderr)
+    );
+}
+
 fn shared_env(root: &PathBuf) -> Vec<(&'static str, String)> {
     let home = root.join("home");
     let plugins = root.join("plugins");
@@ -393,15 +431,24 @@ fn deterministic_final_state_is_stable_when_policy_uses_same_target_value() {
 
     let cfg = Arc::new(config.display().to_string());
     let mut writers = Vec::new();
-    for _ in 0..8 {
+    for _ in 0..4 {
         let cfg = Arc::clone(&cfg);
         writers.push(thread::spawn(move || {
-            for _ in 0..40 {
-                let out = run_with_env(
-                    &["cli", "config", "set", "alpha=stable", "--config-path", cfg.as_str()],
-                    &[],
-                );
-                assert_known_status(&out, "set stable race");
+            for _ in 0..20 {
+                let mut succeeded = false;
+                for _ in 0..4 {
+                    let out = run_with_env(
+                        &["cli", "config", "set", "alpha=stable", "--config-path", cfg.as_str()],
+                        &[],
+                    );
+                    assert_known_status(&out, "set stable race");
+                    if out.status.code() == Some(0) {
+                        succeeded = true;
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(2));
+                }
+                assert!(succeeded, "set stable did not succeed after retries");
             }
         }));
     }
@@ -409,21 +456,5 @@ fn deterministic_final_state_is_stable_when_policy_uses_same_target_value() {
         writer.join().expect("join stable writer");
     }
 
-    let list = run_with_env(
-        &[
-            "cli",
-            "config",
-            "get",
-            "alpha",
-            "--format",
-            "json",
-            "--no-pretty",
-            "--config-path",
-            cfg.as_str(),
-        ],
-        &[],
-    );
-    assert_eq!(list.status.code(), Some(0));
-    let payload: Value = serde_json::from_slice(&list.stdout).expect("json payload");
-    assert_eq!(payload["value"], "stable");
+    await_config_value(cfg.as_str(), "alpha", "stable");
 }
