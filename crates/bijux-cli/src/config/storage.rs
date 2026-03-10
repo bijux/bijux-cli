@@ -88,6 +88,10 @@ mod tests {
         let missing = temp.join("missing.env");
         let loaded = repo.load(&missing).expect("missing treated as empty");
         assert!(loaded.is_empty());
+        assert!(
+            !missing.exists(),
+            "load should not materialize missing file"
+        );
 
         let empty = temp.join("empty.env");
         fs::write(&empty, "").expect("write empty");
@@ -117,6 +121,11 @@ mod tests {
         .expect("write dupes");
 
         let loaded = repo.load(&path).expect("parse");
+        assert_eq!(
+            loaded.len(),
+            2,
+            "duplicate keys should collapse to one entry each"
+        );
         assert_eq!(loaded.get("alpha").map(String::as_str), Some("1"));
         assert_eq!(loaded.get("beta").map(String::as_str), Some("new"));
     }
@@ -128,7 +137,7 @@ mod tests {
         let path = temp.join("comments.env");
         fs::write(
             &path,
-            "\n# top comment\nBIJUXCLI_ALPHA=1\n\n   # indented comment\nBIJUXCLI_BETA=2\n",
+            "\n# top comment\nBIJUXCLI_ALPHA=1\n\n   # indented comment\nBIJUXCLI_BETA=2\n# inline = comment\n",
         )
         .expect("write comments");
 
@@ -143,10 +152,19 @@ mod tests {
         let repo = FileConfigRepository;
         let temp = make_temp_dir("whitespace");
         let path = temp.join("whitespace.env");
-        fs::write(&path, "BIJUXCLI_ALPHA=value   \n").expect("write");
+        fs::write(
+            &path,
+            "BIJUXCLI_ALPHA=value   \nBIJUXCLI_BETA=\"quoted value\"   \n",
+        )
+        .expect("write");
 
         let loaded = repo.load(&path).expect("parse");
         assert_eq!(loaded.get("alpha").map(String::as_str), Some("value"));
+        assert_eq!(
+            loaded.get("beta").map(String::as_str),
+            Some("\"quoted value\""),
+            "quoted input should preserve surrounding quotes while trimming trailing whitespace"
+        );
     }
 
     #[test]
@@ -164,6 +182,8 @@ mod tests {
             written, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n",
             "BTreeMap-backed rendering should stay stable"
         );
+        let reloaded = repo.load(&path).expect("reload");
+        assert_eq!(reloaded, map, "saved config must round-trip through parser");
     }
 
     #[test]

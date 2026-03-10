@@ -57,24 +57,31 @@ mod tests {
 
     #[test]
     fn key_rejects_empty_and_whitespace_only() {
-        assert!(normalize_key("").is_err());
-        assert!(normalize_key("   ").is_err());
+        let empty = normalize_key("").expect_err("empty key should fail validation");
+        let spaces = normalize_key("   ").expect_err("whitespace key should fail validation");
+        assert!(empty.to_string().contains("Key cannot be empty"));
+        assert!(spaces.to_string().contains("Key cannot be empty"));
     }
 
     #[test]
     fn key_accepts_lower_mixed_underscore_and_alphanumeric() {
         assert_eq!(normalize_key("alpha").expect("lower"), "alpha");
         assert_eq!(normalize_key("MixedCase").expect("mixed"), "mixedcase");
+        assert_eq!(normalize_key("BIJUXCLI_ALPHA").expect("prefix"), "alpha");
         assert_eq!(normalize_key("_").expect("underscore"), "_");
         assert_eq!(normalize_key("a1b2").expect("alphanumeric"), "a1b2");
     }
 
     #[test]
     fn key_rejects_invalid_punctuation_dots_dashes_and_non_ascii() {
-        assert!(normalize_key("bad!key").is_err());
-        assert!(normalize_key("group.key").is_err());
-        assert!(normalize_key("bad-key").is_err());
-        assert!(normalize_key("näme").is_err());
+        let punctuation = normalize_key("bad!key").expect_err("punctuation should be rejected");
+        let dotted = normalize_key("group.key").expect_err("dot should be rejected");
+        let dashed = normalize_key("bad-key").expect_err("dash should be rejected");
+        let non_ascii = normalize_key("näme").expect_err("non-ascii should be rejected");
+        assert!(punctuation.to_string().contains("Invalid key"));
+        assert!(dotted.to_string().contains("Unknown config section"));
+        assert!(dashed.to_string().contains("Invalid key"));
+        assert!(non_ascii.to_string().contains("Non-ASCII"));
     }
 
     #[test]
@@ -89,5 +96,9 @@ mod tests {
         assert!(validate_value("line\nbreak").is_err());
         assert!(validate_value("tab\tvalue").is_err());
         assert!(validate_value("vert\u{000B}tab").is_err());
+        assert!(
+            validate_value("accent-é").is_err(),
+            "non-ascii values should be rejected"
+        );
     }
 }
