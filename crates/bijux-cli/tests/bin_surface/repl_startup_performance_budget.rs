@@ -4,8 +4,8 @@
 use std::time::{Duration, Instant};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use bijux_cli::repl::{estimated_session_memory_bytes, startup_repl};
+use bijux_cli_python as _;
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -25,7 +25,10 @@ fn repl_startup_latency_stays_within_budget() {
 fn repl_startup_memory_estimate_stays_within_budget() {
     let (session, _) = startup_repl("benchmark", None);
     let estimated = estimated_session_memory_bytes(&session);
-    assert!(estimated <= 512 * 1024, "repl startup memory estimate exceeded: {estimated} bytes");
+    assert!(
+        estimated <= 512 * 1024,
+        "repl startup memory estimate exceeded: {estimated} bytes"
+    );
 }
 
 #[test]

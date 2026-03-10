@@ -20,7 +20,10 @@ pub(crate) fn try_handle(
                     limit = raw.parse::<usize>().unwrap_or(20);
                 }
             }
-            if let Some(raw) = positional.first().and_then(|token| token.strip_prefix("--limit=")) {
+            if let Some(raw) = positional
+                .first()
+                .and_then(|token| token.strip_prefix("--limit="))
+            {
                 limit = raw.parse::<usize>().unwrap_or(20);
             }
             let mut entries = read_history_entries(&paths.history_file, limit)?;
@@ -46,7 +49,8 @@ pub(crate) fn try_handle(
                 entries.sort_by(|a, b| {
                     let left = a.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
                     let right = b.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
-                    left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal)
+                    left.partial_cmp(&right)
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 });
             }
             Ok(Some(json!({"entries": entries})))

@@ -22,7 +22,9 @@ pub(crate) fn try_handle(
             let memory = read_memory_map(&paths.memory_file)?;
             let mut keys: Vec<String> = memory.keys().cloned().collect();
             keys.sort_unstable();
-            Ok(Some(json!({"status": "ok", "keys": keys, "count": keys.len()})))
+            Ok(Some(
+                json!({"status": "ok", "keys": keys, "count": keys.len()}),
+            ))
         }
         [a, b] if a == "memory" && b == "get" => {
             let key = command_positionals(argv, &["memory", "get"])
@@ -30,7 +32,9 @@ pub(crate) fn try_handle(
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY required"))?;
             let memory = read_memory_map(&paths.memory_file)?;
-            Ok(Some(json!({"status": "ok", "key": key, "value": memory.get(&key).cloned()})))
+            Ok(Some(
+                json!({"status": "ok", "key": key, "value": memory.get(&key).cloned()}),
+            ))
         }
         [a, b] if a == "memory" && b == "set" => {
             let raw_pair = command_positionals(argv, &["memory", "set"])
@@ -41,7 +45,10 @@ pub(crate) fn try_handle(
                 .split_once('=')
                 .ok_or_else(|| anyhow::anyhow!("Invalid argument: expected KEY=VALUE"))?;
             let mut memory = read_memory_map(&paths.memory_file)?;
-            memory.insert(key.trim().to_string(), Value::String(value.trim().to_string()));
+            memory.insert(
+                key.trim().to_string(),
+                Value::String(value.trim().to_string()),
+            );
             write_memory_map(&paths.memory_file, &memory)?;
             Ok(Some(
                 json!({"status": "updated", "key": key.trim(), "value": value.trim(), "file": paths.memory_file}),
