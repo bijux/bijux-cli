@@ -296,6 +296,7 @@ jobs:
           python3 scripts/status/generate_exit_code_law_reports.py
           python3 scripts/status/generate_stream_discipline_reports.py
           python3 scripts/status/generate_metadata_consistency_reports.py
+          python3 scripts/status/generate_config_deep_behavior_reports.py
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
@@ -458,6 +459,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_metadata_consistency_gate.py --enforce
 
+      - name: Config deep behavior gate
+        run: |
+          python3 scripts/status/enforce_config_deep_behavior_gate.py --enforce
+
       - name: Deterministic generation gate
         run: |
           python3 scripts/status/check_deterministic_generation.py
@@ -599,6 +604,20 @@ jobs:
             artifacts/status/route_metadata_artifact.json
             artifacts/status/metadata_drift_artifact.json
             artifacts/status/command_ownership_artifact.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload config deep behavior artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-deep-behavior
+          path: |
+            artifacts/status/config_semantic_roundtrip_artifact.json
+            artifacts/status/config_precedence_artifact.json
+            artifacts/status/config_determinism_artifact.json
+            artifacts/status/config_corruption_recovery_artifact.json
+            artifacts/status/config_deep_behavior_drift_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
