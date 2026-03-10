@@ -12,8 +12,6 @@ use bijux_cli::repl::{
     inspect_last_error, load_history, register_plugin_completion_hook, startup_repl,
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;

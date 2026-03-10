@@ -9,7 +9,6 @@ use std::process::{Command, Output};
 
 use bijux_cli as _;
 use bijux_cli_python as _;
-use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -130,7 +129,7 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
         .filter_map(|row| row["crate"].as_str())
         .map(ToString::to_string)
         .collect();
-    for expected in ["bijux-cli", "bijux-cli-routing", "bijux-cli-python"] {
+    for expected in ["bijux-cli", "bijux-cli", "bijux-cli-python"] {
         assert!(crates.contains(expected), "crate-health missing {expected}");
     }
 

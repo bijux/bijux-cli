@@ -12,8 +12,6 @@ use bijux_cli::repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line, startup_repl,
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;

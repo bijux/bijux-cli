@@ -7,7 +7,6 @@ use std::process::{Command, Output};
 
 use bijux_cli::app::run_app;
 use bijux_cli_python as _;
-use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -59,7 +58,7 @@ fn parity_for_key_dev_cli_commands_against_current_behavior() {
 #[test]
 fn help_snapshots_exist_for_all_dev_cli_subcommands() {
     let commands: Vec<Vec<&str>> =
-        include_str!("../../../bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt")
+        include_str!("../../../bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt")
             .lines()
             .filter(|line| !line.trim().is_empty())
             .map(|line| line.split_whitespace().collect::<Vec<_>>())

@@ -9,7 +9,6 @@ use bijux_cli::app::{run_app, AppRunResult};
 use bijux_cli_python as _;
 use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli::repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput, ReplStream};
-use bijux_cli_routing as _;
 use libc as _;
 use libc as _;
 use serde_json::Value;

@@ -13,8 +13,6 @@ use bijux_cli::repl::{
     register_plugin_completion_hook, render_repl_command_reference, replay_history_command,
     startup_repl, ReplEvent, ReplInput, ReplStream, REPL_MEMORY_BUDGET_BYTES,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use serde_json as _;
 use shlex as _;
 use thiserror as _;

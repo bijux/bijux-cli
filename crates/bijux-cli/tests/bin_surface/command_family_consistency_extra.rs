@@ -10,7 +10,6 @@ use bijux_cli::app::run_app;
 use bijux_cli_python as _;
 use bijux_cli_python::execution_outcome_api;
 use bijux_cli::repl::{execute_repl_line, startup_repl};
-use bijux_cli_routing as _;
 use libc as _;
 use libc as _;
 use serde_json::Value;

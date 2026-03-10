@@ -10,8 +10,6 @@ use bijux_cli::repl::{
     completion_candidates, configure_history, load_history, register_plugin_completion_hook,
     startup_repl, startup_repl_with_diagnostics,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use serde_json as _;
 use shlex as _;
 use thiserror as _;

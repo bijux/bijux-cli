@@ -13,8 +13,7 @@ use bijux_cli::repl::{
     inspect_last_error, load_history, register_plugin_completion_hook, repl_argv_from_line,
     startup_repl, startup_repl_with_diagnostics, ReplEvent, ReplInput,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing::parser::parse_intent;
+use bijux_cli::routing::parser::parse_intent;
 use serde_json as _;
 use shlex as _;
 use thiserror as _;

@@ -5,7 +5,6 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use bijux_cli_python as _;
-use bijux_cli_routing as _;
 #[cfg(unix)]
 use libc as _;
 use serde_json as _;

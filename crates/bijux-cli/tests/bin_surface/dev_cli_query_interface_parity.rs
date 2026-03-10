@@ -5,9 +5,9 @@ use std::process::Command;
 
 use bijux_cli::query::state_diagnostics_query;
 use bijux_cli::install::query::runtime_identity_query;
-use bijux_cli_routing::inventory::{registry_inventory, route_inventory};
-use bijux_cli_routing::query::contracts_schema_query;
-use bijux_cli_routing::registry::RouteRegistry;
+use bijux_cli::routing::inventory::{registry_inventory, route_inventory};
+use bijux_cli::routing::query::contracts_schema_query;
+use bijux_cli::routing::registry::RouteRegistry;
 use serde_json::Value;
 
 fn run_ok_json(args: &[&str]) -> Value {
