@@ -86,6 +86,8 @@ scripts/status/enforce_help_tree_law_gate.py # enforce CI failure when covered h
 scripts/status/generate_diagnostics_trust_reports.py # generate diagnostics trust, actionable guidance, minimalism, schema drift, and frozen diagnostics trust contract artifacts for TODOs 361-380
 scripts/status/enforce_diagnostics_trust_gate.py # enforce CI failure when covered diagnostics trust schema drifts
 scripts/status/warn_diagnostics_wording_drift.py # emit CI warning when diagnostics text wording drifts from stable human-readable snapshots
+scripts/status/generate_deep_layer_test_coverage_reports.py # generate deep-layer domain category reports, weakest-test inventory, replacement actions, and frozen deep-layer behavior coverage contract for TODOs 381-400
+scripts/status/enforce_deep_layer_test_category_gates.py # enforce deep-layer category/equivalence/corruption/determinism CI gates for behavior changes
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

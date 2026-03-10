@@ -266,6 +266,7 @@ jobs:
           python3 scripts/status/generate_test_quality_audit.py
           python3 scripts/status/generate_test_domain_value_reports.py
           python3 scripts/status/generate_deep_test_quality_reports.py
+          python3 scripts/status/generate_deep_layer_test_coverage_reports.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_truth_milestone_status.py
@@ -568,6 +569,10 @@ jobs:
       - name: Deep test-first feature gate
         run: |
           python3 scripts/status/enforce_deep_test_first_feature_gates.py --enforce
+
+      - name: Deep-layer category gate
+        run: |
+          python3 scripts/status/enforce_deep_layer_test_category_gates.py --enforce
 
       - name: Config source consistency gate
         run: |
@@ -904,6 +909,20 @@ jobs:
             artifacts/status/plugin_tests_by_value.json
             artifacts/status/flag_tests_by_value.json
             artifacts/status/determinism_tests_by_value.json
+            artifacts/status/plugin_tests_by_category.json
+            artifacts/status/flag_tests_by_category.json
+            artifacts/status/determinism_tests_by_category.json
+            artifacts/status/command_tests_by_category.json
+            artifacts/status/config_tests_by_category.json
+            artifacts/status/history_tests_by_category.json
+            artifacts/status/memory_tests_by_category.json
+            artifacts/status/diagnostics_tests_by_category.json
+            artifacts/status/repl_tests_by_category.json
+            artifacts/status/bridge_tests_by_category.json
+            artifacts/status/top_10_weakest_deep_layer_tests.json
+            artifacts/status/deep_layer_weak_test_actions.json
+            artifacts/status/deep_layer_test_coverage_artifact.json
+            artifacts/status/deep_layer_behaviors_contract.json
             artifacts/status/missing_plugin_abuse_cases.json
             artifacts/status/missing_flag_abuse_cases.json
             artifacts/status/missing_deterministic_proof_cases.json
@@ -912,6 +931,20 @@ jobs:
             artifacts/status/deep_missing_behavior_cases_report.json
             artifacts/status/deep_weak_tests_replacement_report.json
             artifacts/status/deep_test_first_domains_contract.json
+            artifacts/status/plugin_tests_by_category.json
+            artifacts/status/flag_tests_by_category.json
+            artifacts/status/determinism_tests_by_category.json
+            artifacts/status/command_tests_by_category.json
+            artifacts/status/config_tests_by_category.json
+            artifacts/status/history_tests_by_category.json
+            artifacts/status/memory_tests_by_category.json
+            artifacts/status/diagnostics_tests_by_category.json
+            artifacts/status/repl_tests_by_category.json
+            artifacts/status/bridge_tests_by_category.json
+            artifacts/status/top_10_weakest_deep_layer_tests.json
+            artifacts/status/deep_layer_weak_test_actions.json
+            artifacts/status/deep_layer_test_coverage_artifact.json
+            artifacts/status/deep_layer_behaviors_contract.json
           if-no-files-found: warn
           retention-days: 14
 
