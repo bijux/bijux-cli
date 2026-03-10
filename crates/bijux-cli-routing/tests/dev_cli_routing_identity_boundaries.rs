@@ -3,10 +3,11 @@
 
 #[test]
 fn parser_and_registry_do_not_assemble_dev_cli_reports() {
-    let parser = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/parser.rs"))
-        .expect("read parser.rs");
-    let registry = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/registry.rs"))
-        .expect("read registry.rs");
+    let routing_root =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../bijux-cli-core/src/routing");
+    let parser = std::fs::read_to_string(routing_root.join("parser.rs")).expect("read parser.rs");
+    let registry =
+        std::fs::read_to_string(routing_root.join("registry.rs")).expect("read registry.rs");
 
     assert!(!parser.contains("build_report("), "parser must not host maintainer report assembly");
     assert!(
