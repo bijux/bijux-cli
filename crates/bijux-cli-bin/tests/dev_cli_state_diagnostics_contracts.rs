@@ -58,16 +58,13 @@ fn state_audit_reports_truthful_paths() {
     fs::write(&memory, "{}").expect("write memory");
     fs::write(&plugins, "{\"plugins\":{}}").expect("write plugins");
     let audit = run_ok_json(
-        &[
-            "dev",
-            "cli",
-            "state-audit",
-            "--config-path",
-            config.to_string_lossy().as_ref(),
-        ],
+        &["dev", "cli", "state-audit", "--config-path", config.to_string_lossy().as_ref()],
         &[],
     );
-    assert_eq!(audit["paths"]["config"]["path"], Value::String(config.to_string_lossy().to_string()));
+    assert_eq!(
+        audit["paths"]["config"]["path"],
+        Value::String(config.to_string_lossy().to_string())
+    );
     assert!(audit["paths"]["history"]["path"].as_str().is_some_and(|s| !s.is_empty()));
     assert!(audit["paths"]["memory"]["path"].as_str().is_some_and(|s| !s.is_empty()));
     assert!(audit["paths"]["plugins_registry"]["path"].as_str().is_some_and(|s| !s.is_empty()));
@@ -86,13 +83,7 @@ fn state_doctor_detects_corrupted_config_registry_history_and_memory() {
     fs::write(&memory, "{not-json").expect("write bad memory");
     fs::write(&plugins, "{not-json").expect("write bad plugin registry");
     let doctor = run_ok_json(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--config-path",
-            config.to_string_lossy().as_ref(),
-        ],
+        &["dev", "cli", "state-doctor", "--config-path", config.to_string_lossy().as_ref()],
         &[],
     );
     let issues = doctor["doctor"]["issues"].as_array().cloned().unwrap_or_default();
