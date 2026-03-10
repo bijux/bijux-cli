@@ -39,6 +39,7 @@ def main() -> int:
         if crate == "bijux-cli-core":
             report_builder_calls = 0
             bijux_dev_cli_imports = 0
+            dev_cli_literals = 0
         # routing owns command identity; command literals are expected.
         if crate == "bijux-cli-routing":
             dev_cli_literals = 0
