@@ -107,10 +107,10 @@ fn detect_install_source(active_binary: Option<&str>) -> &'static str {
     };
     if path.contains(".cargo") {
         "cargo"
-    } else if path.contains("site-packages") || path.contains("venv") || path.contains(".venv") {
-        "pip"
     } else if path.contains("pipx") {
         "pipx"
+    } else if path.contains("site-packages") || path.contains("venv") || path.contains(".venv") {
+        "pip"
     } else if path.contains("homebrew") || path.contains("/brew/") {
         "homebrew"
     } else {

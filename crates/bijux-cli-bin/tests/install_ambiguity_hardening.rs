@@ -172,3 +172,42 @@ fn package_health_and_runtime_identity_cover_ambiguous_install_state() {
     assert!(payload["install_state_assumptions"].is_array());
     assert!(payload["install_state_assumption_help"].is_string());
 }
+
+#[test]
+fn runtime_identity_reports_pipx_install_source_when_path_contains_pipx_marker() {
+    let root = tmp_dir("pipx-source");
+    let pipx = root.join("pipx").join("venvs").join("bijux").join("bin");
+    fs::create_dir_all(&pipx).expect("mkdir pipx");
+    fs::write(pipx.join("bijux"), "#!/bin/sh\n").expect("write pipx binary");
+    let path = env::join_paths([&pipx]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[("PATH", path)]);
+    assert_eq!(payload["install_source"], "pipx");
+}
+
+#[test]
+fn runtime_identity_reports_cargo_install_source_when_path_contains_cargo_marker() {
+    let root = tmp_dir("cargo-source");
+    let cargo = root.join(".cargo").join("bin");
+    fs::create_dir_all(&cargo).expect("mkdir cargo");
+    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
+    let path = env::join_paths([&cargo]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[("PATH", path)]);
+    assert_eq!(payload["install_source"], "cargo");
+}
+
+#[test]
+fn runtime_identity_reports_pip_install_source_when_path_contains_site_packages_marker() {
+    let root = tmp_dir("pip-source");
+    let pip = root.join("site-packages").join("bin");
+    fs::create_dir_all(&pip).expect("mkdir pip");
+    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
+    let path = env::join_paths([&pip]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[("PATH", path)]);
+    assert_eq!(payload["install_source"], "pip");
+}
+
+#[test]
+fn runtime_identity_reports_bridge_fallback_diagnostic_when_bridge_is_unavailable() {
+    let payload = run_identity(&[("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())]);
+    assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
+}
