@@ -117,3 +117,5 @@ scripts/status/generate_plugin_state_corruption_campaign_reports.py # generate r
 scripts/status/enforce_plugin_state_corruption_campaign_gate.py # enforce CI failure when plugin/history/memory corruption campaign artifacts drift or hardening contract is not frozen
 scripts/status/generate_state_race_campaign_reports.py # generate concurrent state-race campaign, outcome-classification, reproducer-retention, regression, and frozen contract artifacts for TODOs 161-180
 scripts/status/enforce_state_race_campaign_gate.py # enforce CI failure when concurrent state-race artifacts drift or frozen race contract is not satisfied
+scripts/status/generate_adversarial_fs_process_reports.py # generate adversarial filesystem/process matrix, evidence artifact, and frozen hardening contract for TODOs 181-200
+scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen

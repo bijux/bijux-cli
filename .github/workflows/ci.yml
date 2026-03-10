@@ -279,6 +279,7 @@ jobs:
           python3 scripts/status/generate_config_corruption_campaign_reports.py
           python3 scripts/status/generate_plugin_state_corruption_campaign_reports.py
           python3 scripts/status/generate_state_race_campaign_reports.py
+          python3 scripts/status/generate_adversarial_fs_process_reports.py
           python3 scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py
           python3 scripts/status/generate_output_bridge_fuzz_reports.py
           python3 scripts/status/generate_state_corruption_harness_reports.py
@@ -582,6 +583,10 @@ jobs:
       - name: State race campaign gate
         run: |
           python3 scripts/status/enforce_state_race_campaign_gate.py
+
+      - name: Adversarial fs-process gate
+        run: |
+          python3 scripts/status/enforce_adversarial_fs_process_gate.py
 
       - name: Plugin manifest-scaffold fuzz gate
         run: |
@@ -906,6 +911,18 @@ jobs:
             artifacts/status/state_race_reproducer_retention_artifact.json
             artifacts/status/state_race_regression_artifact.json
             artifacts/status/state_race_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload adversarial fs-process artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-fs-process
+          path: |
+            artifacts/status/adversarial_fs_process_matrix.json
+            artifacts/status/adversarial_fs_process_artifact.json
+            artifacts/status/adversarial_fs_process_contract.json
           if-no-files-found: warn
           retention-days: 14
 
