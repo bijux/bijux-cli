@@ -2,8 +2,6 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli_routing::inventory::registry_inventory;
-use bijux_cli_routing::registry::RouteRegistry;
 use serde_json::{json, Value};
 
 use crate::ReportContext;
@@ -17,22 +15,6 @@ pub struct NamespaceInventoryRow {
     pub reserved: bool,
     /// Owning component.
     pub owner: String,
-}
-
-/// Builds the maintainer registry report envelope.
-#[must_use]
-pub fn build_report(registry: &RouteRegistry, _context: &ReportContext) -> Value {
-    let inventory = registry_inventory(registry);
-    let namespaces: Vec<NamespaceInventoryRow> = inventory
-        .namespaces
-        .into_iter()
-        .map(|row| NamespaceInventoryRow {
-            name: row.name.0,
-            reserved: row.reserved,
-            owner: row.owner,
-        })
-        .collect();
-    build_report_from_query(&namespaces, _context)
 }
 
 /// Builds the maintainer registry report envelope from routing query rows.
@@ -59,18 +41,20 @@ pub fn build_report_from_query(
 
 #[cfg(test)]
 mod tests {
-    use super::build_report;
+    use super::{build_report_from_query, NamespaceInventoryRow};
     use crate::ReportContext;
-    use bijux_cli_routing::registry::RouteRegistry;
 
     #[test]
     fn registry_report_shape_is_stable() {
-        let mut registry = RouteRegistry::default();
-        registry.register_plugin_namespace("community").expect("register");
         let context =
             ReportContext { generated_at: String::new(), data_source: "routing".to_string() };
+        let namespaces = vec![NamespaceInventoryRow {
+            name: "dev".to_string(),
+            reserved: true,
+            owner: "bijux-cli".to_string(),
+        }];
 
-        let report = build_report(&registry, &context);
+        let report = build_report_from_query(&namespaces, &context);
         assert!(report.get("registry").is_some(), "registry field must exist");
         assert!(report.get("ownership").is_some(), "ownership field must exist");
         assert!(report.get("precedence").is_some(), "precedence field must exist");

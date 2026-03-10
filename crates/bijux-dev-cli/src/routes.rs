@@ -1,17 +1,8 @@
 //! Maintainer route inventory report assembly.
 
-use bijux_cli_routing::inventory::route_inventory;
-use bijux_cli_routing::registry::RouteRegistry;
 use serde_json::{json, Value};
 
 use crate::ReportContext;
-
-/// Builds the maintainer route inventory report envelope.
-#[must_use]
-pub fn build_report(registry: &RouteRegistry, _context: &ReportContext) -> Value {
-    let inventory = route_inventory(registry);
-    build_report_from_query(&inventory.routes, &inventory.aliases, _context)
-}
 
 /// Builds the maintainer route inventory report envelope from routing query rows.
 #[must_use]
@@ -38,18 +29,17 @@ pub fn build_report_from_query(
 
 #[cfg(test)]
 mod tests {
-    use super::build_report;
+    use super::build_report_from_query;
     use crate::ReportContext;
-    use bijux_cli_routing::registry::RouteRegistry;
 
     #[test]
     fn routes_report_shape_is_stable() {
-        let mut registry = RouteRegistry::default();
-        registry.register_plugin_namespace("community").expect("register");
         let context =
             ReportContext { generated_at: String::new(), data_source: "routing".to_string() };
+        let routes = vec![vec!["dev".to_string(), "cli".to_string(), "status".to_string()]];
+        let aliases = vec![(vec!["status".to_string()], vec!["cli".to_string(), "status".to_string()])];
 
-        let report = build_report(&registry, &context);
+        let report = build_report_from_query(&routes, &aliases, &context);
         assert!(report.get("routes").is_some(), "routes field must exist");
         assert!(report.get("aliases").is_some(), "aliases field must exist");
     }

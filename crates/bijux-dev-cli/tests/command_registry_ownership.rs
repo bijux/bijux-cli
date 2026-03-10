@@ -3,13 +3,17 @@
 
 use std::collections::BTreeSet;
 
-use bijux_cli_routing::catalog;
 use bijux_dev_cli::{command_registry, DevCliCommand, MAINTAINER_COMMAND_NAMESPACE};
 
 #[test]
 fn command_registry_covers_all_known_dev_cli_subcommands() {
-    let known: BTreeSet<String> =
-        catalog::dev_cli_subcommands().iter().map(|v| format!("dev cli {v}")).collect();
+    let fixture = include_str!("../../bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+    let known: BTreeSet<String> = fixture
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToString::to_string)
+        .collect();
     let registered: BTreeSet<String> =
         command_registry().iter().map(|entry| entry.command.as_str().to_string()).collect();
 

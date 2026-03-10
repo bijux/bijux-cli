@@ -3,7 +3,6 @@
 
 use std::path::Path;
 
-use bijux_cli_routing::registry::RouteRegistry;
 use bijux_dev_cli::{
     cockpit, config, contracts, control_plane, crate_health, docs_audit, env, package_health,
     parity, python, registry, repo, route_audit, routes, runtime_identity, script_audit,
@@ -15,14 +14,25 @@ use std::collections::BTreeMap;
 #[test]
 fn all_command_groups_build_expected_top_level_keys() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
-    let mut route_registry = RouteRegistry::default();
-    route_registry.register_plugin_namespace("community").expect("register namespace");
     let context =
         ReportContext { generated_at: "now".to_string(), data_source: "tests".to_string() };
+    let routes_rows = vec![vec!["dev".to_string(), "cli".to_string(), "status".to_string()]];
+    let alias_rows = vec![(vec!["status".to_string()], vec!["cli".to_string(), "status".to_string()])];
+    let namespace_rows = vec![registry::NamespaceInventoryRow {
+        name: "dev".to_string(),
+        reserved: true,
+        owner: "bijux-cli".to_string(),
+    }];
 
-    assert!(routes::build_report(&route_registry, &context).get("routes").is_some());
-    assert!(registry::build_report(&route_registry, &context).get("registry").is_some());
-    assert!(route_audit::build_report(&route_registry).get("summary").is_some());
+    assert!(routes::build_report_from_query(&routes_rows, &alias_rows, &context)
+        .get("routes")
+        .is_some());
+    assert!(registry::build_report_from_query(&namespace_rows, &context)
+        .get("registry")
+        .is_some());
+    assert!(route_audit::build_report_from_query(&routes_rows, &alias_rows)
+        .get("summary")
+        .is_some());
     assert!(env::build_report(
         BTreeMap::new(),
         &env::ActivePaths {
