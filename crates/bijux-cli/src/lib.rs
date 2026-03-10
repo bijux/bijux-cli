@@ -9,6 +9,7 @@ pub mod cli;
 pub mod entrypoint;
 pub mod features;
 pub mod interface;
+pub mod infrastructure;
 pub mod install;
 pub mod kernel;
 pub mod output;
