@@ -269,6 +269,7 @@ jobs:
           python3 scripts/status/generate_truth_milestone_status.py
           python3 scripts/status/generate_status_reports.py
           python3 scripts/status/generate_repl_behavior_reports.py
+          python3 scripts/status/generate_parser_abuse_report.py
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
@@ -519,6 +520,7 @@ jobs:
           path: |
             artifacts/status/status*.json
             artifacts/status/repl_only_behaviors.json
+            artifacts/status/parser_abuse_report.json
             artifacts/status/install_source_diagnostics.json
             artifacts/status/ambiguous_runtime_diagnostics.json
             artifacts/status/install_health_report.json

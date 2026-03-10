@@ -29,6 +29,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Rust config baseline parity milestone](rust-config-baseline-parity-milestone.md)
 - [Crate boundaries](crate_boundaries.md)
 - [Runtime identity law](runtime_identity_law.md)
+- [Parser abuse hardening](parser-abuse-hardening.md)
 - [Test policy](test-policy.md)
 - [Test review checklist](test-review-checklist.md)
 - [Test quality priorities](test-quality-priorities.md)
