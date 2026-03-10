@@ -5,6 +5,7 @@ mod completion;
 mod diagnostics;
 mod execution;
 mod history;
+mod output;
 mod reference;
 mod session;
 mod types;
