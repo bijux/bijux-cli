@@ -101,6 +101,17 @@ fn memory_malformed_state_is_treated_as_empty_like_python() {
     let payload = parse_json(&out.stdout);
     assert_eq!(payload["status"], "ok");
     assert_eq!(payload["count"], 0);
+
+    fs::write(&memory_file, "{\"alpha\":").expect("write truncated");
+    let truncated = run_with_env(
+        &["memory", "list", "--format", "json", "--no-pretty"],
+        &[("HOME", home.display().to_string())],
+    );
+    assert_eq!(truncated.status.code(), Some(0));
+    assert!(truncated.stderr.is_empty());
+    let truncated_payload = parse_json(&truncated.stdout);
+    assert_eq!(truncated_payload["status"], "ok");
+    assert_eq!(truncated_payload["count"], 0);
 }
 
 #[test]

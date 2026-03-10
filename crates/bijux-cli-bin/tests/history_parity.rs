@@ -83,6 +83,15 @@ fn history_missing_and_malformed_behaviors_are_stable() {
     assert_eq!(out_malformed.status.code(), Some(1));
     assert!(out_malformed.stdout.is_empty());
     assert!(!out_malformed.stderr.is_empty());
+
+    let truncated_path = temp.join("truncated.history");
+    fs::write(&truncated_path, "[{\"command\":\"status\"").expect("write truncated");
+    let envs_truncated = [("BIJUXCLI_HISTORY_FILE", truncated_path.display().to_string())];
+    let out_truncated =
+        run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_truncated);
+    assert_eq!(out_truncated.status.code(), Some(0));
+    let truncated_payload = parse_json(&out_truncated.stdout);
+    assert!(truncated_payload["entries"].is_array());
 }
 
 #[test]

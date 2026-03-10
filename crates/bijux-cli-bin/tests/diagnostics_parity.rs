@@ -275,3 +275,75 @@ fn state_doctor_failure_routes_output_to_stderr_only() {
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
 }
+
+#[test]
+fn state_doctor_exit_codes_cover_healthy_degraded_and_usage_failure() {
+    let healthy = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
+    assert_eq!(healthy.status.code(), Some(0));
+
+    let temp = make_temp_dir("state-doctor-exit-degraded");
+    let config = temp.join("corrupt.env");
+    fs::write(&config, "BROKEN_LINE\n").expect("write malformed config");
+    let degraded = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_CONFIG", config.display().to_string())],
+    );
+    assert_eq!(degraded.status.code(), Some(0));
+    let payload = parse_json(&degraded.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+
+    let usage = run(&["dev", "cli", "state-doctor", "--format", "invalid"]);
+    assert_ne!(usage.status.code(), Some(0));
+    assert!(usage.stdout.is_empty());
+    assert!(!usage.stderr.is_empty());
+}
+
+#[cfg(unix)]
+#[test]
+fn state_doctor_reports_config_invalid_encoding() {
+    let temp = make_temp_dir("state-doctor-config-invalid-encoding");
+    let config = temp.join("invalid-encoding.env");
+    fs::write(&config, vec![0xff, 0xfe, b'=', b'1', b'\n']).expect("write invalid bytes");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_CONFIG", config.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| {
+        item["area"] == "config"
+            && item["message"]
+                .as_str()
+                .map(|msg| msg.contains("stream did not contain valid UTF-8"))
+                .unwrap_or(false)
+    }));
+}
+
+#[cfg(unix)]
+#[test]
+fn state_doctor_reports_plugin_registry_invalid_encoding() {
+    let temp = make_temp_dir("state-doctor-registry-invalid-encoding");
+    let plugins = temp.join("plugins");
+    fs::create_dir_all(&plugins).expect("mkdir plugins");
+    let registry = plugins.join("registry.json");
+    fs::write(&registry, vec![0xff, 0xfe, b'{', b'}']).expect("write invalid bytes");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| {
+        item["area"] == "plugins"
+            && item["message"]
+                .as_str()
+                .map(|msg| msg.contains("stream did not contain valid UTF-8"))
+                .unwrap_or(false)
+    }));
+}
