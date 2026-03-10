@@ -1534,6 +1534,28 @@ fn route_response(
             let cross_surface_consistency_contract = read_json_if_exists(
                 &root.join("artifacts/status/cross_surface_consistency_contract.json"),
             );
+            let cross_crate_duplication_report = read_json_if_exists(
+                &root.join("artifacts/status/cross_crate_duplication_report.json"),
+            );
+            let public_api_inventory_report = read_json_if_exists(
+                &root.join("artifacts/status/public_api_inventory_report.json"),
+            );
+            let crate_complexity_report = read_json_if_exists(
+                &root.join("artifacts/status/crate_complexity_report.json"),
+            );
+            let candidate_merge_later_report = read_json_if_exists(
+                &root.join("artifacts/status/candidate_merge_later_report.json"),
+            );
+            let candidate_keep_separate_report = read_json_if_exists(
+                &root.join("artifacts/status/candidate_keep_separate_report.json"),
+            );
+            let simplification_deletion_artifact = read_json_if_exists(
+                &root.join("artifacts/status/simplification_deletion_artifact.json"),
+            );
+            let simplification_deletion_artifact_text = fs::read_to_string(
+                root.join("artifacts/status/simplification_deletion_artifact.txt"),
+            )
+            .unwrap_or_default();
             let command_surface_consistency_summary = read_json_if_exists(
                 &root.join("artifacts/status/command_surface_consistency_summary.json"),
             );
@@ -1606,6 +1628,13 @@ fn route_response(
                     "cross_surface_consistency_artifact": cross_surface_consistency_artifact,
                     "cross_surface_drift_artifact": cross_surface_drift_artifact,
                     "cross_surface_consistency_contract": cross_surface_consistency_contract,
+                    "cross_crate_duplication_report": cross_crate_duplication_report,
+                    "public_api_inventory_report": public_api_inventory_report,
+                    "crate_complexity_report": crate_complexity_report,
+                    "candidate_merge_later_report": candidate_merge_later_report,
+                    "candidate_keep_separate_report": candidate_keep_separate_report,
+                    "simplification_deletion_artifact": simplification_deletion_artifact,
+                    "simplification_deletion_artifact_text": simplification_deletion_artifact_text,
                     "command_surface_consistency_summary": command_surface_consistency_summary,
                 },
                 "command_migration": {
@@ -1878,17 +1907,6 @@ fn route_response(
             let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
             let is_canonical_path =
                 is_canonical_active_path(install_report.active_binary.as_deref());
-            let active_binary_missing = install_report
-                .active_binary
-                .as_deref()
-                .is_some_and(|path| !Path::new(path).exists());
-            let broken_symlink_active_binary = install_report.active_binary.as_deref().is_some_and(
-                |path| {
-                    let p = Path::new(path);
-                    fs::symlink_metadata(p).map(|meta| meta.file_type().is_symlink()).unwrap_or(false)
-                        && fs::metadata(p).is_err()
-                },
-            );
             let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
             let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
@@ -1913,8 +1931,8 @@ fn route_response(
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
                     "mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
                     "active_binary_mismatch_detected": install_report.has_mismatched_wheel_binary_versions,
-                    "active_binary_missing": active_binary_missing,
-                    "broken_symlink_active_binary": broken_symlink_active_binary,
+                    "active_binary_missing": install_report.active_binary_missing,
+                    "broken_symlink_active_binary": install_report.broken_symlink_active_binary,
                     "python_bridge_supported": python_bridge_supported,
                     "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
                 },

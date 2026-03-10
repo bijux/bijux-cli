@@ -53,3 +53,4 @@ scripts/status/generate_compatibility_debt_trend_report.py # generate compatibil
 scripts/status/generate_command_family_closure_reports.py # generate six command-family closure reports plus combined closure and explicit partial-area acceptance artifact
 scripts/status/generate_cross_surface_consistency_law_reports.py # generate TODO 141-160 cross-surface consistency artifact, drift artifact, and contract freeze report
 scripts/status/enforce_cross_surface_consistency_law.py # enforce fail-on-covered-drift and warn-on-partial-drift policy for cross-surface consistency TODO 141-160
+scripts/status/generate_simplification_reports.py # generate simplification evidence bundle for duplication/api/complexity and safe deletion artifacts

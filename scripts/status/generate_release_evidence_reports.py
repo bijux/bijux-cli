@@ -75,6 +75,9 @@ def main() -> None:
     cross_surface_consistency = STATUS / "cross_surface_consistency_artifact.json"
     cross_surface_drift = STATUS / "cross_surface_drift_artifact.json"
     cross_surface_contract = STATUS / "cross_surface_consistency_contract.json"
+    simplification_artifact = STATUS / "simplification_deletion_artifact.json"
+    candidate_merge_later = STATUS / "candidate_merge_later_report.json"
+    candidate_keep_separate = STATUS / "candidate_keep_separate_report.json"
     known_gaps = ROOT / "docs" / "KNOWN_GAPS.md"
 
     release_evidence_paths = [
@@ -93,6 +96,9 @@ def main() -> None:
         cross_surface_consistency,
         cross_surface_drift,
         cross_surface_contract,
+        simplification_artifact,
+        candidate_merge_later,
+        candidate_keep_separate,
         known_gaps,
     ]
 

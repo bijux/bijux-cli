@@ -60,6 +60,10 @@ def main() -> int:
     if cross_surface_consistency.returncode != 0:
         print(cross_surface_consistency.stderr.strip() or cross_surface_consistency.stdout.strip())
         return cross_surface_consistency.returncode
+    simplification = run(["python3", "scripts/status/generate_simplification_reports.py"])
+    if simplification.returncode != 0:
+        print(simplification.stderr.strip() or simplification.stdout.strip())
+        return simplification.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     parity_diff = run(["git", "diff", "--name-only", "--", "artifacts/parity"])
@@ -121,6 +125,13 @@ def main() -> int:
             or line.strip() == "artifacts/status/cross_surface_consistency_artifact.json"
             or line.strip() == "artifacts/status/cross_surface_drift_artifact.json"
             or line.strip() == "artifacts/status/cross_surface_consistency_contract.json"
+            or line.strip() == "artifacts/status/cross_crate_duplication_report.json"
+            or line.strip() == "artifacts/status/public_api_inventory_report.json"
+            or line.strip() == "artifacts/status/crate_complexity_report.json"
+            or line.strip() == "artifacts/status/candidate_merge_later_report.json"
+            or line.strip() == "artifacts/status/candidate_keep_separate_report.json"
+            or line.strip() == "artifacts/status/simplification_deletion_artifact.json"
+            or line.strip() == "artifacts/status/simplification_deletion_artifact.txt"
         )
     ]
     if changed:

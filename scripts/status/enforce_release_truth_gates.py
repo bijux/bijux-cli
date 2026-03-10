@@ -42,6 +42,9 @@ STATUS_FILES = [
     STATUS_DIR / "cross_surface_consistency_artifact.json",
     STATUS_DIR / "cross_surface_drift_artifact.json",
     STATUS_DIR / "cross_surface_consistency_contract.json",
+    STATUS_DIR / "simplification_deletion_artifact.json",
+    STATUS_DIR / "candidate_merge_later_report.json",
+    STATUS_DIR / "candidate_keep_separate_report.json",
 ]
 
 
