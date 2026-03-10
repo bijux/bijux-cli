@@ -362,6 +362,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_route_law_policy.py
 
+      - name: Public API policy gate
+        run: |
+          python3 scripts/status/enforce_public_api_policy.py
+
       - name: State law policy gate
         run: |
           python3 scripts/status/enforce_state_law_policy.py
@@ -411,6 +415,9 @@ jobs:
             artifacts/status/public_api_by_crate.json
             artifacts/status/internal_only_candidates_by_crate.json
             artifacts/status/cross_crate_api_usage.json
+            artifacts/status/public_api_churn.json
+            artifacts/status/public_api_actually_used.json
+            artifacts/status/public_api_candidates_for_private.json
             artifacts/status/duplication_hotspots.json
           if-no-files-found: warn
           retention-days: 14

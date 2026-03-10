@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate public API inventory, internal-only candidates, and cross-crate usage reports."""
+"""Generate public API inventory, classification, churn, and usage reports."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ TARGET_CRATES = {
     "bijux-cli-routing",
     "bijux-cli-install",
     "bijux-cli-output",
+    "bijux-cli-python",
 }
 
 PUBLIC_ITEM_RE = re.compile(
@@ -89,13 +90,13 @@ def usage_count(symbol: str, all_crates: dict[str, str], owner: str) -> tuple[in
 
 
 def classify(item: PublicItem, cross_crate_hits: int) -> str:
-    if item.kind in {"struct", "enum", "trait"}:
-        return "necessary"
     if cross_crate_hits > 0:
-        return "necessary"
-    if item.name.startswith("new") or item.name.endswith("_marker"):
-        return "accidental"
-    return "convenience"
+        return "used"
+    if item.crate == "bijux-cli-python" or "bindings.rs" in item.path:
+        return "bridge"
+    if item.name in {"RESERVED_NAMESPACES", "CORE_NAMESPACES", "FUTURE_PRODUCT_NAMESPACES"}:
+        return "future-justified"
+    return "accidental"
 
 
 def main() -> int:
@@ -112,9 +113,12 @@ def main() -> int:
     by_crate: dict[str, dict] = {}
     internal_candidates: dict[str, list[dict]] = {}
     cross_usage: list[dict] = []
+    churn_rows: list[dict] = []
+    actually_used_rows: list[dict] = []
+    private_candidates_rows: list[dict] = []
 
     for crate, _ in crates:
-        by_crate[crate] = {"necessary": [], "convenience": [], "accidental": []}
+        by_crate[crate] = {"used": [], "bridge": [], "future-justified": [], "accidental": []}
         internal_candidates[crate] = []
 
     for item in all_items:
@@ -130,6 +134,15 @@ def main() -> int:
             "cross_crate_user_count": hits,
         }
         by_crate[item.crate][classification].append(row)
+        churn_rows.append(
+            {
+                "crate": item.crate,
+                "symbol": item.name,
+                "classification": classification,
+                "kind": item.kind,
+                "defined_at": f"{item.path}:{item.line}",
+            }
+        )
         cross_usage.append(
             {
                 "crate": item.crate,
@@ -146,6 +159,26 @@ def main() -> int:
                     "symbol": item.name,
                     "defined_at": f"{item.path}:{item.line}",
                     "reason": "no cross-crate consumer detected",
+                }
+            )
+            private_candidates_rows.append(
+                {
+                    "crate": item.crate,
+                    "symbol": item.name,
+                    "kind": item.kind,
+                    "defined_at": f"{item.path}:{item.line}",
+                    "reason": "no cross-crate consumer detected",
+                }
+            )
+        if hits > 0:
+            actually_used_rows.append(
+                {
+                    "crate": item.crate,
+                    "symbol": item.name,
+                    "kind": item.kind,
+                    "defined_at": f"{item.path}:{item.line}",
+                    "cross_crate_users": users,
+                    "cross_crate_user_count": hits,
                 }
             )
 
@@ -185,9 +218,48 @@ def main() -> int:
         )
         fh.write("\n")
 
+    with (OUT_DIR / "public_api_churn.json").open("w", encoding="utf-8") as fh:
+        json.dump(
+            {
+                "generated_at": generated_at,
+                "items": sorted(churn_rows, key=lambda x: (x["crate"], x["symbol"])),
+            },
+            fh,
+            indent=2,
+            sort_keys=True,
+        )
+        fh.write("\n")
+
+    with (OUT_DIR / "public_api_actually_used.json").open("w", encoding="utf-8") as fh:
+        json.dump(
+            {
+                "generated_at": generated_at,
+                "items": sorted(actually_used_rows, key=lambda x: (x["crate"], x["symbol"])),
+            },
+            fh,
+            indent=2,
+            sort_keys=True,
+        )
+        fh.write("\n")
+
+    with (OUT_DIR / "public_api_candidates_for_private.json").open("w", encoding="utf-8") as fh:
+        json.dump(
+            {
+                "generated_at": generated_at,
+                "items": sorted(private_candidates_rows, key=lambda x: (x["crate"], x["symbol"])),
+            },
+            fh,
+            indent=2,
+            sort_keys=True,
+        )
+        fh.write("\n")
+
     print("wrote artifacts/status/public_api_by_crate.json")
     print("wrote artifacts/status/internal_only_candidates_by_crate.json")
     print("wrote artifacts/status/cross_crate_api_usage.json")
+    print("wrote artifacts/status/public_api_churn.json")
+    print("wrote artifacts/status/public_api_actually_used.json")
+    print("wrote artifacts/status/public_api_candidates_for_private.json")
     return 0
 
 
