@@ -28,7 +28,7 @@ fn rs_files_under(root: &Path) -> Vec<PathBuf> {
 fn runtime_crates_do_not_import_dev_cli_crate() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let runtime_crates = [
-        "crates/bijux-cli-routing/src",
+        "crates/bijux-cli-core/src/routing",
         "crates/bijux-cli-python/src",
     ];
 
@@ -54,8 +54,8 @@ fn query_interfaces_remain_structured_data_only_without_ui_rendering() {
     let query_files = [
         "crates/bijux-cli-core/src/query.rs",
         "crates/bijux-cli-core/src/install/query.rs",
-        "crates/bijux-cli-routing/src/query.rs",
-        "crates/bijux-cli-routing/src/inventory.rs",
+        "crates/bijux-cli-core/src/routing/query.rs",
+        "crates/bijux-cli-core/src/routing/inventory.rs",
     ];
 
     for file in query_files {

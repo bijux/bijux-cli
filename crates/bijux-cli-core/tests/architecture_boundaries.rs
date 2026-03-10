@@ -7,8 +7,6 @@ use std::process::Command;
 
 use anyhow as _;
 use bijux_cli_core as _;
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use bijux_dev_cli as _;
 use clap as _;
 use futures as _;
@@ -74,7 +72,7 @@ fn enforces_internal_crate_boundaries() {
         ),
         (
             "bijux-cli-core",
-            BTreeSet::from(["bijux-dev-cli", "bijux-cli-routing"]),
+            BTreeSet::from(["bijux-dev-cli"]),
         ),
         ("bijux-cli-evidence", BTreeSet::new()),
         (

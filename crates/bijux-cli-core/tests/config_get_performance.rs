@@ -7,8 +7,6 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow as _;
 use bijux_cli_core::app::run_app;
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use clap as _;
 use futures as _;
 use serde_json as _;

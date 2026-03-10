@@ -3,8 +3,6 @@
 
 use anyhow as _;
 use bijux_cli_core as _;
-use bijux_cli_routing as _;
-use bijux_cli_routing as _;
 use clap as _;
 use futures as _;
 use serde_json as _;

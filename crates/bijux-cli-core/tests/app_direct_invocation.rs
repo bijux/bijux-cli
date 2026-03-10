@@ -6,8 +6,7 @@ use bijux_cli_core::app::run_app;
 use bijux_cli_core::kernel::{
     map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
 };
-use bijux_cli_routing as _;
-use bijux_cli_routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
+use bijux_cli_core::routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use clap as _;
 use futures as _;
 use serde_json::Value;
@@ -552,8 +551,8 @@ fn quiet_mode_suppresses_streams_not_exit_semantics() {
 
 #[test]
 fn error_normalization_internal_plugin_usage_validation() {
-    assert_eq!(map_error_category_to_exit("internal"), bijux_cli_routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli_routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("usage"), bijux_cli_routing::ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("validation"), bijux_cli_routing::ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("internal"), bijux_cli_core::routing::ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli_core::routing::ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("usage"), bijux_cli_core::routing::ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("validation"), bijux_cli_core::routing::ExitCode::Usage);
 }
