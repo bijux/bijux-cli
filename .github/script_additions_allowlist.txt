@@ -129,4 +129,6 @@ scripts/status/generate_dev_cli_cockpit_reports.py # generate top-level cockpit 
 scripts/status/enforce_dev_cli_cockpit_gate.py # enforce cockpit artifact presence and non-empty payload integrity for top-level maintainer commands
 scripts/status/generate_dev_cli_invariants_reports.py # generate dev-cli command invariants and drift artifacts for canonical entrypoint/envelope/exit/help/json/text/mode stability checks
 scripts/status/enforce_dev_cli_invariants_gate.py # enforce dev-cli invariants gate and fail CI on invariants drift or incomplete coverage
+scripts/status/generate_dev_cli_parity_consistency_reports.py # generate parity/migration truth, parity evidence consistency, and parity drift artifacts for release-input hardening
+scripts/status/enforce_dev_cli_parity_consistency_gate.py # enforce parity/migration consistency gate and fail CI when parity drift or migration truth regresses
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
