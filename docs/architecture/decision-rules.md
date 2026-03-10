@@ -55,6 +55,12 @@ REPL resilience claims require:
 `artifacts/status/repl_hostile_session_report.json` and
 `artifacts/status/repl_recovery_behavior_report.json`.
 
+## Install Ambiguity Freeze
+Install-neutrality claims require:
+`artifacts/status/packaging_ambiguity_report.json`,
+`artifacts/status/install_state_assumptions_report.json`, and
+`artifacts/status/package_health_report.json`.
+
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
 
