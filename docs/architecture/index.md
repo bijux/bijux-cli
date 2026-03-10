@@ -30,6 +30,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Crate boundaries](crate_boundaries.md)
 - [Runtime identity law](runtime_identity_law.md)
 - [Parser abuse hardening](parser-abuse-hardening.md)
+- [Namespace reservation law](namespace-reservation-law.md)
 - [Test policy](test-policy.md)
 - [Test review checklist](test-review-checklist.md)
 - [Test quality priorities](test-quality-priorities.md)
