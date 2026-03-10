@@ -71,7 +71,6 @@ def check_scripts_do_not_bypass_supported_rust_entrypoint() -> tuple[bool, str]:
     scripts_dir = ROOT / "scripts"
     bypass_hits: list[str] = []
     allowed = {
-        "scripts/capture_python_behavior.py",
         "scripts/parity/run_rust_python_parity.py",
         "scripts/status/check_runtime_unity.py",
     }

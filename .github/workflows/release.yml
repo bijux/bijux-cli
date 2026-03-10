@@ -275,8 +275,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x scripts/generate-provenance-statement.sh
-          scripts/generate-provenance-statement.sh "${{ needs.publish.outputs.tag }}" "_release"
+          cargo run -q -p bijux-cli-bin -- dev cli scripts provenance-statement --tag "${{ needs.publish.outputs.tag }}" --output-dir "_release"
 
       - name: Compute changelog anchor
         id: anchor

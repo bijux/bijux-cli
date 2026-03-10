@@ -119,7 +119,7 @@ class SecurityArtifactPage(StandardArtifactPage):
         return (
             "Security reports for **code** and **dependencies**, produced by `make security`:\n\n"
             "- **Bandit** — source-level checks (`bandit -r`, text + JSON)\n"
-            "- **pip-audit** — dependency CVE scan (JSON once; gated/pretty text via `scripts/helper_pip_audit.py`)\n"
+            "- **pip-audit** — dependency CVE scan (JSON once; gated/pretty text via `bijux dev cli scripts pip-audit`)\n"
             "\n"
             "Makefile knobs: `SECURITY_PATHS`, `SECURITY_IGNORE_IDS`, `SECURITY_STRICT`, `BANDIT_EXCLUDES`.\n"
         )
@@ -198,7 +198,7 @@ class SecurityArtifactPage(StandardArtifactPage):
                 f"{vulns} total vulnerabilities."
             )
             lines.append(
-                "Console gating is done by `scripts/helper_pip_audit.py` (respects `SECURITY_IGNORE_IDS` and "
+                "Console gating is done by `bijux dev cli scripts pip-audit` (respects `SECURITY_IGNORE_IDS` and "
                 "`SECURITY_STRICT`)."
             )
 

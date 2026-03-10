@@ -10,7 +10,7 @@ Provide concrete capture files for tasks 41-60 from the current Python implement
 - `artifacts/current-python-behavior-lock.json`
 
 ## Reproduction command
-- `python3 scripts/capture_python_behavior.py`
+- `bijux dev cli scripts capture-python-behavior`
 
 ## Task mapping
 - 41: `golden/bijux_help.json`
