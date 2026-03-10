@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Binary-surface integration suites relocated from the former bijux-cli-bin crate.
+//! Binary-surface integration suites hosted directly in bijux-cli-core.
 
 #[path = "bin_surface/adversarial_fs_process_campaign_regressions.rs"]
 mod adversarial_fs_process_campaign_regressions;
@@ -291,4 +291,3 @@ mod transcript_cases;
 
 #[path = "bin_surface/transcript_parity.rs"]
 mod transcript_parity;
-

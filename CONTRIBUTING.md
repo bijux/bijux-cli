@@ -268,7 +268,7 @@ This section defines engineering standards for the Rust workspace in `bijux-cli`
 - `crates/bijux-cli-plugin`: plugin lifecycle boundaries
 - `crates/bijux-cli-python`: Python compatibility bridge
 - `crates/bijux-cli-core::install`: install/update flow boundaries
-- `crates/bijux-cli-bin`: binary entrypoint
+- `crates/bijux-cli-core`: binary entrypoint and core runtime
 
 ### Non-negotiable rules
 - `unsafe` is forbidden workspace-wide.

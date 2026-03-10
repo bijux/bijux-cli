@@ -54,14 +54,14 @@ These files represent the frozen baseline for extraction. Extraction work must r
 
 ## Operational Notes
 
-- `bijux-cli-bin` remains the canonical entrypoint and dispatch host.
+- `bijux-cli-core` remains the canonical entrypoint and dispatch host.
 - `bijux-dev-cli` will become the implementation owner of maintainer workflows behind `bijux dev cli ...`.
 - Runtime crates should expose minimal read-only query data needed by `bijux-dev-cli`.
 
 ## Bin And Routing Ownership Freeze
 
-- `bijux-cli-bin` owns process entrypoint concerns only: argv decoding, `run_app()` invocation, stream writes, and process exit code.
-- `bijux-cli-bin` does not implement maintainer workflow routing branches or maintainer payload formatting.
+- `bijux-cli-core` owns process entrypoint concerns only: argv decoding, `run_app()` invocation, stream writes, and process exit code.
+- `bijux-cli-core` does not implement maintainer workflow routing branches or maintainer payload formatting.
 - `bijux-cli-routing` owns command identity, normalization, and route resolution only.
 - `bijux-cli-routing` does not own maintainer report assembly or maintainer dashboard formatting.
 - Dispatch ownership evidence must be generated at:

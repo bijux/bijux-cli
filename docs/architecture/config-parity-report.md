@@ -22,8 +22,8 @@ Scope: tasks 221-240 (`cli config get` and `cli config set` parity hardening and
 ## Added Test Coverage
 
 - Core-level parity tests: `crates/bijux-cli-core/tests/config_parity.rs`.
-- Binary-level parity tests: `crates/bijux-cli-bin/tests/config_parity.rs`.
-- Python-vs-Rust compatibility tests: `crates/bijux-cli-bin/tests/config_python_compatibility.rs`.
+- Binary-level parity tests: `crates/bijux-cli-core/tests/bin_surface/config_parity.rs`.
+- Python-vs-Rust compatibility tests: `crates/bijux-cli-core/tests/bin_surface/config_python_compatibility.rs`.
 
 Covered scenarios include:
 

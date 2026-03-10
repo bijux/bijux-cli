@@ -15,13 +15,13 @@ Scope: tasks 121-140.
   - `crates/bijux-cli-core/tests/config_key_value_parity.rs`
   - `crates/bijux-cli-core/tests/config_get_performance.rs`
 - Binary behavior tests:
-  - `crates/bijux-cli-bin/tests/config_get_parity.rs`
-  - `crates/bijux-cli-bin/tests/config_python_compatibility.rs`
+  - `crates/bijux-cli-core/tests/bin_surface/config_get_parity.rs`
+  - `crates/bijux-cli-core/tests/bin_surface/config_python_compatibility.rs`
 - Snapshot artifacts:
-  - `crates/bijux-cli-bin/tests/snapshots/config_get_text.txt`
-  - `crates/bijux-cli-bin/tests/snapshots/config_get_json_pretty.txt`
-  - `crates/bijux-cli-bin/tests/snapshots/config_get_json_compact.txt`
-  - `crates/bijux-cli-bin/tests/snapshots/config_get_yaml_pretty.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_get_text.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_get_json_pretty.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_get_json_compact.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_get_yaml_pretty.txt`
 
 ## Task matrix
 

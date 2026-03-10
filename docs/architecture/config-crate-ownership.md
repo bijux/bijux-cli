@@ -9,11 +9,11 @@ This document defines stable ownership boundaries for Rust config behavior.
 - Config command routing and identity: `bijux-cli-routing`
 - Config execution semantics and command handlers: `bijux-cli-core`
 - Config output rendering: `bijux-cli-output`
-- Process bootstrap only: `bijux-cli-bin`
+- Process bootstrap only: `bijux-cli-core`
 
 ## Boundary rules
 
-- `bijux-cli-bin` must not contain config parsing, validation, migration, or file-write logic.
+- `bijux-cli-core` must not contain config parsing, validation, migration, or file-write logic.
 - `bijux-cli-routing` must parse argv and provide route identity only.
 - `bijux-cli-core` executes config commands through one app entrypoint and config service API.
 - Config file persistence must remain in storage/repository components, separate from output concerns.

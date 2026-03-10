@@ -2,7 +2,7 @@
 
 ## Scope
 
-This audit covers `crates/bijux-cli-bin/src/lib.rs` as of commit `a819a12` and classifies major behavior surfaces before modularization.
+This audit covers `crates/bijux-cli-core/src/repl/mod.rs` as of commit `a819a12` and classifies major behavior surfaces before modularization.
 
 ## Findings
 

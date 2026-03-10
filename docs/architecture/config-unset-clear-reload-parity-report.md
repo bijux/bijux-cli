@@ -26,11 +26,11 @@ Scope: tasks `161-180` for Rust configuration parity.
 - Core integration coverage:
   - `crates/bijux-cli-core/tests/config_parity.rs`
 - Binary parity coverage:
-  - `crates/bijux-cli-bin/tests/config_mutation_parity.rs`
+  - `crates/bijux-cli-core/tests/bin_surface/config_mutation_parity.rs`
 - Snapshots:
-  - `crates/bijux-cli-bin/tests/snapshots/config_unset_text.txt`
-  - `crates/bijux-cli-bin/tests/snapshots/config_clear_text.txt`
-  - `crates/bijux-cli-bin/tests/snapshots/config_reload_text.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_unset_text.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_clear_text.txt`
+  - `crates/bijux-cli-core/tests/snapshots/config_reload_text.txt`
 
 ## Remaining Config Scope
 

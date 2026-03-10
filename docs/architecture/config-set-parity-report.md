@@ -12,17 +12,17 @@ Scope: `config set` command parity baseline and reliability checks.
 
 ## Coverage
 
-- Binary command coverage: `crates/bijux-cli-bin/tests/config_set_parity.rs`
+- Binary command coverage: `crates/bijux-cli-core/tests/bin_surface/config_set_parity.rs`
 - Core command coverage: `crates/bijux-cli-core/tests/config_parity.rs`
 - Key/value rule coverage: `crates/bijux-cli-core/tests/config_key_value_parity.rs`
-- Python compatibility coverage: `crates/bijux-cli-bin/tests/config_python_compatibility.rs`
+- Python compatibility coverage: `crates/bijux-cli-core/tests/bin_surface/config_python_compatibility.rs`
 
 ## Captured Outputs
 
-- Text snapshot: `crates/bijux-cli-bin/tests/snapshots/config_set_text.txt`
-- JSON pretty snapshot: `crates/bijux-cli-bin/tests/snapshots/config_set_json_pretty.txt`
-- JSON compact snapshot: `crates/bijux-cli-bin/tests/snapshots/config_set_json_compact.txt`
-- YAML snapshot: `crates/bijux-cli-bin/tests/snapshots/config_set_yaml_pretty.txt`
+- Text snapshot: `crates/bijux-cli-core/tests/snapshots/config_set_text.txt`
+- JSON pretty snapshot: `crates/bijux-cli-core/tests/snapshots/config_set_json_pretty.txt`
+- JSON compact snapshot: `crates/bijux-cli-core/tests/snapshots/config_set_json_compact.txt`
+- YAML snapshot: `crates/bijux-cli-core/tests/snapshots/config_set_yaml_pretty.txt`
 
 ## Status Matrix
 
