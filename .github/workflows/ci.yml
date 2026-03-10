@@ -324,6 +324,7 @@ jobs:
           python3 scripts/status/generate_memory_surface_reports.py
           python3 scripts/status/generate_diagnostics_surface_reports.py
           python3 scripts/status/generate_repl_execution_law_reports.py
+          python3 scripts/status/generate_repl_hostile_session_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -433,6 +434,10 @@ jobs:
       - name: REPL execution law gate
         run: |
           python3 scripts/status/enforce_repl_execution_law_gate.py
+
+      - name: REPL hostile-session gate
+        run: |
+          python3 scripts/status/enforce_repl_hostile_session_gate.py
 
       - name: Warn REPL-only semantic scope
         run: |
@@ -730,6 +735,21 @@ jobs:
             artifacts/status/repl_cli_diff_artifact.json
             artifacts/status/repl_shared_law_drift_artifact.json
             artifacts/status/repl_shared_law_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload REPL hostile-session artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: repl-hostile-session
+          path: |
+            artifacts/status/repl_hostile_session_artifact.json
+            artifacts/status/repl_recovery_artifact.json
+            artifacts/status/repl_startup_resilience_artifact.json
+            artifacts/status/repl_command_loop_failure_class_artifact.json
+            artifacts/status/repl_hostile_session_contract.json
+            artifacts/status/repl_hostile_session_drift_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
