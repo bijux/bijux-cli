@@ -330,6 +330,7 @@ jobs:
           python3 scripts/status/generate_python_bridge_execution_reports.py
           python3 scripts/status/generate_python_bridge_conversion_reports.py
           python3 scripts/status/generate_cross_surface_state_reports.py
+          python3 scripts/status/generate_help_tree_law_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -463,6 +464,10 @@ jobs:
       - name: Cross-surface state gate
         run: |
           python3 scripts/status/enforce_cross_surface_state_gate.py
+
+      - name: Help tree law gate
+        run: |
+          python3 scripts/status/enforce_help_tree_law_gate.py
 
       - name: Warn REPL-only semantic scope
         run: |
@@ -951,6 +956,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Upload help tree law artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: help-tree-law
+          path: |
+            artifacts/status/help_law_artifact.json
+            artifacts/status/command_tree_help_consistency_artifact.json
+            artifacts/status/help_drift_artifact.json
+            artifacts/status/help_tree_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload binary-vs-python-bridge parity report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -1144,6 +1162,10 @@ jobs:
             artifacts/status/cross_surface_state_consistency_artifact.json
             artifacts/status/cross_surface_state_drift_artifact.json
             artifacts/status/cross_surface_state_contract.json
+            artifacts/status/help_law_artifact.json
+            artifacts/status/command_tree_help_consistency_artifact.json
+            artifacts/status/help_drift_artifact.json
+            artifacts/status/help_tree_contract.json
             artifacts/status/packaging_ambiguity_report.json
             artifacts/status/install_state_assumptions_report.json
             artifacts/status/package_health_report.json
