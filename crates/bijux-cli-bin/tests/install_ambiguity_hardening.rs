@@ -327,3 +327,70 @@ fn pip_installed_invocation_config_get_is_green() {
         &[],
     );
 }
+
+#[test]
+fn cli_paths_under_overridden_home_are_consistent() {
+    let root = tmp_dir("paths-home-override");
+    let out = run_with_env(
+        &["cli", "paths", "--format", "json", "--no-pretty"],
+        &[("HOME", root.display().to_string())],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+
+    let expected_prefix = root.join(".bijux");
+    assert!(payload["config"].as_str().expect("config").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["history"].as_str().expect("history").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["plugins"].as_str().expect("plugins").contains(expected_prefix.to_str().expect("utf-8")));
+}
+
+#[test]
+fn cli_paths_under_xdg_style_home_root_are_consistent() {
+    let root = tmp_dir("paths-xdg-style-home").join(".local").join("share");
+    fs::create_dir_all(&root).expect("mkdir xdg-style home");
+
+    let out = run_with_env(
+        &["cli", "paths", "--format", "json", "--no-pretty"],
+        &[("HOME", root.display().to_string())],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+
+    let expected_prefix = root.join(".bijux");
+    assert!(payload["config"].as_str().expect("config").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["history"].as_str().expect("history").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["plugins"].as_str().expect("plugins").contains(expected_prefix.to_str().expect("utf-8")));
+}
+
+#[test]
+#[cfg(unix)]
+fn state_audit_reports_unwritable_config_plugin_and_history_locations() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("state-audit-unwritable");
+    let config = root.join("config.env");
+    let history = root.join("history.log");
+    let plugins = root.join("plugins");
+    fs::create_dir_all(&plugins).expect("mkdir plugins");
+    fs::write(&config, "BIJUXCLI_ALPHA=1\n").expect("write config");
+    fs::write(&history, "[]\n").expect("write history");
+    let registry = plugins.join("registry.json");
+    fs::write(&registry, "{\"version\":\"1\",\"plugins\":{}}\n").expect("write registry");
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o444)).expect("readonly config");
+    fs::set_permissions(&history, fs::Permissions::from_mode(0o444)).expect("readonly history");
+    fs::set_permissions(&registry, fs::Permissions::from_mode(0o444)).expect("readonly registry");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
+        &[
+            ("BIJUXCLI_CONFIG", config.display().to_string()),
+            ("BIJUXCLI_HISTORY_FILE", history.display().to_string()),
+            ("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string()),
+        ],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    assert_eq!(payload["paths"]["config"]["writable"], false);
+    assert_eq!(payload["paths"]["history"]["writable"], false);
+    assert_eq!(payload["paths"]["plugins_registry"]["writable"], false);
+}
