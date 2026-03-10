@@ -8,7 +8,6 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line, startup_repl,
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,

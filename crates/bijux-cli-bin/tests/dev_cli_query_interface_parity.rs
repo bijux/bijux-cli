@@ -4,7 +4,7 @@
 use std::process::Command;
 
 use bijux_cli_core::query::state_diagnostics_query;
-use bijux_cli_install::query::runtime_identity_query;
+use bijux_cli_core::install::query::runtime_identity_query;
 use bijux_cli_routing::inventory::{registry_inventory, route_inventory};
 use bijux_cli_routing::query::contracts_schema_query;
 use bijux_cli_routing::registry::RouteRegistry;

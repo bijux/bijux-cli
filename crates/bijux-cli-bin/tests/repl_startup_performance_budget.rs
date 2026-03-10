@@ -4,7 +4,6 @@
 use std::time::{Duration, Instant};
 
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_python as _;
 use bijux_cli_repl::{estimated_session_memory_bytes, startup_repl};
 use bijux_cli_routing as _;

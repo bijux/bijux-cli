@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_python as _;
 use bijux_cli_repl as _;
 use bijux_cli_routing as _;

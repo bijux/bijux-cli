@@ -7,7 +7,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_repl::{
     check_repl_budgets, completion_candidates, configure_history, execute_repl_input,
     execute_repl_line, flush_history, inspect_last_error, load_history,
