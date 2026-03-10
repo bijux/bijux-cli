@@ -8,6 +8,7 @@ mod argv;
 pub mod cli;
 mod config;
 pub mod entrypoint;
+pub mod interface;
 pub mod install;
 pub mod kernel;
 pub mod output;
