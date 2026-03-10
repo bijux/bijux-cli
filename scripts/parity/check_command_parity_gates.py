@@ -10,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CURRENT = ROOT / "artifacts" / "parity" / "command_parity_matrix.json"
 BASELINE = ROOT / "docs" / "architecture" / "parity" / "baseline_command_parity_matrix.json"
+REGRESSION_JSON = ROOT / "artifacts" / "parity" / "parity_regression_diffs.json"
+REGRESSION_TXT = ROOT / "artifacts" / "parity" / "parity_regression_summary.txt"
 
 
 STATUS_RANK = {
@@ -69,6 +71,23 @@ def main() -> int:
                 warnings.append(
                     f"parity-partial command drifted further away: {command} ({old_conf:.2f} -> {new_conf:.2f})"
                 )
+
+    regression_payload = {
+        "regressions": failures,
+        "warnings": warnings,
+        "baseline": str(BASELINE.relative_to(ROOT)),
+        "current": str(CURRENT.relative_to(ROOT)),
+    }
+    REGRESSION_JSON.parent.mkdir(parents=True, exist_ok=True)
+    REGRESSION_JSON.write_text(json.dumps(regression_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary_lines = [
+        "Parity Regression Summary",
+        f"regressions: {len(failures)}",
+        f"warnings: {len(warnings)}",
+    ]
+    summary_lines.extend(f"- {msg}" for msg in failures[:25])
+    summary_lines.extend(f"- {msg}" for msg in warnings[:25])
+    REGRESSION_TXT.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
 
     for msg in warnings:
         print(f"PARITY WARNING: {msg}")

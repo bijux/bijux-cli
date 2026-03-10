@@ -1113,11 +1113,30 @@ fn route_response(
             );
             let command_matrix =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
+            let plugin_matrix =
+                read_json_if_exists(&root.join("artifacts/parity/plugin_parity_matrix.json"));
+            let repl_matrix =
+                read_json_if_exists(&root.join("artifacts/parity/repl_parity_matrix.json"));
+            let python_bridge_matrix = read_json_if_exists(
+                &root.join("artifacts/parity/python_bridge_parity_matrix.json"),
+            );
+            let state_behavior_matrix = read_json_if_exists(
+                &root.join("artifacts/parity/state_behavior_parity_matrix.json"),
+            );
             let parity_diffs =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
             let text_summary =
                 fs::read_to_string(root.join("artifacts/parity/command_parity_summary.txt"))
                     .unwrap_or_default();
+            let commands_fully_rust_owned =
+                read_json_if_exists(&root.join("artifacts/parity/commands_fully_rust_owned.json"));
+            let commands_using_compatibility_shims = read_json_if_exists(
+                &root.join("artifacts/parity/commands_using_compatibility_shims.json"),
+            );
+            let commands_python_only =
+                read_json_if_exists(&root.join("artifacts/parity/commands_python_only.json"));
+            let coverage =
+                read_json_if_exists(&root.join("artifacts/parity/parity_coverage_matrix.json"));
             let config_parity =
                 read_json_if_exists(&root.join("artifacts/parity/config_parity_report.json"));
             let history_parity =
@@ -1128,9 +1147,17 @@ fn route_response(
                 "rust_python": parity_report,
                 "binary_bridge": bridge_parity,
                 "command_matrix": command_matrix,
+                "plugin_matrix": plugin_matrix,
+                "repl_matrix": repl_matrix,
+                "python_bridge_matrix": python_bridge_matrix,
+                "state_behavior_matrix": state_behavior_matrix,
                 "diffs": parity_diffs,
                 "text_summary": text_summary,
                 "plugin_lifecycle": command_matrix.get("plugin_lifecycle").cloned().unwrap_or_else(|| json!({})),
+                "commands_fully_rust_owned": commands_fully_rust_owned,
+                "commands_using_compatibility_shims": commands_using_compatibility_shims,
+                "commands_python_only": commands_python_only,
+                "coverage": coverage,
                 "state_parity": {
                     "config": config_parity,
                     "history": history_parity,

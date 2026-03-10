@@ -13,6 +13,14 @@ ROOT = Path(__file__).resolve().parents[2]
 MATRIX_OUT = ROOT / "artifacts" / "parity" / "command_parity_matrix.json"
 DIFFS_OUT = ROOT / "artifacts" / "parity" / "command_parity_diffs.json"
 SUMMARY_TXT = ROOT / "artifacts" / "parity" / "command_parity_summary.txt"
+PLUGIN_MATRIX_OUT = ROOT / "artifacts" / "parity" / "plugin_parity_matrix.json"
+REPL_MATRIX_OUT = ROOT / "artifacts" / "parity" / "repl_parity_matrix.json"
+BRIDGE_MATRIX_OUT = ROOT / "artifacts" / "parity" / "python_bridge_parity_matrix.json"
+STATE_MATRIX_OUT = ROOT / "artifacts" / "parity" / "state_behavior_parity_matrix.json"
+OWNED_OUT = ROOT / "artifacts" / "parity" / "commands_fully_rust_owned.json"
+SHIMS_OUT = ROOT / "artifacts" / "parity" / "commands_using_compatibility_shims.json"
+PYTHON_ONLY_OUT = ROOT / "artifacts" / "parity" / "commands_python_only.json"
+COVERAGE_OUT = ROOT / "artifacts" / "parity" / "parity_coverage_matrix.json"
 STDOUT_MD = ROOT / "artifacts" / "parity" / "stdout_diff.md"
 STDERR_MD = ROOT / "artifacts" / "parity" / "stderr_diff.md"
 EXIT_MD = ROOT / "artifacts" / "parity" / "exit_code_diff.md"
@@ -329,6 +337,120 @@ def write_text_summary(matrix: list[dict]) -> None:
     SUMMARY_TXT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def write_specialized_matrices(matrix: list[dict], diffs: list[dict]) -> None:
+    by_command = {row["command"]: row for row in matrix}
+    diff_by_command = {row["command"]: row for row in diffs}
+
+    plugin_rows = [row for row in matrix if row["group"] == "plugin"]
+    repl_rows = [row for row in matrix if "repl" in row["command"].split()]
+    state_rows = [row for row in matrix if row["group"] in {"config", "history", "memory"}]
+    bridge_rows = []
+    for command, row in by_command.items():
+        diff = diff_by_command.get(command)
+        if not diff:
+            continue
+        bridge_rows.append(
+            {
+                "command": command,
+                "status": row["status"],
+                "exit_match": diff["exit_code"]["match"],
+                "stdout_match": diff["stdout"]["match"],
+                "stderr_match": diff["stderr"]["match"],
+            }
+        )
+
+    write_json(
+        PLUGIN_MATRIX_OUT,
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "artifacts/parity/command_parity_matrix.json",
+            "rows": plugin_rows,
+            "summary": {
+                "total": len(plugin_rows),
+                "complete": sum(1 for row in plugin_rows if row["status"] == "complete"),
+                "partial": sum(1 for row in plugin_rows if row["status"] == "partial"),
+                "missing": sum(1 for row in plugin_rows if row["status"] == "missing"),
+            },
+        },
+    )
+    write_json(
+        REPL_MATRIX_OUT,
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "artifacts/parity/command_parity_matrix.json",
+            "rows": repl_rows,
+            "summary": {
+                "total": len(repl_rows),
+                "complete": sum(1 for row in repl_rows if row["status"] == "complete"),
+                "partial": sum(1 for row in repl_rows if row["status"] == "partial"),
+                "missing": sum(1 for row in repl_rows if row["status"] == "missing"),
+            },
+        },
+    )
+    write_json(
+        BRIDGE_MATRIX_OUT,
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "artifacts/parity/command_parity_diffs.json",
+            "rows": bridge_rows,
+            "summary": {
+                "total": len(bridge_rows),
+                "exit_match": sum(1 for row in bridge_rows if row["exit_match"]),
+                "stdout_match": sum(1 for row in bridge_rows if row["stdout_match"]),
+                "stderr_match": sum(1 for row in bridge_rows if row["stderr_match"]),
+            },
+        },
+    )
+    write_json(
+        STATE_MATRIX_OUT,
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source": "artifacts/parity/command_parity_matrix.json",
+            "rows": state_rows,
+            "summary": {
+                "total": len(state_rows),
+                "complete": sum(1 for row in state_rows if row["status"] == "complete"),
+                "partial": sum(1 for row in state_rows if row["status"] == "partial"),
+                "missing": sum(1 for row in state_rows if row["status"] == "missing"),
+            },
+        },
+    )
+
+    state_report = ROOT / "artifacts" / "status" / "current_rust_state.json"
+    aliases: set[str] = set()
+    if state_report.exists():
+        data = json.loads(read_text(state_report))
+        aliases = set(data.get("rust_routed_commands", {}).get("aliases", []))
+
+    owned_rows = [row for row in matrix if row["status"] == "complete"]
+    shim_rows = [row for row in matrix if row["command"] in aliases]
+    python_only_rows = [row for row in matrix if row["status"] == "missing" and row["python_available"]]
+    write_json(OWNED_OUT, {"generated_at": datetime.now(timezone.utc).isoformat(), "commands": owned_rows})
+    write_json(SHIMS_OUT, {"generated_at": datetime.now(timezone.utc).isoformat(), "commands": shim_rows})
+    write_json(
+        PYTHON_ONLY_OUT,
+        {"generated_at": datetime.now(timezone.utc).isoformat(), "commands": python_only_rows},
+    )
+
+    write_json(
+        COVERAGE_OUT,
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "coverage": [
+                {
+                    "command": command,
+                    "parity_tests": command in diff_by_command,
+                    "failure_tests": row.get("status") in {"complete", "partial"},
+                    "output_snapshots": bool(row.get("diff_links", {}).get("stdout")),
+                    "exit_code_checks": bool(row.get("diff_links", {}).get("exit_code")),
+                    "stderr_stdout_checks": bool(row.get("diff_links", {}).get("stderr")),
+                }
+                for command, row in sorted(by_command.items())
+            ],
+        },
+    )
+
+
 def main() -> int:
     matrix, grouped = build_matrix()
     diffs = diff_rows()
@@ -371,6 +493,7 @@ def main() -> int:
     write_json(DIFFS_OUT, diffs_payload)
     write_markdown_diffs(diffs)
     write_text_summary(matrix)
+    write_specialized_matrices(matrix, diffs)
     print(f"wrote {MATRIX_OUT.relative_to(ROOT)}")
     print(f"wrote {DIFFS_OUT.relative_to(ROOT)}")
     print(f"wrote {SUMMARY_TXT.relative_to(ROOT)}")

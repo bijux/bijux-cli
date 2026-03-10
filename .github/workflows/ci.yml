@@ -448,8 +448,18 @@ jobs:
           name: command-parity-matrix
           path: |
             artifacts/parity/command_parity_matrix.json
+            artifacts/parity/plugin_parity_matrix.json
+            artifacts/parity/repl_parity_matrix.json
+            artifacts/parity/python_bridge_parity_matrix.json
+            artifacts/parity/state_behavior_parity_matrix.json
+            artifacts/parity/commands_fully_rust_owned.json
+            artifacts/parity/commands_using_compatibility_shims.json
+            artifacts/parity/commands_python_only.json
+            artifacts/parity/parity_coverage_matrix.json
             artifacts/parity/command_parity_diffs.json
             artifacts/parity/command_parity_summary.txt
+            artifacts/parity/parity_regression_diffs.json
+            artifacts/parity/parity_regression_summary.txt
             artifacts/parity/stdout_diff.md
             artifacts/parity/stderr_diff.md
             artifacts/parity/exit_code_diff.md
