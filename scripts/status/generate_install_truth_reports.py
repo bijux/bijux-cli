@@ -14,7 +14,7 @@ STATUS_DIR = ROOT / "artifacts" / "status"
 
 
 def run_bijux(args: list[str], text: bool = False) -> dict[str, Any] | str:
-    cmd = ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args]
+    cmd = ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args]
     proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, check=True)
     if text:
         return proc.stdout

@@ -30,9 +30,9 @@ def main() -> None:
         "status": "complete",
         "tasks": [461, 462, 463, 464, 465, 466, 467, 477],
         "evidence_tests": [
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::config_doctor_reports_corruption_for_broken_config_states",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::config_doctor_reports_corruption_for_broken_config_states",
         ],
     }
 
@@ -43,9 +43,9 @@ def main() -> None:
         "status": "complete",
         "tasks": [468, 469, 470, 471, 472, 473, 474, 475, 476, 479],
         "evidence_tests": [
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",
-            "crates/bijux-cli-bin/tests/config_corruption_hardening.rs::concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_file_shape",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",
+            "crates/bijux-cli-core/tests/bin_surface/config_corruption_hardening.rs::concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_file_shape",
         ],
     }
 

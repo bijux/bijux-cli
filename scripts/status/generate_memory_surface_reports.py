@@ -9,8 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-MATRIX_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "memory_command_matrix.rs"
-PARITY_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "memory_parity.rs"
+MATRIX_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "memory_command_matrix.rs"
+PARITY_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "memory_parity.rs"
 
 MEMORY_COMMANDS = ["memory", "memory list", "memory get", "memory set", "memory delete", "memory clear"]
 
@@ -58,8 +58,8 @@ def main() -> int:
                 "status": status,
                 "status_model": ["complete", "partial", "shim", "missing"],
                 "evidence": [
-                    "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-                    "crates/bijux-cli-bin/tests/memory_parity.rs",
+                    "crates/bijux-cli-core/tests/bin_surface/memory_command_matrix.rs",
+                    "crates/bijux-cli-core/tests/bin_surface/memory_parity.rs",
                 ],
             }
         )
@@ -73,9 +73,9 @@ def main() -> int:
                 "todo": todo,
                 "test": fn_name,
                 "status": "complete" if (in_matrix or in_parity) else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs"
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/memory_command_matrix.rs"
                 if in_matrix
-                else "crates/bijux-cli-bin/tests/memory_parity.rs",
+                else "crates/bijux-cli-core/tests/bin_surface/memory_parity.rs",
             }
         )
 
@@ -136,8 +136,8 @@ def main() -> int:
             "scope": "todo 359 memory parity versus overlapping python behavior",
             "status": "complete" if "fn memory_root_parity_with_python_summary_command(" in parity_source else "partial",
             "evidence": [
-                "crates/bijux-cli-bin/tests/memory_parity.rs",
-                "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/memory_parity.rs",
+                "crates/bijux-cli-core/tests/bin_surface/memory_command_matrix.rs",
             ],
         },
     )
@@ -151,7 +151,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Memory read behavior is accepted only when determinism and corruption handling remain green.",
             "evidence": [
-                "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/memory_command_matrix.rs",
                 "artifacts/status/memory_command_matrix_artifact.json",
                 "artifacts/status/memory_corruption_matrix_artifact.json",
                 "artifacts/status/memory_python_parity_artifact.json",

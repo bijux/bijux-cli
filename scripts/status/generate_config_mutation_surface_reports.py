@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "config_mutation_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_mutation_matrix.rs"
 
 REQUIRED_TESTS = {
     281: "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
@@ -49,7 +49,7 @@ def main() -> int:
             "todo": todo,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
-            "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+            "evidence": "crates/bijux-cli-core/tests/bin_surface/config_mutation_matrix.rs",
         }
         for todo, fn_name in sorted(REQUIRED_TESTS.items())
     ]
@@ -80,7 +80,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Config mutation behavior is accepted only with rollback safety and idempotent retry proof.",
             "evidence": [
-                "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/config_mutation_matrix.rs",
                 "artifacts/status/config_mutation_matrix_artifact.json",
             ],
         },

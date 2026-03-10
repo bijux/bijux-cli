@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "install_ambiguity_hardening.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "install_ambiguity_hardening.rs"
 
 REQUIRED_TESTS = {
     301: "cargo_installed_invocation_version_is_green",
@@ -49,7 +49,7 @@ def main() -> int:
                 "todo": todo,
                 "test": name,
                 "status": "covered" if covered else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/install_ambiguity_hardening.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/install_ambiguity_hardening.rs",
             }
         )
 

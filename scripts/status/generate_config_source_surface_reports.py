@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "config_source_precedence_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_source_precedence_matrix.rs"
 
 REQUIRED_TESTS = {
     301: "cli_flags_override_env_backed_values_and_config_path",
@@ -55,7 +55,7 @@ def main() -> int:
             "todo": todo,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
-            "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+            "evidence": "crates/bijux-cli-core/tests/bin_surface/config_source_precedence_matrix.rs",
         }
         for todo, fn_name in sorted(REQUIRED_TESTS.items())
     ]
@@ -73,7 +73,7 @@ def main() -> int:
             "run",
             "-q",
             "-p",
-            "bijux-cli-bin",
+            "bijux-cli-core",
             "--",
             "cli",
             "config",
@@ -91,7 +91,7 @@ def main() -> int:
             "run",
             "-q",
             "-p",
-            "bijux-cli-bin",
+            "bijux-cli-core",
             "--",
             "dev",
             "cli",
@@ -150,7 +150,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Config precedence truth must be observable, deterministic, and consistent across config get and dev cli env.",
             "evidence": [
-                "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+                "crates/bijux-cli-core/tests/bin_surface/config_source_precedence_matrix.rs",
                 "artifacts/status/config_source_parity_artifact.json",
                 "artifacts/status/config_source_drift_artifact.json",
             ],

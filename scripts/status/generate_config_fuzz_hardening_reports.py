@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-TARGETS = ROOT / "crates" / "bijux-cli-bin" / "tests" / "config_fuzz_targets.rs"
-REGRESSION = ROOT / "crates" / "bijux-cli-bin" / "tests" / "config_fuzz_regressions.rs"
-MINIMIZED = ROOT / "crates" / "bijux-cli-bin" / "tests" / "fuzz" / "config_minimized_cases"
+TARGETS = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_fuzz_targets.rs"
+REGRESSION = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_fuzz_regressions.rs"
+MINIMIZED = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "config_minimized_cases"
 
 REQUIRED_TESTS = {
     41: "fuzz_dotenv_style_config_parsing_is_stable",
@@ -73,8 +73,10 @@ def main() -> int:
 
     minimized_cases = sorted(str(p.relative_to(ROOT)) for p in MINIMIZED.glob("*.env"))
 
-    replay = run_test(["cargo", "test", "-p", "bijux-cli-bin", "--test", "config_fuzz_regressions"])
-    targets = run_test(["cargo", "test", "-p", "bijux-cli-bin", "--test", "config_fuzz_targets"])
+    replay = run_test(
+        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "config_fuzz_regressions::"]
+    )
+    targets = run_test(["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "config_fuzz_targets::"])
 
     missing = [row["todo"] for row in coverage if row["status"] != "covered"]
 

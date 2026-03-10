@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "config_deep_behavior_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_deep_behavior_matrix.rs"
 
 REQUIRED_TESTS = {
     81: "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
@@ -37,7 +37,7 @@ def has_test(source: str, test_name: str) -> bool:
 
 def run_cmd(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -68,7 +68,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/config_deep_behavior_matrix.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/config_deep_behavior_matrix.rs",
             }
         )
     missing_todos = [row for row in todo_rows if row["status"] != "covered"]
