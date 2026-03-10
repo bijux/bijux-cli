@@ -1,18 +1,21 @@
 #![forbid(unsafe_code)]
-//! Prevents dev-cli route/registry presentation assembly from living in routing.
+//! Prevents dev-cli route/registry/route-audit presentation assembly from living in routing.
 
 #[test]
-fn routing_reports_keep_only_route_audit_presentation() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/reports.rs"))
-        .expect("read routing reports source");
+fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
+    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/lib.rs"))
+        .expect("read routing lib source");
 
-    assert!(source.contains("route_audit_report"), "route audit report assembly must remain");
     assert!(
-        !source.contains("pub fn routes_report"),
-        "routing crate must not expose routes presentation report"
+        !source.contains("pub mod reports;"),
+        "routing crate must not expose maintainer report assembly modules"
     );
     assert!(
-        !source.contains("pub fn registry_report"),
-        "routing crate must not expose registry presentation report"
+        source.contains("pub mod inventory;"),
+        "routing crate must keep read-only inventory query module"
+    );
+    assert!(
+        source.contains("pub mod query;"),
+        "routing crate must keep read-only contracts query module"
     );
 }

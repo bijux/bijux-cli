@@ -6,12 +6,14 @@
 //! control-plane orchestration. Runtime command law remains in runtime crates.
 
 pub mod contracts;
+pub mod control_plane;
 pub mod crate_health;
 pub mod docs_audit;
 pub mod env;
 pub mod package_health;
 pub mod parity;
 pub mod registry;
+pub mod route_audit;
 pub mod routes;
 pub mod runtime_identity;
 pub mod script_audit;

@@ -15,12 +15,20 @@ fn core_app_routes_and_registry_delegate_to_dev_cli() {
         "core app must delegate dev cli registry to bijux-dev-cli"
     );
     assert!(
+        source.contains("dev_route_audit::build_report"),
+        "core app must delegate dev cli route-audit to bijux-dev-cli"
+    );
+    assert!(
         !source.contains("routes_report(&registry)"),
         "core app must not shape dev cli routes directly"
     );
     assert!(
         !source.contains("registry_report(&registry)"),
         "core app must not shape dev cli registry directly"
+    );
+    assert!(
+        !source.contains("route_audit_report(&registry)"),
+        "core app must not shape dev cli route-audit directly"
     );
 }
 
@@ -44,6 +52,14 @@ fn core_app_env_contracts_parity_status_delegate_to_dev_cli() {
     assert!(
         source.contains("dev_status::build_report"),
         "core app must delegate dev cli status to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_control_plane::build_atlas_report"),
+        "core app must delegate hidden dev cli atlas report to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_control_plane::build_dependency_injection_report"),
+        "core app must delegate hidden dev cli di report to bijux-dev-cli"
     );
     assert!(
         source.contains("dev_script_audit::build_report"),

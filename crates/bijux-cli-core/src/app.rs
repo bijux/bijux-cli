@@ -27,12 +27,12 @@ use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::query::contracts_schema_query;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use bijux_cli_routing::reports::route_audit_report;
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
-    contracts as dev_contracts, crate_health as dev_crate_health, docs_audit as dev_docs_audit,
-    env as dev_env, package_health as dev_package_health, parity as dev_parity,
-    registry as dev_registry, routes as dev_routes, runtime_identity as dev_runtime_identity,
+    contracts as dev_contracts, control_plane as dev_control_plane,
+    crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
+    package_health as dev_package_health, parity as dev_parity, registry as dev_registry,
+    route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
     script_audit as dev_script_audit, state_audit as dev_state_audit, status as dev_status,
     ReportContext,
 };
@@ -1014,19 +1014,20 @@ fn route_response(
             dev_routes::build_report(&registry, &context)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "atlas" => {
-            json!({"status": "ok", "mount": "atlas", "entry_surface": "dev-cli"})
+            dev_control_plane::build_atlas_report()
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "di" => {
-            json!({"status": "ok", "container": "built-in", "entry_surface": "dev-cli"})
+            dev_control_plane::build_dependency_injection_report()
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "list-products" => {
-            json!({"status": "ok", "products": FUTURE_PRODUCT_NAMESPACES})
+            dev_control_plane::build_product_list_report(FUTURE_PRODUCT_NAMESPACES)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "list-plugins" => {
-            json!({"status": "ok", "plugins": list_plugins(&plugin_registry_path).unwrap_or_default()})
+            let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
+            dev_control_plane::build_plugin_list_report_from(plugins)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "route-audit" => {
-            serde_json::to_value(route_audit_report(&registry))?
+            dev_route_audit::build_report(&registry)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => {
             dev_script_audit::build_inventory_report(&workspace_root())
@@ -1048,11 +1049,7 @@ fn route_response(
                 .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
                 .map(|p| rel_to_root(&p, &root))
                 .collect();
-            json!({
-                "docs_count": docs_files.len(),
-                "docs": docs_files,
-                "index": "docs/INDEX.md",
-            })
+            dev_control_plane::build_docs_inventory_report(docs_files)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "status" => dev_status::build_report(
             &workspace_root(),
@@ -1160,21 +1157,11 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-prune-plan" => {
             let root = workspace_root();
-            let docs_files: Vec<String> = collect_files(&root.join("docs"))
+            let docs_count = collect_files(&root.join("docs"))
                 .into_iter()
                 .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-                .map(|p| rel_to_root(&p, &root))
-                .collect();
-            json!({
-                "docs_count": docs_files.len(),
-                "target_cap": 60,
-                "actions": [
-                    "merge overlapping architecture docs",
-                    "merge overlapping compatibility docs",
-                    "move low-value prose detail into generated JSON artifacts",
-                    "freeze docs rule: every doc explains law or change",
-                ],
-            })
+                .count();
+            dev_control_plane::build_docs_prune_plan_report(docs_count)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-audit" => {
             let corruption = state_diagnostics(&paths);

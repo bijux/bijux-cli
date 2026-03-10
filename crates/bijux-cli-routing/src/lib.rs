@@ -7,7 +7,6 @@ pub mod inventory;
 pub mod parser;
 pub mod query;
 pub mod registry;
-pub mod reports;
 pub mod schema;
 
 #[cfg(test)]
