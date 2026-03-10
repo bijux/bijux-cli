@@ -58,4 +58,4 @@ Registry updates run through atomic save and rollback-aware update flow.
 - `337`: complete
 - `338`: complete for Python-supported `plugins list` parity; install/uninstall parity constrained and documented
 - `339`: complete (this report)
-- `340`: complete (baseline frozen in `docs/architecture/plugin-write-path-baseline.md`)
+- `340`: complete (baseline frozen by parity artifacts and `artifacts/status/plugin_health_report.json`)
