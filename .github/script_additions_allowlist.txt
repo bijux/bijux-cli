@@ -31,3 +31,5 @@ scripts/status/generate_precedence_reports.py # generate precedence regression m
 scripts/status/generate_deterministic_output_reports.py # generate deterministic output report, determinism dashboard, and frozen byte-stability expectations artifacts
 scripts/status/run_corruption_repeat_harness.py # execute repeated-run corrupted-state probes and emit stability evidence for hostile-state determinism
 scripts/status/generate_hostile_state_reports.py # generate hostile-state determinism report, failure-class stability report, and frozen deterministic-failure quality bar
+scripts/status/generate_cross_surface_reports.py # generate cross-surface equivalence/drift artifacts and freeze the binary-core-bridge-repl duality contract
+scripts/parity/check_cross_surface_drift_gate.py # fail CI when cross-surface equivalence coverage drifts from required command set

@@ -280,6 +280,7 @@ jobs:
           python3 scripts/status/generate_deterministic_output_reports.py
           python3 scripts/status/run_corruption_repeat_harness.py
           python3 scripts/status/generate_hostile_state_reports.py
+          python3 scripts/status/generate_cross_surface_reports.py
           python3 scripts/status/generate_plugin_lifecycle_failure_reports.py
           python3 scripts/status/generate_config_corruption_reports.py
           python3 scripts/status/generate_state_resilience_reports.py
@@ -386,6 +387,10 @@ jobs:
       - name: Binary-vs-bridge parity gate
         run: |
           python3 scripts/parity/check_binary_bridge_parity_gate.py --enforce
+
+      - name: Cross-surface drift gate
+        run: |
+          python3 scripts/parity/check_cross_surface_drift_gate.py --enforce
 
       - name: Command parity matrix artifact
         run: |
@@ -713,6 +718,9 @@ jobs:
             artifacts/status/deterministic_hostile_state_report.json
             artifacts/status/failure_class_stability_report.json
             artifacts/status/deterministic_failure_quality_bar.json
+            artifacts/status/cross_surface_equivalence_report.json
+            artifacts/status/cross_surface_drift_report.json
+            artifacts/status/cross_surface_duality_contract.json
             artifacts/status/plugin_lifecycle_failure_injection_report.json
             artifacts/status/plugin_rollback_proof_report.json
             artifacts/status/plugin_doctor_runtime_sample.json
