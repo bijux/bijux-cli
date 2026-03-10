@@ -1,12 +1,19 @@
 #![forbid(unsafe_code)]
 //! Command-surface contracts plus routing graph and namespace resolution.
 
+#[path = "../../bijux-cli-core/src/routing/catalog.rs"]
 pub mod catalog;
+#[path = "../../bijux-cli-core/src/routing/contracts/mod.rs"]
 pub mod contracts;
+#[path = "../../bijux-cli-core/src/routing/inventory.rs"]
 pub mod inventory;
+#[path = "../../bijux-cli-core/src/routing/parser.rs"]
 pub mod parser;
+#[path = "../../bijux-cli-core/src/routing/query.rs"]
 pub mod query;
+#[path = "../../bijux-cli-core/src/routing/registry.rs"]
 pub mod registry;
+#[path = "../../bijux-cli-core/src/routing/schema.rs"]
 pub mod schema;
 
 #[cfg(test)]
