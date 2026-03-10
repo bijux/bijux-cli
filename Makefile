@@ -66,21 +66,14 @@ all: clean install test lint quality security api docs build sbom citation
 lint quality security api docs: | bootstrap
 .NOTPARALLEL:
 
-all-parallel: clean install
-	@$(MAKE) -j4 quality security api docs
-	@$(MAKE) build sbom citation
-	@echo "✔ All targets completed (parallel mode)"
+dev-cli-status:
+	@cargo run -q -p bijux-cli-bin -- dev cli status --text
 
-# Pre-push Gate
-pre-push:
-	@$(PYTEST) -q -m "not e2e and not slow"
-	@$(MAKE) quality
-	@$(MAKE) security
-	@$(MAKE) api
-	@$(MAKE) docs
-	@$(MAKE) changelog-check
-	@echo "✔ pre-push gate passed"
-.PHONY: pre-push
+dev-cli-crate-health:
+	@cargo run -q -p bijux-cli-bin -- dev cli crate-health --text
+
+dev-cli-parity:
+	@cargo run -q -p bijux-cli-bin -- dev cli parity --text
 
 # Utilities
 define run_tool
@@ -115,6 +108,7 @@ clean-soft: ## Remove build artifacts but keep .venv
 install: ## Install project in editable mode into .venv
 bootstrap: ## Setup environment & install git hooks
 all: ## Run full pipeline (clean → citation)
-all-parallel: ## Run pipeline with parallelized lint, quality, security, api, and docs
-pre-push: ## Run pre-push gate: tests, quality, security, API, docs, changelog-check
+dev-cli-status: ## Show maintainer status report via bijux dev cli
+dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
+dev-cli-parity: ## Show parity summary via bijux dev cli
 help: ## Show this help
