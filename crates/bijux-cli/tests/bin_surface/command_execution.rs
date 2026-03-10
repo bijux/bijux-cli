@@ -17,6 +17,14 @@ fn run(args: &[&str]) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "process failed for args: {args:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "successful command must not write to stderr: {args:?}"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "successful command must produce stdout payload: {args:?}"
+    );
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
@@ -34,6 +42,14 @@ fn run_with_env(args: &[&str], key: &str, value: &str) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "process failed for args: {args:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "successful command must not write to stderr: {args:?}"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "successful command must produce stdout payload: {args:?}"
+    );
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
@@ -285,10 +301,19 @@ fn executes_dev_cli_namespace_commands() {
 fn unsupported_config_set_input_returns_usage_error() {
     let output = run_raw(&["cli", "config", "set", "INVALID_PAIR"]);
     assert_eq!(output.status.code(), Some(2));
-    let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
     assert!(
-        stderr.contains("Invalid argument"),
-        "unexpected stderr: {stderr}"
+        output.stdout.is_empty(),
+        "usage failures must not write to stdout"
+    );
+    let stderr: serde_json::Value =
+        serde_json::from_slice(&output.stderr).expect("usage failure stderr json");
+    assert_eq!(stderr["status"], "error");
+    assert_eq!(stderr["code"], 2);
+    assert!(
+        stderr["message"]
+            .as_str()
+            .is_some_and(|msg| msg.to_ascii_lowercase().contains("argument")),
+        "usage failure should explain invalid argument"
     );
 }
 

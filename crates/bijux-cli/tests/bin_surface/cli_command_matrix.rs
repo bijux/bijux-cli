@@ -42,6 +42,14 @@ fn temp_dir(name: &str) -> PathBuf {
 fn parity_against_core(args: &[&str]) {
     let out = run(args);
     assert!(out.status.success(), "expected success for {args:?}");
+    assert!(
+        out.stderr.is_empty(),
+        "successful parity command must keep stderr empty: {args:?}"
+    );
+    assert!(
+        !out.stdout.is_empty(),
+        "successful parity command must emit stdout: {args:?}"
+    );
 
     let mut argv = vec!["bijux".to_string()];
     argv.extend(args.iter().map(|a| a.to_string()));
@@ -126,6 +134,14 @@ fn help_snapshots_exist_for_all_cli_subcommands() {
         let second = run(&args);
         assert!(first.status.success(), "help failed for {cmd:?}");
         assert!(second.status.success(), "help failed for {cmd:?}");
+        assert!(
+            first.stderr.is_empty(),
+            "help stderr should be empty for {cmd:?}"
+        );
+        assert!(
+            second.stderr.is_empty(),
+            "help stderr should be empty for {cmd:?}"
+        );
         let first_text = String::from_utf8(first.stdout.clone()).expect("utf-8");
         assert!(
             first_text.contains("Usage:"),
@@ -200,6 +216,10 @@ fn machine_readable_cli_commands_support_json_and_yaml() {
         let json_refs: Vec<&str> = json_args.iter().map(String::as_str).collect();
         let json_out = run(&json_refs);
         assert!(json_out.status.success(), "json failed for {base:?}");
+        assert!(
+            json_out.stderr.is_empty(),
+            "json command should not write to stderr for {base:?}"
+        );
         let _: Value = serde_json::from_slice(&json_out.stdout).expect("json parse");
 
         let mut yaml_args = base.clone();
@@ -211,6 +231,10 @@ fn machine_readable_cli_commands_support_json_and_yaml() {
         let yaml_refs: Vec<&str> = yaml_args.iter().map(String::as_str).collect();
         let yaml_out = run(&yaml_refs);
         assert!(yaml_out.status.success(), "yaml failed for {base:?}");
+        assert!(
+            yaml_out.stderr.is_empty(),
+            "yaml command should not write to stderr for {base:?}"
+        );
         let yaml_text = String::from_utf8(yaml_out.stdout).expect("utf-8");
         assert!(!yaml_text.trim().is_empty());
     }
@@ -248,6 +272,10 @@ fn quiet_mode_and_no_color_behavior_for_relevant_cli_commands() {
     for base in text_cases {
         let out = run_with_env(base, &[("NO_COLOR", "1")]);
         assert!(out.status.success(), "no-color failed for {base:?}");
+        assert!(
+            out.stderr.is_empty(),
+            "no-color success should keep stderr empty for {base:?}"
+        );
         let text = String::from_utf8(out.stdout).expect("utf-8");
         assert!(!text.contains("\u{1b}["));
     }
@@ -279,6 +307,15 @@ fn malformed_input_is_rejected_for_argument_taking_cli_subcommands() {
             !out.stderr.is_empty(),
             "malformed input should use stderr for {args:?}"
         );
+        let stderr: Value = serde_json::from_slice(&out.stderr).expect("malformed stderr json");
+        assert_eq!(stderr["status"], "error");
+        assert!(stderr["code"].as_i64().unwrap_or(0) > 0);
+        assert!(
+            stderr["message"]
+                .as_str()
+                .is_some_and(|msg| !msg.trim().is_empty()),
+            "malformed input should emit actionable diagnostics for {args:?}"
+        );
     }
 }
 
@@ -303,6 +340,25 @@ fn repeated_run_stability_for_machine_readable_cli_commands() {
         let second = run(args);
         assert!(first.status.success(), "first run failed for {args:?}");
         assert!(second.status.success(), "second run failed for {args:?}");
+        assert!(
+            first.stderr.is_empty(),
+            "first run should keep stderr empty for {args:?}"
+        );
+        assert!(
+            second.stderr.is_empty(),
+            "second run should keep stderr empty for {args:?}"
+        );
+        let first_json: Value = serde_json::from_slice(&first.stdout).expect("first json payload");
+        let second_json: Value =
+            serde_json::from_slice(&second.stdout).expect("second json payload");
+        assert!(
+            first_json.is_object(),
+            "first payload should be object for {args:?}"
+        );
+        assert!(
+            second_json.is_object(),
+            "second payload should be object for {args:?}"
+        );
         assert_eq!(first.stdout, second.stdout, "stdout drift for {args:?}");
         assert_eq!(first.stderr, second.stderr, "stderr drift for {args:?}");
     }
@@ -310,20 +366,38 @@ fn repeated_run_stability_for_machine_readable_cli_commands() {
 
 #[test]
 fn cli_command_matrix_artifact_smoke_uses_supported_commands() {
-    let checks: &[&[&str]] = &[
-        &["cli", "status"],
-        &["cli", "paths"],
-        &["cli", "self-test"],
-        &["cli", "config", "list"],
-        &["cli", "plugins", "list"],
+    let checks: &[(&[&str], Option<&str>, bool)] = &[
+        (&["cli", "status"], Some("runtime"), false),
+        (&["cli", "paths"], Some("active_binary"), false),
+        (&["cli", "self-test"], Some("checks"), false),
+        (&["cli", "config", "list"], None, true),
+        (&["cli", "plugins", "list"], Some("plugins"), false),
     ];
-    for args in checks {
+    for (args, required_key, allow_empty_object) in checks {
         let out = run(args);
         assert!(
             out.status.success(),
             "matrix command should succeed for {args:?}"
         );
+        assert!(
+            out.stderr.is_empty(),
+            "successful matrix command should keep stderr empty for {args:?}"
+        );
         let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
-        assert!(payload.is_object());
+        let object = payload
+            .as_object()
+            .expect("matrix payload should be object");
+        if !allow_empty_object {
+            assert!(
+                !object.is_empty(),
+                "matrix payload should not be empty for {args:?}"
+            );
+        }
+        if let Some(key) = required_key {
+            assert!(
+                object.contains_key(*key),
+                "matrix payload missing required key `{key}` for {args:?}"
+            );
+        }
     }
 }

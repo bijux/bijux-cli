@@ -33,6 +33,21 @@ fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
 }
 
 fn json(output: &Output) -> Value {
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "expected success but saw {:?} with stderr={}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        output.stderr.is_empty(),
+        "successful machine output must keep stderr empty"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "successful machine output must produce stdout"
+    );
     serde_json::from_slice(&output.stdout).expect("json")
 }
 
@@ -292,6 +307,14 @@ fn command_family_help_trees_and_machine_output_envelopes_remain_consistent() {
     for (family, command) in families {
         let help = run(&[family, "--help"]);
         assert_eq!(help.status.code(), Some(0));
+        assert!(
+            help.stderr.is_empty(),
+            "help should not emit stderr for {family}"
+        );
+        assert!(
+            String::from_utf8_lossy(&help.stdout).contains("Usage:"),
+            "help should include usage section for {family}"
+        );
 
         let payload = json(&run(command));
         assert!(payload.is_object());
