@@ -26,6 +26,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Config export/load parity report](config-export-load-parity-report.md)
 - [Python config UX ambiguities review](python-config-ux-ambiguities-review.md)
 - [Config parity matrix](config-parity-matrix.md)
+- [Config mutation hardening law](config-mutation-hardening-law.md)
 - [Rust config baseline parity milestone](rust-config-baseline-parity-milestone.md)
 - [Crate boundaries](crate_boundaries.md)
 - [Runtime identity law](runtime_identity_law.md)

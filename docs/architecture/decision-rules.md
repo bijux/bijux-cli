@@ -31,6 +31,9 @@ Documentation stays intentionally small. Each long-form document must explain la
 
 ## Test Rule Freeze
 No vanity test counts. Quality claims require evidence from failure-path, exit-code, output-regression, and resilience coverage.
+Config mutation hardening must remain evidenced by:
+`artifacts/status/config_corruption_matrix.json` and
+`artifacts/status/config_rollback_proof.json`.
 
 ## Parity Report Freeze
 Every release candidate must include command-level parity matrix and diff artifacts.
