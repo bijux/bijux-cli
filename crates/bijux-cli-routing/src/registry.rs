@@ -379,12 +379,5 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
 }
 
 fn normalize_namespace(input: &str) -> String {
-    input
-        .trim()
-        .to_ascii_lowercase()
-        .replace('_', "-")
-        .split('-')
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>()
-        .join("-")
+    Namespace::normalize(input)
 }

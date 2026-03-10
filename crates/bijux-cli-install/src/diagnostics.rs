@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 //! Installation diagnostics and health reporting.
 
+use std::fs;
+use std::path::Path;
+
 use crate::paths::{
     detect_stale_wrapper_scripts, discover_path_binaries, legacy_installer_conflicts,
     resolve_active_binary,
@@ -23,6 +26,10 @@ pub struct InstallHealthReport {
     pub has_mismatched_wheel_binary_versions: bool,
     /// Legacy installer wrappers that could shadow canonical runtime.
     pub legacy_installer_conflicts: Vec<String>,
+    /// Whether configured active binary path is missing from disk.
+    pub active_binary_missing: bool,
+    /// Whether configured active binary path is a broken symlink.
+    pub broken_symlink_active_binary: bool,
 }
 
 /// Build installation diagnostics for binary resolution and ecosystem overlap checks.
@@ -43,6 +50,14 @@ pub fn install_health_report(
     let has_mismatched_wheel_binary_versions =
         wheel_version.is_some_and(|version| version != runtime_version);
     let legacy_installer_conflicts = legacy_installer_conflicts(path_value);
+    let active_binary_missing = active_binary
+        .as_deref()
+        .is_some_and(|path| !Path::new(path).exists());
+    let broken_symlink_active_binary = active_binary.as_deref().is_some_and(|path| {
+        let p = Path::new(path);
+        fs::symlink_metadata(p).map(|meta| meta.file_type().is_symlink()).unwrap_or(false)
+            && fs::metadata(p).is_err()
+    });
 
     InstallHealthReport {
         active_binary,
@@ -52,5 +67,7 @@ pub fn install_health_report(
         stale_wrapper_scripts,
         has_mismatched_wheel_binary_versions,
         legacy_installer_conflicts,
+        active_binary_missing,
+        broken_symlink_active_binary,
     }
 }

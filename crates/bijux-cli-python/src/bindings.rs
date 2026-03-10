@@ -7,7 +7,7 @@ use std::path::Path;
 
 use bijux_cli_contracts::ContractMarker;
 use bijux_cli_core::app::{run_app, AppRunResult};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::compatibility::{
     default_compatibility_paths, discover_compatibility_paths, CompatibilityConfig,
@@ -24,6 +24,37 @@ pub fn python_bridge_marker() -> ContractMarker {
 /// Return command tree introspection payload as JSON.
 #[must_use]
 pub fn command_tree_introspection_api() -> String {
+    let argv = vec![
+        "bijux".to_string(),
+        "inspect".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        "--no-pretty".to_string(),
+    ];
+    if let Ok(result) = run_app(&argv) {
+        if result.exit_code == 0 {
+            if let Ok(payload) = serde_json::from_str::<Value>(&result.stdout) {
+                let mut namespaces = payload
+                    .get("builtins")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|entry| entry.get("segments"))
+                    .filter_map(Value::as_array)
+                    .filter_map(|segments| segments.first())
+                    .filter_map(Value::as_str)
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>();
+                namespaces.sort();
+                namespaces.dedup();
+                return json!({
+                    "root": "bijux",
+                    "namespaces": namespaces,
+                })
+                .to_string();
+            }
+        }
+    }
     json!({
         "root": "bijux",
         "namespaces": ["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"],

@@ -19,7 +19,7 @@ pub enum CompletionShell {
 /// Generate deterministic completion content for an install hook.
 #[must_use]
 #[allow(dead_code)]
-pub fn completion_script(shell: CompletionShell) -> &'static str {
+pub(crate) fn completion_script(shell: CompletionShell) -> &'static str {
     match shell {
         CompletionShell::Bash => {
             "complete -W \"cli dev doctor version repl completion inspect\" bijux"
@@ -45,7 +45,7 @@ pub fn post_install_hint(binary_path: &str) -> String {
 /// Build completion file path for a shell under a home directory.
 #[must_use]
 #[allow(dead_code)]
-pub fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> PathBuf {
+pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> PathBuf {
     match shell {
         CompletionShell::Bash => home_dir.join(".bash_completion.d").join("bijux"),
         CompletionShell::Zsh => home_dir.join(".zsh").join("completions").join("_bijux"),
@@ -61,7 +61,7 @@ pub fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> PathBuf 
 /// Detect active shell from explicit value or process environment fallback.
 #[must_use]
 #[allow(dead_code)]
-pub fn detect_shell(shell_env: Option<&str>) -> Option<CompletionShell> {
+pub(crate) fn detect_shell(shell_env: Option<&str>) -> Option<CompletionShell> {
     let raw = shell_env.map(ToOwned::to_owned).or_else(|| std::env::var("SHELL").ok())?;
     let raw = raw.as_str();
     if raw.contains("bash") {
