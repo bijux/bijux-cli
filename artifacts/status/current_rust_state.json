@@ -25,10 +25,6 @@
       "to": "bijux-cli-routing"
     },
     {
-      "from": "bijux-cli-install",
-      "to": "bijux-cli-contracts"
-    },
-    {
       "from": "bijux-cli-output",
       "to": "bijux-cli-contracts"
     },
@@ -80,19 +76,19 @@
     },
     {
       "crate": "bijux-cli-core",
-      "public_api_count": 26
+      "public_api_count": 23
     },
     {
       "crate": "bijux-cli-install",
-      "public_api_count": 47
+      "public_api_count": 44
     },
     {
       "crate": "bijux-cli-output",
-      "public_api_count": 11
+      "public_api_count": 10
     },
     {
       "crate": "bijux-cli-plugin",
-      "public_api_count": 47
+      "public_api_count": 46
     },
     {
       "crate": "bijux-cli-python",
@@ -100,11 +96,11 @@
     },
     {
       "crate": "bijux-cli-repl",
-      "public_api_count": 36
+      "public_api_count": 35
     },
     {
       "crate": "bijux-cli-routing",
-      "public_api_count": 11
+      "public_api_count": 10
     }
   ],
   "docs_files": [
@@ -137,12 +133,12 @@
     "crates/bijux-cli-repl/API_STABILITY.md",
     "crates/bijux-cli-repl/README.md",
     "crates/bijux-cli-routing/README.md",
+    "docs/CONTRIBUTOR_ENGINEERING_RULES.md",
     "docs/HONEST_STATUS.md",
     "docs/KNOWN_GAPS.md",
-    "docs/NO_HYPE.md",
+    "docs/MAINTAINER_MILESTONE_CHECKLIST.md",
     "docs/STABILITY_AND_BREAKAGE.md",
-    "docs/WHAT_STILL_NEEDS_WORK.md",
-    "docs/WHAT_WE_DO_NOT_DO.md",
+    "docs/WHAT_WE_WONT_CLAIM.md",
     "docs/architecture/adr-cli-binary-ownership.md",
     "docs/architecture/bin-main-branch-audit.md",
     "docs/architecture/config-crate-ownership.md",
@@ -351,8 +347,15 @@
     "cli config unset missing",
     "cli hold interruptible",
     "cli paths",
+    "cli plugins doctor",
     "cli plugins inspect",
+    "cli plugins install utf-8",
     "cli plugins list",
+    "cli plugins scaffold python",
+    "cli plugins scaffold rust",
+    "cli plugins uninstall missing",
+    "cli plugins uninstall pyflow",
+    "cli plugins uninstall rustflow",
     "cli plugins unknown-subcommand",
     "cli self-test",
     "cli status",
@@ -378,6 +381,7 @@
     "dev cli contracts json",
     "dev cli crate-health",
     "dev cli docs",
+    "dev cli docs-audit",
     "dev cli docs-prune-plan",
     "dev cli doctor",
     "dev cli doctor json",
@@ -389,15 +393,19 @@
     "dev cli parity",
     "dev cli registry",
     "dev cli registry json",
+    "dev cli route-audit",
     "dev cli routes",
     "dev cli routes json",
     "dev cli runtime-identity",
+    "dev cli script-audit",
     "dev cli scripts-audit",
     "dev cli snapshots-audit",
     "dev cli state-audit",
     "dev cli state-audit json",
     "dev cli state-doctor",
     "dev cli state-doctor json",
+    "dev cli state-doctor nope",
+    "dev cli state-doctor text",
     "dev cli status",
     "doctor",
     "history",
@@ -427,143 +435,148 @@
     "status",
     "version"
   ],
-  "generated_at": "2026-03-09T23:06:36.301564+00:00",
+  "generated_at": "2026-03-10T00:13:38.330734+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-core/tests/config_parity.rs",
-      "line": 261
+      "line": 258
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-core/tests/config_parity.rs",
-      "line": 287
+      "line": 284
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-core/tests/config_parity.rs",
-      "line": 407
+      "line": 404
     },
     {
       "assumption": "env::var_os(\"HOME\").map(std::path::PathBuf::from)",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 55
+      "line": 56
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_root_parity.rs",
-      "line": 175
+      "line": 153
     },
     {
       "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_root_parity.rs",
-      "line": 190
+      "line": 168
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_get_parity.rs",
-      "line": 237
+      "line": 238
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", config_path.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_get_parity.rs",
-      "line": 253
+      "line": 256
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", config_path.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_get_parity.rs",
-      "line": 278
-    },
-    {
-      "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
-      "file": "crates/bijux-cli-bin/tests/config_python_compatibility.rs",
-      "line": 53
+      "line": 283
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_python_compatibility.rs",
-      "line": 124
+      "line": 47
+    },
+    {
+      "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
+      "file": "crates/bijux-cli-bin/tests/config_python_compatibility.rs",
+      "line": 118
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-bin/tests/config_export_load_parity.rs",
-      "line": 200
+      "line": 206
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_export_load_parity.rs",
-      "line": 272
+      "line": 278
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", active.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_export_load_parity.rs",
-      "line": 298
+      "line": 306
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", active.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_export_load_parity.rs",
-      "line": 328
+      "line": 333
     },
     {
       "assumption": "let envs = [(\"HOME\", home.display().to_string())];",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 43
+      "line": 40
     },
     {
       "assumption": "&[(\"HOME\", home.display().to_string())],",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 77
+      "line": 74
+    },
+    {
+      "assumption": "run_with_env(&[\"memory\", \"list\", \"--quiet\"], &[(\"HOME\", home.display().to_string())]);",
+      "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
+      "line": 81
     },
     {
       "assumption": "&[(\"HOME\", home.display().to_string())],",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 85
+      "line": 97
     },
     {
       "assumption": "&[(\"HOME\", home.display().to_string())],",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 102
-    },
-    {
-      "assumption": "&[(\"HOME\", home.display().to_string())],",
-      "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 121
+      "line": 116
     },
     {
       "assumption": "(\"HOME\", home.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 143
+      "line": 146
     },
     {
       "assumption": ".env(\"HOME\", home.display().to_string())",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 169
+      "line": 172
     },
     {
       "assumption": "&[(\"HOME\", home.display().to_string())],",
       "file": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "line": 175
+      "line": 178
+    },
+    {
+      "assumption": "&[(\"HOME\", home.display().to_string())],",
+      "file": "crates/bijux-cli-bin/tests/diagnostics_parity.rs",
+      "line": 225
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-bin/tests/config_set_parity.rs",
-      "line": 177
+      "line": 186
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_set_parity.rs",
-      "line": 215
+      "line": 224
     },
     {
       "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_set_parity.rs",
-      "line": 233
+      "line": 242
     },
     {
       "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_set_parity.rs",
-      "line": 265
+      "line": 272
     },
     {
       "assumption": "let home = std::env::var(\"HOME\").unwrap_or_default();",
@@ -578,32 +591,32 @@
     {
       "assumption": "let home = std::env::var(\"HOME\").unwrap_or_else(|_| \".\".to_string());",
       "file": "crates/bijux-cli-bin/tests/ported_command_goldens.rs",
-      "line": 50
+      "line": 48
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
-      "line": 156
+      "line": 136
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
       "file": "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
-      "line": 190
+      "line": 165
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", config_path.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
-      "line": 207
+      "line": 185
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", config_path.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
-      "line": 226
+      "line": 208
     },
     {
-      "assumption": "&[(\"BIJUXCLI_CONFIG\", config_path.display().to_string()), (\"HOME\", temp.display().to_string()), (\"NO_COLOR\", \"1\".to_string())],",
+      "assumption": "(\"HOME\", temp.display().to_string()),",
       "file": "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
-      "line": 245
+      "line": 231
     },
     {
       "assumption": "#[cfg(unix)]",
@@ -621,24 +634,19 @@
       "line": 162
     },
     {
-      "assumption": "let home = temp.path().join(\"XDG DATA HOME\");",
-      "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 191
-    },
-    {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 206
+      "line": 190
     },
     {
       "assumption": "#[cfg(windows)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 208
+      "line": 192
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 230
+      "line": 215
     },
     {
       "assumption": "- Predictable deprecation windows reduce CI breakage and migration cost.",
@@ -815,12 +823,18 @@
     "artifacts/parity/binary_vs_python_bridge_parity_report.json",
     "artifacts/parity/command_parity_diffs.json",
     "artifacts/parity/command_parity_matrix.json",
+    "artifacts/parity/command_parity_summary.txt",
     "artifacts/parity/config_parity_report.json",
     "artifacts/parity/history_parity_report.json",
     "artifacts/parity/memory_parity_report.json",
     "artifacts/parity/rust_python_parity_report.json",
     "artifacts/rust-parity/config-parity-report.md",
     "artifacts/rust-parity/repl-parity-report.md",
+    "artifacts/status/status_install_packaging_parity_coverage.json",
+    "artifacts/status/status_known_parity_gaps.json",
+    "artifacts/status/status_python_bridge_parity_coverage.json",
+    "artifacts/status/status_repl_parity_coverage.json",
+    "artifacts/status/top_20_missing_parity_cases.json",
     "crates/bijux-cli-bin/tests/config_export_load_parity.rs",
     "crates/bijux-cli-bin/tests/config_get_parity.rs",
     "crates/bijux-cli-bin/tests/config_mutation_parity.rs",
@@ -901,10 +915,7 @@
     "memory get",
     "memory set",
     "plugins",
-    "plugins info",
-    "plugins install",
-    "plugins scaffold",
-    "plugins uninstall"
+    "plugins info"
   ],
   "runtime_identity_rules": {
     "canonical_user_binary": "bijux",
@@ -957,6 +968,7 @@
       "dev contracts",
       "dev crate-health",
       "dev docs",
+      "dev docs-audit",
       "dev docs-prune-plan",
       "dev doctor",
       "dev env",
@@ -965,8 +977,10 @@
       "dev package-health",
       "dev parity",
       "dev registry",
+      "dev route-audit",
       "dev routes",
       "dev runtime-identity",
+      "dev script-audit",
       "dev scripts-audit",
       "dev snapshots-audit",
       "dev state-audit",
@@ -975,11 +989,15 @@
       "doctor",
       "inspect",
       "plugins check",
+      "plugins doctor",
       "plugins explain",
       "plugins inspect",
+      "plugins install",
       "plugins list",
       "plugins reserved-names",
+      "plugins scaffold",
       "plugins schema",
+      "plugins uninstall",
       "plugins where",
       "repl",
       "version"
@@ -998,11 +1016,15 @@
       "cli inspect",
       "cli paths",
       "cli plugins check",
+      "cli plugins doctor",
       "cli plugins explain",
       "cli plugins inspect",
+      "cli plugins install",
       "cli plugins list",
       "cli plugins reserved-names",
+      "cli plugins scaffold",
       "cli plugins schema",
+      "cli plugins uninstall",
       "cli plugins where",
       "cli repl",
       "cli self-test",
@@ -1012,6 +1034,7 @@
       "dev cli contracts",
       "dev cli crate-health",
       "dev cli docs",
+      "dev cli docs-audit",
       "dev cli docs-prune-plan",
       "dev cli doctor",
       "dev cli env",
@@ -1020,8 +1043,10 @@
       "dev cli package-health",
       "dev cli parity",
       "dev cli registry",
+      "dev cli route-audit",
       "dev cli routes",
       "dev cli runtime-identity",
+      "dev cli script-audit",
       "dev cli scripts-audit",
       "dev cli snapshots-audit",
       "dev cli state-audit",
@@ -1032,8 +1057,12 @@
       "memory",
       "memory list",
       "plugins check",
+      "plugins doctor",
       "plugins inspect",
+      "plugins install",
       "plugins list",
+      "plugins scaffold",
+      "plugins uninstall",
       "sleep",
       "status"
     ],
@@ -1051,11 +1080,15 @@
       "cli inspect",
       "cli paths",
       "cli plugins check",
+      "cli plugins doctor",
       "cli plugins explain",
       "cli plugins inspect",
+      "cli plugins install",
       "cli plugins list",
       "cli plugins reserved-names",
+      "cli plugins scaffold",
       "cli plugins schema",
+      "cli plugins uninstall",
       "cli plugins where",
       "cli repl",
       "cli self-test",
@@ -1073,6 +1106,7 @@
       "dev cli contracts",
       "dev cli crate-health",
       "dev cli docs",
+      "dev cli docs-audit",
       "dev cli docs-prune-plan",
       "dev cli doctor",
       "dev cli env",
@@ -1081,8 +1115,10 @@
       "dev cli package-health",
       "dev cli parity",
       "dev cli registry",
+      "dev cli route-audit",
       "dev cli routes",
       "dev cli runtime-identity",
+      "dev cli script-audit",
       "dev cli scripts-audit",
       "dev cli snapshots-audit",
       "dev cli state-audit",
@@ -1091,6 +1127,7 @@
       "dev contracts",
       "dev crate-health",
       "dev docs",
+      "dev docs-audit",
       "dev docs-prune-plan",
       "dev doctor",
       "dev env",
@@ -1099,8 +1136,10 @@
       "dev package-health",
       "dev parity",
       "dev registry",
+      "dev route-audit",
       "dev routes",
       "dev runtime-identity",
+      "dev script-audit",
       "dev scripts-audit",
       "dev snapshots-audit",
       "dev state-audit",
@@ -1113,11 +1152,15 @@
       "memory",
       "memory list",
       "plugins check",
+      "plugins doctor",
       "plugins explain",
       "plugins inspect",
+      "plugins install",
       "plugins list",
       "plugins reserved-names",
+      "plugins scaffold",
       "plugins schema",
+      "plugins uninstall",
       "plugins where",
       "repl",
       "sleep",
@@ -1226,7 +1269,6 @@
     }
   ],
   "scripts_outside_dev_cli": [
-    "scripts/__init__.py",
     "scripts/capture_python_behavior.py",
     "scripts/check-package-metadata.py",
     "scripts/check-towncrier-fragment.sh",
@@ -1252,16 +1294,22 @@
     "scripts/parity/generate_command_parity_matrix.py",
     "scripts/parity/run_rust_python_parity.py",
     "scripts/status/check_runtime_unity.py",
+    "scripts/status/check_status_reports_stale.py",
+    "scripts/status/enforce_dev_cli_automation_policy.py",
     "scripts/status/enforce_release_truth_gates.py",
+    "scripts/status/enforce_test_quality_gates.py",
     "scripts/status/generate_crate_boundary_metrics.py",
     "scripts/status/generate_current_rust_state.py",
     "scripts/status/generate_dev_cli_inventory.py",
     "scripts/status/generate_docs_audit.py",
     "scripts/status/generate_flaky_test_labels.py",
     "scripts/status/generate_plugin_state_report.py",
+    "scripts/status/generate_public_api_reports.py",
     "scripts/status/generate_state_parity_reports.py",
+    "scripts/status/generate_status_reports.py",
     "scripts/status/generate_test_quality_audit.py",
     "scripts/status/generate_truth_milestone_status.py",
+    "scripts/status/warn_new_unused_public_api.py",
     "scripts/verify-install-channels.sh"
   ],
   "snapshot_covered_commands": [
@@ -1275,8 +1323,12 @@
     "cli config unset",
     "cli inspect",
     "cli paths",
+    "cli plugins doctor",
     "cli plugins inspect",
+    "cli plugins install",
     "cli plugins list",
+    "cli plugins scaffold",
+    "cli plugins uninstall",
     "cli self test",
     "cli status",
     "completion",
@@ -1299,9 +1351,13 @@
     "memory",
     "memory list",
     "plugins",
+    "plugins doctor",
     "plugins explain",
+    "plugins install",
     "plugins reserved names",
+    "plugins scaffold",
     "plugins schema",
+    "plugins uninstall",
     "plugins where",
     "repl",
     "root",
@@ -1344,8 +1400,12 @@
     "crates/bijux-cli-bin/tests/snapshots/help_cli_config_get.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_config_set.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_paths.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_doctor.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_inspect.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_install.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_list.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_scaffold.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_cli_plugins_uninstall.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_self_test.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_status.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_completion.txt",
@@ -1365,9 +1425,13 @@
     "crates/bijux-cli-bin/tests/snapshots/help_inspect.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_memory.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_plugins.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_plugins_doctor.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_plugins_explain.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_plugins_install.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_plugins_reserved_names.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_plugins_scaffold.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_plugins_schema.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_plugins_uninstall.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_plugins_where.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_repl.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_root.txt",
@@ -1435,8 +1499,18 @@
     "cli config unset missing",
     "cli hold interruptible",
     "cli paths",
+    "cli plugins doctor",
     "cli plugins inspect",
+    "cli plugins install",
+    "cli plugins install utf-8",
     "cli plugins list",
+    "cli plugins scaffold",
+    "cli plugins scaffold python",
+    "cli plugins scaffold rust",
+    "cli plugins uninstall",
+    "cli plugins uninstall missing",
+    "cli plugins uninstall pyflow",
+    "cli plugins uninstall rustflow",
     "cli plugins unknown-subcommand",
     "cli self-test",
     "cli status",
@@ -1464,6 +1538,7 @@
     "dev cli contracts text",
     "dev cli crate-health",
     "dev cli docs",
+    "dev cli docs-audit",
     "dev cli docs-prune-plan",
     "dev cli doctor",
     "dev cli doctor json",
@@ -1478,11 +1553,13 @@
     "dev cli registry",
     "dev cli registry json",
     "dev cli registry text",
+    "dev cli route-audit",
     "dev cli routes",
     "dev cli routes json",
     "dev cli routes text",
     "dev cli runtime-identity",
     "dev cli runtime-identity text",
+    "dev cli script-audit",
     "dev cli scripts-audit",
     "dev cli snapshots-audit",
     "dev cli state-audit",
@@ -1490,6 +1567,7 @@
     "dev cli state-audit text",
     "dev cli state-doctor",
     "dev cli state-doctor json",
+    "dev cli state-doctor nope",
     "dev cli state-doctor text",
     "dev cli status",
     "dev doctor",
@@ -1512,11 +1590,15 @@
     "memory list yaml",
     "plugins",
     "plugins check sample",
+    "plugins doctor",
     "plugins explain",
     "plugins inspect",
+    "plugins install",
     "plugins list",
     "plugins reserved-names",
+    "plugins scaffold",
     "plugins schema",
+    "plugins uninstall",
     "plugins where",
     "status",
     "status doctor",
