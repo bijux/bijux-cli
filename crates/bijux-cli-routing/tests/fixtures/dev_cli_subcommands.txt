@@ -1,3 +1,4 @@
+dev cli scripts
 dev cli inventory
 dev cli routes
 dev cli route-audit

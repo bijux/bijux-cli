@@ -18,6 +18,7 @@ pub mod route_audit;
 pub mod routes;
 pub mod runtime_identity;
 pub mod script_audit;
+pub mod scripts;
 pub mod state_audit;
 pub mod status;
 mod types;

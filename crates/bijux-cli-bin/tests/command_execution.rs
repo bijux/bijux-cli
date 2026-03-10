@@ -136,6 +136,14 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "plugin-health"], "machine_report"),
         (vec!["dev", "cli", "status"], "current_rust_state"),
         (vec!["dev", "cli", "script-audit"], "scripts"),
+        (vec!["dev", "cli", "scripts", "remaining"], "remaining_root_scripts"),
+        (vec!["dev", "cli", "scripts", "migrated"], "migrated"),
+        (vec!["dev", "cli", "scripts", "diff"], "remaining"),
+        (vec!["dev", "cli", "scripts", "audit"], "migrated"),
+        (vec!["dev", "cli", "scripts", "package-metadata"], "status"),
+        (vec!["dev", "cli", "scripts", "e2e-contract"], "status"),
+        (vec!["dev", "cli", "scripts", "pip-audit"], "status"),
+        (vec!["dev", "cli", "scripts", "capture-python-behavior"], "status"),
         (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
         (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),
         (vec!["dev", "cli", "crate-health"], "crate_metrics"),
@@ -213,6 +221,28 @@ fn crate_health_reports_usage_error_for_unknown_flag() {
     let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
     assert!(stderr.contains("Usage: bijux"));
     assert!(stderr.contains("Commands:"));
+}
+
+#[test]
+fn scripts_provenance_statement_generates_output_file() {
+    let temp = env::temp_dir().join(format!("bijux-provenance-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&temp);
+    fs::create_dir_all(&temp).expect("create temp dir");
+    let stdout = run(&[
+        "dev",
+        "cli",
+        "scripts",
+        "provenance-statement",
+        "--tag",
+        "v0.0.0-test",
+        "--output-dir",
+        temp.to_str().expect("utf-8 temp"),
+    ]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert_eq!(payload["status"], "ok");
+    let file = payload["file"].as_str().expect("file path");
+    assert!(std::path::Path::new(file).exists(), "provenance file should exist");
+    fs::remove_dir_all(&temp).expect("cleanup temp");
 }
 
 #[test]

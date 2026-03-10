@@ -21,6 +21,7 @@ const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "schema",
 ];
 const DEV_CLI_SUBCOMMANDS: &[&str] = &[
+    "scripts",
     "inventory",
     "routes",
     "registry",
@@ -46,6 +47,17 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "di",
     "list-products",
     "list-plugins",
+];
+const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
+    "remaining",
+    "migrated",
+    "diff",
+    "audit",
+    "package-metadata",
+    "e2e-contract",
+    "pip-audit",
+    "capture-python-behavior",
+    "provenance-statement",
 ];
 const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
@@ -139,6 +151,14 @@ pub fn is_known_route(path: &[String]) -> bool {
         [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" || a == "atlas" => true,
         [a, b, c] if a == "cli" && b == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => true,
         [a, b, c] if a == "dev" && b == "cli" && contains(DEV_CLI_SUBCOMMANDS, c) => true,
+        [a, b, c, d]
+            if a == "dev"
+                && b == "cli"
+                && c == "scripts"
+                && contains(DEV_CLI_SCRIPTS_SUBCOMMANDS, d) =>
+        {
+            true
+        }
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => true,
         _ => false,
     }

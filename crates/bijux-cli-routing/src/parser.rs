@@ -199,6 +199,25 @@ pub fn root_command() -> Command {
         .subcommand(plugins_group.clone());
 
     let dev_cli_group = Command::new("cli")
+        .subcommand(
+            Command::new("scripts")
+                .subcommand(Command::new("remaining"))
+                .subcommand(Command::new("migrated"))
+                .subcommand(Command::new("diff"))
+                .subcommand(Command::new("audit"))
+                .subcommand(Command::new("package-metadata"))
+                .subcommand(Command::new("e2e-contract"))
+                .subcommand(
+                    Command::new("pip-audit")
+                        .arg(Arg::new("report-path").long("report-path").num_args(1)),
+                )
+                .subcommand(Command::new("capture-python-behavior"))
+                .subcommand(
+                    Command::new("provenance-statement")
+                        .arg(Arg::new("tag").long("tag").num_args(1).required(true))
+                        .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
+                ),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

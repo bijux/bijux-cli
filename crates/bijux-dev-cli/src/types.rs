@@ -59,6 +59,8 @@ pub enum DevCliCommand {
     StateDoctor,
     /// `bijux dev cli docs-audit`
     DocsAudit,
+    /// `bijux dev cli scripts`
+    Scripts,
     /// `bijux dev cli script-audit`
     ScriptAudit,
     /// `bijux dev cli crate-health`
@@ -105,6 +107,7 @@ impl DevCliCommand {
             Self::StateAudit => "dev cli state-audit",
             Self::StateDoctor => "dev cli state-doctor",
             Self::DocsAudit => "dev cli docs-audit",
+            Self::Scripts => "dev cli scripts",
             Self::ScriptAudit => "dev cli script-audit",
             Self::CrateHealth => "dev cli crate-health",
             Self::RouteAudit => "dev cli route-audit",
@@ -136,6 +139,7 @@ impl DevCliCommand {
             | Self::StateDoctor
             | Self::PluginHealth => DevCliCommandGroup::Runtime,
             Self::DocsAudit
+            | Self::Scripts
             | Self::ScriptAudit
             | Self::CrateHealth
             | Self::SnapshotsAudit
@@ -228,6 +232,12 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
         },
         DevCliCommandMetadata {
             command: DevCliCommand::DocsAudit,
+            group: DevCliCommandGroup::Audit,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Scripts,
             group: DevCliCommandGroup::Audit,
             visible: true,
             owner: "bijux-dev-cli",

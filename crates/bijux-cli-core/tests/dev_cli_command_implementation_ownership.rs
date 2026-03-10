@@ -39,4 +39,13 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         assert!(source.contains(&branch), "missing route branch for {subcommand}");
         assert!(source.contains(delegate), "missing dev-cli delegate for {subcommand}");
     }
+
+    assert!(
+        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"scripts\""),
+        "missing delegated scripts command namespace"
+    );
+    assert!(
+        source.contains("dev_scripts::build_audit_report"),
+        "scripts command namespace must delegate to bijux-dev-cli scripts module"
+    );
 }

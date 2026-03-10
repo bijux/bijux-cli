@@ -33,8 +33,8 @@ use bijux_dev_cli::{
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     package_health as dev_package_health, parity as dev_parity, registry as dev_registry,
     route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
-    script_audit as dev_script_audit, state_audit as dev_state_audit, status as dev_status,
-    ReportContext,
+    script_audit as dev_script_audit, scripts as dev_scripts, state_audit as dev_state_audit,
+    status as dev_status, ReportContext,
 };
 use serde_json::{json, Value};
 
@@ -494,6 +494,14 @@ fn route_response(
                     || b == "explain"
                     || b == "schema") =>
         {
+            RouteTarget::BuiltIn
+        }
+        [a, b, c] if a == "dev" && b == "cli" => {
+            let _ = c;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" => {
+            let _ = d;
             RouteTarget::BuiltIn
         }
         _ => registry.resolve(normalized_path)?,
@@ -1164,6 +1172,44 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor" => {
             let diagnosis = state_diagnostics(&paths);
             dev_state_audit::build_doctor_report(diagnosis)
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "remaining" => {
+            dev_scripts::build_remaining_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "migrated" => {
+            dev_scripts::build_migrated_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "diff" => {
+            dev_scripts::build_diff_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "audit" => {
+            dev_scripts::build_audit_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "package-metadata" => {
+            dev_scripts::build_package_metadata_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "e2e-contract" => {
+            dev_scripts::build_e2e_contract_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "pip-audit" => {
+            dev_scripts::build_pip_audit_report(
+                &workspace_root(),
+                command_option_value(argv, "--report-path").as_deref(),
+            )
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "scripts" && d == "capture-python-behavior" =>
+        {
+            dev_scripts::build_python_capture_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "scripts" && d == "provenance-statement" =>
+        {
+            let tag = command_option_value(argv, "--tag")
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: --tag required"))?;
+            let output_dir = command_option_value(argv, "--output-dir")
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: --output-dir required"))?;
+            dev_scripts::build_provenance_statement_report(&tag, Path::new(&output_dir))
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

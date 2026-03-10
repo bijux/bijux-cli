@@ -108,6 +108,7 @@ impl Default for RouteRegistry {
             "dev cli parity".to_string(),
             "dev cli docs".to_string(),
             "dev cli docs-audit".to_string(),
+            "dev cli scripts".to_string(),
             "dev cli plugin-health".to_string(),
             "dev cli status".to_string(),
             "dev cli script-audit".to_string(),
