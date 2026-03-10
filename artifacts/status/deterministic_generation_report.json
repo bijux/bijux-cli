@@ -1,0 +1,27 @@
+{
+  "checks": [
+    {
+      "details": "cargo test -p bijux-cli-contracts --test schema_snapshots",
+      "name": "schema_snapshots",
+      "ok": true
+    },
+    {
+      "details": "dev cli routes --json output is byte-identical across repeated runs",
+      "name": "command_tree_generation",
+      "ok": true
+    },
+    {
+      "details": "command_parity_matrix.json hash is stable across repeated generation",
+      "hashes": [
+        "e090b61899fef66725bbc7dd51ac2eacbc8de92072113f3e49a97a233305b744",
+        "e090b61899fef66725bbc7dd51ac2eacbc8de92072113f3e49a97a233305b744"
+      ],
+      "name": "parity_artifact_generation",
+      "ok": true
+    }
+  ],
+  "failures": [],
+  "generated_at": "2026-03-10T02:24:20.266923+00:00",
+  "generator": "scripts/status/check_deterministic_generation.py",
+  "ok": true
+}

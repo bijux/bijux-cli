@@ -1,0 +1,10 @@
+{
+  "binary": {
+    "exists": true,
+    "path": "target/release/bijux-rs",
+    "sha256": "b19b644ebe618c4bb2ec3a3599fa35708072252967b810a6ae5a8c2287d82a17",
+    "size_bytes": 1930368
+  },
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_release_build_reports.py"
+}

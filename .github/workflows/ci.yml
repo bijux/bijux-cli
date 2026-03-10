@@ -280,6 +280,7 @@ jobs:
           python3 scripts/status/generate_packaging_ambiguity_reports.py
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
+          python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
           python3 scripts/status/generate_product_mount_readiness_reports.py
@@ -343,6 +344,14 @@ jobs:
       - name: Release truth gate
         run: |
           python3 scripts/status/enforce_release_truth_gates.py --enforce
+
+      - name: Deterministic generation gate
+        run: |
+          python3 scripts/status/check_deterministic_generation.py
+
+      - name: Release build consistency gate
+        run: |
+          python3 scripts/status/check_release_build_consistency.py
 
       - name: Test quality policy gate
         run: |
@@ -597,6 +606,15 @@ jobs:
             artifacts/status/performance_report.txt
             artifacts/status/performance_regression_budget.json
             artifacts/status/performance_benchmark_policy.json
+            artifacts/status/release_binary_size_report.json
+            artifacts/status/debug_binary_size_report.json
+            artifacts/status/release_binary_size_contributors.json
+            artifacts/status/release_dependency_inventory.json
+            artifacts/status/license_inventory.json
+            artifacts/status/reproducible_build_assumptions.json
+            artifacts/status/deterministic_generation_report.json
+            artifacts/status/release_build_consistency_report.json
+            artifacts/status/release_artifact_manifest.json
             artifacts/status/release_evidence_bundle.json
             artifacts/status/release_status_manifest.json
             artifacts/status/release_truth_report.json

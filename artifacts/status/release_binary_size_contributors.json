@@ -1,0 +1,96 @@
+{
+  "disabled_default_features": [
+    "clap in bijux-cli-core",
+    "clap in bijux-cli-routing",
+    "pyo3 in bijux-cli-python"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_release_build_reports.py",
+  "removed_dependencies_for_size": [
+    "strsim",
+    "anyhow (from bijux-cli-python)",
+    "thiserror (from bijux-cli-python)"
+  ],
+  "top_dependency_contributors": [
+    {
+      "crate": "proc-macro2",
+      "hits": 7
+    },
+    {
+      "crate": "quote",
+      "hits": 6
+    },
+    {
+      "crate": "syn",
+      "hits": 5
+    },
+    {
+      "crate": "serde",
+      "hits": 5
+    },
+    {
+      "crate": "serde_json",
+      "hits": 5
+    },
+    {
+      "crate": "thiserror",
+      "hits": 4
+    },
+    {
+      "crate": "futures-core",
+      "hits": 4
+    },
+    {
+      "crate": "futures-sink",
+      "hits": 3
+    },
+    {
+      "crate": "futures-task",
+      "hits": 3
+    },
+    {
+      "crate": "unicode-ident",
+      "hits": 2
+    },
+    {
+      "crate": "serde_core",
+      "hits": 2
+    },
+    {
+      "crate": "itoa",
+      "hits": 2
+    },
+    {
+      "crate": "memchr",
+      "hits": 2
+    },
+    {
+      "crate": "semver",
+      "hits": 2
+    },
+    {
+      "crate": "generic-array",
+      "hits": 2
+    },
+    {
+      "crate": "typenum",
+      "hits": 2
+    },
+    {
+      "crate": "clap",
+      "hits": 2
+    },
+    {
+      "crate": "anstyle",
+      "hits": 2
+    },
+    {
+      "crate": "utf8parse",
+      "hits": 2
+    },
+    {
+      "crate": "futures-channel",
+      "hits": 2
+    }
+  ]
+}

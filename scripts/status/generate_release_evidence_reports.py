@@ -66,6 +66,12 @@ def main() -> None:
     plugin_hardening = STATUS / "plugin_lifecycle_failure_injection_report.json"
     state_hardening = STATUS / "state_resilience_summary.json"
     performance = STATUS / "performance_report.json"
+    release_size = STATUS / "release_binary_size_report.json"
+    dependency_inventory = STATUS / "release_dependency_inventory.json"
+    reproducible = STATUS / "reproducible_build_assumptions.json"
+    deterministic_generation = STATUS / "deterministic_generation_report.json"
+    release_build_consistency = STATUS / "release_build_consistency_report.json"
+    release_artifact_manifest = STATUS / "release_artifact_manifest.json"
     known_gaps = ROOT / "docs" / "KNOWN_GAPS.md"
 
     release_evidence_paths = [
@@ -75,6 +81,12 @@ def main() -> None:
         plugin_hardening,
         state_hardening,
         performance,
+        release_size,
+        dependency_inventory,
+        reproducible,
+        deterministic_generation,
+        release_build_consistency,
+        release_artifact_manifest,
         known_gaps,
     ]
 
