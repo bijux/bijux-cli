@@ -143,7 +143,6 @@ include = [
   "LICENSE",
   "LICENSES/**",
   "REUSE.toml",
-  "CITATION.cff",
   "src/bijux_cli/py.typed",
 ]
 

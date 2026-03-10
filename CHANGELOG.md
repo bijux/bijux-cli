@@ -195,7 +195,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Citation**
 
-    * Validated `CITATION.cff` and added export to BibTeX/RIS/EndNote formats via `make citation`.
+    * Validated software citation metadata and added export to BibTeX/RIS/EndNote formats.
 
 * **Makefile architecture**
 
@@ -220,7 +220,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Packaging / PyPI page**
 
     * Built dynamic long description via **hatch-fancy-pypi-readme** from **README.md** and **CHANGELOG.md** for PyPI/TestPyPI.
-    * Packaged with `LICENSES/`, `REUSE.toml`, `CITATION.cff`, and `py.typed` included in source distributions.
+    * Packaged with `LICENSES/`, `REUSE.toml`, and `py.typed` included in source distributions.
 
 ### Changed
 

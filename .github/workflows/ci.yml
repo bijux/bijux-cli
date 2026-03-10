@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [quality, security, docs, build, api, sbom, citation]
+        env: [quality, security, docs, build, api, sbom]
 
     steps:
       - uses: actions/checkout@v4
@@ -204,16 +204,6 @@ jobs:
           path: artifacts/sbom/**
           if-no-files-found: ignore
           retention-days: 30
-
-      # --- Citation ---
-      - name: Upload citation
-        if: ${{ matrix.env == 'citation' && hashFiles('artifacts/citation/**') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: citation
-          path: artifacts/citation/**
-          if-no-files-found: ignore
-          retention-days: 14
 
       # --- API (full logs) ---
       - name: Upload API artifacts (full)

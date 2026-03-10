@@ -18,7 +18,6 @@ RM                    := rm -rf
 include makefiles/macro.mk
 include makefiles/api.mk
 include makefiles/build.mk
-include makefiles/citation.mk
 include makefiles/cargo-rs.mk
 include makefiles/dictionary.mk
 include makefiles/docs.mk
@@ -56,11 +55,11 @@ clean-soft:
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
 	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
-	  docs/reference artifacts usage_test usage_test_artifacts citation.bib .cache || true
+	  docs/reference artifacts usage_test usage_test_artifacts .cache || true
 	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
 # Pipelines
-all: clean install test lint quality security api docs build sbom citation
+all: clean install test lint quality security api docs build sbom
 	@echo "✔ All targets completed"
 
 # Run independent checks in parallel
@@ -108,7 +107,7 @@ clean: ## Remove virtualenv, caches, build, and artifacts
 clean-soft: ## Remove build artifacts but keep .venv
 install: ## Install project in editable mode into .venv
 bootstrap: ## Setup environment & install git hooks
-all: ## Run full pipeline (clean → citation)
+all: ## Run full pipeline (clean → sbom)
 dev-cli-status: ## Show maintainer status report via bijux dev cli
 dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
 dev-cli-parity: ## Show parity summary via bijux dev cli
