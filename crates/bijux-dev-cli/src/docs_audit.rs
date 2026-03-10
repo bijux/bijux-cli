@@ -28,10 +28,7 @@ fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn read_json_if_exists(path: &Path) -> Value {

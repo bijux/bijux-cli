@@ -33,10 +33,7 @@ fn collect_files(root: &Path) -> Vec<PathBuf> {
 }
 
 fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn stale_generated_artifacts(root: &Path) -> Vec<String> {
@@ -47,19 +44,14 @@ fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     collect_files(&status)
         .into_iter()
         .filter(|path| {
-            path.extension()
-                .and_then(|ext| ext.to_str())
-                .is_some_and(|ext| ext == "tmp")
-                || path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| {
-                        name.contains("stale")
-                            || Path::new(name)
-                                .extension()
-                                .and_then(|ext| ext.to_str())
-                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                    })
+            path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "tmp")
+                || path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
+                    name.contains("stale")
+                        || Path::new(name)
+                            .extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                })
         })
         .map(|path| rel(&path, root))
         .collect()
@@ -71,16 +63,13 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
         .filter(|path| {
             let rel_path = rel(path, root);
             rel_path.contains("/tests/snapshots/")
-                && path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| {
-                        name.contains(".old.")
-                            || Path::new(name)
-                                .extension()
-                                .and_then(|ext| ext.to_str())
-                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                    })
+                && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
+                    name.contains(".old.")
+                        || Path::new(name)
+                            .extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                })
         })
         .map(|path| rel(&path, root))
         .collect()
@@ -127,9 +116,7 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
             let text = fs::read_to_string(&path).ok()?;
             for token in text.split_whitespace() {
                 if token.starts_with("docs/")
-                    && !root
-                        .join(token.trim_matches(|c| c == ')' || c == '('))
-                        .exists()
+                    && !root.join(token.trim_matches(|c| c == ')' || c == '(')).exists()
                 {
                     return Some(format!("{} -> {}", rel(&path, root), token));
                 }
@@ -177,10 +164,7 @@ pub fn build_generated_report(workspace_root: &Path) -> Value {
             .into_iter()
             .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
             .filter(|path| {
-                let name = path
-                    .file_name()
-                    .and_then(|v| v.to_str())
-                    .unwrap_or_default();
+                let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
                 name.starts_with("orphan_")
             })
             .map(|path| rel(&path, workspace_root))
@@ -237,14 +221,12 @@ pub fn build_health_report(workspace_root: &Path) -> Value {
     let inventories = build_inventories_report(workspace_root);
     let stale = build_stale_report(workspace_root);
     let drift = build_drift_report(workspace_root);
-    let stale_crate_api_docs = if workspace_root
-        .join("artifacts/status/stale_crate_api_docs.json")
-        .exists()
-    {
-        json!(["artifacts/status/stale_crate_api_docs.json"])
-    } else {
-        json!([])
-    };
+    let stale_crate_api_docs =
+        if workspace_root.join("artifacts/status/stale_crate_api_docs.json").exists() {
+            json!(["artifacts/status/stale_crate_api_docs.json"])
+        } else {
+            json!([])
+        };
     json!({
         "repo_health": {
             "generated": generated,
@@ -267,10 +249,7 @@ mod tests {
     fn temp_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
             "bijux-repo-health-{name}-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         root
@@ -290,15 +269,9 @@ mod tests {
     #[test]
     fn repo_health_detects_orphan_generated_outputs() {
         let root = temp_root("orphan");
-        fs::write(
-            root.join("artifacts/status/orphan_generated_output.json"),
-            "{}",
-        )
-        .expect("write");
+        fs::write(root.join("artifacts/status/orphan_generated_output.json"), "{}").expect("write");
         let generated = build_generated_report(&root);
-        let orphan = generated["orphan_generated_outputs"]
-            .as_array()
-            .expect("orphan");
+        let orphan = generated["orphan_generated_outputs"].as_array().expect("orphan");
         assert!(!orphan.is_empty());
     }
 }

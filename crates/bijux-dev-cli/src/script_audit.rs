@@ -29,10 +29,7 @@ fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn classify_script(path: &str) -> &'static str {
@@ -121,52 +118,31 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         }));
     }
 
-    let script_summary = scripts
-        .iter()
-        .fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
-            let key = item
-                .get("classification")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown")
-                .to_string();
-            *acc.entry(key).or_insert(0) += 1;
-            acc
-        });
+    let script_summary = scripts.iter().fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
+        let key =
+            item.get("classification").and_then(Value::as_str).unwrap_or("unknown").to_string();
+        *acc.entry(key).or_insert(0) += 1;
+        acc
+    });
     let remaining_script_only_behaviors: Vec<String> = scripts
         .iter()
         .filter_map(|item| {
-            let classification = item
-                .get("classification")
-                .and_then(Value::as_str)
-                .unwrap_or("");
+            let classification = item.get("classification").and_then(Value::as_str).unwrap_or("");
             if classification != "keep" {
                 return None;
             }
-            item.get("path")
-                .and_then(Value::as_str)
-                .map(ToString::to_string)
+            item.get("path").and_then(Value::as_str).map(ToString::to_string)
         })
         .collect();
     let remaining_task_runner_only_behaviors: Vec<String> = makefiles
         .iter()
-        .flat_map(|mk| {
-            mk.get("targets")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default()
-        })
+        .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
         .filter_map(|target| {
-            let classification = target
-                .get("classification")
-                .and_then(Value::as_str)
-                .unwrap_or("");
+            let classification = target.get("classification").and_then(Value::as_str).unwrap_or("");
             if classification != "keep" {
                 return None;
             }
-            target
-                .get("target")
-                .and_then(Value::as_str)
-                .map(ToString::to_string)
+            target.get("target").and_then(Value::as_str).map(ToString::to_string)
         })
         .collect();
 

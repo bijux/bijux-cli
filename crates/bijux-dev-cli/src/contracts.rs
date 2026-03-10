@@ -53,12 +53,7 @@ mod tests {
     fn contracts_report_shape_is_stable() {
         let report = build_report("0.1.0");
         assert!(report.get("contracts").is_some());
-        assert_eq!(
-            report
-                .get("schema_version")
-                .and_then(serde_json::Value::as_str),
-            Some("v1")
-        );
+        assert_eq!(report.get("schema_version").and_then(serde_json::Value::as_str), Some("v1"));
     }
 
     #[test]

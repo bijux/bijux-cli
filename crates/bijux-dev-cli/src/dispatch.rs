@@ -143,10 +143,7 @@ fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn read_json_if_exists(path: &Path) -> Value {
@@ -161,10 +158,7 @@ fn command_option_value(argv: &[String], name: &str) -> Option<String> {
     if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
         return Some(found[prefixed.len()..].to_string());
     }
-    argv.iter()
-        .position(|arg| arg == name)
-        .and_then(|idx| argv.get(idx + 1))
-        .cloned()
+    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
 }
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
@@ -452,9 +446,7 @@ pub fn try_handle(
         [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "show" => {
             let id = command_option_value(argv, "--id")
                 .or_else(|| {
-                    command_positionals(argv, &["dev", "cli", "evidence", "show"])
-                        .first()
-                        .cloned()
+                    command_positionals(argv, &["dev", "cli", "evidence", "show"]).first().cloned()
                 })
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: --id required"))?;
             dev_evidence::build_show_report(&workspace_root(), &id)
@@ -581,26 +573,11 @@ mod tests {
     #[test]
     fn owns_path_matches_dev_cli_dispatch_surface() {
         assert!(owns_path(&["dev".into(), "cli".into(), "status".into()]));
-        assert!(owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "scripts".into(),
-            "audit".into()
-        ]));
-        assert!(owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "release".into(),
-            "status".into()
-        ]));
+        assert!(owns_path(&["dev".into(), "cli".into(), "scripts".into(), "audit".into()]));
+        assert!(owns_path(&["dev".into(), "cli".into(), "release".into(), "status".into()]));
 
         assert!(!owns_path(&["dev".into(), "status".into()]));
         assert!(!owns_path(&["cli".into(), "status".into()]));
-        assert!(!owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "unknown".into(),
-            "leaf".into()
-        ]));
+        assert!(!owns_path(&["dev".into(), "cli".into(), "unknown".into(), "leaf".into()]));
     }
 }
