@@ -314,6 +314,7 @@ jobs:
           python3 scripts/status/generate_history_surface_reports.py
           python3 scripts/status/generate_memory_surface_reports.py
           python3 scripts/status/generate_diagnostics_surface_reports.py
+          python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_command_surface_consistency_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
@@ -861,6 +862,15 @@ jobs:
             artifacts/status/diagnostics_matrix_artifact.json
             artifacts/status/diagnostics_shape_drift_artifact.json
             artifacts/status/diagnostics_operator_truth_contract.json
+            artifacts/status/config_closure_report.json
+            artifacts/status/plugins_closure_report.json
+            artifacts/status/history_closure_report.json
+            artifacts/status/memory_closure_report.json
+            artifacts/status/diagnostics_closure_report.json
+            artifacts/status/repl_shared_law_closure_report.json
+            artifacts/status/command_family_closure_report.json
+            artifacts/status/command_family_closure_report.txt
+            artifacts/status/command_family_partial_area_acceptance.json
             artifacts/status/command_surface_consistency_artifact.json
             artifacts/status/command_surface_consistency_drift_artifact.json
             artifacts/status/command_surface_consistency_summary.json

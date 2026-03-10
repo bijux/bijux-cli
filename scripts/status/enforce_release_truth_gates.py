@@ -30,6 +30,15 @@ STATUS_FILES = [
     STATUS_DIR / "active_runtime_report.json",
     STATUS_DIR / "package_health_report.json",
     STATUS_DIR / "install_health_report.json",
+    STATUS_DIR / "command_family_closure_report.json",
+    STATUS_DIR / "command_family_closure_report.txt",
+    STATUS_DIR / "command_family_partial_area_acceptance.json",
+    STATUS_DIR / "config_closure_report.json",
+    STATUS_DIR / "plugins_closure_report.json",
+    STATUS_DIR / "history_closure_report.json",
+    STATUS_DIR / "memory_closure_report.json",
+    STATUS_DIR / "diagnostics_closure_report.json",
+    STATUS_DIR / "repl_shared_law_closure_report.json",
 ]
 
 
@@ -104,6 +113,8 @@ def main() -> int:
     crate_metrics = read_json(CRATE_BOUNDARY_METRICS)
     runtime_unity = read_json(STATUS_DIR / "runtime_unity_report.json")
     parity_dashboard = read_json(PARITY_DIR / "parity_dashboard.json")
+    command_family_closure = read_json(STATUS_DIR / "command_family_closure_report.json")
+    partial_area_acceptance = read_json(STATUS_DIR / "command_family_partial_area_acceptance.json")
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -156,6 +167,26 @@ def main() -> int:
         coverage = parity_dashboard.get("summary", {}).get("coverage", {})
         if int(coverage.get("parity_tests", 0)) <= 0:
             failures.append("release review blocked: parity dashboard reports zero parity_tests")
+
+    if not command_family_closure:
+        failures.append("release review blocked: missing command_family_closure_report evidence")
+    else:
+        reports = command_family_closure.get("reports", {})
+        partial_areas = [
+            name
+            for name, payload in reports.items()
+            if isinstance(payload, dict) and str(payload.get("status", "")) != "complete"
+        ]
+        accepted = partial_area_acceptance.get("accepted_areas", []) if isinstance(partial_area_acceptance, dict) else []
+        if partial_areas and not isinstance(accepted, list):
+            failures.append("partial area acceptance must list accepted_areas")
+        elif partial_areas:
+            missing_acceptance = sorted(set(partial_areas) - set(str(item) for item in accepted))
+            if missing_acceptance:
+                failures.append(
+                    "release review blocked: partial areas require explicit acceptance: "
+                    + ", ".join(missing_acceptance)
+                )
 
     # Evidence rule for README: promotional quality claims require artifact references.
     if has_claim(r"\b(98%\+ coverage|1,800\+ tests|feature complete|production ready)\b", readme):
