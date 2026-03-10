@@ -59,19 +59,68 @@ fn run_case(path: &Path) {
         }
     }
 
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(expanded)
-        .env("BIJUXCLI_CONFIG_PATH", &config)
-        .env("BIJUXCLI_PLUGINS_DIR", &plugins)
-        .env("BIJUXCLI_HISTORY_FILE", &history)
-        .output()
-        .expect("run repro case");
+    let run_once = || {
+        Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+            .args(&expanded)
+            .env("BIJUXCLI_CONFIG_PATH", &config)
+            .env("BIJUXCLI_PLUGINS_DIR", &plugins)
+            .env("BIJUXCLI_HISTORY_FILE", &history)
+            .output()
+            .expect("run repro case")
+    };
 
-    assert!(
-        matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
-        "reproducer {} returned unexpected status {:?}",
-        path.display(),
-        out.status.code()
+    let first = run_once();
+    let second = run_once();
+
+    for out in [&first, &second] {
+        assert!(
+            matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
+            "reproducer {} returned unexpected status {:?}",
+            path.display(),
+            out.status.code()
+        );
+        if out.status.success() {
+            assert!(
+                out.stderr.is_empty(),
+                "successful repro case must keep stderr empty: {}",
+                path.display()
+            );
+            assert!(
+                !out.stdout.is_empty(),
+                "successful repro case must emit stdout: {}",
+                path.display()
+            );
+        } else {
+            assert!(
+                out.stdout.is_empty(),
+                "failed repro case must keep stdout empty: {}",
+                path.display()
+            );
+            assert!(
+                !out.stderr.is_empty(),
+                "failed repro case must emit stderr: {}",
+                path.display()
+            );
+        }
+    }
+
+    assert_eq!(
+        first.status.code(),
+        second.status.code(),
+        "exit code drift for {}",
+        path.display()
+    );
+    assert_eq!(
+        first.stdout,
+        second.stdout,
+        "stdout drift for {}",
+        path.display()
+    );
+    assert_eq!(
+        first.stderr,
+        second.stderr,
+        "stderr drift for {}",
+        path.display()
     );
 }
 

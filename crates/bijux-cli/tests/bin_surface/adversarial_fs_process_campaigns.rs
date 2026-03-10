@@ -32,11 +32,36 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 }
 
 fn assert_known_status(out: &Output, context: &str) {
+    let code = out.status.code();
     assert!(
-        matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
-        "{context} produced unexpected status {:?}",
-        out.status.code()
+        matches!(code, Some(0) | Some(1) | Some(2)),
+        "{context} produced unexpected status {code:?}"
     );
+    match code {
+        Some(0) => {
+            assert!(
+                out.stderr.is_empty(),
+                "{context} succeeded but wrote stderr"
+            );
+            assert!(
+                !out.stdout.is_empty(),
+                "{context} succeeded but produced empty stdout"
+            );
+            let _: serde_json::Value = serde_json::from_slice(&out.stdout)
+                .expect("successful machine path should emit json");
+        }
+        Some(1) | Some(2) => {
+            assert!(
+                out.stdout.is_empty(),
+                "{context} failure must not write stdout"
+            );
+            assert!(
+                !out.stderr.is_empty(),
+                "{context} failure must write stderr"
+            );
+        }
+        _ => unreachable!("handled above"),
+    }
 }
 
 #[test]
@@ -233,18 +258,22 @@ fn interrupted_process_behavior_is_normalized_for_interactive_entrypoint() {
         .spawn()
         .expect("spawn sleep");
 
-    // Give startup a short window, then interrupt via process kill.
+    // Give startup a short window, then interrupt via SIGINT to emulate Ctrl-C.
     std::thread::sleep(Duration::from_millis(40));
-    let _ = child.kill();
+    let status = Command::new("kill")
+        .args(["-INT", &child.id().to_string()])
+        .status()
+        .expect("kill command should execute");
+    assert!(status.success(), "SIGINT command should succeed");
 
     let status = child.wait().expect("wait interrupt");
     if let Some(code) = status.code() {
         assert!(
-            matches!(code, 0 | 1 | 2 | 130 | 137),
-            "unexpected interrupt exit code: {code}"
+            matches!(code, 0 | 130),
+            "unexpected SIGINT normalized exit code: {code}"
         );
     } else {
-        // Signaled exits are acceptable normalization on Unix.
-        assert!(status.signal().is_some());
+        // Signaled exits are acceptable normalization on Unix, but must match SIGINT.
+        assert_eq!(status.signal(), Some(libc::SIGINT));
     }
 }
