@@ -277,7 +277,7 @@ pub fn try_handle(
             let root = workspace_root();
             let snapshots: Vec<String> = collect_files(&root.join("crates"))
                 .into_iter()
-                .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
+                .filter(|p| p.to_string_lossy().contains("tests/cli_surface/snapshots/"))
                 .map(|p| rel_to_root(&p, &root))
                 .collect();
             dev_control_plane::build_snapshots_audit_report(snapshots)
@@ -290,7 +290,7 @@ pub fn try_handle(
                 .collect();
             let snapshots: Vec<String> = collect_files(&root.join("crates"))
                 .into_iter()
-                .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
+                .filter(|p| p.to_string_lossy().contains("tests/cli_surface/snapshots/"))
                 .map(|p| rel_to_root(&p, &root))
                 .collect();
             dev_control_plane::build_fixture_audit_report(parity_files, snapshots)
