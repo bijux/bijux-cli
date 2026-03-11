@@ -45,6 +45,49 @@ fn classify_script(path: &str) -> &'static str {
     "replace"
 }
 
+fn status_generator_id(path: &str) -> Option<String> {
+    let is_py = Path::new(path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("py"));
+    if !path.starts_with("scripts/status/generate_") || !is_py {
+        return None;
+    }
+    let file = path.rsplit('/').next().unwrap_or(path);
+    let stem = file.strip_suffix(".py").unwrap_or(file);
+    let stem = stem.strip_prefix("generate_").unwrap_or(stem);
+    let stem = stem.strip_suffix("_reports").unwrap_or(stem);
+    let slug = stem
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
+        .collect::<String>()
+        .split('-')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    Some(format!("GEN-STATUS-{slug}"))
+}
+
+fn replacement_command(path: &str) -> Option<String> {
+    if let Some(id) = status_generator_id(path) {
+        return Some(format!("bijux dev cli scripts generate --id {id}"));
+    }
+    match path {
+        "scripts/check-package-metadata.py" => {
+            Some("bijux dev cli scripts package-metadata".to_string())
+        }
+        "scripts/check_e2e_contract.py" => Some("bijux dev cli scripts e2e-contract".to_string()),
+        "scripts/helper_pip_audit.py" => Some("bijux dev cli scripts pip-audit".to_string()),
+        "scripts/capture_python_behavior.py" => {
+            Some("bijux dev cli scripts capture-python-behavior".to_string())
+        }
+        "scripts/generate-provenance-statement.sh" => {
+            Some("bijux dev cli scripts provenance-statement".to_string())
+        }
+        _ => None,
+    }
+}
+
 fn parse_make_targets(path: &Path) -> Vec<String> {
     let mut out = Vec::new();
     let Ok(text) = fs::read_to_string(path) else {
@@ -96,6 +139,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
             json!({
                 "path": rel,
                 "classification": classify_script(&rel),
+                "replacement_command": replacement_command(&rel),
             })
         })
         .collect();
@@ -146,21 +190,25 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
+    let maintainer_script_replacements: Vec<Value> = scripts
+        .iter()
+        .filter_map(|row| {
+            let path = row.get("path").and_then(Value::as_str)?;
+            let replacement = row.get("replacement_command").and_then(Value::as_str)?;
+            if replacement.is_empty() {
+                return None;
+            }
+            Some(json!({"from": path, "to": replacement}))
+        })
+        .collect();
+
     json!({
         "scripts": scripts,
         "makes": makes,
         "summary": {
             "script_classification_counts": script_summary,
         },
-        "maintainer_script_replacements": [
-            {"from": "scripts/status/generate_status_reports.py", "to": "bijux dev cli status"},
-            {"from": "scripts/status/generate_route_law_reports.py", "to": "bijux dev cli route-audit"},
-            {"from": "scripts/status/generate_state_audit_reports.py", "to": "bijux dev cli state-audit"},
-            {"from": "scripts/status/generate_maintainer_control_plane_reports.py", "to": "bijux dev cli script-audit"},
-            {"from": "scripts/status/generate_crate_boundary_metrics.py", "to": "bijux dev cli crate-health"},
-            {"from": "scripts/status/generate_install_truth_reports.py", "to": "bijux dev cli package-health"},
-            {"from": "scripts/status/generate_docs_duplication_report.py", "to": "bijux dev cli docs-audit"},
-        ],
+        "maintainer_script_replacements": maintainer_script_replacements,
         "remaining_script_only_behaviors": remaining_script_only_behaviors,
         "remaining_task_runner_only_behaviors": remaining_task_runner_only_behaviors,
         "rule": "new maintainer automation defaults to bijux dev cli commands",
