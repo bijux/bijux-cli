@@ -1,12 +1,12 @@
 {
   "domain": "diagnostics-operator-truth",
   "evidence": [
-    "crates/bijux-cli-bin/tests/diagnostics_command_matrix.rs",
+    "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
     "artifacts/status/diagnostics_matrix_artifact.json",
     "artifacts/status/diagnostics_shape_drift_artifact.json"
   ],
-  "generated_at": "2026-03-10T04:57:57.380638+00:00",
-  "generator": "scripts/status/generate_diagnostics_surface_reports.py",
+  "generated_at": "2026-03-11T04:58:22Z",
+  "generator": "bijux-dev-cli",
   "rule": "Diagnostics outputs must remain structured, consistent across surfaces, and stable in machine shape.",
   "status": "frozen"
 }

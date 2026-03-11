@@ -1,8 +1,27 @@
 {
-  "drift_commands": [],
-  "drift_count": 0,
-  "generated_at": "2026-03-10T04:57:57.380638+00:00",
-  "generator": "scripts/status/generate_diagnostics_surface_reports.py",
-  "scope": "todo 379 diagnostics shape drift",
-  "status": "clean"
+  "drift_commands": [
+    "inspect_text_json_yaml_quiet_and_trace_modes",
+    "inspect_text_json_yaml_quiet_and_trace_modes",
+    "inspect_text_json_yaml_quiet_and_trace_modes",
+    "inspect_text_json_yaml_quiet_and_trace_modes",
+    "inspect_text_json_yaml_quiet_and_trace_modes",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "doctor_text_json_and_corrupted_state_coverage",
+    "dev_cli_routes_registry_env_contracts_json_shape_stability",
+    "dev_cli_routes_registry_env_contracts_json_shape_stability",
+    "dev_cli_routes_registry_env_contracts_json_shape_stability",
+    "dev_cli_routes_registry_env_contracts_json_shape_stability",
+    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
+    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
+    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"
+  ],
+  "drift_count": 18,
+  "generated_at": "2026-03-11T04:58:22Z",
+  "generator": "bijux-dev-cli",
+  "scope": "diagnostics shape drift",
+  "status": "drift"
 }

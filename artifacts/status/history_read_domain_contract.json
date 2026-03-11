@@ -1,12 +1,12 @@
 {
   "domain": "history-read-behavior",
   "evidence": [
-    "crates/bijux-cli-bin/tests/history_command_matrix.rs",
+    "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
     "artifacts/status/history_command_matrix_artifact.json",
     "artifacts/status/history_corruption_matrix_artifact.json"
   ],
-  "generated_at": "2026-03-10T04:48:51.677339+00:00",
-  "generator": "scripts/status/generate_history_surface_reports.py",
+  "generated_at": "2026-03-11T04:57:58Z",
+  "generator": "bijux-dev-cli",
   "rule": "History read behavior must remain deterministic, format-stable, and resilient under malformed storage states.",
   "status": "frozen"
 }

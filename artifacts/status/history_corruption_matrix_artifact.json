@@ -11,7 +11,7 @@
       "status": "complete"
     }
   ],
-  "generated_at": "2026-03-10T04:48:51.677339+00:00",
-  "generator": "scripts/status/generate_history_surface_reports.py",
-  "scope": "todo 339 history corruption matrix"
+  "generated_at": "2026-03-11T04:57:58Z",
+  "generator": "bijux-dev-cli",
+  "scope": "history corruption matrix"
 }

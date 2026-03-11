@@ -1,139 +1,225 @@
 {
   "commands": [
     {
-      "command": "history",
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 322,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
     },
     {
-      "command": "history clear",
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 323,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
+    },
+    {
+      "coverage_id": 324,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
+    },
+    {
+      "coverage_id": 325,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
+    },
+    {
+      "coverage_id": 326,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
+    },
+    {
+      "coverage_id": 327,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
+    },
+    {
+      "coverage_id": 328,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
+    },
+    {
+      "coverage_id": 329,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
+    },
+    {
+      "coverage_id": 330,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
+    },
+    {
+      "coverage_id": 331,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
+    },
+    {
+      "coverage_id": 332,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
+    },
+    {
+      "coverage_id": 333,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
+    },
+    {
+      "coverage_id": 334,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_clear_with_unwritable_parent_fails_stably"
+    },
+    {
+      "coverage_id": 335,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
+    },
+    {
+      "coverage_id": 336,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
+    },
+    {
+      "coverage_id": 337,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
+    },
+    {
+      "coverage_id": 338,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_help_and_exit_discipline_for_root_and_clear"
+    },
+    {
+      "coverage_id": 339,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     }
   ],
-  "generated_at": "2026-03-10T04:48:51.677339+00:00",
-  "generator": "scripts/status/generate_history_surface_reports.py",
-  "scope": "todo 322-338 history command matrix",
-  "todo_rows": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_root_listing_no_file_one_record_many_records_and_ordering",
-      "todo": 322
+      "coverage_id": 322,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_root_listing_no_file_one_record_many_records_and_ordering",
-      "todo": 323
+      "coverage_id": 323,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_root_listing_no_file_one_record_many_records_and_ordering",
-      "todo": 324
+      "coverage_id": 324,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_text_json_yaml_quiet_and_no_color_modes",
-      "todo": 325
+      "coverage_id": 325,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_text_json_yaml_quiet_and_no_color_modes",
-      "todo": 326
+      "coverage_id": 326,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_text_json_yaml_quiet_and_no_color_modes",
-      "todo": 327
+      "coverage_id": 327,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_root_listing_no_file_one_record_many_records_and_ordering",
-      "todo": 328
+      "coverage_id": 328,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_root_listing_no_file_one_record_many_records_and_ordering"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-      "todo": 329
+      "coverage_id": 329,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-      "todo": 330
+      "coverage_id": 330,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-      "todo": 331
+      "coverage_id": 331,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_limit_path_override_and_repeated_run_determinism",
-      "todo": 332
+      "coverage_id": 332,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_limit_path_override_and_repeated_run_determinism",
-      "todo": 333
+      "coverage_id": 333,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_clear_with_unwritable_parent_fails_stably",
-      "todo": 334
+      "coverage_id": 334,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_clear_with_unwritable_parent_fails_stably"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_text_json_yaml_quiet_and_no_color_modes",
-      "todo": 335
+      "coverage_id": 335,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_text_json_yaml_quiet_and_no_color_modes",
-      "todo": 336
+      "coverage_id": 336,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_text_json_yaml_quiet_and_no_color_modes"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_limit_path_override_and_repeated_run_determinism",
-      "todo": 337
+      "coverage_id": 337,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_limit_path_override_and_repeated_run_determinism"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_help_and_exit_discipline_for_root_and_clear",
-      "todo": 338
+      "coverage_id": 338,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_help_and_exit_discipline_for_root_and_clear"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
-      "status": "complete",
-      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-      "todo": 339
+      "coverage_id": 339,
+      "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+      "status": "missing",
+      "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     }
-  ]
+  ],
+  "generated_at": "2026-03-11T04:57:58Z",
+  "generator": "bijux-dev-cli",
+  "scope": "history command matrix"
 }
