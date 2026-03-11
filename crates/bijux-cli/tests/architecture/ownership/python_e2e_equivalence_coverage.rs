@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Guardrails for Python E2E intent coverage by Rust integration tests.
+//! Guardrails for Python wrapper intent coverage by Rust integration tests.
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -29,7 +29,7 @@ fn every_python_e2e_test_file_is_mapped() {
 
     assert_eq!(
         mapped, discovered,
-        "python e2e to rust equivalence mapping drifted; update inventory to cover the exact set of tests/e2e/test_*.py files"
+        "python wrapper to rust equivalence mapping drifted; update inventory to cover the exact set of crates/bijux-cli-python/tests/python/test_*.py files"
     );
 }
 
@@ -61,8 +61,9 @@ fn mapped_rust_test_files_exist_and_match_coverage_policy() {
 
         for rust_file in &entry.rust_test_files {
             assert!(
-                rust_file.starts_with("crates/bijux-cli/tests/"),
-                "rust coverage file must live under crates/bijux-cli/tests: {rust_file}"
+                rust_file.starts_with("crates/bijux-cli/tests/")
+                    || rust_file.starts_with("crates/bijux-cli-python/tests/"),
+                "rust coverage file must live under crates/bijux-cli/tests or crates/bijux-cli-python/tests: {rust_file}"
             );
             let rust_path = root.join(rust_file);
             assert!(rust_path.is_file(), "mapped rust test file does not exist: {rust_file}");
@@ -100,7 +101,7 @@ fn load_inventory(root: &Path) -> EquivalenceInventory {
 
 fn discover_python_e2e_tests(root: &Path) -> BTreeSet<String> {
     let mut files = BTreeSet::<String>::new();
-    let start = root.join("tests/e2e");
+    let start = root.join("crates/bijux-cli-python/tests/python");
     let mut stack = vec![start];
     while let Some(dir) = stack.pop() {
         let Ok(entries) = std::fs::read_dir(&dir) else {

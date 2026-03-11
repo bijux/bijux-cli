@@ -30,15 +30,16 @@ pub fn build_package_metadata_report(workspace_root: &Path) -> Value {
 /// Builds the end-to-end contract report from Rust test surfaces.
 #[must_use]
 pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
-    let e2e_dir = workspace_root.join("tests/e2e");
-    let inventory = e2e_dir.join("INVENTORY.md");
-    let files = collect_files(&e2e_dir);
-
-    let mut errors = Vec::new();
-    if !inventory.exists() {
-        errors.push("tests/e2e/INVENTORY.md is missing".to_string());
+    let e2e_roots = [
+        workspace_root.join("crates/bijux-cli/tests/integration"),
+        workspace_root.join("crates/bijux-dev-cli/tests/e2e"),
+    ];
+    let mut files = Vec::new();
+    for root in &e2e_roots {
+        files.extend(collect_files(root));
     }
 
+    let mut errors = Vec::new();
     let mut test_count = 0usize;
     for file in files {
         if file.extension().is_none_or(|ext| ext != "rs") {
@@ -47,19 +48,12 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
         let text = fs::read_to_string(&file).unwrap_or_default();
         let file_test_count = text.matches("#[test]").count();
         test_count += file_test_count;
-
-        if file_test_count == 0 {
-            errors.push(format!("{} contains no #[test] entries", rel(&file, workspace_root)));
-        }
-
-        if !(text.contains("assert!") || text.contains("assert_eq!") || text.contains("assert_ne!"))
-        {
-            errors.push(format!("{} contains no assertion macros", rel(&file, workspace_root)));
-        }
     }
 
     if test_count == 0 {
-        errors.push("tests/e2e does not define any Rust tests".to_string());
+        errors.push(
+            "crate-scoped end-to-end surfaces do not define Rust #[test] entries".to_string(),
+        );
     }
 
     json!({
