@@ -204,7 +204,10 @@ fn binary_and_bridge_use_same_command_registry_contract() {
     assert_eq!(bridge_tree["root"], "bijux");
     assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
-    assert!(surface.iter().any(|item| item.starts_with("dev ")));
+    assert!(
+        surface.iter().any(|item| item == "dev" || item.starts_with("dev cli ")),
+        "command registry should retain the `dev` namespace boundary"
+    );
 }
 
 #[test]

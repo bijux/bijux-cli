@@ -122,9 +122,13 @@ fn with_hidden_leaf_subcommands(mut command: Command, names: &[&'static str]) ->
     command
 }
 
+fn passthrough_args(command: Command) -> Command {
+    command.arg(Arg::new("args").num_args(0..).trailing_var_arg(true).allow_hyphen_values(true))
+}
+
 fn with_leaf_subcommands(mut command: Command, names: &[&'static str]) -> Command {
     for name in names {
-        command = command.subcommand(Command::new(*name));
+        command = command.subcommand(passthrough_args(Command::new(*name)));
     }
     command
 }
@@ -145,13 +149,10 @@ fn with_dev_cli_surface_subcommands(mut command: Command) -> Command {
             continue;
         }
 
-        let item = if matches!(
-            *subcommand,
-            "atlas" | "di" | "list-products" | "list-plugins"
-        ) {
-            Command::new(*subcommand).hide(true)
+        let item = if matches!(*subcommand, "atlas" | "di" | "list-products" | "list-plugins") {
+            passthrough_args(Command::new(*subcommand).hide(true))
         } else {
-            Command::new(*subcommand)
+            passthrough_args(Command::new(*subcommand))
         };
         command = command.subcommand(item);
     }
@@ -175,12 +176,7 @@ fn maintenance_command() -> Command {
             "provenance-statement" => command.subcommand(
                 Command::new("provenance-statement")
                     .arg(Arg::new("tag").long("tag").num_args(1).required(true))
-                    .arg(
-                        Arg::new("output-dir")
-                            .long("output-dir")
-                            .num_args(1)
-                            .required(true),
-                    ),
+                    .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
             ),
             other => command.subcommand(Command::new(other)),
         };
@@ -201,14 +197,9 @@ fn maintenance_command() -> Command {
                     ),
             ),
             "run-all" => status.subcommand(
-                Command::new("run-all")
-                    .arg(Arg::new("kind").long("kind").num_args(1))
-                    .arg(
-                        Arg::new("args")
-                            .num_args(0..)
-                            .trailing_var_arg(true)
-                            .allow_hyphen_values(true),
-                    ),
+                Command::new("run-all").arg(Arg::new("kind").long("kind").num_args(1)).arg(
+                    Arg::new("args").num_args(0..).trailing_var_arg(true).allow_hyphen_values(true),
+                ),
             ),
             other => status.subcommand(Command::new(other)),
         };
@@ -221,30 +212,16 @@ fn maintenance_command() -> Command {
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn root_command() -> Command {
-    let format_arg = Arg::new("format")
-        .long("format")
-        .short('f')
-        .num_args(1)
-        .global(true)
-        .value_name("FORMAT");
+    let format_arg =
+        Arg::new("format").long("format").short('f').num_args(1).global(true).value_name("FORMAT");
 
-    let quiet_arg = Arg::new("quiet")
-        .long("quiet")
-        .short('q')
-        .action(ArgAction::SetTrue)
-        .global(true);
+    let quiet_arg =
+        Arg::new("quiet").long("quiet").short('q').action(ArgAction::SetTrue).global(true);
 
-    let log_level_arg = Arg::new("log-level")
-        .long("log-level")
-        .num_args(1)
-        .global(true)
-        .value_name("LEVEL");
+    let log_level_arg =
+        Arg::new("log-level").long("log-level").num_args(1).global(true).value_name("LEVEL");
 
-    let color_arg = Arg::new("color")
-        .long("color")
-        .num_args(1)
-        .global(true)
-        .value_name("MODE");
+    let color_arg = Arg::new("color").long("color").num_args(1).global(true).value_name("MODE");
 
     let pretty_arg = Arg::new("pretty")
         .long("pretty")
@@ -257,11 +234,8 @@ pub fn root_command() -> Command {
         .action(ArgAction::SetTrue)
         .overrides_with("pretty")
         .global(true);
-    let config_path_arg = Arg::new("config-path")
-        .long("config-path")
-        .num_args(1)
-        .global(true)
-        .value_name("PATH");
+    let config_path_arg =
+        Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
     let json_arg = Arg::new("json")
         .long("json")
         .action(ArgAction::SetTrue)
@@ -319,48 +293,32 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
-            Command::new("hold")
-                .hide(true)
-                .subcommand(Command::new("interruptible").hide(true)),
+            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
         )
         .subcommand(plugins_group.clone());
 
-    let dev_cli_group =
-        with_dev_cli_surface_subcommands(
-            Command::new("cli")
-                .subcommand(maintenance_command())
-                .subcommand(with_leaf_subcommands(
-                    Command::new("rustdoc"),
-                    DEV_CLI_RUSTDOC_SUBCOMMANDS,
-                ))
-                .subcommand(with_leaf_subcommands(
-                    Command::new("release"),
-                    DEV_CLI_RELEASE_SUBCOMMANDS,
-                ))
-                .subcommand(with_leaf_subcommands(
-                    Command::new("evidence"),
-                    DEV_CLI_EVIDENCE_SUBCOMMANDS,
-                ))
-                .subcommand(with_leaf_subcommands(
-                    Command::new("config"),
-                    DEV_CLI_CONFIG_SUBCOMMANDS,
-                ))
-                .subcommand(with_leaf_subcommands(
-                    Command::new("python"),
-                    DEV_CLI_PYTHON_SUBCOMMANDS,
-                ))
-                .subcommand(with_leaf_subcommands(
-                    Command::new("repo"),
-                    DEV_CLI_REPO_SUBCOMMANDS,
-                ))
-                .subcommand(
-                    Command::new("contracts")
-                        .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
-                        .arg(Arg::new("kind").long("kind").num_args(1).value_parser([
+    let dev_cli_group = with_dev_cli_surface_subcommands(
+        Command::new("cli")
+            .subcommand(maintenance_command())
+            .subcommand(with_leaf_subcommands(Command::new("rustdoc"), DEV_CLI_RUSTDOC_SUBCOMMANDS))
+            .subcommand(with_leaf_subcommands(Command::new("release"), DEV_CLI_RELEASE_SUBCOMMANDS))
+            .subcommand(with_leaf_subcommands(
+                Command::new("evidence"),
+                DEV_CLI_EVIDENCE_SUBCOMMANDS,
+            ))
+            .subcommand(with_leaf_subcommands(Command::new("config"), DEV_CLI_CONFIG_SUBCOMMANDS))
+            .subcommand(with_leaf_subcommands(Command::new("python"), DEV_CLI_PYTHON_SUBCOMMANDS))
+            .subcommand(with_leaf_subcommands(Command::new("repo"), DEV_CLI_REPO_SUBCOMMANDS))
+            .subcommand(
+                Command::new("contracts")
+                    .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
+                    .arg(
+                        Arg::new("kind").long("kind").num_args(1).value_parser([
                             "generate", "check", "enforce", "warn", "run", "status",
-                        ])),
-                ),
-        );
+                        ]),
+                    ),
+            ),
+    );
 
     // Legacy path support normalized later to `dev cli ...`.
     let dev_group = with_hidden_leaf_subcommands(
@@ -448,9 +406,5 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalized_path = normalize_command_path(&command_path);
     let global_flags = global_flags_from_matches(&matches)?;
 
-    Ok(ParsedIntent {
-        command_path,
-        normalized_path,
-        global_flags,
-    })
+    Ok(ParsedIntent { command_path, normalized_path, global_flags })
 }
