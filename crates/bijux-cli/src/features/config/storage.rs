@@ -19,6 +19,12 @@ pub(crate) trait ConfigRepository {
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct FileConfigRepository;
 
+/// Validate and parse a config file using runtime config parsing rules.
+pub fn validate_config_file(path: &Path) -> Result<(), String> {
+    let repository = FileConfigRepository;
+    repository.load(path).map(|_| ()).map_err(|err| err.to_string())
+}
+
 impl ConfigRepository for FileConfigRepository {
     fn load(&self, path: &Path) -> Result<BTreeMap<String, String>, ConfigError> {
         if !path.exists() {

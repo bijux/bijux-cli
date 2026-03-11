@@ -24,23 +24,32 @@ fn home_dir() -> Option<PathBuf> {
     env::var_os("HOME").map(PathBuf::from)
 }
 
-pub(crate) fn env_map() -> HashMap<String, String> {
+/// Collect runtime path override environment variables.
+#[must_use]
+pub fn env_map() -> HashMap<String, String> {
     [ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH]
         .iter()
         .filter_map(|key| env::var(key).ok().map(|value| ((*key).to_string(), value)))
         .collect()
 }
 
+/// Runtime state path set resolved from defaults, compatibility, env, and flags.
 #[derive(Debug, Clone)]
-pub(crate) struct ResolvedStatePaths {
-    pub(crate) config_file: PathBuf,
-    pub(crate) history_file: PathBuf,
-    pub(crate) plugins_dir: PathBuf,
-    pub(crate) plugin_registry_file: PathBuf,
-    pub(crate) memory_file: PathBuf,
+pub struct ResolvedStatePaths {
+    /// Resolved config file path.
+    pub config_file: PathBuf,
+    /// Resolved history file path.
+    pub history_file: PathBuf,
+    /// Resolved plugins directory path.
+    pub plugins_dir: PathBuf,
+    /// Resolved plugin registry file path.
+    pub plugin_registry_file: PathBuf,
+    /// Resolved memory file path.
+    pub memory_file: PathBuf,
 }
 
-pub(crate) fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> {
+/// Resolve runtime state file paths from defaults, compatibility config, env, and flags.
+pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> {
     let home = home_dir();
     let defaults = home
         .as_deref()
@@ -71,7 +80,9 @@ pub(crate) fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedS
     })
 }
 
-pub(crate) fn state_path_status_value(status: &StatePathStatus) -> Value {
+/// Convert path status into JSON payload shape used by maintainer reports.
+#[must_use]
+pub fn state_path_status_value(status: &StatePathStatus) -> Value {
     json!({
         "path": status.path,
         "exists": status.exists,
@@ -83,7 +94,9 @@ pub(crate) fn state_path_status_value(status: &StatePathStatus) -> Value {
     })
 }
 
-pub(crate) fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
+/// Build state diagnostics and repair actions from resolved runtime state paths.
+#[must_use]
+pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     let mut issues = Vec::<Value>::new();
     let mut repairs = Vec::<Value>::new();
 
