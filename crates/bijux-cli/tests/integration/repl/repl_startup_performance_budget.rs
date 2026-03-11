@@ -24,7 +24,10 @@ fn repl_startup_latency_stays_within_budget() {
 fn repl_startup_memory_estimate_stays_within_budget() {
     let (session, _) = startup_repl("benchmark", None);
     let estimated = estimated_session_memory_bytes(&session);
-    assert!(estimated <= 512 * 1024, "repl startup memory estimate exceeded: {estimated} bytes");
+    assert!(
+        estimated <= 512 * 1024,
+        "repl startup memory estimate exceeded: {estimated} bytes"
+    );
 }
 
 #[test]
