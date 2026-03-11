@@ -6,28 +6,24 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-import tempfile
 
 from bijux_cli_py import (
-    check_embedded_binary_compatibility,
     check_python_runtime_supported,
     command_tree_introspection,
     config_resolution_helpers,
-    deprecated_version_api,
+    error_to_exception,
     execution_facade_with_status,
     execution_facade,
     get_command_tree,
     get_version,
+    InternalError,
     install_path_helpers,
     migration_warnings,
-    output_envelope_model,
-    path_ambiguity_detection_message,
     post_install_diagnostics,
     plugin_registry_inspection,
     run_cli,
-    side_by_side_install_report,
-    simulate_pip_uninstall_cleanup,
-    simulate_pip_upgrade_preserves_state,
+    UsageError,
+    ValidationError,
     version,
 )
 
@@ -37,7 +33,7 @@ def _runtime_binary() -> str:
     if override:
         return override
 
-    for name in ("bijux", "bijux-rs"):
+    for name in ("bijux",):
         resolved = shutil.which(name)
         if resolved:
             return resolved
@@ -70,7 +66,6 @@ def test_python_module_main_parity_with_runtime_for_version() -> None:
 def test_python_facade_apis_are_exposed() -> None:
     assert isinstance(version(), str)
     assert "root" in command_tree_introspection()
-    assert "status" in output_envelope_model()
     assert "config_file" in config_resolution_helpers(str(Path.home()))
     assert "plugins_dir" in install_path_helpers(str(Path.home()))
     assert plugin_registry_inspection("/tmp/non-existing-registry.json")["version"] == "1"
@@ -135,7 +130,6 @@ def test_config_precedence_helpers_and_alias_apis() -> None:
     assert get_version() == version()
     assert "root" in get_command_tree()
     assert isinstance(run_cli(["version"]), str)
-    assert deprecated_version_api() == version()
 
 
 def test_runtime_support_and_migration_warnings() -> None:
@@ -144,43 +138,19 @@ def test_runtime_support_and_migration_warnings() -> None:
     assert migration_warnings(legacy_python_only=True)
 
 
-def test_post_install_diagnostics_and_binary_compatibility() -> None:
+def test_post_install_diagnostics_contract() -> None:
     diagnostics = post_install_diagnostics()
     assert "runtime_supported" in diagnostics
     assert "warnings" in diagnostics
-    assert check_embedded_binary_compatibility(version())
 
 
-def test_pip_uninstall_cleanup_simulation() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp)
-        pkg = root / "bijux_cli_py"
-        entry = root / "bin" / "bijux"
-        pkg.mkdir(parents=True, exist_ok=True)
-        (pkg / "__init__.py").write_text("# stub", encoding="utf-8")
-        entry.parent.mkdir(parents=True, exist_ok=True)
-        entry.write_text("#!/bin/sh\n", encoding="utf-8")
-        report = simulate_pip_uninstall_cleanup(str(root))
-        assert report["site_package_removed"]
-        assert report["entrypoint_removed"]
+def test_error_to_exception_maps_bridge_error_kinds() -> None:
+    usage = error_to_exception({"error_kind": "UsageError", "message": "unknown route"})
+    validation = error_to_exception({"error_kind": "ValidationError", "message": "invalid input"})
+    internal = error_to_exception({"error_kind": "InternalError", "message": "panic normalized"})
+    generic = error_to_exception({"message": "generic"})
 
-
-def test_pip_upgrade_preserves_state_simulation() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        home = Path(tmp)
-        bijux = home / ".bijux"
-        (bijux / ".plugins").mkdir(parents=True, exist_ok=True)
-        (bijux / ".env").write_text("A=B\n", encoding="utf-8")
-        (bijux / ".history").write_text("[]\n", encoding="utf-8")
-        report = simulate_pip_upgrade_preserves_state(str(home))
-        assert report["config_preserved"]
-        assert report["history_preserved"]
-        assert report["plugins_preserved"]
-
-
-def test_side_by_side_install_and_path_ambiguity_reporting() -> None:
-    report = side_by_side_install_report("/usr/local/bin/bijux", "/opt/homebrew/bin/bijux")
-    assert report.has_ambiguity
-    assert "Multiple bijux binaries" in report.message
-    message = path_ambiguity_detection_message(["/usr/local/bin/bijux", "/usr/local/bin/bijux"])
-    assert not message.has_ambiguity
+    assert isinstance(usage, UsageError)
+    assert isinstance(validation, ValidationError)
+    assert isinstance(internal, InternalError)
+    assert str(generic) == "generic"

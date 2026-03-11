@@ -26,7 +26,7 @@ def _runtime_binary() -> str:
     if override:
         return override
 
-    for name in ("bijux", "bijux-rs"):
+    for name in ("bijux",):
         resolved = shutil.which(name)
         if resolved:
             return resolved
@@ -69,4 +69,4 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     project = pyproject["project"]
     assert project["name"] == "bijux-cli"
     assert project["version"] == "0.1.0"
-    assert project["requires-python"] == ">=3.9"
+    assert project["requires-python"] == ">=3.11"
