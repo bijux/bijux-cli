@@ -18,7 +18,6 @@ RM                    := rm -rf
 include makes/macro.mk
 include makes/cargo-rs.mk
 include makes/cargo-py.mk
-include makes/dictionary.mk
 include makes/docs.mk
 
 # Environment
