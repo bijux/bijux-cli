@@ -22,24 +22,25 @@ VENV_PYTHON         ?= python3
 	fmt-py fmt-check-py lint-py lint-artifacts-py lint-file-py lint-dir-py lint-clean-py \
 	fmt fmt-check lint lint-artifacts lint-file lint-dir lint-clean
 
-fmt-py: | $(VENV)
+##@ Python Lint
+fmt-py: | $(VENV) ## Auto-format Python code using Ruff
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -euo pipefail; { \
 	  echo "→ Ruff format"; \
 	  $(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
 	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 
-fmt-check-py: | $(VENV)
+fmt-check-py: | $(VENV) ## Check Python formatting with Ruff (no changes)
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -euo pipefail; { \
 	  echo "→ Ruff format (check)"; \
 	  $(RUFF) format --check --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
 	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 
-lint-py: lint-artifacts-py
+lint-py: lint-artifacts-py ## Run all Python lint checks; save logs to artifacts/lint/
 	@echo "✔ Python linting completed (logs in '$(LINT_ARTIFACTS_DIR)')"
 
-lint-artifacts-py: | $(VENV)
+lint-artifacts-py: | $(VENV) ## Same as 'lint-py' (explicit), generates logs
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)" "$(MYPY_CACHE_DIR)"
 	@set -euo pipefail; { \
 	  echo "→ Ruff format (check)"; \
@@ -54,7 +55,7 @@ lint-artifacts-py: | $(VENV)
 	@[ -d .ruff_cache ] && echo "→ removing stray .ruff_cache" && rm -rf .ruff_cache || true
 	@printf "OK\n" > "$(LINT_ARTIFACTS_DIR)/_passed"
 
-lint-file-py:
+lint-file-py: ## Lint a single Python file (requires file=<path>)
 ifndef file
 	$(error Usage: make lint-file-py file=path/to/file.py)
 endif
@@ -65,13 +66,13 @@ endif
 	@$(call run_tool,Radon,$(RADON) cc -s -a)
 	@$(call run_tool,Pydocstyle,$(PYDOCSTYLE) --convention=google)
 
-lint-dir-py:
+lint-dir-py: ## Lint a Python directory (requires dir=<path>)
 ifndef dir
 	$(error Usage: make lint-dir-py dir=<directory_path>)
 endif
 	@$(MAKE) LINT_DIRS="$(dir)" lint-artifacts-py
 
-lint-clean-py:
+lint-clean-py: ## Remove Python lint artifacts and caches
 	@echo "→ Cleaning Python lint artifacts"
 	@rm -rf "$(LINT_ARTIFACTS_DIR)" .mypy_cache .ruff_cache || true
 	@echo "✔ done"
@@ -84,15 +85,6 @@ lint-artifacts: lint-artifacts-py
 lint-file: lint-file-py
 lint-dir: lint-dir-py
 lint-clean: lint-clean-py
-
-##@ Python Lint
-fmt-py: ## Auto-format Python code using Ruff
-fmt-check-py: ## Check Python formatting with Ruff (no changes)
-lint-py: ## Run all Python lint checks; save logs to artifacts/lint/
-lint-artifacts-py: ## Same as 'lint-py' (explicit), generates logs
-lint-file-py: ## Lint a single Python file (requires file=<path>)
-lint-dir-py: ## Lint a Python directory (requires dir=<path>)
-lint-clean-py: ## Remove Python lint artifacts and caches
 
 # -------------------------------
 # Python tests
@@ -162,7 +154,8 @@ PYTEST_FLAGS_NOCOV = \
 	test-py test-all-py test-unit-py test-e2e-py test-nightly-py test-regression-py test-benchmark-py test-clean-py \
 	test test-all test-unit test-e2e test-nightly test-night test-regression test-benchmark test-clean
 
-test-py:
+##@ Python Test
+test-py: ## Run default Python test suite (not nightly/slow)
 	@echo "→ Running Python test suite on $(TEST_PATHS)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
@@ -182,7 +175,7 @@ test-py:
 	  sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_ABS)" $(PYTEST_FLAGS) '"$$BENCH_FLAGS" )
 	@rm -rf .hypothesis .benchmarks || true
 
-test-all-py:
+test-all-py: ## Run all Python tests including slow and nightly
 	@echo "→ Running full Python test suite (including slow/nightly/bench)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
@@ -203,7 +196,7 @@ test-all-py:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-unit-py: JUNIT_XML=$(JUNIT_XML_UNIT)
-test-unit-py:
+test-unit-py: ## Run Python unit tests only
 	@echo "→ Running Python unit tests only"
 	@$(PYTEST) --version
 	@echo "pytest cmd: $(PYTEST) -c '$(PYTEST_INI_ABS)' …"
@@ -230,7 +223,7 @@ test-unit-py:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-e2e-py: JUNIT_XML=$(JUNIT_XML_E2E)
-test-e2e-py:
+test-e2e-py: ## Run Python e2e tests only
 	@echo "→ Running Python e2e tests only"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
@@ -256,7 +249,7 @@ test-e2e-py:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-nightly-py: JUNIT_XML=$(JUNIT_XML_NIGHTLY)
-test-nightly-py:
+test-nightly-py: ## Run Python nightly tests only
 	@echo "→ Running Python nightly tests only"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
@@ -282,7 +275,7 @@ test-nightly-py:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-regression-py: JUNIT_XML=$(JUNIT_XML_REGRESSION)
-test-regression-py:
+test-regression-py: ## Run Python functional + integration tests
 	@echo "→ Running Python regression tests (functional + integration)"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
@@ -311,7 +304,7 @@ test-regression-py:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-benchmark-py: JUNIT_XML=$(JUNIT_XML_BENCHMARK)
-test-benchmark-py:
+test-benchmark-py: ## Run Python benchmark tests only
 	@echo "→ Running Python benchmark tests only"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
@@ -336,7 +329,7 @@ test-benchmark-py:
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
-test-clean-py:
+test-clean-py: ## Remove Python test artifacts and coverage leftovers
 	@echo "→ Cleaning Python test artifacts"
 	@rm -rf ".hypothesis" ".benchmarks" || true
 	@$(RM) .coverage* || true
@@ -352,16 +345,6 @@ test-night: test-nightly-py
 test-regression: test-regression-py
 test-benchmark: test-benchmark-py
 test-clean: test-clean-py
-
-##@ Python Test
-test-py: ## Run default Python test suite (not nightly/slow)
-test-all-py: ## Run all Python tests including slow and nightly
-test-unit-py: ## Run Python unit tests only
-test-e2e-py: ## Run Python e2e tests only
-test-nightly-py: ## Run Python nightly tests only
-test-regression-py: ## Run Python functional + integration tests
-test-benchmark-py: ## Run Python benchmark tests only
-test-clean-py: ## Remove Python test artifacts and coverage leftovers
 
 # -------------------------------
 # Python quality
@@ -387,7 +370,8 @@ endif
 
 .PHONY: quality-py interrogate-report-py quality-clean-py quality interrogate-report quality-clean
 
-quality-py:
+##@ Python Quality
+quality-py: ## Run Vulture, Deptry, Interrogate; save logs to artifacts/quality/
 	@echo "→ Running Python quality checks..."
 	@mkdir -p "$(QUALITY_ARTIFACTS_DIR)"
 
@@ -412,7 +396,7 @@ quality-py:
 	@echo "✔ Python quality checks passed"
 	@printf "OK\n" >"$(QUALITY_OK_MARKER)"
 
-interrogate-report-py:
+interrogate-report-py: ## Save full Interrogate table + offenders list
 	@echo "→ Generating docstring coverage report (<100%)"
 	@mkdir -p "$(QUALITY_ARTIFACTS_DIR)"
 	@set +e; \
@@ -427,7 +411,7 @@ interrogate-report-py:
 	  if [ -n "$$OFF" ]; then printf '%s\n' "$$OFF"; else echo "✔ All files 100% documented"; fi; \
 	  exit $$rc
 
-quality-clean-py:
+quality-clean-py: ## Remove artifacts/quality
 	@echo "→ Cleaning Python quality artifacts"
 	@rm -rf "$(QUALITY_ARTIFACTS_DIR)"
 
@@ -435,11 +419,6 @@ quality-clean-py:
 quality: quality-py
 interrogate-report: interrogate-report-py
 quality-clean: quality-clean-py
-
-##@ Python Quality
-quality-py: ## Run Vulture, Deptry, Interrogate; save logs to artifacts/quality/
-interrogate-report-py: ## Save full Interrogate table + offenders list
-quality-clean-py: ## Remove artifacts/quality
 
 # -------------------------------
 # Python security
@@ -466,15 +445,16 @@ BANDIT_THREADS           ?= 0
 
 .PHONY: security-py security-bandit-py security-audit-py security-clean-py security security-bandit security-audit security-clean
 
-security-py: security-bandit-py security-audit-py
+##@ Python Security
+security-py: security-bandit-py security-audit-py ## Run Bandit and pip-audit; save reports to artifacts/security
 
-security-bandit-py:
+security-bandit-py: ## Run Bandit (screen + JSON artifact)
 	@mkdir -p "$(SECURITY_REPORT_DIR)"
 	@echo "→ Bandit (Python static analysis)"
 	@$(BANDIT) -r "$(SECURITY_PATHS)" -x "$(BANDIT_EXCLUDES)" -f json -o "$(BANDIT_JSON)" -n $(BANDIT_THREADS) || true
 	@$(BANDIT) -r "$(SECURITY_PATHS)" -x "$(BANDIT_EXCLUDES)" -n $(BANDIT_THREADS) | tee "$(BANDIT_TXT)"
 
-security-audit-py:
+security-audit-py: ## Run pip-audit (JSON once) and gate via scripts/helper_pip_audit.py
 	@mkdir -p "$(SECURITY_REPORT_DIR)"
 	@echo "→ Pip-audit (dependency vulnerability scan)"
 	@$(PIP_AUDIT) $(SECURITY_IGNORE_FLAGS) $(PIP_AUDIT_CONSOLE_FLAGS) $(PIP_AUDIT_INPUTS) \
@@ -486,7 +466,7 @@ security-audit-py:
 	SECURITY_IGNORE_IDS="$(SECURITY_IGNORE_IDS)" \
 	"$(VENV_PYTHON)" scripts/helper_pip_audit.py | tee "$(PIPA_TXT)"
 
-security-clean-py:
+security-clean-py: ## Remove Python security reports
 	@rm -rf "$(SECURITY_REPORT_DIR)"
 
 # Backward-compatible aliases
@@ -494,12 +474,6 @@ security: security-py
 security-bandit: security-bandit-py
 security-audit: security-audit-py
 security-clean: security-clean-py
-
-##@ Python Security
-security-py:        ## Run Bandit and pip-audit; save reports to artifacts/security
-security-bandit-py: ## Run Bandit (screen + JSON artifact)
-security-audit-py:  ## Run pip-audit (JSON once) and gate via scripts/helper_pip_audit.py
-security-clean-py:  ## Remove Python security reports
 
 # -------------------------------
 # Python packaging build
@@ -513,12 +487,13 @@ PYPROJECT_ABS    := $(abspath $(PYTHON_DIST_DIR)/pyproject.toml)
 
 .PHONY: build-py build-sdist-py build-wheel-py build-check-py build-tools-py build-clean-py build build-sdist build-wheel build-check build-tools build-clean
 
-build-tools-py: | $(VENV)
+##@ Python Build
+build-tools-py: | $(VENV) ## Ensure local venv has Python build tooling (pip, build, twine)
 	@echo "→ Ensuring Python build toolchain..."
 	@$(VENV_PYTHON) -m pip install -U pip
 	@$(VENV_PYTHON) -m pip install --upgrade build twine maturin
 
-build-py: build-tools-py
+build-py: build-tools-py ## Build wheel and source distribution into artifacts/build
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@echo "→ Preparing Python package artifacts..."
 	@mkdir -p "$(BUILD_DIR_ABS)"
@@ -533,26 +508,26 @@ build-py: build-tools-py
 	@echo "✔ Build artifacts ready in '$(BUILD_DIR_ABS)'"
 	@ls -l "$(BUILD_DIR_ABS)" || true
 
-build-sdist-py: build-tools-py
+build-sdist-py: build-tools-py ## Build Python sdist only into artifacts/build
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@mkdir -p "$(BUILD_DIR_ABS)"
 	@echo "→ Building sdist from $(PYTHON_DIST_DIR) → $(BUILD_DIR_ABS)"
 	@$(VENV_PYTHON) -m build --sdist --outdir "$(BUILD_DIR_ABS)" "$(PYTHON_DIST_DIR)"
 
-build-wheel-py: build-tools-py
+build-wheel-py: build-tools-py ## Build Python wheel only into artifacts/build
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@mkdir -p "$(BUILD_DIR_ABS)"
 	@echo "→ Building wheel from $(PYTHON_DIST_DIR) → $(BUILD_DIR_ABS)"
 	@$(VENV_PYTHON) -m build --wheel --outdir "$(BUILD_DIR_ABS)" "$(PYTHON_DIST_DIR)"
 
-build-check-py:
+build-check-py: ## Run twine check on artifacts/build/*
 	@if ls "$(BUILD_DIR_ABS)"/* 1>/dev/null 2>&1; then \
 	  $(VENV_PYTHON) -m twine check "$(BUILD_DIR_ABS)"/* 2>&1 | tee "$(BUILD_DIR_ABS)/twine-check.log"; \
 	else \
 	  echo "✘ No artifacts in $(BUILD_DIR_ABS) to check"; exit 1; \
 	fi
 
-build-clean-py:
+build-clean-py: ## Remove Python build artifacts (artifacts/build + legacy build/, dist/, *.egg-info)
 	@echo "→ Cleaning Python build artifacts..."
 	@rm -rf "$(BUILD_DIR_ABS)" || true
 	@rm -rf build dist *.egg-info || true
@@ -566,14 +541,6 @@ build-sdist: build-sdist-py
 build-wheel: build-wheel-py
 build-check: build-check-py
 build-clean: build-clean-py
-
-##@ Python Build
-build-tools-py: ## Ensure local venv has Python build tooling (pip, build, twine)
-build-clean-py: ## Remove Python build artifacts (artifacts/build + legacy build/, dist/, *.egg-info)
-build-py: ## Build wheel and source distribution into artifacts/build
-build-sdist-py: ## Build Python sdist only into artifacts/build
-build-wheel-py: ## Build Python wheel only into artifacts/build
-build-check-py: ## Run twine check on artifacts/build/*
 
 # -------------------------------
 # Python SBOM
@@ -613,7 +580,8 @@ SBOM_DEV_FILE       := $(SBOM_DIR)/$(PACKAGE_NAME)-$(SBOM_VERSION)-$(GIT_SHA).de
 
 .PHONY: sbom-py sbom-prod-py sbom-dev-py sbom-validate-py sbom-summary-py sbom-clean-py sbom sbom-prod sbom-dev sbom-validate sbom-summary sbom-clean
 
-sbom-py: sbom-clean-py sbom-prod-py sbom-dev-py sbom-summary-py
+##@ Python SBOM
+sbom-py: sbom-clean-py sbom-prod-py sbom-dev-py sbom-summary-py ## Generate SBOMs for prod/dev (pip-audit → CycloneDX JSON)
 	@echo "✔ Python SBOMs generated in $(SBOM_DIR)"
 
 sbom-prod-py:
@@ -640,7 +608,7 @@ sbom-dev-py:
 	    --output "$(SBOM_DEV_FILE)" || true; \
 	fi
 
-sbom-validate-py:
+sbom-validate-py: ## Validate generated SBOMs with CycloneDX CLI
 	@if [ -z "$(SBOM_CLI)" ]; then echo "✘ SBOM_CLI not set"; exit 1; fi
 	@command -v $(SBOM_CLI) >/dev/null 2>&1 || { echo "✘ '$(SBOM_CLI)' not found. Install it or set SBOM_CLI."; exit 1; }
 	@if ! find "$(SBOM_DIR)" -maxdepth 1 -name '*.cdx.json' -print -quit | grep -q .; then \
@@ -651,7 +619,7 @@ sbom-validate-py:
 	  $(SBOM_CLI) validate --input-format json --input-file "$$f"; \
 	done
 
-sbom-summary-py:
+sbom-summary-py: ## Write a brief components summary to artifacts/sbom/summary.txt
 	@mkdir -p "$(SBOM_DIR)"
 	@if ! find "$(SBOM_DIR)" -maxdepth 1 -name '*.cdx.json' -print -quit | grep -q .; then \
 	  echo "→ No SBOM files found in $(SBOM_DIR); skipping summary"; \
@@ -681,7 +649,7 @@ sbom-summary-py:
 	fi; \
 	sed -n '1,5p' "$$summary" 2>/dev/null || true
 
-sbom-clean-py:
+sbom-clean-py: ## Remove stale SBOM artifacts from artifacts/sbom
 	@echo "→ Cleaning Python SBOM artifacts"
 	@mkdir -p "$(SBOM_DIR)"
 	@rm -f \
@@ -695,12 +663,6 @@ sbom-dev: sbom-dev-py
 sbom-validate: sbom-validate-py
 sbom-summary: sbom-summary-py
 sbom-clean: sbom-clean-py
-
-##@ Python SBOM
-sbom-py:           ## Generate SBOMs for prod/dev (pip-audit → CycloneDX JSON)
-sbom-validate-py:  ## Validate generated SBOMs with CycloneDX CLI
-sbom-summary-py:   ## Write a brief components summary to artifacts/sbom/summary.txt
-sbom-clean-py:     ## Remove stale SBOM artifacts from artifacts/sbom
 
 # -------------------------------
 # Python publish
@@ -725,10 +687,11 @@ PKG_VERSION         := $(if $(strip $(PKG_VERSION_RAW)),$(strip $(PKG_VERSION_RA
 
 twine-py: publish-py
 
-publish-py: check-version-py build-py twine-check-py twine-upload-py
+##@ Publish
+publish-py: check-version-py build-py twine-check-py twine-upload-py ## Upload Python release to PyPI (build → validate → upload)
 	@echo "✔ Published Python package $(PKG_DIST_NAME) $(PKG_VERSION) to $(TWINE_REPOSITORY)"
 
-publish-test-py: check-version-py build-py twine-check-py twine-upload-test-py
+publish-test-py: check-version-py build-py twine-check-py twine-upload-test-py ## Upload Python release to TestPyPI (build → validate → upload)
 	@echo "✔ Published Python package $(PKG_DIST_NAME) $(PKG_VERSION) to testpypi"
 
 check-version-py:
@@ -767,7 +730,7 @@ twine-upload-py: ensure-dists-py
 twine-upload-test-py:
 	@$(MAKE) twine-upload-py TWINE_REPOSITORY=testpypi
 
-verify-test-install-py:
+verify-test-install-py: ## Install from TestPyPI into temp venv and run CLI
 	@echo "→ Verifying installation from TestPyPI"
 	@tmp=$$(mktemp -d); \
 	$(PY) -m venv $$tmp/venv; \
@@ -785,8 +748,3 @@ twine-check: twine-check-py
 twine-upload: twine-upload-py
 twine-upload-test: twine-upload-test-py
 verify-test-install: verify-test-install-py
-
-##@ Publish
-publish-py:             ## Upload Python release to PyPI (build → validate → upload)
-publish-test-py:        ## Upload Python release to TestPyPI (build → validate → upload)
-verify-test-install-py: ## Install from TestPyPI into temp venv and run CLI

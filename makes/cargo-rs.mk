@@ -56,7 +56,8 @@ endef
 
 .PHONY: fmt-rs lint-rs test-rs test-all-rs coverage-rs audit-rs publish-rs
 
-fmt-rs:
+##@ Rust
+fmt-rs: ## Run Rust format checks (artifact-scoped)
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
 	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
 	@set -o pipefail; \
@@ -67,7 +68,7 @@ fmt-rs:
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml 2>&1 | tee "$(RS_FMT_REPORT)"
 
-lint-rs:
+lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
 	@mkdir -p "$(dir $(RS_LINT_REPORT))"
 	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
 	@set -o pipefail; \
@@ -79,7 +80,7 @@ lint-rs:
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee "$(RS_LINT_REPORT)"
 
-test-rs:
+test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)"
 	@status=0; \
@@ -104,7 +105,7 @@ test-rs:
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
 	test $$status -eq 0
 
-test-all-rs:
+test-all-rs: ## Run Rust nextest all-features + ignored suite (artifact-scoped)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)"
 	@status=0; \
@@ -130,7 +131,7 @@ test-all-rs:
 	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
 	test $$status -eq 0
 
-coverage-rs:
+coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-scoped)
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
@@ -158,7 +159,7 @@ coverage-rs:
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
 	cargo llvm-cov report
 
-audit-rs:
+audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
 	$(call rs_require_tool,cargo-deny)
 	$(call rs_require_tool,cargo-audit)
 	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
@@ -170,7 +171,7 @@ audit-rs:
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit; \
 	} 2>&1 | tee "$(RS_AUDIT_REPORT)"
 
-publish-rs:
+publish-rs: ## Publish Rust crates (dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to release)
 	@set -euo pipefail; \
 	if [ -z "$(RUST_PUBLISH_PACKAGES)" ]; then \
 		echo "RUST_PUBLISH_PACKAGES is empty; nothing to publish"; \
@@ -194,12 +195,3 @@ publish-rs:
 			$$allow_dirty_flag \
 			$$dry_run_flag; \
 	done
-
-##@ Rust
-fmt-rs: ## Run Rust format checks (artifact-scoped)
-lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
-test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
-test-all-rs: ## Run Rust nextest all-features + ignored suite (artifact-scoped)
-coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-scoped)
-audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
-publish-rs: ## Publish Rust crates (dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to release)

@@ -34,7 +34,8 @@ endif
 
 .PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-prep
 
-docs: docs-clean docs-prep
+##@ Documentation
+docs: docs-clean docs-prep ## Build documentation (mkdocs --strict) to artifacts/docs/site
 	@echo "Building documentation"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -42,7 +43,7 @@ docs: docs-clean docs-prep
 	@$(MAKE) docs-hygiene
 	@echo "Documentation build complete"
 
-docs-serve: docs-prep
+docs-serve: docs-prep ## Serve documentation locally (auto-reload; no disk generation)
 	@HOST=$${HOST:-$(DOCS_HOST)}; PORT=$${PORT:-$(DOCS_PORT)}; \
 	  if command -v lsof >/dev/null 2>&1; then \
 	    while lsof -tiTCP:$$PORT -sTCP:LISTEN >/dev/null 2>&1; do PORT=$$((PORT+1)); done; \
@@ -52,13 +53,13 @@ docs-serve: docs-prep
 	  XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) SITE_URL=http://$$HOST:$$PORT/ \
 	    "$(MKDOCS_BIN)" serve --config-file "$(MKDOCS_CFG)" --dev-addr $$HOST:$$PORT
 
-docs-deploy:
+docs-deploy: ## Deploy documentation to GitHub Pages (strict)
 	@echo "Deploying documentation to GitHub Pages"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
 	  "$(MKDOCS_BIN)" gh-deploy --strict --config-file "$(MKDOCS_CFG)"
 
-docs-check:
+docs-check: ## Validate documentation builds without errors
 	@echo "Checking documentation build integrity"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -68,25 +69,16 @@ docs-check:
 	@$(MAKE) docs-hygiene
 	@echo "Documentation passes build checks"
 
-docs-prep:
+docs-prep: ## Validate docs source directory is present
 	@echo "Preparing docs (source: docs/)"
 	@test -d "docs" || (echo "ERROR: docs/ directory is missing"; exit 1)
 
-docs-clean:
+docs-clean: ## Remove generated documentation artifacts
 	@echo "Cleaning documentation build artifacts"
 	@rm -rf "$(DOCS_SITE_DIR)" artifacts/docs/.cache site .cache
 
-docs-hygiene:
+docs-hygiene: ## Fail if root 'site/' or '.cache/' or generated under docs/
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
 	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden"; exit 1)
 	@echo "Docs hygiene OK"
-
-##@ Documentation
-docs:         ## Build documentation (mkdocs --strict) to artifacts/docs/site
-docs-serve:   ## Serve documentation locally (auto-reload; no disk generation)
-docs-deploy:  ## Deploy documentation to GitHub Pages (strict)
-docs-check:   ## Validate documentation builds without errors
-docs-clean:   ## Remove generated documentation artifacts
-docs-prep:    ## Validate docs source directory is present
-docs-hygiene: ## Fail if root 'site/' or '.cache/' or generated under docs/
