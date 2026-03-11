@@ -16,7 +16,6 @@ RM                    := rm -rf
 
 # Modular Includes
 include makes/macro.mk
-include makes/api.mk
 include makes/cargo-rs.mk
 include makes/cargo-py.mk
 include makes/dictionary.mk
@@ -51,11 +50,11 @@ clean-soft:
 	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
 # Pipelines
-all: clean install test lint quality security api docs build sbom
+all: clean install test lint quality security docs build sbom
 	@echo "✔ All targets completed"
 
 # Run independent checks in parallel
-lint quality security api docs: | bootstrap
+lint quality security docs: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status:

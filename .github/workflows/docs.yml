@@ -112,20 +112,6 @@ jobs:
             fi
           done
 
-          if [ -d "_ci_artifacts/api" ] || [ -d "_ci_artifacts/api-full" ]; then
-            mkdir -p artifacts/api
-          fi
-          if [ -d "_ci_artifacts/api" ]; then
-            rsync -a "_ci_artifacts/api/" "artifacts/api/"
-          fi
-          if [ -d "_ci_artifacts/api-full" ]; then
-            rsync -a "_ci_artifacts/api-full/" "artifacts/api/"
-          fi
-          if [ -f "_ci_artifacts/api/v1/schema.yaml" ]; then
-            mkdir -p artifacts/api/v1
-            cp -f "_ci_artifacts/api/v1/schema.yaml" "artifacts/api/v1/schema.yaml"
-          fi
-
           mkdir -p artifacts/test
           choose_test_dir() {
             if [ -d "_ci_artifacts/test-py311" ]; then
@@ -180,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           GEN_DIR="artifacts/docs/docs/artifacts"
-          req=(index test lint quality security api sbom citation)
+          req=(index test lint quality security sbom citation)
           for p in "${req[@]}"; do
             f="$GEN_DIR/${p}.md"
             if [[ ! -f "$f" ]]; then

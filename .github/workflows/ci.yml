@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [quality, security, docs, build, api, sbom]
+        env: [quality, security, docs, build, sbom]
 
     steps:
       - uses: actions/checkout@v4
@@ -112,19 +112,6 @@ jobs:
           cache-dependency-path: |
             pyproject.toml
             requirements/**/*.txt
-
-      # Tooling only where needed
-      - uses: actions/setup-node@v4
-        if: ${{ matrix.env == 'api' }}
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - uses: actions/setup-java@v4
-        if: ${{ matrix.env == 'api' }}
-        with:
-          distribution: "temurin"
-          java-version: "17"
 
       - run: python -m pip install -U pip tox
       - name: Validate cross-ecosystem package metadata
@@ -204,34 +191,6 @@ jobs:
           path: artifacts/sbom/**
           if-no-files-found: ignore
           retention-days: 30
-
-      # --- API (full logs) ---
-      - name: Upload API artifacts (full)
-        if: ${{ always() && matrix.env == 'api' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-full
-          path: artifacts/api/**
-          if-no-files-found: warn
-          retention-days: 14
-
-      # --- API schema (release layout expected by 'Publish to PyPI' / Releases) ---
-      - name: Stage API schema (exact release layout)
-        if: ${{ matrix.env == 'api' && hashFiles('artifacts/api/v1/schema.yaml') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf _release_api && mkdir -p _release_api/v1
-          cp -f artifacts/api/v1/schema.yaml _release_api/v1/schema.yaml
-
-      - name: Upload API schema (release layout)
-        if: ${{ matrix.env == 'api' && hashFiles('artifacts/api/v1/schema.yaml') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: api
-          path: _release_api/v1
-          if-no-files-found: error
-          retention-days: 14
 
   rust-parity:
     name: rust-parity

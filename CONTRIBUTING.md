@@ -1,7 +1,7 @@
 # Contributing to Bijux CLI
 <a id="top"></a>
 
-This guide is the single source of truth for local setup, workflows, API validation, and PR rules. Follow it to ensure your changes pass CI seamlessly.️
+This guide is the single source of truth for local setup, workflows, and PR rules. Follow it to ensure your changes pass CI seamlessly.
 
 ---
 
@@ -9,7 +9,6 @@ This guide is the single source of truth for local setup, workflows, API validat
 
 - [Quick Start](#quick-start)
 - [Daily Workflow](#daily-workflow)
-- [API Development](#api-development)
 - [Docs](#docs)
 - [Tests & Coverage](#tests-coverage)
 - [Style, Types, Hygiene](#style-types-hygiene)
@@ -32,7 +31,6 @@ This guide is the single source of truth for local setup, workflows, API validat
 
 - Python **3.11 / 3.12 / 3.13** (`pyenv` recommended)
 - **GNU Make**
-- **Node.js + npm** (for API validation tooling)
 
 **Setup**
 
@@ -46,7 +44,7 @@ source .venv/bin/activate
 **Sanity check**
 
 ```bash
-make lint test docs api
+make lint test docs
 ```
 
 * ✔ Pass → your env matches CI
@@ -72,7 +70,6 @@ make lint test docs api
 | `make lint`     | Format (ruff), lint (ruff), type-check (mypy), complexity (radon)           |
 | `make quality`  | Dead code (vulture), deps hygiene (deptry), REUSE, docstrings (interrogate) |
 | `make security` | Bandit + pip-audit                                                          |
-| `make api`      | OpenAPI lint + generator compat + Schemathesis contract tests               |
 | `make docs`     | Build MkDocs (strict)                                                       |
 | `make build`    | Build sdist + wheel                                                         |
 | `make sbom`     | CycloneDX SBOM → `artifacts/sbom.json`                                      |
@@ -84,30 +81,6 @@ make lint-file file=path/to/file.py
 make docs-serve    # local docs server
 # make docs-deploy # if you have perms
 ```
-
-[Back to top](#top)
-
----
-
-<a id="api-development"></a>
-
-## API Development
-
-**Schema:** `api/v1/schema.yaml`
-**Tooling:** Prance, OpenAPI Spec Validator, Redocly, OpenAPI Generator, Schemathesis
-
-**Validate locally**
-
-```bash
-.venv/bin/uvicorn bijux_cli.httpapi:app --host 0.0.0.0 --port 8000 &
-make api
-```
-
-**Contract rules**
-
-* Errors use **RFC 7807 Problem JSON**
-* Response shapes and pagination are stable or versioned
-* Breaking changes require a versioned path **and** updated release-truth evidence (`bijux dev cli release *`)
 
 [Back to top](#top)
 
@@ -185,7 +158,6 @@ make sbom      # CycloneDX, saved to artifacts_pages/
 | `lint`                      | `make lint`     |
 | `quality`                   | `make quality`  |
 | `security`                  | `make security` |
-| `api`                       | `make api`      |
 | `docs`                      | `make docs`     |
 | `build`                     | `make build`    |
 | `sbom`                      | `make sbom`     |
@@ -232,7 +204,7 @@ BREAKING CHANGE: <explanation>
 2. Run:
 
    ```bash
-   make lint test api docs
+   make lint test docs
    ```
 3. Ensure Conventional Commits
 4. Open PR with clear summary & rationale

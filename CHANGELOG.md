@@ -58,7 +58,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 * **ADR-0005:** Zero-root-pollution via **Makefile-orchestrated artifact containment** (all generated outputs under `artifacts/`).  
-* **Curated release assets:** zipped bundles for **tests (py311/py312/py313)** and for **lint, quality, security, api, docs, sbom, citation, build**, plus consolidated **checksums**.
+* **Curated release assets:** zipped bundles for **tests (py311/py312/py313)** and for **lint, quality, security, docs, sbom, citation, build**, plus consolidated **checksums**.
 * **End-to-end automation:** GitHub Actions to **publish to PyPI**, **create a GitHub Release** with curated bundles, and **deploy docs**.
 
 ### Changed
@@ -179,7 +179,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **API contract validation & testing**
 
-    * Automated lint/validation of `api/*.yaml` with Prance, OpenAPI Spec Validator, Redocly, and OpenAPI Generator.
+    * Automated lint/validation of OpenAPI specifications with Prance, OpenAPI Spec Validator, Redocly, and OpenAPI Generator.
     * Added **Schemathesis** contract testing against the running server.
     * Pinned OpenAPI Generator CLI version via `OPENAPI_GENERATOR_VERSION` and automated Node.js toolchain setup in Makefile.
 
@@ -207,21 +207,21 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Makefile architecture**
 
     * Modularized the Makefile into `makes/*.mk` for maintainability and clear separation of concerns.
-    * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
+    * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
     * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from `scripts/git-hooks` (skips re-installation if already linked).
-    * Added `all-parallel` target to run independent checks (`quality`, `security`, `api`, `docs`) concurrently for faster CI/CD.
+    * Added `all-parallel` target to run independent checks (`quality`, `security`, `docs`) concurrently for faster CI/CD.
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
 
 * **tox orchestration**
 
     * Configured multi-Python test envs (`py311`, `py312`, `py313`).
-    * Mapped Makefile workflows into tox envs (`lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `changelog`, `citation`) to ensure reproducibility.
+    * Mapped Makefile workflows into tox envs (`lint`, `quality`, `security`, `docs`, `build`, `sbom`, `changelog`, `citation`) to ensure reproducibility.
     * Passed `MAKEFLAGS` to execute Makefile targets inside tox-managed virtualenvs.
 
 * **Continuous Integration**
 
-    * Added **GitHub Actions** workflow running tox across Python versions with Node.js 20 and Java 17 for API checks.
+    * Added **GitHub Actions** workflow running tox across Python versions with auxiliary tooling for specification checks.
     * CI/CD pipelines directly leverage the modularized Makefile for consistent local/CI behavior.
 
 * **Packaging / PyPI page**

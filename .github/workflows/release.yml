@@ -221,7 +221,7 @@ jobs:
           done
   
           # Single-dir bundles
-          for name in lint quality security api docs sbom citation; do
+          for name in lint quality security docs sbom citation; do
             if [ -d "artifacts/${name}" ]; then
               zip -r -q "_release/${name}.zip" "artifacts/${name}"
             fi
