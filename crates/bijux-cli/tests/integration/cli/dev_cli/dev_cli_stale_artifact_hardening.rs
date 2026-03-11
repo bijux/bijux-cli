@@ -7,8 +7,8 @@ use std::process::Command;
 
 use serde_json::Value;
 
-const GENERATOR: &str = "scripts/status/generate_dev_cli_stale_artifact_reports.py";
-const GATE: &str = "scripts/status/enforce_dev_cli_stale_artifact_gate.py";
+const GENERATOR_ID: &str = "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS";
+const GATE_ID: &str = "STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE";
 
 fn workspace_root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -46,8 +46,8 @@ fn seeded_artifact_root(prefix: &str) -> std::path::PathBuf {
 }
 
 fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value {
-    let mut cmd = Command::new("python3");
-    cmd.arg(GENERATOR)
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    cmd.args(["dev", "cli", "scripts", "status", "run", "--id", GENERATOR_ID])
         .current_dir(workspace_root())
         .env("DEV_CLI_STALE_ARTIFACT_ROOT", root)
         .env("DEV_CLI_STALE_MAX_SECONDS", "999999999");
@@ -70,8 +70,10 @@ fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value 
 }
 
 fn run_gate(root: &Path, allow_injection_drift: bool) -> std::process::Output {
-    let mut cmd = Command::new("python3");
-    cmd.arg(GATE).current_dir(workspace_root()).env("DEV_CLI_STALE_ARTIFACT_ROOT", root);
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    cmd.args(["dev", "cli", "scripts", "status", "run", "--id", GATE_ID])
+        .current_dir(workspace_root())
+        .env("DEV_CLI_STALE_ARTIFACT_ROOT", root);
     if allow_injection_drift {
         cmd.env("DEV_CLI_ALLOW_INJECTION_DRIFT", "1");
     }

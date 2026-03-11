@@ -168,6 +168,55 @@ fn delegate_to_external_binary(
     }
 }
 
+fn scripts_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
+    let is_scripts_runner = matches!(
+        normalized_path,
+        [a, b, c, d]
+            if a == "dev"
+                && b == "cli"
+                && c == "scripts"
+                && (d == "generate" || d == "generate-all")
+    ) || matches!(
+        normalized_path,
+        [a, b, c, d, e]
+            if a == "dev"
+                && b == "cli"
+                && c == "scripts"
+                && d == "status"
+                && (e == "run" || e == "run-all")
+    );
+
+    if !is_scripts_runner {
+        return None;
+    }
+
+    if payload
+        .get("status")
+        .and_then(Value::as_str)
+        .is_some_and(|status| status == "failed" || status == "error")
+    {
+        let exit_code =
+            payload.get("exit_code").and_then(Value::as_i64).filter(|code| *code > 0).unwrap_or(1);
+        return Some(exit_code as i32);
+    }
+
+    if payload.get("failed").and_then(Value::as_u64).is_some_and(|count| count > 0) {
+        return Some(1);
+    }
+
+    if payload.get("results").and_then(Value::as_array).is_some_and(|rows| {
+        rows.iter().any(|row| {
+            row.get("status")
+                .and_then(Value::as_str)
+                .is_some_and(|status| status == "failed" || status == "error")
+        })
+    }) {
+        return Some(1);
+    }
+
+    Some(0)
+}
+
 fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
     let first = argv.get(1)?;
 
@@ -291,9 +340,15 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
+    let route_exit_code = scripts_route_exit_code(&intent.normalized_path, &payload).unwrap_or(0);
+
     if intent.global_flags.quiet {
-        return Ok(AppRunResult { exit_code: 0, stdout: String::new(), stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: route_exit_code,
+            stdout: String::new(),
+            stderr: String::new(),
+        });
     }
 
-    Ok(AppRunResult { exit_code: 0, stdout: content, stderr: String::new() })
+    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
 }
