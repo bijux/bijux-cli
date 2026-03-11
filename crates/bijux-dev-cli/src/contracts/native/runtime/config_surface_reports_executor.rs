@@ -304,7 +304,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     })
                                 })
                                 .collect();
-            let temp_root = workspace_root.join("target/tmp/config-source-reports");
+            let temp_root = workspace_root.join("artifacts/tmp/config-source-reports");
             fs::create_dir_all(&temp_root).ok()?;
             let config_file = temp_root.join("config.env");
             fs::write(&config_file, "BIJUXCLI_ALPHA=from-file\n").ok()?;
