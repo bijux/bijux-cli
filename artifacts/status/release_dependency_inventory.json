@@ -1,25 +1,25 @@
 {
-  "generated_at": "1970-01-01T00:00:00+00:00",
-  "generator": "scripts/status/generate_release_build_reports.py",
+  "generated_at": "2026-03-11T05:15:21Z",
+  "generator": "bijux-dev-cli",
   "workspace_packages": [
-    {
-      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli/Cargo.toml",
-      "name": "bijux-cli",
-      "version": "0.1.0"
-    },
     {
       "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli-evidence/Cargo.toml",
       "name": "bijux-cli-evidence",
       "version": "0.1.0"
     },
     {
-      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli-python/Cargo.toml",
-      "name": "bijux-cli-python",
+      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-dev-cli/Cargo.toml",
+      "name": "bijux-dev-cli",
       "version": "0.1.0"
     },
     {
-      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-dev-cli/Cargo.toml",
-      "name": "bijux-dev-cli",
+      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli/Cargo.toml",
+      "name": "bijux-cli",
+      "version": "0.1.0"
+    },
+    {
+      "manifest_path": "/Users/bijan/bijux/bijux-cli/crates/bijux-cli-python/Cargo.toml",
+      "name": "bijux-cli-python",
       "version": "0.1.0"
     }
   ]
