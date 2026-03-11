@@ -18,6 +18,6 @@ pub use crate::commands::routes;
 pub use crate::commands::runtime_contracts;
 pub use crate::commands::runtime_identity;
 pub use crate::commands::rustdoc;
-pub use crate::commands::script_audit;
+pub use crate::commands::maintenance_audit;
 pub use crate::commands::state_audit;
 pub use crate::commands::status;

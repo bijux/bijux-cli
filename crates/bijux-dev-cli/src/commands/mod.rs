@@ -18,6 +18,6 @@ pub mod routes;
 pub mod runtime_contracts;
 pub mod runtime_identity;
 pub mod rustdoc;
-pub mod script_audit;
+pub mod maintenance_audit;
 pub mod state_audit;
 pub mod status;

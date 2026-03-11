@@ -5,7 +5,7 @@ use std::path::Path;
 
 use bijux_dev_cli::{
     cockpit, config, contracts, control_plane, crate_health, docs_audit, env, package_health,
-    parity, python, registry, repo, route_audit, routes, runtime_identity, script_audit,
+    parity, python, registry, repo, route_audit, routes, runtime_identity, maintenance_audit,
     state_audit, status, ReportContext,
 };
 use serde_json::json;
@@ -50,7 +50,7 @@ fn all_command_groups_build_expected_top_level_keys() {
     assert!(repo::build_health_report(&root).get("repo_health").is_some());
     assert!(cockpit::build_dashboard_report(&root).get("dashboard").is_some());
     assert!(parity::build_report(&root).get("command_matrix").is_some());
-    assert!(status::build_report(&root, script_audit::build_inventory_report(&root))
+    assert!(status::build_report(&root, maintenance_audit::build_inventory_report(&root))
         .get("status_report")
         .is_some());
     assert!(runtime_identity::build_report(runtime_identity::RuntimeIdentityInput {
@@ -59,7 +59,7 @@ fn all_command_groups_build_expected_top_level_keys() {
             path_binaries: vec![],
             has_path_shadowing: false,
             has_duplicate_installs: false,
-            stale_wrapper_scripts: vec![],
+            stale_wrapper_maintenance: vec![],
             has_mismatched_wheel_binary_versions: false,
             legacy_installer_conflicts: vec![],
             active_binary_missing: false,
@@ -87,8 +87,8 @@ fn all_command_groups_build_expected_top_level_keys() {
     .get("paths")
     .is_some());
     assert!(docs_audit::build_report(&root).get("docs_count").is_some());
-    let inventory = script_audit::build_inventory_report(&root);
-    assert!(script_audit::build_report(inventory).get("scripts").is_some());
+    let inventory = maintenance_audit::build_inventory_report(&root);
+    assert!(maintenance_audit::build_report(inventory).get("maintenance").is_some());
     assert!(crate_health::build_report(&root).get("crate_metrics").is_some());
     assert!(control_plane::build_atlas_report().get("mount").is_some());
 }

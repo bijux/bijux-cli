@@ -1,44 +1,34 @@
-//! Maintainer script audit report assembly.
+//! Maintainer maintenance inventory report assembly.
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
 use serde_json::{json, Value};
+
 use crate::infrastructure::artifacts::{
     collect_files_recursive, parse_make_targets, relative_to_root,
 };
 
-fn classify_script(path: &str) -> &'static str {
-    if path == "scripts/__init__.py" {
-        return "delete";
+fn classify_maintenance_path(path: &str) -> &'static str {
+    if path.starts_with("maintenance/status/") {
+        "status-contract-input"
+    } else {
+        "maintenance-asset"
     }
-    "replace"
 }
 
 fn replacement_command(path: &str) -> Option<String> {
-    match path {
-        "scripts/check-package-metadata.py" => {
-            Some("bijux dev cli scripts package-metadata".to_string())
-        }
-        "scripts/check_e2e_contract.py" => Some("bijux dev cli scripts e2e-contract".to_string()),
-        "scripts/helper_pip_audit.py" => Some("bijux dev cli scripts pip-audit".to_string()),
-        "scripts/capture_python_behavior.py" => {
-            Some("bijux dev cli scripts capture-python-behavior".to_string())
-        }
-        "scripts/generate-provenance-statement.sh" => {
-            Some("bijux dev cli scripts provenance-statement".to_string())
-        }
-        _ => None,
+    if path.starts_with("maintenance/status/") {
+        Some("bijux dev cli maintenance status inventory".to_string())
+    } else if path.starts_with("maintenance/") {
+        Some("bijux dev cli maintenance audit".to_string())
+    } else {
+        None
     }
 }
 
 fn classify_make_target(target: &str) -> &'static str {
-    if target.starts_with("docs") || target.starts_with("api") || target.starts_with("test") {
-        "replace"
-    } else if target.starts_with("publish")
-        || target.starts_with("sbom")
-        || target.starts_with("security")
-    {
+    if target.starts_with("publish") || target.starts_with("sbom") || target.starts_with("security") {
         "keep"
     } else {
         "replace"
@@ -48,14 +38,14 @@ fn classify_make_target(target: &str) -> &'static str {
 /// Builds the dev-cli inventory payload consumed by maintainer audits.
 #[must_use]
 pub fn build_inventory_report(workspace_root: &Path) -> Value {
-    let script_files = collect_files_recursive(&workspace_root.join("scripts"));
-    let scripts: Vec<Value> = script_files
+    let maintenance_files = collect_files_recursive(&workspace_root.join("maintenance"));
+    let maintenance: Vec<Value> = maintenance_files
         .iter()
-        .map(|p| {
-            let rel = relative_to_root(p, workspace_root);
+        .map(|path| {
+            let rel = relative_to_root(path, workspace_root);
             json!({
                 "path": rel,
-                "classification": classify_script(&rel),
+                "classification": classify_maintenance_path(&rel),
                 "replacement_command": replacement_command(&rel),
             })
         })
@@ -79,22 +69,28 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         }));
     }
 
-    let script_summary = scripts.iter().fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
-        let key =
-            item.get("classification").and_then(Value::as_str).unwrap_or("unknown").to_string();
-        *acc.entry(key).or_insert(0) += 1;
-        acc
-    });
-    let remaining_script_only_behaviors: Vec<String> = scripts
+    let maintenance_summary =
+        maintenance.iter().fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
+            let key = item
+                .get("classification")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown")
+                .to_string();
+            *acc.entry(key).or_insert(0) += 1;
+            acc
+        });
+
+    let remaining_legacy_only_behaviors: Vec<String> = maintenance
         .iter()
         .filter_map(|item| {
             let classification = item.get("classification").and_then(Value::as_str).unwrap_or("");
-            if classification != "keep" {
+            if classification != "legacy" {
                 return None;
             }
             item.get("path").and_then(Value::as_str).map(ToString::to_string)
         })
         .collect();
+
     let remaining_task_runner_only_behaviors: Vec<String> = makes
         .iter()
         .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
@@ -107,7 +103,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
-    let maintainer_script_replacements: Vec<Value> = scripts
+    let maintainer_maintenance_replacements: Vec<Value> = maintenance
         .iter()
         .filter_map(|row| {
             let path = row.get("path").and_then(Value::as_str)?;
@@ -120,26 +116,32 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         .collect();
 
     json!({
-        "scripts": scripts,
+        "maintenance": maintenance,
         "makes": makes,
         "summary": {
-            "script_classification_counts": script_summary,
+            "maintenance_classification_counts": maintenance_summary,
         },
-        "maintainer_script_replacements": maintainer_script_replacements,
-        "remaining_script_only_behaviors": remaining_script_only_behaviors,
+        "maintainer_maintenance_replacements": maintainer_maintenance_replacements,
+        "remaining_legacy_only_behaviors": remaining_legacy_only_behaviors,
         "remaining_task_runner_only_behaviors": remaining_task_runner_only_behaviors,
         "rule": "new maintainer automation defaults to bijux dev cli commands",
     })
 }
 
-/// Builds the maintainer script audit report payload.
+/// Builds the maintainer maintenance audit report payload.
 #[must_use]
 pub fn build_report(inventory: Value) -> Value {
     json!({
-        "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
+        "maintenance": inventory.get("maintenance").cloned().unwrap_or_else(|| json!([])),
         "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
-        "remaining_script_only_behaviors": inventory.get("remaining_script_only_behaviors").cloned().unwrap_or_else(|| json!([])),
-        "remaining_task_runner_only_behaviors": inventory.get("remaining_task_runner_only_behaviors").cloned().unwrap_or_else(|| json!([])),
+        "remaining_legacy_only_behaviors": inventory
+            .get("remaining_legacy_only_behaviors")
+            .cloned()
+            .unwrap_or_else(|| json!([])),
+        "remaining_task_runner_only_behaviors": inventory
+            .get("remaining_task_runner_only_behaviors")
+            .cloned()
+            .unwrap_or_else(|| json!([])),
         "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
     })
 }
@@ -151,11 +153,11 @@ mod tests {
     use super::{build_inventory_report, build_report};
 
     #[test]
-    fn script_audit_report_shape_is_stable() {
+    fn maintenance_audit_report_shape_is_stable() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let inventory = build_inventory_report(&root);
         let report = build_report(inventory);
-        assert!(report.get("scripts").is_some());
+        assert!(report.get("maintenance").is_some());
         assert!(report.get("summary").is_some());
     }
 }

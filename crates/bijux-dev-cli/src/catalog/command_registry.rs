@@ -14,7 +14,7 @@ pub enum DevCliCommandGroup {
     Routing,
     /// Runtime/state/environment/package diagnostics.
     Runtime,
-    /// Documentation and script ownership audits.
+    /// Documentation and maintenance ownership audits.
     Audit,
     /// Internal maintainer inventory and hidden probes.
     Internal,
@@ -61,10 +61,10 @@ pub enum DevCliCommand {
     StateDoctor,
     /// `bijux dev cli docs-audit`
     DocsAudit,
-    /// `bijux dev cli scripts`
-    Scripts,
-    /// `bijux dev cli script-audit`
-    ScriptAudit,
+    /// `bijux dev cli maintenance`
+    Maintenance,
+    /// `bijux dev cli maintenance-audit`
+    MaintenanceAudit,
     /// `bijux dev cli rustdoc`
     Rustdoc,
     /// `bijux dev cli release`
@@ -130,8 +130,8 @@ impl DevCliCommand {
             Self::StateAudit => "dev cli state-audit",
             Self::StateDoctor => "dev cli state-doctor",
             Self::DocsAudit => "dev cli docs-audit",
-            Self::Scripts => "dev cli scripts",
-            Self::ScriptAudit => "dev cli script-audit",
+            Self::Maintenance => "dev cli maintenance",
+            Self::MaintenanceAudit => "dev cli maintenance-audit",
             Self::Rustdoc => "dev cli rustdoc",
             Self::Release => "dev cli release",
             Self::Evidence => "dev cli evidence",
@@ -180,8 +180,8 @@ impl DevCliCommand {
             | Self::StateDoctor
             | Self::PluginHealth => DevCliCommandGroup::Runtime,
             Self::DocsAudit
-            | Self::Scripts
-            | Self::ScriptAudit
+            | Self::Maintenance
+            | Self::MaintenanceAudit
             | Self::Rustdoc
             | Self::Release
             | Self::Evidence
@@ -289,13 +289,13 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
             owner: "bijux-dev-cli",
         },
         DevCliCommandMetadata {
-            command: DevCliCommand::Scripts,
+            command: DevCliCommand::Maintenance,
             group: DevCliCommandGroup::Audit,
             visible: true,
             owner: "bijux-dev-cli",
         },
         DevCliCommandMetadata {
-            command: DevCliCommand::ScriptAudit,
+            command: DevCliCommand::MaintenanceAudit,
             group: DevCliCommandGroup::Audit,
             visible: true,
             owner: "bijux-dev-cli",

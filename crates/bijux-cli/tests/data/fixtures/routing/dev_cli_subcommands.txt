@@ -1,4 +1,4 @@
-dev cli scripts
+dev cli maintenance
 dev cli rustdoc
 dev cli release
 dev cli evidence
@@ -19,7 +19,7 @@ dev cli docs
 dev cli docs-audit
 dev cli plugin-health
 dev cli status
-dev cli script-audit
+dev cli maintenance-audit
 dev cli snapshots-audit
 dev cli fixture-audit
 dev cli crate-health

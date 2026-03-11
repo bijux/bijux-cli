@@ -42,10 +42,10 @@ pub use commands::routes;
 pub use commands::runtime_contracts as contracts;
 pub use commands::runtime_identity;
 pub use commands::rustdoc;
-pub use commands::script_audit;
+pub use commands::maintenance_audit;
 pub use commands::state_audit;
 pub use commands::status;
-pub use contract_engine::maintenance as scripts;
+pub use contract_engine::maintenance as maintenance;
 pub use features::control_plane;
 
 pub use catalog::command_registry::{

@@ -16,12 +16,12 @@ use crate::commands::{
     python as dev_python, registry as dev_registry, release as dev_release, repo as dev_repo,
     route_audit as dev_route_audit, routes as dev_routes, runtime_contracts as dev_contracts,
     runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
-    script_audit as dev_script_audit, state_audit as dev_state_audit, status as dev_status,
+    maintenance_audit as dev_maintenance_audit, state_audit as dev_state_audit, status as dev_status,
 };
 use crate::infrastructure::artifacts::{
     collect_files_recursive, read_json_if_exists, relative_to_root,
 };
-use crate::{scripts as dev_scripts, ReportContext};
+use crate::{maintenance as dev_maintenance, ReportContext};
 
 /// Return true when the normalized path belongs to `dev cli` dispatch ownership.
 #[must_use]
@@ -33,12 +33,12 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
                 && b == "cli"
                 && matches!(
                     c.as_str(),
-                    "scripts" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+                    "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
                 ) =>
         {
             true
         }
-        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "scripts" && d == "status" => true,
+        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "maintenance" && d == "status" => true,
         _ => false,
     }
 }
@@ -75,7 +75,7 @@ pub fn try_handle(
             dev_route_audit::build_report_from_query(&inventory.routes, &inventory.aliases)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => {
-            dev_script_audit::build_inventory_report(&workspace_root())
+            dev_maintenance_audit::build_inventory_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
             let context = ReportContext {
@@ -98,11 +98,11 @@ pub fn try_handle(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "status" => dev_status::build_report(
             &workspace_root(),
-            dev_script_audit::build_inventory_report(&workspace_root()),
+            dev_maintenance_audit::build_inventory_report(&workspace_root()),
         ),
-        [a, b, c] if a == "dev" && b == "cli" && c == "script-audit" => {
-            let inventory = dev_script_audit::build_inventory_report(&workspace_root());
-            dev_script_audit::build_report(inventory)
+        [a, b, c] if a == "dev" && b == "cli" && c == "maintenance-audit" => {
+            let inventory = dev_maintenance_audit::build_inventory_report(&workspace_root());
+            dev_maintenance_audit::build_report(inventory)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "snapshots-audit" => {
             let root = workspace_root();
@@ -166,88 +166,92 @@ pub fn try_handle(
         [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor" => {
             dev_state_audit::build_doctor_report(runtime.state_doctor_report())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "remaining" => {
-            dev_scripts::build_remaining_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "remaining" => {
+            dev_maintenance::build_remaining_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "migrated" => {
-            dev_scripts::build_migrated_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "migrated" => {
+            dev_maintenance::build_migrated_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "diff" => {
-            dev_scripts::build_diff_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "diff" => {
+            dev_maintenance::build_diff_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "audit" => {
-            dev_scripts::build_audit_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "audit" => {
+            dev_maintenance::build_audit_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generators" => {
-            dev_scripts::build_generators_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generators" => {
+            dev_maintenance::build_generators_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generate" => {
-            dev_scripts::run_generator(
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate" => {
+            let source_ref = command_option_value(argv, "--source-ref")
+                .or_else(|| command_option_value(argv, "--source"));
+            dev_maintenance::run_generator(
                 &workspace_root(),
                 command_option_value(argv, "--id").as_deref(),
-                command_option_value(argv, "--source").as_deref(),
+                source_ref.as_deref(),
             )
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generate-all" => {
-            dev_scripts::run_all_generators(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate-all" => {
+            dev_maintenance::run_all_generators(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "requirements" => {
-            dev_scripts::build_requirement_catalog_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "requirements" => {
+            dev_maintenance::build_requirement_catalog_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "flaky-tests" => {
-            dev_scripts::build_flaky_tests_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "flaky-tests" => {
+            dev_maintenance::build_flaky_tests_report(&workspace_root())
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "inventory" =>
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "inventory" =>
         {
-            dev_scripts::build_status_scripts_report(&workspace_root())
+            dev_maintenance::build_status_maintenance_report(&workspace_root())
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "run" =>
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run" =>
         {
             let passthrough = command_passthrough_args(argv);
-            dev_scripts::run_status_script(
+            let source_ref = command_option_value(argv, "--source-ref")
+                .or_else(|| command_option_value(argv, "--source"));
+            dev_maintenance::run_status_contract(
                 &workspace_root(),
                 command_option_value(argv, "--id").as_deref(),
-                command_option_value(argv, "--source").as_deref(),
+                source_ref.as_deref(),
                 &passthrough,
             )
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "run-all" =>
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run-all" =>
         {
             let passthrough = command_passthrough_args(argv);
-            dev_scripts::run_all_status_scripts(
+            dev_maintenance::run_all_status_maintenance(
                 &workspace_root(),
                 command_option_value(argv, "--kind").as_deref(),
                 &passthrough,
             )
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "package-metadata" => {
-            dev_scripts::build_package_metadata_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "package-metadata" => {
+            dev_maintenance::build_package_metadata_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "e2e-contract" => {
-            dev_scripts::build_e2e_contract_report(&workspace_root())
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "e2e-contract" => {
+            dev_maintenance::build_e2e_contract_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "pip-audit" => {
-            dev_scripts::build_pip_audit_report(
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "pip-audit" => {
+            dev_maintenance::build_pip_audit_report(
                 &workspace_root(),
                 command_option_value(argv, "--report-path").as_deref(),
             )
         }
         [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "scripts" && d == "capture-python-behavior" =>
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "capture-python-behavior" =>
         {
-            dev_scripts::build_python_capture_report(&workspace_root())
+            dev_maintenance::build_python_capture_report(&workspace_root())
         }
         [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "scripts" && d == "provenance-statement" =>
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "provenance-statement" =>
         {
             let tag = command_option_value(argv, "--tag")
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: --tag required"))?;
             let output_dir = command_option_value(argv, "--output-dir")
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: --output-dir required"))?;
-            dev_scripts::build_provenance_statement_report(&tag, Path::new(&output_dir))
+            dev_maintenance::build_provenance_statement_report(&tag, Path::new(&output_dir))
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "audit" => {
             dev_rustdoc::build_audit_report(&workspace_root())

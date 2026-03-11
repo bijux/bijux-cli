@@ -16,7 +16,7 @@ mod tests {
         assert!(owns_path(&[
             "dev".into(),
             "cli".into(),
-            "scripts".into(),
+            "maintenance".into(),
             "audit".into()
         ]));
         assert!(owns_path(&[
