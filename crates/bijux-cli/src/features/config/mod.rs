@@ -8,3 +8,5 @@ pub(crate) mod service;
 /// Config persistence repository interfaces used by maintainer query adapters.
 pub mod storage;
 pub(crate) mod validation;
+
+pub use storage::validate_config_file;
