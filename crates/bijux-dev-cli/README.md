@@ -18,31 +18,38 @@
 
 `src/` is organized by stable ownership boundaries:
 
-- `app/`: argument parsing, workspace discovery, route handling entrypoints.
-- `contracts/`: status/maintenance contract catalogs and native executors.
+- `cli/`: argument parsing, workspace discovery, command dispatch, and route handlers.
+- `contracts/`: status inventories/runners and maintenance inventories/compliance/generators.
+- `suites/`: control-plane/runtime/quality/resilience execution suites for status contracts.
 - `reports/`: maintainer report builders grouped by business domain.
-- `platform/`: shared command registry and report envelope primitives.
-- `infrastructure/`: filesystem/process adapters used by report and contract code.
-- `status_contracts/`: status contract inventory and runner services.
+- `infra/`: filesystem/process/clock adapters used by reports and contracts.
+- `schema/`: command registry and report envelope schema primitives.
 
-`contracts/native/` uses suite-oriented folders:
+`cli/routes/` is split by command families:
 
-- `control_plane/`
-- `runtime/`
-- `resilience/`
-- `quality/`
+- `root.rs`
+- `maintenance.rs`
+- `release.rs`
+- `evidence.rs`
+- `config.rs`
+- `python.rs`
+- `rustdoc.rs`
 
-Each suite owns:
+`contracts/status/` uses a stable split:
 
-- `runner.rs`: execution dispatch for contract IDs in that suite.
-- `catalog.rs`: contract inventory rows for that suite.
-- `*_executor.rs` and `*_spec.rs`: concrete contract behavior and catalog entries.
+- `model.rs`
+- `inventory.rs`
+- `run.rs`
 
 ## Architecture Rules
 
 - `crates/*/src` path depth must stay `<= 7`.
 - workspace root legacy shell directory is forbidden.
-- single-file report modules must be `reports/<name>.rs` (no one-file `<name>/mod.rs` directories).
-- legacy `contracts/maintenance/native` is removed; native suites live under `contracts/native`.
+- suites must not contain `*_executor.rs` or `*_spec.rs` file names.
+- legacy `app`, `platform`, `infrastructure`, `status_contracts`, and `contracts/native` namespaces are removed.
 
-Enforcement is in [`tests/module_layout_contracts.rs`](./tests/module_layout_contracts.rs).
+Enforcement is in:
+
+- [`tests/architecture/layout_contracts.rs`](./tests/architecture/layout_contracts.rs)
+- [`tests/architecture/ownership_boundaries.rs`](./tests/architecture/ownership_boundaries.rs)
+- [`tests/architecture/depth_limit.rs`](./tests/architecture/depth_limit.rs)

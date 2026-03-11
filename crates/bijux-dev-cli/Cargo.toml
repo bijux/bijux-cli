@@ -14,5 +14,33 @@ serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
 
+[[test]]
+name = "architecture_layout_contracts"
+path = "tests/architecture/layout_contracts.rs"
+
+[[test]]
+name = "architecture_ownership_boundaries"
+path = "tests/architecture/ownership_boundaries.rs"
+
+[[test]]
+name = "architecture_depth_limit"
+path = "tests/architecture/depth_limit.rs"
+
+[[test]]
+name = "contracts_status_inventory_contracts"
+path = "tests/contracts/status_inventory_contracts.rs"
+
+[[test]]
+name = "contracts_suite_catalog_contracts"
+path = "tests/contracts/suite_catalog_contracts.rs"
+
+[[test]]
+name = "e2e_dev_cli_routes"
+path = "tests/e2e/dev_cli_routes.rs"
+
+[[test]]
+name = "e2e_contract_run_all"
+path = "tests/e2e/contract_run_all.rs"
+
 [lints]
 workspace = true
