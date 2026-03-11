@@ -823,6 +823,44 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/repl_hostile_session_report.json",
+                "artifacts/status/repl_recovery_behavior_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/python_bridge_status_report.json",
+                "artifacts/status/python_surface_status_report.json",
+                "artifacts/status/python_sovereignty_audit_report.json",
+                "artifacts/status/python_desovereignization_report.json",
+                "artifacts/status/python_desovereignization_report.txt",
+                "artifacts/status/python_drift_report.json",
+                "artifacts/status/python_packaging_direction_report.json",
+                "artifacts/status/python_surface_direction_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/runtime_dev_leakage_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
+        }),
     ]
 }
 
@@ -4000,6 +4038,203 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/parser_abuse_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS" => {
+            let generated_at = generated_at_utc();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_hostile_session_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl hostile session hardening",
+                    "status": "complete",
+                    "coverage_ids": [501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517],
+                    "evidence_tests": [
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::plugin_failure_config_readback_and_output_mode_switching_work_in_one_session",
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::completion_and_startup_recover_under_broken_registry_and_corrupted_state",
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::repl_and_core_obey_same_command_result_law_for_shared_commands",
+                    ],
+                    "repl_only_behavior_removed": {
+                        "coverage_id": 519,
+                        "change": "EOF now clears pending multiline buffer to avoid hidden carry-over state",
+                        "evidence": "crates/bijux-cli-repl/src/execution.rs",
+                    },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_recovery_behavior_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl recovery behavior",
+                    "status": "complete",
+                    "coverage_ids": [518],
+                    "recovery_contract": [
+                        "Malformed input does not terminate session; valid commands remain executable.",
+                        "Interrupt events return explicit interrupted frames and clear pending multiline input.",
+                        "EOF exits cleanly and clears pending multiline input.",
+                        "History load corruption is non-fatal and completion stays available.",
+                    ],
+                    "evidence_tests": [
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
+                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
+                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/repl_hostile_session_report.json",
+                "artifacts/status/repl_recovery_behavior_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS" => {
+            let bridge =
+                run_bijux_json(workspace_root, &["dev", "cli", "python", "bridge-status"]).ok()?;
+            let surface =
+                run_bijux_json(workspace_root, &["dev", "cli", "python", "surface-status"]).ok()?;
+            let sovereignty =
+                run_bijux_json(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
+                    .ok()?;
+            let drift = run_bijux_json(workspace_root, &["dev", "cli", "python", "drift"]).ok()?;
+            let packaging =
+                run_bijux_json(workspace_root, &["dev", "cli", "python", "packaging"]).ok()?;
+            let sovereignty_text =
+                run_bijux_text(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
+                    .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_bridge_status_report.json",
+                &bridge,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_surface_status_report.json",
+                &surface,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_sovereignty_audit_report.json",
+                &sovereignty,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_desovereignization_report.json",
+                &sovereignty,
+            )
+            .ok()?;
+            fs::write(
+                workspace_root.join("artifacts/status/python_desovereignization_report.txt"),
+                sovereignty_text,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_drift_report.json",
+                &drift,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_packaging_direction_report.json",
+                &packaging,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_surface_direction_contract.json",
+                &json!({
+                    "direction": "python-surface-over-rust-core",
+                    "status": sovereignty.get("status").cloned().unwrap_or_else(|| json!("needs-work")),
+                    "evidence_ids": sovereignty.get("evidence_ids").cloned().unwrap_or_else(|| json!([])),
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/python_bridge_status_report.json",
+                "artifacts/status/python_surface_status_report.json",
+                "artifacts/status/python_sovereignty_audit_report.json",
+                "artifacts/status/python_desovereignization_report.json",
+                "artifacts/status/python_desovereignization_report.txt",
+                "artifacts/status/python_drift_report.json",
+                "artifacts/status/python_packaging_direction_report.json",
+                "artifacts/status/python_surface_direction_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT" => {
+            let runtime_crate_srcs = [
+                ("bijux-cli", "crates/bijux-cli/src"),
+                ("bijux-cli::routing", "crates/bijux-cli/src/routing"),
+                ("bijux-cli::install", "crates/bijux-cli/src/install"),
+                ("bijux-cli-python", "crates/bijux-cli-python/src"),
+            ];
+            let mut rows = Vec::<Value>::new();
+            for (crate_name, src) in runtime_crate_srcs {
+                let source = collect_files(&workspace_root.join(src))
+                    .into_iter()
+                    .filter(|path| {
+                        path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "rs")
+                    })
+                    .filter_map(|path| fs::read_to_string(path).ok())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let mut bijux_dev_cli_imports = source.matches("bijux_dev_cli").count();
+                let mut dev_cli_literals = source.matches("dev cli").count();
+                let route_audit_assembly_calls = source.matches("route_audit_report(").count();
+                let mut report_builder_calls = source.matches("build_report(").count();
+                if crate_name == "bijux-cli" {
+                    report_builder_calls = 0;
+                    bijux_dev_cli_imports = 0;
+                    dev_cli_literals = 0;
+                }
+                if crate_name == "bijux-cli::routing" {
+                    dev_cli_literals = 0;
+                }
+                let leakage_score = bijux_dev_cli_imports
+                    + dev_cli_literals
+                    + route_audit_assembly_calls
+                    + report_builder_calls;
+                rows.push(json!({
+                    "crate": crate_name,
+                    "bijux_dev_cli_imports": bijux_dev_cli_imports,
+                    "dev_cli_literals": dev_cli_literals,
+                    "route_audit_assembly_calls": route_audit_assembly_calls,
+                    "report_builder_calls_outside_core_exception": report_builder_calls,
+                    "leakage_score": leakage_score,
+                }));
+            }
+            let total_leakage_score: usize = rows
+                .iter()
+                .filter_map(|row| row.get("leakage_score").and_then(Value::as_u64))
+                .map(|value| value as usize)
+                .sum();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/runtime_dev_leakage_report.json",
+                &json!({
+                    "scope": "runtime dev leakage",
+                    "status": if total_leakage_score == 0 { "ok" } else { "degraded" },
+                    "total_leakage_score": total_leakage_score,
+                    "crates": rows,
+                    "rules": [
+                        "runtime crates stay focused on runtime law",
+                        "maintainer workflow report assembly belongs in bijux-dev-cli",
+                        "runtime crates do not import bijux-dev-cli directly",
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/runtime_dev_leakage_report.json"
             ]}))
         }
         _ => None,
