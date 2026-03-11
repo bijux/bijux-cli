@@ -72,8 +72,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let crate_decisions = json!([
                 {"crate":"bijux-cli","status":"keep","review":"must stay separate","reason":"runtime command execution and routing law are now co-located in one crate"},
                 {"crate":"bijux-dev-cli","status":"watch","review":"paying rent with dedicated control-plane reports and ownership tests","reason":"should remain independent while delegating from core through query interfaces"},
-                {"crate":"bijux-cli-python","status":"watch","review":"paying rent with bridge parity and conversion law tests","reason":"language boundary remains useful while python bridge is maintained"},
-                {"crate":"bijux-cli-evidence","status":"keep","review":"must stay separate","reason":"evidence IDs and helpers should stay reusable across tooling surfaces"}
+                {"crate":"bijux-cli-python","status":"watch","review":"paying rent with bridge parity and conversion law tests","reason":"language boundary remains useful while python bridge is maintained"}
             ]);
             let report = json!({
                 "generated_at":generated_at,
@@ -92,7 +91,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/crate_boundary_report.json", &json!({
                                 "generated_at":generated_at,"generator":"bijux-dev-cli",
                                 "evidence":{"metrics_artifact":"artifacts/status/crate_boundary_metrics.json","top_cross_crate_pairs":[]},
-                                "crate_decision_summary":{"keep":2,"watch":2,"candidate_to_merge_later":0},
+                                "crate_decision_summary":{"keep":1,"watch":2,"candidate_to_merge_later":0},
                                 "crate_decisions":crate_decisions,
                                 "boundary_decisions":boundary_decisions
                             })).ok()?;
