@@ -155,7 +155,7 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
 }
 
 #[test]
-fn workspace_automation_does_not_execute_status_scripts_directly() {
+fn workspace_automation_does_not_execute_status_contracts_directly() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let mut offenders = Vec::<String>::new();
 
@@ -184,7 +184,7 @@ fn workspace_automation_does_not_execute_status_scripts_directly() {
 
     assert!(
         offenders.is_empty(),
-        "status scripts must run through `bijux dev cli scripts status run --id ...`; direct execution found in:\n{}",
+        "status contracts must run through `bijux dev cli scripts status run --id ...`; direct execution found in:\n{}",
         offenders.join("\n")
     );
 }
