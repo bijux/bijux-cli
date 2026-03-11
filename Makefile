@@ -27,7 +27,6 @@ include makes/sbom.mk
 include makes/security.mk
 include makes/test.mk
 include makes/publish.mk
-include makes/hooks.mk
 
 # Environment
 $(VENV):
@@ -39,7 +38,7 @@ install: $(VENV)
 	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
 	@$(VENV_PYTHON) -m pip install -e ".[dev]"
 
-bootstrap: $(VENV) install-git-hooks
+bootstrap: $(VENV)
 .PHONY: bootstrap
 
 # Cleanup
@@ -105,7 +104,7 @@ help:
 clean: ## Remove virtualenv, caches, build, and artifacts
 clean-soft: ## Remove build artifacts but keep .venv
 install: ## Install project in editable mode into .venv
-bootstrap: ## Setup environment & install git hooks
+bootstrap: ## Setup environment
 all: ## Run full pipeline (clean → sbom)
 dev-cli-status: ## Show maintainer status report via bijux dev cli
 dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
