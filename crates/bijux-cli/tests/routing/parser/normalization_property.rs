@@ -2,7 +2,7 @@
 
 //! Property tests for namespace and command-path normalization.
 
-use bijux_cli::api::routing::{
+use bijux_cli::contracts::{
     CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV1,
 };
 use proptest::prelude::*;

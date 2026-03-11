@@ -102,7 +102,11 @@ fn read_dev_cli_source() -> String {
     let mut files = Vec::<PathBuf>::new();
     collect_rs_files(&router_root, &mut files);
     files.sort();
-    assert!(!files.is_empty(), "expected dev-cli source files under {}", router_root.display());
+    assert!(
+        !files.is_empty(),
+        "expected dev-cli source files under {}",
+        router_root.display()
+    );
 
     let mut source = String::new();
     for file in files {
@@ -159,8 +163,13 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
 
 #[test]
 fn runtime_crates_do_not_import_bijux_dev_cli() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
-    let runtime_crates = ["crates/bijux-cli/src/routing", "crates/bijux-cli-python/src"];
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..");
+    let runtime_crates = [
+        "crates/bijux-cli/src/routing",
+        "crates/bijux-cli-python/src",
+    ];
 
     for crate_src in runtime_crates {
         for path in walk_rs_files(&root.join(crate_src)) {
@@ -219,14 +228,19 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
 
 #[test]
 fn workspace_automation_does_not_execute_status_contracts_directly() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..");
     let mut offenders = Vec::<String>::new();
 
     let scan_roots = [".github", "crates", "docs", "makes", "scripts", "tests"];
     for scan_root in scan_roots {
         for path in walk_files(&root.join(scan_root)) {
-            let rel =
-                path.strip_prefix(&root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+            let rel = path
+                .strip_prefix(&root)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/");
             if rel == "crates/bijux-cli/tests/architecture/ownership/dev_cli_architecture_guards.rs"
             {
                 continue;
@@ -294,9 +308,15 @@ fn walk_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
                 name == "Makefile"
             } else {
                 false
-            } || path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| {
-                matches!(ext, "rs" | "py" | "sh" | "yml" | "yaml" | "md" | "toml" | "txt" | "mk")
-            });
+            } || path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| {
+                    matches!(
+                        ext,
+                        "rs" | "py" | "sh" | "yml" | "yaml" | "md" | "toml" | "txt" | "mk"
+                    )
+                });
             if include {
                 out.push(path);
             }

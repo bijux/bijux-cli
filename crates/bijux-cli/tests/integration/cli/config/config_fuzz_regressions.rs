@@ -13,7 +13,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("execute")
 }
 
 #[test]
@@ -32,11 +35,33 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
         let payload = fs::read(&case).expect("read case");
         fs::write(&scratch, payload).expect("write scratch");
 
-        let a = run(&["cli", "config", "list", "--config-path", scratch.to_str().expect("utf-8")]);
-        let b = run(&["cli", "config", "list", "--config-path", scratch.to_str().expect("utf-8")]);
+        let a = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            scratch.to_str().expect("utf-8"),
+        ]);
+        let b = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            scratch.to_str().expect("utf-8"),
+        ]);
         assert_eq!(a.status.code(), b.status.code(), "case={}", case.display());
-        assert_eq!(a.stdout, b.stdout, "list stdout drift for case={}", case.display());
-        assert_eq!(a.stderr, b.stderr, "list stderr drift for case={}", case.display());
+        assert_eq!(
+            a.stdout,
+            b.stdout,
+            "list stdout drift for case={}",
+            case.display()
+        );
+        assert_eq!(
+            a.stderr,
+            b.stderr,
+            "list stderr drift for case={}",
+            case.display()
+        );
         if a.status.success() {
             assert!(
                 a.stderr.is_empty(),
@@ -77,9 +102,24 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
             "--config-path",
             scratch.to_str().expect("utf-8"),
         ]);
-        assert_eq!(load_a.status.code(), load_b.status.code(), "case={}", case.display());
-        assert_eq!(load_a.stdout, load_b.stdout, "load stdout drift for case={}", case.display());
-        assert_eq!(load_a.stderr, load_b.stderr, "load stderr drift for case={}", case.display());
+        assert_eq!(
+            load_a.status.code(),
+            load_b.status.code(),
+            "case={}",
+            case.display()
+        );
+        assert_eq!(
+            load_a.stdout,
+            load_b.stdout,
+            "load stdout drift for case={}",
+            case.display()
+        );
+        assert_eq!(
+            load_a.stderr,
+            load_b.stderr,
+            "load stderr drift for case={}",
+            case.display()
+        );
         if load_a.status.success() {
             assert!(
                 load_a.stderr.is_empty(),

@@ -5,8 +5,8 @@ use anyhow as _;
 use bijux_cli::api::kernel::{
     map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
 };
-use bijux_cli::api::routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli::api::runtime::run_app;
+use bijux_cli::contracts::{ColorMode, ExitCode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use clap as _;
 use futures as _;
 use serde_json::Value;
@@ -29,8 +29,14 @@ fn run_success_json(args: &[&str], label: &str) -> Value {
     let argv: Vec<String> = args.iter().map(|value| (*value).to_string()).collect();
     let out = run_app(&argv).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0, "unexpected exit code for {label}");
-    assert!(out.stderr.is_empty(), "stderr should stay empty for success case {label}");
-    assert!(!out.stdout.trim().is_empty(), "stdout should not be empty for success case {label}");
+    assert!(
+        out.stderr.is_empty(),
+        "stderr should stay empty for success case {label}"
+    );
+    assert!(
+        !out.stdout.trim().is_empty(),
+        "stdout should not be empty for success case {label}"
+    );
     serde_json::from_str(&out.stdout).expect("valid json")
 }
 
@@ -168,7 +174,10 @@ fn direct_core_invocation_newly_ported_commands_execute() {
     for argv in cases {
         let out = run_app(&argv).expect("run_app should succeed");
         assert_eq!(out.exit_code, 0, "non-zero exit for {argv:?}");
-        assert!(out.stderr.is_empty(), "stderr should stay empty for {argv:?}");
+        assert!(
+            out.stderr.is_empty(),
+            "stderr should stay empty for {argv:?}"
+        );
         let payload: Value =
             serde_json::from_str(&out.stdout).expect("output should be valid json");
         assert!(
@@ -193,7 +202,10 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
         let args: Vec<String> = argv.into_iter().map(ToString::to_string).collect();
         let out = run_app(&args).expect("run_app should succeed");
         assert_eq!(out.exit_code, 0);
-        assert!(out.stderr.is_empty(), "stderr should stay empty for {args:?}");
+        assert!(
+            out.stderr.is_empty(),
+            "stderr should stay empty for {args:?}"
+        );
         let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
         match args[3].as_str() {
             "routes" => {
@@ -240,7 +252,10 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
 }
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-state-law-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -291,9 +306,13 @@ fn state_read_paths_follow_normalized_resolution_with_flag_overrides() {
 
 #[test]
 fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
-    let out =
-        run_app(&["bijux".to_string(), "dev".to_string(), "cli".to_string(), "status".to_string()])
-            .expect("run_app should succeed");
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "status".to_string(),
+    ])
+    .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     assert!(out.stderr.is_empty());
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
@@ -468,9 +487,18 @@ fn precedence_defaults_when_no_inputs() {
         },
     );
 
-    assert_eq!(policy.output_format, defaults.output_format.expect("defaults format"));
-    assert_eq!(policy.pretty_mode, defaults.pretty_mode.expect("defaults pretty"));
-    assert_eq!(policy.color_mode, defaults.color_mode.expect("defaults color"));
+    assert_eq!(
+        policy.output_format,
+        defaults.output_format.expect("defaults format")
+    );
+    assert_eq!(
+        policy.pretty_mode,
+        defaults.pretty_mode.expect("defaults pretty")
+    );
+    assert_eq!(
+        policy.color_mode,
+        defaults.color_mode.expect("defaults color")
+    );
     assert_eq!(policy.log_level, defaults.log_level.expect("defaults log"));
 }
 
@@ -531,8 +559,8 @@ fn quiet_mode_suppresses_streams_not_exit_semantics() {
 
 #[test]
 fn error_normalization_internal_plugin_usage_validation() {
-    assert_eq!(map_error_category_to_exit("internal"), bijux_cli::api::routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli::api::routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("usage"), bijux_cli::api::routing::ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("validation"), bijux_cli::api::routing::ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("internal"), ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("plugin"), ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("usage"), ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
 }

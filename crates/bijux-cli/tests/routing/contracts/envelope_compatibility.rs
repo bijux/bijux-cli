@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli::api::routing::{
+use bijux_cli::contracts::{
     CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use clap as _;
@@ -19,7 +19,10 @@ fn meta() -> OutputEnvelopeMetaV1 {
     OutputEnvelopeMetaV1 {
         version: "v1".to_string(),
         command: CommandPath {
-            segments: vec![Namespace("cli".to_string()), Namespace("status".to_string())],
+            segments: vec![
+                Namespace("cli".to_string()),
+                Namespace("status".to_string()),
+            ],
         },
         timestamp: "2026-03-09T00:00:00Z".to_string(),
     }

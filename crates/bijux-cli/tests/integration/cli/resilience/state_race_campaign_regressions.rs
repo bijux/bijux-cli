@@ -17,7 +17,10 @@ use thiserror as _;
 
 fn run_bin(args: &[&str]) -> io::Result<Output> {
     for attempt in 0..3 {
-        match Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output() {
+        match Command::new(env!("CARGO_BIN_EXE_bijux"))
+            .args(args)
+            .output()
+        {
             Ok(output) => return Ok(output),
             Err(err) if err.kind() == io::ErrorKind::NotFound && attempt < 2 => {
                 thread::sleep(Duration::from_millis(10));
@@ -33,7 +36,10 @@ fn run_case(path: &Path) {
         serde_json::from_str(&fs::read_to_string(path).expect("read case")).expect("parse case");
     let kind = json["kind"].as_str().expect("kind");
 
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let temp = std::env::temp_dir().join(format!(
         "bijux-race-repro-{}-{}-{nanos}",
         path.file_stem().and_then(|s| s.to_str()).unwrap_or("case"),
@@ -122,7 +128,10 @@ fn minimized_race_reproducers_replay_without_crashing() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "at least one minimized race reproducer must be kept");
+    assert!(
+        !files.is_empty(),
+        "at least one minimized race reproducer must be kept"
+    );
 
     for file in files {
         run_case(&file);

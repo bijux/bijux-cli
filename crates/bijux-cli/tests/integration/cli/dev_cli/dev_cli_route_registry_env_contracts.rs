@@ -48,8 +48,15 @@ fn routes_registry_env_contracts_json_and_text_contracts() {
         ["dev", "cli", "env"],
         ["dev", "cli", "contracts"],
     ] {
-        let out = run(&[command[0], command[1], command[2], "--format", "text"], &[]);
-        assert!(out.status.success(), "text command failed for {:?}", command);
+        let out = run(
+            &[command[0], command[1], command[2], "--format", "text"],
+            &[],
+        );
+        assert!(
+            out.status.success(),
+            "text command failed for {:?}",
+            command
+        );
         assert!(!String::from_utf8_lossy(&out.stdout).trim().is_empty());
     }
 }
@@ -86,13 +93,19 @@ fn registry_deterministic_with_broken_and_healthy_plugin_files() {
     let root = std::env::temp_dir().join(format!("bijux-registry-mix-{}", std::process::id()));
     let plugins = root.join("plugins");
     fs::create_dir_all(&plugins).expect("mkdir");
-    fs::write(plugins.join("healthy.toml"), "[plugin]\nname='healthy'\nentry='plugin:main'\n")
-        .expect("write healthy");
+    fs::write(
+        plugins.join("healthy.toml"),
+        "[plugin]\nname='healthy'\nentry='plugin:main'\n",
+    )
+    .expect("write healthy");
     fs::write(plugins.join("broken.toml"), "not a manifest").expect("write broken");
     let envs = [("BIJUX_PLUGINS_DIR", plugins.to_string_lossy().to_string())];
     let first = run_ok_json(&["dev", "cli", "registry"], &envs);
     let second = run_ok_json(&["dev", "cli", "registry"], &envs);
-    assert_eq!(first, second, "registry output drift with mixed plugin health");
+    assert_eq!(
+        first, second,
+        "registry output drift with mixed plugin health"
+    );
 }
 
 #[test]
@@ -100,7 +113,10 @@ fn env_ignores_unrelated_environment_noise() {
     let base = run_ok_json(&["dev", "cli", "env"], &[]);
     let noisy = run_ok_json(
         &["dev", "cli", "env"],
-        &[("UNRELATED_NOISE_KEY", "1".to_string()), ("UNRELATED_NOISE_TRACE", "loud".to_string())],
+        &[
+            ("UNRELATED_NOISE_KEY", "1".to_string()),
+            ("UNRELATED_NOISE_TRACE", "loud".to_string()),
+        ],
     );
     assert_eq!(base["source_precedence"], noisy["source_precedence"]);
 }
@@ -116,7 +132,10 @@ fn contracts_reports_schema_metadata_and_is_deterministic() {
 
 #[test]
 fn contracts_all_report_exposes_nextest_style_summary() {
-    let report = run_ok_json(&["dev", "cli", "contracts", "--all", "--kind", "status"], &[]);
+    let report = run_ok_json(
+        &["dev", "cli", "contracts", "--all", "--kind", "status"],
+        &[],
+    );
     assert_eq!(report["kind"], "dev_cli_contracts_all_report_v1");
     assert_eq!(report["mode"], "all");
     assert!(report["contracts"].is_array());
@@ -132,10 +151,16 @@ fn routes_deterministic_when_plugin_file_order_changes() {
     let root = std::env::temp_dir().join(format!("bijux-routes-order-{}", std::process::id()));
     let plugins = root.join("plugins");
     fs::create_dir_all(&plugins).expect("mkdir");
-    fs::write(plugins.join("zeta.toml"), "[plugin]\nname='zeta'\nentry='plugin:main'\n")
-        .expect("write zeta");
-    fs::write(plugins.join("alpha.toml"), "[plugin]\nname='alpha'\nentry='plugin:main'\n")
-        .expect("write alpha");
+    fs::write(
+        plugins.join("zeta.toml"),
+        "[plugin]\nname='zeta'\nentry='plugin:main'\n",
+    )
+    .expect("write zeta");
+    fs::write(
+        plugins.join("alpha.toml"),
+        "[plugin]\nname='alpha'\nentry='plugin:main'\n",
+    )
+    .expect("write alpha");
     let envs = [("BIJUX_PLUGINS_DIR", plugins.to_string_lossy().to_string())];
     let first = run_ok_json(&["dev", "cli", "routes"], &envs);
     let second = run_ok_json(&["dev", "cli", "routes"], &envs);

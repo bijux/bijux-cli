@@ -5,7 +5,7 @@
 use bijux_cli::api::routing::catalog::{dev_cli_subcommands, normalize_command_path};
 use bijux_cli::api::routing::parser::{parse_intent, ParsedIntent};
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::api::routing::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::contracts::OFFICIAL_PRODUCT_NAMESPACES;
 use clap as _;
 use proptest as _;
 use schemars as _;
@@ -52,7 +52,9 @@ fn stable_parse(argv: &[String]) -> Result<ParsedIntent, String> {
 
 #[test]
 fn fuzz_root_argv_parsing_does_not_panic() {
-    let roots = ["status", "audit", "docs", "doctor", "version", "history", "memory", "help"];
+    let roots = [
+        "status", "audit", "docs", "doctor", "version", "history", "memory", "help",
+    ];
     let mut seed = 0xA11C_E001_u64;
 
     for _ in 0..220 {
@@ -60,7 +62,11 @@ fn fuzz_root_argv_parsing_does_not_panic() {
         argv.extend(random_suffix(&mut seed, 4));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 6);
         }
@@ -69,16 +75,37 @@ fn fuzz_root_argv_parsing_does_not_panic() {
 
 #[test]
 fn fuzz_cli_argv_parsing_does_not_panic() {
-    let cli_sub =
-        ["status", "paths", "self-test", "config", "plugins", "doctor", "inspect", "version"];
-    let config_sub = ["get", "set", "unset", "clear", "list", "export", "load", "reload"];
-    let plugin_sub =
-        ["list", "inspect", "install", "uninstall", "doctor", "check", "where", "schema"];
+    let cli_sub = [
+        "status",
+        "paths",
+        "self-test",
+        "config",
+        "plugins",
+        "doctor",
+        "inspect",
+        "version",
+    ];
+    let config_sub = [
+        "get", "set", "unset", "clear", "list", "export", "load", "reload",
+    ];
+    let plugin_sub = [
+        "list",
+        "inspect",
+        "install",
+        "uninstall",
+        "doctor",
+        "check",
+        "where",
+        "schema",
+    ];
     let mut seed = 0xA11C_E002_u64;
 
     for _ in 0..220 {
-        let mut argv =
-            vec!["bijux".to_string(), "cli".to_string(), pick(&cli_sub, &mut seed).to_string()];
+        let mut argv = vec![
+            "bijux".to_string(),
+            "cli".to_string(),
+            pick(&cli_sub, &mut seed).to_string(),
+        ];
         if argv[2] == "config" {
             argv.push(pick(&config_sub, &mut seed).to_string());
         }
@@ -88,7 +115,11 @@ fn fuzz_cli_argv_parsing_does_not_panic() {
         argv.extend(random_suffix(&mut seed, 5));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 8);
         }
@@ -110,7 +141,11 @@ fn fuzz_dev_cli_argv_parsing_does_not_panic() {
         argv.extend(random_suffix(&mut seed, 5));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 8);
         }
@@ -142,7 +177,11 @@ fn fuzz_plugin_command_argv_parsing_does_not_panic() {
         argv.extend(random_suffix(&mut seed, 6));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 7);
         }
@@ -151,16 +190,25 @@ fn fuzz_plugin_command_argv_parsing_does_not_panic() {
 
 #[test]
 fn fuzz_config_command_argv_parsing_does_not_panic() {
-    let sub = ["get", "set", "unset", "clear", "list", "export", "load", "reload"];
+    let sub = [
+        "get", "set", "unset", "clear", "list", "export", "load", "reload",
+    ];
     let mut seed = 0xA11C_E005_u64;
 
     for _ in 0..220 {
-        let mut argv =
-            vec!["bijux".to_string(), "config".to_string(), pick(&sub, &mut seed).to_string()];
+        let mut argv = vec![
+            "bijux".to_string(),
+            "config".to_string(),
+            pick(&sub, &mut seed).to_string(),
+        ];
         argv.extend(random_suffix(&mut seed, 6));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 7);
         }
@@ -187,7 +235,11 @@ fn fuzz_diagnostics_command_argv_parsing_does_not_panic() {
         argv.extend(random_suffix(&mut seed, 6));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for argv={argv:?}");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for argv={argv:?}"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 8);
         }
@@ -197,27 +249,82 @@ fn fuzz_diagnostics_command_argv_parsing_does_not_panic() {
 #[test]
 fn fuzz_mixed_global_local_flag_ordering_is_deterministic() {
     let variants = [
-        vec!["bijux", "--format", "json", "cli", "status", "--no-pretty", "--color", "never"],
-        vec!["bijux", "cli", "status", "--format", "json", "--color", "never", "--no-pretty"],
-        vec!["bijux", "--color", "never", "cli", "status", "--no-pretty", "--format", "json"],
-        vec!["bijux", "cli", "status", "--color", "never", "--format", "json", "--no-pretty"],
+        vec![
+            "bijux",
+            "--format",
+            "json",
+            "cli",
+            "status",
+            "--no-pretty",
+            "--color",
+            "never",
+        ],
+        vec![
+            "bijux",
+            "cli",
+            "status",
+            "--format",
+            "json",
+            "--color",
+            "never",
+            "--no-pretty",
+        ],
+        vec![
+            "bijux",
+            "--color",
+            "never",
+            "cli",
+            "status",
+            "--no-pretty",
+            "--format",
+            "json",
+        ],
+        vec![
+            "bijux",
+            "cli",
+            "status",
+            "--color",
+            "never",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
     ];
 
-    let baseline = parse_intent(&variants[0].iter().map(|s| (*s).to_string()).collect::<Vec<_>>())
-        .expect("baseline");
+    let baseline = parse_intent(
+        &variants[0]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect::<Vec<_>>(),
+    )
+    .expect("baseline");
     for variant in variants.iter().skip(1) {
         let parsed = parse_intent(&variant.iter().map(|s| (*s).to_string()).collect::<Vec<_>>())
             .expect("variant");
         assert_eq!(parsed.normalized_path, baseline.normalized_path);
-        assert_eq!(parsed.global_flags.output_format, baseline.global_flags.output_format);
-        assert_eq!(parsed.global_flags.color_mode, baseline.global_flags.color_mode);
+        assert_eq!(
+            parsed.global_flags.output_format,
+            baseline.global_flags.output_format
+        );
+        assert_eq!(
+            parsed.global_flags.color_mode,
+            baseline.global_flags.color_mode
+        );
     }
 }
 
 #[test]
 fn fuzz_repeated_conflicting_flags_stays_safe_and_deterministic() {
     let mut seed = 0xA11C_E007_u64;
-    let flags = ["--pretty", "--no-pretty", "--json", "--text", "--yaml", "--quiet", "--no-pretty"];
+    let flags = [
+        "--pretty",
+        "--no-pretty",
+        "--json",
+        "--text",
+        "--yaml",
+        "--quiet",
+        "--no-pretty",
+    ];
 
     for _ in 0..220 {
         let mut argv = vec!["bijux".to_string(), "cli".to_string(), "status".to_string()];
@@ -242,7 +349,11 @@ fn fuzz_huge_tokens_and_values_does_not_panic() {
     ] {
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
-        assert_eq!(first.as_ref().err(), second.as_ref().err(), "error drift for huge argv");
+        assert_eq!(
+            first.as_ref().err(),
+            second.as_ref().err(),
+            "error drift for huge argv"
+        );
         if let Ok(parsed) = first {
             assert!(parsed.command_path.len() <= 4);
         }
@@ -292,35 +403,50 @@ fn fuzz_help_path_parsing_and_alias_resolution_is_safe() {
 #[test]
 fn fuzz_namespace_normalization_and_reserved_rejection_stays_safe() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("my-plugin").expect("baseline namespace");
+    registry
+        .register_plugin_namespace("my-plugin")
+        .expect("baseline namespace");
 
-    let normalized_collision =
-        registry.register_plugin_namespace("my_plugin").expect_err("normalized collision");
+    let normalized_collision = registry
+        .register_plugin_namespace("my_plugin")
+        .expect_err("normalized collision");
     assert!(matches!(normalized_collision, RouteError::Conflict(_)));
 
-    let case_collision =
-        registry.register_plugin_namespace("MY-PLUGIN").expect_err("case collision");
+    let case_collision = registry
+        .register_plugin_namespace("MY-PLUGIN")
+        .expect_err("case collision");
     assert!(matches!(case_collision, RouteError::Conflict(_)));
 
     let mut reserved = RouteRegistry::default();
     for ns in OFFICIAL_PRODUCT_NAMESPACES {
-        let err =
-            reserved.register_plugin_namespace(ns).expect_err("reserved namespace must reject");
-        assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
+        let err = reserved
+            .register_plugin_namespace(ns)
+            .expect_err("reserved namespace must reject");
+        assert!(matches!(
+            err,
+            RouteError::Reserved(_) | RouteError::Conflict(_)
+        ));
     }
 
-    for built_in in ["cli", "dev", "help", "version", "doctor", "plugins", "inspect"] {
+    for built_in in [
+        "cli", "dev", "help", "version", "doctor", "plugins", "inspect",
+    ] {
         let err = reserved
             .register_plugin_namespace(built_in)
             .expect_err("built-in namespace must reject");
-        assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
+        assert!(matches!(
+            err,
+            RouteError::Reserved(_) | RouteError::Conflict(_)
+        ));
     }
 }
 
 #[test]
 fn fuzz_reserved_name_rejection_and_normalization_are_deterministic() {
     let mut seed = 0xA11C_E009_u64;
-    let candidates = ["cli", "dev", "help", "version", "doctor", "plugins", "status", "config"];
+    let candidates = [
+        "cli", "dev", "help", "version", "doctor", "plugins", "status", "config",
+    ];
 
     for _ in 0..160 {
         let mut registry = RouteRegistry::default();
@@ -328,7 +454,11 @@ fn fuzz_reserved_name_rejection_and_normalization_are_deterministic() {
         let a = registry.register_plugin_namespace(name);
         let mut registry_again = RouteRegistry::default();
         let b = registry_again.register_plugin_namespace(name);
-        assert_eq!(a.is_ok(), b.is_ok(), "reserved-name rejection drift for {name}");
+        assert_eq!(
+            a.is_ok(),
+            b.is_ok(),
+            "reserved-name rejection drift for {name}"
+        );
 
         let normalized = normalize_command_path(&["plugins".to_string(), "inspect".to_string()]);
         assert_eq!(normalized, vec!["cli", "plugins", "inspect"]);

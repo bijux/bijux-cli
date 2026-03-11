@@ -16,13 +16,22 @@ fn run(args: &[&str]) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "process failed for args: {args:?}");
-    assert!(output.stderr.is_empty(), "successful command must not write to stderr: {args:?}");
-    assert!(!output.stdout.is_empty(), "successful command must produce stdout payload: {args:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "successful command must not write to stderr: {args:?}"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "successful command must produce stdout payload: {args:?}"
+    );
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
 fn run_raw(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], key: &str, value: &str) -> String {
@@ -32,8 +41,14 @@ fn run_with_env(args: &[&str], key: &str, value: &str) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "process failed for args: {args:?}");
-    assert!(output.stderr.is_empty(), "successful command must not write to stderr: {args:?}");
-    assert!(!output.stdout.is_empty(), "successful command must produce stdout payload: {args:?}");
+    assert!(
+        output.stderr.is_empty(),
+        "successful command must not write to stderr: {args:?}"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "successful command must produce stdout payload: {args:?}"
+    );
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
@@ -68,7 +83,10 @@ fn executes_root_commands() {
         let payload: serde_json::Value =
             serde_json::from_str(&stdout).expect("root command must emit valid json");
         if args == vec!["config"] {
-            assert!(payload.is_object(), "config root should return object payload");
+            assert!(
+                payload.is_object(),
+                "config root should return object payload"
+            );
             continue;
         }
         assert!(
@@ -119,7 +137,9 @@ fn cli_doctor_reports_install_diagnostics() {
     assert!(install.get("has_duplicate_installs").is_some());
     assert!(install.get("stale_wrapper_scripts").is_some());
     assert!(install.get("legacy_installer_conflicts").is_some());
-    assert!(install.get("has_mismatched_wheel_binary_versions").is_some());
+    assert!(install
+        .get("has_mismatched_wheel_binary_versions")
+        .is_some());
 }
 
 #[test]
@@ -135,36 +155,79 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "plugin-health"], "machine_report"),
         (vec!["dev", "cli", "status"], "current_rust_state"),
         (vec!["dev", "cli", "maintenance-audit"], "maintenance"),
-        (vec!["dev", "cli", "maintenance", "remaining"], "remaining_root_maintenance"),
+        (
+            vec!["dev", "cli", "maintenance", "remaining"],
+            "remaining_root_maintenance",
+        ),
         (vec!["dev", "cli", "maintenance", "migrated"], "migrated"),
         (vec!["dev", "cli", "maintenance", "diff"], "remaining"),
         (vec!["dev", "cli", "maintenance", "audit"], "migrated"),
-        (vec!["dev", "cli", "maintenance", "package-metadata"], "status"),
+        (
+            vec!["dev", "cli", "maintenance", "package-metadata"],
+            "status",
+        ),
         (vec!["dev", "cli", "maintenance", "e2e-contract"], "status"),
         (vec!["dev", "cli", "maintenance", "pip-audit"], "status"),
-        (vec!["dev", "cli", "maintenance", "capture-python-behavior"], "status"),
+        (
+            vec!["dev", "cli", "maintenance", "capture-python-behavior"],
+            "status",
+        ),
         (vec!["dev", "cli", "rustdoc", "audit"], "coverage"),
         (vec!["dev", "cli", "rustdoc", "coverage"], "coverage"),
-        (vec!["dev", "cli", "rustdoc", "broken-links"], "broken_links"),
-        (vec!["dev", "cli", "rustdoc", "public-api"], "missing_public_docs"),
+        (
+            vec!["dev", "cli", "rustdoc", "broken-links"],
+            "broken_links",
+        ),
+        (
+            vec!["dev", "cli", "rustdoc", "public-api"],
+            "missing_public_docs",
+        ),
         (vec!["dev", "cli", "rustdoc", "examples"], "example_sources"),
-        (vec!["dev", "cli", "release", "status"], "release_status_manifest"),
+        (
+            vec!["dev", "cli", "release", "status"],
+            "release_status_manifest",
+        ),
         (vec!["dev", "cli", "release", "evidence"], "bundle"),
         (vec!["dev", "cli", "release", "readiness"], "release_ready"),
         (vec!["dev", "cli", "release", "diff"], "done"),
         (vec!["dev", "cli", "release", "gaps"], "missing_evidence"),
-        (vec!["dev", "cli", "release", "behavior-changes"], "commands"),
-        (vec!["dev", "cli", "release", "intentional-differences"], "items"),
+        (
+            vec!["dev", "cli", "release", "behavior-changes"],
+            "commands",
+        ),
+        (
+            vec!["dev", "cli", "release", "intentional-differences"],
+            "items",
+        ),
         (vec!["dev", "cli", "release", "unresolved-gaps"], "items"),
-        (vec!["dev", "cli", "release", "compatibility-leftovers"], "series"),
+        (
+            vec!["dev", "cli", "release", "compatibility-leftovers"],
+            "series",
+        ),
         (vec!["dev", "cli", "evidence", "list"], "records"),
-        (vec!["dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-RELEASE-TRUTH"], "found"),
+        (
+            vec![
+                "dev",
+                "cli",
+                "evidence",
+                "show",
+                "--id",
+                "EVIDENCE-1001-RELEASE-TRUTH",
+            ],
+            "found",
+        ),
         (vec!["dev", "cli", "evidence", "audit"], "status"),
         (vec!["dev", "cli", "evidence", "stale"], "stale"),
         (vec!["dev", "cli", "evidence", "matrix"], "status_matrix"),
-        (vec!["dev", "cli", "evidence", "website-export"], "website_export"),
+        (
+            vec!["dev", "cli", "evidence", "website-export"],
+            "website_export",
+        ),
         (vec!["dev", "cli", "evidence", "ci-export"], "ci_export"),
-        (vec!["dev", "cli", "evidence", "release-export"], "release_export"),
+        (
+            vec!["dev", "cli", "evidence", "release-export"],
+            "release_export",
+        ),
         (vec!["dev", "cli", "evidence", "command-map"], "command_map"),
         (vec!["dev", "cli", "evidence", "parity-map"], "parity_map"),
         (vec!["dev", "cli", "config", "rust-owner"], "rust_owner"),
@@ -173,15 +236,33 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "config", "drift"], "drift"),
         (vec!["dev", "cli", "config", "shape"], "schemas"),
         (vec!["dev", "cli", "config", "evidence-map"], "evidence_ids"),
-        (vec!["dev", "cli", "python", "bridge-status"], "bridge_status"),
-        (vec!["dev", "cli", "python", "surface-status"], "surface_status"),
-        (vec!["dev", "cli", "python", "sovereignty-audit"], "python_sovereignty_audit"),
+        (
+            vec!["dev", "cli", "python", "bridge-status"],
+            "bridge_status",
+        ),
+        (
+            vec!["dev", "cli", "python", "surface-status"],
+            "surface_status",
+        ),
+        (
+            vec!["dev", "cli", "python", "sovereignty-audit"],
+            "python_sovereignty_audit",
+        ),
         (vec!["dev", "cli", "python", "drift"], "drift"),
         (vec!["dev", "cli", "python", "packaging"], "packaging"),
         (vec!["dev", "cli", "repo", "health"], "repo_health"),
-        (vec!["dev", "cli", "repo", "drift"], "dead_maintenance_references"),
-        (vec!["dev", "cli", "repo", "inventories"], "stale_inventories"),
-        (vec!["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
+        (
+            vec!["dev", "cli", "repo", "drift"],
+            "dead_maintenance_references",
+        ),
+        (
+            vec!["dev", "cli", "repo", "inventories"],
+            "stale_inventories",
+        ),
+        (
+            vec!["dev", "cli", "repo", "generated"],
+            "stale_generated_artifacts",
+        ),
         (vec!["dev", "cli", "repo", "stale"], "stale_snapshots"),
         (vec!["dev", "cli", "dashboard"], "dashboard"),
         (vec!["dev", "cli", "quickcheck"], "quickcheck"),
@@ -191,7 +272,10 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
         (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),
         (vec!["dev", "cli", "crate-health"], "crate_metrics"),
-        (vec!["dev", "cli", "package-health"], "install_state_assumptions"),
+        (
+            vec!["dev", "cli", "package-health"],
+            "install_state_assumptions",
+        ),
         (vec!["dev", "cli", "env"], "source_precedence"),
         (vec!["dev", "cli", "doctor"], "issues"),
         (vec!["dev", "cli", "contracts"], "contracts"),
@@ -224,7 +308,10 @@ fn known_runtime_tool_surface_returns_install_hint_when_binary_is_missing() {
         .expect("binary should execute");
 
     assert_eq!(output.status.code(), Some(1));
-    assert!(output.stdout.is_empty(), "delegation failure must not write to stdout");
+    assert!(
+        output.stdout.is_empty(),
+        "delegation failure must not write to stdout"
+    );
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
     assert!(stderr.contains("bijux rag"));
     assert!(stderr.contains("bijux-rag"));
@@ -240,7 +327,10 @@ fn known_dev_tool_surface_returns_install_hint_when_binary_is_missing() {
         .expect("binary should execute");
 
     assert_eq!(output.status.code(), Some(1));
-    assert!(output.stdout.is_empty(), "delegation failure must not write to stdout");
+    assert!(
+        output.stdout.is_empty(),
+        "delegation failure must not write to stdout"
+    );
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
     assert!(stderr.contains("bijux dev rag"));
     assert!(stderr.contains("bijux-dev-rag"));
@@ -251,13 +341,18 @@ fn known_dev_tool_surface_returns_install_hint_when_binary_is_missing() {
 fn unsupported_config_set_input_returns_usage_error() {
     let output = run_raw(&["cli", "config", "set", "INVALID_PAIR"]);
     assert_eq!(output.status.code(), Some(2));
-    assert!(output.stdout.is_empty(), "usage failures must not write to stdout");
+    assert!(
+        output.stdout.is_empty(),
+        "usage failures must not write to stdout"
+    );
     let stderr: serde_json::Value =
         serde_json::from_slice(&output.stderr).expect("usage failure stderr json");
     assert_eq!(stderr["status"], "error");
     assert_eq!(stderr["code"], 2);
     assert!(
-        stderr["message"].as_str().is_some_and(|msg| msg.to_ascii_lowercase().contains("argument")),
+        stderr["message"]
+            .as_str()
+            .is_some_and(|msg| msg.to_ascii_lowercase().contains("argument")),
         "usage failure should explain invalid argument"
     );
 }
@@ -290,8 +385,11 @@ fn runtime_identity_reports_ambiguous_active_binary_selection() {
 
 #[test]
 fn runtime_identity_reports_python_bridge_support_diagnostic() {
-    let stdout =
-        run_with_env(&["dev", "cli", "runtime-identity"], "BIJUX_PYTHON_BRIDGE_SUPPORTED", "0");
+    let stdout = run_with_env(
+        &["dev", "cli", "runtime-identity"],
+        "BIJUX_PYTHON_BRIDGE_SUPPORTED",
+        "0",
+    );
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
 }
@@ -324,7 +422,10 @@ fn maintenance_provenance_statement_generates_output_file() {
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
     let file = payload["file"].as_str().expect("file path");
-    assert!(std::path::Path::new(file).exists(), "provenance file should exist");
+    assert!(
+        std::path::Path::new(file).exists(),
+        "provenance file should exist"
+    );
     fs::remove_dir_all(&temp).expect("cleanup temp");
 }
 
@@ -342,7 +443,10 @@ fn dev_cli_status_is_deterministic_across_repeated_runs() {
         first_payload["priority_plan_summary_text"],
         second_payload["priority_plan_summary_text"]
     );
-    assert_eq!(first_payload["command_migration"], second_payload["command_migration"]);
+    assert_eq!(
+        first_payload["command_migration"],
+        second_payload["command_migration"]
+    );
 }
 
 #[test]

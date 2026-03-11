@@ -66,7 +66,14 @@ fn doctor_and_state_doctor_agree_on_corruption_classes_across_config_plugins_his
         ],
     );
     let state_doctor = run_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[
             ("BIJUXCLI_CONFIG", &config_s),
             ("BIJUXCLI_PLUGINS_DIR", &plugins_s),
@@ -82,8 +89,10 @@ fn doctor_and_state_doctor_agree_on_corruption_classes_across_config_plugins_his
 
     assert!(doctor_json["install"].is_object());
     let issues = state_json["doctor"]["issues"].as_array().expect("issues");
-    let areas =
-        issues.iter().filter_map(|row| row.get("area").and_then(Value::as_str)).collect::<Vec<_>>();
+    let areas = issues
+        .iter()
+        .filter_map(|row| row.get("area").and_then(Value::as_str))
+        .collect::<Vec<_>>();
     assert!(areas.iter().any(|v| *v == "config"));
     assert!(areas.iter().any(|v| *v == "plugins"));
     assert!(areas.iter().any(|v| *v == "history"));

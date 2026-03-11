@@ -8,11 +8,17 @@ fn read(path: &str) -> String {
 }
 
 fn read_dev_cli_dispatch_source() -> String {
-    read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/cli/dispatch.rs"))
+    read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../bijux-dev-cli/src/cli/dispatch.rs"
+    ))
 }
 
 fn read_dev_cli_root_route_source() -> String {
-    read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/cli/routes/root.rs"))
+    read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../bijux-dev-cli/src/cli/routes/root.rs"
+    ))
 }
 
 fn extract_guard_values(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -63,15 +69,24 @@ fn dev_cli_subcommand_fixture_matches_dispatch_ownership() {
     let root_three_segment_commands =
         extract_guard_values(&root_source, three_segment_branch_prefix);
     let root_nested_namespaces = extract_guard_values(&root_source, four_segment_namespace_prefix);
-    let delegated_namespaces: BTreeSet<String> =
-        ["maintenance", "rustdoc", "release", "evidence", "config", "python"]
-            .into_iter()
-            .map(str::to_string)
-            .collect();
+    let delegated_namespaces: BTreeSet<String> = [
+        "maintenance",
+        "rustdoc",
+        "release",
+        "evidence",
+        "config",
+        "python",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
 
     for namespace in &delegated_namespaces {
         let delegate = format!("{namespace}::try_handle");
-        assert!(dispatch_source.contains(&delegate), "missing dispatch delegate `{delegate}`");
+        assert!(
+            dispatch_source.contains(&delegate),
+            "missing dispatch delegate `{delegate}`"
+        );
     }
 
     let expected_root_three_segment_commands: BTreeSet<String> = fixture_commands
@@ -101,9 +116,19 @@ fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
         "root-route namespace ownership drifted from expected architecture"
     );
 
-    for namespace in ["maintenance", "rustdoc", "release", "evidence", "config", "python"] {
+    for namespace in [
+        "maintenance",
+        "rustdoc",
+        "release",
+        "evidence",
+        "config",
+        "python",
+    ] {
         let delegate = format!("{namespace}::try_handle");
-        assert!(dispatch_source.contains(&delegate), "namespace `{namespace}` missing delegate");
+        assert!(
+            dispatch_source.contains(&delegate),
+            "namespace `{namespace}` missing delegate"
+        );
     }
 }
 
@@ -115,8 +140,14 @@ fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
         ("routes", "dev_routes::build_report_from_query"),
         ("atlas", "dev_control_plane::build_atlas_report"),
         ("di", "dev_control_plane::build_dependency_injection_report"),
-        ("list-products", "dev_control_plane::build_product_list_report"),
-        ("list-plugins", "dev_control_plane::build_plugin_list_report"),
+        (
+            "list-products",
+            "dev_control_plane::build_product_list_report",
+        ),
+        (
+            "list-plugins",
+            "dev_control_plane::build_plugin_list_report",
+        ),
         ("route-audit", "dev_route_audit::build_report_from_query"),
         ("inventory", "dev_maintenance_audit::build_inventory_report"),
         ("registry", "dev_registry::build_report_from_query"),
@@ -124,8 +155,14 @@ fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
         ("docs", "dev_control_plane::build_docs_inventory_report"),
         ("status", "dev_status::build_report"),
         ("maintenance-audit", "dev_maintenance_audit::build_report"),
-        ("snapshots-audit", "dev_control_plane::build_snapshots_audit_report"),
-        ("fixture-audit", "dev_control_plane::build_fixture_audit_report"),
+        (
+            "snapshots-audit",
+            "dev_control_plane::build_snapshots_audit_report",
+        ),
+        (
+            "fixture-audit",
+            "dev_control_plane::build_fixture_audit_report",
+        ),
         ("crate-health", "dev_crate_health::build_report"),
         ("package-health", "dev_package_health::build_report"),
         ("env", "dev_env::build_report"),
@@ -137,16 +174,28 @@ fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
         ("next", "dev_cockpit::build_next_report"),
         ("contracts", "dev_contracts::build_report_from_query"),
         ("runtime-identity", "dev_runtime_identity::build_report"),
-        ("docs-prune-plan", "dev_control_plane::build_docs_prune_plan_report"),
+        (
+            "docs-prune-plan",
+            "dev_control_plane::build_docs_prune_plan_report",
+        ),
         ("state-audit", "dev_state_audit::build_report"),
         ("state-doctor", "dev_state_audit::build_doctor_report"),
         ("docs-audit", "dev_docs_audit::build_report"),
-        ("plugin-health", "dev_control_plane::build_plugin_health_report"),
+        (
+            "plugin-health",
+            "dev_control_plane::build_plugin_health_report",
+        ),
     ];
 
     for (subcommand, delegate) in expected_delegates {
         let branch = format!("[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"{subcommand}\"");
-        assert!(root_source.contains(&branch), "missing route branch for {subcommand}");
-        assert!(root_source.contains(delegate), "missing dev-cli delegate for {subcommand}");
+        assert!(
+            root_source.contains(&branch),
+            "missing route branch for {subcommand}"
+        );
+        assert!(
+            root_source.contains(delegate),
+            "missing dev-cli delegate for {subcommand}"
+        );
     }
 }

@@ -3,7 +3,7 @@
 
 use bijux_cli::api::routing::catalog::normalize_command_path;
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry, RouteTarget};
-use bijux_cli::api::routing::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::contracts::OFFICIAL_PRODUCT_NAMESPACES;
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -31,7 +31,9 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
     for (input, expected) in cases {
         let normalized = normalize_command_path(&input);
         assert_eq!(normalized, expected);
-        let resolved = registry.resolve(&normalized).expect("normalized route should resolve");
+        let resolved = registry
+            .resolve(&normalized)
+            .expect("normalized route should resolve");
         assert!(matches!(resolved, RouteTarget::BuiltIn));
     }
 }
@@ -39,7 +41,9 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
 #[test]
 fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("community").expect("plugin register");
+    registry
+        .register_plugin_namespace("community")
+        .expect("plugin register");
 
     let plugin = registry
         .resolve(&["community".to_string(), "status".to_string()])

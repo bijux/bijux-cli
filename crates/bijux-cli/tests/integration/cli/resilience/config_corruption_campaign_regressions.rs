@@ -25,7 +25,10 @@ fn run_case(case_file: &Path) {
 
     let temp = std::env::temp_dir().join(format!(
         "bijux-config-campaign-repro-{}-{}",
-        case_file.file_stem().and_then(|s| s.to_str()).unwrap_or("case"),
+        case_file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("case"),
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&temp);
@@ -47,8 +50,12 @@ fn run_case(case_file: &Path) {
         }
     }
 
-    let run_once =
-        || Command::new(env!("CARGO_BIN_EXE_bijux")).args(&expanded).output().expect("run case");
+    let run_once = || {
+        Command::new(env!("CARGO_BIN_EXE_bijux"))
+            .args(&expanded)
+            .output()
+            .expect("run case")
+    };
 
     let first = run_once();
     let second = run_once();
@@ -91,8 +98,18 @@ fn run_case(case_file: &Path) {
         "exit code drift in {}",
         case_file.display()
     );
-    assert_eq!(first.stdout, second.stdout, "stdout drift in {}", case_file.display());
-    assert_eq!(first.stderr, second.stderr, "stderr drift in {}", case_file.display());
+    assert_eq!(
+        first.stdout,
+        second.stdout,
+        "stdout drift in {}",
+        case_file.display()
+    );
+    assert_eq!(
+        first.stderr,
+        second.stderr,
+        "stderr drift in {}",
+        case_file.display()
+    );
 }
 
 #[test]
@@ -106,7 +123,10 @@ fn minimized_config_corruption_campaign_cases_replay_without_crashing() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "must retain at least one minimized campaign case");
+    assert!(
+        !files.is_empty(),
+        "must retain at least one minimized campaign case"
+    );
 
     for case_file in files {
         run_case(&case_file);
