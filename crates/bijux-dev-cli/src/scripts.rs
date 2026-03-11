@@ -1137,6 +1137,44 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
+                "artifacts/status/plugin_rollback_proof_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/packaging_ambiguity_report.json",
+                "artifacts/status/install_state_assumptions_report.json",
+                "artifacts/status/package_health_report.json",
+                "artifacts/status/package_health_report.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/history_corruption_matrix.json",
+                "artifacts/status/memory_corruption_matrix.json",
+                "artifacts/status/state_recovery_guidance.json",
+                "artifacts/status/state_recovery_guidance.txt",
+                "artifacts/status/state_resilience_summary.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS",
+        }),
     ]
 }
 
@@ -6528,6 +6566,269 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_discovery_determinism_report.json",
                 "artifacts/status/plugin_ordering_law.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS" => {
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin lifecycle failure injection",
+                    "status": "complete",
+                    "evidence": [
+                        {
+                            "topic": "install write failures",
+                            "coverage_ids": [441, 442, 443, 444, 445, 446],
+                            "tests": [
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
+                            ],
+                        },
+                        {
+                            "topic": "uninstall/disable/enable failure behavior",
+                            "coverage_ids": [447, 448, 449],
+                            "tests": [
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
+                            ],
+                        },
+                        {
+                            "topic": "post-install integrity checks",
+                            "coverage_ids": [450, 451, 452, 453, 454],
+                            "tests": [
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_runtime_kind_becomes_unsupported",
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor",
+                            ],
+                        },
+                        {
+                            "topic": "retry idempotency",
+                            "coverage_ids": [456, 457],
+                            "tests": [
+                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
+                            ],
+                        },
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/plugin_rollback_proof_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin rollback and write-path proofs",
+                    "status": "complete",
+                    "coverage_ids": [455],
+                    "evidence": [
+                        "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
+                        "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
+                        "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
+                        "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
+                        "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
+                "artifacts/status/plugin_rollback_proof_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS" => {
+            let generated_at = generated_at_utc();
+            let install_source = fs::read_to_string(
+                workspace_root.join("artifacts/status/install_source_diagnostics.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let ambiguous_runtime = fs::read_to_string(
+                workspace_root.join("artifacts/status/ambiguous_runtime_diagnostics.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let package_health =
+                run_bijux_json(workspace_root, &["dev", "cli", "package-health"]).ok()?;
+            let runtime_identity =
+                run_bijux_json(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/packaging_ambiguity_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "packaging ambiguity",
+                    "status": "complete",
+                    "coverage_ids": [536],
+                    "runtime_identity": {
+                        "active_binary_selection_is_ambiguous": runtime_identity.get("active_binary_selection_is_ambiguous").cloned().unwrap_or_else(|| json!(false)),
+                        "active_path_is_shadowed": runtime_identity.get("active_path_is_shadowed").cloned().unwrap_or_else(|| json!(false)),
+                        "diagnostics": runtime_identity.get("diagnostics").cloned().unwrap_or_else(|| json!({})),
+                    },
+                    "install_source_diagnostics": install_source,
+                    "ambiguous_runtime_diagnostics": ambiguous_runtime,
+                    "evidence_tests": [
+                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::pip_binary_shadowed_by_cargo_binary_is_reported",
+                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::cargo_binary_shadowed_by_pip_binary_is_reported",
+                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::package_health_and_runtime_identity_cover_ambiguous_install_state",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/install_state_assumptions_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "install-state assumptions",
+                    "status": "complete",
+                    "coverage_ids": [537],
+                    "install_state_assumptions": package_health.get("install_state_assumptions").cloned().unwrap_or_else(|| json!([])),
+                    "install_state_assumption_help": package_health.get("install_state_assumption_help").cloned().unwrap_or_else(|| json!("")),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/package_health_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "package health",
+                    "status": "complete",
+                    "coverage_ids": [538],
+                    "payload": package_health,
+                }),
+            )
+            .ok()?;
+            let assumptions_count = package_health
+                .get("install_state_assumptions")
+                .and_then(Value::as_array)
+                .map(|v| v.len())
+                .unwrap_or(0);
+            let help = package_health
+                .get("install_state_assumption_help")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            fs::write(
+                workspace_root.join("artifacts/status/package_health_report.txt"),
+                format!("Package Health\n\nassumptions_count: {assumptions_count}\nhelp: {help}\n"),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/packaging_ambiguity_report.json",
+                "artifacts/status/install_state_assumptions_report.json",
+                "artifacts/status/package_health_report.json",
+                "artifacts/status/package_health_report.txt"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS" => {
+            let generated_at = generated_at_utc();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/history_corruption_matrix.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "history corruption matrix",
+                    "status": "complete",
+                    "coverage_ids": [481, 482, 483, 484, 485, 488],
+                    "evidence_tests": [
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_enormous_line_layout_is_tolerated_with_tail_limit",
+                        "crates/bijux-cli/tests/bin_surface/history_parity.rs::history_preserves_duplicate_commands_and_ordering",
+                        "crates/bijux-cli/tests/bin_surface/history_parity.rs::history_skips_malformed_entries_inside_json_array",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/memory_corruption_matrix.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "memory corruption matrix",
+                    "status": "complete",
+                    "coverage_ids": [489, 490, 491, 492, 493, 494, 496],
+                    "evidence_tests": [
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_commands_are_read_only_even_when_home_storage_is_unwritable",
+                        "crates/bijux-cli/tests/bin_surface/memory_parity.rs::memory_malformed_state_is_treated_as_empty_like_python",
+                        "crates/bijux-cli/tests/bin_surface/memory_parity.rs::memory_non_object_json_state_fails_with_error_envelope",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_recovery_guidance.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "state recovery guidance",
+                    "status": "complete",
+                    "coverage_ids": [498, 499],
+                    "guidance": [
+                        {
+                            "area": "history",
+                            "when": "history parse fails or returns malformed structure",
+                            "action": "backup file then truncate to valid JSON array or line-based commands",
+                        },
+                        {
+                            "area": "memory",
+                            "when": "memory state is malformed or wrong-type",
+                            "action": "backup file then rewrite to JSON object map with object values",
+                        },
+                        {
+                            "area": "repl-history-write",
+                            "when": "history flush fails during session exit",
+                            "action": "preserve in-memory session, restore writable path, retry flush",
+                        },
+                    ],
+                }),
+            )
+            .ok()?;
+            fs::write(
+                workspace_root.join("artifacts/status/state_recovery_guidance.txt"),
+                "State Recovery Guidance\n\nHistory\n- If history parse fails, back up the file and rewrite as JSON array or line-based command list.\n- Keep the most recent valid entries; discard malformed tail fragments.\n\nMemory\n- If memory state is malformed, back up and rewrite as a JSON object.\n- Ensure each memory entry is represented as an object value.\n\nREPL history flush\n- If flush fails on session exit, keep in-memory commands and retry after restoring writable storage.\n",
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_resilience_summary.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "state resilience summary",
+                    "status": "complete",
+                    "coverage_ids": [486, 487, 495, 497],
+                    "evidence_tests": [
+                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_exit_flush_reports_write_interruption_without_crashing_session",
+                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
+                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
+                    ],
+                    "artifacts": [
+                        "artifacts/status/history_corruption_matrix.json",
+                        "artifacts/status/memory_corruption_matrix.json",
+                        "artifacts/status/state_recovery_guidance.json",
+                        "artifacts/status/state_recovery_guidance.txt",
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/history_corruption_matrix.json",
+                "artifacts/status/memory_corruption_matrix.json",
+                "artifacts/status/state_recovery_guidance.json",
+                "artifacts/status/state_recovery_guidance.txt",
+                "artifacts/status/state_resilience_summary.json"
             ]}))
         }
         _ => None,
