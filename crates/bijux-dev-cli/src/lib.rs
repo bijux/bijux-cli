@@ -7,37 +7,39 @@
 
 /// Application-layer command dispatch and runtime query interfaces.
 pub mod application;
-/// Capability modules organized by maintainer command ownership.
-pub mod capabilities;
 /// Stable shared catalogs and contracts used across dev-cli capabilities.
 pub mod catalog;
-/// Reusable technical helpers with no command ownership.
+/// Domain modules organized by maintainer command ownership.
+pub mod domain;
+/// Reusable technical adapters for filesystem/process/clock concerns.
+pub mod infrastructure;
+/// Backward-compatibility shim for older `support` imports.
 pub mod support;
 
 pub use application::dispatch;
-pub use capabilities::automation_contracts as scripts;
-pub use capabilities::cockpit;
-pub use capabilities::config;
-pub use capabilities::control_plane;
-pub use capabilities::crate_health;
-pub use capabilities::docs_audit;
-pub use capabilities::env;
-pub use capabilities::evidence;
-pub use capabilities::package_health;
-pub use capabilities::parity;
-pub use capabilities::python;
-pub use capabilities::registry;
-pub use capabilities::release;
-pub use capabilities::repo;
-pub use capabilities::route_audit;
-pub use capabilities::routes;
-pub use capabilities::runtime_contracts as contracts;
-pub use capabilities::runtime_identity;
-pub use capabilities::rustdoc;
-pub use capabilities::script_audit;
-pub use capabilities::state_audit;
-pub use capabilities::status;
 pub use catalog::report_envelope as reporting;
+pub use domain::automation_contracts as scripts;
+pub use domain::cockpit;
+pub use domain::config;
+pub use domain::control_plane;
+pub use domain::crate_health;
+pub use domain::docs_audit;
+pub use domain::env;
+pub use domain::evidence;
+pub use domain::package_health;
+pub use domain::parity;
+pub use domain::python;
+pub use domain::registry;
+pub use domain::release;
+pub use domain::repo;
+pub use domain::route_audit;
+pub use domain::routes;
+pub use domain::runtime_contracts as contracts;
+pub use domain::runtime_identity;
+pub use domain::rustdoc;
+pub use domain::script_audit;
+pub use domain::state_audit;
+pub use domain::status;
 
 pub use catalog::command_registry::{
     command_registry, DevCliCommand, DevCliCommandGroup, DevCliCommandMetadata, ReportContext,

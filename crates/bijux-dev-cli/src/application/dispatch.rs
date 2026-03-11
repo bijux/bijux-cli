@@ -9,9 +9,9 @@ use anyhow::Result;
 use serde_json::Value;
 
 use crate::{
-    capabilities::runtime_contracts as dev_contracts, cockpit as dev_cockpit, config as dev_config,
-    control_plane as dev_control_plane, crate_health as dev_crate_health,
-    docs_audit as dev_docs_audit, env as dev_env, evidence as dev_evidence,
+    cockpit as dev_cockpit, config as dev_config, control_plane as dev_control_plane,
+    crate_health as dev_crate_health, docs_audit as dev_docs_audit,
+    domain::runtime_contracts as dev_contracts, env as dev_env, evidence as dev_evidence,
     package_health as dev_package_health, parity as dev_parity, python as dev_python,
     registry as dev_registry, release as dev_release, repo as dev_repo,
     route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
