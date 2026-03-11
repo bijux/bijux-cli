@@ -1250,6 +1250,46 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/docs_unreferenced_candidates.json",
+                "artifacts/status/stale_snapshot_candidates.json",
+                "artifacts/status/dead_generated_artifact_candidates.json",
+                "artifacts/status/cleanup_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-MIGRATION-NOTES",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/migration_notes_commands.json",
+                "artifacts/status/migration_notes_packaging.json",
+                "artifacts/status/migration_notes_plugin_lifecycle.json",
+                "artifacts/status/migration_notes_state_behavior.json",
+                "artifacts/status/migration_notes.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MIGRATION-NOTES",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/official_product_mount_registry.json",
+                "artifacts/status/product_mount_readiness_report.json",
+                "artifacts/status/product_mount_support_report.json",
+                "artifacts/status/product_mount_gap_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS",
+        }),
     ]
 }
 
@@ -7712,6 +7752,393 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/parser_crash_triage_artifact.json",
                 "artifacts/status/parser_fuzz_regression_artifact.json",
                 "artifacts/status/parser_fuzz_campaign_artifact.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS" => {
+            let generated_at = "1970-01-01T00:00:00+00:00";
+            let deleted_docs = vec![
+                "docs/architecture/newly-ported-command-parity.md",
+                "docs/architecture/next-five-command-priorities.md",
+                "docs/architecture/safe-improvements-after-parity.md",
+            ];
+            let deleted_snapshot_files = vec![
+                "artifacts/python-behavior/golden/config/config_get_sample.json",
+                "artifacts/python-behavior/golden/config/config_set_sample.json",
+                "artifacts/python-behavior/golden/config/config_unset_sample.json",
+            ];
+            let deleted_artifacts = vec![
+                "artifacts/python-behavior/golden/config/capture-summary.json",
+                "artifacts/python-behavior/golden/config/config_clear.json",
+                "artifacts/python-behavior/golden/config/config_export_json.json",
+            ];
+            let policy_files = json!({
+                "artifact_retention": "docs/architecture/artifact-retention-policy.md",
+                "snapshot_retention": "docs/architecture/snapshot-retention-policy.md",
+                "document_retention": "docs/architecture/document-retention-policy.md",
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/docs_unreferenced_candidates.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "deleted": deleted_docs,
+                    "criteria": [
+                        "not linked by README, command reference, or contributor flow",
+                        "historical progress reporting rather than durable law",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/stale_snapshot_candidates.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "deleted": deleted_snapshot_files,
+                    "criteria": [
+                        "legacy python-behavior captures no longer tied to live rust command snapshots",
+                        "not consumed by CI upload, release evidence, or tests",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dead_generated_artifact_candidates.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "deleted": deleted_artifacts,
+                    "criteria": [
+                        "runtime lock and temp files in artifact tree are not evidence artifacts",
+                        "legacy python behavior captures not consumed by CI upload, release evidence, or status reports",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/cleanup_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "761-780 cleanup and retention hardening",
+                    "deleted": {
+                        "docs": deleted_docs,
+                        "snapshot_artifacts": deleted_snapshot_files,
+                        "dead_generated_artifacts": deleted_artifacts,
+                    },
+                    "policies": policy_files,
+                    "rules": [
+                        "reject keep-just-in-case for stale prose",
+                        "reject keep-just-in-case for stale snapshots",
+                        "reject keep-just-in-case for dead generated artifacts",
+                        "cleanup is ongoing release-by-release work",
+                    ],
+                    "status": "complete",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/docs_unreferenced_candidates.json",
+                "artifacts/status/stale_snapshot_candidates.json",
+                "artifacts/status/dead_generated_artifact_candidates.json",
+                "artifacts/status/cleanup_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-MIGRATION-NOTES" => {
+            let generated_at = "1970-01-01T00:00:00+00:00";
+            let parity_matrix = fs::read_to_string(
+                workspace_root.join("artifacts/parity/command_parity_matrix.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let command_rows = parity_matrix
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let changed: Vec<Value> = command_rows
+                .into_iter()
+                .filter(|row| {
+                    row.get("status").and_then(Value::as_str).is_some_and(|s| {
+                        matches!(s, "partial" | "intentionally-different" | "different-by-decision")
+                    })
+                })
+                .map(|row| {
+                    json!({
+                        "command": row.get("command").cloned().unwrap_or(Value::Null),
+                        "status": row.get("status").cloned().unwrap_or(Value::Null),
+                        "reason": row.get("reason").cloned().unwrap_or_else(|| json!("")),
+                        "blocker": row.get("blocker").cloned().unwrap_or_else(|| json!("")),
+                    })
+                })
+                .collect();
+            let package_health = fs::read_to_string(
+                workspace_root.join("artifacts/status/package_health_report.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let assumptions = package_health
+                .get("payload")
+                .and_then(|v| v.get("install_state_assumptions"))
+                .cloned()
+                .unwrap_or_else(|| json!([]));
+            let runtime_unity = fs::read_to_string(
+                workspace_root.join("artifacts/status/runtime_unity_report.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let plugin_failures = fs::read_to_string(
+                workspace_root
+                    .join("artifacts/status/plugin_lifecycle_failure_injection_report.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let rollback = fs::read_to_string(
+                workspace_root.join("artifacts/status/plugin_rollback_proof_report.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let config = fs::read_to_string(
+                workspace_root.join("artifacts/status/config_corruption_matrix.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let state = fs::read_to_string(
+                workspace_root.join("artifacts/status/state_resilience_summary.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let guidance = fs::read_to_string(
+                workspace_root.join("artifacts/status/state_recovery_guidance.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/migration_notes_commands.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "commands",
+                    "coverage_ids": [574],
+                    "items": changed.into_iter().take(250).collect::<Vec<_>>(),
+                    "source": "artifacts/parity/command_parity_matrix.json",
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/migration_notes_packaging.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "packaging",
+                    "coverage_ids": [575],
+                    "runtime_unity_ok": runtime_unity.get("ok").and_then(Value::as_bool).unwrap_or(false),
+                    "items": [
+                        {
+                            "area": "runtime-identity",
+                            "note": "verify active binary and PATH shadowing behavior before cutover",
+                            "evidence": "artifacts/status/runtime_unity_report.json",
+                        },
+                        {
+                            "area": "install-assumptions",
+                            "note": "review install-state assumptions and shell completion target paths",
+                            "assumptions": assumptions,
+                            "evidence": "artifacts/status/package_health_report.json",
+                        },
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/migration_notes_plugin_lifecycle.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin-lifecycle",
+                    "coverage_ids": [576],
+                    "items": [
+                        {
+                            "area": "plugin-install-write-path",
+                            "note": "validate rollback and retry behavior before enabling new plugin capabilities",
+                            "evidence": [
+                                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
+                                "artifacts/status/plugin_rollback_proof_report.json",
+                            ],
+                        },
+                        {
+                            "area": "plugin-runtime-diagnostics",
+                            "note": "verify reserved-name and registry diagnostics surface expected errors",
+                            "evidence": "artifacts/status/namespace_abuse_report.json",
+                        },
+                    ],
+                    "plugin_report_status": plugin_failures.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                    "rollback_report_status": rollback.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/migration_notes_state_behavior.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "state-behavior",
+                    "coverage_ids": [577],
+                    "items": [
+                        {
+                            "area": "config",
+                            "note": "backup and validate config before mutating across runtime upgrades",
+                            "evidence": "artifacts/status/config_corruption_matrix.json",
+                        },
+                        {
+                            "area": "history-memory",
+                            "note": "run state doctor when corrupted history or memory payloads are detected",
+                            "evidence": "artifacts/status/state_resilience_summary.json",
+                        },
+                        {
+                            "area": "recovery",
+                            "note": "follow machine-readable state recovery guidance for rollback paths",
+                            "evidence": "artifacts/status/state_recovery_guidance.json",
+                        },
+                    ],
+                    "config_status": config.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                    "state_status": state.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                    "guidance_status": guidance.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                }),
+            )
+            .ok()?;
+            let migration_cmds = fs::read_to_string(
+                workspace_root.join("artifacts/status/migration_notes_commands.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .and_then(|v| v.get("items").cloned())
+            .and_then(|v| v.as_array().cloned())
+            .unwrap_or_default();
+            let mut text = String::from("Migration Notes\n\nCommands:\n");
+            for item in migration_cmds.into_iter().take(40) {
+                let command = item.get("command").and_then(Value::as_str).unwrap_or("");
+                let status = item.get("status").and_then(Value::as_str).unwrap_or("");
+                let reason = item.get("reason").and_then(Value::as_str).unwrap_or("");
+                text.push_str(&format!("- {command}: status={status} reason={reason}\n"));
+            }
+            text.push_str(
+                "\nPackaging:\n- runtime-identity: verify active binary and PATH shadowing behavior before cutover\n- install-assumptions: review install-state assumptions and shell completion target paths\n\nPlugin lifecycle:\n- plugin-install-write-path: validate rollback and retry behavior before enabling new plugin capabilities\n- plugin-runtime-diagnostics: verify reserved-name and registry diagnostics surface expected errors\n\nState behavior:\n- config: backup and validate config before mutating across runtime upgrades\n- history-memory: run state doctor when corrupted history or memory payloads are detected\n- recovery: follow machine-readable state recovery guidance for rollback paths\n",
+            );
+            fs::write(workspace_root.join("artifacts/status/migration_notes.txt"), text).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/migration_notes_commands.json",
+                "artifacts/status/migration_notes_packaging.json",
+                "artifacts/status/migration_notes_plugin_lifecycle.json",
+                "artifacts/status/migration_notes_state_behavior.json",
+                "artifacts/status/migration_notes.txt"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS" => {
+            let registry = fs::read_to_string(
+                workspace_root.join("docs/constitution/official_product_namespace_registry.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let contract = fs::read_to_string(
+                workspace_root.join("docs/constitution/product_mount_metadata_contract.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let namespaces = registry
+                .get("entries")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|entry| {
+                    entry.get("namespace").and_then(Value::as_str).map(ToString::to_string)
+                })
+                .collect::<Vec<_>>();
+            let placeholder_entries =
+                registry.get("placeholder_entries").cloned().unwrap_or_else(|| json!([]));
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/official_product_mount_registry.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "registry": registry,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/product_mount_readiness_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "official_namespaces": namespaces,
+                    "placeholder_entries": placeholder_entries,
+                    "metadata_contract": contract,
+                    "freeze_rule": "future-ready via metadata and tests; no speculative runtime expansion",
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/product_mount_support_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "supports_today": [
+                        "reserved namespace rejection for official mounts",
+                        "route-tree visibility for reserved official namespaces",
+                        "stable metadata contract for runtime and control binaries",
+                        "plugin lifecycle guardrails remain independent from product runtime binaries",
+                    ],
+                    "evidence": [
+                        "crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs",
+                        "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
+                        "crates/bijux-cli/tests/routing/route_law_consistency.rs",
+                        "docs/constitution/official_product_namespace_registry.json",
+                        "docs/constitution/product_mount_metadata_contract.json",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/product_mount_gap_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "not_committed": [
+                        "dynamic product runtime loading",
+                        "external ABI stability guarantee for product plugins",
+                        "network-distributed namespace registry",
+                    ],
+                    "why_missing": "kept intentionally out to avoid speculative core complexity",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/official_product_mount_registry.json",
+                "artifacts/status/product_mount_readiness_report.json",
+                "artifacts/status/product_mount_support_report.json",
+                "artifacts/status/product_mount_gap_report.json"
             ]}))
         }
         _ => None,
