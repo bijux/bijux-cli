@@ -1285,7 +1285,7 @@ jobs:
             artifacts/status/dev_cli_scripts_migrated_report.json
             artifacts/status/dev_cli_scripts_diff_report.json
             artifacts/status/dev_cli_script_value_ranking.json
-            artifacts/status/dev_cli_task_runner_inventory.json
+            artifacts/status/dev_cli_make_target_inventory.json
           if-no-files-found: warn
           retention-days: 14
 

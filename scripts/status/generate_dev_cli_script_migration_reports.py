@@ -49,17 +49,17 @@ def main() -> int:
     ranking["ranking"].sort(key=lambda row: int(row["maintainer_value_rank"]), reverse=True)
     write(STATUS / "dev_cli_script_value_ranking.json", ranking)
 
-    task_runner_inventory = {
-        "task_runner_targets": remaining.get("task_runner_targets", []),
-        "count": len(remaining.get("task_runner_targets", [])),
+    make_target_inventory = {
+        "make_targets": remaining.get("make_targets", []),
+        "count": len(remaining.get("make_targets", [])),
     }
-    write(STATUS / "dev_cli_task_runner_inventory.json", task_runner_inventory)
+    write(STATUS / "dev_cli_make_target_inventory.json", make_target_inventory)
 
     print("wrote artifacts/status/dev_cli_scripts_remaining_report.json")
     print("wrote artifacts/status/dev_cli_scripts_migrated_report.json")
     print("wrote artifacts/status/dev_cli_scripts_diff_report.json")
     print("wrote artifacts/status/dev_cli_script_value_ranking.json")
-    print("wrote artifacts/status/dev_cli_task_runner_inventory.json")
+    print("wrote artifacts/status/dev_cli_make_target_inventory.json")
     return 0
 
 
