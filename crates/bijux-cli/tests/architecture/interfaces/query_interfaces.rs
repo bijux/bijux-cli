@@ -12,10 +12,7 @@ fn unique_temp_dir(label: &str) -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .expect("clock drift before unix epoch")
         .as_nanos();
-    std::env::temp_dir().join(format!(
-        "bijux-query-{label}-{}-{nanos}",
-        std::process::id()
-    ))
+    std::env::temp_dir().join(format!("bijux-query-{label}-{}-{nanos}", std::process::id()))
 }
 
 #[test]
@@ -113,17 +110,11 @@ fn parity_status_query_shape_is_stable() {
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("artifacts/parity")).expect("mkdir parity");
     fs::create_dir_all(root.join("artifacts/status")).expect("mkdir status");
-    fs::write(
-        root.join("artifacts/parity/command_parity_matrix.json"),
-        "{\"ok\":true}\n",
-    )
-    .expect("write parity");
+    fs::write(root.join("artifacts/parity/command_parity_matrix.json"), "{\"ok\":true}\n")
+        .expect("write parity");
     fs::write(root.join("artifacts/status/status.json"), "{\"ok\":true}\n").expect("write status");
-    fs::write(
-        root.join("artifacts/status/command_migration_matrix.json"),
-        "{\"ok\":true}\n",
-    )
-    .expect("write migration");
+    fs::write(root.join("artifacts/status/command_migration_matrix.json"), "{\"ok\":true}\n")
+        .expect("write migration");
 
     let query = parity_status_query(&root);
     assert!(query.command_parity_matrix_exists);
@@ -147,10 +138,7 @@ fn parity_status_query_is_read_only_for_missing_artifact_tree() {
     assert!(!query.command_parity_matrix_exists);
     assert!(!query.status_report_exists);
     assert!(!query.command_migration_matrix_exists);
-    assert!(
-        !parity_dir.exists() && !status_dir.exists(),
-        "parity query must not create artifacts"
-    );
+    assert!(!parity_dir.exists() && !status_dir.exists(), "parity query must not create artifacts");
 
     let _ = fs::remove_dir_all(&root);
 }
