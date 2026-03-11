@@ -313,7 +313,7 @@ jobs:
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_priority_rankings.py
-          python3 scripts/status/generate_next_minimalism_priorities.py
+          python3 scripts/status/generate_simplification_priorities.py
           python3 scripts/status/generate_cleanup_reports.py
           python3 scripts/status/generate_product_mount_readiness_reports.py
           python3 scripts/status/generate_plugin_scaffold_reports.py

@@ -7,7 +7,7 @@ scripts/status/generate_release_build_reports.py # generate release/debug size, 
 scripts/status/check_deterministic_generation.py # verify schema, command-tree, and parity artifact generation remain deterministic
 scripts/status/check_release_build_consistency.py # run repeated release builds and report binary hash consistency
 scripts/status/generate_cleanup_reports.py # produce cleanup evidence and retention-policy artifacts for stale docs/snapshots/generated files
-scripts/status/generate_next_minimalism_priorities.py # generate ranked simplification priorities and simplification_priorities artifacts from evidence reports
+scripts/status/generate_simplification_priorities.py # generate ranked simplification priorities and simplification_priorities artifacts from evidence reports
 scripts/status/generate_command_migration_matrix.py # generate command migration matrix and status-model summaries consumed by dev cli status and CI
 scripts/status/generate_command_surface_inventory.py # generate python-path, alias, and shim command inventories for migration closure evidence
 scripts/status/generate_bridge_duplicate_law_report.py # generate python-bridge duplicate-law audit report to prove wrapper-only bridge behavior

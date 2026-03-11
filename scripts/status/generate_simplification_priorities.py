@@ -54,7 +54,7 @@ def ranked_from(path: Path) -> list[dict[str, Any]]:
 def emit(name: str, title: str, items: list[dict[str, Any]], sources: list[str], coverage_id: int, generated_at: str) -> dict[str, Any]:
     payload = {
         "generated_at": generated_at,
-        "generator": "scripts/status/generate_next_minimalism_priorities.py",
+        "generator": "scripts/status/generate_simplification_priorities.py",
         "title": title,
         "coverage_id": coverage_id,
         "sources": sources,
@@ -214,7 +214,7 @@ def main() -> None:
 
     simplification_priorities = {
         "generated_at": generated_at,
-        "generator": "scripts/status/generate_next_minimalism_priorities.py",
+        "generator": "scripts/status/generate_simplification_priorities.py",
         "coverage_ids": [793, 795, 796, 797, 798, 799, 800],
         "ranked_reports": {name: rel(STATUS / f"{name}.json") for name in outputs},
         "top_priorities": {name: payload.get("items", [])[:5] for name, payload in outputs.items()},
@@ -235,7 +235,7 @@ def main() -> None:
                 rel(STATUS / "live_compatibility_aliases.json"),
                 rel(STATUS / "ranked_shim_alias_leftovers.json"),
             ],
-            "next_wave_requires_artifacts": [
+            "required_artifacts": [
                 rel(STATUS / "simplification_priorities.json"),
                 rel(STATUS / "simplification_priorities.txt"),
             ],
@@ -243,7 +243,7 @@ def main() -> None:
     }
     write_json(STATUS / "simplification_priorities.json", simplification_priorities)
 
-    lines = ["Next Simplification Priorities (Evidence-Ranked)", ""]
+    lines = ["Simplification Priorities (Evidence-Ranked)", ""]
     for name, payload in outputs.items():
         lines.append(f"{payload['title']}:")
         for item in payload.get("items", [])[:5]:

@@ -84,7 +84,7 @@ def main() -> int:
     next_derived_ok = (
         next_policy.get("manual_curated_priority_lists_allowed") is False
         and next_policy.get("roadmap_requires_generated_artifacts") is True
-        and bool(next_policy.get("next_wave_requires_artifacts"))
+        and bool(next_policy.get("required_artifacts"))
     )
     dashboard_status_match = (
         payloads["dev_cli_dashboard_report.json"]["dashboard"]["status"]["summary"] == status_summary
