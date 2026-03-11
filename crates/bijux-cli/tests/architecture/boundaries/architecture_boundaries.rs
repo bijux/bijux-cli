@@ -16,16 +16,24 @@ fn is_internal_workspace_crate(name: &str) -> bool {
     name == "bijux-cli" || name == "bijux-dev-cli" || name.starts_with("bijux-cli-")
 }
 
-fn internal_workspace_deps(pkg: &Value) -> BTreeSet<String> {
+fn dependency_kind(dep: &Value) -> Option<&str> {
+    match dep.get("kind") {
+        None | Some(Value::Null) => Some("normal"),
+        Some(Value::String(kind)) => Some(kind.as_str()),
+        _ => None,
+    }
+}
+
+fn internal_workspace_deps(pkg: &Value) -> BTreeSet<(String, String)> {
     let mut deps = BTreeSet::new();
     let Some(dep_items) = pkg.get("dependencies").and_then(Value::as_array) else {
         return deps;
     };
 
     for dep in dep_items {
-        if !dep.get("kind").is_none_or(Value::is_null) {
+        let Some(kind) = dependency_kind(dep) else {
             continue;
-        }
+        };
         let Some(name) = dep.get("name").and_then(Value::as_str) else {
             continue;
         };
@@ -33,7 +41,7 @@ fn internal_workspace_deps(pkg: &Value) -> BTreeSet<String> {
             continue;
         }
         if dep.get("path").is_some() {
-            deps.insert(name.to_string());
+            deps.insert((kind.to_string(), name.to_string()));
         }
     }
 
@@ -49,7 +57,9 @@ fn enforces_internal_crate_boundaries() {
             "--format-version",
             "1",
             "--manifest-path",
-            manifest.to_str().expect("workspace manifest path must be valid UTF-8"),
+            manifest
+                .to_str()
+                .expect("workspace manifest path must be valid UTF-8"),
         ])
         .output()
         .expect("cargo metadata command must execute");
@@ -61,14 +71,22 @@ fn enforces_internal_crate_boundaries() {
     );
 
     let root: Value = serde_json::from_slice(&output.stdout).expect("valid metadata JSON");
-    let packages =
-        root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
+    let packages = root
+        .get("packages")
+        .and_then(Value::as_array)
+        .expect("metadata contains packages");
 
-    let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
-        ("bijux-dev-cli", BTreeSet::from(["bijux-cli-evidence"])),
-        ("bijux-cli", BTreeSet::from(["bijux-dev-cli"])),
+    let expected: BTreeMap<&str, BTreeSet<(&str, &str)>> = BTreeMap::from([
+        (
+            "bijux-dev-cli",
+            BTreeSet::from([("normal", "bijux-cli-evidence")]),
+        ),
+        ("bijux-cli", BTreeSet::from([("normal", "bijux-dev-cli")])),
         ("bijux-cli-evidence", BTreeSet::new()),
-        ("bijux-cli-python", BTreeSet::from(["bijux-cli"])),
+        (
+            "bijux-cli-python",
+            BTreeSet::from([("normal", "bijux-cli")]),
+        ),
     ]);
     let mut observed_internal_packages = BTreeSet::new();
 
@@ -86,8 +104,10 @@ fn enforces_internal_crate_boundaries() {
         };
 
         let observed = internal_workspace_deps(pkg);
-        let expected_owned: BTreeSet<String> =
-            expected_deps.iter().map(|item| (*item).to_string()).collect();
+        let expected_owned: BTreeSet<(String, String)> = expected_deps
+            .iter()
+            .map(|(kind, name)| ((*kind).to_string(), (*name).to_string()))
+            .collect();
 
         assert_eq!(
             observed, expected_owned,

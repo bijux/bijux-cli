@@ -1,20 +1,130 @@
 #![forbid(unsafe_code)]
 //! Ensures every routed dev-cli command is implemented in bijux-dev-cli dispatch.
 
+use std::collections::{BTreeMap, BTreeSet};
+
+fn read(path: &str) -> String {
+    std::fs::read_to_string(path).unwrap_or_else(|err| panic!("failed to read {path}: {err}"))
+}
+
+fn extract_guard_values(source: &str, prefix: &str) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    let mut rest = source;
+    while let Some(start) = rest.find(prefix) {
+        let value_start = start + prefix.len();
+        let suffix = &rest[value_start..];
+        let Some(value_end) = suffix.find('"') else {
+            break;
+        };
+        out.insert(suffix[..value_end].to_string());
+        rest = &suffix[value_end + 1..];
+    }
+    out
+}
+
+fn fixture_dev_cli_top_level_commands() -> BTreeSet<String> {
+    let fixture = read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/fixtures/routing/dev_cli_subcommands.txt"
+    ));
+    fixture
+        .lines()
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            let segments: Vec<&str> = trimmed.split_whitespace().collect();
+            if segments.len() != 3 || segments[0] != "dev" || segments[1] != "cli" {
+                return None;
+            }
+            Some(segments[2].to_string())
+        })
+        .collect()
+}
+
 #[test]
-fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
-    let source = std::fs::read_to_string(concat!(
+fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
+    let source = read(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../bijux-dev-cli/src/dispatch.rs"
-    ))
-    .expect("read dev cli dispatch source");
+    ));
+    let fixture_commands = fixture_dev_cli_top_level_commands();
+    let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
+    let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
+
+    let dispatch_three_segment_commands =
+        extract_guard_values(&source, three_segment_branch_prefix);
+    let nested_namespaces = extract_guard_values(&source, four_segment_namespace_prefix);
+
+    let expected_three_segment_commands: BTreeSet<String> = fixture_commands
+        .difference(&nested_namespaces)
+        .cloned()
+        .collect();
+
+    assert_eq!(
+        dispatch_three_segment_commands, expected_three_segment_commands,
+        "dev-cli top-level command fixture drifted from dispatch ownership"
+    );
+}
+
+#[test]
+fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
+    let source = read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../bijux-dev-cli/src/dispatch.rs"
+    ));
+
+    let branch_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
+    let observed_namespaces = extract_guard_values(&source, branch_prefix);
+    let expected_namespaces: BTreeSet<String> = [
+        "scripts", "rustdoc", "release", "evidence", "config", "python", "repo",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
+
+    assert_eq!(
+        observed_namespaces, expected_namespaces,
+        "nested namespace dispatch ownership drifted from expected architecture"
+    );
+
+    let expected_delegate_prefixes = BTreeMap::from([
+        ("scripts", "dev_scripts::build_"),
+        ("rustdoc", "dev_rustdoc::build_"),
+        ("release", "dev_release::build_"),
+        ("evidence", "dev_evidence::build_"),
+        ("config", "dev_config::build_"),
+        ("python", "dev_python::build_"),
+        ("repo", "dev_repo::build_"),
+    ]);
+    for (namespace, delegate_prefix) in expected_delegate_prefixes {
+        assert!(
+            source.contains(delegate_prefix),
+            "namespace `{namespace}` must delegate to `{delegate_prefix}*` implementations"
+        );
+    }
+}
+
+#[test]
+fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
+    let source = read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../bijux-dev-cli/src/dispatch.rs"
+    ));
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report_from_query"),
         ("atlas", "dev_control_plane::build_atlas_report"),
         ("di", "dev_control_plane::build_dependency_injection_report"),
-        ("list-products", "dev_control_plane::build_product_list_report"),
-        ("list-plugins", "dev_control_plane::build_plugin_list_report"),
+        (
+            "list-products",
+            "dev_control_plane::build_product_list_report",
+        ),
+        (
+            "list-plugins",
+            "dev_control_plane::build_plugin_list_report",
+        ),
         ("route-audit", "dev_route_audit::build_report_from_query"),
         ("inventory", "dev_script_audit::build_inventory_report"),
         ("registry", "dev_registry::build_report_from_query"),
@@ -22,8 +132,14 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         ("docs", "dev_control_plane::build_docs_inventory_report"),
         ("status", "dev_status::build_report"),
         ("script-audit", "dev_script_audit::build_report"),
-        ("snapshots-audit", "dev_control_plane::build_snapshots_audit_report"),
-        ("fixture-audit", "dev_control_plane::build_fixture_audit_report"),
+        (
+            "snapshots-audit",
+            "dev_control_plane::build_snapshots_audit_report",
+        ),
+        (
+            "fixture-audit",
+            "dev_control_plane::build_fixture_audit_report",
+        ),
         ("crate-health", "dev_crate_health::build_report"),
         ("package-health", "dev_package_health::build_report"),
         ("env", "dev_env::build_report"),
@@ -35,73 +151,28 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         ("next", "dev_cockpit::build_next_report"),
         ("contracts", "dev_contracts::build_report_from_query"),
         ("runtime-identity", "dev_runtime_identity::build_report"),
-        ("docs-prune-plan", "dev_control_plane::build_docs_prune_plan_report"),
+        (
+            "docs-prune-plan",
+            "dev_control_plane::build_docs_prune_plan_report",
+        ),
         ("state-audit", "dev_state_audit::build_report"),
         ("state-doctor", "dev_state_audit::build_doctor_report"),
         ("docs-audit", "dev_docs_audit::build_report"),
-        ("plugin-health", "dev_control_plane::build_plugin_health_report"),
+        (
+            "plugin-health",
+            "dev_control_plane::build_plugin_health_report",
+        ),
     ];
 
     for (subcommand, delegate) in expected_delegates {
         let branch = format!("[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"{subcommand}\"");
-        assert!(source.contains(&branch), "missing route branch for {subcommand}");
-        assert!(source.contains(delegate), "missing dev-cli delegate for {subcommand}");
+        assert!(
+            source.contains(&branch),
+            "missing route branch for {subcommand}"
+        );
+        assert!(
+            source.contains(delegate),
+            "missing dev-cli delegate for {subcommand}"
+        );
     }
-
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"scripts\""),
-        "missing delegated scripts command namespace"
-    );
-    assert!(
-        source.contains("dev_scripts::build_audit_report"),
-        "scripts command namespace must delegate to bijux-dev-cli scripts module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"rustdoc\""),
-        "missing delegated rustdoc command namespace"
-    );
-    assert!(
-        source.contains("dev_rustdoc::build_audit_report"),
-        "rustdoc command namespace must delegate to bijux-dev-cli rustdoc module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"release\""),
-        "missing delegated release command namespace"
-    );
-    assert!(
-        source.contains("dev_release::build_status_report"),
-        "release command namespace must delegate to bijux-dev-cli release module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"evidence\""),
-        "missing delegated evidence command namespace"
-    );
-    assert!(
-        source.contains("dev_evidence::build_list_report"),
-        "evidence command namespace must delegate to bijux-dev-cli evidence module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"config\""),
-        "missing delegated config command namespace"
-    );
-    assert!(
-        source.contains("dev_config::build_ownership_report"),
-        "config command namespace must delegate to bijux-dev-cli config module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"python\""),
-        "missing delegated python command namespace"
-    );
-    assert!(
-        source.contains("dev_python::build_sovereignty_audit_report"),
-        "python command namespace must delegate to bijux-dev-cli python module"
-    );
-    assert!(
-        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"repo\""),
-        "missing delegated repo command namespace"
-    );
-    assert!(
-        source.contains("dev_repo::build_health_report"),
-        "repo command namespace must delegate to bijux-dev-cli repo module"
-    );
 }

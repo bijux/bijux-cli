@@ -37,6 +37,17 @@ pub struct StateDiagnosticsQuery {
     pub memory: StatePathStatus,
 }
 
+fn parent_dir_is_writable(path: &Path) -> bool {
+    let mut cursor = path.parent();
+    while let Some(parent) = cursor {
+        if let Ok(metadata) = fs::metadata(parent) {
+            return metadata.is_dir() && !metadata.permissions().readonly();
+        }
+        cursor = parent.parent();
+    }
+    false
+}
+
 fn state_path_status(path: &Path) -> StatePathStatus {
     let metadata = fs::metadata(path);
     StatePathStatus {
@@ -49,7 +60,7 @@ fn state_path_status(path: &Path) -> StatePathStatus {
         writable: if path.exists() {
             fs::OpenOptions::new().append(true).open(path).is_ok()
         } else {
-            path.parent().is_some_and(|parent| fs::create_dir_all(parent).is_ok())
+            parent_dir_is_writable(path)
         },
     }
 }
