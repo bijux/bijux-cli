@@ -341,6 +341,25 @@ pub fn try_handle(
         [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "audit" => {
             dev_scripts::build_audit_report(&workspace_root())
         }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generators" => {
+            dev_scripts::build_generators_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generate" => {
+            dev_scripts::run_generator(
+                &workspace_root(),
+                command_option_value(argv, "--id").as_deref(),
+                command_option_value(argv, "--source").as_deref(),
+            )
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "generate-all" => {
+            dev_scripts::run_all_generators(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "requirements" => {
+            dev_scripts::build_requirement_catalog_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "flaky-tests" => {
+            dev_scripts::build_flaky_tests_report(&workspace_root())
+        }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "package-metadata" => {
             dev_scripts::build_package_metadata_report(&workspace_root())
         }

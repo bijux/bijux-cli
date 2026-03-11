@@ -205,6 +205,15 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("migrated"))
                 .subcommand(Command::new("diff"))
                 .subcommand(Command::new("audit"))
+                .subcommand(Command::new("generators"))
+                .subcommand(
+                    Command::new("generate")
+                        .arg(Arg::new("id").long("id").num_args(1))
+                        .arg(Arg::new("source").long("source").num_args(1)),
+                )
+                .subcommand(Command::new("generate-all"))
+                .subcommand(Command::new("requirements"))
+                .subcommand(Command::new("flaky-tests"))
                 .subcommand(Command::new("package-metadata"))
                 .subcommand(Command::new("e2e-contract"))
                 .subcommand(
