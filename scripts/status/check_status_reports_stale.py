@@ -7,42 +7,65 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
 def run(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, cwd=ROOT, check=False, capture_output=True, text=True)
 
 
+def run_status_script(script_id: str, *extra_args: str) -> subprocess.CompletedProcess[str]:
+    cmd = [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "bijux-cli",
+        "--bin",
+        "bijux",
+        "--",
+        "dev",
+        "cli",
+        "scripts",
+        "status",
+        "run",
+        "--id",
+        script_id,
+    ]
+    if extra_args:
+        cmd.extend(["--", *extra_args])
+    return run(cmd)
+
+
 def main() -> int:
-    gen = run(["python3", "scripts/status/generate_status_reports.py"])
+    gen = run_status_script("STATUS-SCRIPT-GENERATE-STATUS")
     if gen.returncode != 0:
         print(gen.stderr.strip() or gen.stdout.strip())
         return gen.returncode
-    migration = run(["python3", "scripts/status/generate_command_migration_matrix.py"])
+    migration = run_status_script("STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX")
     if migration.returncode != 0:
         print(migration.stderr.strip() or migration.stdout.strip())
         return migration.returncode
-    inventory = run(["python3", "scripts/status/generate_command_surface_inventory.py"])
+    inventory = run_status_script("STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY")
     if inventory.returncode != 0:
         print(inventory.stderr.strip() or inventory.stdout.strip())
         return inventory.returncode
-    bridge_dup = run(["python3", "scripts/status/generate_bridge_duplicate_law_report.py"])
+    bridge_dup = run_status_script("STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT")
     if bridge_dup.returncode != 0:
         print(bridge_dup.stderr.strip() or bridge_dup.stdout.strip())
         return bridge_dup.returncode
-    bridge_wrapper = run(["python3", "scripts/status/generate_bridge_wrapper_only_reports.py"])
+    bridge_wrapper = run_status_script("STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY")
     if bridge_wrapper.returncode != 0:
         print(bridge_wrapper.stderr.strip() or bridge_wrapper.stdout.strip())
         return bridge_wrapper.returncode
-    install_neutrality = run(["python3", "scripts/status/generate_install_neutrality_reports.py"])
+    install_neutrality = run_status_script("STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY")
     if install_neutrality.returncode != 0:
         print(install_neutrality.stderr.strip() or install_neutrality.stdout.strip())
         return install_neutrality.returncode
-    compatibility = run(["python3", "scripts/status/generate_compatibility_shim_reports.py"])
+    compatibility = run_status_script("STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM")
     if compatibility.returncode != 0:
         print(compatibility.stderr.strip() or compatibility.stdout.strip())
         return compatibility.returncode
-    compatibility_trend = run(
-        ["python3", "scripts/status/generate_compatibility_debt_trend_report.py"]
-    )
+    compatibility_trend = run_status_script("STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT")
     if compatibility_trend.returncode != 0:
         print(compatibility_trend.stderr.strip() or compatibility_trend.stdout.strip())
         return compatibility_trend.returncode
@@ -67,17 +90,17 @@ def main() -> int:
     if parity_law.returncode != 0:
         print(parity_law.stderr.strip() or parity_law.stdout.strip())
         return parity_law.returncode
-    command_family_closure = run(["python3", "scripts/status/generate_command_family_closure_reports.py"])
+    command_family_closure = run_status_script("STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE")
     if command_family_closure.returncode != 0:
         print(command_family_closure.stderr.strip() or command_family_closure.stdout.strip())
         return command_family_closure.returncode
-    cross_surface_consistency = run(
-        ["python3", "scripts/status/generate_cross_surface_consistency_law_reports.py"]
+    cross_surface_consistency = run_status_script(
+        "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW"
     )
     if cross_surface_consistency.returncode != 0:
         print(cross_surface_consistency.stderr.strip() or cross_surface_consistency.stdout.strip())
         return cross_surface_consistency.returncode
-    simplification = run(["python3", "scripts/status/generate_simplification_reports.py"])
+    simplification = run_status_script("STATUS-SCRIPT-GENERATE-SIMPLIFICATION")
     if simplification.returncode != 0:
         print(simplification.stderr.strip() or simplification.stdout.strip())
         return simplification.returncode

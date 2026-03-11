@@ -23,6 +23,29 @@ def run(args: list[str], env: dict[str, str] | None = None) -> subprocess.Comple
     return subprocess.run(args, cwd=ROOT, check=False, capture_output=True, text=True, env=merged)
 
 
+def status_script_cmd(script_id: str, *extra_args: str) -> list[str]:
+    cmd = [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "bijux-cli",
+        "--bin",
+        "bijux",
+        "--",
+        "dev",
+        "cli",
+        "scripts",
+        "status",
+        "run",
+        "--id",
+        script_id,
+    ]
+    if extra_args:
+        cmd.extend(["--", *extra_args])
+    return cmd
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -129,7 +152,7 @@ def main() -> int:
     if not law_ok:
         failures.append("parity dashboard generation is not deterministic")
 
-    migration_gen = ["python3", "scripts/status/generate_command_migration_matrix.py"]
+    migration_gen = status_script_cmd("STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX")
     m1 = run(migration_gen, env=fixed_env)
     migration_file = STATUS / "command_migration_matrix.json"
     migration_hash1 = (
@@ -151,7 +174,7 @@ def main() -> int:
     if not migration_ok:
         failures.append("command migration matrix generation is not deterministic")
 
-    inventory_gen = ["python3", "scripts/status/generate_command_surface_inventory.py"]
+    inventory_gen = status_script_cmd("STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY")
     i1 = run(inventory_gen, env=fixed_env)
     inventory_file = STATUS / "public_python_paths_still_reachable.json"
     inventory_hash1 = (
@@ -173,7 +196,7 @@ def main() -> int:
     if not inventory_ok:
         failures.append("command surface inventory generation is not deterministic")
 
-    bridge_dup_gen = ["python3", "scripts/status/generate_bridge_duplicate_law_report.py"]
+    bridge_dup_gen = status_script_cmd("STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT")
     b1 = run(bridge_dup_gen, env=fixed_env)
     bridge_dup_file = STATUS / "bridge_duplicate_law_report.json"
     bridge_hash1 = (
@@ -195,7 +218,7 @@ def main() -> int:
     if not bridge_ok:
         failures.append("bridge duplicate-law report generation is not deterministic")
 
-    install_neutrality_gen = ["python3", "scripts/status/generate_install_neutrality_reports.py"]
+    install_neutrality_gen = status_script_cmd("STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY")
     n1 = run(install_neutrality_gen, env=fixed_env)
     neutrality_file = STATUS / "install_neutrality_report.json"
     neutrality_hash1 = (
