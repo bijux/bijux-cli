@@ -16,11 +16,7 @@ fn stable_generated_at() -> String {
 }
 
 fn write_text_if_changed(path: &Path, body: &str) {
-    let normalized = if body.ends_with('\n') {
-        body.to_string()
-    } else {
-        format!("{body}\n")
-    };
+    let normalized = if body.ends_with('\n') { body.to_string() } else { format!("{body}\n") };
     if read_text_if_exists(path) == normalized {
         return;
     }
@@ -76,15 +72,10 @@ fn status_rank(status: &str) -> i32 {
 }
 
 fn ensure_command_matrix(workspace_root: &Path) -> Value {
-    let path = workspace_root
-        .join(PARITY_DIR)
-        .join("command_parity_matrix.json");
+    let path = workspace_root.join(PARITY_DIR).join("command_parity_matrix.json");
     let current = read_json_if_exists(&path);
-    let existing_rows = current
-        .get("commands")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let existing_rows =
+        current.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
     if !existing_rows.is_empty() {
         return current;
     }
@@ -160,20 +151,12 @@ fn ensure_command_matrix(workspace_root: &Path) -> Value {
         ];
     }
 
-    commands.sort_by_key(|row| {
-        row.get("command")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string()
-    });
+    commands
+        .sort_by_key(|row| row.get("command").and_then(Value::as_str).unwrap_or("").to_string());
 
     let mut groups: BTreeMap<String, Vec<Value>> = BTreeMap::new();
     for row in &commands {
-        let key = row
-            .get("group")
-            .and_then(Value::as_str)
-            .unwrap_or("root")
-            .to_string();
+        let key = row.get("group").and_then(Value::as_str).unwrap_or("root").to_string();
         groups.entry(key).or_default().push(row.clone());
     }
     let plugin_rows = groups.get("plugin").cloned().unwrap_or_default();
@@ -205,30 +188,16 @@ fn ensure_command_matrix(workspace_root: &Path) -> Value {
 }
 
 fn ensure_parity_diffs(workspace_root: &Path, matrix: &Value) -> Value {
-    let path = workspace_root
-        .join(PARITY_DIR)
-        .join("command_parity_diffs.json");
+    let path = workspace_root.join(PARITY_DIR).join("command_parity_diffs.json");
     let current = read_json_if_exists(&path);
-    let existing_rows = current
-        .get("diffs")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let existing_rows = current.get("diffs").and_then(Value::as_array).cloned().unwrap_or_default();
     if !existing_rows.is_empty() {
         return current;
     }
 
     let mut rows = Vec::new();
-    for row in matrix
-        .get("commands")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        let command = row
-            .get("command")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
+    for row in matrix.get("commands").and_then(Value::as_array).into_iter().flatten() {
+        let command = row.get("command").and_then(Value::as_str).unwrap_or_default();
         if command.is_empty() {
             continue;
         }
@@ -252,11 +221,7 @@ fn ensure_parity_diffs(workspace_root: &Path, matrix: &Value) -> Value {
 }
 
 fn write_diff_markdown(workspace_root: &Path, diffs: &Value) {
-    let rows = diffs
-        .get("diffs")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = diffs.get("diffs").and_then(Value::as_array).cloned().unwrap_or_default();
     if rows.is_empty() {
         return;
     }
@@ -287,30 +252,13 @@ fn write_diff_markdown(workspace_root: &Path, diffs: &Value) {
     ];
 
     for row in &rows {
-        let command = row
-            .get("command")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let stdout_match = row
-            .pointer("/stdout/match")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let stderr_match = row
-            .pointer("/stderr/match")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let exit_match = row
-            .pointer("/exit_code/match")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let help_match = row
-            .pointer("/help/match")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let is_help = row
-            .pointer("/help/is_help_command")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        let command = row.get("command").and_then(Value::as_str).unwrap_or_default();
+        let stdout_match = row.pointer("/stdout/match").and_then(Value::as_bool).unwrap_or(false);
+        let stderr_match = row.pointer("/stderr/match").and_then(Value::as_bool).unwrap_or(false);
+        let exit_match = row.pointer("/exit_code/match").and_then(Value::as_bool).unwrap_or(false);
+        let help_match = row.pointer("/help/match").and_then(Value::as_bool).unwrap_or(false);
+        let is_help =
+            row.pointer("/help/is_help_command").and_then(Value::as_bool).unwrap_or(false);
         stdout_lines.push(format!(
             "| `{command}` | {} | `...` | `...` |",
             if stdout_match { "yes" } else { "no" }
@@ -322,12 +270,8 @@ fn write_diff_markdown(workspace_root: &Path, diffs: &Value) {
         exit_lines.push(format!(
             "| `{command}` | {} | `{}` | `{}` |",
             if exit_match { "yes" } else { "no" },
-            row.pointer("/exit_code/python")
-                .and_then(Value::as_i64)
-                .unwrap_or_default(),
-            row.pointer("/exit_code/rust")
-                .and_then(Value::as_i64)
-                .unwrap_or_default(),
+            row.pointer("/exit_code/python").and_then(Value::as_i64).unwrap_or_default(),
+            row.pointer("/exit_code/rust").and_then(Value::as_i64).unwrap_or_default(),
         ));
         help_lines.push(format!(
             "| `{command}` | {} | {} |",
@@ -352,16 +296,8 @@ fn write_diff_markdown(workspace_root: &Path, diffs: &Value) {
 }
 
 fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Value) {
-    let rows = matrix
-        .get("commands")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let diff_rows = diffs
-        .get("diffs")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+    let diff_rows = diffs.get("diffs").and_then(Value::as_array).cloned().unwrap_or_default();
     if rows.is_empty() {
         return;
     }
@@ -382,10 +318,7 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
     let repl_rows: Vec<Value> = rows
         .iter()
         .filter(|row| {
-            row.get("command")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .contains("repl")
+            row.get("command").and_then(Value::as_str).unwrap_or_default().contains("repl")
         })
         .cloned()
         .collect();
@@ -414,18 +347,15 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
         })
         .collect();
 
-    let aliases: HashSet<String> = read_json_if_exists(
-        &workspace_root
-            .join(STATUS_DIR)
-            .join("current_rust_state.json"),
-    )
-    .pointer("/rust_routed_commands/aliases")
-    .and_then(Value::as_array)
-    .into_iter()
-    .flatten()
-    .filter_map(Value::as_str)
-    .map(ToString::to_string)
-    .collect();
+    let aliases: HashSet<String> =
+        read_json_if_exists(&workspace_root.join(STATUS_DIR).join("current_rust_state.json"))
+            .pointer("/rust_routed_commands/aliases")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(ToString::to_string)
+            .collect();
 
     let owned_rows: Vec<Value> = rows
         .iter()
@@ -445,10 +375,7 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
         .iter()
         .filter(|row| {
             row.get("status").and_then(Value::as_str) == Some("missing")
-                && row
-                    .get("python_available")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false)
+                && row.get("python_available").and_then(Value::as_bool).unwrap_or(false)
         })
         .cloned()
         .collect();
@@ -517,11 +444,7 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
             continue;
         }
         let existing = read_json_if_exists(&path);
-        if existing
-            .get(key)
-            .and_then(Value::as_array)
-            .is_some_and(|rows| !rows.is_empty())
-        {
+        if existing.get(key).and_then(Value::as_array).is_some_and(|rows| !rows.is_empty()) {
             continue;
         }
         write_json_if_changed(&path, &payload);
@@ -530,16 +453,11 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
     let summary_path = parity_root.join("command_parity_summary.txt");
     if !summary_path.exists() {
         let total = rows.len();
-        let complete = rows
-            .iter()
-            .filter(|row| row["status"] == "complete")
-            .count();
+        let complete = rows.iter().filter(|row| row["status"] == "complete").count();
         let partial = rows.iter().filter(|row| row["status"] == "partial").count();
         let missing = rows.iter().filter(|row| row["status"] == "missing").count();
-        let intentional = rows
-            .iter()
-            .filter(|row| row["status"] == "different-by-decision")
-            .count();
+        let intentional =
+            rows.iter().filter(|row| row["status"] == "different-by-decision").count();
         write_text_if_changed(
             &summary_path,
             &format!(
@@ -557,19 +475,12 @@ fn ensure_specialized_matrices(workspace_root: &Path, matrix: &Value, diffs: &Va
 }
 
 fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
-    let rows = matrix
-        .get("commands")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
     if rows.is_empty() {
         return;
     }
-    let coverage = read_json_if_exists(
-        &workspace_root
-            .join(PARITY_DIR)
-            .join("parity_coverage_matrix.json"),
-    );
+    let coverage =
+        read_json_if_exists(&workspace_root.join(PARITY_DIR).join("parity_coverage_matrix.json"));
     let coverage_map: HashMap<String, Value> = coverage
         .get("coverage")
         .and_then(Value::as_array)
@@ -657,11 +568,7 @@ fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
     ] {
         let path = parity_root.join(name);
         let existing = read_json_if_exists(&path);
-        if existing
-            .get("rows")
-            .and_then(Value::as_array)
-            .is_some_and(|rows| !rows.is_empty())
-        {
+        if existing.get("rows").and_then(Value::as_array).is_some_and(|rows| !rows.is_empty()) {
             continue;
         }
         let payload = json!({
@@ -674,21 +581,11 @@ fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
 
     let dashboard_path = parity_root.join("parity_dashboard.json");
     let existing_dashboard = read_json_if_exists(&dashboard_path);
-    if !existing_dashboard
-        .get("summary")
-        .is_some_and(Value::is_object)
-    {
+    if !existing_dashboard.get("summary").is_some_and(Value::is_object) {
         let mut surfaces: BTreeMap<String, BTreeMap<&str, usize>> = BTreeMap::new();
         for row in &rows {
-            let group = row
-                .get("group")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown")
-                .to_string();
-            let status = row
-                .get("status")
-                .and_then(Value::as_str)
-                .unwrap_or("missing");
+            let group = row.get("group").and_then(Value::as_str).unwrap_or("unknown").to_string();
+            let status = row.get("status").and_then(Value::as_str).unwrap_or("missing");
             let slot = surfaces.entry(group).or_default();
             match status {
                 "complete" => *slot.entry("complete").or_default() += 1,
@@ -741,30 +638,18 @@ fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
              output_snapshots: {}\n\
              source: artifacts/parity/parity_dashboard.json\n",
             rows.len(),
-            payload["summary"]["coverage"]["parity_tests"]
-                .as_u64()
-                .unwrap_or_default(),
-            payload["summary"]["coverage"]["exit_code_checks"]
-                .as_u64()
-                .unwrap_or_default(),
-            payload["summary"]["coverage"]["stderr_stdout_checks"]
-                .as_u64()
-                .unwrap_or_default(),
-            payload["summary"]["coverage"]["output_snapshots"]
-                .as_u64()
-                .unwrap_or_default(),
+            payload["summary"]["coverage"]["parity_tests"].as_u64().unwrap_or_default(),
+            payload["summary"]["coverage"]["exit_code_checks"].as_u64().unwrap_or_default(),
+            payload["summary"]["coverage"]["stderr_stdout_checks"].as_u64().unwrap_or_default(),
+            payload["summary"]["coverage"]["output_snapshots"].as_u64().unwrap_or_default(),
         );
         write_text_if_changed(&parity_root.join("parity_dashboard.txt"), &dashboard_text);
     }
 }
 
 fn ensure_regression_report(workspace_root: &Path, matrix: &Value) {
-    let regression_path = workspace_root
-        .join(PARITY_DIR)
-        .join("parity_regression_diffs.json");
-    let summary_path = workspace_root
-        .join(PARITY_DIR)
-        .join("parity_regression_summary.txt");
+    let regression_path = workspace_root.join(PARITY_DIR).join("parity_regression_diffs.json");
+    let summary_path = workspace_root.join(PARITY_DIR).join("parity_regression_summary.txt");
     let existing = read_json_if_exists(&regression_path);
     if existing.get("regressions").is_some() && existing.get("warnings").is_some() {
         return;
@@ -803,14 +688,8 @@ fn ensure_regression_report(workspace_root: &Path, matrix: &Value) {
             regressions.push(format!("command disappeared from matrix: {command}"));
             continue;
         };
-        let old_status = old
-            .get("status")
-            .and_then(Value::as_str)
-            .unwrap_or("missing");
-        let new_status = new
-            .get("status")
-            .and_then(Value::as_str)
-            .unwrap_or("missing");
+        let old_status = old.get("status").and_then(Value::as_str).unwrap_or("missing");
+        let new_status = new.get("status").and_then(Value::as_str).unwrap_or("missing");
         if old_status == "complete" && status_rank(new_status) < status_rank(old_status) {
             regressions.push(format!(
                 "parity-covered command regressed: {command} ({old_status} -> {new_status})"
@@ -890,26 +769,15 @@ fn parity_dashboard_gate(workspace_root: &Path) -> Value {
         }
     }
     let dashboard = read_json_if_exists(&parity_root.join("parity_dashboard.json"));
-    let summary = dashboard
-        .get("summary")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let coverage = summary
-        .get("coverage")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
+    let summary = dashboard.get("summary").cloned().unwrap_or_else(|| json!({}));
+    let coverage = summary.get("coverage").cloned().unwrap_or_else(|| json!({}));
     if !summary.is_object() {
         failures.push("parity_dashboard.json missing summary".to_string());
     }
     if !coverage.is_object() {
         failures.push("parity_dashboard.json missing coverage".to_string());
     }
-    if coverage
-        .get("parity_tests")
-        .and_then(Value::as_u64)
-        .unwrap_or_default()
-        == 0
-    {
+    if coverage.get("parity_tests").and_then(Value::as_u64).unwrap_or_default() == 0 {
         failures.push("parity dashboard shows zero parity tests".to_string());
     }
     json!({
@@ -919,21 +787,11 @@ fn parity_dashboard_gate(workspace_root: &Path) -> Value {
 }
 
 fn parity_regression_gate(workspace_root: &Path) -> Value {
-    let payload = read_json_if_exists(
-        &workspace_root
-            .join(PARITY_DIR)
-            .join("parity_regression_diffs.json"),
-    );
-    let regressions = payload
-        .get("regressions")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let warnings = payload
-        .get("warnings")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let payload =
+        read_json_if_exists(&workspace_root.join(PARITY_DIR).join("parity_regression_diffs.json"));
+    let regressions =
+        payload.get("regressions").and_then(Value::as_array).cloned().unwrap_or_default();
+    let warnings = payload.get("warnings").and_then(Value::as_array).cloned().unwrap_or_default();
     json!({
         "status": if regressions.is_empty() { "pass" } else { "fail" },
         "regressions": regressions,
@@ -943,21 +801,12 @@ fn parity_regression_gate(workspace_root: &Path) -> Value {
 
 fn binary_bridge_gate(workspace_root: &Path) -> Value {
     let payload = read_json_if_exists(
-        &workspace_root
-            .join(PARITY_DIR)
-            .join("binary_vs_python_bridge_parity_report.json"),
+        &workspace_root.join(PARITY_DIR).join("binary_vs_python_bridge_parity_report.json"),
     );
-    let rows = payload
-        .get("cases")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = payload.get("cases").and_then(Value::as_array).cloned().unwrap_or_default();
     let mut failures = Vec::<String>::new();
     for row in rows {
-        let command = row
-            .get("command")
-            .and_then(Value::as_str)
-            .unwrap_or("<unknown>");
+        let command = row.get("command").and_then(Value::as_str).unwrap_or("<unknown>");
         for key in ["exit_match", "stdout_match", "stderr_match"] {
             if !row.get(key).and_then(Value::as_bool).unwrap_or(false) {
                 failures.push(format!("{command}: {key}=false"));
@@ -972,14 +821,9 @@ fn binary_bridge_gate(workspace_root: &Path) -> Value {
 
 fn cross_surface_drift_gate(workspace_root: &Path) -> Value {
     let payload = read_json_if_exists(
-        &workspace_root
-            .join(STATUS_DIR)
-            .join("cross_surface_drift_report.json"),
+        &workspace_root.join(STATUS_DIR).join("cross_surface_drift_report.json"),
     );
-    let drift_count = payload
-        .get("drift_count")
-        .and_then(Value::as_u64)
-        .unwrap_or_default();
+    let drift_count = payload.get("drift_count").and_then(Value::as_u64).unwrap_or_default();
     json!({
         "status": if drift_count == 0 { "pass" } else { "fail" },
         "drift_count": drift_count,
@@ -1124,8 +968,6 @@ mod tests {
         let report = build_report(&workspace_root);
         assert!(report.get("command_matrix").is_some());
         assert!(report.get("state_parity").is_some());
-        assert!(report
-            .pointer("/automation_gates/parity_dashboard")
-            .is_some());
+        assert!(report.pointer("/automation_gates/parity_dashboard").is_some());
     }
 }

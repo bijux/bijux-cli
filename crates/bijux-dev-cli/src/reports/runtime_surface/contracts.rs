@@ -29,16 +29,8 @@ fn nextest_summary_line(total: usize, passed: usize, failed: usize) -> String {
 }
 
 fn contracts_all_rows(inventory: &Value, run_results: &Value) -> Vec<Value> {
-    let specs = inventory
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let results = run_results
-        .get("results")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let specs = inventory.get("rows").and_then(Value::as_array).cloned().unwrap_or_default();
+    let results = run_results.get("results").and_then(Value::as_array).cloned().unwrap_or_default();
     let row_count = specs.len().max(results.len());
 
     (0..row_count)
@@ -49,23 +41,16 @@ fn contracts_all_rows(inventory: &Value, run_results: &Value) -> Vec<Value> {
             let contract_id = spec
                 .and_then(|row| row.get("contract_id"))
                 .and_then(Value::as_str)
-                .or_else(|| {
-                    run.and_then(|row| row.get("contract_id"))
-                        .and_then(Value::as_str)
-                })
+                .or_else(|| run.and_then(|row| row.get("contract_id")).and_then(Value::as_str))
                 .unwrap_or("UNKNOWN-CONTRACT-ID");
-            let kind = spec
-                .and_then(|row| row.get("kind"))
-                .and_then(Value::as_str)
-                .unwrap_or("status");
+            let kind =
+                spec.and_then(|row| row.get("kind")).and_then(Value::as_str).unwrap_or("status");
             let implementation = spec
                 .and_then(|row| row.get("implementation"))
                 .and_then(Value::as_str)
                 .unwrap_or("rust");
-            let run_status = run
-                .and_then(|row| row.get("status"))
-                .and_then(Value::as_str)
-                .unwrap_or("failed");
+            let run_status =
+                run.and_then(|row| row.get("status")).and_then(Value::as_str).unwrap_or("failed");
 
             json!({
                 "contract_id": contract_id,
@@ -174,12 +159,7 @@ mod tests {
     fn contracts_report_shape_is_stable() {
         let report = build_report("0.1.0");
         assert!(report.get("contracts").is_some());
-        assert_eq!(
-            report
-                .get("schema_version")
-                .and_then(serde_json::Value::as_str),
-            Some("v1")
-        );
+        assert_eq!(report.get("schema_version").and_then(serde_json::Value::as_str), Some("v1"));
     }
 
     #[test]
