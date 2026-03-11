@@ -114,6 +114,35 @@ fn read_dev_cli_source() -> String {
     source
 }
 
+fn read_runtime_dispatch_source() -> String {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let dispatch_file = crate_root.join("src/interface/cli/dispatch.rs");
+    let dispatch_dir = crate_root.join("src/interface/cli/dispatch");
+    assert!(
+        dispatch_file.is_file(),
+        "expected runtime dispatch entry file at {}",
+        dispatch_file.display()
+    );
+    assert!(
+        dispatch_dir.is_dir(),
+        "expected runtime dispatch module directory at {}",
+        dispatch_dir.display()
+    );
+
+    let mut files = vec![dispatch_file];
+    collect_rs_files(&dispatch_dir, &mut files);
+    files.sort();
+
+    let mut source = String::new();
+    for file in files {
+        let text = std::fs::read_to_string(&file)
+            .unwrap_or_else(|err| panic!("read runtime dispatch source {}: {err}", file.display()));
+        source.push_str(&text);
+        source.push('\n');
+    }
+    source
+}
+
 fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = std::fs::read_dir(root) else {
         return;
@@ -148,11 +177,7 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
 
 #[test]
 fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
-    let dispatch_source_raw = std::fs::read_to_string(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/interface/cli/dispatch.rs"
-    ))
-    .expect("read runtime dispatch source");
+    let dispatch_source_raw = read_runtime_dispatch_source();
     let dev_cli_source_raw = read_dev_cli_source();
     let dispatch_source = strip_comments_and_strings(&dispatch_source_raw);
     let dev_cli_source = strip_comments_and_strings(&dev_cli_source_raw);

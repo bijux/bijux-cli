@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 //! Source-level invariants for dev-cli dispatch and failure handling.
 
+use std::path::{Path, PathBuf};
+
 fn strip_comments_and_strings(source: &str) -> String {
     let bytes = source.as_bytes();
     let mut out = String::with_capacity(bytes.len());
@@ -89,15 +91,52 @@ fn strip_comments_and_strings(source: &str) -> String {
     out
 }
 
+fn read_runtime_dispatch_source() -> String {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let dispatch_file = crate_root.join("src/interface/cli/dispatch.rs");
+    let dispatch_dir = crate_root.join("src/interface/cli/dispatch");
+    assert!(
+        dispatch_file.is_file(),
+        "expected runtime dispatch entry file at {}",
+        dispatch_file.display()
+    );
+    assert!(
+        dispatch_dir.is_dir(),
+        "expected runtime dispatch module directory at {}",
+        dispatch_dir.display()
+    );
+
+    let mut files = vec![dispatch_file];
+    collect_rs_files(&dispatch_dir, &mut files);
+    files.sort();
+
+    let mut source = String::new();
+    for file in files {
+        let text = std::fs::read_to_string(&file)
+            .unwrap_or_else(|err| panic!("read runtime dispatch source {}: {err}", file.display()));
+        source.push_str(&text);
+        source.push('\n');
+    }
+    source
+}
+
+fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rs_files(&path, out);
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push(path);
+        }
+    }
+}
+
 #[test]
 fn dev_cli_dispatch_uses_shared_envelope_and_exit_mapping() {
-    let source = strip_comments_and_strings(
-        &std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/src/interface/cli/dispatch.rs"
-        ))
-        .expect("read dispatch source"),
-    );
+    let source = strip_comments_and_strings(&read_runtime_dispatch_source());
     assert!(source.contains("render_value("), "core app must use shared report envelope renderer");
     assert!(source.contains("AppRunResult"), "core app must return a normalized run envelope");
     assert!(
@@ -108,13 +147,7 @@ fn dev_cli_dispatch_uses_shared_envelope_and_exit_mapping() {
 
 #[test]
 fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
-    let core_source = strip_comments_and_strings(
-        &std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/src/interface/cli/dispatch.rs"
-        ))
-        .expect("read core dispatch source"),
-    );
+    let core_source = strip_comments_and_strings(&read_runtime_dispatch_source());
     let bin_source = strip_comments_and_strings(
         &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bin/bijux.rs"))
             .expect("read core bin source"),
