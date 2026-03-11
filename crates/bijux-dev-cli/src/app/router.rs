@@ -17,7 +17,7 @@ use crate::commands::{
     evidence as dev_evidence, maintenance_audit as dev_maintenance_audit,
     package_health as dev_package_health, parity as dev_parity, python as dev_python,
     registry as dev_registry, release as dev_release, repo as dev_repo,
-    route_audit as dev_route_audit, routes as dev_routes, runtime_contracts as dev_contracts,
+    route_audit as dev_route_audit, routes as dev_routes, contracts as dev_contracts,
     runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
     state_audit as dev_state_audit, status as dev_status,
 };

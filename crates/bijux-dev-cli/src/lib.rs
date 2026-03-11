@@ -37,7 +37,7 @@ pub use commands::release;
 pub use commands::repo;
 pub use commands::route_audit;
 pub use commands::routes;
-pub use commands::runtime_contracts as contracts;
+pub use commands::contracts;
 pub use commands::runtime_identity;
 pub use commands::rustdoc;
 pub use commands::maintenance_audit;
