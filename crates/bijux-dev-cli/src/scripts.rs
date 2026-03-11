@@ -11536,7 +11536,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 .filter(|name| parser.contains(&format!("Command::new(\"{name}\").hide(true)")))
                 .collect::<Vec<_>>();
             let baseline = fs::read_to_string(
-                workspace_root.join("scripts/status/route_special_cases_baseline.json"),
+                workspace_root.join("configs/status/route_special_cases_baseline.json"),
             )
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
@@ -11905,7 +11905,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
         "STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM-REPORTS" => {
             let generated_at = generated_at_utc();
             let baseline: Value = fs::read_to_string(
-                workspace_root.join("scripts/status/compatibility_baseline.json"),
+                workspace_root.join("configs/status/compatibility_baseline.json"),
             )
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
