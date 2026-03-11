@@ -13,10 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -29,10 +26,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "bijux-deterministic-output-{name}-{}",
-        std::process::id()
-    ));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-deterministic-output-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -56,12 +51,7 @@ fn setup_plugin(root: &Path, plugins_dir: &Path, namespace: &str) {
 
     let manifest = scaffold_dir.join("plugin.manifest.json");
     let install = run_with_env(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
         &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))],
     );
     assert!(install.status.success());
@@ -84,14 +74,9 @@ fn plugins_list_json_is_byte_stable_across_runs() {
     setup_plugin(&root, &plugins_dir, "stablelist");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let first = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second =
+        run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
@@ -141,10 +126,7 @@ fn json_envelope_field_order_is_stable() {
         let status = body.find("\"status\"").expect("status key");
         assert!(runtime < status);
         if let Some(prev) = &baseline {
-            assert_eq!(
-                prev, &out.stdout,
-                "repeated run changed json order or payload"
-            );
+            assert_eq!(prev, &out.stdout, "repeated run changed json order or payload");
         } else {
             baseline = Some(out.stdout);
         }
@@ -169,10 +151,7 @@ fn plugin_list_machine_output_order_is_stable() {
     setup_plugin(&root, &plugins_dir, "alphaorder");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let out = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let out = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     let names: Vec<&str> = payload["plugins"]
@@ -201,28 +180,10 @@ fn state_doctor_ordering_is_stable_in_machine_output() {
     let home_str = home.to_str().expect("utf-8");
 
     let envs = [("HOME", home_str)];
-    let first = run_with_env(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
-    let second = run_with_env(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let first =
+        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
+    let second =
+        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
@@ -256,14 +217,9 @@ fn repeated_runs_do_not_introduce_plugin_discovery_order_noise() {
     setup_plugin(&root, &plugins_dir, "betaorder");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let first = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run_with_env(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second =
+        run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
