@@ -17,8 +17,7 @@
     "scripts/docs_builder/artifacts_pages/test_page.py",
     "scripts/docs_builder/helpers.py",
     "scripts/docs_builder/mkdocs_manager.py",
-    "scripts/docs_builder/models.py",
-    "scripts/git-hooks/prepare-commit-msg"
+    "scripts/docs_builder/models.py"
   ],
   "reason": "These scripts build the docs site generation pipeline and are not duplicate maintainer diagnostics that belong on dev-cli command surfaces."
 }

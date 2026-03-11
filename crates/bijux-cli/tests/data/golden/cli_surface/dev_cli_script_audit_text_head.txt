@@ -11,8 +11,7 @@
     "scripts/docs_builder/artifacts_pages/security_page.py",
     "scripts/docs_builder/artifacts_pages/test_page.py",
     "scripts/docs_builder/helpers.py",
-    "scripts/docs_builder/mkdocs_manager.py",
-    "scripts/git-hooks/prepare-commit-msg"
+    "scripts/docs_builder/mkdocs_manager.py"
   ],
   "remaining_task_runner_only_behaviors": [
     "publish",
@@ -22,3 +21,4 @@
     "sbom-dev",
     "sbom-prod",
     "sbom-summary",
+    "sbom-validate",

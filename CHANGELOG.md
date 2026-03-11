@@ -198,7 +198,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
     * Modularized the Makefile into `makes/*.mk` for maintainability and clear separation of concerns.
     * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
-    * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from `scripts/git-hooks` (skips re-installation if already linked).
+    * Added `bootstrap` target for idempotent virtualenv setup.
     * Added `all-parallel` target to run independent checks (`quality`, `security`, `api`, `docs`) concurrently for faster CI/CD.
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
