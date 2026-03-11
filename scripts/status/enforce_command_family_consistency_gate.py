@@ -28,7 +28,7 @@ def main() -> int:
     payload = json.loads(DRIFT.read_text(encoding="utf-8"))
     if payload.get("status") != "clean" or int(payload.get("drift_count", 1)) != 0:
         raise SystemExit(
-            f"command-family consistency drift detected: todos={payload.get('drift_todos', [])}"
+            f"command-family consistency drift detected: coverage_ids={payload.get('drift_coverage_ids', [])}"
         )
 
     print("command-family consistency gate passed")

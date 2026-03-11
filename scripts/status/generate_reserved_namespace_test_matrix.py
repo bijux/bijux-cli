@@ -56,15 +56,15 @@ def main() -> None:
     payload = {
         "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_reserved_namespace_test_matrix.py",
-        "scope": "todo 1-20 plugin namespace law tests",
+        "scope": "plugin namespace law tests",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
     }
     payload["summary"] = {

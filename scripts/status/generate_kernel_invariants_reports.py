@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate kernel invariants report and drift artifact for TODOs 1-20."""
+"""Generate kernel invariants report and drift artifact."""
 
 from __future__ import annotations
 
@@ -38,11 +38,11 @@ def has_test(source: str, test_name: str) -> bool:
 
 def stable_rows(source: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         present = has_test(source, test_name)
         rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if present else "missing",
                 "evidence": "crates/bijux-cli/src/kernel_pipeline_tests.rs",
@@ -60,7 +60,7 @@ def main() -> None:
         "generator": "scripts/status/generate_kernel_invariants_reports.py",
         "scope": "kernel pipeline invariants",
         "status": "complete" if not missing else "partial",
-        "tasks": list(range(1, 19)),
+        "coverage_ids": list(range(1, 19)),
         "rows": rows,
         "missing": missing,
         "summary": {
@@ -73,10 +73,10 @@ def main() -> None:
         "generator": "scripts/status/generate_kernel_invariants_reports.py",
         "scope": "kernel invariants drift",
         "status": "clean" if not missing else "drift-detected",
-        "tasks": [19],
+        "coverage_ids": [19],
         "drift_items": [
             {
-                "todo": row["todo"],
+                "coverage_id": row["coverage_id"],
                 "kind": "missing-kernel-invariant-test",
                 "test_name": row["test_name"],
             }

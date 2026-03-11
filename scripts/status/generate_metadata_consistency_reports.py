@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate command metadata consistency artifacts for TODOs 61-80."""
+"""Generate command metadata consistency artifacts."""
 
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def main() -> None:
     command_metadata_artifact = {
         "generator": "scripts/status/generate_metadata_consistency_reports.py",
         "scope": "command metadata consistency",
-        "tasks": [61, 63, 64, 68, 69, 70, 71, 72, 73, 74, 75, 76, 80],
+        "coverage_ids": [61, 63, 64, 68, 69, 70, 71, 72, 73, 74, 75, 76, 80],
         "release_blocking": True,
         "required_keys": required_keys,
         "missing_keys": missing_keys,
@@ -99,7 +99,7 @@ def main() -> None:
     route_metadata_artifact = {
         "generator": "scripts/status/generate_metadata_consistency_reports.py",
         "scope": "route metadata consistency",
-        "tasks": [62, 65, 67, 77, 79],
+        "coverage_ids": [62, 65, 67, 77, 79],
         "inspect_route_count": len(inspect_route_set),
         "dev_route_count": len(dev_route_set),
         "route_identity_match": inspect_route_set == dev_route_set,
@@ -109,7 +109,7 @@ def main() -> None:
     ownership_artifact = {
         "generator": "scripts/status/generate_metadata_consistency_reports.py",
         "scope": "command ownership",
-        "tasks": [66, 79],
+        "coverage_ids": [66, 79],
         "registry_owners": sorted(
             {
                 str(row.get("owner"))
@@ -128,17 +128,17 @@ def main() -> None:
         "status": "complete" if reserved_inspect == reserved_registry else "partial",
     }
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
-        todo_rows.append(
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/metadata_inspection_matrix.rs",
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     drift_items: list[dict[str, Any]] = []
     if missing_keys:
@@ -147,17 +147,17 @@ def main() -> None:
         drift_items.append({"kind": "route-identity-mismatch"})
     if reserved_inspect != reserved_registry:
         drift_items.append({"kind": "reserved-namespace-mismatch"})
-    if missing_todos:
-        drift_items.append({"kind": "missing-todo-coverage", "todos": [row["todo"] for row in missing_todos]})
+    if missing_coverage_ids:
+        drift_items.append({"kind": "missing-coverage_id-coverage", "coverage_ids": [row["coverage_id"] for row in missing_coverage_ids]})
 
     drift_artifact = {
         "generator": "scripts/status/generate_metadata_consistency_reports.py",
         "scope": "metadata drift",
-        "tasks": [78, 80],
+        "coverage_ids": [78, 80],
         "status": "clean" if not drift_items else "drift-detected",
         "drift_count": len(drift_items),
         "drift_items": drift_items,
-        "todo_coverage": todo_rows,
+        "coverage_rows": coverage_rows,
     }
 
     STATUS.mkdir(parents=True, exist_ok=True)

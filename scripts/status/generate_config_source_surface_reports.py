@@ -50,14 +50,14 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8")
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_rows = [
+    coverage_rows = [
         {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
             "evidence": "crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs",
         }
-        for todo, fn_name in sorted(REQUIRED_TESTS.items())
+        for coverage_id, fn_name in sorted(REQUIRED_TESTS.items())
     ]
 
     temp_root = ROOT / "target" / "tmp" / "config-source-reports"
@@ -118,8 +118,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_config_source_surface_reports.py",
-            "scope": "todo 301-317 config precedence/source parity",
-            "todo_rows": todo_rows,
+            "scope": "config precedence/source parity",
+            "coverage_rows": coverage_rows,
             "comparison": {
                 "config_get_source_path": source_path,
                 "dev_cli_env_active_config_file": active_config,
@@ -134,7 +134,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_config_source_surface_reports.py",
-            "scope": "todo 318 config precedence/source drift",
+            "scope": "config precedence/source drift",
             "drift_count": len(drift_reasons),
             "drift_reasons": drift_reasons,
             "status": "clean" if not drift_reasons else "drift",

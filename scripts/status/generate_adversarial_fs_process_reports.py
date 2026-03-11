@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate adversarial filesystem/process hardening artifacts for TODOs 181-200."""
+"""Generate adversarial filesystem/process hardening artifacts."""
 
 from __future__ import annotations
 
@@ -63,11 +63,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -90,15 +90,15 @@ def main() -> int:
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     matrix = {
         "generated_at": now,
         "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
         "scope": "adversarial filesystem/process matrix",
-        "tasks": list(range(181, 199)),
+        "coverage_ids": list(range(181, 199)),
         "status": "complete" if campaign_run["ok"] and not missing else "partial",
-        "todo_coverage": coverage,
+        "coverage_rows": coverage,
         "campaign_suite": campaign_run,
     }
 
@@ -106,7 +106,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
         "scope": "adversarial filesystem/process evidence artifact",
-        "tasks": [199],
+        "coverage_ids": [199],
         "status": "complete" if campaign_run["ok"] and regression_run["ok"] else "partial",
         "minimized_case_count": len(minimized_cases),
         "minimized_cases": minimized_cases,
@@ -117,11 +117,11 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
         "scope": "adversarial filesystem/process hardening contract",
-        "tasks": list(range(181, 201)),
+        "coverage_ids": list(range(181, 201)),
         "status": "frozen"
         if campaign_run["ok"] and regression_run["ok"] and minimized_cases and not missing
         else "partial",
-        "missing_todos": missing,
+        "missing_coverage_ids": missing,
         "policy": "adversarial fs/process behavior is first-class hardening and permanently gated",
     }
 

@@ -135,7 +135,7 @@ fn next_is_generated_from_evidence_and_status_inputs() {
     let next = run_ok_json(&["dev", "cli", "next"]);
     let policy = &next["next"]["minimalism"]["evidence_first_policy"];
     assert_eq!(policy["manual_curated_priority_lists_allowed"], Value::Bool(false));
-    assert_eq!(policy["next_roadmap_requires_generated_artifacts"], Value::Bool(true));
+    assert_eq!(policy["roadmap_requires_generated_artifacts"], Value::Bool(true));
     assert!(
         policy["next_wave_requires_artifacts"].as_array().is_some_and(|rows| !rows.is_empty()),
         "next command must declare generated artifact inputs"

@@ -86,9 +86,10 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_next_report(workspace_root: &Path) -> Value {
     let priorities =
-        read_json_if_exists(&workspace_root.join("artifacts/status/next_phase_priorities.json"));
-    let minimalism =
-        read_json_if_exists(&workspace_root.join("artifacts/status/next_phase_minimalism.json"));
+        read_json_if_exists(&workspace_root.join("artifacts/status/priority_plan_priorities.json"));
+    let minimalism = read_json_if_exists(
+        &workspace_root.join("artifacts/status/simplification_priorities.json"),
+    );
     json!({
         "next": {
             "priorities": priorities,

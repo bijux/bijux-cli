@@ -28,7 +28,7 @@ def main() -> None:
         "generator": "scripts/status/generate_config_corruption_reports.py",
         "scope": "config corruption matrix",
         "status": "complete",
-        "tasks": [461, 462, 463, 464, 465, 466, 467, 477],
+        "coverage_ids": [461, 462, 463, 464, 465, 466, 467, 477],
         "evidence_tests": [
             "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
             "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
@@ -41,7 +41,7 @@ def main() -> None:
         "generator": "scripts/status/generate_config_corruption_reports.py",
         "scope": "config rollback and retry proof",
         "status": "complete",
-        "tasks": [468, 469, 470, 471, 472, 473, 474, 475, 476, 479],
+        "coverage_ids": [468, 469, 470, 471, 472, 473, 474, 475, 476, 479],
         "evidence_tests": [
             "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
             "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",

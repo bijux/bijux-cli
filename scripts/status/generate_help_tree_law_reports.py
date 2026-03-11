@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate help-law artifacts for TODOs 341-360."""
+"""Generate help-law artifacts."""
 
 from __future__ import annotations
 
@@ -41,40 +41,40 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     help_law = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_help_tree_law_reports.py",
         "scope": "help law",
-        "tasks": list(range(341, 357)),
+        "coverage_ids": list(range(341, 357)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     command_tree_consistency = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_help_tree_law_reports.py",
         "scope": "command-tree help consistency",
-        "tasks": [350, 351, 352, 355, 357],
+        "coverage_ids": [350, 351, 352, 355, 357],
         "status": "complete" if not missing else "partial",
         "proof": {
-            "inspect_help_agreement": any(row["todo"] == 350 and row["status"] == "covered" for row in todo_coverage),
-            "routes_help_agreement": any(row["todo"] == 351 and row["status"] == "covered" for row in todo_coverage),
-            "bridge_help_parity": any(row["todo"] == 352 and row["status"] == "covered" for row in todo_coverage),
-            "repeated_discovery_stability": any(row["todo"] == 355 and row["status"] == "covered" for row in todo_coverage),
+            "inspect_help_agreement": any(row["coverage_id"] == 350 and row["status"] == "covered" for row in coverage_rows),
+            "routes_help_agreement": any(row["coverage_id"] == 351 and row["status"] == "covered" for row in coverage_rows),
+            "bridge_help_parity": any(row["coverage_id"] == 352 and row["status"] == "covered" for row in coverage_rows),
+            "repeated_discovery_stability": any(row["coverage_id"] == 355 and row["status"] == "covered" for row in coverage_rows),
         },
     }
 
@@ -82,17 +82,17 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_help_tree_law_reports.py",
         "scope": "help drift",
-        "tasks": [358, 359],
+        "coverage_ids": [358, 359],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_help_tree_law_reports.py",
         "scope": "help tree contract",
-        "tasks": [360],
+        "coverage_ids": [360],
         "status": "frozen" if not missing else "not-frozen",
         "law": "help tree is a law surface",
     }

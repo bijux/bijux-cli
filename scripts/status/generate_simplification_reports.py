@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate simplification evidence artifacts for TODO 161-180."""
+"""Generate simplification evidence artifacts."""
 
 from __future__ import annotations
 

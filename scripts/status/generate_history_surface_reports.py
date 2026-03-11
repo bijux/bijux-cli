@@ -58,14 +58,14 @@ def main() -> int:
             }
         )
 
-    todo_rows = [
+    coverage_rows = [
         {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
             "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
         }
-        for todo, fn_name in sorted(REQUIRED_TESTS.items())
+        for coverage_id, fn_name in sorted(REQUIRED_TESTS.items())
     ]
 
     write_json(
@@ -73,7 +73,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_history_surface_reports.py",
-            "scope": "todo 321 history command coverage",
+            "scope": "history command coverage",
             "commands": coverage_rows,
             "summary": {
                 "total": len(coverage_rows),
@@ -90,8 +90,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_history_surface_reports.py",
-            "scope": "todo 322-338 history command matrix",
-            "todo_rows": todo_rows,
+            "scope": "history command matrix",
+            "coverage_rows": coverage_rows,
             "commands": coverage_rows,
         },
     )
@@ -101,7 +101,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_history_surface_reports.py",
-            "scope": "todo 339 history corruption matrix",
+            "scope": "history corruption matrix",
             "cases": [
                 {
                     "name": "line-layout malformed and mixed records",

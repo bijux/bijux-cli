@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate config fuzz hardening artifacts for TODOs 41-60."""
+"""Generate config fuzz hardening artifacts."""
 
 from __future__ import annotations
 
@@ -59,12 +59,12 @@ def main() -> int:
     regression_text = REGRESSION.read_text(encoding="utf-8") if REGRESSION.exists() else ""
 
     coverage = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         source = regression_text if "minimized_config_cases" in test_name else targets_text
         covered = f"fn {test_name}(" in source
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str((REGRESSION if "minimized_config_cases" in test_name else TARGETS).relative_to(ROOT)),
@@ -78,13 +78,13 @@ def main() -> int:
     )
     targets = run_test(["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "config_fuzz_targets::"])
 
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     parser_triage = {
         "generated_at": now,
         "generator": "scripts/status/generate_config_fuzz_hardening_reports.py",
         "scope": "config parser fuzz triage",
-        "tasks": [54],
+        "coverage_ids": [54],
         "status": "clean" if targets["ok"] and replay["ok"] else "needs-triage",
         "regression_replay_ok": replay["ok"],
         "target_suite_ok": targets["ok"],
@@ -94,7 +94,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_fuzz_hardening_reports.py",
         "scope": "config serializer fuzz triage",
-        "tasks": [55],
+        "coverage_ids": [55],
         "status": "clean" if targets["ok"] else "needs-triage",
         "target_suite_ok": targets["ok"],
     }
@@ -103,7 +103,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_fuzz_hardening_reports.py",
         "scope": "config fuzz regression",
-        "tasks": [56, 57],
+        "coverage_ids": [56, 57],
         "status": "clean" if replay["ok"] else "drift",
         "minimized_case_count": len(minimized_cases),
         "regression_replay_ok": replay["ok"],
@@ -113,10 +113,10 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_fuzz_hardening_reports.py",
         "scope": "config fuzz hardening",
-        "tasks": list(range(41, 61)),
+        "coverage_ids": list(range(41, 61)),
         "status": "frozen" if not missing and replay["ok"] and targets["ok"] and len(minimized_cases) > 0 else "partial",
-        "todo_coverage": coverage,
-        "missing_todos": missing,
+        "coverage_rows": coverage,
+        "missing_coverage_ids": missing,
         "minimized_cases": minimized_cases,
         "policy": "config fuzzing is required before release claims",
     }

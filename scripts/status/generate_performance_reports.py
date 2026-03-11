@@ -95,7 +95,7 @@ def main() -> None:
         "generator": "scripts/status/generate_performance_reports.py",
         "scope": "performance realism",
         "status": "complete",
-        "tasks": [557],
+        "coverage_ids": [557],
         "benchmark_sets": {
             "startup": startup_benchmarks,
             "memory": memory_benchmarks,
@@ -113,7 +113,7 @@ def main() -> None:
         "generator": "scripts/status/generate_performance_reports.py",
         "scope": "regression budgets",
         "status": "complete",
-        "tasks": [558, 560],
+        "coverage_ids": [558, 560],
         "thresholds": thresholds,
     }
 
@@ -122,7 +122,7 @@ def main() -> None:
         "generator": "scripts/status/generate_performance_reports.py",
         "scope": "benchmark policy",
         "status": "complete",
-        "tasks": [559],
+        "coverage_ids": [559],
         "rules": [
             "benchmark additions must target user-visible commands or rendering paths",
             "regression thresholds apply to critical-path commands only",

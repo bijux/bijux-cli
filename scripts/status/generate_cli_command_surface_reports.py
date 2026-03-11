@@ -119,14 +119,14 @@ def main() -> int:
     ]
     rows.sort(key=lambda row: (-int(row["user_value"]), row["command"]))
 
-    todo_rows = [
+    coverage_rows = [
         {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in test_source else "missing",
             "evidence": "crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs",
         }
-        for todo, fn_name in sorted(REQUIRED_TESTS.items())
+        for coverage_id, fn_name in sorted(REQUIRED_TESTS.items())
     ]
 
     generated_at = datetime.now(timezone.utc).isoformat()
@@ -154,8 +154,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_cli_command_surface_reports.py",
-            "scope": "todo 221-240 cli command matrix",
-            "todo_rows": todo_rows,
+            "scope": "cli command matrix",
+            "coverage_rows": coverage_rows,
             "commands": rows,
         },
     )

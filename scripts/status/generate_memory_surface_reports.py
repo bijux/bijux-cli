@@ -64,13 +64,13 @@ def main() -> int:
             }
         )
 
-    todo_rows = []
-    for todo, fn_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, fn_name in sorted(REQUIRED_TESTS.items()):
         in_matrix = f"fn {fn_name}(" in matrix_source
         in_parity = f"fn {fn_name}(" in parity_source
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": fn_name,
                 "status": "complete" if (in_matrix or in_parity) else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs"
@@ -84,7 +84,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_memory_surface_reports.py",
-            "scope": "todo 341 memory command coverage",
+            "scope": "memory command coverage",
             "commands": coverage_rows,
             "summary": {
                 "total": len(coverage_rows),
@@ -101,8 +101,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_memory_surface_reports.py",
-            "scope": "todo 342-357 memory command matrix",
-            "todo_rows": todo_rows,
+            "scope": "memory command matrix",
+            "coverage_rows": coverage_rows,
             "commands": coverage_rows,
         },
     )
@@ -112,7 +112,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_memory_surface_reports.py",
-            "scope": "todo 358 memory corruption matrix",
+            "scope": "memory corruption matrix",
             "cases": [
                 {
                     "name": "malformed memory state and wrong-type fields",
@@ -133,7 +133,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_memory_surface_reports.py",
-            "scope": "todo 359 memory parity versus overlapping python behavior",
+            "scope": "memory parity versus overlapping python behavior",
             "status": "complete" if "fn memory_root_parity_with_python_summary_command(" in parity_source else "partial",
             "evidence": [
                 "crates/bijux-cli/tests/bin_surface/memory_parity.rs",

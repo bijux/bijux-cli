@@ -148,14 +148,16 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     .unwrap_or_default();
     let repl_only_behaviors =
         read_json_if_exists(&workspace_root.join("artifacts/status/repl_only_behaviors.json"));
-    let next_phase = read_json_if_exists(&workspace_root.join("artifacts/status/next_phase.json"));
-    let next_phase_text =
-        fs::read_to_string(workspace_root.join("artifacts/status/next_phase.txt"))
+    let priority_plan =
+        read_json_if_exists(&workspace_root.join("artifacts/status/priority_plan.json"));
+    let priority_plan_text =
+        fs::read_to_string(workspace_root.join("artifacts/status/priority_plan.txt"))
             .unwrap_or_default();
-    let next_phase_minimalism =
-        read_json_if_exists(&workspace_root.join("artifacts/status/next_phase_minimalism.json"));
-    let next_phase_minimalism_text =
-        fs::read_to_string(workspace_root.join("artifacts/status/next_phase_minimalism.txt"))
+    let simplification_priorities = read_json_if_exists(
+        &workspace_root.join("artifacts/status/simplification_priorities.json"),
+    );
+    let simplification_priorities_text =
+        fs::read_to_string(workspace_root.join("artifacts/status/simplification_priorities.txt"))
             .unwrap_or_default();
     let migration_matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
@@ -371,10 +373,10 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
             "bridge_wrapper_only_closure_report": bridge_wrapper_only_closure,
             "bridge_wrapper_only_closure_report_text": bridge_wrapper_only_closure_text,
         },
-        "next_phase_priorities": next_phase,
-        "next_phase_summary_text": next_phase_text,
-        "next_simplification_priorities": next_phase_minimalism,
-        "next_simplification_summary_text": next_phase_minimalism_text,
+        "priority_plan_priorities": priority_plan,
+        "priority_plan_summary_text": priority_plan_text,
+        "next_simplification_priorities": simplification_priorities,
+        "next_simplification_summary_text": simplification_priorities_text,
         "current_rust_state": state,
         "parity": parity,
         "inventory": inventory,

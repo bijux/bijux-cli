@@ -36,15 +36,15 @@ def main() -> int:
     missing_rows = [row for row in rows if isinstance(row, dict) and row.get("status") != "covered"]
     if missing_rows:
         failures.append(
-            "kernel invariants missing coverage for TODOs: "
-            + ", ".join(str(row.get("todo", "?")) for row in missing_rows)
+            "kernel invariants missing coverage ids: "
+            + ", ".join(str(row.get("coverage_id", "?")) for row in missing_rows)
         )
 
     drift_items = diff.get("drift_items", []) if isinstance(diff, dict) else []
     if drift_items:
         failures.append(
             "kernel invariants drift detected: "
-            + ", ".join(str(item.get("todo", "?")) for item in drift_items if isinstance(item, dict))
+            + ", ".join(str(item.get("coverage_id", "?")) for item in drift_items if isinstance(item, dict))
         )
 
     for item in failures:
@@ -57,4 +57,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

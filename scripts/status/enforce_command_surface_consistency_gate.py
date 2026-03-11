@@ -17,7 +17,7 @@ def main() -> int:
     payload = json.loads(DRIFT.read_text(encoding="utf-8"))
     if payload.get("status") != "clean" or int(payload.get("drift_count", 1)) != 0:
         raise SystemExit(
-            f"cross-command consistency drift detected: todos={payload.get('drift_todos', [])}"
+            f"cross-command consistency drift detected: coverage_ids={payload.get('drift_coverage_ids', [])}"
         )
 
     print("cross-command consistency gate passed")

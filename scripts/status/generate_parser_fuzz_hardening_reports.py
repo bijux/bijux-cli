@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate parser fuzz hardening artifacts for TODOs 1-20."""
+"""Generate parser fuzz hardening artifacts."""
 
 from __future__ import annotations
 
@@ -71,11 +71,11 @@ def main() -> int:
     }
 
     coverage_rows = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in sources[path]
         coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -97,13 +97,13 @@ def main() -> int:
         ["cargo", "test", "-p", "bijux-cli", "--test", "routing", "parser_fuzz_regressions::"]
     )
 
-    missing_todos = [row["todo"] for row in coverage_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row["coverage_id"] for row in coverage_rows if row["status"] != "covered"]
 
     triage = {
         "generated_at": now,
         "generator": "scripts/status/generate_parser_fuzz_hardening_reports.py",
         "scope": "parser crash triage",
-        "tasks": [16],
+        "coverage_ids": [16],
         "status": "clean" if regression_run["ok"] else "needs-triage",
         "known_crash_case_count": len(minimized_files),
         "regression_test_ok": regression_run["ok"],
@@ -118,9 +118,9 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_parser_fuzz_hardening_reports.py",
         "scope": "parser fuzz regressions",
-        "tasks": [19, 20],
-        "status": "clean" if regression_run["ok"] and not missing_todos else "drift",
-        "missing_todos": missing_todos,
+        "coverage_ids": [19, 20],
+        "status": "clean" if regression_run["ok"] and not missing_coverage_ids else "drift",
+        "missing_coverage_ids": missing_coverage_ids,
         "corpus_file_count": len(corpus_files),
         "minimized_case_count": len(minimized_files),
         "regression_test_ok": regression_run["ok"],
@@ -130,9 +130,9 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_parser_fuzz_hardening_reports.py",
         "scope": "parser fuzzing",
-        "tasks": list(range(1, 21)),
-        "status": "complete" if not missing_todos and len(corpus_files) > 0 and len(minimized_files) > 0 else "partial",
-        "todo_coverage": coverage_rows,
+        "coverage_ids": list(range(1, 21)),
+        "status": "complete" if not missing_coverage_ids and len(corpus_files) > 0 and len(minimized_files) > 0 else "partial",
+        "coverage_rows": coverage_rows,
         "corpus_directory": str(CORPUS_DIR.relative_to(ROOT)).replace("\\", "/"),
         "corpus_files": corpus_files,
         "minimized_directory": str(MINIMIZED_DIR.relative_to(ROOT)).replace("\\", "/"),

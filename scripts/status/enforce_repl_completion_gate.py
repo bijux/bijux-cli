@@ -25,7 +25,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "repl_completion_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"repl completion drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"repl completion drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     ordering = json.loads((STATUS / "repl_completion_ordering_artifact.json").read_text(encoding="utf-8"))
     if ordering.get("status") != "stable":

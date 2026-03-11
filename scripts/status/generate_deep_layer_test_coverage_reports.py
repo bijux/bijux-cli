@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deep-layer test-category coverage artifacts for TODOs 381-400."""
+"""Generate deep-layer test-category coverage artifacts."""
 
 from __future__ import annotations
 
@@ -222,19 +222,19 @@ def main() -> int:
         "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
         "actions": [
             {
-                "todo": 392,
+                "coverage_id": 392,
                 "action": "deleted first weak test file",
                 "evidence": "crates/bijux-cli/tests/bin_surface/ported_command_goldens.rs",
                 "status": "done",
             },
             {
-                "todo": 393,
+                "coverage_id": 393,
                 "action": "rewrote weak snapshot coverage into repeated-run determinism proof",
                 "evidence": "crates/bijux-cli-contracts/tests/schema_snapshots.rs",
                 "status": "done",
             },
             {
-                "todo": 394,
+                "coverage_id": 394,
                 "action": "added failure-path deserialization proof for invalid payloads",
                 "evidence": "crates/bijux-cli-contracts/tests/serde_roundtrip.rs",
                 "status": "done",
@@ -246,7 +246,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
         "scope": "deep-layer test coverage",
-        "tasks": [381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 399],
+        "coverage_ids": [381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 399],
         "status": "complete"
         if all(payload.get("status") == "complete" for payload in by_domain.values())
         else "partial",
@@ -258,7 +258,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
         "scope": "deep-layer behaviors contract",
-        "tasks": [400],
+        "coverage_ids": [400],
         "status": "frozen",
         "policy": [
             "deep-layer behavior changes must map to at least one domain category report",

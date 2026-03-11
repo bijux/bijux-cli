@@ -82,7 +82,7 @@ def main() -> None:
         "generator": "scripts/status/generate_packaging_ambiguity_reports.py",
         "scope": "packaging ambiguity",
         "status": "complete",
-        "tasks": [536],
+        "coverage_ids": [536],
         "runtime_identity": {
             "active_binary_selection_is_ambiguous": runtime_identity.get(
                 "active_binary_selection_is_ambiguous", False
@@ -104,7 +104,7 @@ def main() -> None:
         "generator": "scripts/status/generate_packaging_ambiguity_reports.py",
         "scope": "install-state assumptions",
         "status": "complete",
-        "tasks": [537],
+        "coverage_ids": [537],
         "install_state_assumptions": package_health.get("install_state_assumptions", []),
         "install_state_assumption_help": package_health.get("install_state_assumption_help", ""),
     }
@@ -114,7 +114,7 @@ def main() -> None:
         "generator": "scripts/status/generate_packaging_ambiguity_reports.py",
         "scope": "package health",
         "status": "complete",
-        "tasks": [538],
+        "coverage_ids": [538],
         "payload": package_health,
     }
 

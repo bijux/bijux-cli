@@ -147,7 +147,7 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release evidence bundle",
         "status": "complete" if not missing else "partial",
-        "tasks": [181, 182, 183, 184, 185, 186, 187, 188],
+        "coverage_ids": [181, 182, 183, 184, 185, 186, 187, 188],
         "evidence": evidence,
         "missing": missing,
         "required_components": {
@@ -166,7 +166,7 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release status manifest",
         "status": "ready" if not missing else "blocked",
-        "tasks": [189, 200],
+        "coverage_ids": [189, 200],
         "checks": {
             "missing_evidence": missing,
             "parity_partial_count": len(partial),
@@ -221,7 +221,7 @@ def main() -> None:
         "generator": "scripts/status/generate_release_evidence_reports.py",
         "scope": "release truth",
         "status": manifest["status"],
-        "tasks": [190, 191, 192, 193, 194, 198, 199, 200],
+        "coverage_ids": [190, 191, 192, 193, 194, 198, 199, 200],
         "summary": {
             "missing_evidence": len(missing),
             "parity_partial": len(partial),

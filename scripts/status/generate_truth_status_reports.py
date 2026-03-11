@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate milestone truth status artifacts for done/left/partial/deferred/different/unproven."""
+"""Generate truth status artifacts for done/left/partial/deferred/different/unproven."""
 
 from __future__ import annotations
 
@@ -179,7 +179,7 @@ def unproven_items(
     return items
 
 
-def next_two_hundred_todos(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def next_two_hundred_priorities(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     generated: list[dict[str, Any]] = []
     pending = [
         row
@@ -231,11 +231,11 @@ def main() -> int:
     done, partial, left, intentionally_different = split_commands(rows)
     deferred = deferred_items(current_state, plugin_state)
     unproven = unproven_items(rows, current_state, plugin_state)
-    next_todos = next_two_hundred_todos(rows)
+    next_priorities = next_two_hundred_priorities(rows)
 
     shared = {
         "generated_at": generated_at,
-        "generator": "scripts/status/generate_truth_milestone_status.py",
+        "generator": "scripts/status/generate_truth_status_reports.py",
         "source": {
             "command_matrix": str(PARITY_MATRIX.relative_to(ROOT)),
             "current_state": str(CURRENT_STATE.relative_to(ROOT)),
@@ -295,14 +295,14 @@ def main() -> int:
         },
     )
     write_status(
-        "next_200_todos",
+        "next_200_priorities",
         {
             **shared,
             "summary": {
-                "count": len(next_todos),
+                "count": len(next_priorities),
                 "scope": "prioritized from generated parity status data only",
             },
-            "items": next_todos,
+            "items": next_priorities,
         },
     )
     left_lines = [

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate concurrent state-race hardening artifacts for TODOs 161-180."""
+"""Generate concurrent state-race hardening artifacts."""
 
 from __future__ import annotations
 
@@ -63,11 +63,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -82,23 +82,23 @@ def main() -> int:
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     campaign = {
         "generated_at": now,
         "generator": "scripts/status/generate_state_race_campaign_reports.py",
         "scope": "concurrent state race campaigns",
-        "tasks": list(range(161, 177)),
+        "coverage_ids": list(range(161, 177)),
         "status": "complete" if campaign_run["ok"] else "partial",
         "campaign_suite": campaign_run,
-        "todo_coverage": [row for row in coverage if 161 <= int(row["todo"]) <= 176],
+        "coverage_rows": [row for row in coverage if 161 <= int(row["coverage_id"]) <= 176],
     }
 
     race_outcome = {
         "generated_at": now,
         "generator": "scripts/status/generate_state_race_campaign_reports.py",
         "scope": "race outcome classification",
-        "tasks": [177],
+        "coverage_ids": [177],
         "status": "complete",
         "classes": {
             "deterministic-stable": ["same target value writes converge to stable final value"],
@@ -111,7 +111,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_state_race_campaign_reports.py",
         "scope": "minimized race reproducer retention",
-        "tasks": [178],
+        "coverage_ids": [178],
         "status": "complete" if minimized_cases else "partial",
         "minimized_case_count": len(minimized_cases),
         "minimized_cases": minimized_cases,
@@ -121,7 +121,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_state_race_campaign_reports.py",
         "scope": "race regression replay",
-        "tasks": [179],
+        "coverage_ids": [179],
         "status": "clean" if regression_run["ok"] else "drift",
         "minimized_cases": minimized_cases,
     }
@@ -130,11 +130,11 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_state_race_campaign_reports.py",
         "scope": "core state race hardening contract",
-        "tasks": list(range(161, 181)),
+        "coverage_ids": list(range(161, 181)),
         "status": "frozen"
         if campaign_run["ok"] and regression_run["ok"] and minimized_cases and not missing
         else "partial",
-        "missing_todos": missing,
+        "missing_coverage_ids": missing,
         "policy": "core state race tests are permanent and release-gated",
     }
 

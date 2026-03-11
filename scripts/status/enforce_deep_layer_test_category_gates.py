@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce deep-layer category gates for TODOs 395-398."""
+"""Enforce deep-layer category gates."""
 
 from __future__ import annotations
 

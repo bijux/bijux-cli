@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate randomized state-corruption harness artifacts for TODOs 101-120."""
+"""Generate randomized state-corruption harness artifacts."""
 
 from __future__ import annotations
 
@@ -63,11 +63,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -97,23 +97,23 @@ def main() -> int:
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
 
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     campaign_artifact = {
         "generated_at": now,
         "generator": "scripts/status/generate_state_corruption_harness_reports.py",
         "scope": "randomized corruption campaign",
-        "tasks": list(range(101, 119)),
+        "coverage_ids": list(range(101, 119)),
         "status": "clean" if campaign_run["ok"] else "needs-triage",
         "campaign_suite_ok": campaign_run["ok"],
-        "todo_coverage": coverage,
+        "coverage_rows": coverage,
     }
 
     reproducer_retention = {
         "generated_at": now,
         "generator": "scripts/status/generate_state_corruption_harness_reports.py",
         "scope": "minimized corrupted-state reproducer retention",
-        "tasks": [119],
+        "coverage_ids": [119],
         "status": "clean" if replay_run["ok"] and len(minimized_cases) > 0 else "needs-triage",
         "replay_suite_ok": replay_run["ok"],
         "minimized_case_count": len(minimized_cases),
@@ -124,11 +124,11 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_state_corruption_harness_reports.py",
         "scope": "randomized state corruption harness",
-        "tasks": list(range(101, 121)),
+        "coverage_ids": list(range(101, 121)),
         "status": "frozen"
         if not missing and campaign_run["ok"] and replay_run["ok"] and len(minimized_cases) > 0
         else "partial",
-        "missing_todos": missing,
+        "missing_coverage_ids": missing,
         "campaign_suite": campaign_run,
         "replay_suite": replay_run,
         "policy": "randomized state corruption harness is shared test utility and release hardening evidence",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deep history behavior artifacts for TODOs 101-120."""
+"""Generate deep history behavior artifacts."""
 
 from __future__ import annotations
 
@@ -74,30 +74,30 @@ def main() -> None:
     stream_sample = run_cmd(["history", "--format", "text"])
     failure_sample = run_cmd(["history", "--unknown-flag"])
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         evidence = find_test(test_name, sources)
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if evidence else "missing",
                 "evidence": evidence,
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     history_semantic = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history semantic",
-        "tasks": [101, 102, 103, 104, 105, 108, 109, 110, 111, 113, 114],
+        "coverage_ids": [101, 102, 103, 104, 105, 108, 109, 110, 111, 113, 114],
         "status": "complete" if semantic_sample != {} else "partial",
         "sample": semantic_sample,
     }
     history_determinism = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history determinism",
-        "tasks": [101, 102, 107, 111, 113, 115],
+        "coverage_ids": [101, 102, 107, 111, 113, 115],
         "status": "complete"
         if determinism_a.returncode == 0
         and determinism_b.returncode == 0
@@ -110,27 +110,27 @@ def main() -> None:
     history_corruption = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history corruption",
-        "tasks": [103, 104, 110, 112, 116],
+        "coverage_ids": [103, 104, 110, 112, 116],
         "status": "complete" if corruption_sample != {} else "partial",
         "sample": corruption_sample,
     }
     history_repl_interop = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history repl interop",
-        "tasks": [108, 117],
+        "coverage_ids": [108, 117],
         "status": "complete" if repl_interop_sample != {} else "partial",
         "sample": repl_interop_sample,
     }
     history_stream_discipline = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history stream discipline",
-        "tasks": [106, 118],
+        "coverage_ids": [106, 118],
         "status": "complete" if stream_sample.returncode == 0 and not stream_sample.stderr else "partial",
     }
     history_failure_class = {
         "generator": "scripts/status/generate_history_deep_behavior_reports.py",
         "scope": "history failure class",
-        "tasks": [112, 119],
+        "coverage_ids": [112, 119],
         "status": "complete" if failure_sample.returncode == 2 else "partial",
         "sample_exit_code": failure_sample.returncode,
     }
@@ -146,8 +146,8 @@ def main() -> None:
     ]:
         if payload.get("status") != "complete":
             drift_items.append({"artifact": name, "reason": "status-not-complete"})
-    if missing_todos:
-        drift_items.append({"reason": "missing-todo-coverage", "todos": [row["todo"] for row in missing_todos]})
+    if missing_coverage_ids:
+        drift_items.append({"reason": "missing-coverage_id-coverage", "coverage_ids": [row["coverage_id"] for row in missing_coverage_ids]})
 
     STATUS.mkdir(parents=True, exist_ok=True)
     (STATUS / "history_semantic_artifact.json").write_text(
@@ -179,11 +179,11 @@ def main() -> None:
             {
                 "generator": "scripts/status/generate_history_deep_behavior_reports.py",
                 "scope": "history deep behavior drift",
-                "tasks": [120],
+                "coverage_ids": [120],
                 "status": "clean" if not drift_items else "drift-detected",
                 "drift_count": len(drift_items),
                 "drift_items": drift_items,
-                "todo_coverage": todo_rows,
+                "coverage_rows": coverage_rows,
             },
             indent=2,
             sort_keys=True,

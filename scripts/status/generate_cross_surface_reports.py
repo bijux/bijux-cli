@@ -40,9 +40,9 @@ def main() -> int:
 
     covered: list[dict[str, object]] = []
     missing: list[dict[str, object]] = []
-    for todo, fn_name, law in REQUIRED_TESTS:
+    for coverage_id, fn_name, law in REQUIRED_TESTS:
         row = {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "law": law,
             "test": f"crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs::{fn_name}",
         }

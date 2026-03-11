@@ -71,10 +71,10 @@ def main() -> int:
 
     evidence_text = "\n".join([routing_text, plugin_text, cli_text])
     rows = []
-    for todo, test_name in abuse_checks:
+    for coverage_id, test_name in abuse_checks:
         rows.append(
             {
-                "todo": int(todo),
+                "coverage_id": int(coverage_id),
                 "status": "complete" if test_name in evidence_text else "missing",
                 "evidence_test": test_name,
             }

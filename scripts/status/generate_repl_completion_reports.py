@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate REPL completion artifacts for TODOs 241-260."""
+"""Generate REPL completion artifacts."""
 
 from __future__ import annotations
 
@@ -41,54 +41,54 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli-repl/tests/repl_completion_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     completion = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_completion_reports.py",
         "scope": "repl completion",
-        "tasks": list(range(241, 257)),
+        "coverage_ids": list(range(241, 257)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     ordering = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_completion_reports.py",
         "scope": "repl completion ordering",
-        "tasks": [254, 255, 257],
+        "coverage_ids": [254, 255, 257],
         "status": "stable" if not missing else "unstable",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     drift = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_completion_reports.py",
         "scope": "repl completion drift",
-        "tasks": [258, 259],
+        "coverage_ids": [258, 259],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_completion_reports.py",
         "scope": "repl completion contract",
-        "tasks": [260],
+        "coverage_ids": [260],
         "status": "frozen" if not missing else "not-frozen",
         "law": "completion behavior is a tested surface",
     }

@@ -48,15 +48,15 @@ def main() -> int:
         }
         if set(domains) != required_domains:
             failures.append("exit-code contract domains are incomplete")
-        missing_todos = int(contract.get("summary", {}).get("missing_todos", 1))
-        if missing_todos != 0:
-            failures.append(f"exit-code law todo coverage incomplete: missing_todos={missing_todos}")
+        missing_coverage_ids = int(contract.get("summary", {}).get("missing_coverage_ids", 1))
+        if missing_coverage_ids != 0:
+            failures.append(f"exit-code law coverage_id coverage incomplete: missing_coverage_ids={missing_coverage_ids}")
 
     if drift:
         if int(drift.get("drift_count", 1)) != 0:
             failures.append(f"exit-code drift detected: count={drift.get('drift_count')}")
-        if drift.get("missing_todos"):
-            failures.append(f"exit-code drift artifact has missing todo coverage: {drift.get('missing_todos')}")
+        if drift.get("missing_coverage_ids"):
+            failures.append(f"exit-code drift artifact has missing coverage_id coverage: {drift.get('missing_coverage_ids')}")
 
     for item in failures:
         print(f"EXIT CODE LAW FAILURE: {item}")

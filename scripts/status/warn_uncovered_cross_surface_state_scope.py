@@ -18,10 +18,10 @@ def main() -> int:
     payload = json.loads(DRIFT.read_text(encoding="utf-8"))
     status = payload.get("status")
     if status != "clean":
-        todos = payload.get("drift_todos", [])
+        coverage_ids = payload.get("drift_coverage_ids", [])
         print(
             "::warning title=Cross-Surface State::"
-            f"cross-surface state coverage is partial for todos: {todos}"
+            f"cross-surface state coverage is partial for coverage_ids: {coverage_ids}"
         )
     else:
         print("cross-surface state warning check passed")

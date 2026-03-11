@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate plugin lifecycle test matrix artifact for TODOs 21-40."""
+"""Generate plugin lifecycle test matrix artifact."""
 
 from __future__ import annotations
 
@@ -56,15 +56,15 @@ def main() -> None:
     payload = {
         "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_plugin_lifecycle_test_matrix.py",
-        "scope": "todo 21-40 plugin lifecycle integration tests",
+        "scope": "plugin lifecycle integration tests",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
     }
     payload["summary"] = {

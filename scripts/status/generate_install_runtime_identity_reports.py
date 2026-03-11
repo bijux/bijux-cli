@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate install/runtime identity artifacts for TODOs 301-320."""
+"""Generate install/runtime identity artifacts."""
 
 from __future__ import annotations
 
@@ -42,11 +42,11 @@ def main() -> int:
     generated_at = datetime.now(timezone.utc).isoformat()
 
     coverage = []
-    for todo, name in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {name}(" in source
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs",
@@ -59,16 +59,16 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_install_runtime_identity_reports.py",
         "scope": "install and runtime identity",
-        "tasks": list(range(301, 317)),
+        "coverage_ids": list(range(301, 317)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": coverage,
+        "coverage_rows": coverage,
     }
 
     install_ambiguity_artifact = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_install_runtime_identity_reports.py",
         "scope": "install ambiguity",
-        "tasks": [303, 304, 305, 306, 307, 317],
+        "coverage_ids": [303, 304, 305, 306, 307, 317],
         "status": "complete" if not missing else "partial",
         "signals": {
             "mixed_pip_cargo_install_detected": True,
@@ -83,7 +83,7 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_install_runtime_identity_reports.py",
         "scope": "package health",
-        "tasks": [307, 308, 309, 310, 318],
+        "coverage_ids": [307, 308, 309, 310, 318],
         "status": "complete" if not missing else "partial",
     }
 
@@ -91,17 +91,17 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_install_runtime_identity_reports.py",
         "scope": "runtime identity drift",
-        "tasks": [319],
+        "coverage_ids": [319],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_install_runtime_identity_reports.py",
         "scope": "runtime identity contract",
-        "tasks": [320],
+        "coverage_ids": [320],
         "status": "frozen" if not missing else "not-frozen",
         "law": "runtime identity is an operator-facing truth surface",
     }

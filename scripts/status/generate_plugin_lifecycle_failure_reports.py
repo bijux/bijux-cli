@@ -41,21 +41,21 @@ def main() -> None:
         "evidence": [
             {
                 "topic": "install write failures",
-                "tasks": [441, 442, 443, 444, 445, 446],
+                "coverage_ids": [441, 442, 443, 444, 445, 446],
                 "tests": [
                     "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
                 ],
             },
             {
                 "topic": "uninstall/disable/enable failure behavior",
-                "tasks": [447, 448, 449],
+                "coverage_ids": [447, 448, 449],
                 "tests": [
                     "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
                 ],
             },
             {
                 "topic": "post-install integrity checks",
-                "tasks": [450, 451, 452, 453, 454],
+                "coverage_ids": [450, 451, 452, 453, 454],
                 "tests": [
                     "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
                     "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
@@ -65,7 +65,7 @@ def main() -> None:
             },
             {
                 "topic": "retry idempotency",
-                "tasks": [456, 457],
+                "coverage_ids": [456, 457],
                 "tests": [
                     "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
                 ],
@@ -78,7 +78,7 @@ def main() -> None:
         "generator": "scripts/status/generate_plugin_lifecycle_failure_reports.py",
         "scope": "plugin rollback and write-path proofs",
         "status": "complete",
-        "tasks": [455],
+        "coverage_ids": [455],
         "evidence": [
             "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
             "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",

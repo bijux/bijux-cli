@@ -25,7 +25,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "cross_surface_state_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"cross-surface state drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"cross-surface state drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     contract = json.loads((STATUS / "cross_surface_state_contract.json").read_text(encoding="utf-8"))
     if contract.get("status") != "frozen":

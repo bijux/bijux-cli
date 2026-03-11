@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce cross-surface consistency drift policy for TODO 141-160."""
+"""Enforce cross-surface consistency drift policy."""
 
 from __future__ import annotations
 
@@ -29,12 +29,12 @@ def main() -> int:
         if not isinstance(item, dict):
             continue
         coverage = str(item.get("coverage_class", "partial"))
-        todo = item.get("todo", "?")
+        coverage_id = item.get("coverage_id", "?")
         law = item.get("law", "<unknown>")
         if coverage == "covered":
-            failures.append(f"TODO {todo}: {law}")
+            failures.append(f"Coverage {coverage_id}: {law}")
         else:
-            warnings.append(f"TODO {todo}: {law}")
+            warnings.append(f"Coverage {coverage_id}: {law}")
 
     for msg in warnings:
         print(f"CROSS-SURFACE WARNING (partial): {msg}")

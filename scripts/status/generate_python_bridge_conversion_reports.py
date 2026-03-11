@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Python-bridge conversion artifacts for TODOs 281-300."""
+"""Generate Python-bridge conversion artifacts."""
 
 from __future__ import annotations
 
@@ -41,34 +41,34 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     conversion = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_conversion_reports.py",
         "scope": "python bridge conversion",
-        "tasks": list(range(281, 297)),
+        "coverage_ids": list(range(281, 297)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     exception_mapping = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_conversion_reports.py",
         "scope": "python bridge exception mapping",
-        "tasks": [281, 282, 283, 284, 297],
+        "coverage_ids": [281, 282, 283, 284, 297],
         "status": "complete" if not missing else "partial",
     }
 
@@ -76,7 +76,7 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_conversion_reports.py",
         "scope": "python bridge envelope integrity",
-        "tasks": [285, 286, 287, 288, 289, 290, 291, 292, 298],
+        "coverage_ids": [285, 286, 287, 288, 289, 290, 291, 292, 298],
         "status": "complete" if not missing else "partial",
     }
 
@@ -84,17 +84,17 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_conversion_reports.py",
         "scope": "python bridge conversion drift",
-        "tasks": [299],
+        "coverage_ids": [299],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_conversion_reports.py",
         "scope": "python bridge conversion contract",
-        "tasks": [300],
+        "coverage_ids": [300],
         "status": "frozen" if not missing else "not-frozen",
         "law": "python bridge conversion behavior is part of CLI law",
     }

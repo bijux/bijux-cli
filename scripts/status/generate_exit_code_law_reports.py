@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate exit-code contract and drift artifacts for TODOs 21-40."""
+"""Generate exit-code contract and drift artifacts."""
 
 from __future__ import annotations
 
@@ -127,32 +127,32 @@ def main() -> None:
             if row["status"] != "covered":
                 drift_items.append(row)
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
-        todo_rows.append(
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/exit_code_law_matrix.rs",
             }
         )
 
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
     contract = {
         "generator": "scripts/status/generate_exit_code_law_reports.py",
         "scope": "exit-code law",
-        "status": "complete" if not drift_items and not missing_todos else "partial",
-        "tasks": list(range(21, 39)),
+        "status": "complete" if not drift_items and not missing_coverage_ids else "partial",
+        "coverage_ids": list(range(21, 39)),
         "release_blocking": True,
         "rows": rows,
-        "todo_coverage": todo_rows,
+        "coverage_rows": coverage_rows,
         "summary": {
             "domains": sorted(MATRIX.keys()),
             "covered_rows": len(rows) - len(drift_items),
             "drift_rows": len(drift_items),
-            "covered_todos": len(todo_rows) - len(missing_todos),
-            "missing_todos": len(missing_todos),
+            "covered_requirements": len(coverage_rows) - len(missing_coverage_ids),
+            "missing_coverage_ids": len(missing_coverage_ids),
         },
     }
 
@@ -160,10 +160,10 @@ def main() -> None:
         "generator": "scripts/status/generate_exit_code_law_reports.py",
         "scope": "exit-code law drift",
         "status": "clean" if not drift_items else "drift-detected",
-        "tasks": [39, 40],
+        "coverage_ids": [39, 40],
         "drift_count": len(drift_items),
         "drift_items": drift_items,
-        "missing_todos": [row["todo"] for row in missing_todos],
+        "missing_coverage_ids": [row["coverage_id"] for row in missing_coverage_ids],
     }
 
     STATUS.mkdir(parents=True, exist_ok=True)

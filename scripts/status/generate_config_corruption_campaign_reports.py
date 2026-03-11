@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate randomized config-corruption campaign artifacts for TODOs 121-140."""
+"""Generate randomized config-corruption campaign artifacts."""
 
 from __future__ import annotations
 
@@ -59,11 +59,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -78,13 +78,13 @@ def main() -> int:
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     campaign = {
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "randomized config corruption campaigns",
-        "tasks": list(range(121, 129)),
+        "coverage_ids": list(range(121, 129)),
         "status": "complete" if campaign_run["ok"] else "partial",
         "campaign_suite": campaign_run,
     }
@@ -93,18 +93,18 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption invariants",
-        "tasks": [129, 130, 131, 132, 133],
+        "coverage_ids": [129, 130, 131, 132, 133],
         "status": "complete"
-        if campaign_run["ok"] and not any(todo in missing for todo in [129, 130, 131, 132, 133])
+        if campaign_run["ok"] and not any(coverage_id in missing for coverage_id in [129, 130, 131, 132, 133])
         else "partial",
-        "todo_coverage": [row for row in coverage if 129 <= int(row["todo"]) <= 133],
+        "coverage_rows": [row for row in coverage if 129 <= int(row["coverage_id"]) <= 133],
     }
 
     corpus_retention = {
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption corpus retention",
-        "tasks": [134],
+        "coverage_ids": [134],
         "status": "complete" if minimized_cases else "partial",
         "minimized_case_count": len(minimized_cases),
         "minimized_cases": minimized_cases,
@@ -114,7 +114,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption triage",
-        "tasks": [135],
+        "coverage_ids": [135],
         "status": "clean" if campaign_run["ok"] and regression_run["ok"] else "needs-triage",
         "campaign_suite_ok": campaign_run["ok"],
         "regression_suite_ok": regression_run["ok"],
@@ -124,7 +124,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption regression replay",
-        "tasks": [136],
+        "coverage_ids": [136],
         "status": "clean" if regression_run["ok"] else "drift",
         "minimized_cases": minimized_cases,
     }
@@ -133,7 +133,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption severity classification",
-        "tasks": [137],
+        "coverage_ids": [137],
         "status": "complete",
         "classes": {
             "critical": ["write-path panic", "state file replacement with empty content"],
@@ -147,7 +147,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption recovery classification",
-        "tasks": [138],
+        "coverage_ids": [138],
         "status": "complete",
         "paths": {
             "stable_failure": ["usage/validation failure with unchanged file content"],
@@ -160,7 +160,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption determinism",
-        "tasks": [139],
+        "coverage_ids": [139],
         "status": "complete" if campaign_run["ok"] else "partial",
         "deterministic_failure_class_required": True,
         "evidence": "crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set",
@@ -170,11 +170,11 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
         "scope": "config corruption release-blocking contract",
-        "tasks": list(range(121, 141)),
+        "coverage_ids": list(range(121, 141)),
         "status": "frozen"
         if campaign_run["ok"] and regression_run["ok"] and minimized_cases and not missing
         else "partial",
-        "missing_todos": missing,
+        "missing_coverage_ids": missing,
         "release_blocking": True,
         "policy": "config corruption campaign coverage and deterministic rollback behavior are required before release",
     }

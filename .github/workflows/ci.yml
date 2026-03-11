@@ -266,7 +266,7 @@ jobs:
           python3 scripts/status/generate_deep_layer_test_coverage_reports.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
-          python3 scripts/status/generate_truth_milestone_status.py
+          python3 scripts/status/generate_truth_status_reports.py
           python3 scripts/status/generate_status_reports.py
           python3 scripts/status/generate_repl_behavior_reports.py
           python3 scripts/status/generate_parser_abuse_report.py
@@ -312,7 +312,7 @@ jobs:
           python3 scripts/status/generate_diagnostics_deep_behavior_reports.py
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
-          python3 scripts/status/generate_next_phase_priorities.py
+          python3 scripts/status/generate_priority_rankings.py
           python3 scripts/status/generate_next_minimalism_priorities.py
           python3 scripts/status/generate_cleanup_reports.py
           python3 scripts/status/generate_product_mount_readiness_reports.py
@@ -701,9 +701,9 @@ jobs:
         run: |
           python3 scripts/status/enforce_performance_regression_gates.py
 
-      - name: Next-phase evidence gate
+      - name: Priority-plan evidence gate
         run: |
-          python3 scripts/status/enforce_next_phase_evidence.py
+          python3 scripts/status/enforce_priority_evidence.py
 
       - name: Compatibility shim policy gate
         run: |
@@ -1593,11 +1593,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload milestone truth status artifacts
+      - name: Upload truth status artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: milestone-truth-status
+          name: truth-status
           path: |
             artifacts/status/what_is_done.json
             artifacts/status/what_is_left.json
@@ -1606,7 +1606,7 @@ jobs:
             artifacts/status/what_is_intentionally_different.json
             artifacts/status/what_is_unproven.json
             artifacts/status/what_is_left.txt
-            artifacts/status/next_200_todos.json
+            artifacts/status/next_200_priorities.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -1824,10 +1824,10 @@ jobs:
             artifacts/status/migration_notes_plugin_lifecycle.json
             artifacts/status/migration_notes_state_behavior.json
             artifacts/status/migration_notes.txt
-            artifacts/status/next_phase.json
-            artifacts/status/next_phase.txt
-            artifacts/status/next_phase_minimalism.json
-            artifacts/status/next_phase_minimalism.txt
+            artifacts/status/priority_plan.json
+            artifacts/status/priority_plan.txt
+            artifacts/status/simplification_priorities.json
+            artifacts/status/simplification_priorities.txt
             artifacts/status/ranked_python_only_behaviors.json
             artifacts/status/ranked_parity_partial_behaviors.json
             artifacts/status/ranked_plugin_gaps.json

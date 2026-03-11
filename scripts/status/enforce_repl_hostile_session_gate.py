@@ -28,7 +28,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "repl_hostile_session_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"repl hostile-session drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"repl hostile-session drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     contract = json.loads((STATUS / "repl_hostile_session_contract.json").read_text(encoding="utf-8"))
     if contract.get("status") != "frozen":

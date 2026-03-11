@@ -44,14 +44,14 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8")
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_rows = [
+    coverage_rows = [
         {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
             "evidence": "crates/bijux-cli/tests/bin_surface/config_mutation_matrix.rs",
         }
-        for todo, fn_name in sorted(REQUIRED_TESTS.items())
+        for coverage_id, fn_name in sorted(REQUIRED_TESTS.items())
     ]
 
     write_json(
@@ -59,8 +59,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_config_mutation_surface_reports.py",
-            "scope": "todo 281-299 config mutation matrix",
-            "todo_rows": todo_rows,
+            "scope": "config mutation matrix",
+            "coverage_rows": coverage_rows,
             "domains": [
                 {"surface": "config set", "status": "complete", "evidence": "config_mutation_matrix.rs"},
                 {"surface": "config unset", "status": "complete", "evidence": "config_mutation_matrix.rs"},

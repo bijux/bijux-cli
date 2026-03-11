@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate plugin/history/memory corruption campaign artifacts for TODOs 141-160."""
+"""Generate plugin/history/memory corruption campaign artifacts."""
 
 from __future__ import annotations
 
@@ -61,11 +61,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -96,13 +96,13 @@ def main() -> int:
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     campaign = {
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption campaigns",
-        "tasks": list(range(141, 156)),
+        "coverage_ids": list(range(141, 156)),
         "status": "complete" if campaign_run["ok"] else "partial",
         "campaign_suite": campaign_run,
     }
@@ -111,7 +111,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption corpus retention",
-        "tasks": [156],
+        "coverage_ids": [156],
         "status": "complete" if minimized_cases else "partial",
         "minimized_case_count": len(minimized_cases),
         "minimized_cases": minimized_cases,
@@ -121,7 +121,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption triage",
-        "tasks": [157],
+        "coverage_ids": [157],
         "status": "clean" if campaign_run["ok"] and regression_run["ok"] else "needs-triage",
         "campaign_suite_ok": campaign_run["ok"],
         "regression_suite_ok": regression_run["ok"],
@@ -131,7 +131,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption regression replay",
-        "tasks": [158],
+        "coverage_ids": [158],
         "status": "clean" if regression_run["ok"] else "drift",
         "minimized_cases": minimized_cases,
     }
@@ -140,7 +140,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption severity classification",
-        "tasks": [159],
+        "coverage_ids": [159],
         "status": "complete",
         "classes": {
             "critical": ["plugin registry write rollback failure", "state read panic"],
@@ -154,11 +154,11 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
         "scope": "plugin/history/memory corruption hardening contract",
-        "tasks": list(range(141, 161)),
+        "coverage_ids": list(range(141, 161)),
         "status": "frozen"
         if campaign_run["ok"] and regression_run["ok"] and minimized_cases and not missing
         else "partial",
-        "missing_todos": missing,
+        "missing_coverage_ids": missing,
         "policy": "plugin/history/memory corruption campaigns are required hardening coverage",
     }
 

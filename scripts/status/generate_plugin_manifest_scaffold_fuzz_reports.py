@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate plugin manifest/scaffold fuzz hardening artifacts for TODOs 61-80."""
+"""Generate plugin manifest/scaffold fuzz hardening artifacts."""
 
 from __future__ import annotations
 
@@ -68,11 +68,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -99,13 +99,13 @@ def main() -> int:
         ]
     )
 
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     manifest_triage = {
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py",
         "scope": "plugin manifest fuzz crash triage",
-        "tasks": [74],
+        "coverage_ids": [74],
         "status": "clean" if manifest_targets_run["ok"] and manifest_reg_run["ok"] else "needs-triage",
         "target_suite_ok": manifest_targets_run["ok"],
         "regression_suite_ok": manifest_reg_run["ok"],
@@ -116,7 +116,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py",
         "scope": "plugin scaffold fuzz crash triage",
-        "tasks": [75],
+        "coverage_ids": [75],
         "status": "clean" if scaffold_targets_run["ok"] and scaffold_reg_run["ok"] else "needs-triage",
         "target_suite_ok": scaffold_targets_run["ok"],
         "regression_suite_ok": scaffold_reg_run["ok"],
@@ -127,7 +127,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py",
         "scope": "plugin manifest fuzz regressions",
-        "tasks": [76, 78],
+        "coverage_ids": [76, 78],
         "status": "clean" if manifest_reg_run["ok"] else "drift",
         "minimized_cases": manifest_cases,
     }
@@ -136,7 +136,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py",
         "scope": "plugin scaffold fuzz regressions",
-        "tasks": [77, 79],
+        "coverage_ids": [77, 79],
         "status": "clean" if scaffold_reg_run["ok"] else "drift",
         "minimized_cases": scaffold_cases,
     }
@@ -145,7 +145,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py",
         "scope": "plugin manifest and scaffold fuzzing",
-        "tasks": list(range(61, 81)),
+        "coverage_ids": list(range(61, 81)),
         "status": "frozen"
         if not missing
         and manifest_targets_run["ok"]
@@ -155,8 +155,8 @@ def main() -> int:
         and len(manifest_cases) > 0
         and len(scaffold_cases) > 0
         else "partial",
-        "todo_coverage": coverage,
-        "missing_todos": missing,
+        "coverage_rows": coverage,
+        "missing_coverage_ids": missing,
         "manifest_minimized_case_count": len(manifest_cases),
         "scaffold_minimized_case_count": len(scaffold_cases),
         "policy": "plugin manifest and scaffold fuzzing remain maintenance-required hardening checks",

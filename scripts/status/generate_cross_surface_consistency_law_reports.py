@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate cross-surface consistency artifacts for TODO 141-160."""
+"""Generate cross-surface consistency artifacts."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def main() -> int:
     drift_items: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
 
-    for todo, fn_name, law, related in REQUIRED_TESTS:
+    for coverage_id, fn_name, law, related in REQUIRED_TESTS:
         present = f"fn {fn_name}(" in source
         related_statuses = [migration_status(cmd, matrix) for cmd in related]
         coverage_class = (
@@ -65,7 +65,7 @@ def main() -> int:
             else "partial"
         )
         row = {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "law": law,
             "test": f"crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs::{fn_name}",
             "present": present,

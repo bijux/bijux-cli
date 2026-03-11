@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deep memory behavior artifacts for TODOs 121-140."""
+"""Generate deep memory behavior artifacts."""
 
 from __future__ import annotations
 
@@ -74,30 +74,30 @@ def main() -> None:
     failure = run_cmd(["memory", "list", "--unknown-flag"])
     path_behavior = run_json(["memory", "list"])
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         evidence = find_test(test_name, sources)
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if evidence else "missing",
                 "evidence": evidence,
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     memory_semantic = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory semantic",
-        "tasks": [121, 122, 125, 132, 134],
+        "coverage_ids": [121, 122, 125, 132, 134],
         "status": "complete" if semantic != {} else "partial",
         "sample": semantic,
     }
     memory_determinism = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory determinism",
-        "tasks": [126, 127, 128, 129, 135],
+        "coverage_ids": [126, 127, 128, 129, 135],
         "status": "complete"
         if determinism_a.returncode == 0
         and determinism_b.returncode == 0
@@ -110,28 +110,28 @@ def main() -> None:
     memory_corruption = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory corruption",
-        "tasks": [123, 124, 131, 136],
+        "coverage_ids": [123, 124, 131, 136],
         "status": "complete" if corruption != {} else "partial",
         "sample": corruption,
     }
     memory_diagnostics = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory diagnostics consistency",
-        "tasks": [131, 137],
+        "coverage_ids": [131, 137],
         "status": "complete" if diagnostics != {} else "partial",
         "sample": diagnostics,
     }
     memory_failure = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory failure class",
-        "tasks": [123, 124, 138],
+        "coverage_ids": [123, 124, 138],
         "status": "complete" if failure.returncode == 2 else "partial",
         "sample_exit_code": failure.returncode,
     }
     memory_path = {
         "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
         "scope": "memory path behavior",
-        "tasks": [130, 133, 139],
+        "coverage_ids": [130, 133, 139],
         "status": "complete" if path_behavior != {} else "partial",
         "sample": path_behavior,
     }
@@ -147,8 +147,8 @@ def main() -> None:
     ]:
         if payload.get("status") != "complete":
             drift_items.append({"artifact": name, "reason": "status-not-complete"})
-    if missing_todos:
-        drift_items.append({"reason": "missing-todo-coverage", "todos": [row["todo"] for row in missing_todos]})
+    if missing_coverage_ids:
+        drift_items.append({"reason": "missing-coverage_id-coverage", "coverage_ids": [row["coverage_id"] for row in missing_coverage_ids]})
 
     STATUS.mkdir(parents=True, exist_ok=True)
     (STATUS / "memory_semantic_artifact.json").write_text(
@@ -180,11 +180,11 @@ def main() -> None:
             {
                 "generator": "scripts/status/generate_memory_deep_behavior_reports.py",
                 "scope": "memory deep behavior drift",
-                "tasks": [140],
+                "coverage_ids": [140],
                 "status": "clean" if not drift_items else "drift-detected",
                 "drift_count": len(drift_items),
                 "drift_items": drift_items,
-                "todo_coverage": todo_rows,
+                "coverage_rows": coverage_rows,
             },
             indent=2,
             sort_keys=True,

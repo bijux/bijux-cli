@@ -50,10 +50,10 @@ def main() -> int:
     if drift:
         if int(drift.get("drift_count", 1)) != 0:
             failures.append(f"metadata drift detected: count={drift.get('drift_count')}")
-        todo_coverage = drift.get("todo_coverage", [])
-        missing_todos = [row["todo"] for row in todo_coverage if isinstance(row, dict) and row.get("status") != "covered"]
-        if missing_todos:
-            failures.append(f"metadata todo coverage incomplete: {missing_todos}")
+        coverage_rows = drift.get("coverage_rows", [])
+        missing_coverage_ids = [row["coverage_id"] for row in coverage_rows if isinstance(row, dict) and row.get("status") != "covered"]
+        if missing_coverage_ids:
+            failures.append(f"metadata coverage_id coverage incomplete: {missing_coverage_ids}")
 
     for item in failures:
         print(f"METADATA CONSISTENCY FAILURE: {item}")

@@ -51,12 +51,12 @@ def ranked_from(path: Path) -> list[dict[str, Any]]:
     return read_json(path).get("items", [])
 
 
-def emit(name: str, title: str, items: list[dict[str, Any]], sources: list[str], todo: int, generated_at: str) -> dict[str, Any]:
+def emit(name: str, title: str, items: list[dict[str, Any]], sources: list[str], coverage_id: int, generated_at: str) -> dict[str, Any]:
     payload = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_next_minimalism_priorities.py",
         "title": title,
-        "todo": todo,
+        "coverage_id": coverage_id,
         "sources": sources,
         "items": items,
     }
@@ -212,15 +212,15 @@ def main() -> None:
         ),
     }
 
-    next_phase_minimalism = {
+    simplification_priorities = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_next_minimalism_priorities.py",
-        "todos": [793, 795, 796, 797, 798, 799, 800],
+        "coverage_ids": [793, 795, 796, 797, 798, 799, 800],
         "ranked_reports": {name: rel(STATUS / f"{name}.json") for name in outputs},
         "top_priorities": {name: payload.get("items", [])[:5] for name, payload in outputs.items()},
         "evidence_first_policy": {
             "manual_curated_priority_lists_allowed": False,
-            "next_roadmap_requires_generated_artifacts": True,
+            "roadmap_requires_generated_artifacts": True,
             "crate_merge_reassessment_source": [
                 rel(STATUS / "ranked_crate_complexity.json"),
                 rel(STATUS / "ranked_remaining_crate_boundary_problems.json"),
@@ -236,12 +236,12 @@ def main() -> None:
                 rel(STATUS / "ranked_shim_alias_leftovers.json"),
             ],
             "next_wave_requires_artifacts": [
-                rel(STATUS / "next_phase_minimalism.json"),
-                rel(STATUS / "next_phase_minimalism.txt"),
+                rel(STATUS / "simplification_priorities.json"),
+                rel(STATUS / "simplification_priorities.txt"),
             ],
         },
     }
-    write_json(STATUS / "next_phase_minimalism.json", next_phase_minimalism)
+    write_json(STATUS / "simplification_priorities.json", simplification_priorities)
 
     lines = ["Next Simplification Priorities (Evidence-Ranked)", ""]
     for name, payload in outputs.items():
@@ -258,10 +258,10 @@ def main() -> None:
             )
             lines.append(f"- {label}")
         lines.append("")
-    write_text(STATUS / "next_phase_minimalism.txt", "\n".join(lines))
+    write_text(STATUS / "simplification_priorities.txt", "\n".join(lines))
 
-    print("wrote artifacts/status/next_phase_minimalism.json")
-    print("wrote artifacts/status/next_phase_minimalism.txt")
+    print("wrote artifacts/status/simplification_priorities.json")
+    print("wrote artifacts/status/simplification_priorities.txt")
     for name in outputs:
         print(f"wrote artifacts/status/{name}.json")
 

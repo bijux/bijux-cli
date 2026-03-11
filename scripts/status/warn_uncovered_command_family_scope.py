@@ -24,10 +24,10 @@ def main() -> int:
     for row in uncovered:
         scope = row.get("scope", "unknown")
         reason = row.get("reason", "unreported")
-        todos = row.get("impacted_todos", [])
+        coverage_ids = row.get("impacted_coverage_ids", [])
         print(
             "::warning title=Command Family Scope::"
-            f"uncovered scope `{scope}` impacts TODOs {todos}: {reason}"
+            f"uncovered scope `{scope}` impacts coverage ids {coverage_ids}: {reason}"
         )
 
     return 0

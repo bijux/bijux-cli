@@ -16,7 +16,7 @@ OUT = ROOT / "artifacts" / "status" / "docs_duplication_report.json"
 
 def norm_key(value: str) -> str:
     cleaned = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
-    cleaned = re.sub(r"-(report|audit|baseline|guide|rules|law|milestone)$", "", cleaned)
+    cleaned = re.sub(r"-(report|audit|baseline|guide|rules|law|status)$", "", cleaned)
     return cleaned
 
 

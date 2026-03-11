@@ -28,7 +28,7 @@ def main() -> None:
         "generator": "scripts/status/generate_repl_recovery_reports.py",
         "scope": "repl hostile session hardening",
         "status": "complete",
-        "tasks": [501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517],
+        "coverage_ids": [501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517],
         "evidence_tests": [
             "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
             "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::plugin_failure_config_readback_and_output_mode_switching_work_in_one_session",
@@ -37,7 +37,7 @@ def main() -> None:
             "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::repl_and_core_obey_same_command_result_law_for_shared_commands",
         ],
         "repl_only_behavior_removed": {
-            "task": 519,
+            "coverage_id": 519,
             "change": "EOF now clears pending multiline buffer to avoid hidden carry-over state",
             "evidence": "crates/bijux-cli-repl/src/execution.rs",
         },
@@ -48,7 +48,7 @@ def main() -> None:
         "generator": "scripts/status/generate_repl_recovery_reports.py",
         "scope": "repl recovery behavior",
         "status": "complete",
-        "tasks": [518],
+        "coverage_ids": [518],
         "recovery_contract": [
             "Malformed input does not terminate session; valid commands remain executable.",
             "Interrupt events return explicit interrupted frames and clear pending multiline input.",

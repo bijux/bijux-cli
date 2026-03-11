@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate output/envelope and bridge-conversion fuzz hardening artifacts for TODOs 81-100."""
+"""Generate output/envelope and bridge-conversion fuzz hardening artifacts."""
 
 from __future__ import annotations
 
@@ -68,11 +68,11 @@ def main() -> int:
     }
 
     coverage = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in texts[path]
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -87,13 +87,13 @@ def main() -> int:
     bridge_targets_run = run_test(["cargo", "test", "-p", "bijux-cli-python", "--test", "bridge_conversion_fuzz_targets"])
     bridge_reg_run = run_test(["cargo", "test", "-p", "bijux-cli-python", "--test", "bridge_conversion_fuzz_regressions"])
 
-    missing = [row["todo"] for row in coverage if row["status"] != "covered"]
+    missing = [row["coverage_id"] for row in coverage if row["status"] != "covered"]
 
     output_triage = {
         "generated_at": now,
         "generator": "scripts/status/generate_output_bridge_fuzz_reports.py",
         "scope": "output crash triage",
-        "tasks": [94],
+        "coverage_ids": [94],
         "status": "clean" if output_targets_run["ok"] and output_reg_run["ok"] else "needs-triage",
         "target_suite_ok": output_targets_run["ok"],
         "regression_suite_ok": output_reg_run["ok"],
@@ -104,7 +104,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_output_bridge_fuzz_reports.py",
         "scope": "bridge conversion crash triage",
-        "tasks": [95],
+        "coverage_ids": [95],
         "status": "clean" if bridge_targets_run["ok"] and bridge_reg_run["ok"] else "needs-triage",
         "target_suite_ok": bridge_targets_run["ok"],
         "regression_suite_ok": bridge_reg_run["ok"],
@@ -115,7 +115,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_output_bridge_fuzz_reports.py",
         "scope": "output fuzz regressions",
-        "tasks": [96, 98],
+        "coverage_ids": [96, 98],
         "status": "clean" if output_reg_run["ok"] else "drift",
         "minimized_cases": output_cases,
     }
@@ -124,7 +124,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_output_bridge_fuzz_reports.py",
         "scope": "bridge conversion fuzz regressions",
-        "tasks": [97],
+        "coverage_ids": [97],
         "status": "clean" if bridge_reg_run["ok"] else "drift",
         "minimized_cases": bridge_cases,
     }
@@ -133,7 +133,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_output_bridge_fuzz_reports.py",
         "scope": "output and envelope fuzz hardening",
-        "tasks": list(range(81, 101)),
+        "coverage_ids": list(range(81, 101)),
         "status": "frozen"
         if not missing
         and output_targets_run["ok"]
@@ -143,8 +143,8 @@ def main() -> int:
         and len(output_cases) > 0
         and len(bridge_cases) > 0
         else "partial",
-        "todo_coverage": coverage,
-        "missing_todos": missing,
+        "coverage_rows": coverage,
+        "missing_coverage_ids": missing,
         "output_minimized_case_count": len(output_cases),
         "bridge_minimized_case_count": len(bridge_cases),
         "policy": "envelope/output fuzzing is contract hardening and remains permanently gated",

@@ -170,7 +170,7 @@ def main() -> None:
     special_cases = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_route_law_reports.py",
-        "task": 638,
+        "coverage_id": 638,
         "report": route_special_cases(),
         "rule": "special-case count must trend down over releases",
     }

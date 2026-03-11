@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic output artifacts for TODOs 121-140."""
+"""Generate deterministic output artifacts."""
 
 from __future__ import annotations
 
@@ -56,15 +56,15 @@ def main() -> None:
     report = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_deterministic_output_reports.py",
-        "scope": "todo 121-140 deterministic output tests",
+        "scope": "deterministic output tests",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
         "summary": {
             "complete": sum(1 for _, name in rows if name in test_names),

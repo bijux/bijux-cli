@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate stdout/stderr stream-discipline contract and drift artifacts for TODOs 41-60."""
+"""Generate stdout/stderr stream-discipline contract and drift artifacts."""
 
 from __future__ import annotations
 
@@ -13,23 +13,23 @@ STATUS = ROOT / "artifacts" / "status"
 TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "stream_discipline_matrix.rs"
 
 CASES: list[dict[str, Any]] = [
-    {"todo": 41, "name": "success_machine_json_stderr_empty", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 42, "name": "success_text_no_stderr_noise", "args": ["status", "--format", "text"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 43, "name": "usage_error_stderr_only", "args": ["config", "get"], "expect_code": 2, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
-    {"todo": 44, "name": "validation_error_stderr_only", "args": ["--format", "not-a-format", "status"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
-    {"todo": 45, "name": "plugin_error_stderr_only", "args": ["plugins", "uninstall"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
-    {"todo": 46, "name": "internal_like_error_stderr_only", "args": ["plugins", "enable"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
-    {"todo": 47, "name": "quiet_mode_suppresses_stdout", "args": ["--quiet", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": False, "expect_stderr_empty": True},
-    {"todo": 48, "name": "quiet_mode_suppresses_nonessential_stderr", "args": ["--quiet", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": False, "expect_stderr_empty": True},
-    {"todo": 49, "name": "trace_mode_stream_contract", "args": ["--log-level", "trace", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 50, "name": "pretty_json_stream_contract", "args": ["status", "--format", "json", "--pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 51, "name": "compact_json_stream_contract", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 52, "name": "yaml_stream_contract", "args": ["status", "--format", "yaml", "--pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 53, "name": "help_no_unrelated_stderr", "args": ["help", "status"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 54, "name": "version_no_unrelated_stderr", "args": ["version"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 55, "name": "plugin_commands_follow_stream_law", "args": ["plugins", "list", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 56, "name": "state_doctor_follows_stream_law", "args": ["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
-    {"todo": 57, "name": "binary_bridge_stream_routing_consistency", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 41, "name": "success_machine_json_stderr_empty", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 42, "name": "success_text_no_stderr_noise", "args": ["status", "--format", "text"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 43, "name": "usage_error_stderr_only", "args": ["config", "get"], "expect_code": 2, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
+    {"coverage_id": 44, "name": "validation_error_stderr_only", "args": ["--format", "not-a-format", "status"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
+    {"coverage_id": 45, "name": "plugin_error_stderr_only", "args": ["plugins", "uninstall"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
+    {"coverage_id": 46, "name": "internal_like_error_stderr_only", "args": ["plugins", "enable"], "expect_code": 1, "expect_stdout_nonempty": False, "expect_stderr_empty": False},
+    {"coverage_id": 47, "name": "quiet_mode_suppresses_stdout", "args": ["--quiet", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": False, "expect_stderr_empty": True},
+    {"coverage_id": 48, "name": "quiet_mode_suppresses_nonessential_stderr", "args": ["--quiet", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": False, "expect_stderr_empty": True},
+    {"coverage_id": 49, "name": "trace_mode_stream_contract", "args": ["--log-level", "trace", "status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 50, "name": "pretty_json_stream_contract", "args": ["status", "--format", "json", "--pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 51, "name": "compact_json_stream_contract", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 52, "name": "yaml_stream_contract", "args": ["status", "--format", "yaml", "--pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 53, "name": "help_no_unrelated_stderr", "args": ["help", "status"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 54, "name": "version_no_unrelated_stderr", "args": ["version"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 55, "name": "plugin_commands_follow_stream_law", "args": ["plugins", "list", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 56, "name": "state_doctor_follows_stream_law", "args": ["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
+    {"coverage_id": 57, "name": "binary_bridge_stream_routing_consistency", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
 ]
 
 REQUIRED_TESTS = {
@@ -82,7 +82,7 @@ def main() -> None:
             and stderr_empty == case["expect_stderr_empty"]
         )
         row = {
-            "todo": case["todo"],
+            "coverage_id": case["coverage_id"],
             "name": case["name"],
             "command": " ".join(case["args"]),
             "expected_exit_code": case["expect_code"],
@@ -97,31 +97,31 @@ def main() -> None:
         if row["status"] != "covered":
             drift_items.append(row)
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
-        todo_rows.append(
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs",
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     contract = {
         "generator": "scripts/status/generate_stream_discipline_reports.py",
         "scope": "stdout-stderr discipline",
-        "status": "complete" if not drift_items and not missing_todos else "partial",
-        "tasks": list(range(41, 59)),
+        "status": "complete" if not drift_items and not missing_coverage_ids else "partial",
+        "coverage_ids": list(range(41, 59)),
         "release_blocking": True,
         "rows": rows,
-        "todo_coverage": todo_rows,
+        "coverage_rows": coverage_rows,
         "summary": {
             "covered_rows": len(rows) - len(drift_items),
             "drift_rows": len(drift_items),
-            "covered_todos": len(todo_rows) - len(missing_todos),
-            "missing_todos": len(missing_todos),
+            "covered_requirements": len(coverage_rows) - len(missing_coverage_ids),
+            "missing_coverage_ids": len(missing_coverage_ids),
         },
     }
 
@@ -129,10 +129,10 @@ def main() -> None:
         "generator": "scripts/status/generate_stream_discipline_reports.py",
         "scope": "stdout-stderr discipline drift",
         "status": "clean" if not drift_items else "drift-detected",
-        "tasks": [59, 60],
+        "coverage_ids": [59, 60],
         "drift_count": len(drift_items),
         "drift_items": drift_items,
-        "missing_todos": [row["todo"] for row in missing_todos],
+        "missing_coverage_ids": [row["coverage_id"] for row in missing_coverage_ids],
     }
 
     STATUS.mkdir(parents=True, exist_ok=True)

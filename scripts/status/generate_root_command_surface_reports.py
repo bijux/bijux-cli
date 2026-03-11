@@ -120,11 +120,11 @@ def main() -> int:
         )
     rows.sort(key=lambda row: (-int(row["user_impact"]), row["command"]))
 
-    todo_rows = []
-    for todo, fn_name in sorted(REQUIRED_TESTS.items()):
-        todo_rows.append(
+    coverage_rows = []
+    for coverage_id, fn_name in sorted(REQUIRED_TESTS.items()):
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": fn_name,
                 "status": "complete" if f"fn {fn_name}(" in source else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/root_command_matrix.rs",
@@ -156,8 +156,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_root_command_surface_reports.py",
-            "scope": "todo 201-220 root command matrix",
-            "todo_rows": todo_rows,
+            "scope": "root command matrix",
+            "coverage_rows": coverage_rows,
             "commands": rows,
         },
     )

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate evidence-ranked next priorities and next_phase artifacts."""
+"""Generate evidence-ranked next priorities and priority_plan artifacts."""
 
 from __future__ import annotations
 
@@ -292,12 +292,12 @@ def ranked_weak_tests() -> list[dict[str, Any]]:
     return [{"rank": i + 1, **row} for i, row in enumerate(rows)]
 
 
-def emit_ranked(name: str, title: str, items: list[dict[str, Any]], source: list[str], task: int, generated_at: str) -> dict[str, Any]:
+def emit_ranked(name: str, title: str, items: list[dict[str, Any]], source: list[str], coverage_id: int, generated_at: str) -> dict[str, Any]:
     payload = {
         "generated_at": generated_at,
-        "generator": "scripts/status/generate_next_phase_priorities.py",
+        "generator": "scripts/status/generate_priority_rankings.py",
         "title": title,
-        "task": task,
+        "coverage_id": coverage_id,
         "source": source,
         "items": items,
     }
@@ -416,10 +416,10 @@ def main() -> None:
         ),
     }
 
-    next_phase = {
+    priority_plan = {
         "generated_at": generated_at,
-        "generator": "scripts/status/generate_next_phase_priorities.py",
-        "tasks": [594, 596, 597, 598, 599, 600],
+        "generator": "scripts/status/generate_priority_rankings.py",
+        "coverage_ids": [594, 596, 597, 598, 599, 600],
         "ranked_reports": {name: rel(STATUS / f"{name}.json") for name in outputs},
         "top_priorities": {
             name: payload.get("items", [])[:5] for name, payload in outputs.items()
@@ -436,12 +436,12 @@ def main() -> None:
                 rel(STATUS / "crate_boundary_metrics.json"),
             ],
             "next_wave_requires_artifacts": [
-                rel(STATUS / "next_phase.json"),
-                rel(STATUS / "next_phase.txt"),
+                rel(STATUS / "priority_plan.json"),
+                rel(STATUS / "priority_plan.txt"),
             ],
         },
     }
-    write_json(STATUS / "next_phase.json", next_phase)
+    write_json(STATUS / "priority_plan.json", priority_plan)
 
     lines = [
         "Next Priorities (Evidence-Ranked)",
@@ -453,10 +453,10 @@ def main() -> None:
             label = item.get("command") or item.get("gap") or item.get("path") or item.get("crate") or item.get("symbol") or item.get("case")
             lines.append(f"- {label}")
         lines.append("")
-    write_text(STATUS / "next_phase.txt", "\n".join(lines))
+    write_text(STATUS / "priority_plan.txt", "\n".join(lines))
 
-    print("wrote artifacts/status/next_phase.json")
-    print("wrote artifacts/status/next_phase.txt")
+    print("wrote artifacts/status/priority_plan.json")
+    print("wrote artifacts/status/priority_plan.txt")
     for name in outputs:
         print(f"wrote artifacts/status/{name}.json")
 

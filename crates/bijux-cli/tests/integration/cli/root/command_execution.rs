@@ -334,8 +334,14 @@ fn dev_cli_status_is_deterministic_across_repeated_runs() {
     let second = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
     let first_payload: serde_json::Value = serde_json::from_str(&first).expect("valid json");
     let second_payload: serde_json::Value = serde_json::from_str(&second).expect("valid json");
-    assert_eq!(first_payload["next_phase_priorities"], second_payload["next_phase_priorities"]);
-    assert_eq!(first_payload["next_phase_summary_text"], second_payload["next_phase_summary_text"]);
+    assert_eq!(
+        first_payload["priority_plan_priorities"],
+        second_payload["priority_plan_priorities"]
+    );
+    assert_eq!(
+        first_payload["priority_plan_summary_text"],
+        second_payload["priority_plan_summary_text"]
+    );
     assert_eq!(first_payload["command_migration"], second_payload["command_migration"]);
 }
 

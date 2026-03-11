@@ -29,7 +29,7 @@ REQUIRED_TESTS = {
     395: "binary_and_direct_core_agree_on_same_command_results",
 }
 
-AREA_TO_TODOS = {
+AREA_TO_COVERAGE_IDS = {
     "commands": [381, 382, 385, 393, 394, 395, 396, 397],
     "config": [383, 389],
     "history": [384, 390],
@@ -48,27 +48,27 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8")
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_rows = []
-    for todo, fn_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, fn_name in sorted(REQUIRED_TESTS.items()):
         present = f"fn {fn_name}(" in source
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": fn_name,
                 "status": "complete" if present else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
             }
         )
 
-    drift_rows = [row for row in todo_rows if row["status"] != "complete"]
+    drift_rows = [row for row in coverage_rows if row["status"] != "complete"]
 
     write_json(
         "command_surface_consistency_artifact.json",
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-            "scope": "todo 381-394 cross-command consistency artifact",
-            "todo_rows": todo_rows,
+            "scope": "cross-command consistency artifact",
+            "coverage_rows": coverage_rows,
         },
     )
 
@@ -77,16 +77,16 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-            "scope": "todo 395 cross-command drift detector artifact",
+            "scope": "cross-command drift detector artifact",
             "drift_count": len(drift_rows),
-            "drift_todos": [row["todo"] for row in drift_rows],
+            "drift_coverage_ids": [row["coverage_id"] for row in drift_rows],
             "status": "clean" if not drift_rows else "drift",
         },
     )
 
     summary_rows = []
-    for area, todos in AREA_TO_TODOS.items():
-        relevant = [row for row in todo_rows if row["todo"] in todos]
+    for area, coverage_ids in AREA_TO_COVERAGE_IDS.items():
+        relevant = [row for row in coverage_rows if row["coverage_id"] in coverage_ids]
         complete = sum(1 for row in relevant if row["status"] == "complete")
         total = len(relevant)
         status = "complete" if complete == total else ("partial" if complete > 0 else "missing")
@@ -104,9 +104,9 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-            "scope": "todo 398 complete/partial/missing summary for commands/config/history/memory/diagnostics",
+            "scope": "complete/partial/missing summary for commands/config/history/memory/diagnostics",
             "areas": summary_rows,
-            "next_wave_input": "Use this summary as source-of-truth for prioritization instead of intuition.",
+            "prioritization_note": "Use this summary as source-of-truth for prioritization instead of intuition.",
         },
     )
 

@@ -25,7 +25,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "python_bridge_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"python bridge execution drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"python bridge execution drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     contract = json.loads((STATUS / "python_bridge_execution_contract.json").read_text(encoding="utf-8"))
     if contract.get("status") != "frozen":

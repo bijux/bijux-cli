@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate REPL execution law artifacts for TODOs 201-220."""
+"""Generate REPL execution law artifacts."""
 
 from __future__ import annotations
 
@@ -41,40 +41,40 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     shared_law = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_execution_law_reports.py",
         "scope": "repl shared law",
-        "tasks": list(range(201, 217)),
+        "coverage_ids": list(range(201, 217)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     repl_cli_diff = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_execution_law_reports.py",
         "scope": "repl vs cli drift",
-        "tasks": [217],
+        "coverage_ids": [217],
         "status": "clean" if not missing else "drift",
         "diff_count": len(missing),
-        "diff_todos": [row["todo"] for row in missing],
+        "diff_requirements": [row["coverage_id"] for row in missing],
     }
 
-    # Warn-only surface for TODO 219: explicit repl-only semantics require justification.
+    # Warn-only surface: explicit repl-only semantics require justification.
     repl_only_semantics = []
     for marker in ["repl_only_semantic", "repl-only semantic", "repl specific semantic"]:
         if marker in source.lower():
@@ -84,10 +84,10 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_execution_law_reports.py",
         "scope": "repl shared law policy",
-        "tasks": [218, 219],
+        "coverage_ids": [218, 219],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
         "repl_only_semantics": repl_only_semantics,
     }
 
@@ -95,7 +95,7 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_execution_law_reports.py",
         "scope": "repl execution law contract",
-        "tasks": [220],
+        "coverage_ids": [220],
         "status": "frozen" if not missing else "not-frozen",
         "law": "same law, different shell",
     }

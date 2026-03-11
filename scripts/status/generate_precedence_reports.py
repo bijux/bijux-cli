@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate precedence evidence artifacts for TODOs 101-120."""
+"""Generate precedence evidence artifacts."""
 
 from __future__ import annotations
 
@@ -79,19 +79,19 @@ def main() -> None:
     regression_matrix = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_precedence_reports.py",
-        "scope": "todo 101-120 precedence tests",
+        "scope": "precedence tests",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/precedence_matrix.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
         "summary": {
-            "complete": sum(1 for todo, name in rows if name in test_names),
-            "missing": sum(1 for todo, name in rows if name not in test_names),
+            "complete": sum(1 for coverage_id, name in rows if name in test_names),
+            "missing": sum(1 for coverage_id, name in rows if name not in test_names),
             "artifact_todo": 118,
             "artifact_path": "artifacts/status/precedence_regression_matrix.json",
         },

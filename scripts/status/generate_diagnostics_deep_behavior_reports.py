@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deep diagnostics behavior artifacts for TODOs 141-160."""
+"""Generate deep diagnostics behavior artifacts."""
 
 from __future__ import annotations
 
@@ -79,23 +79,23 @@ def main() -> None:
     package_health_payload = run_json(["dev", "cli", "package-health"])
     runtime_identity_payload = run_json(["dev", "cli", "runtime-identity"])
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         evidence = find_test(test_name, sources)
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if evidence else "missing",
                 "evidence": evidence,
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     diagnostics_consistency = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "diagnostics consistency",
-        "tasks": [145, 146, 149, 150, 151, 152, 154],
+        "coverage_ids": [145, 146, 149, 150, 151, 152, 154],
         "status": "complete"
         if inspect_payload != {}
         and doctor_a != {}
@@ -117,7 +117,7 @@ def main() -> None:
     doctor_determinism = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "doctor determinism",
-        "tasks": [141, 142, 143, 144, 155, 158],
+        "coverage_ids": [141, 142, 143, 144, 155, 158],
         "status": "complete"
         if doctor_a == doctor_b
         and state_doctor_a == state_doctor_b
@@ -151,7 +151,7 @@ def main() -> None:
     diagnostics_schema_drift = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "diagnostics schema drift",
-        "tasks": [147, 148, 156],
+        "coverage_ids": [147, 148, 156],
         "status": "complete"
         if contracts_payload == expected_contracts and expected_route_set.issubset(current_route_set)
         else "partial",
@@ -162,7 +162,7 @@ def main() -> None:
     diagnostics_source_of_truth = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "diagnostics source of truth",
-        "tasks": [146, 147, 148, 149, 157],
+        "coverage_ids": [146, 147, 148, 149, 157],
         "status": "complete"
         if env_payload != {} and contracts_payload != {} and routes_payload != {} and registry_payload != {}
         else "partial",
@@ -177,7 +177,7 @@ def main() -> None:
     findings_order = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "findings order",
-        "tasks": [141, 142, 150, 158],
+        "coverage_ids": [141, 142, 150, 158],
         "status": "complete"
         if state_doctor_a.get("doctor", {}).get("issues") == state_doctor_b.get("doctor", {}).get("issues")
         else "partial",
@@ -188,7 +188,7 @@ def main() -> None:
     diagnostics_contract = {
         "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
         "scope": "diagnostics contract",
-        "tasks": [143, 144, 145, 152, 153, 159],
+        "coverage_ids": [143, 144, 145, 152, 153, 159],
         "status": "complete"
         if doctor_a != {}
         and plugin_health_payload != {}
@@ -214,8 +214,8 @@ def main() -> None:
     ]:
         if payload.get("status") != "complete":
             drift_items.append({"artifact": name, "reason": "status-not-complete"})
-    if missing_todos:
-        drift_items.append({"reason": "missing-todo-coverage", "todos": [row["todo"] for row in missing_todos]})
+    if missing_coverage_ids:
+        drift_items.append({"reason": "missing-coverage_id-coverage", "coverage_ids": [row["coverage_id"] for row in missing_coverage_ids]})
 
     STATUS.mkdir(parents=True, exist_ok=True)
     (STATUS / "diagnostics_consistency_artifact.json").write_text(
@@ -241,11 +241,11 @@ def main() -> None:
             {
                 "generator": "scripts/status/generate_diagnostics_deep_behavior_reports.py",
                 "scope": "diagnostics deep behavior drift",
-                "tasks": [160],
+                "coverage_ids": [160],
                 "status": "clean" if not drift_items else "drift-detected",
                 "drift_count": len(drift_items),
                 "drift_items": drift_items,
-                "todo_coverage": todo_rows,
+                "coverage_rows": coverage_rows,
             },
             indent=2,
             sort_keys=True,

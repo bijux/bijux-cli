@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate plugin discovery determinism artifacts for TODOs 61-80."""
+"""Generate plugin discovery determinism artifacts."""
 
 from __future__ import annotations
 
@@ -57,15 +57,15 @@ def main() -> None:
     matrix = {
         "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_plugin_discovery_determinism_reports.py",
-        "scope": "todo 61-80 plugin discovery and ordering determinism",
+        "scope": "plugin discovery and ordering determinism",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/plugin_discovery_determinism_matrix.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
     }
     matrix["summary"] = {

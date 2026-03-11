@@ -7,7 +7,7 @@ scripts/status/generate_release_build_reports.py # generate release/debug size, 
 scripts/status/check_deterministic_generation.py # verify schema, command-tree, and parity artifact generation remain deterministic
 scripts/status/check_release_build_consistency.py # run repeated release builds and report binary hash consistency
 scripts/status/generate_cleanup_reports.py # produce cleanup evidence and retention-policy artifacts for stale docs/snapshots/generated files
-scripts/status/generate_next_minimalism_priorities.py # generate ranked simplification priorities and next_phase_minimalism artifacts from evidence reports
+scripts/status/generate_next_minimalism_priorities.py # generate ranked simplification priorities and simplification_priorities artifacts from evidence reports
 scripts/status/generate_command_migration_matrix.py # generate command migration matrix and status-model summaries consumed by dev cli status and CI
 scripts/status/generate_command_surface_inventory.py # generate python-path, alias, and shim command inventories for migration closure evidence
 scripts/status/generate_bridge_duplicate_law_report.py # generate python-bridge duplicate-law audit report to prove wrapper-only bridge behavior
@@ -25,11 +25,11 @@ scripts/status/generate_plugin_migration_reports.py # generate unified plugin mi
 scripts/status/enforce_plugin_migration_policy.py # enforce plugin migration evidence completeness, rollback proofs, and strict frozen-law clarity contracts
 scripts/status/generate_maintainer_control_plane_reports.py # generate maintainer script inventory and required dev-cli cockpit command evidence artifacts
 scripts/status/enforce_maintainer_control_plane_policy.py # enforce maintainer cockpit command coverage plus stable json/text evidence for required dev-cli control-plane commands
-scripts/status/generate_reserved_namespace_test_matrix.py # generate plugin namespace-law todo matrix artifact proving reserved namespace rejection test coverage
-scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecycle todo matrix artifact proving end-to-end lifecycle integration test coverage
-scripts/status/generate_plugin_failure_rollback_test_matrix.py # generate plugin failure/rollback todo matrix artifact proving failure injection and rollback coverage
-scripts/status/generate_plugin_discovery_determinism_reports.py # generate plugin discovery determinism report and frozen ordering law artifacts for TODOs 61-80
-scripts/status/generate_flag_normalization_matrix.py # generate flag normalization todo matrix artifact proving parser and conflict behavior coverage
+scripts/status/generate_reserved_namespace_test_matrix.py # generate plugin namespace-law coverage_id matrix artifact proving reserved namespace rejection test coverage
+scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecycle coverage_id matrix artifact proving end-to-end lifecycle integration test coverage
+scripts/status/generate_plugin_failure_rollback_test_matrix.py # generate plugin failure/rollback coverage_id matrix artifact proving failure injection and rollback coverage
+scripts/status/generate_plugin_discovery_determinism_reports.py # generate plugin discovery determinism report and frozen ordering law artifacts
+scripts/status/generate_flag_normalization_matrix.py # generate flag normalization coverage_id matrix artifact proving parser and conflict behavior coverage
 scripts/status/generate_precedence_reports.py # generate precedence regression matrix, machine-readable precedence report, and frozen precedence contract artifacts
 scripts/status/generate_deterministic_output_reports.py # generate deterministic output report, determinism dashboard, and frozen byte-stability expectations artifacts
 scripts/status/run_corruption_repeat_harness.py # execute repeated-run corrupted-state probes and emit stability evidence for hostile-state determinism
@@ -81,12 +81,12 @@ scripts/status/enforce_python_bridge_conversion_gate.py # enforce CI failure whe
 scripts/status/generate_cross_surface_state_reports.py # generate cross-surface state consistency, drift, and frozen contract artifacts for binary/bridge/repl/state-doctor coverage
 scripts/status/enforce_cross_surface_state_gate.py # enforce CI failure when covered cross-surface state behavior drifts
 scripts/status/warn_uncovered_cross_surface_state_scope.py # emit CI warning when cross-surface state coverage remains partial for new stateful behavior
-scripts/status/generate_help_tree_law_reports.py # generate help-law, command-tree consistency, help drift, and frozen help-tree contract artifacts for TODOs 341-360
+scripts/status/generate_help_tree_law_reports.py # generate help-law, command-tree consistency, help drift, and frozen help-tree contract artifacts
 scripts/status/enforce_help_tree_law_gate.py # enforce CI failure when covered help-tree law behavior drifts
-scripts/status/generate_diagnostics_trust_reports.py # generate diagnostics trust, actionable guidance, minimalism, schema drift, and frozen diagnostics trust contract artifacts for TODOs 361-380
+scripts/status/generate_diagnostics_trust_reports.py # generate diagnostics trust, actionable guidance, minimalism, schema drift, and frozen diagnostics trust contract artifacts
 scripts/status/enforce_diagnostics_trust_gate.py # enforce CI failure when covered diagnostics trust schema drifts
 scripts/status/warn_diagnostics_wording_drift.py # emit CI warning when diagnostics text wording drifts from stable human-readable snapshots
-scripts/status/generate_deep_layer_test_coverage_reports.py # generate deep-layer domain category reports, weakest-test inventory, replacement actions, and frozen deep-layer behavior coverage contract for TODOs 381-400
+scripts/status/generate_deep_layer_test_coverage_reports.py # generate deep-layer domain category reports, weakest-test inventory, replacement actions, and frozen deep-layer behavior coverage contract
 scripts/status/enforce_deep_layer_test_category_gates.py # enforce deep-layer category/equivalence/corruption/determinism CI gates for behavior changes
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
@@ -96,9 +96,8 @@ scripts/status/enforce_command_surface_consistency_gate.py # enforce CI failure 
 scripts/status/warn_uncovered_command_surface_scope.py # emit CI warning when command-surface scope introduces uncovered consistency checks
 scripts/status/generate_compatibility_debt_trend_report.py # generate compatibility debt trend artifact from shim/alias baseline and delta reports
 scripts/status/generate_command_family_closure_reports.py # generate six command-family closure reports plus combined closure and explicit partial-area acceptance artifact
-scripts/status/generate_cross_surface_consistency_law_reports.py # generate TODO 141-160 cross-surface consistency artifact, drift artifact, and contract freeze report
-scripts/status/enforce_cross_surface_consistency_law.py # enforce fail-on-covered-drift and warn-on-partial-drift policy for cross-surface consistency TODO 141-160
-scripts/status/generate_simplification_reports.py # generate simplification evidence bundle for duplication/api/complexity and safe deletion artifacts
+scripts/status/generate_cross_surface_consistency_law_reports.py # generate cross-surface consistency artifact, drift artifact, and contract freeze report
+scripts/status/enforce_cross_surface_consistency_law.py # enforce fail-on-covered-drift and warn-on-partial-drift policy for cross-surface consistency scripts/status/generate_simplification_reports.py # generate simplification evidence bundle for duplication/api/complexity and safe deletion artifacts
 scripts/status/generate_parser_fuzz_hardening_reports.py # generate parser crash triage, parser fuzz regression, and parser fuzz campaign artifacts from retained minimized/interesting parser corpus cases
 scripts/status/enforce_parser_fuzz_regression_gate.py # enforce CI failure when parser fuzz regression replay, known minimized parser cases, or parser fuzz campaign coverage drifts
 scripts/status/generate_route_registry_fuzz_reports.py # generate route/registry fuzz crash-triage, minimized-regression, and frozen hardening-contract artifacts from retained route/registry minimized cases
@@ -109,15 +108,15 @@ scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py # generate plug
 scripts/status/enforce_plugin_manifest_scaffold_fuzz_gate.py # enforce CI failure when plugin manifest/scaffold fuzz triage or minimized regression replay drifts from the frozen hardening contract
 scripts/status/generate_output_bridge_fuzz_reports.py # generate output/envelope and bridge-conversion fuzz crash triage, minimized-regression, and frozen hardening-contract artifacts from retained output/bridge minimized fuzz cases
 scripts/status/enforce_output_bridge_fuzz_gate.py # enforce CI failure when output/envelope or bridge-conversion fuzz triage/regression replay drifts from the frozen hardening contract
-scripts/status/generate_state_corruption_harness_reports.py # generate randomized state-corruption campaign, minimized reproducer retention, and frozen corruption-harness contract artifacts for TODOs 101-120
+scripts/status/generate_state_corruption_harness_reports.py # generate randomized state-corruption campaign, minimized reproducer retention, and frozen corruption-harness contract artifacts
 scripts/status/enforce_state_corruption_harness_gate.py # enforce CI failure when randomized state-corruption campaign/reproducer retention drifts or the harness contract is not frozen
-scripts/status/generate_config_corruption_campaign_reports.py # generate randomized config-corruption campaign, invariant, corpus-retention, severity/recovery/determinism, and release-blocking contract artifacts for TODOs 121-140
+scripts/status/generate_config_corruption_campaign_reports.py # generate randomized config-corruption campaign, invariant, corpus-retention, severity/recovery/determinism, and release-blocking contract artifacts
 scripts/status/enforce_config_corruption_campaign_gate.py # enforce CI failure when config-corruption campaign artifacts drift or release-blocking contract is not frozen
-scripts/status/generate_plugin_state_corruption_campaign_reports.py # generate randomized plugin/history/memory corruption campaign, corpus-retention, triage, regression, severity, and hardening-contract artifacts for TODOs 141-160
+scripts/status/generate_plugin_state_corruption_campaign_reports.py # generate randomized plugin/history/memory corruption campaign, corpus-retention, triage, regression, severity, and hardening-contract artifacts
 scripts/status/enforce_plugin_state_corruption_campaign_gate.py # enforce CI failure when plugin/history/memory corruption campaign artifacts drift or hardening contract is not frozen
-scripts/status/generate_state_race_campaign_reports.py # generate concurrent state-race campaign, outcome-classification, reproducer-retention, regression, and frozen contract artifacts for TODOs 161-180
+scripts/status/generate_state_race_campaign_reports.py # generate concurrent state-race campaign, outcome-classification, reproducer-retention, regression, and frozen contract artifacts
 scripts/status/enforce_state_race_campaign_gate.py # enforce CI failure when concurrent state-race artifacts drift or frozen race contract is not satisfied
-scripts/status/generate_adversarial_fs_process_reports.py # generate adversarial filesystem/process matrix, evidence artifact, and frozen hardening contract for TODOs 181-200
+scripts/status/generate_adversarial_fs_process_reports.py # generate adversarial filesystem/process matrix, evidence artifact, and frozen hardening contract
 scripts/status/generate_dev_cli_evidence_reports.py # generate dev-cli evidence namespace reports used by CI integrity gates and release truth exports
 scripts/status/generate_evidence_integrity_reports.py # generate evidence coverage/orphan/claim-without-evidence plus config ownership truth artifacts
 scripts/status/enforce_evidence_integrity_gate.py # enforce evidence integrity and release evidence-id reference correctness in CI

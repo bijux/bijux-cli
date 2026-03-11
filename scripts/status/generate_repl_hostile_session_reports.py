@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate REPL hostile-session artifacts for TODOs 221-240."""
+"""Generate REPL hostile-session artifacts."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ def main() -> int:
     generated_at = datetime.now(timezone.utc).isoformat()
 
     coverage = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         evidence = None
         for rel, text in sources.items():
             if f"fn {test_name}(" in text:
@@ -57,7 +57,7 @@ def main() -> int:
                 break
         coverage.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if evidence else "missing",
                 "evidence": evidence,
@@ -70,36 +70,36 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_hostile_session_reports.py",
         "scope": "repl hostile session",
-        "tasks": [221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236],
+        "coverage_ids": [221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236],
         "status": "complete" if not missing else "partial",
-        "todo_coverage": coverage,
+        "coverage_rows": coverage,
     }
     recovery = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_hostile_session_reports.py",
         "scope": "repl recovery",
-        "tasks": [221, 222, 223, 228, 229, 230, 237],
+        "coverage_ids": [221, 222, 223, 228, 229, 230, 237],
         "status": "complete" if not missing else "partial",
     }
     startup = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_hostile_session_reports.py",
         "scope": "repl startup resilience",
-        "tasks": [224, 225, 226, 227, 238],
+        "coverage_ids": [224, 225, 226, 227, 238],
         "status": "complete" if not missing else "partial",
     }
     failure_class = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_hostile_session_reports.py",
         "scope": "repl command-loop failure classes",
-        "tasks": [221, 222, 223, 228, 229, 239],
+        "coverage_ids": [221, 222, 223, 228, 229, 239],
         "status": "complete" if not missing else "partial",
     }
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_repl_hostile_session_reports.py",
         "scope": "repl hostile session contract",
-        "tasks": [240],
+        "coverage_ids": [240],
         "status": "frozen" if not missing else "not-frozen",
         "law": "hostile-session behavior is tested, not assumed",
     }
@@ -110,7 +110,7 @@ def main() -> int:
         "scope": "repl hostile-session drift",
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     write_json("repl_hostile_session_artifact.json", hostile)

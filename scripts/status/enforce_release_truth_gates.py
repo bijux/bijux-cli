@@ -111,7 +111,7 @@ def main() -> int:
         ROOT / "docs" / "WHAT_WE_WONT_CLAIM.md",
         ROOT / "docs" / "STABILITY_AND_BREAKAGE.md",
         ROOT / "docs" / "CONTRIBUTOR_ENGINEERING_RULES.md",
-        ROOT / "docs" / "MAINTAINER_MILESTONE_CHECKLIST.md",
+        ROOT / "docs" / "MAINTAINER_EVIDENCE_CHECKLIST.md",
         ROOT / "docs" / "index.md",
     ]
     docs = "\n".join(read_text(path) for path in public_claim_docs if path.exists())
@@ -234,7 +234,7 @@ def main() -> int:
         if covered_drift:
             failures.append(
                 "release review blocked: covered cross-surface drift exists for "
-                + ", ".join(str(item.get("todo", "?")) for item in covered_drift)
+                + ", ".join(str(item.get("coverage_id", "?")) for item in covered_drift)
             )
 
     if not release_bundle or not release_manifest or not release_truth:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deep config behavior artifacts for TODOs 81-100."""
+"""Generate deep config behavior artifacts."""
 
 from __future__ import annotations
 
@@ -61,22 +61,22 @@ def main() -> None:
     determinism_second = run_cmd(["cli", "config", "list", "--format", "json", "--no-pretty"])
     corruption_view = run_json(["dev", "cli", "state-doctor"])
 
-    todo_rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
-        todo_rows.append(
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/config_deep_behavior_matrix.rs",
             }
         )
-    missing_todos = [row for row in todo_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row for row in coverage_rows if row["status"] != "covered"]
 
     semantic_artifact = {
         "generator": "scripts/status/generate_config_deep_behavior_reports.py",
         "scope": "config semantic roundtrip",
-        "tasks": [88, 89, 90, 91, 92, 96],
+        "coverage_ids": [88, 89, 90, 91, 92, 96],
         "status": "complete" if semantic_roundtrip != {} else "partial",
         "sample": semantic_roundtrip,
     }
@@ -84,7 +84,7 @@ def main() -> None:
     precedence_artifact = {
         "generator": "scripts/status/generate_config_deep_behavior_reports.py",
         "scope": "config precedence",
-        "tasks": [94, 97],
+        "coverage_ids": [94, 97],
         "status": "complete" if precedence_view != {} else "partial",
         "sample": precedence_view,
     }
@@ -92,7 +92,7 @@ def main() -> None:
     determinism_artifact = {
         "generator": "scripts/status/generate_config_deep_behavior_reports.py",
         "scope": "config determinism",
-        "tasks": [81, 82, 83, 84, 85, 86, 87, 93, 98],
+        "coverage_ids": [81, 82, 83, 84, 85, 86, 87, 93, 98],
         "status": "complete"
         if determinism_first.returncode == 0
         and determinism_second.returncode == 0
@@ -108,7 +108,7 @@ def main() -> None:
     corruption_artifact = {
         "generator": "scripts/status/generate_config_deep_behavior_reports.py",
         "scope": "config corruption recovery",
-        "tasks": [95, 99],
+        "coverage_ids": [95, 99],
         "status": "complete" if corruption_view != {} else "partial",
         "sample": corruption_view,
     }
@@ -122,8 +122,8 @@ def main() -> None:
     ]:
         if payload.get("status") != "complete":
             drift_items.append({"artifact": artifact_name, "reason": "status-not-complete"})
-    if missing_todos:
-        drift_items.append({"reason": "missing-todo-coverage", "todos": [row["todo"] for row in missing_todos]})
+    if missing_coverage_ids:
+        drift_items.append({"reason": "missing-coverage_id-coverage", "coverage_ids": [row["coverage_id"] for row in missing_coverage_ids]})
 
     STATUS.mkdir(parents=True, exist_ok=True)
     (STATUS / "config_semantic_roundtrip_artifact.json").write_text(
@@ -147,11 +147,11 @@ def main() -> None:
             {
                 "generator": "scripts/status/generate_config_deep_behavior_reports.py",
                 "scope": "config deep behavior drift",
-                "tasks": [100],
+                "coverage_ids": [100],
                 "status": "clean" if not drift_items else "drift-detected",
                 "drift_count": len(drift_items),
                 "drift_items": drift_items,
-                "todo_coverage": todo_rows,
+                "coverage_rows": coverage_rows,
             },
             indent=2,
             sort_keys=True,

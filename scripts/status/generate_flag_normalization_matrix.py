@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate flag normalization matrix artifact for TODOs 81-100."""
+"""Generate flag normalization matrix artifact."""
 
 from __future__ import annotations
 
@@ -56,15 +56,15 @@ def main() -> None:
     payload = {
         "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_flag_normalization_matrix.py",
-        "scope": "todo 81-100 flag normalization tests",
+        "scope": "flag normalization tests",
         "rows": [
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs",
             }
-            for todo, name in rows
+            for coverage_id, name in rows
         ],
     }
     payload["summary"] = {

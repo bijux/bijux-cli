@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate diagnostics trust artifacts for TODOs 361-380."""
+"""Generate diagnostics trust artifacts."""
 
 from __future__ import annotations
 
@@ -116,19 +116,19 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/diagnostics_trust_law_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     payloads = {command: run_json(command.split()) for command in EXPECTED_TOP_LEVEL_KEYS}
     plugin_health = run_json(["dev", "cli", "plugin-health"])
@@ -151,16 +151,16 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_diagnostics_trust_reports.py",
         "scope": "diagnostics trust",
-        "tasks": [361, 362, 363, 364, 365, 366, 367, 374, 375],
+        "coverage_ids": [361, 362, 363, 364, 365, 366, 367, 374, 375],
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     actionable = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_diagnostics_trust_reports.py",
         "scope": "actionable diagnostics",
-        "tasks": [368, 369, 370, 371, 376],
+        "coverage_ids": [368, 369, 370, 371, 376],
         "status": "complete" if not missing else "partial",
         "checks": {
             "plugin_health_has_guidance": "Use `bijux dev cli plugin-health --format json`"
@@ -174,7 +174,7 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_diagnostics_trust_reports.py",
         "scope": "diagnostics minimalism",
-        "tasks": [372, 373, 377],
+        "coverage_ids": [372, 373, 377],
         "status": "complete" if not missing else "partial",
         "json_commands_checked": sorted(EXPECTED_TOP_LEVEL_KEYS.keys()),
         "json_schema_drift_count": len(schema_drift),
@@ -184,18 +184,18 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_diagnostics_trust_reports.py",
         "scope": "diagnostics trust schema drift",
-        "tasks": [378],
+        "coverage_ids": [378],
         "status": "clean" if not schema_drift and not missing else "drift",
         "drift_count": len(schema_drift) + len(missing),
         "schema_rows": schema_rows,
-        "missing_todos": [row["todo"] for row in missing],
+        "missing_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_diagnostics_trust_reports.py",
         "scope": "diagnostics trust contract",
-        "tasks": [380],
+        "coverage_ids": [380],
         "status": "frozen" if not schema_drift and not missing else "not-frozen",
         "law": "diagnostics are credible operator output",
     }

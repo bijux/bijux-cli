@@ -36,10 +36,10 @@ def main() -> int:
     }
 
     rows = []
-    for todo, test_name in checks.items():
+    for coverage_id, test_name in checks.items():
         rows.append(
             {
-                "todo": int(todo),
+                "coverage_id": int(coverage_id),
                 "status": "complete" if test_name in text else "missing",
                 "evidence_test": f"crates/bijux-cli/tests/routing/parser_abuse.rs::{test_name}",
             }

@@ -23,7 +23,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "help_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"help-law drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"help-law drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     consistency = json.loads((STATUS / "command_tree_help_consistency_artifact.json").read_text(encoding="utf-8"))
     if consistency.get("status") != "complete":

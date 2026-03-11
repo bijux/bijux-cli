@@ -42,13 +42,13 @@ def main() -> int:
     if drift:
         if int(drift.get("drift_count", 1)) != 0:
             failures.append(f"diagnostics deep behavior drift detected: count={drift.get('drift_count')}")
-        missing_todos = [
-            row["todo"]
-            for row in drift.get("todo_coverage", [])
+        missing_coverage_ids = [
+            row["coverage_id"]
+            for row in drift.get("coverage_rows", [])
             if isinstance(row, dict) and row.get("status") != "covered"
         ]
-        if missing_todos:
-            failures.append(f"diagnostics deep behavior todo coverage incomplete: {missing_todos}")
+        if missing_coverage_ids:
+            failures.append(f"diagnostics deep behavior coverage_id coverage incomplete: {missing_coverage_ids}")
 
     for artifact_name in [
         "diagnostics_consistency_artifact.json",

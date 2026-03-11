@@ -16,12 +16,12 @@ def main() -> int:
         return 0
 
     payload = json.loads(CONSISTENCY.read_text(encoding="utf-8"))
-    missing = [row for row in payload.get("todo_rows", []) if row.get("status") != "complete"]
+    missing = [row for row in payload.get("coverage_rows", []) if row.get("status") != "complete"]
     if missing:
-        todos = ", ".join(str(row.get("todo")) for row in missing)
-        print(f"warning: uncovered command-surface consistency todos detected: {todos}")
+        coverage_ids = ", ".join(str(row.get("coverage_id")) for row in missing)
+        print(f"warning: uncovered command-surface consistency coverage_ids detected: {coverage_ids}")
     else:
-        print("no uncovered command-surface consistency todos detected")
+        print("no uncovered command-surface consistency coverage_ids detected")
     return 0
 
 

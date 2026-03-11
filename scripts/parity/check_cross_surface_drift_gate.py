@@ -28,10 +28,10 @@ def main() -> int:
         print("CROSS-SURFACE DRIFT DETECTED:")
         for item in drift_items:
             if isinstance(item, dict):
-                todo = item.get("todo", "?")
+                coverage_id = item.get("coverage_id", "?")
                 law = item.get("law", "<unknown>")
                 test = item.get("test", "<unknown>")
-                print(f" - TODO {todo}: {law} missing ({test})")
+                print(f" - Coverage {coverage_id}: {law} missing ({test})")
         return 1 if args.enforce else 0
 
     print("Cross-surface drift gate passed.")

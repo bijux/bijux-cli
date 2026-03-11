@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Python-bridge execution artifacts for TODOs 261-280."""
+"""Generate Python-bridge execution artifacts."""
 
 from __future__ import annotations
 
@@ -41,44 +41,44 @@ def main() -> int:
     source = TEST_FILE.read_text(encoding="utf-8") if TEST_FILE.exists() else ""
     generated_at = datetime.now(timezone.utc).isoformat()
 
-    todo_coverage = []
-    for todo, name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, name in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {name}(" in source
-        todo_coverage.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": name,
                 "status": "covered" if covered else "missing",
                 "evidence": "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
             }
         )
 
-    missing = [row for row in todo_coverage if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
 
     execution = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_execution_reports.py",
         "scope": "python bridge execution parity",
-        "tasks": list(range(261, 277)),
+        "coverage_ids": list(range(261, 277)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_coverage,
+        "coverage_rows": coverage_rows,
     }
 
     drift = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_execution_reports.py",
         "scope": "python bridge drift",
-        "tasks": [277, 278],
+        "coverage_ids": [277, 278],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_python_bridge_execution_reports.py",
         "scope": "python bridge execution contract",
-        "tasks": [280],
+        "coverage_ids": [280],
         "status": "frozen" if not missing else "not-frozen",
         "law": "python bridge execution parity is a hard requirement",
     }

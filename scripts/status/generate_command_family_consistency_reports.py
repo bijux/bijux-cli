@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate command-family consistency artifacts for TODOs 161-180."""
+"""Generate command-family consistency artifacts."""
 
 from __future__ import annotations
 
@@ -42,26 +42,26 @@ def main() -> int:
     matrix = json.loads(MATRIX_FILE.read_text(encoding="utf-8")) if MATRIX_FILE.exists() else {"commands": []}
     complete_commands = matrix.get("commands", []) if isinstance(matrix.get("commands"), list) else []
 
-    todo_rows = []
-    for todo, fn_name in sorted(REQUIRED_TESTS.items()):
+    coverage_rows = []
+    for coverage_id, fn_name in sorted(REQUIRED_TESTS.items()):
         present = f"fn {fn_name}(" in source
-        todo_rows.append(
+        coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": fn_name,
                 "status": "covered" if present else "missing",
                 "evidence": "crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs",
             }
         )
 
-    missing = [row for row in todo_rows if row["status"] != "covered"]
+    missing = [row for row in coverage_rows if row["status"] != "covered"]
     uncovered_scope = []
     if not complete_commands:
         uncovered_scope.append(
             {
                 "scope": "matrix_complete_commands",
                 "reason": "artifacts/parity/commands_fully_rust_owned.json has no commands",
-                "impacted_todos": [170, 171, 172],
+                "impacted_coverage_ids": [170, 171, 172],
             }
         )
 
@@ -71,19 +71,19 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_command_family_consistency_reports.py",
         "scope": "command-family consistency",
-        "tasks": list(range(161, 176)),
+        "coverage_ids": list(range(161, 176)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": todo_rows,
+        "coverage_rows": coverage_rows,
     }
 
     cross_family_drift = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_command_family_consistency_reports.py",
         "scope": "cross-family drift",
-        "tasks": [176, 178, 179],
+        "coverage_ids": [176, 178, 179],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
         "uncovered_scope": uncovered_scope,
     }
 
@@ -91,12 +91,12 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_command_family_consistency_reports.py",
         "scope": "shared law proof",
-        "tasks": [177],
+        "coverage_ids": [177],
         "status": "complete" if not missing else "partial",
         "proof": {
-            "binary_core_bridge_repl_test_present": any(row["todo"] == 170 and row["status"] == "covered" for row in todo_rows),
-            "help_tree_consistency_test_present": any(row["todo"] == 173 and row["status"] == "covered" for row in todo_rows),
-            "envelope_law_test_present": any(row["todo"] == 174 and row["status"] == "covered" for row in todo_rows),
+            "binary_core_bridge_repl_test_present": any(row["coverage_id"] == 170 and row["status"] == "covered" for row in coverage_rows),
+            "help_tree_consistency_test_present": any(row["coverage_id"] == 173 and row["status"] == "covered" for row in coverage_rows),
+            "envelope_law_test_present": any(row["coverage_id"] == 174 and row["status"] == "covered" for row in coverage_rows),
         },
     }
 
@@ -104,7 +104,7 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_command_family_consistency_reports.py",
         "scope": "command-family consistency requirement",
-        "tasks": [180],
+        "coverage_ids": [180],
         "status": "frozen" if not missing else "not-frozen",
         "release_requirement": "Command-family consistency is a migration requirement and must remain drift-free.",
     }

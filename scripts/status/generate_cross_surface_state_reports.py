@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate cross-surface state artifacts for TODOs 321-340."""
+"""Generate cross-surface state artifacts."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main() -> int:
 
     generated_at = datetime.now(timezone.utc).isoformat()
     rows = []
-    for todo, test_name in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, test_name in sorted(REQUIRED_TESTS.items()):
         evidence = None
         for rel, text in sources.items():
             if f"fn {test_name}(" in text:
@@ -56,7 +56,7 @@ def main() -> int:
                 break
         rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if evidence else "missing",
                 "evidence": evidence,
@@ -69,26 +69,26 @@ def main() -> int:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_cross_surface_state_reports.py",
         "scope": "cross-surface state consistency",
-        "tasks": list(range(321, 337)),
+        "coverage_ids": list(range(321, 337)),
         "status": "complete" if not missing else "partial",
-        "todo_coverage": rows,
+        "coverage_rows": rows,
     }
 
     drift = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_cross_surface_state_reports.py",
         "scope": "cross-surface state drift",
-        "tasks": [337, 338],
+        "coverage_ids": [337, 338],
         "status": "clean" if not missing else "drift",
         "drift_count": len(missing),
-        "drift_todos": [row["todo"] for row in missing],
+        "drift_coverage_ids": [row["coverage_id"] for row in missing],
     }
 
     contract = {
         "generated_at": generated_at,
         "generator": "scripts/status/generate_cross_surface_state_reports.py",
         "scope": "cross-surface state contract",
-        "tasks": [340],
+        "coverage_ids": [340],
         "status": "frozen" if not missing else "not-frozen",
         "law": "state consistency is part of migration contract",
     }

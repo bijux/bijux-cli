@@ -69,14 +69,14 @@ def main() -> int:
         for command in DIAGNOSTICS_COMMANDS
     ]
 
-    todo_rows = [
+    coverage_rows = [
         {
-            "todo": todo,
+            "coverage_id": coverage_id,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
             "evidence": "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
         }
-        for todo, fn_name in sorted(REQUIRED_TESTS.items())
+        for coverage_id, fn_name in sorted(REQUIRED_TESTS.items())
     ]
 
     drift = [row for row in coverage_rows if row["status"] != "complete"]
@@ -86,7 +86,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_diagnostics_surface_reports.py",
-            "scope": "todo 361 diagnostics command coverage",
+            "scope": "diagnostics command coverage",
             "commands": coverage_rows,
             "summary": {
                 "total": len(coverage_rows),
@@ -103,8 +103,8 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_diagnostics_surface_reports.py",
-            "scope": "todo 362-378 diagnostics matrix",
-            "todo_rows": todo_rows,
+            "scope": "diagnostics matrix",
+            "coverage_rows": coverage_rows,
             "commands": coverage_rows,
         },
     )
@@ -114,7 +114,7 @@ def main() -> int:
         {
             "generated_at": generated_at,
             "generator": "scripts/status/generate_diagnostics_surface_reports.py",
-            "scope": "todo 379 diagnostics shape drift",
+            "scope": "diagnostics shape drift",
             "drift_count": len(drift),
             "drift_commands": [row["command"] for row in drift],
             "status": "clean" if not drift else "drift",

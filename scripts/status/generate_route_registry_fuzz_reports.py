@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate route and registry fuzz hardening artifacts for TODOs 21-40."""
+"""Generate route and registry fuzz hardening artifacts."""
 
 from __future__ import annotations
 
@@ -72,11 +72,11 @@ def main() -> int:
     }
 
     coverage_rows = []
-    for todo, (path, test_name) in sorted(REQUIRED_TESTS.items()):
+    for coverage_id, (path, test_name) in sorted(REQUIRED_TESTS.items()):
         covered = f"fn {test_name}(" in sources[path]
         coverage_rows.append(
             {
-                "todo": todo,
+                "coverage_id": coverage_id,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
                 "evidence": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -91,13 +91,13 @@ def main() -> int:
     )
     registry_replay = run_test(["cargo", "test", "-p", "bijux-cli-plugin", "--test", "registry_fuzz_regressions"])
 
-    missing_todos = [row["todo"] for row in coverage_rows if row["status"] != "covered"]
+    missing_coverage_ids = [row["coverage_id"] for row in coverage_rows if row["status"] != "covered"]
 
     route_triage = {
         "generated_at": now,
         "generator": "scripts/status/generate_route_registry_fuzz_reports.py",
         "scope": "route fuzz crash triage",
-        "tasks": [34],
+        "coverage_ids": [34],
         "status": "clean" if route_replay["ok"] else "needs-triage",
         "known_minimized_route_cases": len(route_cases),
         "regression_replay_ok": route_replay["ok"],
@@ -108,7 +108,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_route_registry_fuzz_reports.py",
         "scope": "registry fuzz crash triage",
-        "tasks": [35],
+        "coverage_ids": [35],
         "status": "clean" if registry_replay["ok"] else "needs-triage",
         "known_minimized_registry_cases": len(registry_cases),
         "regression_replay_ok": registry_replay["ok"],
@@ -119,7 +119,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_route_registry_fuzz_reports.py",
         "scope": "route fuzz regressions",
-        "tasks": [36, 38],
+        "coverage_ids": [36, 38],
         "status": "clean" if route_replay["ok"] else "drift",
         "minimized_case_count": len(route_cases),
         "regression_replay_ok": route_replay["ok"],
@@ -129,7 +129,7 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_route_registry_fuzz_reports.py",
         "scope": "registry fuzz regressions",
-        "tasks": [37, 39],
+        "coverage_ids": [37, 39],
         "status": "clean" if registry_replay["ok"] else "drift",
         "minimized_case_count": len(registry_cases),
         "regression_replay_ok": registry_replay["ok"],
@@ -139,10 +139,10 @@ def main() -> int:
         "generated_at": now,
         "generator": "scripts/status/generate_route_registry_fuzz_reports.py",
         "scope": "route-registry fuzz hardening",
-        "tasks": list(range(21, 41)),
-        "status": "frozen" if not missing_todos and route_replay["ok"] and registry_replay["ok"] else "partial",
-        "todo_coverage": coverage_rows,
-        "missing_todos": missing_todos,
+        "coverage_ids": list(range(21, 41)),
+        "status": "frozen" if not missing_coverage_ids and route_replay["ok"] and registry_replay["ok"] else "partial",
+        "coverage_rows": coverage_rows,
+        "missing_coverage_ids": missing_coverage_ids,
         "route_minimized_cases": route_cases,
         "registry_minimized_cases": registry_cases,
         "policy": "route and registry fuzzing are permanent CI hardening checks",

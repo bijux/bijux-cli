@@ -46,7 +46,7 @@ def main() -> int:
 
     drift = json.loads((STATUS / "install_runtime_identity_drift_artifact.json").read_text(encoding="utf-8"))
     if drift.get("status") != "clean" or int(drift.get("drift_count", 1)) != 0:
-        raise SystemExit(f"install/runtime identity drift detected: todos={drift.get('drift_todos', [])}")
+        raise SystemExit(f"install/runtime identity drift detected: coverage_ids={drift.get('drift_coverage_ids', [])}")
 
     contract = json.loads((STATUS / "install_runtime_identity_contract.json").read_text(encoding="utf-8"))
     if contract.get("status") != "frozen":
