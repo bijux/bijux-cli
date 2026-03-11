@@ -1,5 +1,5 @@
 #[allow(clippy::wildcard_imports)]
-use crate::contract_engine::maintenance::*;
+use crate::contracts::maintenance::*;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {

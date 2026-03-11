@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::contract_engine::maintenance::{generated_at_utc, run_native_status_contract};
+use crate::contracts::maintenance::{generated_at_utc, run_native_status_contract};
 
 use super::inventory::status_contract_specs;
 

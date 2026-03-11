@@ -10,8 +10,6 @@ pub mod repository_health;
 pub mod runtime_surface;
 pub mod rustdoc;
 
-pub use config as config_governance;
-pub use python as python_surface;
 pub use repository_health::{
     crate_health, docs_audit, maintenance_audit, package_health, repo, state_audit, status,
 };

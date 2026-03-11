@@ -6,7 +6,7 @@ use std::path::Path;
 use bijux_cli_evidence::{valid_evidence_id, EvidenceRecord, EvidenceStatus, EvidenceStrength};
 use serde_json::{json, Value};
 
-use crate::command_registry;
+use crate::schema::command_registry::command_registry;
 use crate::infra::artifacts::{read_json_if_exists, relative_to_root};
 
 fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {

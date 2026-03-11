@@ -2,7 +2,7 @@
 
 use serde_json::{json, Value};
 
-use crate::ReportContext;
+use crate::schema::command_registry::ReportContext;
 
 /// Builds the maintainer route inventory report envelope from routing query rows.
 #[must_use]
@@ -28,7 +28,7 @@ pub fn build_report_from_query(
 #[cfg(test)]
 mod tests {
     use super::build_report_from_query;
-    use crate::ReportContext;
+    use crate::schema::command_registry::ReportContext;
 
     #[test]
     fn routes_report_shape_is_stable() {

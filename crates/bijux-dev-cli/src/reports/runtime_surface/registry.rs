@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde_json::{json, Value};
 
-use crate::ReportContext;
+use crate::schema::command_registry::ReportContext;
 
 /// Stable namespace row consumed by maintainer registry reports.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,7 +42,7 @@ pub fn build_report_from_query(
 #[cfg(test)]
 mod tests {
     use super::{build_report_from_query, NamespaceInventoryRow};
-    use crate::ReportContext;
+    use crate::schema::command_registry::ReportContext;
 
     #[test]
     fn registry_report_shape_is_stable() {

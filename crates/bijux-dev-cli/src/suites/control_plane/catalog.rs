@@ -1,5 +1,5 @@
 #[allow(clippy::wildcard_imports)]
-use crate::contract_engine::maintenance::*;
+use crate::contracts::maintenance::*;
 
 pub(crate) fn rows() -> Vec<Value> {
     vec![

@@ -1,4 +1,4 @@
-use crate::contract_engine::maintenance::Value;
+use crate::contracts::maintenance::Value;
 
 use super::{control_plane, quality, resilience, runtime};
 

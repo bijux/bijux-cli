@@ -16,7 +16,7 @@ use crate::reports::{
     routes as dev_routes, runtime_identity as dev_runtime_identity, state_audit as dev_state_audit,
     status as dev_status, repo as dev_repo,
 };
-use crate::ReportContext;
+use crate::schema::command_registry::ReportContext;
 
 pub(super) fn try_handle(
     normalized_path: &[String],

@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use serde_json::{json, Value};
 
-use crate::{command_registry, DevCliCommandGroup};
+use crate::schema::command_registry::{command_registry, DevCliCommandGroup};
 
 /// Builds hidden `dev cli atlas` report payload.
 #[must_use]

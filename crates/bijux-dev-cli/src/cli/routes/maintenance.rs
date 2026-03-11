@@ -5,7 +5,7 @@ use serde_json::Value;
 
 use crate::cli::args::{command_option_value, command_passthrough_args};
 use crate::cli::workspace::workspace_root;
-use crate::maintenance as dev_maintenance;
+use crate::contracts::maintenance as dev_maintenance;
 
 pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<Option<Value>> {
     let payload = match normalized_path {

@@ -1,4 +1,4 @@
-use crate::contract_engine::maintenance::{Path, Value};
+use crate::contracts::maintenance::{Path, Value};
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     super::release_evidence_reports::run(workspace_root, contract_id)

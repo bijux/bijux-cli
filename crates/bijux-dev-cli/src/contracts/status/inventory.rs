@@ -5,7 +5,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::contract_engine::maintenance::{generated_at_utc, native_status_contract_rows};
+use crate::contracts::maintenance::{generated_at_utc, native_status_contract_rows};
 
 use super::model::StatusContractSpec;
 

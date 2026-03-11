@@ -11,9 +11,11 @@ use bijux_dev_cli::{
         self as dev_dispatch, ContractsSchemaInput, DoctorReportInput, RouteInventoryQuery,
         RuntimeQueryProvider, StateAuditInput,
     },
-    control_plane::{ProductContractRow, ProductSurfaceRow},
-    env as dev_env, registry as dev_registry, runtime_identity as dev_runtime_identity,
-    state_audit as dev_state_audit,
+    reports::{
+        control_plane::{ProductContractRow, ProductSurfaceRow},
+        env as dev_env, registry as dev_registry, runtime_identity as dev_runtime_identity,
+        state_audit as dev_state_audit,
+    },
 };
 use serde_json::{json, Value};
 
