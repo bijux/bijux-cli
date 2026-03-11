@@ -5,12 +5,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
+use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
 
 /// Builds the maintainer status report envelope.
 #[must_use]
@@ -34,10 +29,9 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     );
     let root_command_closure_set =
         read_json_if_exists(&workspace_root.join("artifacts/status/root_command_closure_set.json"));
-    let root_command_completion_report_text = fs::read_to_string(
-        workspace_root.join("artifacts/status/root_command_completion_report.txt"),
-    )
-    .unwrap_or_default();
+    let root_command_completion_report_text = read_text_if_exists(
+        &workspace_root.join("artifacts/status/root_command_completion_report.txt"),
+    );
     let cli_subcommands =
         read_json_if_exists(&workspace_root.join("artifacts/status/status_cli_subcommands.json"));
     let dev_cli_subcommands = read_json_if_exists(
@@ -69,10 +63,9 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     let cli_dev_command_closure_report = read_json_if_exists(
         &workspace_root.join("artifacts/status/cli_dev_command_closure_report.json"),
     );
-    let cli_dev_command_closure_report_text = fs::read_to_string(
-        workspace_root.join("artifacts/status/cli_dev_command_closure_report.txt"),
-    )
-    .unwrap_or_default();
+    let cli_dev_command_closure_report_text = read_text_if_exists(
+        &workspace_root.join("artifacts/status/cli_dev_command_closure_report.txt"),
+    );
     let plugin_commands =
         read_json_if_exists(&workspace_root.join("artifacts/status/status_plugin_commands.json"));
     let repl_parity = read_json_if_exists(

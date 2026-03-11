@@ -1,16 +1,10 @@
 //! Maintainer crate health report assembly.
 
-use std::fs;
 use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
+use crate::infrastructure::artifacts::read_json_if_exists;
 
 /// Builds the maintainer crate health report payload.
 #[must_use]

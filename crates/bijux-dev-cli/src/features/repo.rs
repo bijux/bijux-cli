@@ -1,47 +1,18 @@
 //! Repository health and drift reports for maintainer control-plane workflows.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn collect_files(root: &Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    let mut stack = vec![root.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        let entries = match fs::read_dir(&dir) {
-            Ok(entries) => entries,
-            Err(_) => continue,
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name == ".git" || name == "target")
-            {
-                continue;
-            }
-            if path.is_dir() {
-                stack.push(path);
-            } else {
-                files.push(path);
-            }
-        }
-    }
-    files
-}
-
-fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
+use crate::infrastructure::artifacts::{collect_files_recursive, relative_to_root};
 
 fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     let status = root.join("artifacts/status");
     if !status.exists() {
         return vec![];
     }
-    collect_files(&status)
+    collect_files_recursive(&status)
         .into_iter()
         .filter(|path| {
             path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "tmp")
@@ -53,15 +24,15 @@ fn stale_generated_artifacts(root: &Path) -> Vec<String> {
                             .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
                 })
         })
-        .map(|path| rel(&path, root))
+        .map(|path| relative_to_root(&path, root))
         .collect()
 }
 
 fn stale_snapshots(root: &Path) -> Vec<String> {
-    collect_files(root)
+    collect_files_recursive(root)
         .into_iter()
         .filter(|path| {
-            let rel_path = rel(path, root);
+            let rel_path = relative_to_root(path, root);
             rel_path.contains("/tests/data/golden/cli_surface/")
                 && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
                     name.contains(".old.")
@@ -71,7 +42,7 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
                             .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
                 })
         })
-        .map(|path| rel(&path, root))
+        .map(|path| relative_to_root(&path, root))
         .collect()
 }
 
@@ -80,14 +51,14 @@ fn stale_inventories(root: &Path) -> Vec<String> {
     if !status.exists() {
         return vec![];
     }
-    collect_files(&status)
+    collect_files_recursive(&status)
         .into_iter()
         .filter(|path| {
             path.file_name()
                 .and_then(|name| name.to_str())
                 .is_some_and(|name| name.contains("inventory") && name.contains("stale"))
         })
-        .map(|path| rel(&path, root))
+        .map(|path| relative_to_root(&path, root))
         .collect()
 }
 
@@ -109,7 +80,7 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
     if !docs.exists() {
         return vec![];
     }
-    collect_files(&docs)
+    collect_files_recursive(&docs)
         .into_iter()
         .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("md"))
         .filter_map(|path| {
@@ -118,7 +89,7 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
                 if token.starts_with("docs/")
                     && !root.join(token.trim_matches(|c| c == ')' || c == '(')).exists()
                 {
-                    return Some(format!("{} -> {}", rel(&path, root), token));
+                    return Some(format!("{} -> {}", relative_to_root(&path, root), token));
                 }
             }
             None
@@ -160,14 +131,14 @@ fn dead_command_references(root: &Path) -> Vec<String> {
 pub fn build_generated_report(workspace_root: &Path) -> Value {
     let stale_generated = stale_generated_artifacts(workspace_root);
     let orphan_generated_outputs: Vec<String> =
-        collect_files(&workspace_root.join("artifacts/status"))
+        collect_files_recursive(&workspace_root.join("artifacts/status"))
             .into_iter()
             .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
             .filter(|path| {
                 let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
                 name.starts_with("orphan_")
             })
-            .map(|path| rel(&path, workspace_root))
+            .map(|path| relative_to_root(&path, workspace_root))
             .collect();
     json!({
         "stale_generated_artifacts": stale_generated,

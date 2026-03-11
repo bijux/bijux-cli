@@ -8,7 +8,7 @@ use super::{
 };
 
 #[test]
-fn scripts_reports_are_shaped() {
+fn contract_reports_are_shaped() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     assert!(build_migrated_report(&root).get("migrated").is_some());
     assert!(build_remaining_report(&root).get("remaining_root_scripts").is_some());

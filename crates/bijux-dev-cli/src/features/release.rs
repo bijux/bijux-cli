@@ -1,20 +1,10 @@
 //! Release truth control-plane reports.
 
-use std::fs;
 use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
-
-fn read_text_if_exists(path: &Path) -> String {
-    fs::read_to_string(path).unwrap_or_default()
-}
+use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
 
 /// `dev cli release status`
 #[must_use]
