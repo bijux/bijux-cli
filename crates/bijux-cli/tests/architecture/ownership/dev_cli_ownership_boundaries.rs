@@ -90,16 +90,20 @@ fn strip_comments_and_strings(source: &str) -> String {
 
 fn read_dev_cli_router_source() -> String {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let legacy = crate_root.join("../bijux-dev-cli/src/app/router.rs");
-    if legacy.is_file() {
-        return std::fs::read_to_string(&legacy)
-            .unwrap_or_else(|err| panic!("read dev cli dispatch source: {err}"));
-    }
-
     let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    assert!(
+        router_root.is_dir(),
+        "expected modular dev-cli router directory at {}",
+        router_root.display()
+    );
     let mut files = Vec::<PathBuf>::new();
     collect_rs_files(&router_root, &mut files);
     files.sort();
+    assert!(
+        !files.is_empty(),
+        "expected dev-cli router source files under {}",
+        router_root.display()
+    );
 
     let mut source = String::new();
     for file in files {
@@ -186,7 +190,10 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
     ];
 
     for needle in delegated {
-        assert!(source.contains(needle), "dispatch must delegate report assembly for {needle}");
+        assert!(
+            source.contains(needle),
+            "dispatch must delegate report assembly for {needle}"
+        );
     }
     assert!(
         !source.contains("render_value("),
