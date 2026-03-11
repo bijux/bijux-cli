@@ -82,11 +82,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/python_bridge_execution_artifact.json",
-                "artifacts/status/python_bridge_drift_artifact.json",
-                "artifacts/status/python_bridge_execution_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/python_bridge_execution_artifact.json",
+                    "artifacts/status/python_bridge_drift_artifact.json",
+                    "artifacts/status/python_bridge_execution_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
             let source = fs::read_to_string(
@@ -191,13 +193,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/bridge_conversion_artifact.json",
-                "artifacts/status/bridge_exception_mapping_artifact.json",
-                "artifacts/status/bridge_envelope_integrity_artifact.json",
-                "artifacts/status/bridge_conversion_drift_artifact.json",
-                "artifacts/status/bridge_conversion_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/bridge_conversion_artifact.json",
+                    "artifacts/status/bridge_exception_mapping_artifact.json",
+                    "artifacts/status/bridge_envelope_integrity_artifact.json",
+                    "artifacts/status/bridge_conversion_drift_artifact.json",
+                    "artifacts/status/bridge_conversion_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
@@ -292,12 +296,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_completion_artifact.json",
-                "artifacts/status/repl_completion_ordering_artifact.json",
-                "artifacts/status/repl_completion_drift_artifact.json",
-                "artifacts/status/repl_completion_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_completion_artifact.json",
+                    "artifacts/status/repl_completion_ordering_artifact.json",
+                    "artifacts/status/repl_completion_drift_artifact.json",
+                    "artifacts/status/repl_completion_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS" => {
             let parity_matrix = workspace_root.join("artifacts/parity/command_parity_matrix.json");
@@ -387,10 +393,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_only_behaviors.json",
-                "artifacts/parity/repl_cli_output_diff.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_only_behaviors.json",
+                    "artifacts/parity/repl_cli_output_diff.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
             let source = fs::read_to_string(
@@ -433,11 +441,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .cloned()
                 .collect();
             let lower = source.to_lowercase();
-            let repl_only_semantics: Vec<&str> =
-                ["repl_only_semantic", "repl-only semantic", "repl specific semantic"]
-                    .into_iter()
-                    .filter(|marker| lower.contains(marker))
-                    .collect();
+            let repl_only_semantics: Vec<&str> = [
+                "repl_only_semantic",
+                "repl-only semantic",
+                "repl specific semantic",
+            ]
+            .into_iter()
+            .filter(|marker| lower.contains(marker))
+            .collect();
             write_status_artifact_json(
                                 workspace_root,
                                 "artifacts/status/repl_shared_law_artifact.json",
@@ -493,12 +504,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_shared_law_artifact.json",
-                "artifacts/status/repl_cli_diff_artifact.json",
-                "artifacts/status/repl_shared_law_drift_artifact.json",
-                "artifacts/status/repl_shared_law_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_shared_law_artifact.json",
+                    "artifacts/status/repl_cli_diff_artifact.json",
+                    "artifacts/status/repl_shared_law_drift_artifact.json",
+                    "artifacts/status/repl_shared_law_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
@@ -535,7 +548,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .map(|(coverage_id, test_name)| {
                     let evidence = sources.iter().find_map(|(path, text)| {
-                        text.contains(&format!("fn {test_name}(")).then_some(path.clone())
+                        text.contains(&format!("fn {test_name}("))
+                            .then_some(path.clone())
                     });
                     json!({
                         "coverage_id": coverage_id,
@@ -625,14 +639,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_hostile_session_artifact.json",
-                "artifacts/status/repl_recovery_artifact.json",
-                "artifacts/status/repl_startup_resilience_artifact.json",
-                "artifacts/status/repl_command_loop_failure_class_artifact.json",
-                "artifacts/status/repl_hostile_session_contract.json",
-                "artifacts/status/repl_hostile_session_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_hostile_session_artifact.json",
+                    "artifacts/status/repl_recovery_artifact.json",
+                    "artifacts/status/repl_startup_resilience_artifact.json",
+                    "artifacts/status/repl_command_loop_failure_class_artifact.json",
+                    "artifacts/status/repl_hostile_session_contract.json",
+                    "artifacts/status/repl_hostile_session_drift_artifact.json"
+                ]}),
+            )
         }
         _ => None,
     }

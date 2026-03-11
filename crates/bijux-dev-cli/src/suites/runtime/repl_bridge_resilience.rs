@@ -39,25 +39,39 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_corruption_matrix.json",
-                "artifacts/status/config_rollback_proof.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_corruption_matrix.json",
+                    "artifacts/status/config_rollback_proof.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DOCS-DUPLICATION-REPORT" => {
             let mut by_name: BTreeMap<String, Vec<String>> = BTreeMap::new();
             let mut by_heading: BTreeMap<String, Vec<String>> = BTreeMap::new();
-            for doc in collect_files(&workspace_root.join("docs")).into_iter().filter(|path| {
-                path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "md")
-            }) {
+            for doc in collect_files(&workspace_root.join("docs"))
+                .into_iter()
+                .filter(|path| {
+                    path.extension()
+                        .and_then(|ext| ext.to_str())
+                        .is_some_and(|ext| ext == "md")
+                })
+            {
                 let rel = doc
                     .strip_prefix(workspace_root)
                     .ok()
                     .unwrap_or(doc.as_path())
                     .to_string_lossy()
                     .replace('\\', "/");
-                let stem = doc.file_stem().and_then(|s| s.to_str()).unwrap_or_default().to_string();
-                by_name.entry(status_slug_for_name(&stem)).or_default().push(rel.clone());
+                let stem = doc
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default()
+                    .to_string();
+                by_name
+                    .entry(status_slug_for_name(&stem))
+                    .or_default()
+                    .push(rel.clone());
                 let heading = fs::read_to_string(&doc)
                     .ok()
                     .and_then(|content| {
@@ -66,12 +80,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         })
                     })
                     .unwrap_or(stem);
-                by_heading.entry(status_slug_for_name(&heading)).or_default().push(rel);
+                by_heading
+                    .entry(status_slug_for_name(&heading))
+                    .or_default()
+                    .push(rel);
             }
-            let duplicate_stem_groups: Vec<Vec<String>> =
-                by_name.into_values().filter(|group| group.len() > 1).collect();
-            let duplicate_heading_groups: Vec<Vec<String>> =
-                by_heading.into_values().filter(|group| group.len() > 1).collect();
+            let duplicate_stem_groups: Vec<Vec<String>> = by_name
+                .into_values()
+                .filter(|group| group.len() > 1)
+                .collect();
+            let duplicate_heading_groups: Vec<Vec<String>> = by_heading
+                .into_values()
+                .filter(|group| group.len() > 1)
+                .collect();
             write_status_artifact_json(
                                 workspace_root,
                                 "artifacts/status/docs_duplication_report.json",
@@ -84,9 +105,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/docs_duplication_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/docs_duplication_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PARSER-ABUSE-REPORT" => {
             let source = fs::read_to_string(
@@ -195,9 +218,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/parser_abuse_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/parser_abuse_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-RECOVERY-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -248,25 +273,31 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_hostile_session_report.json",
-                "artifacts/status/repl_recovery_behavior_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_hostile_session_report.json",
+                    "artifacts/status/repl_recovery_behavior_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS" => {
             let bridge =
                 run_bijux_json(workspace_root, &["dev", "cli", "python", "bridge-status"]).ok()?;
             let surface =
                 run_bijux_json(workspace_root, &["dev", "cli", "python", "surface-status"]).ok()?;
-            let sovereignty =
-                run_bijux_json(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
-                    .ok()?;
+            let sovereignty = run_bijux_json(
+                workspace_root,
+                &["dev", "cli", "python", "sovereignty-audit"],
+            )
+            .ok()?;
             let drift = run_bijux_json(workspace_root, &["dev", "cli", "python", "drift"]).ok()?;
             let packaging =
                 run_bijux_json(workspace_root, &["dev", "cli", "python", "packaging"]).ok()?;
-            let sovereignty_text =
-                run_bijux_text(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
-                    .ok()?;
+            let sovereignty_text = run_bijux_text(
+                workspace_root,
+                &["dev", "cli", "python", "sovereignty-audit"],
+            )
+            .ok()?;
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/python_bridge_status_report.json",
@@ -318,16 +349,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/python_bridge_status_report.json",
-                "artifacts/status/python_surface_status_report.json",
-                "artifacts/status/python_sovereignty_audit_report.json",
-                "artifacts/status/python_desovereignization_report.json",
-                "artifacts/status/python_desovereignization_report.txt",
-                "artifacts/status/python_drift_report.json",
-                "artifacts/status/python_packaging_direction_report.json",
-                "artifacts/status/python_surface_direction_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/python_bridge_status_report.json",
+                    "artifacts/status/python_surface_status_report.json",
+                    "artifacts/status/python_sovereignty_audit_report.json",
+                    "artifacts/status/python_desovereignization_report.json",
+                    "artifacts/status/python_desovereignization_report.txt",
+                    "artifacts/status/python_drift_report.json",
+                    "artifacts/status/python_packaging_direction_report.json",
+                    "artifacts/status/python_surface_direction_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT" => {
             let runtime_crate_srcs = [
@@ -341,7 +374,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let source = collect_files(&workspace_root.join(src))
                     .into_iter()
                     .filter(|path| {
-                        path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "rs")
+                        path.extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext == "rs")
                     })
                     .filter_map(|path| fs::read_to_string(path).ok())
                     .collect::<Vec<_>>()
@@ -392,9 +427,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/runtime_dev_leakage_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/runtime_dev_leakage_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
             let source = fs::read_to_string(
@@ -404,16 +441,28 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (81, "global_flags_before_namespace_are_accepted"),
-                (82, "global_flags_after_namespace_are_accepted_when_supported"),
-                (83, "global_flags_before_and_after_namespace_normalize_to_same_intent"),
+                (
+                    82,
+                    "global_flags_after_namespace_are_accepted_when_supported",
+                ),
+                (
+                    83,
+                    "global_flags_before_and_after_namespace_normalize_to_same_intent",
+                ),
                 (84, "repeated_format_flags_are_rejected_deterministically"),
                 (85, "repeated_pretty_flags_are_rejected_deterministically"),
-                (86, "repeated_no_pretty_flags_are_rejected_deterministically"),
+                (
+                    86,
+                    "repeated_no_pretty_flags_are_rejected_deterministically",
+                ),
                 (87, "repeated_quiet_flags_are_rejected_deterministically"),
                 (88, "repeated_trace_flags_are_rejected_deterministically"),
                 (89, "repeated_color_flags_are_rejected_deterministically"),
                 (90, "repeated_config_flags_are_rejected_deterministically"),
-                (91, "conflicting_pretty_and_no_pretty_have_stable_resolution"),
+                (
+                    91,
+                    "conflicting_pretty_and_no_pretty_have_stable_resolution",
+                ),
                 (92, "conflicting_color_always_and_never_are_rejected"),
                 (93, "invalid_format_value_is_rejected"),
                 (94, "invalid_color_value_is_rejected"),
@@ -455,9 +504,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/flag_normalization_matrix.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/flag_normalization_matrix.json"
+                ]}),
+            )
         }
         _ => None,
     }

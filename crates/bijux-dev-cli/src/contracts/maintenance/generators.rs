@@ -91,8 +91,9 @@ pub fn run_generator(
         });
     };
 
-    if let Some(row) =
-        rows.into_iter().find(|row| row.get("generator_id").and_then(Value::as_str) == Some(id))
+    if let Some(row) = rows
+        .into_iter()
+        .find(|row| row.get("generator_id").and_then(Value::as_str) == Some(id))
     {
         return run_status_generator_entry(workspace_root, &row);
     }

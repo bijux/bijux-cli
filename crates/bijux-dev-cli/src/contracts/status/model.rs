@@ -86,8 +86,11 @@ impl StatusContractSpec {
             .and_then(Value::as_str)
             .map(ToString::to_string)
             .filter(|item| !item.is_empty());
-        let implementation =
-            row.get("implementation").and_then(Value::as_str).unwrap_or("rust").to_string();
+        let implementation = row
+            .get("implementation")
+            .and_then(Value::as_str)
+            .unwrap_or("rust")
+            .to_string();
         let outputs = row
             .get("outputs")
             .and_then(Value::as_array)
@@ -96,8 +99,19 @@ impl StatusContractSpec {
             .into_iter()
             .filter_map(|value| value.as_str().map(ToString::to_string))
             .collect();
-        let command = row.get("command").and_then(Value::as_str).unwrap_or("").to_string();
-        Some(Self { contract_id, kind, source_ref, implementation, outputs, command })
+        let command = row
+            .get("command")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        Some(Self {
+            contract_id,
+            kind,
+            source_ref,
+            implementation,
+            outputs,
+            command,
+        })
     }
 
     /// Convert specification back to inventory row payload.

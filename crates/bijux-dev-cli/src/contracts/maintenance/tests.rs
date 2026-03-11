@@ -10,7 +10,9 @@ use super::{
 fn contract_reports_are_shaped() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     assert!(build_migrated_report(&root).get("migrated").is_some());
-    assert!(build_remaining_report(&root).get("remaining_root_maintenance").is_some());
+    assert!(build_remaining_report(&root)
+        .get("remaining_root_maintenance")
+        .is_some());
     assert!(build_diff_report(&root).get("remaining").is_some());
     let audit = build_audit_report(&root);
     assert!(audit.get("diff").is_some());
@@ -30,7 +32,10 @@ fn status_generator_ids_are_stable_and_prefixed() {
         .unwrap_or_default();
     assert!(!rows.is_empty());
     for row in rows {
-        let id = row.get("generator_id").and_then(serde_json::Value::as_str).unwrap_or("");
+        let id = row
+            .get("generator_id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         assert!(id.starts_with("GEN-STATUS-"));
     }
 }
@@ -45,7 +50,10 @@ fn requirement_ids_use_req_prefix() {
         .unwrap_or_default();
     assert!(!rows.is_empty(), "requirement catalog must not be empty");
     for row in rows {
-        let id = row.get("requirement_id").and_then(serde_json::Value::as_str).unwrap_or("");
+        let id = row
+            .get("requirement_id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         assert!(id.starts_with("REQ-"));
     }
 }
@@ -62,7 +70,9 @@ fn requirement_catalog_covers_status_contract_inventory() {
         .into_iter()
         .filter(|row| row.get("domain").and_then(serde_json::Value::as_str) == Some("STATUS"))
         .filter_map(|row| {
-            row.get("contract_id").and_then(serde_json::Value::as_str).map(ToString::to_string)
+            row.get("contract_id")
+                .and_then(serde_json::Value::as_str)
+                .map(ToString::to_string)
         })
         .collect();
     let status_inventory: BTreeSet<String> = build_status_contracts_report(&root)
@@ -72,7 +82,9 @@ fn requirement_catalog_covers_status_contract_inventory() {
         .unwrap_or_default()
         .into_iter()
         .filter_map(|row| {
-            row.get("contract_id").and_then(serde_json::Value::as_str).map(ToString::to_string)
+            row.get("contract_id")
+                .and_then(serde_json::Value::as_str)
+                .map(ToString::to_string)
         })
         .collect();
     assert_eq!(
@@ -94,7 +106,9 @@ fn migrated_report_controls_are_non_empty_and_removed() {
         .into_iter()
         .filter(|row| row.get("status").and_then(serde_json::Value::as_str) == Some("remaining"))
         .filter_map(|row| {
-            row.get("control_id").and_then(serde_json::Value::as_str).map(ToString::to_string)
+            row.get("control_id")
+                .and_then(serde_json::Value::as_str)
+                .map(ToString::to_string)
         })
         .collect();
     assert!(
@@ -114,7 +128,10 @@ fn status_contract_ids_are_stable_and_prefixed() {
         .unwrap_or_default();
     assert!(!rows.is_empty());
     for row in rows {
-        let id = row.get("contract_id").and_then(serde_json::Value::as_str).unwrap_or("");
+        let id = row
+            .get("contract_id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         assert!(id.starts_with("STATUS-CONTRACT-"));
     }
 }
@@ -134,7 +151,10 @@ fn status_inventory_commands_use_canonical_maintenance_route() {
             .get("contract_id")
             .and_then(serde_json::Value::as_str)
             .unwrap_or("<missing-contract-id>");
-        let command = row.get("command").and_then(serde_json::Value::as_str).unwrap_or("");
+        let command = row
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         assert!(
             command.contains("dev cli maintenance status run --id"),
             "{contract_id} must use canonical maintenance status route: {command}"

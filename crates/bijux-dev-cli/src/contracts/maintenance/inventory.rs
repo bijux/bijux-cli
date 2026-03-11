@@ -77,7 +77,12 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let dependencies = parsed
         .as_array()
         .cloned()
-        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
+        .or_else(|| {
+            parsed
+                .get("dependencies")
+                .and_then(Value::as_array)
+                .cloned()
+        })
         .unwrap_or_default();
 
     let mut remaining = Vec::new();
@@ -92,8 +97,11 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
             .unwrap_or_default()
         {
             let id = vuln.get("id").and_then(Value::as_str).unwrap_or("?");
-            let fix =
-                vuln.get("fix_versions").and_then(Value::as_array).cloned().unwrap_or_default();
+            let fix = vuln
+                .get("fix_versions")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             remaining.push(json!({
                 "package": name,
                 "version": version,
@@ -118,8 +126,10 @@ pub fn build_python_capture_report(workspace_root: &Path) -> Value {
         .ok()
         .and_then(|text| serde_json::from_str(&text).ok())
         .unwrap_or_else(|| json!({}));
-    let capture_count =
-        lock.get("captures").and_then(Value::as_object).map_or(0, |captures| captures.len());
+    let capture_count = lock
+        .get("captures")
+        .and_then(Value::as_object)
+        .map_or(0, |captures| captures.len());
     json!({
         "status": if capture_count > 0 { "pass" } else { "fail" },
         "lock_path": lock_path,
@@ -177,7 +187,10 @@ pub(crate) fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 pub(crate) fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 pub(crate) fn parse_make_targets(path: &Path) -> Vec<String> {
@@ -219,7 +232,15 @@ pub(crate) fn status_slug_for_name(value: &str) -> String {
         }
     }
     let mut cleaned = slug.trim_matches('-').to_string();
-    for suffix in ["-report", "-audit", "-baseline", "-guide", "-rules", "-law", "-status"] {
+    for suffix in [
+        "-report",
+        "-audit",
+        "-baseline",
+        "-guide",
+        "-rules",
+        "-law",
+        "-status",
+    ] {
         if cleaned.ends_with(suffix) {
             cleaned.truncate(cleaned.len().saturating_sub(suffix.len()));
         }
@@ -256,7 +277,10 @@ pub(crate) fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Val
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -275,9 +299,14 @@ pub(crate) fn run_bijux_json_env(
     for (key, value) in envs {
         cmd.env(key, value);
     }
-    let output = cmd.output().map_err(|err| format!("failed to run bijux command: {err}"))?;
+    let output = cmd
+        .output()
+        .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -292,7 +321,10 @@ pub(crate) fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<Str
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
