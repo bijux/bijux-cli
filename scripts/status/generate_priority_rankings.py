@@ -400,7 +400,7 @@ def main() -> None:
         ),
         "ranked_script_deletion_candidates": emit_ranked(
             "ranked_script_deletion_candidates",
-            "scripts most likely to be deleted next",
+            "scripts with highest deletion priority",
             ranked_scripts_delete(),
             [rel(STATUS / "script_only_behaviors.json")],
             592,
@@ -408,7 +408,7 @@ def main() -> None:
         ),
         "ranked_weak_test_replacements": emit_ranked(
             "ranked_weak_test_replacements",
-            "weak tests most worth replacing next",
+            "weak tests with highest replacement priority",
             ranked_weak_tests(),
             [rel(STATUS / "top_20_weakest_tests.json")],
             593,
@@ -435,7 +435,7 @@ def main() -> None:
                 rel(STATUS / "cross_crate_api_usage.json"),
                 rel(STATUS / "crate_boundary_metrics.json"),
             ],
-            "next_wave_requires_artifacts": [
+            "required_artifacts": [
                 rel(STATUS / "priority_plan.json"),
                 rel(STATUS / "priority_plan.txt"),
             ],
@@ -444,7 +444,7 @@ def main() -> None:
     write_json(STATUS / "priority_plan.json", priority_plan)
 
     lines = [
-        "Next Priorities (Evidence-Ranked)",
+        "Priority Rankings (Evidence-Ranked)",
         "",
     ]
     for name, payload in outputs.items():
