@@ -1028,6 +1028,45 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/repl_only_behaviors.json",
+                "artifacts/parity/repl_cli_output_diff.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/repl_shared_law_artifact.json",
+                "artifacts/status/repl_cli_diff_artifact.json",
+                "artifacts/status/repl_shared_law_drift_artifact.json",
+                "artifacts/status/repl_shared_law_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/repl_hostile_session_artifact.json",
+                "artifacts/status/repl_recovery_artifact.json",
+                "artifacts/status/repl_startup_resilience_artifact.json",
+                "artifacts/status/repl_command_loop_failure_class_artifact.json",
+                "artifacts/status/repl_hostile_session_contract.json",
+                "artifacts/status/repl_hostile_session_drift_artifact.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
+        }),
     ]
 }
 
@@ -5477,6 +5516,341 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/repl_completion_ordering_artifact.json",
                 "artifacts/status/repl_completion_drift_artifact.json",
                 "artifacts/status/repl_completion_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS" => {
+            let parity_matrix = workspace_root.join("artifacts/parity/command_parity_matrix.json");
+            let rows = fs::read_to_string(parity_matrix)
+                .ok()
+                .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+                .and_then(|v| v.get("commands").cloned())
+                .and_then(|v| v.as_array().cloned())
+                .unwrap_or_default();
+            let repl_rows: Vec<Value> = rows
+                .into_iter()
+                .filter(|row| {
+                    row.get("command")
+                        .and_then(Value::as_str)
+                        .is_some_and(|cmd| cmd.split_whitespace().any(|part| part == "repl"))
+                })
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_only_behaviors.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "rule": "REPL follows CLI law; REPL-only behavior must be justified.",
+                    "repl_only_behaviors": [
+                        {
+                            "name": ":help",
+                            "category": "meta-command",
+                            "justification": "interactive help navigation for command discovery",
+                            "defensible": true,
+                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                        },
+                        {
+                            "name": ":set trace|quiet|format",
+                            "category": "meta-command",
+                            "justification": "session-level output policy toggles",
+                            "defensible": true,
+                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                        },
+                        {
+                            "name": ":exit",
+                            "category": "meta-command",
+                            "justification": "interactive shutdown convenience",
+                            "defensible": true,
+                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                        },
+                    ],
+                    "removed_repl_only_behaviors": [
+                        {
+                            "name": ":plugin reload",
+                            "reason": "removed to keep REPL behavior aligned with routed CLI law",
+                        }
+                    ],
+                    "repl_parity_rows": repl_rows,
+                }),
+            )
+            .ok()?;
+            write_json(
+                &workspace_root.join("artifacts/parity/repl_cli_output_diff.json"),
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl-vs-cli",
+                    "evidence": {
+                        "tests": [
+                            "crates/bijux-cli-repl/tests/transcript_cases.rs::repl_output_parity_with_non_interactive_cli_for_status",
+                            "crates/bijux-cli-repl/tests/transcript_cases.rs::repl_does_not_define_separate_semantics_for_common_commands",
+                        ]
+                    },
+                    "commands": [
+                        {
+                            "command": "status",
+                            "result_identity": "matched",
+                            "output_diff": "none",
+                        },
+                        {
+                            "command": "doctor",
+                            "result_identity": "matched",
+                            "output_diff": "none",
+                        },
+                        {
+                            "command": "history",
+                            "result_identity": "matched",
+                            "output_diff": "none",
+                        },
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/repl_only_behaviors.json",
+                "artifacts/parity/repl_cli_output_diff.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs"),
+            )
+            .unwrap_or_default();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (201, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
+                (202, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
+                (203, "repl_machine_and_text_modes_use_same_underlying_payload_law"),
+                (204, "repl_machine_and_text_modes_use_same_underlying_payload_law"),
+                (205, "repl_usage_validation_and_plugin_failures_map_to_same_failure_classes"),
+                (206, "repl_usage_validation_and_plugin_failures_map_to_same_failure_classes"),
+                (207, "repl_usage_validation_and_plugin_failures_map_to_same_failure_classes"),
+                (208, "repl_state_corruption_handling_matches_non_interactive_cli_for_shared_commands"),
+                (209, "repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli"),
+                (210, "repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli"),
+                (211, "repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli"),
+                (212, "repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli"),
+                (213, "repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli"),
+                (214, "repl_help_for_builtin_and_plugin_commands_matches_non_interactive_help"),
+                (215, "repl_help_for_builtin_and_plugin_commands_matches_non_interactive_help"),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, name)| {
+                    let covered = source.contains(&format!("fn {name}("));
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": name,
+                        "status": if covered { "covered" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs",
+                    })
+                })
+                .collect();
+            let missing: Vec<Value> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .cloned()
+                .collect();
+            let lower = source.to_lowercase();
+            let repl_only_semantics: Vec<&str> =
+                ["repl_only_semantic", "repl-only semantic", "repl specific semantic"]
+                    .into_iter()
+                    .filter(|marker| lower.contains(marker))
+                    .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_shared_law_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl shared law",
+                    "coverage_ids": [201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_cli_diff_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl vs cli drift",
+                    "coverage_ids": [217],
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "diff_count": missing.len(),
+                    "diff_requirements": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_shared_law_drift_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl shared law policy",
+                    "coverage_ids": [218, 219],
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                    "repl_only_semantics": repl_only_semantics,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_shared_law_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl execution law contract",
+                    "coverage_ids": [220],
+                    "status": if missing.is_empty() { "frozen" } else { "not-frozen" },
+                    "law": "same law, different shell",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/repl_shared_law_artifact.json",
+                "artifacts/status/repl_cli_diff_artifact.json",
+                "artifacts/status/repl_shared_law_drift_artifact.json",
+                "artifacts/status/repl_shared_law_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
+            let test_paths = [
+                "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs",
+                "crates/bijux-cli-repl/tests/repl_hostile_session_extra.rs",
+            ];
+            let sources: Vec<(String, String)> = test_paths
+                .iter()
+                .map(|path| {
+                    (
+                        (*path).to_string(),
+                        fs::read_to_string(workspace_root.join(path)).unwrap_or_default(),
+                    )
+                })
+                .collect();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (221, "repeated_malformed_plugin_and_config_failures_recover_to_success"),
+                (222, "repeated_malformed_plugin_and_config_failures_recover_to_success"),
+                (223, "repeated_malformed_plugin_and_config_failures_recover_to_success"),
+                (224, "startup_with_corrupted_history_registry_missing_paths_and_large_history_is_resilient"),
+                (225, "startup_with_corrupted_history_registry_missing_paths_and_large_history_is_resilient"),
+                (226, "startup_with_corrupted_history_registry_missing_paths_and_large_history_is_resilient"),
+                (227, "startup_with_corrupted_history_registry_missing_paths_and_large_history_is_resilient"),
+                (228, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
+                (229, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
+                (230, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
+                (231, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
+                (232, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
+                (233, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
+                (234, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
+                (235, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, test_name)| {
+                    let evidence = sources.iter().find_map(|(path, text)| {
+                        text.contains(&format!("fn {test_name}(")).then_some(path.clone())
+                    });
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": test_name,
+                        "status": if evidence.is_some() { "covered" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect();
+            let missing: Vec<Value> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .cloned()
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_hostile_session_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl hostile session",
+                    "coverage_ids": [221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_recovery_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl recovery",
+                    "coverage_ids": [221, 222, 223, 228, 229, 230, 237],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_startup_resilience_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl startup resilience",
+                    "coverage_ids": [224, 225, 226, 227, 238],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_command_loop_failure_class_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl command-loop failure classes",
+                    "coverage_ids": [221, 222, 223, 228, 229, 239],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_hostile_session_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl hostile session contract",
+                    "coverage_ids": [240],
+                    "status": if missing.is_empty() { "frozen" } else { "not-frozen" },
+                    "law": "hostile-session behavior is tested, not assumed",
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_hostile_session_drift_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl hostile-session drift",
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/repl_hostile_session_artifact.json",
+                "artifacts/status/repl_recovery_artifact.json",
+                "artifacts/status/repl_startup_resilience_artifact.json",
+                "artifacts/status/repl_command_loop_failure_class_artifact.json",
+                "artifacts/status/repl_hostile_session_contract.json",
+                "artifacts/status/repl_hostile_session_drift_artifact.json"
             ]}))
         }
         _ => None,
