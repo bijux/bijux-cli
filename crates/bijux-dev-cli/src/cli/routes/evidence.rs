@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
 use serde_json::Value;
 
-use crate::app::args::{command_option_value, command_positionals};
-use crate::app::workspace::workspace_root;
+use crate::cli::args::{command_option_value, command_positionals};
+use crate::cli::workspace::workspace_root;
 use crate::reports::evidence as dev_evidence;
 
 pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<Option<Value>> {

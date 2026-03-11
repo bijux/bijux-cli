@@ -14,7 +14,7 @@ use crate::routing::known_bijux_tool;
 use crate::routing::registry::{RouteRegistry, RouteTarget};
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use anyhow::Result;
-use bijux_dev_cli::dispatch::owns_path as owns_dev_cli_path;
+use bijux_dev_cli::cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
 use crate::features::diagnostics::state_paths::resolve_state_paths;

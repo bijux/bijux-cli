@@ -7,11 +7,11 @@ use std::path::Path;
 
 use anyhow::Result;
 use bijux_dev_cli::{
-    control_plane::{ProductContractRow, ProductSurfaceRow},
-    dispatch::{
+    cli::dispatch::{
         self as dev_dispatch, ContractsSchemaInput, DoctorReportInput, RouteInventoryQuery,
         RuntimeQueryProvider, StateAuditInput,
     },
+    control_plane::{ProductContractRow, ProductSurfaceRow},
     env as dev_env, registry as dev_registry, runtime_identity as dev_runtime_identity,
     state_audit as dev_state_audit,
 };

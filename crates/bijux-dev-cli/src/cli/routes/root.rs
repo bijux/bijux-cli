@@ -2,9 +2,9 @@ use std::fs;
 
 use serde_json::Value;
 
-use crate::app::args::{command_has_flag, command_option_value};
-use crate::app::runtime_query::RuntimeQueryProvider;
-use crate::app::workspace::workspace_root;
+use crate::cli::args::{command_has_flag, command_option_value};
+use crate::cli::dispatch::RuntimeQueryProvider;
+use crate::cli::workspace::workspace_root;
 use crate::infrastructure::artifacts::{
     collect_files_recursive, read_json_if_exists, relative_to_root,
 };
@@ -14,7 +14,7 @@ use crate::reports::{
     maintenance_audit as dev_maintenance_audit, package_health as dev_package_health,
     parity as dev_parity, registry as dev_registry, route_audit as dev_route_audit,
     routes as dev_routes, runtime_identity as dev_runtime_identity, state_audit as dev_state_audit,
-    status as dev_status,
+    status as dev_status, repo as dev_repo,
 };
 use crate::ReportContext;
 
@@ -150,6 +150,21 @@ pub(super) fn try_handle(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "runtime-identity" => {
             dev_runtime_identity::build_report(runtime.runtime_identity_input())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "health" => {
+            dev_repo::build_health_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "drift" => {
+            dev_repo::build_drift_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "inventories" => {
+            dev_repo::build_inventories_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "generated" => {
+            dev_repo::build_generated_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "stale" => {
+            dev_repo::build_stale_report(&workspace_root())
         }
         _ => return None,
     };

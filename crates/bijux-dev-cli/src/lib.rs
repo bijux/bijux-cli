@@ -5,13 +5,11 @@
 //! This crate is intentionally focused on maintainer-facing report assembly and
 //! control-plane orchestration. Runtime command law remains in runtime crates.
 
-/// Application building blocks for argument parsing, workspace resolution, and routing.
-pub mod app;
+/// Command-line routing, workspace resolution, and dispatch contracts.
+pub mod cli;
 /// Contract inventories and execution boundaries.
 #[path = "contracts/mod.rs"]
 pub mod contract_engine;
-/// Application-layer command dispatch and runtime query interfaces.
-pub mod dispatch;
 /// Reusable technical adapters for filesystem/process/clock concerns.
 pub mod infrastructure;
 /// Shared platform contracts and schemas used across dev-cli capabilities.

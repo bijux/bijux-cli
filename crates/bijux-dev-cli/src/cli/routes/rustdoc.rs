@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::app::workspace::workspace_root;
+use crate::cli::workspace::workspace_root;
 use crate::reports::rustdoc as dev_rustdoc;
 
 pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
