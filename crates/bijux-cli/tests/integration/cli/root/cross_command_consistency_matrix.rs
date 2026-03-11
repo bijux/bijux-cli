@@ -16,7 +16,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_bin_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -37,8 +40,10 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir()
-        .join(format!("bijux-cross-command-{name}-{}-{nanos}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-cross-command-{name}-{}-{nanos}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
@@ -117,7 +122,15 @@ fn config_get_and_dev_env_agree_on_source_precedence() {
 
     let get = parse_json(
         &run_bin_with_env(
-            &["cli", "config", "get", "alpha", "--format", "json", "--no-pretty"],
+            &[
+                "cli",
+                "config",
+                "get",
+                "alpha",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
             &[("BIJUXCLI_CONFIG", path)],
         )
         .stdout,
@@ -131,7 +144,10 @@ fn config_get_and_dev_env_agree_on_source_precedence() {
     );
 
     assert_eq!(get["source_path"], env["active"]["config_file"]);
-    assert_eq!(env["source_precedence"], serde_json::json!(["flags", "env", "config", "defaults"]));
+    assert_eq!(
+        env["source_precedence"],
+        serde_json::json!(["flags", "env", "config", "defaults"])
+    );
 }
 
 #[test]
@@ -142,14 +158,28 @@ fn doctor_and_state_audit_agree_on_corruption_detection_when_applicable() {
 
     let doctor = parse_json(
         &run_bin_with_env(
-            &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+            &[
+                "dev",
+                "cli",
+                "state-doctor",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
             &[("BIJUXCLI_CONFIG", config.to_str().expect("utf-8"))],
         )
         .stdout,
     );
     let audit = parse_json(
         &run_bin_with_env(
-            &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
+            &[
+                "dev",
+                "cli",
+                "state-audit",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
             &[("BIJUXCLI_CONFIG", config.to_str().expect("utf-8"))],
         )
         .stdout,
@@ -206,17 +236,26 @@ fn repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status
         "--config-path",
         config_arg,
     ]);
-    assert_eq!(session.last_exit_code, bin_config.status.code().unwrap_or(-1));
+    assert_eq!(
+        session.last_exit_code,
+        bin_config.status.code().unwrap_or(-1)
+    );
 
     let _repl_plugins = execute_repl_line(&mut session, "plugins list --format json --no-pretty")
         .expect("repl plugins");
     let bin_plugins = run_bin(&["plugins", "list", "--format", "json", "--no-pretty"]);
-    assert_eq!(session.last_exit_code, bin_plugins.status.code().unwrap_or(-1));
+    assert_eq!(
+        session.last_exit_code,
+        bin_plugins.status.code().unwrap_or(-1)
+    );
 
     let _repl_status =
         execute_repl_line(&mut session, "status --format json --no-pretty").expect("repl status");
     let bin_status = run_bin(&["status", "--format", "json", "--no-pretty"]);
-    assert_eq!(session.last_exit_code, bin_status.status.code().unwrap_or(-1));
+    assert_eq!(
+        session.last_exit_code,
+        bin_status.status.code().unwrap_or(-1)
+    );
 }
 
 #[test]
@@ -243,7 +282,10 @@ fn plugin_command_help_integrates_into_root_help_tree_deterministically() {
     assert_eq!(root_help_a.status.code(), Some(0));
     assert_eq!(root_help_a.stdout, root_help_b.stdout);
     let text = String::from_utf8(root_help_a.stdout).expect("utf-8");
-    assert!(text.contains("plugins"), "root help should include plugin command group");
+    assert!(
+        text.contains("plugins"),
+        "root help should include plugin command group"
+    );
 
     let plugin_help = run_bin(&["plugins", "--help"]);
     assert_eq!(plugin_help.status.code(), Some(0));
