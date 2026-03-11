@@ -69,8 +69,12 @@ fn file_set(base: &Path) -> BTreeSet<String> {
 
 fn expected_snapshot(path: &str) -> BTreeSet<String> {
     let content = match path {
-        "python" => include_str!("../../../data/golden/cli_surface/plugin_scaffold_python_minimal_files.txt"),
-        "rust" => include_str!("../../../data/golden/cli_surface/plugin_scaffold_rust_minimal_files.txt"),
+        "python" => include_str!(
+            "../../../data/golden/cli_surface/plugin_scaffold_python_minimal_files.txt"
+        ),
+        "rust" => {
+            include_str!("../../../data/golden/cli_surface/plugin_scaffold_rust_minimal_files.txt")
+        }
         _ => panic!("unknown snapshot"),
     };
     content.lines().map(str::trim).filter(|line| !line.is_empty()).map(str::to_string).collect()

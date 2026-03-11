@@ -29,7 +29,7 @@ Scope: tasks 301-320
 - Inspect failure normalization check for usage/help error path.
 - Internal consistency check: `inspect.route_sources` equals `dev cli routes.routes`.
 - Text snapshots for all dev diagnostics commands.
-- JSON golden snapshots for all dev diagnostics commands (updated under `tests/data/ported_snapshots`).
+- JSON golden snapshots for all dev diagnostics commands (updated under `tests/data/golden/ported`).
 - Core-level invocation assertions for diagnostics payload metadata.
 
 ## Status for 301-320

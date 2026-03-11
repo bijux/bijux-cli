@@ -50,7 +50,9 @@ fn python_sovereignty_reports_have_stable_json_shapes() {
 fn python_desovereignization_text_head_matches_snapshot() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
-        .join("data").join("golden").join("cli_surface")
+        .join("data")
+        .join("golden")
+        .join("cli_surface")
         .join("dev_cli_python_desovereignization_text_head.txt");
     let expected_head = fs::read_to_string(snapshot_path).expect("read snapshot");
     let out = run(&["dev", "cli", "python", "sovereignty-audit", "--format", "text"]);
@@ -63,7 +65,9 @@ fn python_desovereignization_text_head_matches_snapshot() {
 fn python_text_heads_match_snapshots() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
-        .join("data").join("golden").join("cli_surface")
+        .join("data")
+        .join("golden")
+        .join("cli_surface")
         .join("dev_cli_python_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))

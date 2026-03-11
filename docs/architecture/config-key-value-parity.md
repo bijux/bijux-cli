@@ -37,5 +37,5 @@ This document records completion for tasks 61-80.
 ## Sources
 
 - `crates/bijux-cli/src/config/validation.rs`
-- `crates/bijux-cli/tests/config_key_value_parity.rs`
-- `crates/bijux-cli/tests/config_parity.rs`
+- `crates/bijux-cli/tests/integration/cli/config/config_key_value_parity.rs`
+- `crates/bijux-cli/tests/integration/cli/config/config_parity.rs`

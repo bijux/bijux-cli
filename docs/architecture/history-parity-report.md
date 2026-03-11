@@ -28,10 +28,10 @@ Scope: tasks 241-260 (first read-only history parity milestone).
 
 Files:
 
-- `crates/bijux-cli/tests/cli_surface/history/history_parity.rs`
-- `crates/bijux-cli/tests/cli_surface/snapshots/history_root_json.txt`
-- `crates/bijux-cli/tests/cli_surface/snapshots/history_root_yaml.txt`
-- `crates/bijux-cli/tests/cli_surface/snapshots/history_root_text.txt`
+- `crates/bijux-cli/tests/integration/cli/history/history_parity.rs`
+- `crates/bijux-cli/tests/data/golden/cli_surface/history_root_json.txt`
+- `crates/bijux-cli/tests/data/golden/cli_surface/history_root_yaml.txt`
+- `crates/bijux-cli/tests/data/golden/cli_surface/history_root_text.txt`
 
 ## Status for 241-260
 

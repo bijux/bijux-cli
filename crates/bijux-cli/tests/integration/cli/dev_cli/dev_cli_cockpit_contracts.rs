@@ -55,7 +55,9 @@ fn cockpit_json_contracts_are_stable() {
 fn cockpit_text_heads_match_snapshots() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
-        .join("data").join("golden").join("cli_surface")
+        .join("data")
+        .join("golden")
+        .join("cli_surface")
         .join("dev_cli_cockpit_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))

@@ -62,7 +62,7 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
         .into_iter()
         .filter(|path| {
             let rel_path = rel(path, root);
-            rel_path.contains("/tests/cli_surface/snapshots/")
+            rel_path.contains("/tests/data/golden/cli_surface/")
                 && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
                     name.contains(".old.")
                         || Path::new(name)

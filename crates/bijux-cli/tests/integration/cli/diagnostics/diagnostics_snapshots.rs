@@ -56,7 +56,10 @@ fn inspect_snapshots_match_json_yaml_and_text() {
             &["inspect", "--format", "yaml", "--pretty"],
             include_str!("../../../data/golden/cli_surface/inspect_yaml.txt"),
         ),
-        (&["inspect", "--format", "text"], include_str!("../../../data/golden/cli_surface/inspect_text.txt")),
+        (
+            &["inspect", "--format", "text"],
+            include_str!("../../../data/golden/cli_surface/inspect_text.txt"),
+        ),
     ];
 
     for (args, expected) in cases {

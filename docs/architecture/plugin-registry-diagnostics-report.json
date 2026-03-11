@@ -9,8 +9,8 @@
   ],
   "status": "covered-by-tests",
   "covered_tests": [
-    "crates/bijux-cli/tests/routing/route_inspection_output.rs",
-    "crates/bijux-cli/tests/routing/registry_namespace_policy.rs",
+    "crates/bijux-cli/tests/routing/laws/route_inspection_output.rs",
+    "crates/bijux-cli/tests/routing/registry/registry_namespace_policy.rs",
     "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs"
   ]
 }

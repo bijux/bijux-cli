@@ -39,6 +39,6 @@ This document defines stable ownership boundaries for Rust config behavior.
 
 ## Enforced architecture tests
 
-- `crates/bijux-cli/tests/config_architecture_boundaries.rs`
+- `crates/bijux-cli/tests/architecture/boundaries/config_architecture_boundaries.rs`
   - verifies `bin` stays free of config business logic
   - verifies config storage stays free of output formatting logic

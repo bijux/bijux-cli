@@ -75,7 +75,9 @@ fn config_ownership_text_outputs_are_non_empty_and_structured() {
 fn config_ownership_text_heads_match_snapshot() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
-        .join("data").join("golden").join("cli_surface")
+        .join("data")
+        .join("golden")
+        .join("cli_surface")
         .join("dev_cli_config_ownership_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))
