@@ -1,7 +1,7 @@
 #[allow(clippy::wildcard_imports)]
 use crate::contract_engine::maintenance::*;
 
-pub(super) fn rows() -> Vec<Value> {
+pub(crate) fn rows() -> Vec<Value> {
     vec![
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS",

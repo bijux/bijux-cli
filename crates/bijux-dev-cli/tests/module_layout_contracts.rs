@@ -15,12 +15,8 @@ fn domain_platform_and_status_contract_namespaces_exist() {
 #[test]
 fn legacy_native_directory_names_are_removed() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert!(!crate_root
-        .join("src/contracts/maintenance/native/catalog")
-        .exists());
-    assert!(!crate_root
-        .join("src/contracts/maintenance/native/handlers")
-        .exists());
+    assert!(!crate_root.join("src/contracts/maintenance/native").exists());
+    assert!(crate_root.join("src/contracts/native").is_dir());
 }
 
 #[test]
@@ -31,30 +27,47 @@ fn legacy_alias_modules_are_removed() {
 }
 
 #[test]
-fn native_contract_modules_use_domain_first_filenames() {
-    let native_mod = include_str!("../src/contracts/maintenance/native/mod.rs");
-    assert!(native_mod.contains("mod executors;"));
-    assert!(native_mod.contains("mod specs;"));
+fn native_contract_modules_use_suite_layout() {
+    let native_mod = include_str!("../src/contracts/native/mod.rs");
+    assert!(native_mod.contains("mod control_plane;"));
+    assert!(native_mod.contains("mod runtime;"));
+    assert!(native_mod.contains("mod resilience;"));
+    assert!(native_mod.contains("mod quality;"));
 
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let native_dir = crate_root.join("src/contracts/maintenance/native");
+    let native_dir = crate_root.join("src/contracts/native");
+    for suite in ["control_plane", "runtime", "resilience", "quality"] {
+        let suite_dir = native_dir.join(suite);
+        assert!(suite_dir.is_dir(), "missing suite directory {}", suite_dir.display());
+        assert!(
+            suite_dir.join("mod.rs").is_file(),
+            "missing suite module file {}",
+            suite_dir.join("mod.rs").display()
+        );
+        assert!(
+            suite_dir.join("runner.rs").is_file(),
+            "missing suite runner file {}",
+            suite_dir.join("runner.rs").display()
+        );
+        assert!(
+            suite_dir.join("catalog.rs").is_file(),
+            "missing suite catalog file {}",
+            suite_dir.join("catalog.rs").display()
+        );
+    }
+
+    let mut files = Vec::<PathBuf>::new();
+    collect_files_recursive(&native_dir, &mut files);
     let mut violations = Vec::new();
 
-    let Ok(entries) = fs::read_dir(&native_dir) else {
-        panic!(
-            "missing native contracts directory at {}",
-            native_dir.display()
-        );
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if !path.is_file() || path.extension().map_or(true, |ext| ext != "rs") {
+    for path in files {
+        if path.extension().map_or(true, |ext| ext != "rs") {
             continue;
         }
         let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
             continue;
         };
-        if file_name == "mod.rs" || file_name == "executors.rs" || file_name == "specs.rs" {
+        if file_name == "mod.rs" || file_name == "runner.rs" || file_name == "catalog.rs" {
             continue;
         }
         if file_name.starts_with("executor_") || file_name.starts_with("spec_") {
@@ -66,6 +79,13 @@ fn native_contract_modules_use_domain_first_filenames() {
         if !file_name.ends_with("_executor.rs") && !file_name.ends_with("_spec.rs") {
             violations.push(format!(
                 "{} must end with _executor.rs or _spec.rs",
+                path.strip_prefix(crate_root).unwrap_or(&path).display()
+            ));
+        }
+        let text = fs::read_to_string(&path).unwrap_or_default();
+        if text.contains("#[path = \"") {
+            violations.push(format!(
+                "{} must not use #[path] indirection",
                 path.strip_prefix(crate_root).unwrap_or(&path).display()
             ));
         }

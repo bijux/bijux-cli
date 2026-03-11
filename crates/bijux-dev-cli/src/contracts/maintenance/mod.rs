@@ -10,7 +10,6 @@ pub(crate) use serde_json::{json, Value};
 mod compliance;
 mod generator_runner;
 mod migration_reports;
-mod native;
 mod shared;
 mod status_contract_bridge;
 
@@ -31,7 +30,7 @@ pub use status_contract_bridge::{
     run_all_status_maintenance, run_status_contract,
 };
 
-pub(crate) use native::{native_status_contract_rows, run_native_status_contract};
+pub(crate) use super::native::{native_status_contract_rows, run_native_status_contract};
 pub(crate) use shared::{
     collect_files, generated_at_utc, rel, run_bijux_json,
     run_bijux_json_env, run_bijux_text, status_slug_for_name, write_json,
