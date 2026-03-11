@@ -1,6 +1,6 @@
 # Config Unset Clear Reload Parity Report
 
-Scope: tasks `161-180` for Rust configuration parity.
+Scope: Rust configuration parity coverage for unset, clear, and reload behavior.
 
 ## Implementation Decisions
 

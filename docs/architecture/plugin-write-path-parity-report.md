@@ -1,7 +1,7 @@
 # Plugin Write-Path Parity Report
 
 Date: 2026-03-09
-Scope: tasks 321-340
+Scope: stable parity and behavior coverage.
 
 ## Implementation status
 

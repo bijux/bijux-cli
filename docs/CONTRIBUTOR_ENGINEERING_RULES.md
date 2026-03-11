@@ -1,7 +1,7 @@
 # Contributor Engineering Rules
 
 ## Purpose
-This document defines contributor and reviewer rules that keep milestone claims tied to evidence.
+This document defines contributor and reviewer rules that keep status claims tied to evidence.
 
 ## Rules
 1. Do not use status language without parity, runtime, and test artifacts.
@@ -10,7 +10,7 @@ This document defines contributor and reviewer rules that keep milestone claims 
 4. Treat behavior contracts as stable; treat file and doc counts as non-contracts.
 5. Keep docs focused on law and change; move volatile status detail to generated artifacts.
 6. Use `artifacts/parity/command_parity_matrix.json` as the truth source for "done" command status.
-7. Use `bijux dev cli status --format json` as first check before milestone claims.
+7. Use `bijux dev cli status --format json` as first check before status claims.
 8. Do not add a public API without a consumer or an explicit reason documented in status artifacts.
 9. Treat `bijux dev cli` as the default maintainer cockpit for automation and diagnostics.
 10. Prefer `bijux dev cli` commands over new one-off scripts; any new `scripts/*` file requires a checked-in justification entry in `.github/script_additions_allowlist.txt`.
@@ -24,4 +24,4 @@ This document defines contributor and reviewer rules that keep milestone claims 
 - `artifacts/status/test_quality_audit.json`
 
 ## Review Gate
-A milestone statement is rejectable if it does not include done/left/blocked evidence.
+A status statement is rejectable if it does not include done/left/blocked evidence.

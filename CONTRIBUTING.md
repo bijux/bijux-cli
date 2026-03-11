@@ -240,7 +240,7 @@ BREAKING CHANGE: <explanation>
 ### Status Update Rule
 
 - Describe current observed state, not aspiration.
-- Reference generated evidence artifacts for milestone claims:
+- Reference generated evidence artifacts for status claims:
   - `artifacts/status/what_is_done.json`
   - `artifacts/status/what_is_left.json`
   - `artifacts/status/what_is_partial.json`

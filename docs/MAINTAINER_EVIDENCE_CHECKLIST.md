@@ -1,6 +1,6 @@
-# Maintainer Milestone Checklist
+# Maintainer Evidence Checklist
 
-Use this checklist for every milestone claim.
+Use this checklist for every evidence-backed status claim.
 
 ## Required Outcome Shape
 1. `done`: what is complete with artifact evidence.
@@ -17,11 +17,11 @@ Use this checklist for every milestone claim.
 ## Claim Discipline
 1. No status language without generated evidence.
 2. Reviewers reject hype phrasing not backed by artifacts or tests.
-3. Check `bijux dev cli status --format json` first before any milestone claim.
+3. Check `bijux dev cli status --format json` first before any status claim.
 
 ## Planning Discipline
 Next backlog must come from generated status data only:
-- `artifacts/status/next_200_todos.json`
+- `artifacts/status/next_200_priorities.json`
 
 ## Release Discipline
 Before release claims:

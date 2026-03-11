@@ -71,8 +71,8 @@ Only critical-path command regressions are release-gated.
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
 
-## Maintainer Milestone Rule
-Every milestone update must include explicit `done`, `left`, and `blocked/deferred` lists backed by artifact paths.
+## Maintainer Evidence Rule
+Every status update must include explicit `done`, `left`, and `blocked/deferred` lists backed by artifact paths.
 
 ## Major Command Rule
 Each major command area requires a parity report before non-parity improvements are accepted.

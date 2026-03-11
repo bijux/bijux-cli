@@ -1,6 +1,6 @@
 # Memory Parity Report
 
-Scope: tasks 261-280 (first memory baseline).
+Scope: stable parity and behavior coverage. (first memory baseline).
 
 ## Implemented in Rust
 

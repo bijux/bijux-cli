@@ -1,6 +1,6 @@
 # Config Root Listing Parity Report
 
-Scope: tasks 101-120.
+Scope: stable parity and behavior coverage.
 
 ## Decision
 
@@ -23,7 +23,7 @@ This matches Python root `config` baseline behavior where output is an entry map
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_root_json_compact.txt`
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_root_yaml_pretty.txt`
 
-## Task matrix
+## Coverage matrix
 
 - `101`: complete (root `config` listing implemented in `core::config::service`).
 - `102`: complete (lists active stored entries).

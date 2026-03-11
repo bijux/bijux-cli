@@ -2,7 +2,7 @@
 
 Date: 2026-03-09
 
-## Milestone statement
+## Baseline statement
 
 Rust reached baseline parity for the first consolidated command set under the current parity runner and baseline gate:
 

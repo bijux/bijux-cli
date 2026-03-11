@@ -4,7 +4,7 @@
 Capture the current Python implementation behavior as migration input for compatibility-preserving evolution.
 
 ## Scope
-This inventory documents behavior from source and tests for tasks 31-40.
+This inventory documents behavior from source and tests for stable compatibility coverage.
 
 ## Inventory Files
 - [Top-level commands](top-level-commands.md)

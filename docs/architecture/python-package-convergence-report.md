@@ -1,6 +1,6 @@
 # Python Package Convergence Report
 
-Scope: tasks 361-380.
+Scope: stable parity and behavior coverage.
 
 ## Summary
 

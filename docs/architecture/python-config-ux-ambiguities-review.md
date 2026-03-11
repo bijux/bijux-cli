@@ -1,6 +1,6 @@
 # Python Config UX Ambiguities Review
 
-Scope: task `194`.
+Scope: documented Python config UX ambiguities and parity constraints.
 
 ## Ambiguities Found
 

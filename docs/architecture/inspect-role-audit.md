@@ -1,7 +1,7 @@
 # Inspect Role Audit
 
 Date: 2026-03-09
-Scope: tasks 301-303
+Scope: stable parity and behavior coverage.
 
 ## Current role in Rust
 

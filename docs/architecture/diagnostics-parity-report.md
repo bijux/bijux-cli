@@ -1,7 +1,7 @@
 # Diagnostics Parity Report
 
 Date: 2026-03-09
-Scope: tasks 301-320
+Scope: stable parity and behavior coverage.
 
 ## Implemented
 

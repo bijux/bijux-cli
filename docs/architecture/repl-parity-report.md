@@ -1,7 +1,7 @@
 # REPL Parity Report
 
 Date: 2026-03-09
-Scope: tasks 341-360
+Scope: stable parity and behavior coverage.
 
 ## Inputs used for comparison
 

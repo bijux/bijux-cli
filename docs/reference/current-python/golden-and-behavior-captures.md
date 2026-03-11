@@ -1,7 +1,7 @@
 # Golden Outputs and Behavior Captures
 
 ## Purpose
-Provide concrete capture files for tasks 41-60 from the current Python implementation.
+Provide concrete capture files for stable compatibility coverage from the current Python implementation.
 
 ## Capture root
 - `artifacts/python-behavior/golden/*.json`
@@ -12,7 +12,7 @@ Provide concrete capture files for tasks 41-60 from the current Python implement
 ## Reproduction command
 - `bijux dev cli scripts capture-python-behavior`
 
-## Task mapping
+## Capture mapping
 - 41: `golden/bijux_help.json`
 - 42: `golden/bijux_version.json`
 - 43: `golden/bijux_doctor.json`

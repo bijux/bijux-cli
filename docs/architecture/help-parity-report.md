@@ -1,7 +1,7 @@
 # Help Parity Report
 
 Date: 2026-03-09
-Scope: tasks 281-300
+Scope: stable parity and behavior coverage.
 
 ## Coverage added
 

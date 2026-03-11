@@ -23,7 +23,7 @@ Python currently exposes:
 - Service loads state into an in-process map and persists writes.
 - Root summary and `list` are read-only operations.
 
-## Behavior baseline for first Rust memory milestone
+## Behavior baseline for first Rust memory parity freeze
 
 The parity scope in this batch is intentionally read-only:
 

@@ -1,6 +1,6 @@
 # Config Parity Report
 
-Scope: tasks 221-240 (`cli config get` and `cli config set` parity hardening and validation coverage).
+Scope: stable parity and behavior coverage. (`cli config get` and `cli config set` parity hardening and validation coverage).
 
 ## Implemented in Rust
 

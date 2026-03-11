@@ -1,6 +1,6 @@
 # Config File And Path Behavior
 
-This document records decisions and coverage for tasks 81-100.
+This document records decisions and coverage for stable compatibility coverage.
 
 ## File format baseline
 

@@ -1,6 +1,6 @@
 # History Parity Report
 
-Scope: tasks 241-260 (first read-only history parity milestone).
+Scope: stable parity and behavior coverage. (first read-only history parity baseline).
 
 ## Implemented
 

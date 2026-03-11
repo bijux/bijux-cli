@@ -1,6 +1,6 @@
 # Parser Abuse Hardening
 
-Scope: tasks `401-420`.
+Scope: coverage_ids `401-420`.
 
 Evidence:
 - `crates/bijux-cli/tests/routing/parser/parser_abuse.rs`

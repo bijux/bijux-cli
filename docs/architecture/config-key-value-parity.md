@@ -1,6 +1,6 @@
 # Config Key/Value Parity Coverage
 
-This document records completion for tasks 61-80.
+This document records completion for stable compatibility coverage.
 
 ## Implemented behavior
 

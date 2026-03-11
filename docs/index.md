@@ -9,7 +9,7 @@ High-value documents only. Everything else is supporting detail.
 - [Plugin runtime law](PLUGIN_RUNTIME_LAW.md)
 - [Stability and breakage](STABILITY_AND_BREAKAGE.md)
 - [Contributor engineering rules](CONTRIBUTOR_ENGINEERING_RULES.md)
-- [Maintainer milestone checklist](MAINTAINER_MILESTONE_CHECKLIST.md)
+- [Maintainer evidence checklist](MAINTAINER_EVIDENCE_CHECKLIST.md)
 - [Plugin state](plugin_state.md)
 
 ## Core Law

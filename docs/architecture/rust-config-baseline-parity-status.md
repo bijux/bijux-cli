@@ -1,8 +1,8 @@
-# Rust Config Baseline Parity Milestone
+# Rust Config Baseline Parity Status
 
-Scope: task `199`.
+Scope: configuration parity baseline freeze.
 
-## Milestone
+## Baseline Status
 
 Rust config command baseline parity is frozen for:
 - root `config`

@@ -1,6 +1,6 @@
 # Config Parity Matrix
 
-Scope: task `198`.
+Scope: configuration parity matrix freeze.
 
 | Command | Rust Status | Parity Status | Notes |
 |---|---|---|---|

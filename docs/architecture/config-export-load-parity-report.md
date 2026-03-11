@@ -1,6 +1,6 @@
 # Config Export Load Parity Report
 
-Scope: tasks `181-193` for Rust config parity.
+Scope: coverage_ids `181-193` for Rust config parity.
 
 ## Behavior Decisions
 
@@ -22,7 +22,7 @@ Scope: tasks `181-193` for Rust config parity.
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_export_yaml_pretty.txt`
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_export_text_error.txt`
 
-## Completed Tasks
+## Completed Coverage
 
 - `181`: complete (`config export` implementation).
 - `182`: complete (export semantics fixed to dotenv-file target; response format metadata is `auto`).

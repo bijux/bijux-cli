@@ -1,6 +1,6 @@
 # Config Get Parity Report
 
-Scope: tasks 121-140.
+Scope: stable parity and behavior coverage.
 
 ## Decisions
 
@@ -23,7 +23,7 @@ Scope: tasks 121-140.
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_get_json_compact.txt`
   - `crates/bijux-cli/tests/data/golden/cli_surface/config_get_yaml_pretty.txt`
 
-## Task matrix
+## Coverage matrix
 
 - `121`: complete (`cli config get` implemented in Rust core path).
 - `122`: complete (missing key returns usage failure semantics matching Python baseline).

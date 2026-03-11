@@ -1,6 +1,6 @@
 # Install Truth Report
 
-Scope: install and packaging truth tasks `361-380`.
+Scope: install and packaging truth coverage_ids `361-380`.
 
 ## Evidence
 
