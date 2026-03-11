@@ -1212,6 +1212,44 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/deterministic_output_report.json",
+                "artifacts/status/determinism_dashboard.json",
+                "artifacts/status/determinism_expectations.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/output_crash_triage_artifact.json",
+                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
+                "artifacts/status/output_fuzz_regression_artifact.json",
+                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
+                "artifacts/status/output_envelope_fuzz_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/parser_crash_triage_artifact.json",
+                "artifacts/status/parser_fuzz_regression_artifact.json",
+                "artifacts/status/parser_fuzz_campaign_artifact.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS",
+        }),
     ]
 }
 
@@ -7227,6 +7265,453 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/cross_surface_consistency_artifact.json",
                 "artifacts/status/cross_surface_drift_artifact.json",
                 "artifacts/status/cross_surface_consistency_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let rows: Vec<(i64, &str)> = vec![
+                (121, "status_json_is_byte_stable_across_runs"),
+                (122, "plugins_list_json_is_byte_stable_across_runs"),
+                (123, "config_get_json_is_byte_stable_across_runs"),
+                (124, "inspect_json_is_byte_stable_across_runs"),
+                (125, "help_text_is_stable_across_runs"),
+                (126, "json_envelope_field_order_is_stable"),
+                (127, "yaml_envelope_field_order_is_stable"),
+                (128, "plugin_list_machine_output_order_is_stable"),
+                (129, "diagnostic_ordering_is_stable_in_machine_output"),
+                (130, "state_doctor_ordering_is_stable_in_machine_output"),
+                (131, "repeated_runs_do_not_introduce_timestamp_noise_when_disallowed"),
+                (132, "repeated_runs_do_not_introduce_path_order_noise"),
+                (133, "repeated_runs_do_not_introduce_plugin_discovery_order_noise"),
+                (134, "repeated_runs_do_not_introduce_environment_order_noise"),
+                (135, "text_output_stability_holds_under_no_color_mode"),
+                (136, "stderr_payloads_are_stable_for_identical_failures"),
+                (137, "exit_codes_are_stable_for_identical_failures"),
+            ];
+            let report_rows: Vec<Value> = rows
+                .iter()
+                .map(|(coverage_id, name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",
+                    })
+                })
+                .collect();
+            let complete = report_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/deterministic_output_report.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generator": "bijux-dev-cli",
+                    "scope": "deterministic output tests",
+                    "rows": report_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                        "artifact_todo": 138,
+                        "artifact_path": "artifacts/status/deterministic_output_report.json",
+                    },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/determinism_dashboard.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "dashboard": "command-by-command determinism",
+                    "commands": [
+                        "status --format json --no-pretty",
+                        "cli plugins list --format json --no-pretty",
+                        "cli config get alpha --format json --no-pretty",
+                        "inspect --format json --no-pretty",
+                        "help cli plugins",
+                        "dev cli state-doctor --format json --no-pretty",
+                    ],
+                    "evidence": [
+                        "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",
+                        "artifacts/status/deterministic_output_report.json",
+                    ],
+                    "covers_todo": 139,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/determinism_expectations.json",
+                &json!({
+                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "expectation": "byte stability is required where explicitly claimed",
+                    "status": "frozen",
+                    "evidence": [
+                        "artifacts/status/deterministic_output_report.json",
+                        "artifacts/status/determinism_dashboard.json",
+                    ],
+                    "covers_todo": 140,
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/deterministic_output_report.json",
+                "artifacts/status/determinism_dashboard.json",
+                "artifacts/status/determinism_expectations.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS" => {
+            let output_targets = workspace_root
+                .join("crates/bijux-cli-output/tests/output_envelope_fuzz_targets.rs");
+            let output_regression = workspace_root
+                .join("crates/bijux-cli-output/tests/output_envelope_fuzz_regressions.rs");
+            let bridge_targets = workspace_root
+                .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_targets.rs");
+            let bridge_regression = workspace_root
+                .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_regressions.rs");
+            let output_min_dir =
+                workspace_root.join("crates/bijux-cli-output/tests/fuzz/output_minimized_cases");
+            let bridge_min_dir = workspace_root
+                .join("crates/bijux-cli-python/tests/fuzz/bridge_conversion_minimized_cases");
+            let texts = BTreeMap::from([
+                (output_targets.clone(), fs::read_to_string(&output_targets).unwrap_or_default()),
+                (
+                    output_regression.clone(),
+                    fs::read_to_string(&output_regression).unwrap_or_default(),
+                ),
+                (bridge_targets.clone(), fs::read_to_string(&bridge_targets).unwrap_or_default()),
+                (
+                    bridge_regression.clone(),
+                    fs::read_to_string(&bridge_regression).unwrap_or_default(),
+                ),
+            ]);
+            let required: BTreeMap<i64, (PathBuf, &str)> = BTreeMap::from([
+                (81, (output_targets.clone(), "fuzz_success_envelope_serialization_is_stable")),
+                (82, (output_targets.clone(), "fuzz_error_envelope_serialization_is_stable")),
+                (83, (output_targets.clone(), "fuzz_json_yaml_text_emitters_render_without_corruption")),
+                (84, (output_targets.clone(), "fuzz_json_yaml_text_emitters_render_without_corruption")),
+                (85, (output_targets.clone(), "fuzz_json_yaml_text_emitters_render_without_corruption")),
+                (86, (output_targets.clone(), "fuzz_nested_diagnostics_multiline_unicode_empty_and_large_payload_rendering")),
+                (87, (output_targets.clone(), "fuzz_nested_diagnostics_multiline_unicode_empty_and_large_payload_rendering")),
+                (88, (output_targets.clone(), "fuzz_nested_diagnostics_multiline_unicode_empty_and_large_payload_rendering")),
+                (89, (output_targets.clone(), "fuzz_nested_diagnostics_multiline_unicode_empty_and_large_payload_rendering")),
+                (90, (output_targets.clone(), "fuzz_malformed_envelope_deserialization_is_rejected")),
+                (91, (bridge_targets.clone(), "fuzz_bridge_conversion_of_success_envelopes_is_stable")),
+                (92, (bridge_targets.clone(), "fuzz_bridge_conversion_of_error_envelopes_is_stable")),
+                (93, (output_targets.clone(), "fuzz_route_inspection_json_rendering_is_deterministic")),
+                (96, (output_regression.clone(), "minimized_output_cases_replay_with_stable_parse_behavior")),
+                (97, (bridge_regression.clone(), "minimized_bridge_conversion_cases_replay_deterministically")),
+                (98, (output_regression.clone(), "minimized_output_cases_replay_with_stable_parse_behavior")),
+                (99, (output_targets.clone(), "fuzz_output_field_order_invariant_for_machine_rendering")),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, (path, test_name))| {
+                    let text = texts.get(path).cloned().unwrap_or_default();
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": test_name,
+                        "status": if text.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
+                        "evidence": rel(path, workspace_root),
+                    })
+                })
+                .collect();
+            let output_cases: Vec<String> = collect_files(&output_min_dir)
+                .into_iter()
+                .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
+                .map(|p| rel(&p, workspace_root))
+                .collect();
+            let bridge_cases: Vec<String> = collect_files(&bridge_min_dir)
+                .into_iter()
+                .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
+                .map(|p| rel(&p, workspace_root))
+                .collect();
+            let run = |args: &[&str]| -> bool {
+                Command::new("cargo")
+                    .args(args)
+                    .current_dir(workspace_root)
+                    .status()
+                    .ok()
+                    .is_some_and(|s| s.success())
+            };
+            let output_targets_ok =
+                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_targets"]);
+            let output_reg_ok =
+                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_regressions"]);
+            let bridge_targets_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli-python",
+                "--test",
+                "bridge_conversion_fuzz_targets",
+            ]);
+            let bridge_reg_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli-python",
+                "--test",
+                "bridge_conversion_fuzz_regressions",
+            ]);
+            let missing_ids: Vec<i64> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .filter_map(|row| row.get("coverage_id").and_then(Value::as_i64))
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/output_crash_triage_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "output crash triage",
+                    "coverage_ids": [94],
+                    "status": if output_targets_ok && output_reg_ok { "clean" } else { "needs-triage" },
+                    "target_suite_ok": output_targets_ok,
+                    "regression_suite_ok": output_reg_ok,
+                    "minimized_case_count": output_cases.len(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "bridge conversion crash triage",
+                    "coverage_ids": [95],
+                    "status": if bridge_targets_ok && bridge_reg_ok { "clean" } else { "needs-triage" },
+                    "target_suite_ok": bridge_targets_ok,
+                    "regression_suite_ok": bridge_reg_ok,
+                    "minimized_case_count": bridge_cases.len(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/output_fuzz_regression_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "output fuzz regressions",
+                    "coverage_ids": [96, 98],
+                    "status": if output_reg_ok { "clean" } else { "drift" },
+                    "minimized_cases": output_cases,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "bridge conversion fuzz regressions",
+                    "coverage_ids": [97],
+                    "status": if bridge_reg_ok { "clean" } else { "drift" },
+                    "minimized_cases": bridge_cases,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/output_envelope_fuzz_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "output and envelope fuzz hardening",
+                    "coverage_ids": (81..101).collect::<Vec<_>>(),
+                    "status": if missing_ids.is_empty() && output_targets_ok && output_reg_ok && bridge_targets_ok && bridge_reg_ok && !output_cases.is_empty() && !bridge_cases.is_empty() { "frozen" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                    "missing_coverage_ids": missing_ids,
+                    "output_minimized_case_count": output_cases.len(),
+                    "bridge_minimized_case_count": bridge_cases.len(),
+                    "policy": "envelope/output fuzzing is contract hardening and remains permanently gated",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/output_crash_triage_artifact.json",
+                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
+                "artifacts/status/output_fuzz_regression_artifact.json",
+                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
+                "artifacts/status/output_envelope_fuzz_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS" => {
+            let routing_test =
+                workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_targets.rs");
+            let bin_test = workspace_root
+                .join("crates/bijux-cli/tests/bin_surface/parser_invalid_utf8_argv.rs");
+            let regression_test =
+                workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_regressions.rs");
+            let corpus_dir = workspace_root
+                .join("crates/bijux-cli/tests/routing/fuzz/parser_interesting_inputs");
+            let min_dir =
+                workspace_root.join("crates/bijux-cli/tests/routing/fuzz/parser_minimized_cases");
+            let texts = BTreeMap::from([
+                (routing_test.clone(), fs::read_to_string(&routing_test).unwrap_or_default()),
+                (bin_test.clone(), fs::read_to_string(&bin_test).unwrap_or_default()),
+                (regression_test.clone(), fs::read_to_string(&regression_test).unwrap_or_default()),
+            ]);
+            let required: BTreeMap<i64, (PathBuf, &str)> = BTreeMap::from([
+                (1, (routing_test.clone(), "fuzz_root_argv_parsing_does_not_panic")),
+                (2, (routing_test.clone(), "fuzz_cli_argv_parsing_does_not_panic")),
+                (3, (routing_test.clone(), "fuzz_dev_cli_argv_parsing_does_not_panic")),
+                (4, (routing_test.clone(), "fuzz_plugin_command_argv_parsing_does_not_panic")),
+                (5, (routing_test.clone(), "fuzz_config_command_argv_parsing_does_not_panic")),
+                (6, (routing_test.clone(), "fuzz_diagnostics_command_argv_parsing_does_not_panic")),
+                (
+                    7,
+                    (
+                        routing_test.clone(),
+                        "fuzz_mixed_global_local_flag_ordering_is_deterministic",
+                    ),
+                ),
+                (
+                    8,
+                    (
+                        routing_test.clone(),
+                        "fuzz_repeated_conflicting_flags_stays_safe_and_deterministic",
+                    ),
+                ),
+                (9, (bin_test.clone(), "malformed_utf8_argv_is_rejected_without_panic")),
+                (10, (routing_test.clone(), "fuzz_huge_tokens_and_values_does_not_panic")),
+                (11, (routing_test.clone(), "fuzz_typo_suggestion_paths_are_stable")),
+                (12, (routing_test.clone(), "fuzz_help_path_parsing_and_alias_resolution_is_safe")),
+                (13, (routing_test.clone(), "fuzz_help_path_parsing_and_alias_resolution_is_safe")),
+                (
+                    14,
+                    (
+                        routing_test.clone(),
+                        "fuzz_namespace_normalization_and_reserved_rejection_stays_safe",
+                    ),
+                ),
+                (
+                    15,
+                    (
+                        routing_test.clone(),
+                        "fuzz_reserved_name_rejection_and_normalization_are_deterministic",
+                    ),
+                ),
+                (
+                    17,
+                    (
+                        regression_test.clone(),
+                        "interesting_corpus_cases_do_not_crash_or_corrupt_route_resolution",
+                    ),
+                ),
+                (
+                    18,
+                    (
+                        regression_test.clone(),
+                        "minimized_parser_cases_do_not_crash_and_are_deterministic",
+                    ),
+                ),
+                (
+                    19,
+                    (
+                        regression_test.clone(),
+                        "minimized_parser_cases_do_not_crash_and_are_deterministic",
+                    ),
+                ),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, (path, test_name))| {
+                    let text = texts.get(path).cloned().unwrap_or_default();
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": test_name,
+                        "status": if text.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
+                        "evidence": rel(path, workspace_root),
+                    })
+                })
+                .collect();
+            let corpus_files: Vec<String> = collect_files(&corpus_dir)
+                .into_iter()
+                .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("txt"))
+                .map(|p| rel(&p, workspace_root))
+                .collect();
+            let minimized_files: Vec<String> = collect_files(&min_dir)
+                .into_iter()
+                .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("argv"))
+                .map(|p| rel(&p, workspace_root))
+                .collect();
+            let regression_ok = Command::new("cargo")
+                .args(["test", "-p", "bijux-cli", "--test", "routing", "parser_fuzz_regressions::"])
+                .current_dir(workspace_root)
+                .status()
+                .ok()
+                .is_some_and(|s| s.success());
+            let missing_ids: Vec<i64> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .filter_map(|row| row.get("coverage_id").and_then(Value::as_i64))
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/parser_crash_triage_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "parser crash triage",
+                    "coverage_ids": [16],
+                    "status": if regression_ok { "clean" } else { "needs-triage" },
+                    "known_crash_case_count": minimized_files.len(),
+                    "regression_test_ok": regression_ok,
+                    "regression_test_command": ["cargo","test","-p","bijux-cli","--test","routing","parser_fuzz_regressions::"],
+                    "triage_notes": [
+                        "minimized cases are retained and replayed on every gate run",
+                        "new parser crashes must be added as minimized reproducer cases",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/parser_fuzz_regression_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "parser fuzz regressions",
+                    "coverage_ids": [19, 20],
+                    "status": if regression_ok && missing_ids.is_empty() { "clean" } else { "drift" },
+                    "missing_coverage_ids": missing_ids,
+                    "corpus_file_count": corpus_files.len(),
+                    "minimized_case_count": minimized_files.len(),
+                    "regression_test_ok": regression_ok,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/parser_fuzz_campaign_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "parser fuzzing",
+                    "coverage_ids": (1..21).collect::<Vec<_>>(),
+                    "status": if missing_ids.is_empty() && !corpus_files.is_empty() && !minimized_files.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                    "corpus_directory": "crates/bijux-cli/tests/routing/fuzz/parser_interesting_inputs",
+                    "corpus_files": corpus_files,
+                    "minimized_directory": "crates/bijux-cli/tests/routing/fuzz/parser_minimized_cases",
+                    "minimized_files": minimized_files,
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/parser_crash_triage_artifact.json",
+                "artifacts/status/parser_fuzz_regression_artifact.json",
+                "artifacts/status/parser_fuzz_campaign_artifact.json"
             ]}))
         }
         _ => None,
