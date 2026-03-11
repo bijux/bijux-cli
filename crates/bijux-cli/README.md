@@ -9,7 +9,7 @@ for the Rust runtime.
 
 - Canonical command routing and normalization (`src/routing`).
 - Runtime command execution behavior (`src/app.rs`).
-- CLI process entrypoint helpers (`src/entrypoint.rs` and `src/bin/bijux-rs.rs`).
+- CLI process entrypoint helpers (`src/bootstrap/run.rs` and `src/bin/bijux.rs`).
 - Execution-kernel primitives and exit mapping (`src/kernel.rs`).
 - Runtime state behavior for config/history/memory/plugin command paths.
 - Runtime query interfaces used by maintainer commands (`src/contracts/query.rs`, `src/features/diagnostics/routing_inventory.rs`, `src/features/install/query.rs`, and diagnostics query modules).
@@ -18,7 +18,7 @@ for the Rust runtime.
 
 - Maintainer control-plane report assembly and maintainer workflow orchestration.
   Those live in `bijux-dev-cli` and are invoked through external binary delegation.
-- A second executable surface. `bijux-rs` remains a thin process entrypoint.
+- A temporary compatibility alias. `bijux-rs` remains a thin process entrypoint during deprecation.
 
 ## Module Map
 

@@ -12,7 +12,7 @@ maturin build --release
 ## Validate Wrapper Parity
 
 ```bash
-PYTHONPATH=python BIJUX_BIN=../../target/debug/bijux-rs python -m pytest -q tests/python
+PYTHONPATH=python BIJUX_BIN=../../target/debug/bijux python -m pytest -q tests/python
 ```
 
 ## Release Notes Requirements

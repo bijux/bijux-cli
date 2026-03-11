@@ -20,7 +20,7 @@ Compared current Rust root help content against Python command capture data.
 
 - Accepted differences:
   - Rust currently exposes only the routed baseline command set in help.
-  - Rust binary name in usage is `bijux-rs` during cargo-based test execution.
+  - Rust usage now reports canonical binary name `bijux`.
 - Regressions requiring follow-up:
   - Python command-tree ordering still differs in sections where Python contains additional families.
   - Unknown-command diagnostics currently show deterministic `unknown route: <name>` without suggestion text.

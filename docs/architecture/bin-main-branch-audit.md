@@ -1,4 +1,4 @@
-# `bijux-cli/src/bin/bijux-rs.rs` Branch Audit
+# `bijux-cli/src/bin/bijux.rs` Branch Audit
 
 ## Scope
 Audit date: 2026-03-09
