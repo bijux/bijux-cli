@@ -38,7 +38,11 @@ fn immediate_directories(root: &Path) -> BTreeSet<String> {
         .flatten()
         .map(|entry| entry.path())
         .filter(|path| path.is_dir())
-        .filter_map(|path| path.file_name().and_then(|name| name.to_str()).map(str::to_string))
+        .filter_map(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .map(str::to_string)
+        })
         .collect()
 }
 
@@ -175,7 +179,10 @@ fn collect_path_import_offenders(root: &Path, forbidden_paths: &[&str]) -> Vec<S
     for file in rs_files_under(root) {
         let source = fs::read_to_string(&file).expect("read source");
         let cleaned = strip_comments_and_strings(&source);
-        if forbidden_paths.iter().any(|needle| cleaned.contains(needle)) {
+        if forbidden_paths
+            .iter()
+            .any(|needle| cleaned.contains(needle))
+        {
             offenders.push(file.display().to_string());
         }
     }
@@ -186,11 +193,18 @@ fn collect_path_import_offenders(root: &Path, forbidden_paths: &[&str]) -> Vec<S
 fn feature_root_inventory_is_explicit_and_exhaustive() {
     let features_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/features");
     let observed = immediate_directories(&features_root);
-    let expected: BTreeSet<String> =
-        ["config", "developer", "diagnostics", "history", "install", "memory", "plugins"]
-            .into_iter()
-            .map(str::to_string)
-            .collect();
+    let expected: BTreeSet<String> = [
+        "config",
+        "developer",
+        "diagnostics",
+        "history",
+        "install",
+        "memory",
+        "plugins",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
 
     assert_eq!(
         observed, expected,
@@ -212,7 +226,11 @@ fn domain_modules_do_not_depend_on_interface_bootstrap_or_kernel_layers() {
     for module_root in domain_roots {
         offenders.extend(collect_path_import_offenders(
             &module_root,
-            &["crate::interface::", "crate::bootstrap::", "crate::kernel::"],
+            &[
+                "crate::interface::",
+                "crate::bootstrap::",
+                "crate::kernel::",
+            ],
         ));
     }
 
@@ -226,21 +244,30 @@ fn domain_modules_do_not_depend_on_interface_bootstrap_or_kernel_layers() {
 fn kernel_layer_does_not_depend_on_interface_layer() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/kernel");
     let offenders = collect_path_import_offenders(&root, &["crate::interface::"]);
-    assert!(offenders.is_empty(), "kernel layer must not import interface layer: {offenders:?}");
+    assert!(
+        offenders.is_empty(),
+        "kernel layer must not import interface layer: {offenders:?}"
+    );
 }
 
 #[test]
 fn cli_interface_does_not_depend_on_kernel_layer() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/interface/cli");
     let offenders = collect_path_import_offenders(&root, &["crate::kernel::"]);
-    assert!(offenders.is_empty(), "cli interface must not import kernel layer: {offenders:?}");
+    assert!(
+        offenders.is_empty(),
+        "cli interface must not import kernel layer: {offenders:?}"
+    );
 }
 
 #[test]
 fn feature_modules_do_not_depend_on_interface_layer() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/features");
     let offenders = collect_path_import_offenders(&root, &["crate::interface::"]);
-    assert!(offenders.is_empty(), "feature modules must not import interface layer: {offenders:?}");
+    assert!(
+        offenders.is_empty(),
+        "feature modules must not import interface layer: {offenders:?}"
+    );
 }
 
 #[test]

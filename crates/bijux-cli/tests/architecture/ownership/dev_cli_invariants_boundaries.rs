@@ -98,8 +98,14 @@ fn dev_cli_dispatch_uses_shared_envelope_and_exit_mapping() {
         ))
         .expect("read dispatch source"),
     );
-    assert!(source.contains("render_value("), "core app must use shared report envelope renderer");
-    assert!(source.contains("AppRunResult"), "core app must return a normalized run envelope");
+    assert!(
+        source.contains("render_value("),
+        "core app must use shared report envelope renderer"
+    );
+    assert!(
+        source.contains("AppRunResult"),
+        "core app must return a normalized run envelope"
+    );
     assert!(
         source.contains("try_delegate_known_bijux_tool"),
         "core dispatch must route known external tool delegation before local handling"
@@ -133,6 +139,12 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
         core_source.contains("owns_dev_cli_path"),
         "core route target classification must use bijux-dev-cli ownership helper"
     );
-    assert!(!bin_source.contains("dev cli"), "bin must not own dev cli dispatch");
-    assert!(!bin_source.contains("bijux_dev_cli"), "bin must not import bijux-dev-cli crate");
+    assert!(
+        !bin_source.contains("dev cli"),
+        "bin must not own dev cli dispatch"
+    );
+    assert!(
+        !bin_source.contains("bijux_dev_cli"),
+        "bin must not import bijux-dev-cli crate"
+    );
 }

@@ -57,7 +57,9 @@ fn enforces_internal_crate_boundaries() {
             "--format-version",
             "1",
             "--manifest-path",
-            manifest.to_str().expect("workspace manifest path must be valid UTF-8"),
+            manifest
+                .to_str()
+                .expect("workspace manifest path must be valid UTF-8"),
         ])
         .output()
         .expect("cargo metadata command must execute");
@@ -69,14 +71,22 @@ fn enforces_internal_crate_boundaries() {
     );
 
     let root: Value = serde_json::from_slice(&output.stdout).expect("valid metadata JSON");
-    let packages =
-        root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
+    let packages = root
+        .get("packages")
+        .and_then(Value::as_array)
+        .expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<(&str, &str)>> = BTreeMap::from([
-        ("bijux-dev-cli", BTreeSet::from([("normal", "bijux-cli-evidence")])),
+        (
+            "bijux-dev-cli",
+            BTreeSet::from([("normal", "bijux-cli-evidence")]),
+        ),
         ("bijux-cli", BTreeSet::from([("normal", "bijux-dev-cli")])),
         ("bijux-cli-evidence", BTreeSet::new()),
-        ("bijux-cli-python", BTreeSet::from([("normal", "bijux-cli")])),
+        (
+            "bijux-cli-python",
+            BTreeSet::from([("normal", "bijux-cli")]),
+        ),
     ]);
     let mut observed_internal_packages = BTreeSet::new();
 

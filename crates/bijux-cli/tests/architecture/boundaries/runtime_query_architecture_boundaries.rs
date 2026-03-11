@@ -119,7 +119,10 @@ fn strip_comments_and_strings(source: &str) -> String {
 #[test]
 fn runtime_crates_do_not_import_dev_cli_crate() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
-    let runtime_crates = ["crates/bijux-cli/src/routing", "crates/bijux-cli-python/src"];
+    let runtime_crates = [
+        "crates/bijux-cli/src/routing",
+        "crates/bijux-cli-python/src",
+    ];
 
     let mut offenders = Vec::<String>::new();
     for crate_src in runtime_crates {
