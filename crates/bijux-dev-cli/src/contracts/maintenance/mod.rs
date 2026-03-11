@@ -28,7 +28,7 @@ pub use inventory::{
     build_provenance_statement_report, build_python_capture_report,
 };
 
-pub(crate) use super::native::{native_status_contract_rows, run_native_status_contract};
+pub(crate) use crate::suites::{native_status_contract_rows, run_native_status_contract};
 pub(crate) use inventory::{
     collect_files, generated_at_utc, rel, run_bijux_json, run_bijux_json_env, run_bijux_text,
     status_slug_for_name, write_json, write_status_artifact_json,

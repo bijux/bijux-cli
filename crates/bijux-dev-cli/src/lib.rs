@@ -14,6 +14,8 @@ pub mod contract_engine;
 pub mod infra;
 /// Shared platform contracts and schemas used across dev-cli capabilities.
 pub mod schema;
+/// Contract execution suites grouped by control-plane domain.
+pub mod suites;
 /// Maintainer-facing report modules.
 pub mod reports;
 
