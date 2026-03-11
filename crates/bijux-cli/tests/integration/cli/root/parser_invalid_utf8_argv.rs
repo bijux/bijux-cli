@@ -3,7 +3,6 @@
 //! test_type: parser-fuzz
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json as _;
 use shlex as _;

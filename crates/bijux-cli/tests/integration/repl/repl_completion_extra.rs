@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 //! REPL completion coverage for TODOs 241-255.
 
-use bijux_cli_python as _;
 use libc as _;
 use std::fs;
 
