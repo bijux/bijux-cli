@@ -69,10 +69,7 @@ fn removed_dev_alias_paths_resolve_as_unknown_and_canonical_path_still_resolves(
     let canonical_err = registry
         .resolve(&canonical)
         .expect_err("canonical dev cli command should remain outside runtime registry");
-    assert!(matches!(
-        canonical_err,
-        bijux_cli::api::routing::registry::RouteError::Unknown(_)
-    ));
+    assert!(matches!(canonical_err, bijux_cli::api::routing::registry::RouteError::Unknown(_)));
 }
 
 #[test]
@@ -108,9 +105,6 @@ fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
         let err = registry
             .resolve(&path)
             .expect_err("canonical dev cli command should remain outside runtime registry");
-        assert!(matches!(
-            err,
-            bijux_cli::api::routing::registry::RouteError::Unknown(_)
-        ));
+        assert!(matches!(err, bijux_cli::api::routing::registry::RouteError::Unknown(_)));
     }
 }

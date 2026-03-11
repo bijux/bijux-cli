@@ -27,11 +27,7 @@ fn delegate_to_external_binary(
             let message = format!(
                 "failed to run `{command_surface}` via `{binary}`: {error}\ninstall with `cargo install {package_name}` or `pip install {package_name}`\n"
             );
-            AppRunResult {
-                exit_code: 1,
-                stdout: String::new(),
-                stderr: message,
-            }
+            AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
         }
     }
 }
@@ -76,10 +72,7 @@ fn dev_cli_binary_candidates() -> Vec<String> {
         for profile in ["debug", "release"] {
             push_unique_candidate(
                 &mut candidates,
-                workspace_root
-                    .join("target")
-                    .join(profile)
-                    .join(&executable),
+                workspace_root.join("target").join(profile).join(&executable),
             );
         }
     }
@@ -134,11 +127,7 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let message = format!(
         "failed to run `bijux dev cli`: {last_error}\nattempted binaries: {attempted}\ninstall with `cargo install {DEV_CLI_PACKAGE}` or `pip install {DEV_CLI_PACKAGE}`\n"
     );
-    AppRunResult {
-        exit_code: 1,
-        stdout: String::new(),
-        stderr: message,
-    }
+    AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
 }
 
 pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
@@ -173,11 +162,7 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
             ));
         }
 
-        let forwarded = if tool_namespace == "cli" {
-            &argv[3..]
-        } else {
-            &argv[2..]
-        };
+        let forwarded = if tool_namespace == "cli" { &argv[3..] } else { &argv[2..] };
         return Some(delegate_dev_cli(forwarded));
     }
 
