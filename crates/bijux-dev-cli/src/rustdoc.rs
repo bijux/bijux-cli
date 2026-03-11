@@ -29,10 +29,7 @@ fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn read(path: &Path) -> String {
