@@ -33,9 +33,7 @@ where
 #[test]
 fn roundtrip_for_all_contract_types() {
     let ns = Namespace("cli".to_string());
-    let path = CommandPath {
-        segments: vec![ns.clone(), Namespace("status".to_string())],
-    };
+    let path = CommandPath { segments: vec![ns.clone(), Namespace("status".to_string())] };
 
     let flags = GlobalFlags {
         output_format: Some(OutputFormat::Json),
@@ -85,16 +83,11 @@ fn roundtrip_for_all_contract_types() {
         path: path.clone(),
         summary: "Show status".to_string(),
         hidden: false,
-        aliases: vec![CommandPath {
-            segments: vec![Namespace("status".to_string())],
-        }],
+        aliases: vec![CommandPath { segments: vec![Namespace("status".to_string())] }],
     };
 
-    let ns_meta = NamespaceMetadata {
-        name: ns.clone(),
-        reserved: true,
-        owner: "bijux-cli".to_string(),
-    };
+    let ns_meta =
+        NamespaceMetadata { name: ns.clone(), reserved: true, owner: "bijux-cli".to_string() };
 
     let plugin_manifest = PluginManifestV1 {
         name: "sample".to_string(),
@@ -152,11 +145,7 @@ fn roundtrip_for_all_contract_types() {
         }],
         alias_rewrites: vec![AliasRewrite {
             alias: vec!["plugins".to_string(), "inspect".to_string()],
-            canonical: vec![
-                "cli".to_string(),
-                "plugins".to_string(),
-                "inspect".to_string(),
-            ],
+            canonical: vec!["cli".to_string(), "plugins".to_string(), "inspect".to_string()],
             source: "compatibility-alias".to_string(),
         }],
     };

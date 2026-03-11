@@ -190,10 +190,7 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
     ];
 
     for needle in delegated {
-        assert!(
-            source.contains(needle),
-            "dispatch must delegate report assembly for {needle}"
-        );
+        assert!(source.contains(needle), "dispatch must delegate report assembly for {needle}");
     }
     assert!(
         !source.contains("render_value("),
