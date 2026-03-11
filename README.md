@@ -180,6 +180,9 @@ Bijux relies on POSIX filesystem and process semantics.
 # Scaffold a Python plugin from repository templates
 bijux plugins scaffold my_plugin --template ./templates/plugins-py --force
 
+# Scaffold a Rust-backed plugin from repository templates
+bijux plugins scaffold my_rust_plugin --template ./templates/plugins-rs --force
+
 # Install and explore
 bijux plugins install ./my_plugin --force
 bijux plugins list
@@ -333,7 +336,7 @@ api/            OpenAPI schemas
 configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
 makes/          Make modules
-templates/      Plugin templates
+templates/      Plugin templates (plugins-py, plugins-rs)
 scripts/        Helper scripts
 src/bijux_cli/  Core implementation
 tests/          All test layers
