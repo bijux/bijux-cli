@@ -108,7 +108,11 @@ fn native_contract_modules_use_suite_layout() {
     let native_dir = crate_root.join("src/contracts/native");
     for suite in ["control_plane", "runtime", "resilience", "quality"] {
         let suite_dir = native_dir.join(suite);
-        assert!(suite_dir.is_dir(), "missing suite directory {}", suite_dir.display());
+        assert!(
+            suite_dir.is_dir(),
+            "missing suite directory {}",
+            suite_dir.display()
+        );
         assert!(
             suite_dir.join("mod.rs").is_file(),
             "missing suite module file {}",
@@ -222,6 +226,16 @@ fn workspace_root_scripts_directory_is_removed_and_name_is_blocked() {
             file.display()
         );
     }
+}
+
+#[test]
+fn workspace_root_target_directory_is_forbidden() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let workspace_root = crate_root.join("..").join("..");
+    assert!(
+        !workspace_root.join("target").exists(),
+        "workspace root must not contain target/; use artifacts/ for generated files"
+    );
 }
 
 #[test]
