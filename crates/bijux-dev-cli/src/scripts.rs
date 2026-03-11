@@ -7,6 +7,8 @@ use std::process::Command;
 
 use serde_json::{json, Value};
 
+use crate::status_script_ids::{status_script_id, status_script_kind};
+
 fn collect_files(base: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if !base.exists() {
@@ -114,48 +116,6 @@ fn status_script_sources(workspace_root: &Path) -> Vec<String> {
         .filter(|path| is_python_file(path))
         .map(|path| rel(&path, workspace_root))
         .collect()
-}
-
-fn status_script_kind(script_path: &str) -> Option<&'static str> {
-    let file = script_path.rsplit('/').next().unwrap_or(script_path);
-    if file.starts_with("generate_") {
-        return Some("generate");
-    }
-    if file.starts_with("enforce_") {
-        return Some("enforce");
-    }
-    if file.starts_with("check_") {
-        return Some("check");
-    }
-    if file.starts_with("warn_") {
-        return Some("warn");
-    }
-    if file.starts_with("run_") {
-        return Some("run");
-    }
-    None
-}
-
-fn status_script_slug(script_path: &str) -> Option<String> {
-    let kind = status_script_kind(script_path)?;
-    let file = script_path.rsplit('/').next().unwrap_or(script_path);
-    let stem = file.strip_suffix(".py").unwrap_or(file);
-    let stem = stem.strip_prefix(&format!("{kind}_")).unwrap_or(stem);
-    Some(
-        stem.chars()
-            .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
-            .collect::<String>()
-            .split('-')
-            .filter(|part| !part.is_empty())
-            .collect::<Vec<_>>()
-            .join("-"),
-    )
-}
-
-fn status_script_id(script_path: &str) -> Option<String> {
-    let kind = status_script_kind(script_path)?;
-    let slug = status_script_slug(script_path)?;
-    Some(format!("STATUS-SCRIPT-{}-{slug}", kind.to_ascii_uppercase()))
 }
 
 fn extract_artifact_paths(source: &str) -> Vec<String> {

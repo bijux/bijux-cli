@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
+use crate::status_script_ids::status_script_id;
+
 fn collect_files(base: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if !base.exists() {
@@ -43,49 +45,6 @@ fn classify_script(path: &str) -> &'static str {
         return "delete";
     }
     "replace"
-}
-
-fn status_script_kind(path: &str) -> Option<&'static str> {
-    let file = path.rsplit('/').next().unwrap_or(path);
-    if file.starts_with("generate_") {
-        return Some("generate");
-    }
-    if file.starts_with("enforce_") {
-        return Some("enforce");
-    }
-    if file.starts_with("check_") {
-        return Some("check");
-    }
-    if file.starts_with("warn_") {
-        return Some("warn");
-    }
-    if file.starts_with("run_") {
-        return Some("run");
-    }
-    None
-}
-
-fn status_script_id(path: &str) -> Option<String> {
-    let is_py = Path::new(path)
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("py"));
-    if !path.starts_with("scripts/status/") || !is_py {
-        return None;
-    }
-    let kind = status_script_kind(path)?;
-    let file = path.rsplit('/').next().unwrap_or(path);
-    let stem = file.strip_suffix(".py").unwrap_or(file);
-    let stem = stem.strip_prefix(&format!("{kind}_")).unwrap_or(stem);
-    let slug = stem
-        .chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
-        .collect::<String>()
-        .split('-')
-        .filter(|segment| !segment.is_empty())
-        .collect::<Vec<_>>()
-        .join("-");
-    Some(format!("STATUS-SCRIPT-{}-{slug}", kind.to_ascii_uppercase()))
 }
 
 fn replacement_command(path: &str) -> Option<String> {
