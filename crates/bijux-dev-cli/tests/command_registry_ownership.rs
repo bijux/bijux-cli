@@ -57,10 +57,10 @@ fn dev_cli_crate_does_not_define_runtime_command_law() {
     ];
 
     for signature in runtime_law_signatures {
-        let present = include_str!("../src/control_plane.rs").contains(signature)
-            || include_str!("../src/status.rs").contains(signature)
-            || include_str!("../src/parity.rs").contains(signature)
-            || include_str!("../src/runtime_identity.rs").contains(signature);
+        let present = include_str!("../src/domain/control_plane.rs").contains(signature)
+            || include_str!("../src/domain/status.rs").contains(signature)
+            || include_str!("../src/domain/parity.rs").contains(signature)
+            || include_str!("../src/domain/runtime_identity.rs").contains(signature);
         assert!(
             !present,
             "dev cli crate must not define runtime command law signature: {signature}"
