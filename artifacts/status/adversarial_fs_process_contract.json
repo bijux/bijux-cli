@@ -1,11 +1,5 @@
 {
-  "generated_at": "2026-03-10T12:56:16.505664+00:00",
-  "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
-  "missing_todos": [],
-  "policy": "adversarial fs/process behavior is first-class hardening and permanently gated",
-  "scope": "adversarial filesystem/process hardening contract",
-  "status": "frozen",
-  "tasks": [
+  "coverage_ids": [
     181,
     182,
     183,
@@ -26,5 +20,30 @@
     198,
     199,
     200
-  ]
+  ],
+  "generated_at": "2026-03-11T04:49:24Z",
+  "generator": "bijux-dev-cli",
+  "missing_coverage_ids": [
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198
+  ],
+  "policy": "adversarial fs/process behavior is first-class hardening and permanently gated",
+  "scope": "adversarial filesystem/process hardening contract",
+  "status": "partial"
 }

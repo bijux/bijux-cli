@@ -1,23 +1,8 @@
 {
   "campaign_suite": {
-    "command": [
-      "cargo",
-      "test",
-      "-p",
-      "bijux-cli-bin",
-      "--test",
-      "adversarial_fs_process_campaigns"
-    ],
-    "exit_code": 0,
-    "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/adversarial_fs_process_campaigns.rs (target/debug/deps/adversarial_fs_process_campaigns-d7be227b8bf1bd17)\n",
-    "stdout": "\nrunning 5 tests\ntest interrupted_process_behavior_is_normalized_for_interactive_entrypoint ... ok\ntest child_process_failure_paths_surface_normalized_failures_when_plugins_are_broken ... ok\ntest rename_race_and_temp_leftovers_keep_commands_non_panicking ... ok\ntest broken_symlink_and_permission_denied_paths_surface_stable_failures ... ok\ntest missing_parent_and_type_flip_path_cases_are_handled_without_corruption ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s\n\n"
+    "ok": true
   },
-  "generated_at": "2026-03-10T12:56:16.505664+00:00",
-  "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
-  "scope": "adversarial filesystem/process matrix",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     181,
     182,
     183,
@@ -37,114 +22,118 @@
     197,
     198
   ],
-  "todo_coverage": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption",
-      "todo": 181
+      "coverage_id": 181,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption",
-      "todo": 182
+      "coverage_id": 182,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption",
-      "todo": 183
+      "coverage_id": 183,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption",
-      "todo": 184
+      "coverage_id": 184,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 185
+      "coverage_id": 185,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 186
+      "coverage_id": 186,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 187
+      "coverage_id": 187,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 188
+      "coverage_id": 188,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 189
+      "coverage_id": 189,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 190
+      "coverage_id": 190,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 191
+      "coverage_id": 191,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 192
+      "coverage_id": 192,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures",
-      "todo": 193
+      "coverage_id": 193,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "broken_symlink_and_permission_denied_paths_surface_stable_failures"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking",
-      "todo": 194
+      "coverage_id": 194,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking",
-      "todo": 195
+      "coverage_id": 195,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking",
-      "todo": 196
+      "coverage_id": 196,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "rename_race_and_temp_leftovers_keep_commands_non_panicking"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "child_process_failure_paths_surface_normalized_failures_when_plugins_are_broken",
-      "todo": 197
+      "coverage_id": 197,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "child_process_failure_paths_surface_normalized_failures_when_plugins_are_broken"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/adversarial_fs_process_campaigns.rs",
-      "status": "covered",
-      "test": "interrupted_process_behavior_is_normalized_for_interactive_entrypoint",
-      "todo": 198
+      "coverage_id": 198,
+      "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+      "status": "missing",
+      "test": "interrupted_process_behavior_is_normalized_for_interactive_entrypoint"
     }
-  ]
+  ],
+  "generated_at": "2026-03-11T04:49:24Z",
+  "generator": "bijux-dev-cli",
+  "scope": "adversarial filesystem/process matrix",
+  "status": "partial"
 }

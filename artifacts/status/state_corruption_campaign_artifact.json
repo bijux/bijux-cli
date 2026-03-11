@@ -1,10 +1,6 @@
 {
   "campaign_suite_ok": true,
-  "generated_at": "2026-03-10T12:40:31.475035+00:00",
-  "generator": "scripts/status/generate_state_corruption_harness_reports.py",
-  "scope": "randomized corruption campaign",
-  "status": "clean",
-  "tasks": [
+  "coverage_ids": [
     101,
     102,
     103,
@@ -24,114 +20,118 @@
     117,
     118
   ],
-  "todo_coverage": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 101
+      "coverage_id": 101,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 102
+      "coverage_id": 102,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 103
+      "coverage_id": 103,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 104
+      "coverage_id": 104,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 105
+      "coverage_id": 105,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 106
+      "coverage_id": 106,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 107
+      "coverage_id": 107,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 108
+      "coverage_id": 108,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 109
+      "coverage_id": 109,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 110
+      "coverage_id": 110,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 111
+      "coverage_id": 111,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 112
+      "coverage_id": 112,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 113
+      "coverage_id": 113,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 114
+      "coverage_id": 114,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 115
+      "coverage_id": 115,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 116
+      "coverage_id": 116,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_harness.rs",
-      "status": "covered",
-      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains",
-      "todo": 117
+      "coverage_id": 117,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs",
+      "status": "missing",
+      "test": "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/randomized_state_corruption_regressions.rs",
-      "status": "covered",
-      "test": "minimized_corrupted_state_reproducers_replay_without_crashing",
-      "todo": 119
+      "coverage_id": 119,
+      "evidence": "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_regressions.rs",
+      "status": "missing",
+      "test": "minimized_corrupted_state_reproducers_replay_without_crashing"
     }
-  ]
+  ],
+  "generated_at": "2026-03-11T04:49:28Z",
+  "generator": "bijux-dev-cli",
+  "scope": "randomized corruption campaign",
+  "status": "clean"
 }

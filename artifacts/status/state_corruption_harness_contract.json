@@ -1,39 +1,8 @@
 {
   "campaign_suite": {
-    "command": [
-      "cargo",
-      "test",
-      "-p",
-      "bijux-cli-bin",
-      "--test",
-      "randomized_state_corruption_harness"
-    ],
-    "exit_code": 0,
-    "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/randomized_state_corruption_harness.rs (target/debug/deps/randomized_state_corruption_harness-e0c41d53734215a5)\n",
-    "stdout": "\nrunning 1 test\ntest randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s\n\n"
+    "ok": true
   },
-  "generated_at": "2026-03-10T12:40:31.475035+00:00",
-  "generator": "scripts/status/generate_state_corruption_harness_reports.py",
-  "missing_todos": [],
-  "policy": "randomized state corruption harness is shared test utility and release hardening evidence",
-  "replay_suite": {
-    "command": [
-      "cargo",
-      "test",
-      "-p",
-      "bijux-cli-bin",
-      "--test",
-      "randomized_state_corruption_regressions"
-    ],
-    "exit_code": 0,
-    "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/randomized_state_corruption_regressions.rs (target/debug/deps/randomized_state_corruption_regressions-41ce8d45be2bc590)\n",
-    "stdout": "\nrunning 1 test\ntest minimized_corrupted_state_reproducers_replay_without_crashing ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s\n\n"
-  },
-  "scope": "randomized state corruption harness",
-  "status": "frozen",
-  "tasks": [
+  "coverage_ids": [
     101,
     102,
     103,
@@ -54,5 +23,33 @@
     118,
     119,
     120
-  ]
+  ],
+  "generated_at": "2026-03-11T04:49:28Z",
+  "generator": "bijux-dev-cli",
+  "missing_coverage_ids": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    119
+  ],
+  "policy": "randomized state corruption harness is shared test utility and release hardening evidence",
+  "replay_suite": {
+    "ok": true
+  },
+  "scope": "randomized state corruption harness",
+  "status": "partial"
 }

@@ -1,16 +1,12 @@
 {
-  "generated_at": "2026-03-10T12:40:31.475035+00:00",
-  "generator": "scripts/status/generate_state_corruption_harness_reports.py",
-  "minimized_case_count": 3,
-  "minimized_cases": [
-    "crates/bijux-cli-bin/tests/fuzz/state_corruption_minimized_cases/config_partial_write.json",
-    "crates/bijux-cli-bin/tests/fuzz/state_corruption_minimized_cases/history_wrong_shape.json",
-    "crates/bijux-cli-bin/tests/fuzz/state_corruption_minimized_cases/registry_truncated.json"
+  "coverage_ids": [
+    119
   ],
+  "generated_at": "2026-03-11T04:49:28Z",
+  "generator": "bijux-dev-cli",
+  "minimized_case_count": 0,
+  "minimized_cases": [],
   "replay_suite_ok": true,
   "scope": "minimized corrupted-state reproducer retention",
-  "status": "clean",
-  "tasks": [
-    119
-  ]
+  "status": "needs-triage"
 }
