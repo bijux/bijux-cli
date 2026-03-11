@@ -140,9 +140,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let dev_registry = workspace_root.join("crates/bijux-dev-cli/src/registry.rs");
             let inventory = workspace_root.join("crates/bijux-cli/src/routing/inventory.rs");
             let has = |path: &Path, token: &str| -> bool {
-                fs::read_to_string(path)
-                    .map(|text| text.contains(token))
-                    .unwrap_or(false)
+                fs::read_to_string(path).map(|text| text.contains(token)).unwrap_or(false)
             };
             let before = json!({
                 "core_owned_routes_registry_presentation":
@@ -244,10 +242,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "install_runtime_identity_query",
                     workspace_root.join("crates/bijux-cli/src/install/query.rs"),
                 ),
-                (
-                    "core_state_parity_query",
-                    workspace_root.join("crates/bijux-cli/src/query.rs"),
-                ),
+                ("core_state_parity_query", workspace_root.join("crates/bijux-cli/src/query.rs")),
             ];
             let interfaces: Vec<Value> = query_files
                 .into_iter()
@@ -323,11 +318,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .count();
             let groups: BTreeSet<String> = command_rows
                 .iter()
-                .filter_map(|row| {
-                    row.get("group")
-                        .and_then(Value::as_str)
-                        .map(ToString::to_string)
-                })
+                .filter_map(|row| row.get("group").and_then(Value::as_str).map(ToString::to_string))
                 .collect();
             let report = json!({
                 "namespace": "dev cli",

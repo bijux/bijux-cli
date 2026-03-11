@@ -20,10 +20,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .into_iter()
                 .filter(|row| {
                     row.get("status").and_then(Value::as_str).is_some_and(|s| {
-                        matches!(
-                            s,
-                            "partial" | "intentionally-different" | "different-by-decision"
-                        )
+                        matches!(s, "partial" | "intentionally-different" | "different-by-decision")
                     })
                 })
                 .map(|row| {
@@ -198,20 +195,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             text.push_str(
                                 "\nPackaging:\n- runtime-identity: verify active binary and PATH shadowing behavior before cutover\n- install-assumptions: review install-state assumptions and shell completion target paths\n\nPlugin lifecycle:\n- plugin-install-write-path: validate rollback and retry behavior before enabling new plugin capabilities\n- plugin-runtime-diagnostics: verify reserved-name and registry diagnostics surface expected errors\n\nState behavior:\n- config: backup and validate config before mutating across runtime upgrades\n- history-memory: run state doctor when corrupted history or memory payloads are detected\n- recovery: follow machine-readable state recovery guidance for rollback paths\n",
                             );
-            fs::write(
-                workspace_root.join("artifacts/status/migration_notes.txt"),
-                text,
-            )
-            .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/migration_notes_commands.json",
-                    "artifacts/status/migration_notes_packaging.json",
-                    "artifacts/status/migration_notes_plugin_lifecycle.json",
-                    "artifacts/status/migration_notes_state_behavior.json",
-                    "artifacts/status/migration_notes.txt"
-                ]}),
-            )
+            fs::write(workspace_root.join("artifacts/status/migration_notes.txt"), text).ok()?;
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/migration_notes_commands.json",
+                "artifacts/status/migration_notes_packaging.json",
+                "artifacts/status/migration_notes_plugin_lifecycle.json",
+                "artifacts/status/migration_notes_state_behavior.json",
+                "artifacts/status/migration_notes.txt"
+            ]}))
         }
         _ => None,
     }

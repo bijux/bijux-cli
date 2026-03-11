@@ -184,27 +184,25 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/evidence_coverage_report.json",
-                    "artifacts/status/evidence_integrity_artifact.json",
-                    "artifacts/status/orphan_evidence_report.json",
-                    "artifacts/status/orphan_evidence_artifact.json",
-                    "artifacts/status/claim_without_evidence_report.json",
-                    "artifacts/status/evidence_command_map_report.json",
-                    "artifacts/status/evidence_parity_map_report.json",
-                    "artifacts/status/config_owners_by_layer_report.json",
-                    "artifacts/status/config_file_schema_owners_report.json",
-                    "artifacts/status/config_python_compatibility_shims_report.json",
-                    "artifacts/status/config_rust_sources_report.json",
-                    "artifacts/status/config_precedence_proofs_report.json",
-                    "artifacts/status/config_mutation_rollback_proofs_report.json",
-                    "artifacts/status/config_corruption_evidence_report.json",
-                    "artifacts/status/config_owner_drift_report.json",
-                    "artifacts/status/config_evidence_link_report.json",
-                    "artifacts/status/config_ownership_truth.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/evidence_coverage_report.json",
+                "artifacts/status/evidence_integrity_artifact.json",
+                "artifacts/status/orphan_evidence_report.json",
+                "artifacts/status/orphan_evidence_artifact.json",
+                "artifacts/status/claim_without_evidence_report.json",
+                "artifacts/status/evidence_command_map_report.json",
+                "artifacts/status/evidence_parity_map_report.json",
+                "artifacts/status/config_owners_by_layer_report.json",
+                "artifacts/status/config_file_schema_owners_report.json",
+                "artifacts/status/config_python_compatibility_shims_report.json",
+                "artifacts/status/config_rust_sources_report.json",
+                "artifacts/status/config_precedence_proofs_report.json",
+                "artifacts/status/config_mutation_rollback_proofs_report.json",
+                "artifacts/status/config_corruption_evidence_report.json",
+                "artifacts/status/config_owner_drift_report.json",
+                "artifacts/status/config_evidence_link_report.json",
+                "artifacts/status/config_ownership_truth.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-HISTORY-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -212,57 +210,24 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (
-                    322,
-                    "history_root_listing_no_file_one_record_many_records_and_ordering",
-                ),
-                (
-                    323,
-                    "history_root_listing_no_file_one_record_many_records_and_ordering",
-                ),
-                (
-                    324,
-                    "history_root_listing_no_file_one_record_many_records_and_ordering",
-                ),
+                (322, "history_root_listing_no_file_one_record_many_records_and_ordering"),
+                (323, "history_root_listing_no_file_one_record_many_records_and_ordering"),
+                (324, "history_root_listing_no_file_one_record_many_records_and_ordering"),
                 (325, "history_text_json_yaml_quiet_and_no_color_modes"),
                 (326, "history_text_json_yaml_quiet_and_no_color_modes"),
                 (327, "history_text_json_yaml_quiet_and_no_color_modes"),
-                (
-                    328,
-                    "history_root_listing_no_file_one_record_many_records_and_ordering",
-                ),
-                (
-                    329,
-                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-                ),
-                (
-                    330,
-                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-                ),
-                (
-                    331,
-                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-                ),
-                (
-                    332,
-                    "history_limit_path_override_and_repeated_run_determinism",
-                ),
-                (
-                    333,
-                    "history_limit_path_override_and_repeated_run_determinism",
-                ),
+                (328, "history_root_listing_no_file_one_record_many_records_and_ordering"),
+                (329, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
+                (330, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
+                (331, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
+                (332, "history_limit_path_override_and_repeated_run_determinism"),
+                (333, "history_limit_path_override_and_repeated_run_determinism"),
                 (334, "history_clear_with_unwritable_parent_fails_stably"),
                 (335, "history_text_json_yaml_quiet_and_no_color_modes"),
                 (336, "history_text_json_yaml_quiet_and_no_color_modes"),
-                (
-                    337,
-                    "history_limit_path_override_and_repeated_run_determinism",
-                ),
+                (337, "history_limit_path_override_and_repeated_run_determinism"),
                 (338, "history_help_and_exit_discipline_for_root_and_clear"),
-                (
-                    339,
-                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
-                ),
+                (339, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
             ]);
             let coverage_rows = required
                                 .iter()
@@ -344,14 +309,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/history_command_coverage_report.json",
-                    "artifacts/status/history_command_matrix_artifact.json",
-                    "artifacts/status/history_corruption_matrix_artifact.json",
-                    "artifacts/status/history_read_domain_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/history_command_coverage_report.json",
+                "artifacts/status/history_command_matrix_artifact.json",
+                "artifacts/status/history_corruption_matrix_artifact.json",
+                "artifacts/status/history_read_domain_contract.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -371,34 +334,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (370, "doctor_text_json_and_corrupted_state_coverage"),
                 (371, "doctor_text_json_and_corrupted_state_coverage"),
                 (372, "doctor_text_json_and_corrupted_state_coverage"),
-                (
-                    373,
-                    "dev_cli_routes_registry_env_contracts_json_shape_stability",
-                ),
-                (
-                    374,
-                    "dev_cli_routes_registry_env_contracts_json_shape_stability",
-                ),
-                (
-                    375,
-                    "dev_cli_routes_registry_env_contracts_json_shape_stability",
-                ),
-                (
-                    376,
-                    "dev_cli_routes_registry_env_contracts_json_shape_stability",
-                ),
-                (
-                    377,
-                    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
-                ),
-                (
-                    378,
-                    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
-                ),
-                (
-                    379,
-                    "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces",
-                ),
+                (373, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
+                (374, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
+                (375, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
+                (376, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
+                (377, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
+                (378, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
+                (379, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
             ]);
             let coverage_rows = required
                                 .iter()
@@ -477,14 +419,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/diagnostics_command_coverage_report.json",
-                    "artifacts/status/diagnostics_matrix_artifact.json",
-                    "artifacts/status/diagnostics_shape_drift_artifact.json",
-                    "artifacts/status/diagnostics_operator_truth_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/diagnostics_command_coverage_report.json",
+                "artifacts/status/diagnostics_matrix_artifact.json",
+                "artifacts/status/diagnostics_shape_drift_artifact.json",
+                "artifacts/status/diagnostics_operator_truth_contract.json"
+            ]}))
         }
         _ => None,
     }

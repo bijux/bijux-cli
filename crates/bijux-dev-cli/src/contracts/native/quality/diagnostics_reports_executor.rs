@@ -13,18 +13,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for path in tests {
                 let full = workspace_root.join(path);
                 if full.exists() {
-                    sources.insert(
-                        path.to_string(),
-                        fs::read_to_string(full).unwrap_or_default(),
-                    );
+                    sources.insert(path.to_string(), fs::read_to_string(full).unwrap_or_default());
                 }
             }
             let find_test = |name: &str| -> Option<String> {
                 let needle = format!("fn {name}(");
-                sources
-                    .iter()
-                    .find(|(_, src)| src.contains(&needle))
-                    .map(|(p, _)| p.clone())
+                sources.iter().find(|(_, src)| src.contains(&needle)).map(|(p, _)| p.clone())
             };
             let run_json =
                 |args: &[&str]| run_bijux_json(workspace_root, args).unwrap_or_else(|_| json!({}));
@@ -107,16 +101,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let contract = json!({"generator":"bijux-dev-cli","scope":"diagnostics contract","coverage_ids":[143,144,145,152,153,159],"status":if doctor_a.is_object()&&plugin_health.is_object()&&package_health.is_object()&&runtime_identity.is_object(){"complete"}else{"partial"},"contract_keys":{"doctor":doctor_a.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"plugin_health":plugin_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"package_health":package_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"runtime_identity":runtime_identity.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default()}});
             let mut drift = Vec::<Value>::new();
             for (name, payload) in [
-                (
-                    "diagnostics_consistency_artifact.json",
-                    &diagnostics_consistency,
-                ),
+                ("diagnostics_consistency_artifact.json", &diagnostics_consistency),
                 ("doctor_determinism_artifact.json", &doctor_determinism),
                 ("diagnostics_schema_drift_artifact.json", &schema_drift),
-                (
-                    "diagnostics_source_of_truth_artifact.json",
-                    &source_of_truth,
-                ),
+                ("diagnostics_source_of_truth_artifact.json", &source_of_truth),
                 ("findings_order_artifact.json", &findings_order),
                 ("diagnostics_contract_artifact.json", &contract),
             ] {
@@ -164,17 +152,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/diagnostics_deep_behavior_drift_artifact.json", &json!({"generator":"bijux-dev-cli","scope":"diagnostics deep behavior drift","coverage_ids":[160],"status":if drift.is_empty(){"clean"}else{"drift-detected"},"drift_count":drift.len(),"drift_items":drift,"coverage_rows":coverage})).ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/diagnostics_consistency_artifact.json",
-                    "artifacts/status/doctor_determinism_artifact.json",
-                    "artifacts/status/diagnostics_schema_drift_artifact.json",
-                    "artifacts/status/diagnostics_source_of_truth_artifact.json",
-                    "artifacts/status/findings_order_artifact.json",
-                    "artifacts/status/diagnostics_contract_artifact.json",
-                    "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/diagnostics_consistency_artifact.json",
+                "artifacts/status/doctor_determinism_artifact.json",
+                "artifacts/status/diagnostics_schema_drift_artifact.json",
+                "artifacts/status/diagnostics_source_of_truth_artifact.json",
+                "artifacts/status/findings_order_artifact.json",
+                "artifacts/status/diagnostics_contract_artifact.json",
+                "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
             let source = fs::read_to_string(
@@ -205,15 +191,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter_map(|r| r.get("coverage_id").and_then(Value::as_i64))
                 .collect::<Vec<_>>();
             let expected_keys: BTreeMap<&str, Vec<&str>> = BTreeMap::from([
-                (
-                    "dev cli contracts",
-                    vec!["contracts", "runtime_version", "schema_version"],
-                ),
+                ("dev cli contracts", vec!["contracts", "runtime_version", "schema_version"]),
                 ("dev cli routes", vec!["aliases", "routes"]),
-                (
-                    "dev cli registry",
-                    vec!["ownership", "precedence", "registry"],
-                ),
+                ("dev cli registry", vec!["ownership", "precedence", "registry"]),
                 ("dev cli env", vec!["active", "env", "source_precedence"]),
                 (
                     "dev cli parity",
@@ -257,10 +237,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "public_api_counts",
                     ],
                 ),
-                (
-                    "dev cli docs-audit",
-                    vec!["docs", "docs_audit", "docs_count"],
-                ),
+                ("dev cli docs-audit", vec!["docs", "docs_audit", "docs_count"]),
                 ("dev cli doctor", vec!["issues", "runtime", "status"]),
                 (
                     "dev cli runtime-identity",
@@ -339,15 +316,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &contract,
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/diagnostics_trust_artifact.json",
-                    "artifacts/status/actionable_diagnostics_artifact.json",
-                    "artifacts/status/diagnostics_minimalism_artifact.json",
-                    "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
-                    "artifacts/status/diagnostics_trust_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/diagnostics_trust_artifact.json",
+                "artifacts/status/actionable_diagnostics_artifact.json",
+                "artifacts/status/diagnostics_minimalism_artifact.json",
+                "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
+                "artifacts/status/diagnostics_trust_contract.json"
+            ]}))
         }
         _ => None,
     }

@@ -111,41 +111,39 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ];
             let checks: Vec<Value> = specs
                 .iter()
-                .map(
-                    |(scenario_id, command, relative_path, severity, description)| {
-                        let path = stale_root.join(relative_path);
-                        let exists = path.exists();
-                        let mut state = "fresh".to_string();
-                        let mut age_seconds = None::<u64>;
-                        if !exists {
-                            state = "missing".to_string();
-                        } else {
-                            let modified = path
-                                .metadata()
-                                .ok()
-                                .and_then(|meta| meta.modified().ok())
-                                .and_then(|ts| ts.duration_since(std::time::UNIX_EPOCH).ok())
-                                .map(|dur| dur.as_secs())
-                                .unwrap_or(now_epoch);
-                            let age = now_epoch.saturating_sub(modified);
-                            age_seconds = Some(age);
-                            if forced.contains(*relative_path) || age > max_age_seconds {
-                                state = "stale".to_string();
-                            }
+                .map(|(scenario_id, command, relative_path, severity, description)| {
+                    let path = stale_root.join(relative_path);
+                    let exists = path.exists();
+                    let mut state = "fresh".to_string();
+                    let mut age_seconds = None::<u64>;
+                    if !exists {
+                        state = "missing".to_string();
+                    } else {
+                        let modified = path
+                            .metadata()
+                            .ok()
+                            .and_then(|meta| meta.modified().ok())
+                            .and_then(|ts| ts.duration_since(std::time::UNIX_EPOCH).ok())
+                            .map(|dur| dur.as_secs())
+                            .unwrap_or(now_epoch);
+                        let age = now_epoch.saturating_sub(modified);
+                        age_seconds = Some(age);
+                        if forced.contains(*relative_path) || age > max_age_seconds {
+                            state = "stale".to_string();
                         }
-                        json!({
-                            "scenario_id": scenario_id,
-                            "command": command,
-                            "path": relative_path,
-                            "severity": severity,
-                            "description": description,
-                            "exists": exists,
-                            "state": state,
-                            "age_seconds": age_seconds,
-                            "max_age_seconds": max_age_seconds,
-                        })
-                    },
-                )
+                    }
+                    json!({
+                        "scenario_id": scenario_id,
+                        "command": command,
+                        "path": relative_path,
+                        "severity": severity,
+                        "description": description,
+                        "exists": exists,
+                        "state": state,
+                        "age_seconds": age_seconds,
+                        "max_age_seconds": max_age_seconds,
+                    })
+                })
                 .collect();
             let stale_or_missing: Vec<Value> = checks
                 .iter()
@@ -165,11 +163,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("severity").and_then(Value::as_str) == Some("warning"))
                 .count();
-            let status_value = if stale_or_missing.is_empty() {
-                "clean"
-            } else {
-                "drift"
-            };
+            let status_value = if stale_or_missing.is_empty() { "clean" } else { "drift" };
             let summary = json!({
                 "checks_total": checks.len(),
                 "fresh_count": fresh_count,
@@ -234,14 +228,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "status": if critical_stale_count == 0 { "clean" } else { "drift" },
                 }),
             )?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/stale_artifact_artifact.json",
-                    "artifacts/status/stale_evidence_artifact.json",
-                    "artifacts/status/stale_report_artifact.json",
-                    "artifacts/status/stale_detection_regression_suite.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/stale_artifact_artifact.json",
+                "artifacts/status/stale_evidence_artifact.json",
+                "artifacts/status/stale_report_artifact.json",
+                "artifacts/status/stale_detection_regression_suite.json"
+            ]}))
         }
         "STATUS-CONTRACT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
             let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
@@ -255,22 +247,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .and_then(|text| serde_json::from_str::<Value>(&text).ok())
             .unwrap_or_else(|| json!({}));
             let summary = payload.get("summary").cloned().unwrap_or_else(|| json!({}));
-            let critical_stale = summary
-                .get("critical_stale_count")
-                .and_then(Value::as_i64)
-                .unwrap_or(0);
-            let warning_stale = summary
-                .get("warning_stale_count")
-                .and_then(Value::as_i64)
-                .unwrap_or(0);
-            let injection_mode = summary
-                .get("injection_mode")
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            let allow_injection_drift = std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT")
-                .ok()
-                .as_deref()
-                == Some("1");
+            let critical_stale =
+                summary.get("critical_stale_count").and_then(Value::as_i64).unwrap_or(0);
+            let warning_stale =
+                summary.get("warning_stale_count").and_then(Value::as_i64).unwrap_or(0);
+            let injection_mode =
+                summary.get("injection_mode").and_then(Value::as_bool).unwrap_or(false);
+            let allow_injection_drift =
+                std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT").ok().as_deref() == Some("1");
             if critical_stale > 0 && !(injection_mode && allow_injection_drift) {
                 return Some(json!({
                     "status":"failed",

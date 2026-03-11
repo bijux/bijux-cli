@@ -76,12 +76,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "future_product_namespaces": parse_array("FUTURE_PRODUCT_NAMESPACES"),
                                 "registry_entries": product_registry.get("entries").cloned().unwrap_or_else(|| json!([]))
                             })).ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/namespace_abuse_report.json",
-                    "artifacts/status/reserved_namespace_inventory.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/namespace_abuse_report.json",
+                "artifacts/status/reserved_namespace_inventory.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -91,10 +89,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 run_bijux_json(workspace_root, &["dev", "cli", "package-health"]).ok()?;
             let install_text =
                 run_bijux_text(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
-            let diagnostics = runtime_identity
-                .get("diagnostics")
-                .cloned()
-                .unwrap_or_else(|| json!({}));
+            let diagnostics =
+                runtime_identity.get("diagnostics").cloned().unwrap_or_else(|| json!({}));
             let install_source_payload = json!({
                 "generated_at": generated_at,
                 "generator": "bijux-dev-cli",
@@ -153,47 +149,29 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()?;
             let mut ambiguities = Vec::<String>::new();
             let ambiguous = &ambiguous_payload;
-            if ambiguous
-                .get("active_binary_selection_is_ambiguous")
-                .and_then(Value::as_bool)
+            if ambiguous.get("active_binary_selection_is_ambiguous").and_then(Value::as_bool)
                 == Some(true)
             {
                 ambiguities.push("multiple bijux binaries detected in PATH order".to_string());
             }
-            if ambiguous
-                .get("path_shadowing_detected")
-                .and_then(Value::as_bool)
-                == Some(true)
-            {
+            if ambiguous.get("path_shadowing_detected").and_then(Value::as_bool) == Some(true) {
                 ambiguities
                     .push("PATH shadowing detected for canonical bijux executable".to_string());
             }
-            if ambiguous
-                .get("mixed_pip_cargo_install_detected")
-                .and_then(Value::as_bool)
+            if ambiguous.get("mixed_pip_cargo_install_detected").and_then(Value::as_bool)
                 == Some(true)
             {
                 ambiguities.push("cargo and pip installations both appear active".to_string());
             }
-            if ambiguous
-                .get("stale_wrapper_detected")
-                .and_then(Value::as_bool)
-                == Some(true)
-            {
+            if ambiguous.get("stale_wrapper_detected").and_then(Value::as_bool) == Some(true) {
                 ambiguities.push("stale wrapper maintenance found in PATH".to_string());
             }
-            if ambiguous
-                .get("active_binary_mismatch_detected")
-                .and_then(Value::as_bool)
+            if ambiguous.get("active_binary_mismatch_detected").and_then(Value::as_bool)
                 == Some(true)
             {
                 ambiguities.push("runtime binary version does not match wheel version".to_string());
             }
-            if ambiguous
-                .get("python_bridge_supported")
-                .and_then(Value::as_bool)
-                == Some(false)
-            {
+            if ambiguous.get("python_bridge_supported").and_then(Value::as_bool) == Some(false) {
                 ambiguities
                     .push("python bridge support is unavailable for current runtime".to_string());
             }
@@ -209,15 +187,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/install_source_diagnostics.json",
-                    "artifacts/status/ambiguous_runtime_diagnostics.json",
-                    "artifacts/status/install_health_report.json",
-                    "artifacts/status/install_health_report.txt",
-                    "artifacts/status/remaining_install_ambiguities.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/install_source_diagnostics.json",
+                "artifacts/status/ambiguous_runtime_diagnostics.json",
+                "artifacts/status/install_health_report.json",
+                "artifacts/status/install_health_report.txt",
+                "artifacts/status/remaining_install_ambiguities.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-INSTALL-NEUTRALITY-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -273,12 +249,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/install_neutrality_report.json",
-                    "artifacts/status/active_runtime_report.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/install_neutrality_report.json",
+                "artifacts/status/active_runtime_report.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS" => {
             let source = fs::read_to_string(
@@ -319,11 +293,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
                 .cloned()
                 .collect();
-            let status = if missing.is_empty() {
-                "complete"
-            } else {
-                "partial"
-            };
+            let status = if missing.is_empty() { "complete" } else { "partial" };
             write_status_artifact_json(
                                 workspace_root,
                                 "artifacts/status/install_runtime_identity_artifact.json",
@@ -395,15 +365,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/install_runtime_identity_artifact.json",
-                    "artifacts/status/install_ambiguity_artifact.json",
-                    "artifacts/status/package_health_artifact.json",
-                    "artifacts/status/install_runtime_identity_drift_artifact.json",
-                    "artifacts/status/install_runtime_identity_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/install_runtime_identity_artifact.json",
+                "artifacts/status/install_ambiguity_artifact.json",
+                "artifacts/status/package_health_artifact.json",
+                "artifacts/status/install_runtime_identity_drift_artifact.json",
+                "artifacts/status/install_runtime_identity_contract.json"
+            ]}))
         }
         _ => None,
     }
