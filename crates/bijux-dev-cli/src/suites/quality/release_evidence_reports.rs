@@ -25,8 +25,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "sha256": sha256,
                 })
             };
-            let release_bin = file_info(&workspace_root.join("target/release/bijux-rs"));
-            let debug_bin = file_info(&workspace_root.join("target/debug/bijux-rs"));
+            let release_bin = file_info(&workspace_root.join("target/release/bijux"));
+            let debug_bin = file_info(&workspace_root.join("target/debug/bijux"));
             let tree = Command::new("cargo")
                 .args(["tree", "-p", "bijux-cli", "-e", "normal", "--prefix", "none"])
                 .current_dir(workspace_root)

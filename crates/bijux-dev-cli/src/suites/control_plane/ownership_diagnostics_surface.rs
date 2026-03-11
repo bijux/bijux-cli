@@ -444,7 +444,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS" => {
             let main_rs =
-                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bin/bijux-rs.rs"))
+                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bin/bijux.rs"))
                     .unwrap_or_default();
             let core_app = fs::read_to_string(workspace_root.join("crates/bijux-cli/src/app.rs"))
                 .unwrap_or_default();
@@ -478,7 +478,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_dispatch_ownership_report.json", &json!({
                                 "scope":"dev cli dispatch ownership","status":"ok",
                                 "dispatch_chain":[
-                                    {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux-rs.rs delegates to bijux_cli::app::run_app"},
+                                    {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux.rs delegates to bijux_cli::bootstrap::run::run_cli_from_env"},
                                     {"crate":"bijux-cli","role":"dispatch-only-for-maintainer-surface","evidence":"src/app.rs routes dev cli commands into bijux-dev-cli report builders"},
                                     {"crate":"bijux-dev-cli","role":"maintainer-workflow-implementation-owner","evidence":"src/*.rs report builders provide maintainer payload assembly"}
                                 ],
@@ -497,10 +497,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/bin_entrypoint_responsibility_diff.json", &json!({
                                 "scope":"bin responsibility diff","status":"ok",
                                 "current":{
-                                    "file":"crates/bijux-cli/src/bin/bijux-rs.rs",
+                                    "file":"crates/bijux-cli/src/bin/bijux.rs",
                                     "line_count": main_rs.lines().count(),
                                     "dev_cli_literal_mentions": main_rs.matches("dev cli").count(),
-                                    "core_run_app_calls": main_rs.matches("bijux_cli::app::run_app").count(),
+                                    "core_entrypoint_calls": main_rs.matches("run_cli_from_env").count(),
                                     "direct_dispatch_match_mentions": main_rs.matches("match normalized_path").count(),
                                     "parser_dependency_mentions": main_rs.matches("bijux_cli::routing::parser").count()
                                 },
