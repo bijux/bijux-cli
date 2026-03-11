@@ -51,18 +51,12 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
         test_count += file_test_count;
 
         if file_test_count == 0 {
-            errors.push(format!(
-                "{} contains no #[test] entries",
-                rel(&file, workspace_root)
-            ));
+            errors.push(format!("{} contains no #[test] entries", rel(&file, workspace_root)));
         }
 
         if !(text.contains("assert!") || text.contains("assert_eq!") || text.contains("assert_ne!"))
         {
-            errors.push(format!(
-                "{} contains no assertion macros",
-                rel(&file, workspace_root)
-            ));
+            errors.push(format!("{} contains no assertion macros", rel(&file, workspace_root)));
         }
     }
 
@@ -91,12 +85,7 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let dependencies = parsed
         .as_array()
         .cloned()
-        .or_else(|| {
-            parsed
-                .get("dependencies")
-                .and_then(Value::as_array)
-                .cloned()
-        })
+        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
         .unwrap_or_default();
 
     let mut remaining = Vec::new();
@@ -111,11 +100,8 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
             .unwrap_or_default()
         {
             let id = vuln.get("id").and_then(Value::as_str).unwrap_or("?");
-            let fix = vuln
-                .get("fix_versions")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
+            let fix =
+                vuln.get("fix_versions").and_then(Value::as_array).cloned().unwrap_or_default();
             remaining.push(json!({
                 "package": name,
                 "version": version,
@@ -140,10 +126,8 @@ pub fn build_python_capture_report(workspace_root: &Path) -> Value {
         .ok()
         .and_then(|text| serde_json::from_str(&text).ok())
         .unwrap_or_else(|| json!({}));
-    let capture_count = lock
-        .get("captures")
-        .and_then(Value::as_object)
-        .map_or(0, |captures| captures.len());
+    let capture_count =
+        lock.get("captures").and_then(Value::as_object).map_or(0, |captures| captures.len());
     json!({
         "status": if capture_count > 0 { "pass" } else { "fail" },
         "lock_path": lock_path,
