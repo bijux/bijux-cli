@@ -15,4 +15,6 @@ pub use python as python_surface;
 pub use repository_health::{
     crate_health, docs_audit, maintenance_audit, package_health, repo, state_audit, status,
 };
-pub use runtime_surface::{contracts, env, parity, registry, route_audit, routes, runtime_identity};
+pub use runtime_surface::{
+    contracts, env, parity, registry, route_audit, routes, runtime_identity,
+};

@@ -42,8 +42,16 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             source: "dev cli parity".to_string(),
             proof_kind: "matrix".to_string(),
             artifact_links: vec![relative_to_root(&parity, workspace_root)],
-            freshness: if parity.exists() { "fresh".to_string() } else { "stale".to_string() },
-            status: if parity.exists() { EvidenceStatus::Proven } else { EvidenceStatus::Blocked },
+            freshness: if parity.exists() {
+                "fresh".to_string()
+            } else {
+                "stale".to_string()
+            },
+            status: if parity.exists() {
+                EvidenceStatus::Proven
+            } else {
+                EvidenceStatus::Blocked
+            },
             strength: EvidenceStrength::Strong,
         },
         EvidenceRecord {
@@ -96,7 +104,10 @@ fn records_json(workspace_root: &Path) -> Vec<Value> {
 
 fn artifacts_exist(record: &EvidenceRecord, workspace_root: &Path) -> bool {
     !record.artifact_links.is_empty()
-        && record.artifact_links.iter().all(|artifact| workspace_root.join(artifact).exists())
+        && record
+            .artifact_links
+            .iter()
+            .all(|artifact| workspace_root.join(artifact).exists())
 }
 
 fn audit_records(records: &[EvidenceRecord], workspace_root: &Path) -> Value {
@@ -128,8 +139,9 @@ pub fn build_list_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
     let records = records_json(workspace_root);
-    let record =
-        records.into_iter().find(|item| item.get("id").and_then(Value::as_str) == Some(id));
+    let record = records
+        .into_iter()
+        .find(|item| item.get("id").and_then(Value::as_str) == Some(id));
     json!({"record": record, "found": record.is_some()})
 }
 
@@ -187,7 +199,11 @@ pub fn build_matrix_report(workspace_root: &Path) -> Value {
     let by_status = records_json(workspace_root).into_iter().fold(
         BTreeMap::<String, usize>::new(),
         |mut acc, row| {
-            let key = row.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
+            let key = row
+                .get("status")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown")
+                .to_string();
             *acc.entry(key).or_insert(0) += 1;
             acc
         },
@@ -224,7 +240,11 @@ pub fn build_command_map_report(workspace_root: &Path) -> Value {
     let records = records_json(workspace_root);
     let ids: Vec<String> = records
         .iter()
-        .filter_map(|row| row.get("id").and_then(Value::as_str).map(ToString::to_string))
+        .filter_map(|row| {
+            row.get("id")
+                .and_then(Value::as_str)
+                .map(ToString::to_string)
+        })
         .collect();
     let mapping: Vec<Value> = command_registry()
         .iter()
@@ -243,11 +263,18 @@ pub fn build_command_map_report(workspace_root: &Path) -> Value {
 pub fn build_parity_map_report(workspace_root: &Path) -> Value {
     let matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
-    let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+    let rows = matrix
+        .get("commands")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     let mapped: Vec<Value> = rows
         .into_iter()
         .map(|row| {
-            let command = row.get("command").cloned().unwrap_or_else(|| json!("unknown"));
+            let command = row
+                .get("command")
+                .cloned()
+                .unwrap_or_else(|| json!("unknown"));
             json!({
                 "command": command,
                 "evidence_ids": ["EVIDENCE-1002-PARITY-COVERAGE"],
