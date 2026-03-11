@@ -27,6 +27,14 @@ pub struct RuntimeIdentityQuery {
     pub broken_symlink_active_binary: bool,
 }
 
+impl RuntimeIdentityQuery {
+    /// Return stale-wrapper maintenance paths using neutral naming.
+    #[must_use]
+    pub fn stale_wrapper_maintenance(&self) -> Vec<String> {
+        self.stale_wrapper_scripts.clone()
+    }
+}
+
 /// Query runtime identity diagnostics without presentation formatting.
 #[must_use]
 pub fn runtime_identity_query(

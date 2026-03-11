@@ -13,6 +13,8 @@ pub mod contracts;
 pub mod infra;
 /// Maintainer-facing report modules.
 pub mod reports;
+/// Runtime-query bridge and process entrypoint for delegated execution.
+pub mod runtime;
 /// Shared schemas used across dev-cli capabilities.
 pub mod schema;
 /// Contract execution suites grouped by control-plane domain.

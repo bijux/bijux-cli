@@ -108,6 +108,7 @@ dependencies = [
  "anyhow",
  "bijux-cli",
  "bijux-cli-evidence",
+ "clap",
  "serde",
  "serde_json",
  "toml",
