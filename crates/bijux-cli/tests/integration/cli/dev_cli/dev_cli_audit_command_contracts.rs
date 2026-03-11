@@ -22,9 +22,9 @@ fn head(text: &str, lines: usize) -> String {
 }
 
 #[test]
-fn script_docs_crate_health_json_contracts_are_stable() {
+fn maintenance_docs_crate_health_json_contracts_are_stable() {
     let cases = [
-        (vec!["dev", "cli", "script-audit", "--format", "json", "--no-pretty"], "scripts"),
+        (vec!["dev", "cli", "maintenance-audit", "--format", "json", "--no-pretty"], "maintenance"),
         (vec!["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"], "docs"),
         (vec!["dev", "cli", "crate-health", "--format", "json", "--no-pretty"], "crate_metrics"),
     ];
@@ -45,11 +45,11 @@ fn script_docs_crate_health_json_contracts_are_stable() {
 }
 
 #[test]
-fn script_docs_crate_health_text_snapshot_heads_match() {
+fn maintenance_docs_crate_health_text_snapshot_heads_match() {
     let cases = [
         (
-            vec!["dev", "cli", "script-audit", "--format", "text"],
-            include_str!("../../../data/golden/cli_surface/dev_cli_script_audit_text_head.txt"),
+            vec!["dev", "cli", "maintenance-audit", "--format", "text"],
+            include_str!("../../../data/golden/cli_surface/dev_cli_maintenance_audit_text_head.txt"),
         ),
         (
             vec!["dev", "cli", "docs-audit", "--format", "text"],

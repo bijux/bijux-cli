@@ -28,7 +28,7 @@ fn run_ok_json(args: &[&str]) -> Value {
 fn repo_health_json_contracts_are_stable() {
     let commands = [
         (["dev", "cli", "repo", "health"], "repo_health"),
-        (["dev", "cli", "repo", "drift"], "dead_scripts_references"),
+        (["dev", "cli", "repo", "drift"], "dead_maintenance_references"),
         (["dev", "cli", "repo", "inventories"], "stale_inventories"),
         (["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
         (["dev", "cli", "repo", "stale"], "stale_snapshots"),

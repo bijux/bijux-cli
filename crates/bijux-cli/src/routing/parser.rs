@@ -200,7 +200,7 @@ pub fn root_command() -> Command {
 
     let dev_cli_group = Command::new("cli")
         .subcommand(
-            Command::new("scripts")
+            Command::new("maintenance")
                 .subcommand(Command::new("remaining"))
                 .subcommand(Command::new("migrated"))
                 .subcommand(Command::new("diff"))
@@ -331,7 +331,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("docs-audit"))
         .subcommand(Command::new("plugin-health"))
         .subcommand(Command::new("status"))
-        .subcommand(Command::new("script-audit"))
+        .subcommand(Command::new("maintenance-audit"))
         .subcommand(Command::new("snapshots-audit"))
         .subcommand(Command::new("fixture-audit"))
         .subcommand(Command::new("crate-health"))
@@ -361,7 +361,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("docs-audit").hide(true))
         .subcommand(Command::new("plugin-health").hide(true))
         .subcommand(Command::new("status").hide(true))
-        .subcommand(Command::new("script-audit").hide(true))
+        .subcommand(Command::new("maintenance-audit").hide(true))
         .subcommand(Command::new("crate-health").hide(true))
         .subcommand(Command::new("package-health").hide(true))
         .subcommand(Command::new("doctor").hide(true))

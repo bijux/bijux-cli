@@ -148,12 +148,12 @@ fn runtime_data_consistency_suite_matches_query_truth() {
 }
 
 #[test]
-fn script_replacement_suite_tracks_migrated_workflows() {
+fn maintenance_replacement_suite_tracks_migrated_workflows() {
     let script =
-        run(&["dev", "cli", "scripts", "status", "inventory", "--format", "json", "--no-pretty"]);
+        run(&["dev", "cli", "maintenance", "status", "inventory", "--format", "json", "--no-pretty"]);
     assert!(script.status.success());
     let payload: Value = serde_json::from_slice(&script.stdout).expect("script json");
-    let scripts = payload["rows"].as_array().expect("scripts rows");
+    let scripts = payload["rows"].as_array().expect("maintenance rows");
     assert_eq!(payload["id_policy"], "STATUS-CONTRACT-<KIND>-<SLUG>");
     let required = [
         "STATUS-CONTRACT-GENERATE-STATUS-REPORTS",
@@ -192,7 +192,7 @@ fn package_runtime_state_parity_suite_has_consistent_truth_commands() {
 
 #[test]
 fn audit_integration_suite_links_repo_docs_and_crate_health() {
-    let script = run(&["dev", "cli", "script-audit", "--format", "json", "--no-pretty"]);
+    let script = run(&["dev", "cli", "maintenance-audit", "--format", "json", "--no-pretty"]);
     let docs = run(&["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"]);
     let crate_health = run(&["dev", "cli", "crate-health", "--format", "json", "--no-pretty"]);
     assert!(script.status.success());
@@ -203,8 +203,8 @@ fn audit_integration_suite_links_repo_docs_and_crate_health() {
     let docs_json: Value = serde_json::from_slice(&docs.stdout).expect("docs json");
     let crate_json: Value = serde_json::from_slice(&crate_health.stdout).expect("crate json");
 
-    assert!(script_json["scripts"].as_array().is_some_and(|v| v.is_empty()));
-    assert!(script_json["remaining_script_only_behaviors"]
+    assert!(script_json["maintenance"].as_array().is_some_and(|v| v.is_empty()));
+    assert!(script_json["remaining_legacy_only_behaviors"]
         .as_array()
         .is_some_and(|v| v.is_empty()));
     assert!(script_json["summary"].is_object());

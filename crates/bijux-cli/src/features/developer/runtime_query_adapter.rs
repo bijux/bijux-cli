@@ -187,7 +187,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
                 path_binaries: install_query.path_binaries,
                 has_path_shadowing: install_query.has_path_shadowing,
                 has_duplicate_installs: install_query.has_duplicate_installs,
-                stale_wrapper_scripts: install_query.stale_wrapper_scripts,
+                stale_wrapper_maintenance: install_query.stale_wrapper_scripts,
                 has_mismatched_wheel_binary_versions: install_query
                     .has_mismatched_wheel_binary_versions,
                 legacy_installer_conflicts: install_query.legacy_installer_conflicts,

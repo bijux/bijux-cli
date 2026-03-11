@@ -15,7 +15,7 @@
     "path_shadowing_detected": true,
     "python_bridge_supported": true,
     "stale_wrapper_detected": false,
-    "stale_wrapper_scripts": []
+    "stale_wrapper_maintenance": []
   },
   "entrypoints": {
     "binary": "crates/bijux-cli/src/bin/bijux-rs.rs",

@@ -36,7 +36,7 @@ fn seeded_artifact_root(prefix: &str) -> std::path::PathBuf {
         "package_health_diagnostics_artifact.json",
         "state_audit_truth_artifact.json",
         "docs_audit.json",
-        "script_only_behaviors.json",
+        "maintenance_gap_behaviors.json",
         "duplication_hotspots.json",
         "dev_cli_next_report.json",
     ] {
@@ -47,7 +47,7 @@ fn seeded_artifact_root(prefix: &str) -> std::path::PathBuf {
 
 fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
-    cmd.args(["dev", "cli", "scripts", "status", "run", "--id", GENERATOR_ID])
+    cmd.args(["dev", "cli", "maintenance", "status", "run", "--id", GENERATOR_ID])
         .current_dir(workspace_root())
         .env("DEV_CLI_STALE_ARTIFACT_ROOT", root)
         .env("DEV_CLI_STALE_MAX_SECONDS", "999999999");
@@ -71,7 +71,7 @@ fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value 
 
 fn run_gate(root: &Path, allow_injection_drift: bool) -> std::process::Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
-    cmd.args(["dev", "cli", "scripts", "status", "run", "--id", GATE_ID])
+    cmd.args(["dev", "cli", "maintenance", "status", "run", "--id", GATE_ID])
         .current_dir(workspace_root())
         .env("DEV_CLI_STALE_ARTIFACT_ROOT", root);
     if allow_injection_drift {
@@ -92,7 +92,7 @@ fn stale_scenarios_are_detected_for_all_required_commands() {
             "artifacts/status/package_health_diagnostics_artifact.json",
             "artifacts/status/state_audit_truth_artifact.json",
             "artifacts/status/docs_audit.json",
-            "artifacts/status/script_only_behaviors.json",
+            "artifacts/status/maintenance_gap_behaviors.json",
             "artifacts/status/duplication_hotspots.json",
         ],
         false,
@@ -106,7 +106,7 @@ fn stale_scenarios_are_detected_for_all_required_commands() {
         "package_health_stale_before_dashboard",
         "state_audit_stale_before_blockers",
         "docs_audit_stale_before_repo_health",
-        "script_audit_stale_before_repo_health",
+        "maintenance_audit_stale_before_repo_health",
         "crate_health_stale_before_crate_health",
     ] {
         let matched = checks.iter().any(|row| {

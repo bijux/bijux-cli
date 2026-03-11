@@ -21,7 +21,7 @@ const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "schema",
 ];
 const DEV_CLI_SUBCOMMANDS: &[&str] = &[
-    "scripts",
+    "maintenance",
     "rustdoc",
     "release",
     "evidence",
@@ -41,7 +41,7 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "docs-audit",
     "plugin-health",
     "status",
-    "script-audit",
+    "maintenance-audit",
     "snapshots-audit",
     "fixture-audit",
     "crate-health",
@@ -101,7 +101,7 @@ const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
 const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
     &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
 const DEV_CLI_REPO_SUBCOMMANDS: &[&str] = &["health", "drift", "inventories", "generated", "stale"];
-const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
+const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
     "remaining",
     "migrated",
     "diff",
@@ -117,14 +117,14 @@ const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "capture-python-behavior",
     "provenance-statement",
 ];
-const DEV_CLI_SCRIPTS_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
+const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
 const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
     "parity",
     "docs-audit",
     "plugin-health",
     "status",
-    "script-audit",
+    "maintenance-audit",
     "crate-health",
     "package-health",
     "route-audit",
@@ -213,17 +213,17 @@ pub fn is_known_route(path: &[String]) -> bool {
         [a, b, c, d]
             if a == "dev"
                 && b == "cli"
-                && c == "scripts"
-                && contains(DEV_CLI_SCRIPTS_SUBCOMMANDS, d) =>
+                && c == "maintenance"
+                && contains(DEV_CLI_MAINTENANCE_SUBCOMMANDS, d) =>
         {
             true
         }
         [a, b, c, d, e]
             if a == "dev"
                 && b == "cli"
-                && c == "scripts"
+                && c == "maintenance"
                 && d == "status"
-                && contains(DEV_CLI_SCRIPTS_STATUS_SUBCOMMANDS, e) =>
+                && contains(DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS, e) =>
         {
             true
         }

@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Contracts for repo/docs/scripts/crate-health cleanup backbone surfaces.
+//! Contracts for repo/docs/maintenance/crate-health cleanup backbone surfaces.
 
 use std::process::Command;
 
@@ -41,11 +41,11 @@ fn run_ok_text_non_empty(command: &[&str]) {
 }
 
 #[test]
-fn repo_docs_script_crate_health_json_and_text_contracts() {
+fn repo_docs_maintenance_crate_health_json_and_text_contracts() {
     for command in [
         &["dev", "cli", "repo", "health"][..],
         &["dev", "cli", "docs-audit"][..],
-        &["dev", "cli", "script-audit"][..],
+        &["dev", "cli", "maintenance-audit"][..],
         &["dev", "cli", "crate-health"][..],
     ] {
         let json = run_ok_json(command);
@@ -66,10 +66,10 @@ fn docs_audit_exposes_duplicate_and_stale_reference_signals() {
 }
 
 #[test]
-fn script_audit_exposes_remaining_and_migrated_views() {
-    let scripts = run_ok_json(&["dev", "cli", "script-audit"]);
-    assert!(scripts["scripts"].is_array());
-    assert!(scripts.get("remaining_script_only_behaviors").is_some());
+fn maintenance_audit_exposes_remaining_and_migrated_views() {
+    let scripts = run_ok_json(&["dev", "cli", "maintenance-audit"]);
+    assert!(scripts["maintenance"].is_array());
+    assert!(scripts.get("remaining_legacy_only_behaviors").is_some());
     assert!(scripts.get("remaining_task_runner_only_behaviors").is_some());
     assert!(scripts["replacement_rule"].is_string());
 }

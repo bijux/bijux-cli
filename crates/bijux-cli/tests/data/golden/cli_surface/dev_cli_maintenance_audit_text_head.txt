@@ -1,5 +1,6 @@
 {
-  "remaining_script_only_behaviors": [],
+  "maintenance": [],
+  "remaining_legacy_only_behaviors": [],
   "remaining_task_runner_only_behaviors": [
     "publish",
     "publish-test",
@@ -15,8 +16,7 @@
     "security-clean"
   ],
   "replacement_rule": "new maintainer automation defaults to bijux dev cli commands",
-  "scripts": [],
   "summary": {
-    "script_classification_counts": {}
+    "maintenance_classification_counts": {}
   }
 }

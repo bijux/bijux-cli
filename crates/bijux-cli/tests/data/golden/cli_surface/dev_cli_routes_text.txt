@@ -912,6 +912,24 @@
       "segments": [
         "dev",
         "cli",
+        "maintenance"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "maintenance-audit"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "next"
       ],
       "source": "built-in"
@@ -1021,24 +1039,6 @@
         "dev",
         "cli",
         "rustdoc"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
-        "dev",
-        "cli",
-        "script-audit"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
-        "dev",
-        "cli",
-        "scripts"
       ],
       "source": "built-in"
     },

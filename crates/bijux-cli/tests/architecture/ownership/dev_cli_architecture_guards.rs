@@ -116,7 +116,7 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
     .expect("read dev cli command source");
     let dispatch_source_raw = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../bijux-dev-cli/src/application/dispatch.rs"
+        "/../bijux-dev-cli/src/app/router.rs"
     ))
     .expect("read dev cli dispatch source");
     let adapter_source = strip_comments_and_strings(&adapter_source_raw);
@@ -164,7 +164,7 @@ fn workspace_automation_does_not_execute_status_contracts_directly() {
         for path in walk_files(&root.join(scan_root)) {
             let rel =
                 path.strip_prefix(&root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
-            if rel == "crates/bijux-dev-cli/src/scripts.rs"
+            if rel == "crates/bijux-dev-cli/src/contracts/maintenance/status_contract_bridge.rs"
                 || rel == "crates/bijux-cli/tests/architecture/ownership/dev_cli_architecture_guards.rs"
             {
                 continue;
@@ -173,9 +173,9 @@ fn workspace_automation_does_not_execute_status_contracts_directly() {
             let Ok(source) = std::fs::read_to_string(&path) else {
                 continue;
             };
-            let direct_source_arg = source.contains("scripts status run --source")
-                || source.contains("scripts\", \"status\", \"run\", \"--source")
-                || source.contains("scripts status run -- source");
+            let direct_source_arg = source.contains("maintenance status run --source")
+                || source.contains("maintenance\", \"status\", \"run\", \"--source")
+                || source.contains("maintenance status run -- source");
             if direct_source_arg {
                 offenders.push(rel);
             }
@@ -184,7 +184,7 @@ fn workspace_automation_does_not_execute_status_contracts_directly() {
 
     assert!(
         offenders.is_empty(),
-        "status contracts must run through `bijux dev cli scripts status run --id ...`; direct execution found in:\n{}",
+        "status contracts must run through `bijux dev cli maintenance status run --id ...`; direct execution found in:\n{}",
         offenders.join("\n")
     );
 }

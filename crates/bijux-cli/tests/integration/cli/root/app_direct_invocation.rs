@@ -156,7 +156,7 @@ fn direct_core_invocation_newly_ported_commands_execute() {
         vec!["bijux", "dev", "cli", "route-audit"],
         vec!["bijux", "dev", "cli", "registry"],
         vec!["bijux", "dev", "cli", "docs-audit"],
-        vec!["bijux", "dev", "cli", "script-audit"],
+        vec!["bijux", "dev", "cli", "maintenance-audit"],
         vec!["bijux", "dev", "cli", "env"],
         vec!["bijux", "dev", "cli", "doctor"],
         vec!["bijux", "dev", "cli", "contracts"],
@@ -185,7 +185,7 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
         vec!["bijux", "dev", "cli", "route-audit"],
         vec!["bijux", "dev", "cli", "registry"],
         vec!["bijux", "dev", "cli", "docs-audit"],
-        vec!["bijux", "dev", "cli", "script-audit"],
+        vec!["bijux", "dev", "cli", "maintenance-audit"],
         vec!["bijux", "dev", "cli", "env"],
         vec!["bijux", "dev", "cli", "doctor"],
         vec!["bijux", "dev", "cli", "contracts"],
@@ -215,8 +215,8 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
                 assert!(payload["docs"].is_array());
                 assert!(payload["docs_count"].is_number());
             }
-            "script-audit" => {
-                assert!(payload["scripts"].is_array());
+            "maintenance-audit" => {
+                assert!(payload["maintenance"].is_array());
                 assert!(payload["summary"].is_object());
             }
             "env" => {
@@ -322,8 +322,8 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
     assert!(payload["reports"]["compatibility_aliases"].is_object());
     assert!(payload["reports"]["known_parity_gaps"].is_object());
     assert!(payload["reports"]["intentional_differences"].is_object());
-    assert!(payload["reports"]["unowned_scripts"].is_object());
-    assert!(payload["reports"]["maintainer_scripts_outside_dev_cli"].is_object());
+    assert!(payload["reports"]["unowned_maintenance"].is_object());
+    assert!(payload["reports"]["maintainer_maintenance_outside_dev_cli"].is_object());
     assert!(payload["reports"]["maintainer_control_plane_commands"].is_object());
     assert!(payload["reports"]["maintainer_control_plane_report"].is_object());
     assert!(payload["reports"]["maintainer_control_plane_text_report"].is_string());
@@ -362,7 +362,7 @@ fn direct_core_invocation_runtime_identity_exposes_runtime_diagnostics() {
     assert!(payload["diagnostics"]["mixed_pip_cargo_install_detected"].is_boolean());
     assert!(payload["diagnostics"]["path_shadowing_detected"].is_boolean());
     assert!(payload["diagnostics"]["stale_wrapper_detected"].is_boolean());
-    assert!(payload["diagnostics"]["stale_wrapper_scripts"].is_array());
+    assert!(payload["diagnostics"]["stale_wrapper_maintenance"].is_array());
     assert!(payload["text_summary"].is_array());
 }
 

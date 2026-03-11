@@ -168,25 +168,25 @@ fn delegate_to_external_binary(
     }
 }
 
-fn scripts_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
-    let is_scripts_runner = matches!(
+fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
+    let is_maintenance_runner = matches!(
         normalized_path,
         [a, b, c, d]
             if a == "dev"
                 && b == "cli"
-                && c == "scripts"
+                && c == "maintenance"
                 && (d == "generate" || d == "generate-all")
     ) || matches!(
         normalized_path,
         [a, b, c, d, e]
             if a == "dev"
                 && b == "cli"
-                && c == "scripts"
+                && c == "maintenance"
                 && d == "status"
                 && (e == "run" || e == "run-all")
     );
 
-    if !is_scripts_runner {
+    if !is_maintenance_runner {
         return None;
     }
 
@@ -340,7 +340,8 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
-    let route_exit_code = scripts_route_exit_code(&intent.normalized_path, &payload).unwrap_or(0);
+    let route_exit_code =
+        maintenance_route_exit_code(&intent.normalized_path, &payload).unwrap_or(0);
 
     if intent.global_flags.quiet {
         return Ok(AppRunResult {

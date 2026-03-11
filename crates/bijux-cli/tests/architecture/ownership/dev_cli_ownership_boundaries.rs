@@ -123,7 +123,7 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
     let source = strip_comments_and_strings(
         &std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../bijux-dev-cli/src/application/dispatch.rs"
+            "/../bijux-dev-cli/src/app/router.rs"
         ))
         .expect("read dev cli dispatch source"),
     );
@@ -143,7 +143,7 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
         "dev_status::build_report",
         "dev_control_plane::build_atlas_report",
         "dev_control_plane::build_dependency_injection_report",
-        "dev_script_audit::build_report",
+        "dev_maintenance_audit::build_report",
         "dev_docs_audit::build_report",
         "dev_crate_health::build_report",
         "dev_runtime_identity::build_report",

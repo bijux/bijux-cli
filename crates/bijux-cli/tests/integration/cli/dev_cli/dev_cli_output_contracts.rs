@@ -18,7 +18,7 @@ fn dev_cli_commands_support_json_and_text_flags() {
         ("parity", "rust_python"),
         ("crate-health", "crate_metrics"),
         ("route-audit", "summary"),
-        ("script-audit", "scripts"),
+        ("maintenance-audit", "maintenance"),
         ("docs-audit", "docs_audit"),
         ("state-audit", "paths"),
         ("runtime-identity", "entrypoints"),

@@ -492,6 +492,14 @@ builtins:
 - segments:
   - dev
   - cli
+  - maintenance
+- segments:
+  - dev
+  - cli
+  - maintenance-audit
+- segments:
+  - dev
+  - cli
   - next
 - segments:
   - dev
@@ -541,14 +549,6 @@ builtins:
   - dev
   - cli
   - rustdoc
-- segments:
-  - dev
-  - cli
-  - script-audit
-- segments:
-  - dev
-  - cli
-  - scripts
 - segments:
   - dev
   - cli
@@ -992,6 +992,18 @@ route_sources:
   segments:
   - dev
   - cli
+  - maintenance
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - maintenance-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
   - next
   source: built-in
 - owner: bijux-cli
@@ -1065,18 +1077,6 @@ route_sources:
   - dev
   - cli
   - rustdoc
-  source: built-in
-- owner: bijux-cli
-  segments:
-  - dev
-  - cli
-  - script-audit
-  source: built-in
-- owner: bijux-cli
-  segments:
-  - dev
-  - cli
-  - scripts
   source: built-in
 - owner: bijux-cli
   segments:

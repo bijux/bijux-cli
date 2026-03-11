@@ -125,7 +125,7 @@ fn cli_doctor_reports_install_diagnostics() {
 #[test]
 fn executes_dev_cli_namespace_commands() {
     let cases: Vec<(Vec<&str>, &str)> = vec![
-        (vec!["dev", "cli", "inventory"], "scripts"),
+        (vec!["dev", "cli", "inventory"], "maintenance"),
         (vec!["dev", "cli", "routes"], "routes"),
         (vec!["dev", "cli", "route-audit"], "summary"),
         (vec!["dev", "cli", "registry"], "registry"),
@@ -134,15 +134,15 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "docs-audit"], "docs_audit"),
         (vec!["dev", "cli", "plugin-health"], "machine_report"),
         (vec!["dev", "cli", "status"], "current_rust_state"),
-        (vec!["dev", "cli", "script-audit"], "scripts"),
-        (vec!["dev", "cli", "scripts", "remaining"], "remaining_root_scripts"),
-        (vec!["dev", "cli", "scripts", "migrated"], "migrated"),
-        (vec!["dev", "cli", "scripts", "diff"], "remaining"),
-        (vec!["dev", "cli", "scripts", "audit"], "migrated"),
-        (vec!["dev", "cli", "scripts", "package-metadata"], "status"),
-        (vec!["dev", "cli", "scripts", "e2e-contract"], "status"),
-        (vec!["dev", "cli", "scripts", "pip-audit"], "status"),
-        (vec!["dev", "cli", "scripts", "capture-python-behavior"], "status"),
+        (vec!["dev", "cli", "maintenance-audit"], "maintenance"),
+        (vec!["dev", "cli", "maintenance", "remaining"], "remaining_root_maintenance"),
+        (vec!["dev", "cli", "maintenance", "migrated"], "migrated"),
+        (vec!["dev", "cli", "maintenance", "diff"], "remaining"),
+        (vec!["dev", "cli", "maintenance", "audit"], "migrated"),
+        (vec!["dev", "cli", "maintenance", "package-metadata"], "status"),
+        (vec!["dev", "cli", "maintenance", "e2e-contract"], "status"),
+        (vec!["dev", "cli", "maintenance", "pip-audit"], "status"),
+        (vec!["dev", "cli", "maintenance", "capture-python-behavior"], "status"),
         (vec!["dev", "cli", "rustdoc", "audit"], "coverage"),
         (vec!["dev", "cli", "rustdoc", "coverage"], "coverage"),
         (vec!["dev", "cli", "rustdoc", "broken-links"], "broken_links"),
@@ -179,7 +179,7 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "python", "drift"], "drift"),
         (vec!["dev", "cli", "python", "packaging"], "packaging"),
         (vec!["dev", "cli", "repo", "health"], "repo_health"),
-        (vec!["dev", "cli", "repo", "drift"], "dead_scripts_references"),
+        (vec!["dev", "cli", "repo", "drift"], "dead_maintenance_references"),
         (vec!["dev", "cli", "repo", "inventories"], "stale_inventories"),
         (vec!["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
         (vec!["dev", "cli", "repo", "stale"], "stale_snapshots"),
@@ -307,14 +307,14 @@ fn crate_health_reports_usage_error_for_unknown_flag() {
 }
 
 #[test]
-fn scripts_provenance_statement_generates_output_file() {
+fn maintenance_provenance_statement_generates_output_file() {
     let temp = env::temp_dir().join(format!("bijux-provenance-{}", std::process::id()));
     let _ = fs::remove_dir_all(&temp);
     fs::create_dir_all(&temp).expect("create temp dir");
     let stdout = run(&[
         "dev",
         "cli",
-        "scripts",
+        "maintenance",
         "provenance-statement",
         "--tag",
         "v0.0.0-test",

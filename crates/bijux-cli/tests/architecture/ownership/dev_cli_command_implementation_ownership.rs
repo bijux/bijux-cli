@@ -45,8 +45,7 @@ fn fixture_dev_cli_top_level_commands() -> BTreeSet<String> {
 
 #[test]
 fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
-    let source =
-        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/application/dispatch.rs"));
+    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
     let fixture_commands = fixture_dev_cli_top_level_commands();
     let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
     let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
@@ -66,13 +65,12 @@ fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
 
 #[test]
 fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
-    let source =
-        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/application/dispatch.rs"));
+    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
 
     let branch_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
     let observed_namespaces = extract_guard_values(&source, branch_prefix);
     let expected_namespaces: BTreeSet<String> =
-        ["scripts", "rustdoc", "release", "evidence", "config", "python", "repo"]
+        ["maintenance", "rustdoc", "release", "evidence", "config", "python", "repo"]
             .into_iter()
             .map(str::to_string)
             .collect();
@@ -83,7 +81,7 @@ fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
     );
 
     let expected_delegate_prefixes = BTreeMap::from([
-        ("scripts", "dev_scripts::build_"),
+        ("maintenance", "dev_maintenance::build_"),
         ("rustdoc", "dev_rustdoc::build_"),
         ("release", "dev_release::build_"),
         ("evidence", "dev_evidence::build_"),
@@ -101,8 +99,7 @@ fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
 
 #[test]
 fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
-    let source =
-        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/application/dispatch.rs"));
+    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report_from_query"),
@@ -111,12 +108,12 @@ fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
         ("list-products", "dev_control_plane::build_product_list_report"),
         ("list-plugins", "dev_control_plane::build_plugin_list_report"),
         ("route-audit", "dev_route_audit::build_report_from_query"),
-        ("inventory", "dev_script_audit::build_inventory_report"),
+        ("inventory", "dev_maintenance_audit::build_inventory_report"),
         ("registry", "dev_registry::build_report_from_query"),
         ("parity", "dev_parity::build_report"),
         ("docs", "dev_control_plane::build_docs_inventory_report"),
         ("status", "dev_status::build_report"),
-        ("script-audit", "dev_script_audit::build_report"),
+        ("maintenance-audit", "dev_maintenance_audit::build_report"),
         ("snapshots-audit", "dev_control_plane::build_snapshots_audit_report"),
         ("fixture-audit", "dev_control_plane::build_fixture_audit_report"),
         ("crate-health", "dev_crate_health::build_report"),
