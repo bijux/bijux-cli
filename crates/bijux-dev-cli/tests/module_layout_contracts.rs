@@ -174,12 +174,12 @@ fn workspace_crate_src_tree_depth_is_bounded() {
 }
 
 #[test]
-fn allowlists_are_centralized_under_config_as_toml() {
+fn allowlists_are_centralized_under_configs_as_toml() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = crate_root.join("..").join("..");
 
-    let automation_allowlist = workspace_root.join("config/allowlists/automation.toml");
-    let public_api_allowlist = workspace_root.join("config/allowlists/public_api.toml");
+    let automation_allowlist = workspace_root.join("configs/allowlists/automation.toml");
+    let public_api_allowlist = workspace_root.join("configs/allowlists/public_api.toml");
 
     assert!(
         automation_allowlist.exists(),

@@ -18,3 +18,4 @@ Centralizing these configurations ensures:
 | **`coveragerc.ini`**              | Coverage.py — coverage measurement rules                           |
 | **`mypy.ini`**                    | Mypy — strict static type checking                                 |
 | **`ruff.toml`**                   | Ruff — linting, formatting, and isort rules                        |
+| **`allowlists/*.toml`**           | Centralized policy allowlists consumed by maintainer automation    |

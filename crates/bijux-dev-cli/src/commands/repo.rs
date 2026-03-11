@@ -76,7 +76,7 @@ fn stale_inventories(root: &Path) -> Vec<String> {
 }
 
 fn maintenance_allowlist_paths(root: &Path) -> Vec<String> {
-    let allowlist = root.join("config/allowlists/automation.toml");
+    let allowlist = root.join("configs/allowlists/automation.toml");
     let content = fs::read_to_string(&allowlist).unwrap_or_default();
     toml::from_str::<AutomationAllowlists>(&content)
         .unwrap_or_default()
@@ -264,11 +264,11 @@ mod tests {
     }
 
     #[test]
-    fn repo_drift_reads_maintenance_allowlist_from_config_toml() {
+    fn repo_drift_reads_maintenance_allowlist_from_configs_toml() {
         let root = temp_root("allowlist");
-        fs::create_dir_all(root.join("config/allowlists")).expect("mkdir allowlists");
+        fs::create_dir_all(root.join("configs/allowlists")).expect("mkdir allowlists");
         fs::write(
-            root.join("config/allowlists/automation.toml"),
+            root.join("configs/allowlists/automation.toml"),
             "version = 1\n[maintenance_additions]\npaths = [\"maintenance/missing_target\"]\n",
         )
         .expect("write allowlist");
