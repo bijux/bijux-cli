@@ -2520,8 +2520,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             ]}))
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
-            let fixture = workspace_root.join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
-            let test_file = workspace_root.join("crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs");
+            let fixture = workspace_root
+                .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+            let test_file =
+                workspace_root.join("crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs");
             let test_dir = workspace_root.join("crates/bijux-cli/tests/bin_surface");
             let source = fs::read_to_string(&test_file).unwrap_or_default();
             let test_sources: BTreeMap<String, String> = collect_files(&test_dir)
@@ -2537,21 +2539,27 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 .map(ToString::to_string)
                 .collect();
             let dev_values: BTreeMap<String, i64> = BTreeMap::from([
-                ("dev cli status".to_string(),100),("dev cli routes".to_string(),98),("dev cli registry".to_string(),98),
-                ("dev cli env".to_string(),96),("dev cli doctor".to_string(),95),("dev cli contracts".to_string(),93),
-                ("dev cli parity".to_string(),91),("dev cli runtime-identity".to_string(),90),("dev cli state-audit".to_string(),90),("dev cli state-doctor".to_string(),90),
+                ("dev cli status".to_string(), 100),
+                ("dev cli routes".to_string(), 98),
+                ("dev cli registry".to_string(), 98),
+                ("dev cli env".to_string(), 96),
+                ("dev cli doctor".to_string(), 95),
+                ("dev cli contracts".to_string(), 93),
+                ("dev cli parity".to_string(), 91),
+                ("dev cli runtime-identity".to_string(), 90),
+                ("dev cli state-audit".to_string(), 90),
+                ("dev cli state-doctor".to_string(), 90),
             ]);
             let mut rows = Vec::<Value>::new();
             for command in commands {
                 let parts = command.split(' ').collect::<Vec<_>>();
-                let quoted = parts
-                    .iter()
-                    .map(|p| format!("\"{p}\""))
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                let quoted =
+                    parts.iter().map(|p| format!("\"{p}\"")).collect::<Vec<_>>().join(", ");
                 let evidence_links: Vec<String> = test_sources
                     .iter()
-                    .filter(|(_, src)| src.contains(&quoted) || src.contains(&format!("\"{command}\"")))
+                    .filter(|(_, src)| {
+                        src.contains(&quoted) || src.contains(&format!("\"{command}\""))
+                    })
                     .map(|(path, _)| path.to_string())
                     .collect();
                 let status = if !evidence_links.is_empty()
@@ -2610,7 +2618,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "partial": rows.iter().filter(|r| r.get("status").and_then(Value::as_str)==Some("partial")).count(),
                 "shim": 0, "missing": 0
             });
-            let remaining: Vec<Value> = rows.iter().filter(|r| r.get("status").and_then(Value::as_str)!=Some("complete")).cloned().collect();
+            let remaining: Vec<Value> = rows
+                .iter()
+                .filter(|r| r.get("status").and_then(Value::as_str) != Some("complete"))
+                .cloned()
+                .collect();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_coverage_report.json", &json!({
                 "generated_at": generated_at_utc(), "generator":"bijux-dev-cli","scope":"dev cli command coverage","commands":rows,"summary":summary
             })).ok()?;
@@ -2638,12 +2650,16 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"tracked dev cli closure set","tracked_commands":rows.iter().filter_map(|r| r.get("command").cloned()).collect::<Vec<_>>(),
                 "coverage_checks":coverage_checks,"status":"frozen"
             })).ok()?;
-            let cli_completion = fs::read_to_string(workspace_root.join("artifacts/status/cli_command_completion_report.json"))
-                .ok()
-                .and_then(|t| serde_json::from_str::<Value>(&t).ok())
-                .unwrap_or_else(|| json!({}));
-            let cli_remaining = cli_completion.get("remaining_count").and_then(Value::as_i64).unwrap_or(0);
-            let cli_green = cli_completion.get("closure_status").and_then(Value::as_str) == Some("green");
+            let cli_completion = fs::read_to_string(
+                workspace_root.join("artifacts/status/cli_command_completion_report.json"),
+            )
+            .ok()
+            .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+            .unwrap_or_else(|| json!({}));
+            let cli_remaining =
+                cli_completion.get("remaining_count").and_then(Value::as_i64).unwrap_or(0);
+            let cli_green =
+                cli_completion.get("closure_status").and_then(Value::as_str) == Some("green");
             let dev_green = remaining.is_empty() && all_required;
             let combined = json!({
                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"cli and dev cli command closure",
@@ -2653,7 +2669,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "closure_status": if cli_green && dev_green {"green"} else {"open"},
                 "complete_language_allowed": cli_green && dev_green
             });
-            write_status_artifact_json(workspace_root, "artifacts/status/cli_dev_command_closure_report.json", &combined).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/cli_dev_command_closure_report.json",
+                &combined,
+            )
+            .ok()?;
             let txt = format!(
                 "CLI and DEV CLI Closure Report\noverall: {}\ncomplete language allowed: {}\n\ncli remaining: {}\ndev cli remaining: {}\n",
                 combined.get("closure_status").and_then(Value::as_str).unwrap_or("open"),
@@ -2661,7 +2682,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 cli_remaining,
                 remaining.len()
             );
-            fs::write(workspace_root.join("artifacts/status/cli_dev_command_closure_report.txt"), txt).ok()?;
+            fs::write(
+                workspace_root.join("artifacts/status/cli_dev_command_closure_report.txt"),
+                txt,
+            )
+            .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_command_coverage_report.json",
                 "artifacts/status/dev_cli_command_matrix_artifact.json",
@@ -2675,20 +2700,19 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             ]}))
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS" => {
-            let main_rs = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/src/bin/bijux-rs.rs"),
-            )
-            .unwrap_or_default();
+            let main_rs =
+                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bin/bijux-rs.rs"))
+                    .unwrap_or_default();
             let core_app = fs::read_to_string(workspace_root.join("crates/bijux-cli/src/app.rs"))
                 .unwrap_or_default();
             let parser_rs =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/routing/parser.rs"))
                     .unwrap_or_default();
-            let registry_rs = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/src/routing/registry.rs"),
-            )
-            .unwrap_or_default();
-            let dev_cli_dispatch_arm_count = core_app.matches("a == \"dev\" && b == \"cli\"").count();
+            let registry_rs =
+                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/routing/registry.rs"))
+                    .unwrap_or_default();
+            let dev_cli_dispatch_arm_count =
+                core_app.matches("a == \"dev\" && b == \"cli\"").count();
             let core_dev_cli_builder_call_count = [
                 "dev_routes::build_report(",
                 "dev_registry::build_report(",
@@ -2758,8 +2782,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 for (k, v) in envs {
                     cmd.env(k, v);
                 }
-                cmd.output()
-                    .expect("failed to execute cargo run for resilience report")
+                cmd.output().expect("failed to execute cargo run for resilience report")
             };
             let summary_commands: Vec<Vec<&str>> = vec![
                 vec!["dev", "cli", "status"],
@@ -2795,7 +2818,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "second_exit": b.status.code().unwrap_or(1),
                 }));
             }
-            let tmp = std::env::temp_dir().join(format!("bijux-dev-cli-side-effects-{}", std::process::id()));
+            let tmp = std::env::temp_dir()
+                .join(format!("bijux-dev-cli-side-effects-{}", std::process::id()));
             let _ = fs::remove_dir_all(&tmp);
             let _ = fs::create_dir_all(tmp.join("plugins"));
             let config = tmp.join("config.env");
@@ -2805,7 +2829,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             let _ = fs::write(&config, "BIJUXCLI_SAMPLE=1\n");
             let _ = fs::write(&history, "[]");
             let _ = fs::write(&memory, "{}");
-            let _ = fs::write(plugins.join("healthy.toml"), "[plugin]\nname='healthy'\nentry='plugin:main'\n");
+            let _ = fs::write(
+                plugins.join("healthy.toml"),
+                "[plugin]\nname='healthy'\nentry='plugin:main'\n",
+            );
             let digest = |p: &Path| -> String {
                 use std::collections::hash_map::DefaultHasher;
                 use std::hash::{Hash, Hasher};
@@ -2827,18 +2854,48 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             let after = json!({"config":digest(&config),"history":digest(&history),"memory":digest(&memory)});
             let _ = fs::remove_dir_all(&tmp);
             let failure_cases: Vec<(&str, Vec<&str>, Vec<(&str, String)>)> = vec![
-                ("status_unreadable_input", vec!["dev","cli","status"], vec![("BIJUX_HISTORY_PATH","/root/forbidden/history.json".to_string())]),
-                ("parity_corrupted_input", vec!["dev","cli","parity"], vec![("BIJUX_MEMORY_PATH","/dev/null/not-json".to_string())]),
-                ("contracts_missing_snapshot_context", vec!["dev","cli","contracts"], vec![("PWD","/definitely/missing/contracts/root".to_string())]),
-                ("runtime_identity_path_ambiguity", vec!["dev","cli","runtime-identity"], vec![("PATH",format!("/tmp/bijux-a:/tmp/bijux-b:{}",std::env::var("PATH").unwrap_or_default()))]),
-                ("package_health_metadata_mismatch", vec!["dev","cli","package-health"], vec![("BIJUX_WHEEL_VERSION","0.0.1".to_string()),("BIJUX_PYTHON_BRIDGE_SUPPORTED","0".to_string())]),
+                (
+                    "status_unreadable_input",
+                    vec!["dev", "cli", "status"],
+                    vec![("BIJUX_HISTORY_PATH", "/root/forbidden/history.json".to_string())],
+                ),
+                (
+                    "parity_corrupted_input",
+                    vec!["dev", "cli", "parity"],
+                    vec![("BIJUX_MEMORY_PATH", "/dev/null/not-json".to_string())],
+                ),
+                (
+                    "contracts_missing_snapshot_context",
+                    vec!["dev", "cli", "contracts"],
+                    vec![("PWD", "/definitely/missing/contracts/root".to_string())],
+                ),
+                (
+                    "runtime_identity_path_ambiguity",
+                    vec!["dev", "cli", "runtime-identity"],
+                    vec![(
+                        "PATH",
+                        format!(
+                            "/tmp/bijux-a:/tmp/bijux-b:{}",
+                            std::env::var("PATH").unwrap_or_default()
+                        ),
+                    )],
+                ),
+                (
+                    "package_health_metadata_mismatch",
+                    vec!["dev", "cli", "package-health"],
+                    vec![
+                        ("BIJUX_WHEEL_VERSION", "0.0.1".to_string()),
+                        ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
+                    ],
+                ),
             ];
             let mut failure_rows = Vec::<Value>::new();
             for (case_id, command, env) in &failure_cases {
                 let mut args = command.clone();
                 args.extend(["--format", "json", "--no-pretty"]);
                 let out = run_cmd(&args, env);
-                let payload = serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| json!({}));
+                let payload =
+                    serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| json!({}));
                 failure_rows.push(json!({
                     "case_id": case_id,
                     "command": command.join(" "),
@@ -2846,8 +2903,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "json_object": payload.is_object(),
                 }));
             }
-            let summary_set: BTreeSet<String> = summary_commands.iter().map(|c| c.join(" ")).collect();
-            let machine_set: BTreeSet<String> = machine_commands.iter().map(|c| c.join(" ")).collect();
+            let summary_set: BTreeSet<String> =
+                summary_commands.iter().map(|c| c.join(" ")).collect();
+            let machine_set: BTreeSet<String> =
+                machine_commands.iter().map(|c| c.join(" ")).collect();
             let checks = json!({
                 "failure_injection_cases_reported": failure_rows.len() == failure_cases.len(),
                 "determinism_rows_present": determinism_rows.len() == summary_commands.len()+machine_commands.len(),
@@ -2855,7 +2914,15 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "machine_commands_deterministic": determinism_rows.iter().filter(|r| machine_set.contains(r.get("command").and_then(Value::as_str).unwrap_or(""))).all(|r| r.get("stable").and_then(Value::as_bool)==Some(true)),
                 "read_only_commands_did_not_mutate_state": before == after,
             });
-            let drift_checks: Vec<String> = checks.as_object().map(|o| o.iter().filter(|(_,v)| v.as_bool()!=Some(true)).map(|(k,_)| k.to_string()).collect()).unwrap_or_default();
+            let drift_checks: Vec<String> = checks
+                .as_object()
+                .map(|o| {
+                    o.iter()
+                        .filter(|(_, v)| v.as_bool() != Some(true))
+                        .map(|(k, _)| k.to_string())
+                        .collect()
+                })
+                .unwrap_or_default();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_control_plane_resilience_artifact.json", &json!({
                 "scope":"dev cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,
                 "status": if drift_checks.is_empty() {"complete"} else {"partial"}
@@ -2887,21 +2954,18 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     .unwrap_or_else(|| json!({}))
             };
             let runtime_leakage = read_json("artifacts/status/runtime_dev_leakage_report.json");
-            let interface_bridge = read_json("artifacts/status/dev_cli_interface_bridge_report.json");
+            let interface_bridge =
+                read_json("artifacts/status/dev_cli_interface_bridge_report.json");
             let dispatch = read_json("artifacts/status/dev_cli_dispatch_ownership_report.json");
             let mut violations = Vec::<String>::new();
             if runtime_leakage.get("status").and_then(Value::as_str) != Some("ok") {
                 violations.push("runtime leakage report is not green".to_string());
             }
-            if interface_bridge
-                .get("interfaces")
-                .and_then(Value::as_array)
-                .is_some_and(|rows| {
-                    rows.iter().any(|row| {
-                        row.get("contains_json_assembly").and_then(Value::as_bool) == Some(true)
-                    })
+            if interface_bridge.get("interfaces").and_then(Value::as_array).is_some_and(|rows| {
+                rows.iter().any(|row| {
+                    row.get("contains_json_assembly").and_then(Value::as_bool) == Some(true)
                 })
-            {
+            }) {
                 violations.push("query bridge still assembles presentation json".to_string());
             }
             if dispatch
@@ -2928,7 +2992,9 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &payload,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/runtime_responsibility_reassessment.json"]}))
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/runtime_responsibility_reassessment.json"]}),
+            )
         }
         _ => None,
     }
