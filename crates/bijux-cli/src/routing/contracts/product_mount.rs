@@ -99,7 +99,9 @@ pub const OFFICIAL_PRODUCT_NAMESPACES: &[&str] = KNOWN_BIJUX_TOOL_NAMESPACES;
 /// Resolve known tool metadata by namespace.
 #[must_use]
 pub fn known_bijux_tool(namespace: &str) -> Option<&'static KnownBijuxTool> {
-    KNOWN_BIJUX_TOOLS.iter().find(|tool| tool.namespace == namespace)
+    KNOWN_BIJUX_TOOLS
+        .iter()
+        .find(|tool| tool.namespace == namespace)
 }
 
 /// Smallest metadata contract required for reserved product mounts.
