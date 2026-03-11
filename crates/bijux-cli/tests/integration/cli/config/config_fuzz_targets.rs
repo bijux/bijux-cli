@@ -15,21 +15,38 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-config-fuzz-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("mkdir");
     dir
 }
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("execute")
 }
 
 fn run_json_ok(args: &[&str]) -> Value {
     let out = run(args);
-    assert_eq!(out.status.code(), Some(0), "stderr={}", String::from_utf8_lossy(&out.stderr));
-    assert!(out.stderr.is_empty(), "successful json command should keep stderr empty: {args:?}");
-    assert!(!out.stdout.is_empty(), "successful json command should emit stdout payload: {args:?}");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "stderr={}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        out.stderr.is_empty(),
+        "successful json command should keep stderr empty: {args:?}"
+    );
+    assert!(
+        !out.stdout.is_empty(),
+        "successful json command should emit stdout payload: {args:?}"
+    );
     serde_json::from_slice(&out.stdout).expect("json")
 }
 
@@ -50,11 +67,19 @@ fn seeded_pairs(seed: u64, n: usize) -> Vec<(String, String)> {
 fn fuzz_dotenv_style_config_parsing_is_stable() {
     let root = temp_dir("dotenv");
     let path = root.join("config.env");
-    fs::write(&path, "# comment\nBIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=two\nBIJUXCLI_GAMMA=3\n")
-        .expect("write");
+    fs::write(
+        &path,
+        "# comment\nBIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=two\nBIJUXCLI_GAMMA=3\n",
+    )
+    .expect("write");
 
-    let json =
-        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(json["alpha"], "1");
     assert_eq!(json["beta"], "two");
     assert_eq!(json["gamma"], "3");
@@ -65,17 +90,49 @@ fn fuzz_malformed_config_lines_fail_consistently() {
     let root = temp_dir("malformed");
     let path = root.join("bad.env");
 
-    for sample in ["BROKEN\n", "=\n", "BIJUXCLI_OK=1\nBAD\n", "BIJUXCLI_A=1\nX\nY\n"] {
+    for sample in [
+        "BROKEN\n",
+        "=\n",
+        "BIJUXCLI_OK=1\nBAD\n",
+        "BIJUXCLI_A=1\nX\nY\n",
+    ] {
         fs::write(&path, sample).expect("write");
-        let a = run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
-        let b = run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+        let a = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            path.to_str().expect("utf-8"),
+        ]);
+        let b = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            path.to_str().expect("utf-8"),
+        ]);
         assert_eq!(a.status.code(), b.status.code());
         assert_ne!(a.status.code(), Some(0));
-        assert!(a.stdout.is_empty(), "malformed listing should not write stdout");
-        assert!(b.stdout.is_empty(), "malformed listing should not write stdout");
-        assert!(!a.stderr.is_empty(), "malformed listing should write stderr");
-        assert!(!b.stderr.is_empty(), "malformed listing should write stderr");
-        assert_eq!(a.stderr, b.stderr, "malformed listing diagnostics should be deterministic");
+        assert!(
+            a.stdout.is_empty(),
+            "malformed listing should not write stdout"
+        );
+        assert!(
+            b.stdout.is_empty(),
+            "malformed listing should not write stdout"
+        );
+        assert!(
+            !a.stderr.is_empty(),
+            "malformed listing should write stderr"
+        );
+        assert!(
+            !b.stderr.is_empty(),
+            "malformed listing should write stderr"
+        );
+        assert_eq!(
+            a.stderr, b.stderr,
+            "malformed listing diagnostics should be deterministic"
+        );
     }
 }
 
@@ -83,10 +140,19 @@ fn fuzz_malformed_config_lines_fail_consistently() {
 fn fuzz_duplicate_key_handling_keeps_last_value() {
     let root = temp_dir("dupes");
     let path = root.join("dupes.env");
-    fs::write(&path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=2\nBIJUXCLI_ALPHA=3\n").expect("write");
+    fs::write(
+        &path,
+        "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=2\nBIJUXCLI_ALPHA=3\n",
+    )
+    .expect("write");
 
-    let json =
-        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(json["alpha"], "3");
 }
 
@@ -94,11 +160,19 @@ fn fuzz_duplicate_key_handling_keeps_last_value() {
 fn fuzz_weird_whitespace_handling_is_stable() {
     let root = temp_dir("whitespace");
     let path = root.join("w.env");
-    fs::write(&path, "   BIJUXCLI_ALPHA   =value   \n\tBIJUXCLI_BETA=  two words  \n# c\n")
-        .expect("write");
+    fs::write(
+        &path,
+        "   BIJUXCLI_ALPHA   =value   \n\tBIJUXCLI_BETA=  two words  \n# c\n",
+    )
+    .expect("write");
 
-    let json =
-        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(json["alpha"], "value");
     assert_eq!(json["beta"], "two words");
 }
@@ -113,8 +187,13 @@ fn fuzz_quote_parsing_and_escape_parsing_are_stable() {
     )
     .expect("write");
 
-    let json =
-        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(json["a"], "\"quoted value\"");
     assert_eq!(json["b"], "'single quoted'");
     assert_eq!(json["c"], "\"a\"b\"");
@@ -127,19 +206,47 @@ fn fuzz_null_byte_and_control_characters_are_handled_deterministically() {
     let path = root.join("controls.env");
 
     fs::write(&path, b"BIJUXCLI_A=ok\nBIJUXCLI_B=bad\x00x\n").expect("write null bytes");
-    let null_case_a =
-        run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
-    let null_case_b =
-        run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let null_case_a = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
+    let null_case_b = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(null_case_a.status.code(), null_case_b.status.code());
-    assert_eq!(null_case_a.stdout, null_case_b.stdout, "null-byte stdout should be deterministic");
-    assert_eq!(null_case_a.stderr, null_case_b.stderr, "null-byte stderr should be deterministic");
+    assert_eq!(
+        null_case_a.stdout, null_case_b.stdout,
+        "null-byte stdout should be deterministic"
+    );
+    assert_eq!(
+        null_case_a.stderr, null_case_b.stderr,
+        "null-byte stderr should be deterministic"
+    );
 
     fs::write(&path, "BIJUXCLI_A=ok\nBIJUXCLI_B=bad\tvalue\n").expect("write tab");
-    let tab_case = run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let tab_case = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(tab_case.status.code(), Some(3));
-    assert!(tab_case.stdout.is_empty(), "tab validation failures should not write stdout");
-    assert!(!tab_case.stderr.is_empty(), "tab validation failures should write stderr");
+    assert!(
+        tab_case.stdout.is_empty(),
+        "tab validation failures should not write stdout"
+    );
+    assert!(
+        !tab_case.stderr.is_empty(),
+        "tab validation failures should write stderr"
+    );
 }
 
 #[test]
@@ -148,7 +255,13 @@ fn fuzz_mixed_valid_invalid_content_never_silently_succeeds() {
     let path = root.join("mixed.env");
     fs::write(&path, "BIJUXCLI_OK=1\nBROKEN\nBIJUXCLI_STILL_OK=2\n").expect("write");
 
-    let out = run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let out = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
@@ -164,9 +277,20 @@ fn fuzz_config_export_serialization_roundtrips_for_random_inputs() {
     for (k, v) in seeded_pairs(77, 32) {
         expected.insert(k.clone(), v.clone());
         let pair = format!("{k}={v}");
-        let out =
-            run(&["cli", "config", "set", &pair, "--config-path", active.to_str().expect("utf-8")]);
-        assert_eq!(out.status.code(), Some(0), "stderr={}", String::from_utf8_lossy(&out.stderr));
+        let out = run(&[
+            "cli",
+            "config",
+            "set",
+            &pair,
+            "--config-path",
+            active.to_str().expect("utf-8"),
+        ]);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "stderr={}",
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
 
     let export = run(&[
@@ -179,8 +303,13 @@ fn fuzz_config_export_serialization_roundtrips_for_random_inputs() {
     ]);
     assert_eq!(export.status.code(), Some(0));
 
-    let loaded =
-        run_json_ok(&["cli", "config", "list", "--config-path", exported.to_str().expect("utf-8")]);
+    let loaded = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        exported.to_str().expect("utf-8"),
+    ]);
     for (k, v) in expected {
         assert_eq!(loaded[k], v);
     }
@@ -219,8 +348,13 @@ fn fuzz_config_load_import_parsing_is_deterministic() {
     assert_eq!(a.stdout, b.stdout, "load stdout should be deterministic");
     assert_eq!(a.stderr, b.stderr, "load stderr should be deterministic");
 
-    let listed =
-        run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
+    let listed = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        active.to_str().expect("utf-8"),
+    ]);
     assert!(
         !listed.as_object().expect("listed object").is_empty(),
         "loaded config should contain entries"
@@ -245,8 +379,13 @@ fn fuzz_roundtrip_parse_serialize_parse_is_semantically_stable() {
         assert_eq!(out.status.code(), Some(0));
     }
 
-    let before =
-        run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
+    let before = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        active.to_str().expect("utf-8"),
+    ]);
     let export = run(&[
         "cli",
         "config",
@@ -356,9 +495,17 @@ fn fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports() {
         assert_eq!(load.status.code(), Some(0));
     }
 
-    let listed =
-        run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
+    let listed = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        active.to_str().expect("utf-8"),
+    ]);
     for k in keys {
-        assert!(listed.get(&k).is_some(), "missing key after repeated export/load: {k}");
+        assert!(
+            listed.get(&k).is_some(),
+            "missing key after repeated export/load: {k}"
+        );
     }
 }

@@ -15,7 +15,10 @@ fn parse_json(stdout: &str) -> Value {
 }
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-cli-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -130,7 +133,13 @@ fn config_set_repeated_write_is_idempotent() {
 
     let content = fs::read_to_string(path).expect("config file");
     let lines: Vec<&str> = content.lines().collect();
-    assert_eq!(lines.iter().filter(|line| line.contains("BIJUXCLI_SAME=")).count(), 1);
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.contains("BIJUXCLI_SAME="))
+            .count(),
+        1
+    );
 }
 
 #[test]

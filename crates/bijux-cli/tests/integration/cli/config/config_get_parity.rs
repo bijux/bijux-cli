@@ -14,14 +14,20 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-get-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -41,7 +47,10 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
+    let root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -55,7 +64,9 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut cmd = Command::new(&cli);
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
-        && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
+        && normalized_args
+            .get(1)
+            .is_some_and(|arg| !arg.starts_with('-'));
     if cli == env!("CARGO_BIN_EXE_bijux-rs") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
@@ -79,7 +90,10 @@ fn normalize_snapshot(stdout: String, config_path: &str) -> String {
 fn assert_success_json_output(out: &Output, context: &str) -> Value {
     assert_eq!(out.status.code(), Some(0), "{context} should succeed");
     assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
-    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
     serde_json::from_slice(&out.stdout).expect("valid json payload")
 }
 
@@ -90,7 +104,16 @@ fn config_get_output_snapshots_text_json_yaml() {
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
     let path = config_path.to_str().expect("utf-8");
 
-    let text = run(&["cli", "config", "get", "alpha", "--format", "text", "--config-path", path]);
+    let text = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "text",
+        "--config-path",
+        path,
+    ]);
     assert!(text.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(text.stdout).expect("utf-8"), path),
@@ -160,7 +183,14 @@ fn config_get_found_missing_invalid_and_normalized_keys() {
     let found_json = assert_success_json_output(&found, "config get found");
     assert_eq!(found_json["value"], "1");
 
-    let normalized = run(&["cli", "config", "get", "BIJUXCLI_MIXED", "--config-path", path]);
+    let normalized = run(&[
+        "cli",
+        "config",
+        "get",
+        "BIJUXCLI_MIXED",
+        "--config-path",
+        path,
+    ]);
     let normalized_json = assert_success_json_output(&normalized, "config get normalized key");
     assert_eq!(normalized_json["key"], "mixed");
 
@@ -186,14 +216,27 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
     fs::write(&bad_path, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("write bad");
 
     let override_out = run_with_env(
-        &["cli", "config", "get", "alpha", "--config-path", flag_path.to_str().expect("utf-8")],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--config-path",
+            flag_path.to_str().expect("utf-8"),
+        ],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
     let override_json = assert_success_json_output(&override_out, "config get path override");
     assert_eq!(override_json["value"], "flag");
 
-    let malformed =
-        run(&["cli", "config", "get", "alpha", "--config-path", bad_path.to_str().expect("utf-8")]);
+    let malformed = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--config-path",
+        bad_path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(malformed.status.code(), Some(1));
     assert!(malformed.stdout.is_empty());
     assert!(!malformed.stderr.is_empty());
@@ -254,8 +297,14 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
     ]);
     assert_eq!(base.status.code(), Some(0));
     assert_eq!(traced.status.code(), Some(0));
-    assert!(base.stderr.is_empty(), "base output should keep stderr empty");
-    assert!(traced.stderr.is_empty(), "trace output should keep stderr empty");
+    assert!(
+        base.stderr.is_empty(),
+        "base output should keep stderr empty"
+    );
+    assert!(
+        traced.stderr.is_empty(),
+        "trace output should keep stderr empty"
+    );
     assert_eq!(base.stdout, traced.stdout);
 }
 
@@ -266,11 +315,17 @@ fn config_get_python_parity_for_success_and_missing() {
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
 
     let mut envs = HashMap::new();
-    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
+    envs.insert(
+        "BIJUXCLI_CONFIG".to_string(),
+        config_path.display().to_string(),
+    );
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
-    let py_ok = run_python(&["config", "get", "alpha", "--format", "json", "--no-pretty"], &envs);
+    let py_ok = run_python(
+        &["config", "get", "alpha", "--format", "json", "--no-pretty"],
+        &envs,
+    );
     let rs_ok = run_with_env(
         &[
             "cli",
@@ -298,8 +353,17 @@ fn config_get_python_parity_for_success_and_missing() {
     let rs_ok_json: Value = serde_json::from_slice(&rs_ok.stdout).expect("rs json");
     assert_eq!(py_ok_json["value"], rs_ok_json["value"]);
 
-    let py_missing =
-        run_python(&["config", "get", "missing", "--format", "json", "--no-pretty"], &envs);
+    let py_missing = run_python(
+        &[
+            "config",
+            "get",
+            "missing",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &envs,
+    );
     let rs_missing = run_with_env(
         &[
             "cli",
