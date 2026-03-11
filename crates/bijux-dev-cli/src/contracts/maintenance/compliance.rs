@@ -9,7 +9,7 @@ use super::shared::{
     collect_files, extract_required_test_names, generated_at_utc, is_python_file, migrated_rows,
     parse_make_targets, rel, status_generator_slug,
 };
-use super::status_registry::build_status_contracts_report;
+use super::status_contract_bridge::build_status_contracts_report;
 
 fn build_requirement_catalog(workspace_root: &Path) -> Value {
     let mut by_script = BTreeMap::<String, Vec<String>>::new();

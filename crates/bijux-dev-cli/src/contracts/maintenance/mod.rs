@@ -12,7 +12,7 @@ mod generator_runner;
 mod migration_reports;
 mod native;
 mod shared;
-mod status_registry;
+mod status_contract_bridge;
 
 #[cfg(test)]
 mod tests;
@@ -26,7 +26,7 @@ pub use migration_reports::{
     build_e2e_contract_report, build_package_metadata_report, build_pip_audit_report,
     build_provenance_statement_report, build_python_capture_report,
 };
-pub use status_registry::{
+pub use status_contract_bridge::{
     build_status_contracts_report, build_status_scripts_report, run_all_status_contracts,
     run_all_status_scripts, run_status_contract, run_status_script,
 };
