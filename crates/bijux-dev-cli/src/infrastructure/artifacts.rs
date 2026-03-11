@@ -49,3 +49,32 @@ pub fn collect_files_recursive(base: &Path) -> Vec<PathBuf> {
 pub fn relative_to_root(path: &Path, root: &Path) -> String {
     path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
+
+/// Parse makefile target names from a `makes/*.mk` style file.
+#[must_use]
+pub fn parse_make_targets(path: &Path) -> Vec<String> {
+    let Ok(text) = fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for raw in text.lines() {
+        if raw.starts_with('\t') || raw.starts_with('#') || raw.trim().is_empty() {
+            continue;
+        }
+        let Some((left, _)) = raw.split_once(':') else {
+            continue;
+        };
+        let target = left.trim();
+        if target.is_empty()
+            || target.contains(' ')
+            || target.contains('=')
+            || target.starts_with('.')
+        {
+            continue;
+        }
+        out.push(target.to_string());
+    }
+    out.sort();
+    out.dedup();
+    out
+}

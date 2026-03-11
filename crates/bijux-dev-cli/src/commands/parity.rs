@@ -6,22 +6,13 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
+use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
+
 const PARITY_DIR: &str = "artifacts/parity";
 const STATUS_DIR: &str = "artifacts/status";
 
 fn stable_generated_at() -> String {
     "1970-01-01T00:00:00+00:00".to_string()
-}
-
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
-
-fn read_text_if_exists(path: &Path) -> String {
-    fs::read_to_string(path).unwrap_or_default()
 }
 
 fn write_text_if_changed(path: &Path, body: &str) {

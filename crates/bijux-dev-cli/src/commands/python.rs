@@ -1,16 +1,10 @@
 //! Python bridge surface and sovereignty audits for maintainer control-plane workflows.
 
-use std::fs;
 use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
+use crate::infrastructure::artifacts::read_json_if_exists;
 
 fn duplication_list(payload: &Value, key: &str) -> Vec<Value> {
     payload.get(key).and_then(Value::as_array).cloned().unwrap_or_default()

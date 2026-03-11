@@ -1,24 +1,13 @@
 //! Evidence control-plane reports and exports.
 
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::Path;
 
 use bijux_cli_evidence::{valid_evidence_id, EvidenceRecord, EvidenceStatus, EvidenceStrength};
 use serde_json::{json, Value};
 
 use crate::command_registry;
-
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
-
-fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
+use crate::infrastructure::artifacts::{read_json_if_exists, relative_to_root};
 
 fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
     let release_truth = workspace_root.join("artifacts/status/release_truth_report.json");
@@ -33,7 +22,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             ownership: "bijux-dev-cli".to_string(),
             source: "dev cli release evidence".to_string(),
             proof_kind: "report".to_string(),
-            artifact_links: vec![rel(&release_truth, workspace_root)],
+            artifact_links: vec![relative_to_root(&release_truth, workspace_root)],
             freshness: if release_truth.exists() {
                 "fresh".to_string()
             } else {
@@ -52,7 +41,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             ownership: "bijux-dev-cli".to_string(),
             source: "dev cli parity".to_string(),
             proof_kind: "matrix".to_string(),
-            artifact_links: vec![rel(&parity, workspace_root)],
+            artifact_links: vec![relative_to_root(&parity, workspace_root)],
             freshness: if parity.exists() { "fresh".to_string() } else { "stale".to_string() },
             status: if parity.exists() { EvidenceStatus::Proven } else { EvidenceStatus::Blocked },
             strength: EvidenceStrength::Strong,
@@ -63,7 +52,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             ownership: "bijux-dev-cli".to_string(),
             source: "dev cli package-health".to_string(),
             proof_kind: "report".to_string(),
-            artifact_links: vec![rel(&install_neutrality, workspace_root)],
+            artifact_links: vec![relative_to_root(&install_neutrality, workspace_root)],
             freshness: if install_neutrality.exists() {
                 "fresh".to_string()
             } else {
@@ -82,7 +71,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             ownership: "bijux-dev-cli".to_string(),
             source: "dev cli runtime-identity".to_string(),
             proof_kind: "report".to_string(),
-            artifact_links: vec![rel(&runtime_identity, workspace_root)],
+            artifact_links: vec![relative_to_root(&runtime_identity, workspace_root)],
             freshness: if runtime_identity.exists() {
                 "fresh".to_string()
             } else {

@@ -1,36 +1,12 @@
 //! Maintainer script audit report assembly.
 
 use std::collections::BTreeMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::{json, Value};
-
-fn collect_files(base: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    if !base.exists() {
-        return out;
-    }
-    let mut stack = vec![base.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        if let Ok(entries) = fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    stack.push(path);
-                } else if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
-    }
-    out.sort();
-    out
-}
-
-fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
+use crate::infrastructure::artifacts::{
+    collect_files_recursive, parse_make_targets, relative_to_root,
+};
 
 fn classify_script(path: &str) -> &'static str {
     if path == "scripts/__init__.py" {
@@ -56,33 +32,6 @@ fn replacement_command(path: &str) -> Option<String> {
     }
 }
 
-fn parse_make_targets(path: &Path) -> Vec<String> {
-    let mut out = Vec::new();
-    let Ok(text) = fs::read_to_string(path) else {
-        return out;
-    };
-    for raw in text.lines() {
-        if raw.starts_with('\t') || raw.starts_with('#') || raw.trim().is_empty() {
-            continue;
-        }
-        let Some((left, _)) = raw.split_once(':') else {
-            continue;
-        };
-        let target = left.trim();
-        if target.is_empty()
-            || target.contains(' ')
-            || target.contains('=')
-            || target.starts_with('.')
-        {
-            continue;
-        }
-        out.push(target.to_string());
-    }
-    out.sort();
-    out.dedup();
-    out
-}
-
 fn classify_make_target(target: &str) -> &'static str {
     if target.starts_with("docs") || target.starts_with("api") || target.starts_with("test") {
         "replace"
@@ -99,11 +48,11 @@ fn classify_make_target(target: &str) -> &'static str {
 /// Builds the dev-cli inventory payload consumed by maintainer audits.
 #[must_use]
 pub fn build_inventory_report(workspace_root: &Path) -> Value {
-    let script_files = collect_files(&workspace_root.join("scripts"));
+    let script_files = collect_files_recursive(&workspace_root.join("scripts"));
     let scripts: Vec<Value> = script_files
         .iter()
         .map(|p| {
-            let rel = rel_to_root(p, workspace_root);
+            let rel = relative_to_root(p, workspace_root);
             json!({
                 "path": rel,
                 "classification": classify_script(&rel),
@@ -113,8 +62,8 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         .collect();
 
     let mut makes = Vec::new();
-    for mk in collect_files(&workspace_root.join("makes")) {
-        let rel = rel_to_root(&mk, workspace_root);
+    for mk in collect_files_recursive(&workspace_root.join("makes")) {
+        let rel = relative_to_root(&mk, workspace_root);
         let targets: Vec<Value> = parse_make_targets(&mk)
             .into_iter()
             .map(|target| {

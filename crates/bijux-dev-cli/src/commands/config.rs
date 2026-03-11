@@ -1,16 +1,10 @@
 //! Config ownership and drift reports for maintainer control-plane workflows.
 
-use std::fs;
 use std::path::Path;
 
 use serde_json::{json, Value};
 
-fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}))
-}
+use crate::infrastructure::artifacts::read_json_if_exists;
 
 fn ownership_report(workspace_root: &Path) -> Value {
     let path = workspace_root.join("artifacts/status/config_ownership_truth.json");

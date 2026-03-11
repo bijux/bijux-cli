@@ -5,32 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde_json::{json, Value};
-
-fn collect_files(base: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    if !base.exists() {
-        return out;
-    }
-    let mut stack = vec![base.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        if let Ok(entries) = fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    stack.push(path);
-                } else if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
-    }
-    out.sort();
-    out
-}
-
-fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
+use crate::infrastructure::artifacts::{collect_files_recursive, relative_to_root};
 
 fn read(path: &Path) -> String {
     fs::read_to_string(path).unwrap_or_default()
@@ -47,7 +22,7 @@ fn doc_comment_count(src: &str) -> usize {
 }
 
 fn crate_rs_sources(workspace_root: &Path) -> Vec<PathBuf> {
-    collect_files(&workspace_root.join("crates"))
+    collect_files_recursive(&workspace_root.join("crates"))
         .into_iter()
         .filter(|p| p.extension().is_some_and(|ext| ext == "rs"))
         .collect()
@@ -69,7 +44,7 @@ pub fn build_coverage_report(workspace_root: &Path) -> Value {
         total_public += public_items;
         total_docs += docs;
         rows.push(json!({
-            "file": rel(&path, workspace_root),
+            "file": relative_to_root(&path, workspace_root),
             "public_items": public_items,
             "doc_comment_lines": docs,
         }));
@@ -96,7 +71,7 @@ pub fn build_coverage_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_broken_links_report(workspace_root: &Path) -> Value {
     let mut missing = Vec::new();
-    for path in collect_files(&workspace_root.join("docs")) {
+    for path in collect_files_recursive(&workspace_root.join("docs")) {
         if path.extension().is_none_or(|ext| ext != "md") {
             continue;
         }
@@ -108,7 +83,7 @@ pub fn build_broken_links_report(workspace_root: &Path) -> Value {
                     let target = &rest[..end];
                     if !workspace_root.join(target).exists() {
                         missing.push(json!({
-                            "source": rel(&path, workspace_root),
+                            "source": relative_to_root(&path, workspace_root),
                             "target": target,
                         }));
                     }
@@ -139,7 +114,7 @@ pub fn build_public_api_report(workspace_root: &Path) -> Value {
             if trimmed.starts_with("pub ") {
                 if !saw_doc {
                     missing_docs.push(json!({
-                        "file": rel(&path, workspace_root),
+                        "file": relative_to_root(&path, workspace_root),
                         "line": trimmed,
                     }));
                 }
@@ -165,7 +140,7 @@ pub fn build_examples_report(workspace_root: &Path) -> Value {
         let example_blocks = src.match_indices("```rust").count();
         if example_blocks > 0 {
             rows.push(json!({
-                "file": rel(&path, workspace_root),
+                "file": relative_to_root(&path, workspace_root),
                 "rust_example_blocks": example_blocks,
             }));
         }
@@ -185,15 +160,15 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
     let public_api = build_public_api_report(workspace_root);
     let examples = build_examples_report(workspace_root);
 
-    let docs_files: Vec<String> = collect_files(&workspace_root.join("docs"))
+    let docs_files: Vec<String> = collect_files_recursive(&workspace_root.join("docs"))
         .into_iter()
         .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-        .map(|p| rel(&p, workspace_root))
+        .map(|p| relative_to_root(&p, workspace_root))
         .collect();
-    let readme_files: Vec<String> = collect_files(&workspace_root.join("crates"))
+    let readme_files: Vec<String> = collect_files_recursive(&workspace_root.join("crates"))
         .into_iter()
         .filter(|p| p.file_name().is_some_and(|name| name == "README.md"))
-        .map(|p| rel(&p, workspace_root))
+        .map(|p| relative_to_root(&p, workspace_root))
         .collect();
 
     json!({
@@ -217,10 +192,10 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
 /// `dev cli rustdoc migrate-website-api-docs`
 #[must_use]
 pub fn build_migration_report(workspace_root: &Path) -> Value {
-    let candidates: Vec<String> = collect_files(&workspace_root.join("docs/reference"))
+    let candidates: Vec<String> = collect_files_recursive(&workspace_root.join("docs/reference"))
         .into_iter()
         .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-        .map(|p| rel(&p, workspace_root))
+        .map(|p| relative_to_root(&p, workspace_root))
         .collect();
     json!({
         "delete_candidates": candidates,
@@ -250,10 +225,10 @@ pub fn build_build_proof_report(workspace_root: &Path) -> Value {
 /// `dev cli rustdoc workspace-coverage-proof`
 #[must_use]
 pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
-    let cargo_tomls: Vec<String> = collect_files(&workspace_root.join("crates"))
+    let cargo_tomls: Vec<String> = collect_files_recursive(&workspace_root.join("crates"))
         .into_iter()
         .filter(|p| p.file_name().is_some_and(|name| name == "Cargo.toml"))
-        .map(|p| rel(&p, workspace_root))
+        .map(|p| relative_to_root(&p, workspace_root))
         .collect();
     json!({"documented_crates": cargo_tomls, "status": "pass"})
 }
