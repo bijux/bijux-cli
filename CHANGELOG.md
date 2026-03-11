@@ -24,7 +24,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## [0.2.0] – 2026-01-26
 
 ### Added
-- Linear bootstrap flow with explicit execution boundaries and a first-class `CLIIntent`
+- Linear bootstrap flow with explicit phase boundaries and a first-class `CLIIntent`
 - Rebuilt E2E suite with domain taxonomy, invariants, and a subprocess harness
 - Nightly fuzz and stress suites under `tests/nightly` with dedicated markers
 - Expanded regression coverage for bootstrap paths, flags matrix, plugin loader/metadata, and real serializer roundtrips
@@ -62,7 +62,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **End-to-end automation:** GitHub Actions to **publish to PyPI**, **create a GitHub Release** with curated bundles, and **deploy docs**.
 
 ### Changed
-* **Make modules + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
+* **Makefiles + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
 
 [Back to top](#top)
 
@@ -76,7 +76,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
 * **CI Artifact Pages:** The documentation site now automatically generates detailed pages for all CI artifacts, including tests, linting, code quality, security, API tests, SBOMs, and citation files.
 * **Release Evidence:** The `publish` workflow now downloads all artifacts from the `CI` run, packages them as `evidence/*.tar.gz` bundles, and attaches them to the GitHub Release for traceability.
-* **Build Hygiene:** Make modules now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
+* **Build Hygiene:** Makefiles now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
 
 ### Changed
 * **CI/CD Overhaul:**
@@ -121,7 +121,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **MkDocs config (`mkdocs.yml`):** tightened plugin ordering and settings for `include-markdown`, enabled section indexes, and strict mode; added watch paths for configs and scripts.
 * **README / USAGE:** Refined copy; standardized **top anchors** and links to **TESTS.md**/**PROJECT_TREE.md**/**TOOLING.md**.
 * **SECURITY.md:** Rewritten with clearer reporting, SLAs, scope, and safe harbor.
-* **Make modules:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
+* **Makefiles:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
 * **Config:** Expanded lints/dictionary.
 
 ### Fixed
@@ -192,9 +192,9 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added formatting/linting: `ruff` (+format).
     * Added typing: `mypy`.
     * Added docs style/coverage: `pydocstyle`, `interrogate`.
-    * Added code health: `vulture`, `deptry`, `radon`, `codespell`.
+    * Added code health: `vulture`, `deptry`, `radon`, `codespell`, `reuse`.
     * Added security: `bandit`, `pip-audit`.
-    * Added mutation testing: `mutmut`.
+    * Added mutation testing: `mutmut`, `cosmic-ray`.
 
 * **SBOM**
 
@@ -202,11 +202,11 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Citation**
 
-    * Validated software citation metadata and added export to BibTeX/RIS/EndNote formats.
+    * Validated `CITATION.cff` and added export to BibTeX/RIS/EndNote formats via `make citation`.
 
 * **Makefile architecture**
 
-    * Modularized the Makefile into `makes/*.mk` for maintainability and clear separation of concerns.
+    * Modularized the Makefile into `makefiles/*.mk` for maintainability and clear separation of concerns.
     * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
     * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from `scripts/git-hooks` (skips re-installation if already linked).
     * Added `all-parallel` target to run independent checks (`quality`, `security`, `api`, `docs`) concurrently for faster CI/CD.
@@ -227,7 +227,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Packaging / PyPI page**
 
     * Built dynamic long description via **hatch-fancy-pypi-readme** from **README.md** and **CHANGELOG.md** for PyPI/TestPyPI.
-    * Packaged with `LICENSE` and `py.typed` included in source distributions.
+    * Packaged with `LICENSES/`, `REUSE.toml`, `CITATION.cff`, and `py.typed` included in source distributions.
 
 ### Changed
 
