@@ -16,10 +16,8 @@ use bijux_cli_python::{
 use serde_json as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let nanos =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-cli-{label}-{nanos}"));
     fs::create_dir_all(&dir).expect("temp directory should be created");
     dir
@@ -37,10 +35,7 @@ fn missing_config_file_returns_default_config() {
 #[test]
 fn malformed_config_file_returns_parse_error() {
     let malformed = parse_compatibility_config("BIJUXCLI_CONFIG\n").expect_err("must fail");
-    assert!(matches!(
-        malformed,
-        CompatibilityError::MalformedConfigLine { .. }
-    ));
+    assert!(matches!(malformed, CompatibilityError::MalformedConfigLine { .. }));
 }
 
 #[test]
