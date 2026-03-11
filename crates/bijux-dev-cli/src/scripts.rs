@@ -551,6 +551,30 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/dev_cli_route_registry_ownership_diff.json"],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/dev_cli_diagnostics_source_map.json"],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/dev_cli_interface_bridge_report.json"],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
+        }),
     ]
 }
 
@@ -1700,6 +1724,150 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "artifacts/status/dev_cli_invariants_drift_artifact.json"
                 ]
             }))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF" => {
+            let routing_module = workspace_root.join("crates/bijux-cli/src/routing/mod.rs");
+            let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
+            let dev_routes = workspace_root.join("crates/bijux-dev-cli/src/routes.rs");
+            let dev_registry = workspace_root.join("crates/bijux-dev-cli/src/registry.rs");
+            let inventory = workspace_root.join("crates/bijux-cli/src/routing/inventory.rs");
+            let has = |path: &Path, token: &str| -> bool {
+                fs::read_to_string(path)
+                    .map(|text| text.contains(token))
+                    .unwrap_or(false)
+            };
+            let before = json!({
+                "core_owned_routes_registry_presentation":
+                    has(&core_app, "routes_report(&registry)") || has(&core_app, "registry_report(&registry)"),
+                "routing_owned_routes_registry_presentation":
+                    has(&routing_module, "pub fn routes_report") || has(&routing_module, "pub fn registry_report"),
+            });
+            let after = json!({
+                "core_delegates_routes_to_dev_cli": has(&core_app, "dev_routes::build_report_from_query"),
+                "core_delegates_registry_to_dev_cli": has(&core_app, "dev_registry::build_report_from_query"),
+                "dev_cli_owns_routes_presentation": has(&dev_routes, "pub fn build_report_from_query"),
+                "dev_cli_owns_registry_presentation": has(&dev_registry, "pub fn build_report_from_query"),
+                "routing_exposes_read_only_route_inventory": has(&inventory, "pub fn route_inventory"),
+                "routing_exposes_read_only_registry_inventory": has(&inventory, "pub fn registry_inventory"),
+            });
+            let summary = json!({
+                "ownership_shift_complete":
+                    before["core_owned_routes_registry_presentation"] == false
+                    && before["routing_owned_routes_registry_presentation"] == false
+                    && after["core_delegates_routes_to_dev_cli"] == true
+                    && after["core_delegates_registry_to_dev_cli"] == true
+                    && after["dev_cli_owns_routes_presentation"] == true
+                    && after["dev_cli_owns_registry_presentation"] == true,
+            });
+            let payload = json!({
+                "generated_at": generated_at_utc(),
+                "generator": "bijux-dev-cli",
+                "scope": "route-registry ownership shift",
+                "before": before,
+                "after": after,
+                "summary": summary,
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_route_registry_ownership_diff.json",
+                &payload,
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_route_registry_ownership_diff.json"]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP" => {
+            let payload = json!({
+                "generated_at": generated_at_utc(),
+                "generator": "bijux-dev-cli",
+                "scope": "dev-cli diagnostics source map",
+                "commands": [
+                    {
+                        "command": "dev cli runtime-identity",
+                        "presentation_owner": "bijux-dev-cli",
+                        "runtime_data_sources": [
+                            "bijux-cli::install::install_health_report",
+                            "bijux-cli::install::cargo_install_strategy",
+                            "bijux-cli::install::pip_install_strategy",
+                        ],
+                    },
+                    {
+                        "command": "dev cli package-health",
+                        "presentation_owner": "bijux-dev-cli",
+                        "runtime_data_sources": ["artifacts/status/current_rust_state.json"],
+                    },
+                    {
+                        "command": "dev cli state-audit",
+                        "presentation_owner": "bijux-dev-cli",
+                        "runtime_data_sources": [
+                            "bijux-cli::state_path_status",
+                            "bijux-cli::state_diagnostics",
+                        ],
+                    },
+                    {
+                        "command": "dev cli state-doctor",
+                        "presentation_owner": "bijux-dev-cli",
+                        "runtime_data_sources": ["bijux-cli::state_diagnostics"],
+                    },
+                ],
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_diagnostics_source_map.json",
+                &payload,
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_diagnostics_source_map.json"]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT" => {
+            let query_files = [
+                (
+                    "routing_inventory",
+                    workspace_root.join("crates/bijux-cli/src/routing/inventory.rs"),
+                ),
+                (
+                    "routing_contracts_query",
+                    workspace_root.join("crates/bijux-cli/src/routing/query.rs"),
+                ),
+                (
+                    "install_runtime_identity_query",
+                    workspace_root.join("crates/bijux-cli/src/install/query.rs"),
+                ),
+                ("core_state_parity_query", workspace_root.join("crates/bijux-cli/src/query.rs")),
+            ];
+            let interfaces: Vec<Value> = query_files
+                .into_iter()
+                .map(|(name, path)| {
+                    let text = fs::read_to_string(&path).unwrap_or_default();
+                    json!({
+                        "name": name,
+                        "path": rel(&path, workspace_root),
+                        "public_structs": text.matches("pub struct ").count(),
+                        "public_functions": text.matches("pub fn ").count(),
+                        "contains_json_assembly": text.contains("serde_json::json!"),
+                        "contains_terminal_rendering": text.contains("println!")
+                            || text.contains("eprintln!")
+                            || text.contains("render_value("),
+                    })
+                })
+                .collect();
+            let report = json!({
+                "scope": "runtime query interface bridge",
+                "status": "ok",
+                "interfaces": interfaces,
+                "rules": [
+                    "interfaces are read-only",
+                    "interfaces are structured-data only",
+                    "interfaces do not render text",
+                    "interfaces bridge runtime data to bijux-dev-cli report assembly",
+                ],
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_interface_bridge_report.json",
+                &report,
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_interface_bridge_report.json"]}))
         }
         _ => None,
     }
