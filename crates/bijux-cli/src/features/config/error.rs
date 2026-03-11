@@ -19,22 +19,34 @@ pub(crate) struct ConfigError {
 impl ConfigError {
     #[must_use]
     pub(crate) fn validation(message: impl Into<String>) -> Self {
-        Self { kind: ConfigErrorKind::Validation, message: message.into() }
+        Self {
+            kind: ConfigErrorKind::Validation,
+            message: message.into(),
+        }
     }
 
     #[must_use]
     pub(crate) fn parse(message: impl Into<String>) -> Self {
-        Self { kind: ConfigErrorKind::Parse, message: message.into() }
+        Self {
+            kind: ConfigErrorKind::Parse,
+            message: message.into(),
+        }
     }
 
     #[must_use]
     pub(crate) fn persistence(message: impl Into<String>) -> Self {
-        Self { kind: ConfigErrorKind::Persistence, message: message.into() }
+        Self {
+            kind: ConfigErrorKind::Persistence,
+            message: message.into(),
+        }
     }
 
     #[must_use]
     pub(crate) fn not_found(message: impl Into<String>) -> Self {
-        Self { kind: ConfigErrorKind::NotFound, message: message.into() }
+        Self {
+            kind: ConfigErrorKind::NotFound,
+            message: message.into(),
+        }
     }
 }
 

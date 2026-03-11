@@ -28,7 +28,11 @@ fn delegate_to_external_binary(
             let message = format!(
                 "failed to run `{command_surface}` via `{binary}`: {error}\ninstall with `cargo install {package_name}` or `pip install {package_name}`\n"
             );
-            AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
+            AppRunResult {
+                exit_code: 1,
+                stdout: String::new(),
+                stderr: message,
+            }
         }
     }
 }
@@ -73,7 +77,10 @@ fn dev_cli_binary_candidates() -> Vec<String> {
         for profile in ["debug", "release"] {
             push_unique_candidate(
                 &mut candidates,
-                workspace_root.join("target").join(profile).join(&executable),
+                workspace_root
+                    .join("target")
+                    .join(profile)
+                    .join(&executable),
             );
         }
     }
@@ -87,14 +94,32 @@ fn dev_cli_binary_candidates() -> Vec<String> {
 fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let candidates = dev_cli_binary_candidates();
     let mut last_error = String::new();
-    for binary in &candidates {
+    let mut fallback_usage: Option<AppRunResult> = None;
+
+    for (index, binary) in candidates.iter().enumerate() {
         match Command::new(binary).args(forwarded_args).output() {
             Ok(output) => {
-                return AppRunResult {
+                let result = AppRunResult {
                     exit_code: output.status.code().unwrap_or(1),
                     stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
                     stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
                 };
+
+                let diagnostic_stream = if result.stderr.trim().is_empty() {
+                    result.stdout.as_str()
+                } else {
+                    result.stderr.as_str()
+                };
+                let looks_like_generic_root_help = result.exit_code != 0
+                    && diagnostic_stream.contains("Usage: bijux [OPTIONS] [COMMAND]")
+                    && diagnostic_stream.contains("Commands:");
+
+                if looks_like_generic_root_help && index + 1 < candidates.len() {
+                    fallback_usage = Some(result);
+                    continue;
+                }
+
+                return result;
             }
             Err(error) => {
                 last_error = format!("{binary}: {error}");
@@ -102,11 +127,19 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
         }
     }
 
+    if let Some(result) = fallback_usage {
+        return result;
+    }
+
     let attempted = candidates.join(", ");
     let message = format!(
         "failed to run `bijux dev cli`: {last_error}\nattempted binaries: {attempted}\ninstall with `cargo install {DEV_CLI_PACKAGE}` or `pip install {DEV_CLI_PACKAGE}`\n"
     );
-    AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
+    AppRunResult {
+        exit_code: 1,
+        stdout: String::new(),
+        stderr: message,
+    }
 }
 
 pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
@@ -116,10 +149,12 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
         if tool.namespace == "atlas" && argv.len() == 2 {
             return None;
         }
+        let runtime_binary = tool.runtime_binary();
+        let runtime_package = tool.runtime_package();
         let command_surface = format!("bijux {}", tool.namespace);
         return Some(delegate_to_external_binary(
-            tool.runtime_binary,
-            tool.runtime_package,
+            &runtime_binary,
+            &runtime_package,
             &command_surface,
             &argv[2..],
         ));
@@ -134,10 +169,12 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
             return Some(delegate_dev_cli(&argv[2..]));
         }
         if let Some(tool) = known_bijux_tool(tool_namespace) {
+            let control_binary = tool.control_binary();
+            let control_package = tool.control_package();
             let command_surface = format!("bijux dev {}", tool.namespace);
             return Some(delegate_to_external_binary(
-                tool.control_binary,
-                tool.control_package,
+                &control_binary,
+                &control_package,
                 &command_surface,
                 &argv[3..],
             ));

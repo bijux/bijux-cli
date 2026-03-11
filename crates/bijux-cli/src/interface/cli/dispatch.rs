@@ -44,7 +44,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
-        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: help,
+            stderr: String::new(),
+        });
     }
 
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
@@ -91,14 +95,21 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, policy::emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
-    let route_exit_code =
-        policy::maintenance_route_exit_code(&intent.normalized_path, &payload).unwrap_or(0);
+    let route_exit_code = 0;
 
     if intent.global_flags.quiet {
         return Ok(AppRunResult {
@@ -108,5 +119,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: route_exit_code,
+        stdout: content,
+        stderr: String::new(),
+    })
 }

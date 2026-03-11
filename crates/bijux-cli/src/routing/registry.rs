@@ -44,7 +44,7 @@ impl Default for RouteRegistry {
     fn default() -> Self {
         let built_ins = super::model::built_in_route_paths()
             .iter()
-            .map(|path| (*path).to_string())
+            .cloned()
             .collect::<BTreeSet<_>>();
 
         let aliases = super::model::alias_rewrites()
@@ -63,9 +63,18 @@ impl Default for RouteRegistry {
             "completion".to_string(),
             "inspect".to_string(),
         ]);
-        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(std::string::ToString::to_string));
+        reserved.extend(
+            OFFICIAL_PRODUCT_NAMESPACES
+                .iter()
+                .map(std::string::ToString::to_string),
+        );
 
-        Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
+        Self {
+            built_ins,
+            plugin_namespaces: BTreeSet::new(),
+            aliases,
+            reserved,
+        }
     }
 }
 
@@ -119,7 +128,11 @@ impl RouteRegistry {
 
         let root = rewritten.split(' ').next().unwrap_or_default();
         if self.plugin_namespaces.contains(root) {
-            if self.built_ins.iter().any(|x| x.split(' ').next() == Some(root)) {
+            if self
+                .built_ins
+                .iter()
+                .any(|x| x.split(' ').next() == Some(root))
+            {
                 return Err(RouteError::Ambiguous(root.to_string()));
             }
             return Ok(RouteTarget::Plugin(root.to_string()));
@@ -146,7 +159,9 @@ impl RouteRegistry {
             universe.insert(reserved.clone());
         }
 
-        universe.into_iter().max_by_key(|candidate| similarity_score(&query, candidate))
+        universe
+            .into_iter()
+            .max_by_key(|candidate| similarity_score(&query, candidate))
     }
 
     /// Build route-tree introspection payload.
@@ -200,7 +215,10 @@ impl RouteRegistry {
         self.built_ins
             .iter()
             .map(|raw| CommandPath {
-                segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect(),
+                segments: raw
+                    .split(' ')
+                    .map(|segment| Namespace(segment.to_string()))
+                    .collect(),
             })
             .collect()
     }
@@ -232,7 +250,10 @@ fn similarity_score(left: &str, right: &str) -> usize {
 }
 
 fn common_prefix_len(left: &str, right: &str) -> usize {
-    left.chars().zip(right.chars()).take_while(|(a, b)| a == b).count()
+    left.chars()
+        .zip(right.chars())
+        .take_while(|(a, b)| a == b)
+        .count()
 }
 
 fn levenshtein_distance(left: &str, right: &str) -> usize {

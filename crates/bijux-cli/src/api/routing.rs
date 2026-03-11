@@ -20,17 +20,3 @@ pub mod parser {
 pub mod registry {
     pub use crate::routing::registry::{RouteError, RouteRegistry, RouteTarget};
 }
-
-pub use crate::contracts::{
-    known_bijux_tool, AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange,
-    ConfigClearResult, ConfigCommandResult, ConfigConflictError, ConfigEntry, ConfigErrorKind,
-    ConfigExportFormat, ConfigKey, ConfigLoadResult, ConfigMutation, ConfigParseError,
-    ConfigPathSet, ConfigPersistenceError, ConfigReadSource, ConfigReloadResult, ConfigSnapshot,
-    ConfigSource, ConfigValidationError, ConfigValue, ConfigWriteResult, ContractMarker,
-    DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode,
-    GlobalFlags, InspectReport, InvocationEvent, InvocationTrace, KnownBijuxTool, LogLevel,
-    MemoryKeyList, MemorySummary, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
-    OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
-    PluginManifestV1, PrettyMode, ProductMountMetadata, ResolvedConfigValue, RouteSourceMetadata,
-    KNOWN_BIJUX_TOOLS, KNOWN_BIJUX_TOOL_NAMESPACES, OFFICIAL_PRODUCT_NAMESPACES,
-};

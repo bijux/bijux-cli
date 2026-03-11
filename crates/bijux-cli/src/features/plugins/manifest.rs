@@ -29,7 +29,10 @@ pub fn validate_manifest(
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
 
-    Ok(ValidatedPlugin { manifest, state: crate::contracts::PluginLifecycleState::Validated })
+    Ok(ValidatedPlugin {
+        manifest,
+        state: crate::contracts::PluginLifecycleState::Validated,
+    })
 }
 
 fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginError> {
@@ -55,7 +58,9 @@ fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
         return Err(PluginError::InvalidNamespace(raw.to_string()));
     }
 
-    if !bytes.iter().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+    if !bytes
+        .iter()
+        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
     {
         return Err(PluginError::InvalidNamespace(raw.to_string()));
     }
@@ -82,7 +87,10 @@ fn reject_core_namespace(namespace: &Namespace) -> Result<(), PluginError> {
 }
 
 fn reject_known_bijux_project_namespace(namespace: &Namespace) -> Result<(), PluginError> {
-    if KNOWN_BIJUX_PROJECT_NAMESPACES.iter().any(|value| *value == namespace.0) {
+    if KNOWN_BIJUX_PROJECT_NAMESPACES
+        .iter()
+        .any(|value| *value == namespace.0)
+    {
         return Err(PluginError::FutureNamespaceConflict(namespace.0.clone()));
     }
     Ok(())
@@ -103,7 +111,9 @@ fn validate_compatibility(
     host_version: &str,
 ) -> Result<(), PluginError> {
     if !is_version_compatible(range, host_version)? {
-        return Err(PluginError::IncompatibleVersion { host_version: host_version.to_string() });
+        return Err(PluginError::IncompatibleVersion {
+            host_version: host_version.to_string(),
+        });
     }
     Ok(())
 }
@@ -133,18 +143,24 @@ pub(crate) fn is_version_compatible(
 
 fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), PluginError> {
     if manifest.entrypoint.trim().is_empty() {
-        return Err(PluginError::InvalidEntrypoint { kind: manifest.kind });
+        return Err(PluginError::InvalidEntrypoint {
+            kind: manifest.kind,
+        });
     }
 
     match manifest.kind {
         PluginKind::Delegated | PluginKind::Python => {
             if !manifest.entrypoint.contains(':') && !manifest.entrypoint.contains('.') {
-                return Err(PluginError::InvalidEntrypoint { kind: manifest.kind });
+                return Err(PluginError::InvalidEntrypoint {
+                    kind: manifest.kind,
+                });
             }
         }
         PluginKind::ExternalExec => {
             if manifest.entrypoint.contains(':') {
-                return Err(PluginError::InvalidEntrypoint { kind: manifest.kind });
+                return Err(PluginError::InvalidEntrypoint {
+                    kind: manifest.kind,
+                });
             }
         }
         PluginKind::Native => return Err(PluginError::UnsupportedKind(PluginKind::Native)),

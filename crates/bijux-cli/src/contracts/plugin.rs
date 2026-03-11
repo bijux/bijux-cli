@@ -61,7 +61,10 @@ impl PluginCapability {
         if name.trim().is_empty() {
             return Err("capability name cannot be empty".to_string());
         }
-        Ok(Self { name: name.to_string(), version: version.map(ToString::to_string) })
+        Ok(Self {
+            name: name.to_string(),
+            version: version.map(ToString::to_string),
+        })
     }
 }
 

@@ -106,7 +106,11 @@ pub fn discover_compatibility_paths(
         home,
     );
 
-    Ok(CompatibilityPaths { config_file, history_file, plugins_dir })
+    Ok(CompatibilityPaths {
+        config_file,
+        history_file,
+        plugins_dir,
+    })
 }
 
 /// Default compatibility paths anchored in the user home directory.
@@ -145,7 +149,9 @@ pub fn parse_compatibility_config(text: &str) -> Result<CompatibilityConfig, Com
                 values.insert(trimmed_key.to_string(), trimmed_value.to_string());
             }
             _ => {
-                return Err(CompatibilityError::UnsupportedConfigKey(trimmed_key.to_string()));
+                return Err(CompatibilityError::UnsupportedConfigKey(
+                    trimmed_key.to_string(),
+                ));
             }
         }
     }

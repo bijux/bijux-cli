@@ -3,6 +3,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
+use super::model::{DEV_CLI_SUBCOMMANDS, DEV_LEGACY_ALIASES};
 use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 /// Parsed and normalized global options.
@@ -109,20 +110,71 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
     })
 }
 
+fn with_hidden_leaf_subcommands(mut command: Command, names: &[&'static str]) -> Command {
+    for name in names {
+        command = command.subcommand(Command::new(*name).hide(true));
+    }
+    command
+}
+
+fn with_dev_cli_surface_subcommands(mut command: Command) -> Command {
+    for subcommand in DEV_CLI_SUBCOMMANDS {
+        if matches!(
+            *subcommand,
+            "maintenance"
+                | "rustdoc"
+                | "release"
+                | "evidence"
+                | "config"
+                | "python"
+                | "repo"
+                | "contracts"
+        ) {
+            continue;
+        }
+
+        let item = if matches!(
+            *subcommand,
+            "atlas" | "di" | "list-products" | "list-plugins"
+        ) {
+            Command::new(*subcommand).hide(true)
+        } else {
+            Command::new(*subcommand)
+        };
+        command = command.subcommand(item);
+    }
+
+    command
+}
+
 /// Build the root clap command for `bijux`.
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn root_command() -> Command {
-    let format_arg =
-        Arg::new("format").long("format").short('f').num_args(1).global(true).value_name("FORMAT");
+    let format_arg = Arg::new("format")
+        .long("format")
+        .short('f')
+        .num_args(1)
+        .global(true)
+        .value_name("FORMAT");
 
-    let quiet_arg =
-        Arg::new("quiet").long("quiet").short('q').action(ArgAction::SetTrue).global(true);
+    let quiet_arg = Arg::new("quiet")
+        .long("quiet")
+        .short('q')
+        .action(ArgAction::SetTrue)
+        .global(true);
 
-    let log_level_arg =
-        Arg::new("log-level").long("log-level").num_args(1).global(true).value_name("LEVEL");
+    let log_level_arg = Arg::new("log-level")
+        .long("log-level")
+        .num_args(1)
+        .global(true)
+        .value_name("LEVEL");
 
-    let color_arg = Arg::new("color").long("color").num_args(1).global(true).value_name("MODE");
+    let color_arg = Arg::new("color")
+        .long("color")
+        .num_args(1)
+        .global(true)
+        .value_name("MODE");
 
     let pretty_arg = Arg::new("pretty")
         .long("pretty")
@@ -135,8 +187,11 @@ pub fn root_command() -> Command {
         .action(ArgAction::SetTrue)
         .overrides_with("pretty")
         .global(true);
-    let config_path_arg =
-        Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
+    let config_path_arg = Arg::new("config-path")
+        .long("config-path")
+        .num_args(1)
+        .global(true)
+        .value_name("PATH");
     let json_arg = Arg::new("json")
         .long("json")
         .action(ArgAction::SetTrue)
@@ -194,190 +249,152 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
-            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
+            Command::new("hold")
+                .hide(true)
+                .subcommand(Command::new("interruptible").hide(true)),
         )
         .subcommand(plugins_group.clone());
 
-    let dev_cli_group = Command::new("cli")
-        .subcommand(
-            Command::new("maintenance")
-                .subcommand(Command::new("remaining"))
-                .subcommand(Command::new("migrated"))
-                .subcommand(Command::new("diff"))
-                .subcommand(Command::new("audit"))
-                .subcommand(Command::new("generators"))
+    let dev_cli_group =
+        with_dev_cli_surface_subcommands(
+            Command::new("cli")
                 .subcommand(
-                    Command::new("generate")
-                        .arg(Arg::new("id").long("id").num_args(1))
-                        .arg(Arg::new("source").long("source").num_args(1)),
-                )
-                .subcommand(Command::new("generate-all"))
-                .subcommand(Command::new("requirements"))
-                .subcommand(Command::new("flaky-tests"))
-                .subcommand(
-                    Command::new("status")
-                        .subcommand(Command::new("inventory"))
+                    Command::new("maintenance")
+                        .subcommand(Command::new("remaining"))
+                        .subcommand(Command::new("migrated"))
+                        .subcommand(Command::new("diff"))
+                        .subcommand(Command::new("audit"))
+                        .subcommand(Command::new("generators"))
                         .subcommand(
-                            Command::new("run")
+                            Command::new("generate")
                                 .arg(Arg::new("id").long("id").num_args(1))
-                                .arg(Arg::new("source").long("source").num_args(1))
-                                .arg(
-                                    Arg::new("args")
-                                        .num_args(0..)
-                                        .trailing_var_arg(true)
-                                        .allow_hyphen_values(true),
+                                .arg(Arg::new("source").long("source").num_args(1)),
+                        )
+                        .subcommand(Command::new("generate-all"))
+                        .subcommand(Command::new("requirements"))
+                        .subcommand(Command::new("flaky-tests"))
+                        .subcommand(
+                            Command::new("status")
+                                .subcommand(Command::new("inventory"))
+                                .subcommand(
+                                    Command::new("run")
+                                        .arg(Arg::new("id").long("id").num_args(1))
+                                        .arg(Arg::new("source").long("source").num_args(1))
+                                        .arg(
+                                            Arg::new("args")
+                                                .num_args(0..)
+                                                .trailing_var_arg(true)
+                                                .allow_hyphen_values(true),
+                                        ),
+                                )
+                                .subcommand(
+                                    Command::new("run-all")
+                                        .arg(Arg::new("kind").long("kind").num_args(1))
+                                        .arg(
+                                            Arg::new("args")
+                                                .num_args(0..)
+                                                .trailing_var_arg(true)
+                                                .allow_hyphen_values(true),
+                                        ),
                                 ),
                         )
+                        .subcommand(Command::new("package-metadata"))
+                        .subcommand(Command::new("e2e-contract"))
                         .subcommand(
-                            Command::new("run-all")
-                                .arg(Arg::new("kind").long("kind").num_args(1))
+                            Command::new("pip-audit")
+                                .arg(Arg::new("report-path").long("report-path").num_args(1)),
+                        )
+                        .subcommand(Command::new("capture-python-behavior"))
+                        .subcommand(
+                            Command::new("provenance-statement")
+                                .arg(Arg::new("tag").long("tag").num_args(1).required(true))
                                 .arg(
-                                    Arg::new("args")
-                                        .num_args(0..)
-                                        .trailing_var_arg(true)
-                                        .allow_hyphen_values(true),
+                                    Arg::new("output-dir")
+                                        .long("output-dir")
+                                        .num_args(1)
+                                        .required(true),
                                 ),
                         ),
                 )
-                .subcommand(Command::new("package-metadata"))
-                .subcommand(Command::new("e2e-contract"))
                 .subcommand(
-                    Command::new("pip-audit")
-                        .arg(Arg::new("report-path").long("report-path").num_args(1)),
+                    Command::new("rustdoc")
+                        .subcommand(Command::new("audit"))
+                        .subcommand(Command::new("coverage"))
+                        .subcommand(Command::new("broken-links"))
+                        .subcommand(Command::new("public-api"))
+                        .subcommand(Command::new("examples"))
+                        .subcommand(Command::new("migrate-website-api-docs"))
+                        .subcommand(Command::new("build-proof"))
+                        .subcommand(Command::new("workspace-coverage-proof"))
+                        .subcommand(Command::new("python-link-proof")),
                 )
-                .subcommand(Command::new("capture-python-behavior"))
                 .subcommand(
-                    Command::new("provenance-statement")
-                        .arg(Arg::new("tag").long("tag").num_args(1).required(true))
-                        .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
+                    Command::new("release")
+                        .subcommand(Command::new("status"))
+                        .subcommand(Command::new("evidence"))
+                        .subcommand(Command::new("readiness"))
+                        .subcommand(Command::new("diff"))
+                        .subcommand(Command::new("gaps"))
+                        .subcommand(Command::new("summary"))
+                        .subcommand(Command::new("manifest"))
+                        .subcommand(Command::new("notes"))
+                        .subcommand(Command::new("behavior-changes"))
+                        .subcommand(Command::new("intentional-differences"))
+                        .subcommand(Command::new("unresolved-gaps"))
+                        .subcommand(Command::new("compatibility-leftovers")),
+                )
+                .subcommand(
+                    Command::new("evidence")
+                        .subcommand(Command::new("list"))
+                        .subcommand(Command::new("show").arg(Arg::new("id").long("id").num_args(1)))
+                        .subcommand(Command::new("audit"))
+                        .subcommand(Command::new("stale"))
+                        .subcommand(Command::new("matrix"))
+                        .subcommand(Command::new("website-export"))
+                        .subcommand(Command::new("ci-export"))
+                        .subcommand(Command::new("release-export"))
+                        .subcommand(Command::new("command-map"))
+                        .subcommand(Command::new("parity-map")),
+                )
+                .subcommand(
+                    Command::new("config")
+                        .subcommand(Command::new("rust-owner"))
+                        .subcommand(Command::new("python-owner"))
+                        .subcommand(Command::new("ownership"))
+                        .subcommand(Command::new("drift"))
+                        .subcommand(Command::new("shape"))
+                        .subcommand(Command::new("evidence-map")),
+                )
+                .subcommand(
+                    Command::new("python")
+                        .subcommand(Command::new("bridge-status"))
+                        .subcommand(Command::new("surface-status"))
+                        .subcommand(Command::new("sovereignty-audit"))
+                        .subcommand(Command::new("drift"))
+                        .subcommand(Command::new("packaging")),
+                )
+                .subcommand(
+                    Command::new("repo")
+                        .subcommand(Command::new("health"))
+                        .subcommand(Command::new("drift"))
+                        .subcommand(Command::new("inventories"))
+                        .subcommand(Command::new("generated"))
+                        .subcommand(Command::new("stale")),
+                )
+                .subcommand(
+                    Command::new("contracts")
+                        .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
+                        .arg(Arg::new("kind").long("kind").num_args(1).value_parser([
+                            "generate", "check", "enforce", "warn", "run", "status",
+                        ])),
                 ),
-        )
-        .subcommand(
-            Command::new("rustdoc")
-                .subcommand(Command::new("audit"))
-                .subcommand(Command::new("coverage"))
-                .subcommand(Command::new("broken-links"))
-                .subcommand(Command::new("public-api"))
-                .subcommand(Command::new("examples"))
-                .subcommand(Command::new("migrate-website-api-docs"))
-                .subcommand(Command::new("build-proof"))
-                .subcommand(Command::new("workspace-coverage-proof"))
-                .subcommand(Command::new("python-link-proof")),
-        )
-        .subcommand(
-            Command::new("release")
-                .subcommand(Command::new("status"))
-                .subcommand(Command::new("evidence"))
-                .subcommand(Command::new("readiness"))
-                .subcommand(Command::new("diff"))
-                .subcommand(Command::new("gaps"))
-                .subcommand(Command::new("summary"))
-                .subcommand(Command::new("manifest"))
-                .subcommand(Command::new("notes"))
-                .subcommand(Command::new("behavior-changes"))
-                .subcommand(Command::new("intentional-differences"))
-                .subcommand(Command::new("unresolved-gaps"))
-                .subcommand(Command::new("compatibility-leftovers")),
-        )
-        .subcommand(
-            Command::new("evidence")
-                .subcommand(Command::new("list"))
-                .subcommand(Command::new("show").arg(Arg::new("id").long("id").num_args(1)))
-                .subcommand(Command::new("audit"))
-                .subcommand(Command::new("stale"))
-                .subcommand(Command::new("matrix"))
-                .subcommand(Command::new("website-export"))
-                .subcommand(Command::new("ci-export"))
-                .subcommand(Command::new("release-export"))
-                .subcommand(Command::new("command-map"))
-                .subcommand(Command::new("parity-map")),
-        )
-        .subcommand(
-            Command::new("config")
-                .subcommand(Command::new("rust-owner"))
-                .subcommand(Command::new("python-owner"))
-                .subcommand(Command::new("ownership"))
-                .subcommand(Command::new("drift"))
-                .subcommand(Command::new("shape"))
-                .subcommand(Command::new("evidence-map")),
-        )
-        .subcommand(
-            Command::new("python")
-                .subcommand(Command::new("bridge-status"))
-                .subcommand(Command::new("surface-status"))
-                .subcommand(Command::new("sovereignty-audit"))
-                .subcommand(Command::new("drift"))
-                .subcommand(Command::new("packaging")),
-        )
-        .subcommand(
-            Command::new("repo")
-                .subcommand(Command::new("health"))
-                .subcommand(Command::new("drift"))
-                .subcommand(Command::new("inventories"))
-                .subcommand(Command::new("generated"))
-                .subcommand(Command::new("stale")),
-        )
-        .subcommand(Command::new("dashboard"))
-        .subcommand(Command::new("quickcheck"))
-        .subcommand(Command::new("truth"))
-        .subcommand(Command::new("blockers"))
-        .subcommand(Command::new("next"))
-        .subcommand(Command::new("inventory"))
-        .subcommand(Command::new("routes"))
-        .subcommand(Command::new("route-audit"))
-        .subcommand(Command::new("registry"))
-        .subcommand(Command::new("parity"))
-        .subcommand(Command::new("docs"))
-        .subcommand(Command::new("docs-audit"))
-        .subcommand(Command::new("plugin-health"))
-        .subcommand(Command::new("status"))
-        .subcommand(Command::new("maintenance-audit"))
-        .subcommand(Command::new("snapshots-audit"))
-        .subcommand(Command::new("fixture-audit"))
-        .subcommand(Command::new("crate-health"))
-        .subcommand(Command::new("package-health"))
-        .subcommand(Command::new("env"))
-        .subcommand(Command::new("doctor"))
-        .subcommand(
-            Command::new("contracts")
-                .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
-                .arg(
-                    Arg::new("kind")
-                        .long("kind")
-                        .num_args(1)
-                        .value_parser(["generate", "check", "enforce", "warn", "run", "status"]),
-                ),
-        )
-        .subcommand(Command::new("runtime-identity"))
-        .subcommand(Command::new("docs-prune-plan"))
-        .subcommand(Command::new("state-audit"))
-        .subcommand(Command::new("state-doctor"))
-        .subcommand(Command::new("atlas").hide(true))
-        .subcommand(Command::new("di").hide(true))
-        .subcommand(Command::new("list-products").hide(true))
-        .subcommand(Command::new("list-plugins").hide(true));
+        );
 
-    let dev_group = Command::new("dev")
-        .subcommand(dev_cli_group.clone())
-        .subcommand(Command::new("atlas").hide(true))
-        .subcommand(Command::new("di").hide(true))
-        .subcommand(Command::new("list-products").hide(true))
-        .subcommand(Command::new("list-plugins").hide(true))
-        // Legacy path support normalized later to `dev cli ...`.
-        .subcommand(Command::new("route-audit").hide(true))
-        .subcommand(Command::new("inventory").hide(true))
-        .subcommand(Command::new("parity").hide(true))
-        .subcommand(Command::new("docs-audit").hide(true))
-        .subcommand(Command::new("plugin-health").hide(true))
-        .subcommand(Command::new("status").hide(true))
-        .subcommand(Command::new("maintenance-audit").hide(true))
-        .subcommand(Command::new("crate-health").hide(true))
-        .subcommand(Command::new("package-health").hide(true))
-        .subcommand(Command::new("doctor").hide(true))
-        .subcommand(Command::new("runtime-identity").hide(true))
-        .subcommand(Command::new("docs-prune-plan").hide(true))
-        .subcommand(Command::new("state-audit").hide(true))
-        .subcommand(Command::new("state-doctor").hide(true));
+    // Legacy path support normalized later to `dev cli ...`.
+    let dev_group = with_hidden_leaf_subcommands(
+        Command::new("dev").subcommand(dev_cli_group.clone()),
+        DEV_LEGACY_ALIASES,
+    );
 
     Command::new("bijux")
         .args([
@@ -459,5 +476,9 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalized_path = normalize_command_path(&command_path);
     let global_flags = global_flags_from_matches(&matches)?;
 
-    Ok(ParsedIntent { command_path, normalized_path, global_flags })
+    Ok(ParsedIntent {
+        command_path,
+        normalized_path,
+        global_flags,
+    })
 }

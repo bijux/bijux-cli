@@ -1,9 +1,13 @@
 #![forbid(unsafe_code)]
 //! Canonical route model shared by catalog, registry, and dispatch policy.
 
+use std::collections::BTreeSet;
+use std::sync::OnceLock;
+
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "inspect", "completion", "repl"];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
+    "get", "set", "unset", "clear", "reload", "export", "load", "list",
+];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -96,10 +100,21 @@ pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "command-map",
     "parity-map",
 ];
-pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
-pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
-    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
+pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
+    "rust-owner",
+    "python-owner",
+    "ownership",
+    "drift",
+    "shape",
+    "evidence-map",
+];
+pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] = &[
+    "bridge-status",
+    "surface-status",
+    "sovereignty-audit",
+    "drift",
+    "packaging",
+];
 pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
     &["health", "drift", "inventories", "generated", "stale"];
 pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
@@ -151,102 +166,8 @@ pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     ":exit",
 ];
 
-const BUILT_IN_ROUTE_PATHS: &[&str] = &[
-    "status",
-    "audit",
-    "docs",
-    "sleep",
-    "atlas",
-    "dev",
-    "config",
-    "config list",
-    "history",
-    "history clear",
-    "memory",
-    "memory list",
-    "memory get",
-    "memory set",
-    "memory delete",
-    "memory clear",
-    "plugins",
-    "plugins info",
-    "plugins list",
-    "plugins inspect",
-    "plugins check",
-    "plugins install",
-    "plugins uninstall",
-    "plugins enable",
-    "plugins disable",
-    "plugins scaffold",
-    "plugins doctor",
-    "cli status",
-    "cli doctor",
-    "cli version",
-    "cli completion",
-    "cli inspect",
-    "cli repl",
-    "cli paths",
-    "cli self-test",
-    "cli config get",
-    "cli config set",
-    "cli config unset",
-    "cli config clear",
-    "cli config reload",
-    "cli config export",
-    "cli config load",
-    "cli config list",
-    "cli plugins list",
-    "cli plugins info",
-    "cli plugins inspect",
-    "cli plugins check",
-    "cli plugins install",
-    "cli plugins uninstall",
-    "cli plugins enable",
-    "cli plugins disable",
-    "cli plugins scaffold",
-    "cli plugins doctor",
-    "cli plugins reserved-names",
-    "cli plugins where",
-    "cli plugins explain",
-    "cli plugins schema",
-    "dev cli inventory",
-    "dev cli routes",
-    "dev cli route-audit",
-    "dev cli registry",
-    "dev cli parity",
-    "dev cli docs",
-    "dev cli docs-audit",
-    "dev cli maintenance",
-    "dev cli rustdoc",
-    "dev cli release",
-    "dev cli evidence",
-    "dev cli config",
-    "dev cli python",
-    "dev cli repo",
-    "dev cli dashboard",
-    "dev cli quickcheck",
-    "dev cli truth",
-    "dev cli blockers",
-    "dev cli next",
-    "dev cli plugin-health",
-    "dev cli status",
-    "dev cli maintenance-audit",
-    "dev cli snapshots-audit",
-    "dev cli fixture-audit",
-    "dev cli crate-health",
-    "dev cli package-health",
-    "dev cli env",
-    "dev cli doctor",
-    "dev cli contracts",
-    "dev cli runtime-identity",
-    "dev cli docs-prune-plan",
-    "dev cli state-audit",
-    "dev cli state-doctor",
-    "dev cli atlas",
-    "dev cli di",
-    "dev cli list-products",
-    "dev cli list-plugins",
-];
+static BUILT_IN_ROUTE_PATHS: OnceLock<Vec<String>> = OnceLock::new();
+static KNOWN_ROUTE_PATHS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
 const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("doctor", "cli doctor"),
@@ -294,8 +215,87 @@ fn contains(values: &[&str], value: &str) -> bool {
     values.contains(&value)
 }
 
-pub fn built_in_route_paths() -> &'static [&'static str] {
-    BUILT_IN_ROUTE_PATHS
+fn push_prefixed_routes(routes: &mut Vec<String>, prefix: &str, leaves: &[&str]) {
+    routes.extend(leaves.iter().map(|leaf| format!("{prefix} {leaf}")));
+}
+
+fn push_prefixed_routes_to_set(routes: &mut BTreeSet<String>, prefix: &str, leaves: &[&str]) {
+    for leaf in leaves {
+        routes.insert(format!("{prefix} {leaf}"));
+    }
+}
+
+fn build_built_in_route_paths() -> Vec<String> {
+    let mut routes = vec![
+        "status".to_string(),
+        "audit".to_string(),
+        "docs".to_string(),
+        "sleep".to_string(),
+        "atlas".to_string(),
+        "dev".to_string(),
+        "config".to_string(),
+        "config list".to_string(),
+        "history".to_string(),
+        "history clear".to_string(),
+        "memory".to_string(),
+        "memory list".to_string(),
+        "memory get".to_string(),
+        "memory set".to_string(),
+        "memory delete".to_string(),
+        "memory clear".to_string(),
+        "plugins".to_string(),
+        "plugins info".to_string(),
+        "plugins list".to_string(),
+        "plugins inspect".to_string(),
+        "plugins check".to_string(),
+        "plugins install".to_string(),
+        "plugins uninstall".to_string(),
+        "plugins enable".to_string(),
+        "plugins disable".to_string(),
+        "plugins scaffold".to_string(),
+        "plugins doctor".to_string(),
+        "cli status".to_string(),
+        "cli paths".to_string(),
+        "cli self-test".to_string(),
+    ];
+
+    push_prefixed_routes(&mut routes, "cli", CLI_ROOT_ALIASES);
+    push_prefixed_routes(&mut routes, "cli config", CLI_CONFIG_SUBCOMMANDS);
+    push_prefixed_routes(&mut routes, "cli plugins", CLI_PLUGINS_SUBCOMMANDS);
+    push_prefixed_routes(&mut routes, "dev cli", DEV_CLI_SUBCOMMANDS);
+
+    routes.sort();
+    routes.dedup();
+    routes
+}
+
+fn build_known_route_paths() -> BTreeSet<String> {
+    let mut routes: BTreeSet<String> = built_in_route_paths().iter().cloned().collect();
+    push_prefixed_routes_to_set(
+        &mut routes,
+        "dev cli maintenance",
+        DEV_CLI_MAINTENANCE_SUBCOMMANDS,
+    );
+    push_prefixed_routes_to_set(
+        &mut routes,
+        "dev cli maintenance status",
+        DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS,
+    );
+    push_prefixed_routes_to_set(&mut routes, "dev cli rustdoc", DEV_CLI_RUSTDOC_SUBCOMMANDS);
+    push_prefixed_routes_to_set(&mut routes, "dev cli release", DEV_CLI_RELEASE_SUBCOMMANDS);
+    push_prefixed_routes_to_set(
+        &mut routes,
+        "dev cli evidence",
+        DEV_CLI_EVIDENCE_SUBCOMMANDS,
+    );
+    push_prefixed_routes_to_set(&mut routes, "dev cli config", DEV_CLI_CONFIG_SUBCOMMANDS);
+    push_prefixed_routes_to_set(&mut routes, "dev cli python", DEV_CLI_PYTHON_SUBCOMMANDS);
+    push_prefixed_routes_to_set(&mut routes, "dev cli repo", DEV_CLI_REPO_SUBCOMMANDS);
+    routes
+}
+
+pub fn built_in_route_paths() -> &'static [String] {
+    BUILT_IN_ROUTE_PATHS.get_or_init(build_built_in_route_paths)
 }
 
 pub fn alias_rewrites() -> &'static [(&'static str, &'static str)] {
@@ -307,91 +307,18 @@ pub fn is_dev_legacy_alias(value: &str) -> bool {
 }
 
 pub fn is_known_route(path: &[String]) -> bool {
-    match path {
-        [a, b]
-            if a == "cli"
-                && (contains(CLI_ROOT_ALIASES, b)
-                    || b == "status"
-                    || b == "paths"
-                    || b == "self-test") =>
-        {
-            true
-        }
-        [a, b, c] if a == "cli" && b == "config" && contains(CLI_CONFIG_SUBCOMMANDS, c) => true,
-        [a] if a == "config" || a == "history" || a == "memory" || a == "plugins" => true,
-        [a, b] if a == "history" && b == "clear" => true,
-        [a, b]
-            if a == "memory"
-                && (b == "list" || b == "get" || b == "set" || b == "delete" || b == "clear") =>
-        {
-            true
-        }
-        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" || a == "atlas" => true,
-        [a, b, c] if a == "cli" && b == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => true,
-        [a, b, c] if a == "dev" && b == "cli" && contains(DEV_CLI_SUBCOMMANDS, c) => true,
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "maintenance"
-                && contains(DEV_CLI_MAINTENANCE_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d, e]
-            if a == "dev"
-                && b == "cli"
-                && c == "maintenance"
-                && d == "status"
-                && contains(DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS, e) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "rustdoc"
-                && contains(DEV_CLI_RUSTDOC_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "release"
-                && contains(DEV_CLI_RELEASE_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "evidence"
-                && contains(DEV_CLI_EVIDENCE_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "config"
-                && contains(DEV_CLI_CONFIG_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "python"
-                && contains(DEV_CLI_PYTHON_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "repo" && contains(DEV_CLI_REPO_SUBCOMMANDS, d) =>
-        {
-            true
-        }
-        [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => true,
-        _ => false,
+    if path.is_empty() {
+        return false;
     }
+
+    let key = path.join(" ");
+    let canonical = ALIAS_REWRITES
+        .iter()
+        .find(|(alias, _)| *alias == key.as_str())
+        .map(|(_, canonical)| *canonical)
+        .unwrap_or(key.as_str());
+
+    KNOWN_ROUTE_PATHS
+        .get_or_init(build_known_route_paths)
+        .contains(canonical)
 }
