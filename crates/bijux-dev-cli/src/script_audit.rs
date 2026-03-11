@@ -77,7 +77,6 @@ fn status_script_id(path: &str) -> Option<String> {
     let file = path.rsplit('/').next().unwrap_or(path);
     let stem = file.strip_suffix(".py").unwrap_or(file);
     let stem = stem.strip_prefix(&format!("{kind}_")).unwrap_or(stem);
-    let stem = stem.strip_suffix("_reports").unwrap_or(stem);
     let slug = stem
         .chars()
         .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
@@ -250,7 +249,10 @@ pub fn build_report(inventory: Value) -> Value {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
     use std::path::Path;
+
+    use crate::scripts::build_status_scripts_report;
 
     use super::{build_inventory_report, build_report};
 
@@ -261,5 +263,50 @@ mod tests {
         let report = build_report(inventory);
         assert!(report.get("scripts").is_some());
         assert!(report.get("summary").is_some());
+    }
+
+    #[test]
+    fn status_script_replacement_commands_match_status_inventory_ids() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let status_rows = build_status_scripts_report(&root)
+            .get("rows")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let id_by_source: BTreeMap<String, String> = status_rows
+            .iter()
+            .filter_map(|row| {
+                let source = row.get("source_script").and_then(serde_json::Value::as_str)?;
+                let script_id = row.get("script_id").and_then(serde_json::Value::as_str)?;
+                Some((source.to_string(), script_id.to_string()))
+            })
+            .collect();
+        assert!(!id_by_source.is_empty());
+
+        let inventory_rows = build_inventory_report(&root)
+            .get("scripts")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        for row in inventory_rows {
+            let Some(path) = row.get("path").and_then(serde_json::Value::as_str) else {
+                continue;
+            };
+            if !path.starts_with("scripts/status/") || !path.ends_with(".py") {
+                continue;
+            }
+            let expected_id = id_by_source.get(path).unwrap_or_else(|| {
+                panic!("status script missing from inventory report: {path}");
+            });
+            let replacement = row
+                .get("replacement_command")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            assert_eq!(
+                replacement,
+                format!("bijux dev cli scripts status run --id {expected_id}"),
+                "status script replacement command drift for {path}"
+            );
+        }
     }
 }

@@ -911,6 +911,8 @@ pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value 
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+    use std::fs;
     use std::path::Path;
 
     use super::{
@@ -974,5 +976,41 @@ mod tests {
             let id = row.get("script_id").and_then(serde_json::Value::as_str).unwrap_or("");
             assert!(id.starts_with("STATUS-SCRIPT-"));
         }
+    }
+
+    #[test]
+    fn ci_status_script_ids_match_status_inventory() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let ci = fs::read_to_string(root.join(".github/workflows/ci.yml")).expect("read ci");
+        let referenced: BTreeSet<String> = ci
+            .split_whitespace()
+            .map(|token| {
+                token.trim_matches(|ch: char| {
+                    !ch.is_ascii_uppercase() && !ch.is_ascii_digit() && ch != '-'
+                })
+            })
+            .filter(|token| token.starts_with("STATUS-SCRIPT-"))
+            .map(ToString::to_string)
+            .collect();
+        assert!(!referenced.is_empty(), "expected STATUS-SCRIPT IDs in CI workflow");
+
+        let valid: BTreeSet<String> = build_status_scripts_report(&root)
+            .get("rows")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|row| {
+                row.get("script_id").and_then(serde_json::Value::as_str).map(ToString::to_string)
+            })
+            .collect();
+        assert!(!valid.is_empty(), "expected status script inventory rows");
+
+        let missing: Vec<String> = referenced.difference(&valid).cloned().collect();
+        assert!(
+            missing.is_empty(),
+            "CI references unknown STATUS-SCRIPT IDs; missing:\n{}",
+            missing.join("\n")
+        );
     }
 }
