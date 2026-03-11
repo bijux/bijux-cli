@@ -3,7 +3,7 @@ use std::path::Path;
 use serde_json::{json, Value};
 
 use super::compliance::build_flaky_tests_report;
-use super::shared::{generated_at_utc, write_json};
+use super::inventory::{generated_at_utc, write_json};
 
 fn build_status_generators_report() -> Value {
     let rows = vec![json!({

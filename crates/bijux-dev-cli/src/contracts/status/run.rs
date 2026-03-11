@@ -6,13 +6,13 @@ use serde_json::{json, Value};
 
 use crate::contract_engine::maintenance::{generated_at_utc, run_native_status_contract};
 
-use super::registry::status_contract_specs;
+use super::inventory::status_contract_specs;
 
 fn find_spec(
     workspace_root: &Path,
     contract_id: Option<&str>,
     source_ref: Option<&str>,
-) -> Option<super::spec::StatusContractSpec> {
+) -> Option<super::model::StatusContractSpec> {
     let rows = status_contract_specs(workspace_root);
     if let Some(id) = contract_id {
         return rows.into_iter().find(|spec| spec.contract_id == id);

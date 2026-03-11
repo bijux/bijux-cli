@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 
 use crate::contract_engine::maintenance::{generated_at_utc, native_status_contract_rows};
 
-use super::spec::StatusContractSpec;
+use super::model::StatusContractSpec;
 
 /// Return all known status contract specs.
 #[must_use]

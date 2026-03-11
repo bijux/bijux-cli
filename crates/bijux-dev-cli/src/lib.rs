@@ -16,8 +16,6 @@ pub mod infra;
 pub mod schema;
 /// Maintainer-facing report modules.
 pub mod reports;
-/// Status contract inventory and execution services.
-pub mod status_contracts;
 
 pub use contract_engine::maintenance;
 pub use schema::report_envelope as reporting;

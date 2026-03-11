@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::status_contracts::{build_inventory_report, run_all_contracts};
+use crate::contract_engine::status::{build_inventory_report, run_all_contracts};
 
 fn contract_rows(schema_ids: &[String]) -> Vec<Value> {
     schema_ids
