@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Route-inspection JSON output coverage.
 
-use bijux_cli::routing::registry::RouteRegistry;
+use bijux_cli::api::routing::registry::RouteRegistry;
 use proptest as _;
 use serde as _;
 use serde_json as _;

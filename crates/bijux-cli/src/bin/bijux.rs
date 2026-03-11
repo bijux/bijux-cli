@@ -7,5 +7,5 @@ use std::process::ExitCode;
 use libc as _;
 
 fn main() -> ExitCode {
-    bijux_cli::bootstrap::run::run_cli_from_env()
+    bijux_cli::api::runtime::run_cli_from_env()
 }

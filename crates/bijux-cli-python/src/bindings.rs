@@ -6,8 +6,8 @@ use std::fs;
 use std::hash::BuildHasher;
 use std::path::Path;
 
-use bijux_cli::interface::cli::dispatch::{run_app, AppRunResult};
-use bijux_cli::routing::ContractMarker;
+use bijux_cli::api::runtime::{run_app, AppRunResult};
+use bijux_cli::contracts::ContractMarker;
 use serde_json::{json, Value};
 
 use crate::compatibility::{

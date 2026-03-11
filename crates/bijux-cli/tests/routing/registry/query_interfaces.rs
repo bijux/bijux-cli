@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 //! Query interface shape and determinism checks for routing-owned dev bridge data.
 
+use bijux_cli::api::diagnostics::{registry_inventory, route_inventory};
+use bijux_cli::api::routing::registry::RouteRegistry;
 use bijux_cli::contracts::contracts_schema_query;
-use bijux_cli::features::diagnostics::{registry_inventory, route_inventory};
-use bijux_cli::routing::registry::RouteRegistry;
 
 #[test]
 fn contracts_schema_query_shape_is_stable() {

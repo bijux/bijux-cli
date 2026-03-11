@@ -5,7 +5,7 @@
 use std::process::{Command, Output};
 
 use bijux_cli as _;
-use bijux_cli::interface::repl::{execute_repl_line, startup_repl};
+use bijux_cli::api::repl::{execute_repl_line, startup_repl};
 use libc as _;
 use libc as _;
 use serde_json::Value;

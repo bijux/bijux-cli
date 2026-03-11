@@ -478,7 +478,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_dispatch_ownership_report.json", &json!({
                                 "scope":"dev cli dispatch ownership","status":"ok",
                                 "dispatch_chain":[
-                                    {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux.rs delegates to bijux_cli::bootstrap::run::run_cli_from_env"},
+                                    {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux.rs delegates to bijux_cli::api::runtime::run_cli_from_env"},
                                     {"crate":"bijux-cli","role":"dispatch-only-for-maintainer-surface","evidence":"src/app.rs routes dev cli commands into bijux-dev-cli report builders"},
                                     {"crate":"bijux-dev-cli","role":"maintainer-workflow-implementation-owner","evidence":"src/*.rs report builders provide maintainer payload assembly"}
                                 ],

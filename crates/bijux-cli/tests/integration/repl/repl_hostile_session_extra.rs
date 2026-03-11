@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use bijux_cli as _;
-use bijux_cli::interface::repl::{
+use bijux_cli::api::repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line, startup_repl,
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,
 };
@@ -165,7 +165,7 @@ fn plugin_management_state_doctor_and_broken_completion_source_do_not_crash() {
     let _ = fs::remove_file(config);
 }
 
-fn load_history_like_user(session: &mut bijux_cli::interface::repl::ReplSession) {
+fn load_history_like_user(session: &mut bijux_cli::api::repl::ReplSession) {
     // Mirrors user startup behavior with tolerant history loading.
-    let _ = bijux_cli::interface::repl::load_history(session);
+    let _ = bijux_cli::api::repl::load_history(session);
 }

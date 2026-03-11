@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Registry conflict and route resolution tests.
 
-use bijux_cli::routing::registry::{RouteError, RouteRegistry, RouteTarget};
+use bijux_cli::api::routing::registry::{RouteError, RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde_json as _;

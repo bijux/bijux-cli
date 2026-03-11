@@ -2,10 +2,10 @@
 //! Parser fuzz targets for argv normalization and route safety.
 //! test_type: parser-fuzz
 
-use bijux_cli::routing::catalog::{dev_cli_subcommands, normalize_command_path};
-use bijux_cli::routing::parser::{parse_intent, ParsedIntent};
-use bijux_cli::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::routing::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::api::routing::catalog::{dev_cli_subcommands, normalize_command_path};
+use bijux_cli::api::routing::parser::{parse_intent, ParsedIntent};
+use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
+use bijux_cli::api::routing::OFFICIAL_PRODUCT_NAMESPACES;
 use clap as _;
 use proptest as _;
 use schemars as _;

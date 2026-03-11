@@ -5,10 +5,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Output};
 
-use bijux_cli::interface::cli::dispatch::{run_app, AppRunResult};
-use bijux_cli::interface::repl::{
+use bijux_cli::api::repl::{
     execute_repl_input, execute_repl_line, startup_repl, ReplInput, ReplStream,
 };
+use bijux_cli::api::runtime::{run_app, AppRunResult};
 use libc as _;
 use libc as _;
 use serde_json::Value;
@@ -117,7 +117,7 @@ fn binary_vs_repl_unknown_command_exit_semantics_match_where_sensible() {
 
     assert_eq!(repl.last_exit_code, bin_code);
     match event {
-        bijux_cli::interface::repl::ReplEvent::Continue(Some(frame)) => {
+        bijux_cli::api::repl::ReplEvent::Continue(Some(frame)) => {
             assert_eq!(frame.stream, ReplStream::Stderr);
             assert!(!frame.content.is_empty());
         }

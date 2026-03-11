@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli::features::diagnostics::{parity_status_query, state_diagnostics_query};
+use bijux_cli::api::diagnostics::{parity_status_query, state_diagnostics_query};
 
 fn unique_temp_dir(label: &str) -> PathBuf {
     let nanos = SystemTime::now()

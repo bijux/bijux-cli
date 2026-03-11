@@ -8,7 +8,7 @@ use serde_json as _;
 use std::fs;
 use std::path::Path;
 
-use bijux_cli::routing::registry::RouteRegistry;
+use bijux_cli::api::routing::registry::RouteRegistry;
 use clap as _;
 use schemars as _;
 use semver as _;

@@ -5,7 +5,7 @@ use libc as _;
 use std::fs;
 
 use bijux_cli as _;
-use bijux_cli::interface::repl::{
+use bijux_cli::api::repl::{
     completion_candidates, configure_history, load_history, register_plugin_completion_hook,
     startup_repl, startup_repl_with_diagnostics,
 };

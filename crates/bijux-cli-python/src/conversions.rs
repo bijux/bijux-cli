@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Conversion and error-classification helpers for Python bridge APIs.
 
-use bijux_cli::routing::ExitCode;
+use bijux_cli::contracts::ExitCode;
 use std::fmt::Display;
 
 /// Coarse error categories surfaced to Python callers.

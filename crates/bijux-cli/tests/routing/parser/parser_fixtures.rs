@@ -3,8 +3,8 @@
 
 use std::fs;
 
-use bijux_cli::routing::parser::parse_intent;
-use bijux_cli::routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli::api::routing::parser::parse_intent;
+use bijux_cli::api::routing::registry::{RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
@@ -76,7 +76,7 @@ fn parser_conflicting_pretty_flags_are_normalized_deterministically() {
         "status".to_string(),
     ];
     let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli::routing::PrettyMode::Compact));
+    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli::api::routing::PrettyMode::Compact));
 }
 
 #[test]

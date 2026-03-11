@@ -3,7 +3,7 @@
 
 use std::process::{Command, Output};
 
-use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::api::runtime::run_app;
 use libc as _;
 use serde_json::Value;
 use shlex as _;

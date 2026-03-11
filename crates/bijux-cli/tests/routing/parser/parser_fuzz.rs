@@ -2,7 +2,7 @@
 //! Fuzz-style parser robustness checks.
 //! test_type: flag-precedence-conflict
 
-use bijux_cli::routing::parser::parse_intent;
+use bijux_cli::api::routing::parser::parse_intent;
 use proptest as _;
 use serde as _;
 use serde_json as _;

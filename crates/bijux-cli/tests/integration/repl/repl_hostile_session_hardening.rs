@@ -5,12 +5,12 @@ use libc as _;
 use std::fs;
 use std::path::PathBuf;
 
-use bijux_cli::interface::cli::dispatch::run_app;
-use bijux_cli::interface::repl::{
+use bijux_cli::api::repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line,
     inspect_last_error, load_history, register_plugin_completion_hook, startup_repl,
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,
 };
+use bijux_cli::api::runtime::run_app;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;

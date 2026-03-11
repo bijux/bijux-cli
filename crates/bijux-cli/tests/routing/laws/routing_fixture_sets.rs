@@ -3,7 +3,7 @@
 
 use std::fs;
 
-use bijux_cli::routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli::api::routing::registry::{RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;

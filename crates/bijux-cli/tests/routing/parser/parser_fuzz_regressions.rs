@@ -5,8 +5,8 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli::routing::parser::parse_intent;
-use bijux_cli::routing::registry::RouteRegistry;
+use bijux_cli::api::routing::parser::parse_intent;
+use bijux_cli::api::routing::registry::RouteRegistry;
 use clap as _;
 use proptest as _;
 use schemars as _;

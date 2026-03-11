@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 //! Registry precedence and namespace-policy tests.
 
-use bijux_cli::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::routing::{KNOWN_BIJUX_TOOLS, OFFICIAL_PRODUCT_NAMESPACES};
+use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
+use bijux_cli::api::routing::{KNOWN_BIJUX_TOOLS, OFFICIAL_PRODUCT_NAMESPACES};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
@@ -128,7 +128,7 @@ fn hidden_alias_paths_remain_builtin_when_namespace_resembles_alias_tail() {
     let resolved = registry
         .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
         .expect("canonical dev cli registry path must stay builtin");
-    assert!(matches!(resolved, bijux_cli::routing::registry::RouteTarget::BuiltIn));
+    assert!(matches!(resolved, bijux_cli::api::routing::registry::RouteTarget::BuiltIn));
 }
 
 #[test]

@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli::routing::{
+use bijux_cli::api::routing::{
     CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use clap as _;

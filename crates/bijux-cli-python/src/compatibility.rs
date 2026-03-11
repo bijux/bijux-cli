@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Compatibility helpers re-exported for Python-facing consumers.
 
-pub use bijux_cli::features::install::{
+pub use bijux_cli::api::install::{
     acquire_state_lock, default_compatibility_paths, discover_compatibility_paths,
     ensure_history_file, ensure_plugins_dir, load_compatibility_config, parse_compatibility_config,
     run_config_migrations, write_compatibility_config, CompatibilityConfig, CompatibilityError,

@@ -4,7 +4,7 @@
 use std::time::{Duration, Instant};
 
 use bijux_cli as _;
-use bijux_cli::interface::repl::{estimated_session_memory_bytes, startup_repl};
+use bijux_cli::api::repl::{estimated_session_memory_bytes, startup_repl};
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -31,12 +31,11 @@ fn repl_startup_memory_estimate_stays_within_budget() {
 fn repl_startup_latency_with_plugin_completion_hooks_stays_within_budget() {
     let started = Instant::now();
     for _ in 0..10 {
-        let (_session, _startup, diagnostics) =
-            bijux_cli::interface::repl::startup_repl_with_diagnostics(
-                "benchmark",
-                None,
-                &["community", "atlas", "plugins"],
-            );
+        let (_session, _startup, diagnostics) = bijux_cli::api::repl::startup_repl_with_diagnostics(
+            "benchmark",
+            None,
+            &["community", "atlas", "plugins"],
+        );
         assert!(diagnostics.is_empty() || diagnostics.len() <= 3);
     }
     let elapsed = started.elapsed();

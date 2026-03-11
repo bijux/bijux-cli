@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::api::runtime::run_app;
 use bijux_cli_python::{
     classify_failure, cli_status_binding_api, command_tree_introspection_api,
     config_resolution_api, doctor_binding_api, execution_facade_api, execution_outcome_api,

@@ -2,11 +2,12 @@
 #![recursion_limit = "512"]
 //! Core runtime primitives for Rust bijux-cli.
 
-pub mod bootstrap;
+pub mod api;
+mod bootstrap;
 pub mod contracts;
-pub mod features;
-pub mod infrastructure;
-pub mod interface;
-pub mod kernel;
-pub mod routing;
-pub mod shared;
+mod features;
+mod infrastructure;
+mod interface;
+mod kernel;
+mod routing;
+mod shared;

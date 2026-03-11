@@ -6,10 +6,10 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 use anyhow::Result;
-use bijux_cli::interface::cli::parser::{parse_intent, root_command, ParsedGlobalFlags};
-use bijux_cli::routing::catalog::is_known_route as is_known_catalog_route;
-use bijux_cli::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
-use bijux_cli::shared::output::{render_value, EmitterConfig};
+use bijux_cli::api::output::{render_value, EmitterConfig};
+use bijux_cli::api::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use bijux_cli::api::routing::catalog::is_known_route as is_known_catalog_route;
+use bijux_cli::api::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use serde_json::{json, Value};
 
 use crate::cli::dispatch as dev_dispatch;

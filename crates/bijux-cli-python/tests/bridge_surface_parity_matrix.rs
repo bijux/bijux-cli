@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::api::runtime::run_app;
 use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use serde_json::Value;
 
