@@ -1,5 +1,8 @@
+#[path = "executor_runtime_config_repl.rs"]
 mod config_repl;
+#[path = "executor_runtime_cross_surface.rs"]
 mod cross_surface;
+#[path = "executor_runtime_namespace_install.rs"]
 mod namespace_install;
 
 use crate::contract_engine::maintenance::{Path, Value};
