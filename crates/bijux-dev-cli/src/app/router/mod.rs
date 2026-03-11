@@ -22,14 +22,18 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
                 && b == "cli"
                 && matches!(
                     c.as_str(),
-                    "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+                    "maintenance"
+                        | "rustdoc"
+                        | "release"
+                        | "evidence"
+                        | "config"
+                        | "python"
+                        | "repo"
                 ) =>
         {
             true
         }
-        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "maintenance" && d == "status" => {
-            true
-        }
+        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "maintenance" && d == "status" => true,
         _ => false,
     }
 }

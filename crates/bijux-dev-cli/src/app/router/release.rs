@@ -30,9 +30,7 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "notes" => {
             dev_release::build_notes_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "release" && d == "behavior-changes" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "behavior-changes" => {
             dev_release::build_behavior_changes_report(&workspace_root())
         }
         [a, b, c, d]
@@ -40,9 +38,7 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         {
             dev_release::build_intentional_differences_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "release" && d == "unresolved-gaps" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "unresolved-gaps" => {
             dev_release::build_unresolved_gaps_report(&workspace_root())
         }
         [a, b, c, d]

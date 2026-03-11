@@ -34,9 +34,7 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         {
             dev_rustdoc::build_workspace_coverage_proof_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "rustdoc" && d == "python-link-proof" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "python-link-proof" => {
             dev_rustdoc::build_python_link_proof_report(&workspace_root())
         }
         _ => return Ok(None),

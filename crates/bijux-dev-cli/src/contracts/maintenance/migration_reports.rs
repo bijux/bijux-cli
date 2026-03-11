@@ -57,7 +57,8 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
             ));
         }
 
-        if !(text.contains("assert!") || text.contains("assert_eq!") || text.contains("assert_ne!")) {
+        if !(text.contains("assert!") || text.contains("assert_eq!") || text.contains("assert_ne!"))
+        {
             errors.push(format!(
                 "{} contains no assertion macros",
                 rel(&file, workspace_root)
@@ -90,7 +91,12 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let dependencies = parsed
         .as_array()
         .cloned()
-        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
+        .or_else(|| {
+            parsed
+                .get("dependencies")
+                .and_then(Value::as_array)
+                .cloned()
+        })
         .unwrap_or_default();
 
     let mut remaining = Vec::new();

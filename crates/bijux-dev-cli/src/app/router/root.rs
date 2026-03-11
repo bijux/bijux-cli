@@ -10,11 +10,12 @@ use crate::infrastructure::artifacts::{
     collect_files_recursive, read_json_if_exists, relative_to_root,
 };
 use crate::reports::{
-    cockpit as dev_cockpit, control_plane as dev_control_plane, crate_health as dev_crate_health,
-    docs_audit as dev_docs_audit, env as dev_env, maintenance_audit as dev_maintenance_audit,
-    package_health as dev_package_health, parity as dev_parity, routes as dev_routes,
-    contracts as dev_contracts, registry as dev_registry, route_audit as dev_route_audit,
-    runtime_identity as dev_runtime_identity, state_audit as dev_state_audit, status as dev_status,
+    cockpit as dev_cockpit, contracts as dev_contracts, control_plane as dev_control_plane,
+    crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
+    maintenance_audit as dev_maintenance_audit, package_health as dev_package_health,
+    parity as dev_parity, registry as dev_registry, route_audit as dev_route_audit,
+    routes as dev_routes, runtime_identity as dev_runtime_identity, state_audit as dev_state_audit,
+    status as dev_status,
 };
 use crate::ReportContext;
 
@@ -125,7 +126,8 @@ pub(super) fn try_handle(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "plugin-health" => {
             let root = workspace_root();
-            let machine = read_json_if_exists(&root.join("artifacts/status/plugin_health_report.json"));
+            let machine =
+                read_json_if_exists(&root.join("artifacts/status/plugin_health_report.json"));
             let text = fs::read_to_string(root.join("artifacts/status/plugin_health_report.txt"))
                 .unwrap_or_default();
             dev_control_plane::build_plugin_health_report(machine, text)
@@ -176,7 +178,10 @@ fn snapshot_fixtures() -> Vec<String> {
     let root = workspace_root();
     collect_files_recursive(&root.join("crates"))
         .into_iter()
-        .filter(|p| p.to_string_lossy().contains("tests/data/golden/cli_surface/"))
+        .filter(|p| {
+            p.to_string_lossy()
+                .contains("tests/data/golden/cli_surface/")
+        })
         .map(|p| relative_to_root(&p, &root))
         .collect()
 }
