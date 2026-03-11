@@ -382,27 +382,27 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTENANCE-MIGRATION-REPORTS" => {
             let remaining =
-                run_bijux_json(workspace_root, &["dev", "cli", "scripts", "remaining"]).ok()?;
+                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "remaining"]).ok()?;
             let migrated =
-                run_bijux_json(workspace_root, &["dev", "cli", "scripts", "migrated"]).ok()?;
-            let diff = run_bijux_json(workspace_root, &["dev", "cli", "scripts", "diff"]).ok()?;
+                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "migrated"]).ok()?;
+            let diff = run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "diff"]).ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_scripts_remaining_report.json",
+                "artifacts/status/dev_cli_maintenance_remaining_report.json",
                 &remaining,
             )
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_scripts_migrated_report.json",
+                "artifacts/status/dev_cli_maintenance_migrated_report.json",
                 &migrated,
             )
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_scripts_diff_report.json",
+                "artifacts/status/dev_cli_maintenance_diff_report.json",
                 &diff,
             )
             .ok()?;
@@ -414,7 +414,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 .into_iter()
                                 .map(|row| {
                                     json!({
-                                        "script": row.get("from").cloned().unwrap_or(Value::Null),
+                                        "source": row.get("from").cloned().unwrap_or(Value::Null),
                                         "replacement": row.get("to").cloned().unwrap_or(Value::Null),
                                         "maintainer_value_rank": row.get("maintainer_value_rank").cloned().unwrap_or_else(|| json!(0)),
                                     })
@@ -427,7 +427,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_script_value_ranking.json",
+                "artifacts/status/dev_cli_maintenance_value_ranking.json",
                 &json!({"ranking": ranking}),
             )
             .ok()?;
@@ -446,26 +446,26 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_scripts_remaining_report.json",
-                "artifacts/status/dev_cli_scripts_migrated_report.json",
-                "artifacts/status/dev_cli_scripts_diff_report.json",
-                "artifacts/status/dev_cli_script_value_ranking.json",
+                "artifacts/status/dev_cli_maintenance_remaining_report.json",
+                "artifacts/status/dev_cli_maintenance_migrated_report.json",
+                "artifacts/status/dev_cli_maintenance_diff_report.json",
+                "artifacts/status/dev_cli_maintenance_value_ranking.json",
                 "artifacts/status/dev_cli_make_target_inventory.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
             let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
             let docs = run_bijux_json(workspace_root, &["dev", "cli", "docs-audit"]).ok()?;
-            let scripts = run_bijux_json(workspace_root, &["dev", "cli", "script-audit"]).ok()?;
+            let maintenance = run_bijux_json(workspace_root, &["dev", "cli", "maintenance-audit"]).ok()?;
             let crate_health =
                 run_bijux_json(workspace_root, &["dev", "cli", "crate-health"]).ok()?;
             let checks = json!({
                 "repo_health_payload_present": repo.get("repo_health").is_some_and(Value::is_object),
                 "docs_payload_present": docs.get("docs").is_some_and(Value::is_array),
-                "scripts_payload_present": scripts.get("scripts").is_some_and(Value::is_array),
+                "maintenance_payload_present": maintenance.get("maintenance").is_some_and(Value::is_array),
                 "crate_metrics_payload_present": crate_health.get("crate_metrics").is_some_and(Value::is_object),
                 "docs_audit_summary_present": docs.get("docs_audit").is_some_and(Value::is_object),
-                "script_audit_remaining_signal_present": scripts.get("remaining_script_only_behaviors").is_some(),
+                "maintenance_audit_remaining_signal_present": maintenance.get("remaining_legacy_only_behaviors").is_some(),
                 "crate_health_dependency_edges_present": crate_health.get("dependency_edges").is_some_and(Value::is_array),
                 "crate_health_public_api_inventory_present": crate_health.get("public_api_by_crate").is_some_and(Value::is_object),
                 "repo_health_stale_generated_signal_present":
@@ -483,9 +483,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default();
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
+                "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
                 &json!({
-                    "scope": "repo/docs/scripts/crate-health truth",
+                    "scope": "repo/docs/maintenance/crate-health truth",
                     "generator": "bijux-dev-cli",
                     "checks": checks,
                     "status": if drift_checks.is_empty() { "complete" } else { "partial" },
@@ -494,9 +494,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json",
+                "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json",
                 &json!({
-                    "scope": "repo/docs/scripts/crate-health drift",
+                    "scope": "repo/docs/maintenance/crate-health drift",
                     "generator": "bijux-dev-cli",
                     "drift_checks": drift_checks,
                     "drift_count": drift_checks.len(),
@@ -505,8 +505,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
-                "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json"
+                "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
+                "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
@@ -661,7 +661,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "dev cli runtime-identity",
                 "dev cli state-audit",
                 "dev cli package-health",
-                "dev cli script-audit",
+                "dev cli maintenance-audit",
                 "dev cli rustdoc audit",
                 "dev cli release status",
                 "dev cli docs-audit",

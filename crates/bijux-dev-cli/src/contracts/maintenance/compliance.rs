@@ -1,59 +1,31 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
 use serde_json::{json, Value};
 
 use super::generator_runner::build_generators_report;
-use super::shared::{
-    collect_files, extract_required_test_names, generated_at_utc, is_python_file, migrated_rows,
-    parse_make_targets, rel, status_generator_slug,
-};
+use super::shared::{collect_files, generated_at_utc, migrated_rows, parse_make_targets, rel};
 use super::status_contract_bridge::build_status_contracts_report;
 
-fn build_requirement_catalog(workspace_root: &Path) -> Value {
-    let mut by_script = BTreeMap::<String, Vec<String>>::new();
-    for path in collect_files(&workspace_root.join("scripts").join("status")) {
-        let rel_path = rel(&path, workspace_root);
-        let is_py = is_python_file(&path);
-        if !is_py || !rel_path.contains("/generate_") {
-            continue;
-        }
-        let source = fs::read_to_string(&path).unwrap_or_default();
-        let tests = extract_required_test_names(&source);
-        if tests.is_empty() {
-            continue;
-        }
-        by_script.insert(rel_path, tests);
-    }
-
-    let mut rows = Vec::<Value>::new();
-    for (script_path, tests) in by_script {
-        let slug = status_generator_slug(&script_path);
-        for (idx, test_name) in tests.iter().enumerate() {
-            rows.push(json!({
-                "requirement_id": format!("REQ-{slug}-{:03}", idx + 1),
-                "owner": "bijux-dev-cli",
-                "source_script": script_path,
-                "test_name": test_name,
-            }));
-        }
-    }
+fn build_requirement_catalog(_workspace_root: &Path) -> Value {
+    let rows: Vec<Value> = Vec::new();
     json!({
-        "id_policy": "REQ-<GENERATOR-SLUG>-<3DIGIT-INDEX>",
+        "id_policy": "REQ-<DOMAIN>-<3DIGIT-INDEX>",
         "generated_at_utc": generated_at_utc(),
         "rows": rows,
-        "count": rows.len(),
+        "count": 0,
+        "rule": "status contracts are rust-native and do not rely on external process sources",
     })
 }
 
-/// Builds `dev cli scripts requirements` report payload.
+/// Builds `dev cli maintenance requirements` report payload.
 #[must_use]
 pub fn build_requirement_catalog_report(workspace_root: &Path) -> Value {
     build_requirement_catalog(workspace_root)
 }
 
-/// Builds `dev cli scripts flaky-tests` report payload.
+/// Builds `dev cli maintenance flaky-tests` report payload.
 #[must_use]
 pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     let mut tests = Vec::<Value>::new();
@@ -93,7 +65,7 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli scripts migrated` report payload.
+/// Builds `dev cli maintenance migrated` report payload.
 #[must_use]
 pub fn build_migrated_report(workspace_root: &Path) -> Value {
     let rows: Vec<Value> = migrated_rows()
@@ -116,17 +88,17 @@ pub fn build_migrated_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli scripts remaining` report payload.
+/// Builds `dev cli maintenance remaining` report payload.
 #[must_use]
 pub fn build_remaining_report(workspace_root: &Path) -> Value {
     let migrated: BTreeSet<&str> = migrated_rows().iter().map(|(from, _, _)| *from).collect();
-    let root_scripts: Vec<String> = collect_files(&workspace_root.join("scripts"))
+    let root_maintenance: Vec<String> = collect_files(&workspace_root.join("maintenance"))
         .into_iter()
-        .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("scripts")))
+        .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("maintenance")))
         .map(|p| rel(&p, workspace_root))
         .collect();
     let remaining: Vec<String> =
-        root_scripts.into_iter().filter(|path| !migrated.contains(path.as_str())).collect();
+        root_maintenance.into_iter().filter(|path| !migrated.contains(path.as_str())).collect();
 
     let mut make_targets = Vec::new();
     for mk in collect_files(&workspace_root.join("makes")) {
@@ -136,16 +108,16 @@ pub fn build_remaining_report(workspace_root: &Path) -> Value {
     }
 
     json!({
-        "remaining_root_scripts": remaining,
+        "remaining_root_maintenance": remaining,
         "make_targets": make_targets,
         "summary": {
-            "remaining_root_script_count": remaining.len(),
+            "remaining_root_maintenance_count": remaining.len(),
             "make_target_count": make_targets.len(),
         }
     })
 }
 
-/// Builds `dev cli scripts diff` report payload.
+/// Builds `dev cli maintenance diff` report payload.
 #[must_use]
 pub fn build_diff_report(workspace_root: &Path) -> Value {
     let migrated = build_migrated_report(workspace_root);
@@ -159,12 +131,12 @@ pub fn build_diff_report(workspace_root: &Path) -> Value {
         .filter(|row| row.get("deleted") == Some(&Value::Bool(false)))
         .collect();
     json!({
-        "undeleted_migrated_scripts": undeleted,
+        "undeleted_migrated_maintenance": undeleted,
         "remaining": remaining,
     })
 }
 
-/// Builds `dev cli scripts audit` report payload.
+/// Builds `dev cli maintenance audit` report payload.
 #[must_use]
 pub fn build_audit_report(workspace_root: &Path) -> Value {
     json!({

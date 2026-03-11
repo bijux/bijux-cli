@@ -135,12 +135,12 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "artifacts/status/status_intentional_differences.json",
     ),
     (
-        "unowned_scripts",
-        "artifacts/status/status_unowned_scripts.json",
+        "unowned_maintenance",
+        "artifacts/status/status_unowned_maintenance.json",
     ),
     (
-        "maintainer_scripts_outside_dev_cli",
-        "artifacts/status/maintainer_scripts_outside_dev_cli.json",
+        "maintainer_maintenance_outside_dev_cli",
+        "artifacts/status/maintainer_maintenance_outside_dev_cli.json",
     ),
     (
         "maintainer_control_plane_commands",

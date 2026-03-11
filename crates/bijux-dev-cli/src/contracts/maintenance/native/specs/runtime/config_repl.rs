@@ -6,53 +6,53 @@ pub(super) fn rows() -> Vec<Value> {
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/config_read_matrix_artifact.json",
                 "artifacts/status/config_read_domain_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/config_mutation_matrix_artifact.json",
                 "artifacts/status/config_mutation_domain_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/config_source_parity_artifact.json",
                 "artifacts/status/config_source_drift_artifact.json",
                 "artifacts/status/config_source_precedence_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/python_bridge_execution_artifact.json",
                 "artifacts/status/python_bridge_drift_artifact.json",
                 "artifacts/status/python_bridge_execution_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/bridge_conversion_artifact.json",
@@ -61,12 +61,12 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/bridge_conversion_drift_artifact.json",
                 "artifacts/status/bridge_conversion_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/repl_completion_artifact.json",
@@ -74,23 +74,23 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/repl_completion_drift_artifact.json",
                 "artifacts/status/repl_completion_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/repl_only_behaviors.json",
                 "artifacts/parity/repl_cli_output_diff.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/repl_shared_law_artifact.json",
@@ -98,12 +98,12 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/repl_shared_law_drift_artifact.json",
                 "artifacts/status/repl_shared_law_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/repl_hostile_session_artifact.json",
@@ -113,23 +113,23 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/repl_hostile_session_contract.json",
                 "artifacts/status/repl_hostile_session_drift_artifact.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-KERNEL-INVARIANTS-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/kernel_invariants_report.json",
                 "artifacts/status/kernel_invariants_diff.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-KERNEL-INVARIANTS-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-KERNEL-INVARIANTS-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/help_law_artifact.json",
@@ -137,30 +137,30 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/help_drift_artifact.json",
                 "artifacts/status/help_tree_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/diagnostics_taxonomy.json",
                 "artifacts/status/diagnostics_usefulness_review.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-REPORTS",
             "kind": "generate",
-            "source_script": Value::Null,
+            "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/cross_surface_equivalence_report.json",
                 "artifacts/status/cross_surface_drift_report.json",
                 "artifacts/status/cross_surface_duality_contract.json"
             ],
-            "command": "bijux dev cli scripts status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-REPORTS",
+            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-REPORTS",
         }),
     ]
 }

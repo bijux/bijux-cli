@@ -17,8 +17,8 @@ pub struct InstallHealthReport {
     pub has_path_shadowing: bool,
     /// Whether installs appear to exist across multiple ecosystems.
     pub has_duplicate_installs: bool,
-    /// Wrapper scripts that no longer point to an existing runtime.
-    pub stale_wrapper_scripts: Vec<String>,
+    /// Wrapper maintenance that no longer point to an existing runtime.
+    pub stale_wrapper_maintenance: Vec<String>,
     /// Whether wheel and runtime binary versions differ.
     pub has_mismatched_wheel_binary_versions: bool,
     /// Legacy installer wrappers that could shadow canonical runtime.
@@ -99,8 +99,8 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
             "duplicate_install_detected": input.install_report.has_duplicate_installs,
             "mixed_pip_cargo_install_detected": input.install_report.has_duplicate_installs,
             "path_shadowing_detected": input.install_report.has_path_shadowing,
-            "stale_wrapper_detected": !input.install_report.stale_wrapper_scripts.is_empty(),
-            "stale_wrapper_scripts": input.install_report.stale_wrapper_scripts,
+            "stale_wrapper_detected": !input.install_report.stale_wrapper_maintenance.is_empty(),
+            "stale_wrapper_maintenance": input.install_report.stale_wrapper_maintenance,
             "mismatched_wheel_binary_versions": input.install_report.has_mismatched_wheel_binary_versions,
             "active_binary_mismatch_detected": input.install_report.has_mismatched_wheel_binary_versions,
             "active_binary_missing": input.install_report.active_binary_missing,
@@ -130,7 +130,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
             format!("install source: {install_source}"),
             format!("path shadowing: {}", if input.install_report.has_path_shadowing { "detected" } else { "not-detected" }),
             format!("duplicate installs: {}", if input.install_report.has_duplicate_installs { "detected" } else { "not-detected" }),
-            format!("stale wrappers: {}", if input.install_report.stale_wrapper_scripts.is_empty() { "not-detected" } else { "detected" }),
+            format!("stale wrappers: {}", if input.install_report.stale_wrapper_maintenance.is_empty() { "not-detected" } else { "detected" }),
             format!("python bridge support: {}", if input.python_bridge_supported { "available" } else { "missing" }),
         ],
     })
@@ -149,7 +149,7 @@ mod tests {
                 path_binaries: vec!["/tmp/bijux".to_string()],
                 has_path_shadowing: false,
                 has_duplicate_installs: false,
-                stale_wrapper_scripts: Vec::new(),
+                stale_wrapper_maintenance: Vec::new(),
                 has_mismatched_wheel_binary_versions: false,
                 legacy_installer_conflicts: Vec::new(),
                 active_binary_missing: false,

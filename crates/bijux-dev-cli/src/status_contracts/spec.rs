@@ -10,7 +10,7 @@ use super::kind::StatusContractKind;
 pub struct StatusContractSpec {
     pub contract_id: String,
     pub kind: StatusContractKind,
-    pub source_script: Option<String>,
+    pub source_ref: Option<String>,
     pub implementation: String,
     pub outputs: Vec<String>,
     pub command: String,
@@ -26,8 +26,8 @@ impl StatusContractSpec {
             .and_then(Value::as_str)
             .and_then(StatusContractKind::from_str)
             .unwrap_or_else(|| infer_kind(&contract_id));
-        let source_script = row
-            .get("source_script")
+        let source_ref = row
+            .get("source_ref")
             .and_then(Value::as_str)
             .map(ToString::to_string)
             .filter(|item| !item.is_empty());
@@ -52,7 +52,7 @@ impl StatusContractSpec {
         Some(Self {
             contract_id,
             kind,
-            source_script,
+            source_ref,
             implementation,
             outputs,
             command,
@@ -65,7 +65,7 @@ impl StatusContractSpec {
         json!({
             "contract_id": self.contract_id,
             "kind": self.kind.as_str(),
-            "source_script": self.source_script,
+            "source_ref": self.source_ref,
             "implementation": self.implementation,
             "outputs": self.outputs,
             "command": self.command,

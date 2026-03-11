@@ -40,10 +40,10 @@ pub fn status_contract_specs(workspace_root: &Path) -> Vec<StatusContractSpec> {
         specs.push(StatusContractSpec {
             contract_id: id.clone(),
             kind: inferred_kind,
-            source_script: None,
+            source_ref: None,
             implementation: "rust-compat".to_string(),
             outputs: Vec::new(),
-            command: format!("bijux dev cli scripts status run --id {id}"),
+            command: format!("bijux dev cli maintenance status run --id {id}"),
         });
     }
 

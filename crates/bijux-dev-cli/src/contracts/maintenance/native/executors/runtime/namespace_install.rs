@@ -339,7 +339,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ambiguities.push("cargo and pip installations both appear active".to_string());
             }
             if ambiguous.get("stale_wrapper_detected").and_then(Value::as_bool) == Some(true) {
-                ambiguities.push("stale wrapper scripts found in PATH".to_string());
+                ambiguities.push("stale wrapper maintenance found in PATH".to_string());
             }
             if ambiguous.get("active_binary_mismatch_detected").and_then(Value::as_bool)
                 == Some(true)
@@ -1313,9 +1313,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             fs::create_dir_all(&cargo_bin).ok()?;
             fs::create_dir_all(&pip_bin).ok()?;
             fs::create_dir_all(&wrappers).ok()?;
-            fs::write(cargo_bin.join("bijux"), "#!/bin/sh\n").ok()?;
-            fs::write(pip_bin.join("bijux"), "#!/bin/sh\n").ok()?;
-            fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n").ok()?;
+            fs::write(cargo_bin.join("bijux"), "placeholder").ok()?;
+            fs::write(pip_bin.join("bijux"), "placeholder").ok()?;
+            fs::write(wrappers.join("bijux-wrapper"), "/missing/bijux").ok()?;
             let path = std::env::var("PATH").unwrap_or_default();
             let path_mixed = format!("{}:{}:{}", cargo_bin.display(), pip_bin.display(), path);
             let runtime_env = vec![

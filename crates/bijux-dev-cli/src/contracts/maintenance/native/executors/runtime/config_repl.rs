@@ -1111,7 +1111,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS" => {
-            let search_roots = [workspace_root.join("crates"), workspace_root.join("scripts")];
+            let search_roots = [workspace_root.join("crates"), workspace_root.join("maintenance")];
             let bucket_patterns = [
                 ("runtime", vec!["runtime-identity", "runtime_unity", "execution_outcome"]),
                 ("state", vec!["state-audit", "state-doctor", "history", "memory"]),

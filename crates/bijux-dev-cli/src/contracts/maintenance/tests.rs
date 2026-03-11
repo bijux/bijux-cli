@@ -11,7 +11,7 @@ use super::{
 fn contract_reports_are_shaped() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     assert!(build_migrated_report(&root).get("migrated").is_some());
-    assert!(build_remaining_report(&root).get("remaining_root_scripts").is_some());
+    assert!(build_remaining_report(&root).get("remaining_root_maintenance").is_some());
     assert!(build_diff_report(&root).get("remaining").is_some());
     let audit = build_audit_report(&root);
     assert!(audit.get("diff").is_some());

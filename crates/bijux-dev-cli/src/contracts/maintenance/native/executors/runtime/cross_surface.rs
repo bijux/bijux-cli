@@ -947,7 +947,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "scope": "cross-surface consistency contract",
                                     "release_review_rule": "cross-surface consistency artifacts are mandatory release evidence",
                                     "freeze_rule": "one command law is frozen only when covered drift remains zero",
-                                    "gate": "bijux dev cli scripts status run --id STATUS-CONTRACT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
+                                    "gate": "bijux dev cli maintenance status run --id STATUS-CONTRACT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
                                     "evidence": [
                                         "artifacts/status/cross_surface_consistency_artifact.json",
                                         "artifacts/status/cross_surface_drift_artifact.json",

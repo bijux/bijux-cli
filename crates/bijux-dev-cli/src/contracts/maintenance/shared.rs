@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -32,17 +31,7 @@ pub(crate) fn rel(path: &Path, root: &Path) -> String {
 }
 
 pub(crate) fn migrated_rows() -> &'static [(&'static str, &'static str, usize)] {
-    &[
-        ("scripts/check-package-metadata.py", "bijux dev cli scripts package-metadata", 100),
-        ("scripts/check_e2e_contract.py", "bijux dev cli scripts e2e-contract", 95),
-        ("scripts/helper_pip_audit.py", "bijux dev cli scripts pip-audit", 90),
-        ("scripts/capture_python_behavior.py", "bijux dev cli scripts capture-python-behavior", 85),
-        (
-            "scripts/generate-provenance-statement.sh",
-            "bijux dev cli scripts provenance-statement",
-            80,
-        ),
-    ]
+    &[]
 }
 
 pub(crate) fn parse_make_targets(path: &Path) -> Vec<String> {
@@ -71,37 +60,6 @@ pub(crate) fn parse_make_targets(path: &Path) -> Vec<String> {
     out
 }
 
-pub(crate) fn is_python_file(path: &Path) -> bool {
-    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext.eq_ignore_ascii_case("py"))
-}
-
-pub(crate) fn status_generator_sources(workspace_root: &Path) -> Vec<String> {
-    collect_files(&workspace_root.join("scripts").join("status"))
-        .into_iter()
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("generate_"))
-                && is_python_file(path)
-        })
-        .map(|path| rel(&path, workspace_root))
-        .collect()
-}
-
-pub(crate) fn status_generator_slug(script_path: &str) -> String {
-    let file = script_path.rsplit('/').next().unwrap_or(script_path);
-    let stem = file.strip_suffix(".py").unwrap_or(file);
-    let stem = stem.strip_prefix("generate_").unwrap_or(stem);
-    let stem = stem.strip_suffix("_reports").unwrap_or(stem);
-    stem.chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
-        .collect::<String>()
-        .split('-')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("-")
-}
-
 pub(crate) fn status_slug_for_name(value: &str) -> String {
     let mut slug = String::new();
     let mut last_was_dash = false;
@@ -121,66 +79,6 @@ pub(crate) fn status_slug_for_name(value: &str) -> String {
         }
     }
     cleaned.trim_matches('-').to_string()
-}
-
-pub(crate) fn status_generator_id(script_path: &str) -> String {
-    format!("GEN-STATUS-{}", status_generator_slug(script_path))
-}
-
-pub(crate) fn extract_artifact_paths(source: &str) -> Vec<String> {
-    let mut out = BTreeSet::<String>::new();
-    for line in source.lines() {
-        let mut search = line;
-        while let Some(idx) = search.find("artifacts/") {
-            let tail = &search[idx..];
-            let token = tail
-                .chars()
-                .take_while(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '/' | '_' | '-' | '.'))
-                .collect::<String>()
-                .trim_end_matches('.')
-                .trim_end_matches(',')
-                .trim_end_matches(')')
-                .trim_end_matches('"')
-                .trim_end_matches('\'')
-                .to_string();
-            if token.starts_with("artifacts/") {
-                out.insert(token);
-            }
-            search = &tail["artifacts/".len()..];
-        }
-    }
-    out.into_iter().collect()
-}
-
-pub(crate) fn extract_required_test_names(source: &str) -> Vec<String> {
-    let Some(start) = source.find("REQUIRED_TESTS = {") else {
-        return Vec::new();
-    };
-    let block = &source[start..];
-    let Some(end) = block.find("\n}") else {
-        return Vec::new();
-    };
-    let mut out = Vec::<String>::new();
-    for line in block[..end].lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("REQUIRED_TESTS = {") || trimmed.is_empty() {
-            continue;
-        }
-        let Some(first_quote) = trimmed.find('"') else {
-            continue;
-        };
-        let tail = &trimmed[first_quote + 1..];
-        let Some(second_quote) = tail.find('"') else {
-            continue;
-        };
-        let test_name = &tail[..second_quote];
-        if !test_name.is_empty() {
-            out.push(test_name.to_string());
-        }
-    }
-    out.sort();
-    out.dedup();
-    out
 }
 
 pub(crate) fn generated_at_utc() -> String {
