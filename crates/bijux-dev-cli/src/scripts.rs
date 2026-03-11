@@ -575,6 +575,43 @@ fn native_status_script_rows() -> Vec<Value> {
             "outputs": ["artifacts/status/dev_cli_interface_bridge_report.json"],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/dev_cli_ownership_report.json",
+                "artifacts/status/dev_cli_ownership_report.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/stale_artifact_artifact.json",
+                "artifacts/status/stale_evidence_artifact.json",
+                "artifacts/status/stale_report_artifact.json",
+                "artifacts/status/stale_detection_regression_suite.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/state_audit_truth_artifact.json",
+                "artifacts/status/state_doctor_truth_artifact.json",
+                "artifacts/status/corrupted_state_truth_artifact.json",
+                "artifacts/status/state_diagnostics_drift_artifact.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS",
+        }),
     ]
 }
 
@@ -1868,6 +1905,335 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_interface_bridge_report.json"]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT" => {
+            let command_rows = vec![
+                json!({"command":"dev cli status","group":"dashboard","visible":true}),
+                json!({"command":"dev cli parity","group":"dashboard","visible":true}),
+                json!({"command":"dev cli doctor","group":"dashboard","visible":true}),
+                json!({"command":"dev cli routes","group":"routing","visible":true}),
+                json!({"command":"dev cli registry","group":"routing","visible":true}),
+                json!({"command":"dev cli route-audit","group":"routing","visible":true}),
+                json!({"command":"dev cli env","group":"runtime","visible":true}),
+                json!({"command":"dev cli contracts","group":"runtime","visible":true}),
+                json!({"command":"dev cli runtime-identity","group":"runtime","visible":true}),
+                json!({"command":"dev cli package-health","group":"runtime","visible":true}),
+                json!({"command":"dev cli state-audit","group":"runtime","visible":true}),
+                json!({"command":"dev cli state-doctor","group":"runtime","visible":true}),
+                json!({"command":"dev cli plugin-health","group":"runtime","visible":true}),
+                json!({"command":"dev cli docs-audit","group":"audit","visible":true}),
+                json!({"command":"dev cli scripts","group":"audit","visible":true}),
+                json!({"command":"dev cli rustdoc","group":"audit","visible":true}),
+                json!({"command":"dev cli release","group":"audit","visible":true}),
+                json!({"command":"dev cli script-audit","group":"audit","visible":true}),
+                json!({"command":"dev cli crate-health","group":"audit","visible":true}),
+                json!({"command":"dev cli snapshots-audit","group":"audit","visible":true}),
+                json!({"command":"dev cli fixture-audit","group":"audit","visible":true}),
+                json!({"command":"dev cli docs","group":"audit","visible":false}),
+                json!({"command":"dev cli docs-prune-plan","group":"audit","visible":false}),
+                json!({"command":"dev cli inventory","group":"internal","visible":false}),
+                json!({"command":"dev cli atlas","group":"internal","visible":false}),
+                json!({"command":"dev cli di","group":"internal","visible":false}),
+                json!({"command":"dev cli list-products","group":"internal","visible":false}),
+                json!({"command":"dev cli list-plugins","group":"internal","visible":false}),
+            ];
+            let visible = command_rows
+                .iter()
+                .filter(|row| row.get("visible").and_then(Value::as_bool) == Some(true))
+                .count();
+            let groups: BTreeSet<String> = command_rows
+                .iter()
+                .filter_map(|row| row.get("group").and_then(Value::as_str).map(ToString::to_string))
+                .collect();
+            let report = json!({
+                "namespace": "dev cli",
+                "owner": "bijux-dev-cli",
+                "commands": command_rows
+                    .iter()
+                    .map(|row| {
+                        let mut obj = row.as_object().cloned().unwrap_or_default();
+                        obj.insert("owner".to_string(), Value::String("bijux-dev-cli".to_string()));
+                        Value::Object(obj)
+                    })
+                    .collect::<Vec<_>>(),
+                "summary": {
+                    "total": command_rows.len(),
+                    "visible": visible,
+                    "internal": command_rows.len().saturating_sub(visible),
+                    "groups": groups,
+                },
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_ownership_report.json",
+                &report,
+            )
+            .ok()?;
+            let mut lines = vec![
+                "Dev CLI ownership report".to_string(),
+                "owner: bijux-dev-cli".to_string(),
+                "namespace: dev cli".to_string(),
+                String::new(),
+            ];
+            for row in &command_rows {
+                let command = row.get("command").and_then(Value::as_str).unwrap_or("");
+                let group = row.get("group").and_then(Value::as_str).unwrap_or("");
+                let visibility = if row.get("visible").and_then(Value::as_bool) == Some(true) {
+                    "visible"
+                } else {
+                    "internal"
+                };
+                lines.push(format!("- {command} [{group}, {visibility}]"));
+            }
+            fs::write(
+                workspace_root.join("artifacts/status/dev_cli_ownership_report.txt"),
+                lines.join("\n") + "\n",
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_ownership_report.json","artifacts/status/dev_cli_ownership_report.txt"]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS" => {
+            let now_epoch = std::env::var("DEV_CLI_STALE_NOW_EPOCH")
+                .ok()
+                .and_then(|raw| raw.parse::<u64>().ok())
+                .unwrap_or_else(|| {
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|dur| dur.as_secs())
+                        .unwrap_or(0)
+                });
+            let max_age_seconds = std::env::var("DEV_CLI_STALE_MAX_SECONDS")
+                .ok()
+                .and_then(|raw| raw.parse::<u64>().ok())
+                .unwrap_or(86_400);
+            let forced_raw = std::env::var("DEV_CLI_FORCE_STALE_FILES").unwrap_or_default();
+            let mut forced: BTreeSet<String> = forced_raw
+                .split(',')
+                .map(str::trim)
+                .filter(|item| !item.is_empty())
+                .map(ToString::to_string)
+                .collect();
+            if std::env::var("DEV_CLI_INJECT_STALE_ARTIFACT")
+                .is_ok_and(|raw| raw == "1")
+            {
+                forced.insert("artifacts/status/parity_drift_artifact.json".to_string());
+            }
+            let specs = vec![
+                ("evidence_deleted_before_evidence_audit","dev cli evidence audit","artifacts/status/evidence_integrity_artifact.json","critical","Detect missing evidence artifact before evidence audit."),
+                ("evidence_stale_before_evidence_stale","dev cli evidence stale","artifacts/status/evidence_integrity_artifact.json","critical","Detect stale evidence artifact before evidence stale command."),
+                ("parity_stale_before_status","dev cli status","artifacts/status/parity_drift_artifact.json","critical","Detect stale parity artifact before status command."),
+                ("migration_stale_before_truth","dev cli truth","artifacts/status/migration_truth_artifact.json","critical","Detect stale migration artifact before truth command."),
+                ("package_health_stale_before_dashboard","dev cli dashboard","artifacts/status/package_health_diagnostics_artifact.json","critical","Detect stale package health artifact before dashboard command."),
+                ("state_audit_stale_before_blockers","dev cli blockers","artifacts/status/state_audit_truth_artifact.json","critical","Detect stale state audit artifact before blockers command."),
+                ("docs_audit_stale_before_repo_health","dev cli repo health","artifacts/status/docs_audit.json","critical","Detect stale docs-audit artifact before repo health command."),
+                ("script_audit_stale_before_repo_health","dev cli repo health","artifacts/status/script_only_behaviors.json","critical","Detect stale script-audit artifact before repo health command."),
+                ("crate_health_stale_before_crate_health","dev cli crate-health","artifacts/status/duplication_hotspots.json","critical","Detect stale crate-health artifact before crate-health command."),
+                ("optional_next_report_stale_warning","dev cli next","artifacts/status/dev_cli_next_report.json","warning","Stale optional report is tolerated with warning."),
+            ];
+            let checks: Vec<Value> = specs
+                .iter()
+                .map(|(scenario_id, command, relative_path, severity, description)| {
+                    let path = workspace_root.join(relative_path);
+                    let exists = path.exists();
+                    let mut state = "fresh".to_string();
+                    let mut age_seconds = None::<u64>;
+                    if !exists {
+                        state = "missing".to_string();
+                    } else {
+                        let modified = path
+                            .metadata()
+                            .ok()
+                            .and_then(|meta| meta.modified().ok())
+                            .and_then(|ts| ts.duration_since(std::time::UNIX_EPOCH).ok())
+                            .map(|dur| dur.as_secs())
+                            .unwrap_or(now_epoch);
+                        let age = now_epoch.saturating_sub(modified);
+                        age_seconds = Some(age);
+                        if forced.contains(*relative_path) || age > max_age_seconds {
+                            state = "stale".to_string();
+                        }
+                    }
+                    json!({
+                        "scenario_id": scenario_id,
+                        "command": command,
+                        "path": relative_path,
+                        "severity": severity,
+                        "description": description,
+                        "exists": exists,
+                        "state": state,
+                        "age_seconds": age_seconds,
+                        "max_age_seconds": max_age_seconds,
+                    })
+                })
+                .collect();
+            let stale_or_missing: Vec<Value> = checks
+                .iter()
+                .filter(|row| {
+                    row.get("state")
+                        .and_then(Value::as_str)
+                        .is_some_and(|s| s == "stale" || s == "missing")
+                })
+                .cloned()
+                .collect();
+            let fresh_count = checks.len().saturating_sub(stale_or_missing.len());
+            let critical_stale_count = stale_or_missing
+                .iter()
+                .filter(|row| row.get("severity").and_then(Value::as_str) == Some("critical"))
+                .count();
+            let warning_stale_count = stale_or_missing
+                .iter()
+                .filter(|row| row.get("severity").and_then(Value::as_str) == Some("warning"))
+                .count();
+            let status_value = if stale_or_missing.is_empty() {
+                "clean"
+            } else {
+                "drift"
+            };
+            let summary = json!({
+                "checks_total": checks.len(),
+                "fresh_count": fresh_count,
+                "stale_or_missing_count": stale_or_missing.len(),
+                "critical_stale_count": critical_stale_count,
+                "warning_stale_count": warning_stale_count,
+                "status": status_value,
+                "injection_mode": std::env::var("DEV_CLI_INJECT_STALE_ARTIFACT").is_ok_and(|raw| raw == "1"),
+            });
+            write_status_artifact_json(workspace_root, "artifacts/status/stale_artifact_artifact.json", &json!({
+                "scope": "stale artifact truth",
+                "generator": "bijux-dev-cli",
+                "summary": summary,
+                "checks": checks,
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/stale_evidence_artifact.json", &json!({
+                "scope": "stale evidence truth",
+                "generator": "bijux-dev-cli",
+                "checks": checks.iter().filter(|row| {
+                    row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
+                        cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                    })
+                }).cloned().collect::<Vec<_>>(),
+                "status": if checks.iter().any(|row| {
+                    row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
+                        cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                    }) && row.get("state").and_then(Value::as_str).is_some_and(|state| state == "stale" || state == "missing")
+                }) { "drift" } else { "clean" },
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/stale_report_artifact.json", &json!({
+                "scope": "stale report truth",
+                "generator": "bijux-dev-cli",
+                "checks": checks.iter().filter(|row| {
+                    !row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
+                        cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                    })
+                }).cloned().collect::<Vec<_>>(),
+                "status": status_value,
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/stale_detection_regression_suite.json", &json!({
+                "scope": "stale artifact regression suite",
+                "generator": "bijux-dev-cli",
+                "cases": checks.iter().map(|row| {
+                    json!({
+                        "scenario_id": row.get("scenario_id").cloned().unwrap_or(Value::Null),
+                        "command": row.get("command").cloned().unwrap_or(Value::Null),
+                        "state": row.get("state").cloned().unwrap_or(Value::Null),
+                        "severity": row.get("severity").cloned().unwrap_or(Value::Null),
+                    })
+                }).collect::<Vec<_>>(),
+                "status": if critical_stale_count == 0 { "clean" } else { "drift" },
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/stale_artifact_artifact.json",
+                "artifacts/status/stale_evidence_artifact.json",
+                "artifacts/status/stale_report_artifact.json",
+                "artifacts/status/stale_detection_regression_suite.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS" => {
+            let read_json = |rel_path: &str| -> Value {
+                fs::read_to_string(workspace_root.join(rel_path))
+                    .ok()
+                    .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+                    .unwrap_or_else(|| json!({}))
+            };
+            let state_audit = read_json("artifacts/status/state_audit_report.json");
+            let state_doctor = read_json("artifacts/status/state_doctor_report.json");
+            let unified_corruption = read_json("artifacts/status/unified_state_corruption_report.json");
+            let repeated_harness = read_json("artifacts/status/repeated_run_corruption_harness.json");
+            let audit_checks = json!({
+                "paths_present": state_audit.get("paths").is_some_and(Value::is_object),
+                "corruption_health_present": state_audit.get("corruption_health").is_some_and(Value::is_object),
+                "config_path_present": state_audit.get("paths").and_then(|v| v.get("config")).and_then(|v| v.get("path")).is_some_and(Value::is_string),
+                "plugin_registry_path_present": state_audit.get("paths").and_then(|v| v.get("plugins_registry")).and_then(|v| v.get("path")).is_some_and(Value::is_string),
+                "history_path_present": state_audit.get("paths").and_then(|v| v.get("history")).and_then(|v| v.get("path")).is_some_and(Value::is_string),
+                "memory_path_present": state_audit.get("paths").and_then(|v| v.get("memory")).and_then(|v| v.get("path")).is_some_and(Value::is_string),
+            });
+            let doctor_checks = json!({
+                "doctor_object_present": state_doctor.get("doctor").is_some_and(Value::is_object),
+                "issues_list_present": state_doctor.get("doctor").and_then(|v| v.get("issues")).is_some_and(Value::is_array),
+                "repairs_list_present": state_doctor.get("doctor").and_then(|v| v.get("repairs")).is_some_and(Value::is_array),
+                "runtime_marker_present": state_doctor.get("runtime").is_some_and(Value::is_string),
+            });
+            let harness_results = repeated_harness
+                .get("results")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let has_corrupt_config_probe = harness_results.iter().any(|row| {
+                row.get("name").and_then(Value::as_str)
+                    == Some("state_doctor_json_corrupt_config")
+            });
+            let all_harness_stable = !harness_results.is_empty()
+                && harness_results
+                    .iter()
+                    .all(|row| row.get("stable").and_then(Value::as_bool) == Some(true));
+            let harness_checks = json!({
+                "corrupt_config_probe_present": has_corrupt_config_probe,
+                "harness_results_stable": all_harness_stable,
+                "unified_corruption_report_present": !unified_corruption.as_object().is_some_and(|obj| obj.is_empty()),
+            });
+            let all_checks = [audit_checks.clone(), doctor_checks.clone(), harness_checks.clone()]
+                .into_iter()
+                .filter_map(|v| v.as_object().cloned())
+                .fold(serde_json::Map::new(), |mut acc, map| {
+                    acc.extend(map);
+                    acc
+                });
+            let drift_checks: Vec<String> = all_checks
+                .iter()
+                .filter(|(_, v)| v.as_bool() != Some(true))
+                .map(|(k, _)| k.to_string())
+                .collect();
+            write_status_artifact_json(workspace_root, "artifacts/status/state_audit_truth_artifact.json", &json!({
+                "scope": "state audit truth",
+                "generator": "bijux-dev-cli",
+                "checks": audit_checks,
+                "status": if audit_checks.as_object().is_some_and(|obj| obj.values().all(|v| v.as_bool() == Some(true))) { "complete" } else { "partial" },
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/state_doctor_truth_artifact.json", &json!({
+                "scope": "state doctor truth",
+                "generator": "bijux-dev-cli",
+                "checks": doctor_checks,
+                "status": if doctor_checks.as_object().is_some_and(|obj| obj.values().all(|v| v.as_bool() == Some(true))) { "complete" } else { "partial" },
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/corrupted_state_truth_artifact.json", &json!({
+                "scope": "corrupted state truth",
+                "generator": "bijux-dev-cli",
+                "checks": harness_checks,
+                "status": if harness_checks.as_object().is_some_and(|obj| obj.values().all(|v| v.as_bool() == Some(true))) { "complete" } else { "partial" },
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/state_diagnostics_drift_artifact.json", &json!({
+                "scope": "state diagnostics drift",
+                "generator": "bijux-dev-cli",
+                "drift_checks": drift_checks,
+                "drift_count": drift_checks.len(),
+                "status": if drift_checks.is_empty() { "clean" } else { "drift" },
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/state_audit_truth_artifact.json",
+                "artifacts/status/state_doctor_truth_artifact.json",
+                "artifacts/status/corrupted_state_truth_artifact.json",
+                "artifacts/status/state_diagnostics_drift_artifact.json"
+            ]}))
         }
         _ => None,
     }
