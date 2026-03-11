@@ -1,3 +1,5 @@
+//! Packaging ownership contracts for the Python bridge distribution.
+
 use std::fs;
 use std::path::PathBuf;
 
