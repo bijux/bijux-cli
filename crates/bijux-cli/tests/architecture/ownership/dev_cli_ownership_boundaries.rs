@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 //! Prevents maintainer report assembly from drifting back into runtime core.
 
+use std::path::{Path, PathBuf};
+
 fn strip_comments_and_strings(source: &str) -> String {
     let bytes = source.as_bytes();
     let mut out = String::with_capacity(bytes.len());
@@ -86,6 +88,43 @@ fn strip_comments_and_strings(source: &str) -> String {
     out
 }
 
+fn read_dev_cli_router_source() -> String {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let legacy = crate_root.join("../bijux-dev-cli/src/app/router.rs");
+    if legacy.is_file() {
+        return std::fs::read_to_string(&legacy)
+            .unwrap_or_else(|err| panic!("read dev cli dispatch source: {err}"));
+    }
+
+    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    let mut files = Vec::<PathBuf>::new();
+    collect_rs_files(&router_root, &mut files);
+    files.sort();
+
+    let mut source = String::new();
+    for file in files {
+        let text = std::fs::read_to_string(&file)
+            .unwrap_or_else(|err| panic!("read dev cli dispatch source {}: {err}", file.display()));
+        source.push_str(&text);
+        source.push('\n');
+    }
+    source
+}
+
+fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rs_files(&path, out);
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push(path);
+        }
+    }
+}
+
 #[test]
 fn core_adapter_is_runtime_query_only_and_delegates_dispatch() {
     let source = strip_comments_and_strings(
@@ -120,13 +159,7 @@ fn core_adapter_is_runtime_query_only_and_delegates_dispatch() {
 
 #[test]
 fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
-    let source = strip_comments_and_strings(
-        &std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../bijux-dev-cli/src/app/router.rs"
-        ))
-        .expect("read dev cli dispatch source"),
-    );
+    let source = strip_comments_and_strings(&read_dev_cli_router_source());
 
     assert!(
         source.contains("match normalized_path"),

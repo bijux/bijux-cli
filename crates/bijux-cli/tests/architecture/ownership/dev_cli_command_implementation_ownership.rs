@@ -2,9 +2,44 @@
 //! Ensures every routed dev-cli command is implemented in bijux-dev-cli dispatch.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
 fn read(path: &str) -> String {
     std::fs::read_to_string(path).unwrap_or_else(|err| panic!("failed to read {path}: {err}"))
+}
+
+fn read_dev_cli_router_source() -> String {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let legacy = crate_root.join("../bijux-dev-cli/src/app/router.rs");
+    if legacy.is_file() {
+        return read(&legacy.to_string_lossy());
+    }
+
+    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    let mut files = Vec::<PathBuf>::new();
+    collect_rs_files(&router_root, &mut files);
+    files.sort();
+
+    let mut source = String::new();
+    for file in files {
+        source.push_str(&read(&file.to_string_lossy()));
+        source.push('\n');
+    }
+    source
+}
+
+fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rs_files(&path, out);
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push(path);
+        }
+    }
 }
 
 fn extract_guard_values(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -45,7 +80,7 @@ fn fixture_dev_cli_top_level_commands() -> BTreeSet<String> {
 
 #[test]
 fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
+    let source = read_dev_cli_router_source();
     let fixture_commands = fixture_dev_cli_top_level_commands();
     let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
     let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
@@ -65,7 +100,7 @@ fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
 
 #[test]
 fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
+    let source = read_dev_cli_router_source();
 
     let branch_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
     let observed_namespaces = extract_guard_values(&source, branch_prefix);
@@ -99,7 +134,7 @@ fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
 
 #[test]
 fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/app/router.rs"));
+    let source = read_dev_cli_router_source();
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report_from_query"),

@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 //! Workspace-level architecture guards for dev-cli ownership.
 
+use std::path::{Path, PathBuf};
+
 fn strip_comments_and_strings(source: &str) -> String {
     let bytes = source.as_bytes();
     let mut out = String::with_capacity(bytes.len());
@@ -89,6 +91,43 @@ fn strip_comments_and_strings(source: &str) -> String {
     out
 }
 
+fn read_dev_cli_router_source() -> String {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let legacy = crate_root.join("../bijux-dev-cli/src/app/router.rs");
+    if legacy.is_file() {
+        return std::fs::read_to_string(&legacy)
+            .unwrap_or_else(|err| panic!("read dev cli dispatch source: {err}"));
+    }
+
+    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    let mut files = Vec::<PathBuf>::new();
+    collect_rs_files(&router_root, &mut files);
+    files.sort();
+
+    let mut source = String::new();
+    for file in files {
+        let text = std::fs::read_to_string(&file)
+            .unwrap_or_else(|err| panic!("read dev cli dispatch source {}: {err}", file.display()));
+        source.push_str(&text);
+        source.push('\n');
+    }
+    source
+}
+
+fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rs_files(&path, out);
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push(path);
+        }
+    }
+}
+
 #[test]
 fn runtime_crates_do_not_import_bijux_dev_cli() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
@@ -114,11 +153,7 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
         "/src/features/developer/runtime_query_adapter.rs"
     ))
     .expect("read dev cli command source");
-    let dispatch_source_raw = std::fs::read_to_string(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../bijux-dev-cli/src/app/router.rs"
-    ))
-    .expect("read dev cli dispatch source");
+    let dispatch_source_raw = read_dev_cli_router_source();
     let adapter_source = strip_comments_and_strings(&adapter_source_raw);
     let dispatch_source = strip_comments_and_strings(&dispatch_source_raw);
 
