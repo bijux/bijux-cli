@@ -264,7 +264,7 @@ jobs:
           python3 scripts/status/generate_test_domain_value_reports.py
           python3 scripts/status/generate_deep_test_quality_reports.py
           python3 scripts/status/generate_deep_layer_test_coverage_reports.py
-          python3 scripts/status/generate_flaky_test_labels.py
+          cargo run -q -p bijux-cli-bin -- dev cli scripts generate --id GEN-STATUS-FLAKY-TEST-LABELS --json --no-pretty > artifacts/status/flaky_generator_run.json
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_truth_status_reports.py
           python3 scripts/status/generate_status_reports.py
