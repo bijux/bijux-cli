@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-# Reserved hook. Changelog fragment automation has been removed in favor of release-truth reports.
+# Reserved hook.
 exit 0

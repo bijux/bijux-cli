@@ -9,9 +9,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ---
 
-<!-- towncrier start -->
-
-
 <a id="v0-2-0"></a>
 
 ## [0.2.0] – 2026-01-26
