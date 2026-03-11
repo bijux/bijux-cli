@@ -257,103 +257,103 @@ jobs:
 
       - name: Generate current Rust state artifact
         run: |
-          python3 scripts/status/generate_crate_boundary_metrics.py
-          python3 scripts/status/generate_public_api_reports.py
-          python3 scripts/status/generate_current_rust_state.py
-          python3 scripts/status/generate_test_quality_audit.py
-          python3 scripts/status/generate_test_domain_value_reports.py
-          python3 scripts/status/generate_deep_test_quality_reports.py
-          python3 scripts/status/generate_deep_layer_test_coverage_reports.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PUBLIC-API
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CURRENT-RUST-STATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TEST-QUALITY-AUDIT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TEST-DOMAIN-VALUE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-LAYER-TEST-COVERAGE
           cargo run -q -p bijux-cli-bin -- dev cli scripts generate --id GEN-STATUS-FLAKY-TEST-LABELS --json --no-pretty > artifacts/status/flaky_generator_run.json
-          python3 scripts/status/generate_plugin_state_report.py
-          python3 scripts/status/generate_truth_status_reports.py
-          python3 scripts/status/generate_status_reports.py
-          python3 scripts/status/generate_repl_behavior_reports.py
-          python3 scripts/status/generate_parser_abuse_report.py
-          python3 scripts/status/generate_parser_fuzz_hardening_reports.py
-          python3 scripts/status/generate_route_registry_fuzz_reports.py
-          python3 scripts/status/generate_config_fuzz_hardening_reports.py
-          python3 scripts/status/generate_config_corruption_campaign_reports.py
-          python3 scripts/status/generate_plugin_state_corruption_campaign_reports.py
-          python3 scripts/status/generate_state_race_campaign_reports.py
-          python3 scripts/status/generate_adversarial_fs_process_reports.py
-          python3 scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py
-          python3 scripts/status/generate_output_bridge_fuzz_reports.py
-          python3 scripts/status/generate_state_corruption_harness_reports.py
-          python3 scripts/status/generate_namespace_reservation_reports.py
-          python3 scripts/status/generate_reserved_namespace_test_matrix.py
-          python3 scripts/status/generate_plugin_lifecycle_test_matrix.py
-          python3 scripts/status/generate_plugin_failure_rollback_test_matrix.py
-          python3 scripts/status/generate_plugin_discovery_determinism_reports.py
-          python3 scripts/status/generate_flag_normalization_matrix.py
-          python3 scripts/status/generate_precedence_reports.py
-          python3 scripts/status/generate_deterministic_output_reports.py
-          python3 scripts/status/run_corruption_repeat_harness.py
-          python3 scripts/status/generate_hostile_state_reports.py
-          python3 scripts/status/generate_cross_surface_reports.py
-          python3 scripts/status/generate_plugin_lifecycle_failure_reports.py
-          python3 scripts/status/generate_config_corruption_reports.py
-          python3 scripts/status/generate_state_resilience_reports.py
-          python3 scripts/status/generate_repl_recovery_reports.py
-          python3 scripts/status/generate_docs_duplication_report.py
-          python3 scripts/status/generate_install_truth_reports.py
-          python3 scripts/status/generate_install_neutrality_reports.py
-          python3 scripts/status/generate_install_runtime_identity_reports.py
-          python3 scripts/status/generate_packaging_ambiguity_reports.py
-          python3 scripts/status/generate_performance_reports.py
-          python3 scripts/status/generate_release_evidence_reports.py
-          python3 scripts/status/generate_kernel_invariants_reports.py
-          python3 scripts/status/generate_exit_code_law_reports.py
-          python3 scripts/status/generate_stream_discipline_reports.py
-          python3 scripts/status/generate_metadata_consistency_reports.py
-          python3 scripts/status/generate_config_deep_behavior_reports.py
-          python3 scripts/status/generate_history_deep_behavior_reports.py
-          python3 scripts/status/generate_memory_deep_behavior_reports.py
-          python3 scripts/status/generate_diagnostics_deep_behavior_reports.py
-          python3 scripts/status/generate_release_build_reports.py
-          python3 scripts/status/generate_migration_notes.py
-          python3 scripts/status/generate_priority_rankings.py
-          python3 scripts/status/generate_simplification_priorities.py
-          python3 scripts/status/generate_cleanup_reports.py
-          python3 scripts/status/generate_product_mount_readiness_reports.py
-          python3 scripts/status/generate_plugin_scaffold_reports.py
-          python3 scripts/status/generate_compatibility_shim_reports.py
-          python3 scripts/status/generate_compatibility_debt_trend_report.py
-          python3 scripts/status/generate_route_law_reports.py
-          python3 scripts/status/generate_state_law_reports.py
-          python3 scripts/status/generate_diagnostics_law_reports.py
-          python3 scripts/status/generate_bridge_duplicate_law_report.py
-          python3 scripts/status/generate_root_command_surface_reports.py
-          python3 scripts/status/generate_cli_command_surface_reports.py
-          python3 scripts/status/generate_dev_cli_command_surface_reports.py
-          python3 scripts/status/generate_dev_cli_boundary_reports.py
-          python3 scripts/status/generate_dev_cli_route_registry_ownership_diff.py
-          python3 scripts/status/generate_dev_cli_maintainer_report_io_map.py
-          python3 scripts/status/generate_dev_cli_diagnostics_source_map.py
-          python3 scripts/status/generate_dev_cli_dispatch_ownership_reports.py
-          python3 scripts/status/generate_dev_cli_interface_bridge_report.py
-          python3 scripts/status/generate_runtime_dev_leakage_report.py
-          python3 scripts/status/generate_dev_cli_control_plane_bundle.py
-          python3 scripts/status/generate_dev_cli_scope_reassessment.py
-          python3 scripts/status/generate_config_read_surface_reports.py
-          python3 scripts/status/generate_config_mutation_surface_reports.py
-          python3 scripts/status/generate_config_source_surface_reports.py
-          python3 scripts/status/generate_history_surface_reports.py
-          python3 scripts/status/generate_memory_surface_reports.py
-          python3 scripts/status/generate_diagnostics_surface_reports.py
-          python3 scripts/status/generate_repl_execution_law_reports.py
-          python3 scripts/status/generate_repl_hostile_session_reports.py
-          python3 scripts/status/generate_repl_completion_reports.py
-          python3 scripts/status/generate_python_bridge_execution_reports.py
-          python3 scripts/status/generate_python_bridge_conversion_reports.py
-          python3 scripts/status/generate_cross_surface_state_reports.py
-          python3 scripts/status/generate_help_tree_law_reports.py
-          python3 scripts/status/generate_diagnostics_trust_reports.py
-          python3 scripts/status/generate_command_family_closure_reports.py
-          python3 scripts/status/generate_cross_surface_consistency_law_reports.py
-          python3 scripts/status/generate_simplification_reports.py
-          python3 scripts/status/generate_command_surface_consistency_reports.py
-          python3 scripts/status/generate_command_family_consistency_reports.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TRUTH-STATUS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATUS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-REGISTRY-FUZZ
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RACE-CAMPAIGN
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRECEDENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-RUN-CORRUPTION-REPEAT-HARNESS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HOSTILE-STATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RESILIENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-RECOVERY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-TRUTH
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PERFORMANCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EXIT-CODE-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-BUILD
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MIGRATION-NOTES
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRIORITY-RANKINGS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-SIMPLIFICATION-PRIORITIES
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLEANUP
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HELP-TREE-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-SIMPLIFICATION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -392,49 +392,49 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --json --no-pretty > artifacts/status/state_doctor_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
-          python3 scripts/status/generate_state_audit_reports.py
-          python3 scripts/status/generate_plugin_migration_reports.py
-          python3 scripts/status/generate_maintainer_control_plane_reports.py
-          python3 scripts/status/generate_dev_cli_script_migration_reports.py
-          python3 scripts/status/generate_dev_cli_rustdoc_reports.py
-          python3 scripts/status/generate_dev_cli_release_reports.py
-          python3 scripts/status/generate_dev_cli_release_truth_bundle.py
-          python3 scripts/status/generate_dev_cli_evidence_reports.py
-          python3 scripts/status/generate_evidence_integrity_reports.py
-          python3 scripts/status/generate_python_sovereignty_reports.py
-          python3 scripts/status/generate_repo_health_reports.py
-          python3 scripts/status/generate_dev_cli_cockpit_reports.py
-          python3 scripts/status/generate_dev_cli_invariants_reports.py
-          python3 scripts/status/generate_dev_cli_parity_consistency_reports.py
-          python3 scripts/status/generate_runtime_package_diagnostics_reports.py
-          python3 scripts/status/generate_dev_cli_state_diagnostics_reports.py
-          python3 scripts/status/generate_dev_cli_route_registry_env_contracts_reports.py
-          python3 scripts/status/generate_dev_cli_repo_docs_scripts_crate_health_reports.py
-          python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
-          python3 scripts/status/generate_dev_cli_resilience_reports.py
-          python3 scripts/status/generate_dev_cli_ownership_report.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPO-HEALTH
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
-          python3 scripts/status/enforce_evidence_integrity_gate.py
-          python3 scripts/status/enforce_python_sovereignty_gate.py
-          python3 scripts/status/enforce_repo_health_gate.py
-          python3 scripts/status/enforce_dev_cli_cockpit_gate.py
-          python3 scripts/status/enforce_dev_cli_invariants_gate.py
-          python3 scripts/status/enforce_dev_cli_parity_consistency_gate.py
-          python3 scripts/status/enforce_runtime_package_diagnostics_gate.py
-          python3 scripts/status/enforce_dev_cli_state_diagnostics_gate.py
-          python3 scripts/status/enforce_dev_cli_route_registry_env_contracts_gate.py
-          python3 scripts/status/enforce_dev_cli_repo_docs_scripts_crate_health_gate.py
-          python3 scripts/status/enforce_dev_cli_stale_artifact_gate.py
-          python3 scripts/status/enforce_dev_cli_resilience_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-EVIDENCE-INTEGRITY-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PYTHON-SOVEREIGNTY-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-REPO-HEALTH-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-COCKPIT-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-INVARIANTS-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-PARITY-CONSISTENCY-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-RUNTIME-PACKAGE-DIAGNOSTICS-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-STATE-DIAGNOSTICS-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-RESILIENCE-GATE
 
       - name: Verify stale-artifact CI injection mode
         shell: bash
         run: |
           set -euo pipefail
-          DEV_CLI_INJECT_STALE_ARTIFACT=1 python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
-          DEV_CLI_ALLOW_INJECTION_DRIFT=1 python3 scripts/status/enforce_dev_cli_stale_artifact_gate.py
-          python3 scripts/status/generate_dev_cli_stale_artifact_reports.py
+          DEV_CLI_INJECT_STALE_ARTIFACT=1 cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
+          DEV_CLI_ALLOW_INJECTION_DRIFT=1 cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
 
       - name: Warn on new script files without justification
         shell: bash
@@ -488,15 +488,15 @@ jobs:
 
       - name: Runtime unity gate
         run: |
-          python3 scripts/status/check_runtime_unity.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-CHECK-RUNTIME-UNITY -- --enforce
 
       - name: Install neutrality gate
         run: |
-          python3 scripts/status/enforce_install_neutrality_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-INSTALL-NEUTRALITY-GATE
 
       - name: Install runtime identity gate
         run: |
-          python3 scripts/status/enforce_install_runtime_identity_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-INSTALL-RUNTIME-IDENTITY-GATE
 
       - name: Binary-vs-bridge parity artifact
         run: |
@@ -512,63 +512,63 @@ jobs:
 
       - name: Cross-surface consistency law gate
         run: |
-          python3 scripts/status/enforce_cross_surface_consistency_law.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW -- --enforce
 
       - name: Command-surface consistency gate
         run: |
-          python3 scripts/status/enforce_command_surface_consistency_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-COMMAND-SURFACE-CONSISTENCY-GATE
 
       - name: Command-family consistency gate
         run: |
-          python3 scripts/status/enforce_command_family_consistency_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-COMMAND-FAMILY-CONSISTENCY-GATE
 
       - name: REPL execution law gate
         run: |
-          python3 scripts/status/enforce_repl_execution_law_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-REPL-EXECUTION-LAW-GATE
 
       - name: REPL hostile-session gate
         run: |
-          python3 scripts/status/enforce_repl_hostile_session_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-REPL-HOSTILE-SESSION-GATE
 
       - name: REPL completion gate
         run: |
-          python3 scripts/status/enforce_repl_completion_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-REPL-COMPLETION-GATE
 
       - name: Python bridge execution gate
         run: |
-          python3 scripts/status/enforce_python_bridge_execution_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PYTHON-BRIDGE-EXECUTION-GATE
 
       - name: Python bridge conversion gate
         run: |
-          python3 scripts/status/enforce_python_bridge_conversion_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PYTHON-BRIDGE-CONVERSION-GATE
 
       - name: Cross-surface state gate
         run: |
-          python3 scripts/status/enforce_cross_surface_state_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CROSS-SURFACE-STATE-GATE
 
       - name: Help tree law gate
         run: |
-          python3 scripts/status/enforce_help_tree_law_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-HELP-TREE-LAW-GATE
 
       - name: Warn REPL-only semantic scope
         run: |
-          python3 scripts/status/warn_repl_only_semantic_scope.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-REPL-ONLY-SEMANTIC-SCOPE
 
       - name: Warn python bridge command-law scope
         run: |
-          python3 scripts/status/warn_python_bridge_command_law_scope.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-PYTHON-BRIDGE-COMMAND-LAW-SCOPE
 
       - name: Warn uncovered cross-surface state scope
         run: |
-          python3 scripts/status/warn_uncovered_cross_surface_state_scope.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-UNCOVERED-CROSS-SURFACE-STATE-SCOPE
 
       - name: Warn uncovered command-family scope
         run: |
-          python3 scripts/status/warn_uncovered_command_family_scope.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-UNCOVERED-COMMAND-FAMILY-SCOPE
 
       - name: Warn diagnostics wording drift
         run: |
-          python3 scripts/status/warn_diagnostics_wording_drift.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-DIAGNOSTICS-WORDING-DRIFT
 
       - name: Command parity matrix artifact
         run: |
@@ -577,9 +577,9 @@ jobs:
 
       - name: Command migration matrix artifact
         run: |
-          python3 scripts/status/generate_command_migration_matrix.py
-          python3 scripts/status/generate_command_surface_inventory.py
-          python3 scripts/status/generate_bridge_wrapper_only_reports.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY
 
       - name: Command parity regression gate
         run: |
@@ -591,215 +591,215 @@ jobs:
 
       - name: Release truth gate
         run: |
-          python3 scripts/status/enforce_release_truth_gates.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-RELEASE-TRUTH-GATES -- --enforce
 
       - name: Kernel invariants gate
         run: |
-          python3 scripts/status/enforce_kernel_invariants_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-KERNEL-INVARIANTS-GATE -- --enforce
 
       - name: Exit-code law gate
         run: |
-          python3 scripts/status/enforce_exit_code_law_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-EXIT-CODE-LAW-GATE -- --enforce
 
       - name: Stream discipline gate
         run: |
-          python3 scripts/status/enforce_stream_discipline_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-STREAM-DISCIPLINE-GATE -- --enforce
 
       - name: Metadata consistency gate
         run: |
-          python3 scripts/status/enforce_metadata_consistency_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-METADATA-CONSISTENCY-GATE -- --enforce
 
       - name: Config deep behavior gate
         run: |
-          python3 scripts/status/enforce_config_deep_behavior_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CONFIG-DEEP-BEHAVIOR-GATE -- --enforce
 
       - name: History deep behavior gate
         run: |
-          python3 scripts/status/enforce_history_deep_behavior_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-HISTORY-DEEP-BEHAVIOR-GATE -- --enforce
 
       - name: Memory deep behavior gate
         run: |
-          python3 scripts/status/enforce_memory_deep_behavior_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-MEMORY-DEEP-BEHAVIOR-GATE -- --enforce
 
       - name: Diagnostics deep behavior gate
         run: |
-          python3 scripts/status/enforce_diagnostics_deep_behavior_gate.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DIAGNOSTICS-DEEP-BEHAVIOR-GATE -- --enforce
 
       - name: Diagnostics trust gate
         run: |
-          python3 scripts/status/enforce_diagnostics_trust_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DIAGNOSTICS-TRUST-GATE
 
       - name: Parser fuzz regression gate
         run: |
-          python3 scripts/status/enforce_parser_fuzz_regression_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PARSER-FUZZ-REGRESSION-GATE
 
       - name: Route-registry fuzz gate
         run: |
-          python3 scripts/status/enforce_route_registry_fuzz_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-ROUTE-REGISTRY-FUZZ-GATE
 
       - name: Config fuzz hardening gate
         run: |
-          python3 scripts/status/enforce_config_fuzz_hardening_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CONFIG-FUZZ-HARDENING-GATE
 
       - name: Config corruption campaign gate
         run: |
-          python3 scripts/status/enforce_config_corruption_campaign_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CONFIG-CORRUPTION-CAMPAIGN-GATE
 
       - name: Plugin-state corruption campaign gate
         run: |
-          python3 scripts/status/enforce_plugin_state_corruption_campaign_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-GATE
 
       - name: State race campaign gate
         run: |
-          python3 scripts/status/enforce_state_race_campaign_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-STATE-RACE-CAMPAIGN-GATE
 
       - name: Adversarial fs-process gate
         run: |
-          python3 scripts/status/enforce_adversarial_fs_process_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-ADVERSARIAL-FS-PROCESS-GATE
 
       - name: Plugin manifest-scaffold fuzz gate
         run: |
-          python3 scripts/status/enforce_plugin_manifest_scaffold_fuzz_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-GATE
 
       - name: Output-bridge fuzz gate
         run: |
-          python3 scripts/status/enforce_output_bridge_fuzz_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-OUTPUT-BRIDGE-FUZZ-GATE
 
       - name: State corruption harness gate
         run: |
-          python3 scripts/status/enforce_state_corruption_harness_gate.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-STATE-CORRUPTION-HARNESS-GATE
 
       - name: Deterministic generation gate
         run: |
-          python3 scripts/status/check_deterministic_generation.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-CHECK-DETERMINISTIC-GENERATION
 
       - name: Release build consistency gate
         run: |
-          python3 scripts/status/check_release_build_consistency.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-CHECK-RELEASE-BUILD-CONSISTENCY
 
       - name: Test quality policy gate
         run: |
-          python3 scripts/status/enforce_test_quality_gates.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-TEST-QUALITY-GATES
 
       - name: Test-first domain gate
         run: |
-          python3 scripts/status/enforce_test_first_domain_gates.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-TEST-FIRST-DOMAIN-GATES -- --enforce
 
       - name: Deep test-first feature gate
         run: |
-          python3 scripts/status/enforce_deep_test_first_feature_gates.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEEP-TEST-FIRST-FEATURE-GATES -- --enforce
 
       - name: Deep-layer category gate
         run: |
-          python3 scripts/status/enforce_deep_layer_test_category_gates.py --enforce
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEEP-LAYER-TEST-CATEGORY-GATES -- --enforce
 
       - name: Config source consistency gate
         run: |
-          python3 scripts/status/enforce_config_source_consistency.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CONFIG-SOURCE-CONSISTENCY
 
       - name: Performance regression gate
         run: |
-          python3 scripts/status/enforce_performance_regression_gates.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PERFORMANCE-REGRESSION-GATES
 
       - name: Priority-plan evidence gate
         run: |
-          python3 scripts/status/enforce_priority_evidence.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PRIORITY-EVIDENCE
 
       - name: Compatibility shim policy gate
         run: |
-          python3 scripts/status/enforce_compatibility_shim_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-COMPATIBILITY-SHIM-POLICY
 
       - name: Route law policy gate
         run: |
-          python3 scripts/status/enforce_route_law_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-ROUTE-LAW-POLICY
 
       - name: Public API policy gate
         run: |
-          python3 scripts/status/enforce_public_api_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PUBLIC-API-POLICY
 
       - name: State law policy gate
         run: |
-          python3 scripts/status/enforce_state_law_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-STATE-LAW-POLICY
 
       - name: Diagnostics law policy gate
         run: |
-          python3 scripts/status/enforce_diagnostics_law_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DIAGNOSTICS-LAW-POLICY
 
       - name: Bridge duplicate law policy gate
         run: |
-          python3 scripts/status/enforce_bridge_duplicate_law_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-BRIDGE-DUPLICATE-LAW-POLICY
 
       - name: Plugin scaffold policy gate
         run: |
-          python3 scripts/status/enforce_plugin_scaffold_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PLUGIN-SCAFFOLD-POLICY
 
       - name: Plugin migration policy gate
         run: |
-          python3 scripts/status/enforce_plugin_migration_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-PLUGIN-MIGRATION-POLICY
 
       - name: Maintainer control-plane policy gate
         run: |
-          python3 scripts/status/enforce_maintainer_control_plane_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-MAINTAINER-CONTROL-PLANE-POLICY
 
       - name: Maintainer automation policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_automation_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-AUTOMATION-POLICY
 
       - name: Dev cli boundary policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_boundary_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-BOUNDARY-POLICY
 
       - name: Dev cli dispatch policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_dispatch_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-DISPATCH-POLICY
 
       - name: Dev cli interface bridge policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_interface_bridge_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-INTERFACE-BRIDGE-POLICY
 
       - name: Runtime dev leakage policy gate
         run: |
-          python3 scripts/status/enforce_runtime_dev_leakage_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-RUNTIME-DEV-LEAKAGE-POLICY
 
       - name: Dev cli script replacement policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_script_replacement_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-SCRIPT-REPLACEMENT-POLICY
 
       - name: Dev cli canonical control-plane policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_canonical_control_plane_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-CANONICAL-CONTROL-PLANE-POLICY
 
       - name: Dev cli ownership policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_ownership_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-OWNERSHIP-POLICY
 
       - name: Rustdoc primary docs policy gate
         run: |
-          python3 scripts/status/enforce_rustdoc_primary_docs_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-RUSTDOC-PRIMARY-DOCS-POLICY
 
       - name: Dev cli release truth bundle freshness gate
         run: |
-          python3 scripts/status/enforce_dev_cli_release_bundle_freshness.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-RELEASE-BUNDLE-FRESHNESS
 
       - name: Dev cli release blocker threshold gate
         run: |
-          python3 scripts/status/enforce_dev_cli_release_blocker_threshold.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-RELEASE-BLOCKER-THRESHOLD
 
       - name: Dev cli release truth policy gate
         run: |
-          python3 scripts/status/enforce_dev_cli_release_truth_policy.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-RELEASE-TRUTH-POLICY
 
       - name: New public API consumer warning
         run: |
-          python3 scripts/status/warn_new_unused_public_api.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-NEW-UNUSED-PUBLIC-API
 
       - name: Uncovered command-surface warning
         run: |
-          python3 scripts/status/warn_uncovered_command_surface_scope.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-WARN-UNCOVERED-COMMAND-SURFACE-SCOPE
 
       - name: Status report freshness gate
         run: |
-          python3 scripts/status/check_status_reports_stale.py
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-CHECK-STATUS-REPORTS-STALE
 
       - name: Upload parity report
         if: ${{ always() }}
