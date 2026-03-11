@@ -123,7 +123,10 @@ pub fn emit_success(
     let value = serde_json::to_value(envelope)?;
     let content = with_trailing_newline(render_value(&value, cfg)?);
 
-    Ok(Some(RenderedOutput { stream: OutputStream::Stdout, content }))
+    Ok(Some(RenderedOutput {
+        stream: OutputStream::Stdout,
+        content,
+    }))
 }
 
 /// Render error envelope to stderr (never suppressed by quiet mode).
@@ -140,5 +143,8 @@ pub fn emit_error(
         }
         _ => with_trailing_newline(render_value(&value, cfg)?),
     };
-    Ok(RenderedOutput { stream: OutputStream::Stderr, content: with_trailing_newline(content) })
+    Ok(RenderedOutput {
+        stream: OutputStream::Stderr,
+        content: with_trailing_newline(content),
+    })
 }
