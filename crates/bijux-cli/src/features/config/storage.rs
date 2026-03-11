@@ -34,7 +34,9 @@ impl ConfigRepository for FileConfigRepository {
                 continue;
             }
             let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
-                return Err(ConfigError::parse(format!("Malformed line {line_no}: {raw_line}")));
+                return Err(ConfigError::parse(format!(
+                    "Malformed line {line_no}: {raw_line}"
+                )));
             };
             let key = normalize_key(raw_key)?;
             let value = decode_quoted_value(raw_value.trim());
@@ -70,7 +72,10 @@ mod tests {
     use super::{ConfigRepository, FileConfigRepository};
 
     fn make_temp_dir(name: &str) -> PathBuf {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
         let path = std::env::temp_dir().join(format!("bijux-storage-{name}-{nanos}"));
         fs::create_dir_all(&path).expect("mkdir");
         path
@@ -83,7 +88,10 @@ mod tests {
         let missing = temp.join("missing.env");
         let loaded = repo.load(&missing).expect("missing treated as empty");
         assert!(loaded.is_empty());
-        assert!(!missing.exists(), "load should not materialize missing file");
+        assert!(
+            !missing.exists(),
+            "load should not materialize missing file"
+        );
 
         let empty = temp.join("empty.env");
         fs::write(&empty, "").expect("write empty");
@@ -113,7 +121,11 @@ mod tests {
         .expect("write dupes");
 
         let loaded = repo.load(&path).expect("parse");
-        assert_eq!(loaded.len(), 2, "duplicate keys should collapse to one entry each");
+        assert_eq!(
+            loaded.len(),
+            2,
+            "duplicate keys should collapse to one entry each"
+        );
         assert_eq!(loaded.get("alpha").map(String::as_str), Some("1"));
         assert_eq!(loaded.get("beta").map(String::as_str), Some("new"));
     }
@@ -140,8 +152,11 @@ mod tests {
         let repo = FileConfigRepository;
         let temp = make_temp_dir("whitespace");
         let path = temp.join("whitespace.env");
-        fs::write(&path, "BIJUXCLI_ALPHA=value   \nBIJUXCLI_BETA=\"quoted value\"   \n")
-            .expect("write");
+        fs::write(
+            &path,
+            "BIJUXCLI_ALPHA=value   \nBIJUXCLI_BETA=\"quoted value\"   \n",
+        )
+        .expect("write");
 
         let loaded = repo.load(&path).expect("parse");
         assert_eq!(loaded.get("alpha").map(String::as_str), Some("value"));
