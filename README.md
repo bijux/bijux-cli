@@ -319,9 +319,13 @@ Bijux quality claims are evidence-backed through generated artifacts and CI gate
 Run locally:
 
 ```bash
-make test
-make test-unit
-make test-night
+make test-py
+make test-unit-py
+make test-nightly-py
+make fmt-rs lint-rs audit-rs test-all-rs
+make build-py
+make publish-py    # requires PYPI_API_TOKEN
+make publish-rs    # dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to publish
 ```
 
 Artifacts:
@@ -332,7 +336,6 @@ Artifacts:
 ## Project Tree
 
 ```text
-api/            OpenAPI schemas
 configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
 makes/          Make modules

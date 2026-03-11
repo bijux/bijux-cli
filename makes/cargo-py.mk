@@ -158,7 +158,7 @@ PYTEST_FLAGS_NOCOV = \
 
 .PHONY: \
 	test-py test-all-py test-unit-py test-e2e-py test-nightly-py test-regression-py test-benchmark-py test-clean-py \
-	test test-all test-unit test-e2e test-nightly test-regression test-benchmark test-clean
+	test test-all test-unit test-e2e test-nightly test-night test-regression test-benchmark test-clean
 
 test-py:
 	@echo "→ Running Python test suite on $(TEST_PATHS)"
@@ -346,6 +346,7 @@ test-all: test-all-py
 test-unit: test-unit-py
 test-e2e: test-e2e-py
 test-nightly: test-nightly-py
+test-night: test-nightly-py
 test-regression: test-regression-py
 test-benchmark: test-benchmark-py
 test-clean: test-clean-py
@@ -583,16 +584,16 @@ GIT_TAG_LATEST      := $(shell git describe --tags --abbrev=0 2>/dev/null | sed 
 
 PYPROJECT_VERSION    = $(call read_pyproject_version)
 
-PKG_VERSION         ?= $(if $(GIT_TAG_EXACT),$(GIT_TAG_EXACT),\
+SBOM_PKG_VERSION     := $(strip $(if $(GIT_TAG_EXACT),$(GIT_TAG_EXACT),\
                            $(if $(PYPROJECT_VERSION),$(PYPROJECT_VERSION),\
-                           $(if $(GIT_TAG_LATEST),$(GIT_TAG_LATEST),0.0.0)))
+                           $(if $(GIT_TAG_LATEST),$(GIT_TAG_LATEST),0.0.0))))
 
 GIT_DESCRIBE        := $(shell git describe --tags --long --dirty --always 2>/dev/null)
-PKG_VERSION_FULL    := $(if $(GIT_TAG_EXACT),$(PKG_VERSION),\
+SBOM_PKG_VERSION_FULL := $(strip $(if $(GIT_TAG_EXACT),$(SBOM_PKG_VERSION),\
                           $(shell echo "$(GIT_DESCRIBE)" \
-                            | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)(-dirty)?$$/+\1.g\2\3/'))
+                            | sed -E 's/^v//; s/-([0-9]+)-g([0-9a-f]+)(-dirty)?$$/+\1.g\2\3/')))
 
-SBOM_VERSION        := $(if $(PKG_VERSION_FULL),$(PKG_VERSION_FULL),$(PKG_VERSION))
+SBOM_VERSION        := $(strip $(if $(SBOM_PKG_VERSION_FULL),$(SBOM_PKG_VERSION_FULL),$(SBOM_PKG_VERSION)))
 
 SBOM_DIR            ?= artifacts/sbom
 SBOM_PROD_REQ       ?= requirements/prod.txt
@@ -712,12 +713,9 @@ TWINE_PASSWORD      ?= $(PYPI_API_TOKEN)
 SKIP_TWINE_CHECK    ?= 0
 SKIP_EXISTING       ?= 1
 
-PKG_VERSION ?= $(shell \
-  echo 'import importlib, importlib.util, pathlib; \
-tl = importlib.import_module("tomllib") if importlib.util.find_spec("tomllib") else importlib.import_module("tomli"); \
-print(tl.loads(pathlib.Path("pyproject.toml").read_bytes())["project"]["version"])' \
-  | $(PY) - 2>/dev/null || echo 0.0.0 \
-)
+PYTHON_PYPROJECT    ?= crates/bijux-cli-python/pyproject.toml
+PKG_VERSION_RAW     := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(PYTHON_PYPROJECT)" 2>/dev/null)
+PKG_VERSION         := $(if $(strip $(PKG_VERSION_RAW)),$(strip $(PKG_VERSION_RAW)),0.0.0)
 
 .PHONY: \
 	publish-py publish-test-py twine-py twine-check-py twine-upload-py twine-upload-test-py verify-test-install-py \
