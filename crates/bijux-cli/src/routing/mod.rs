@@ -2,7 +2,6 @@
 //! Routing graph, parser normalization, and namespace resolution.
 
 pub mod catalog;
-pub mod inventory;
 pub mod parser;
 pub mod registry;
 

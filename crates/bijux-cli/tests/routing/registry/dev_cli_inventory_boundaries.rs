@@ -12,8 +12,8 @@ fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
         "routing module must not expose maintainer report assembly modules"
     );
     assert!(
-        source.contains("pub mod inventory;"),
-        "routing module must keep read-only inventory query module"
+        !source.contains("pub mod inventory;"),
+        "routing module must not expose route inventory query interfaces"
     );
     assert!(
         !source.contains("pub mod query;"),

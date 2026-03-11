@@ -2,6 +2,7 @@
 //! Query interface shape and determinism checks for routing-owned dev bridge data.
 
 use bijux_cli::contracts::contracts_schema_query;
+use bijux_cli::features::diagnostics::{registry_inventory, route_inventory};
 use bijux_cli::routing::registry::RouteRegistry;
 
 #[test]
@@ -23,11 +24,11 @@ fn route_and_registry_queries_are_stable_across_repeated_runs() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("community").expect("register");
 
-    let first_routes = bijux_cli::routing::inventory::route_inventory(&registry);
-    let second_routes = bijux_cli::routing::inventory::route_inventory(&registry);
+    let first_routes = route_inventory(&registry);
+    let second_routes = route_inventory(&registry);
     assert_eq!(first_routes, second_routes);
 
-    let first_registry = bijux_cli::routing::inventory::registry_inventory(&registry);
-    let second_registry = bijux_cli::routing::inventory::registry_inventory(&registry);
+    let first_registry = registry_inventory(&registry);
+    let second_registry = registry_inventory(&registry);
     assert_eq!(first_registry, second_registry);
 }

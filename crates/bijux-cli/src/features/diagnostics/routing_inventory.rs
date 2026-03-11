@@ -2,7 +2,8 @@
 
 use serde::Serialize;
 
-use super::registry::RouteRegistry;
+use crate::contracts::NamespaceMetadata;
+use crate::routing::registry::RouteRegistry;
 
 /// Raw route inventory exposed to maintainer control-plane consumers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -17,7 +18,7 @@ pub struct RouteInventory {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct RegistryInventory {
     /// Namespace metadata rows from the route tree.
-    pub namespaces: Vec<super::NamespaceMetadata>,
+    pub namespaces: Vec<NamespaceMetadata>,
 }
 
 /// Query raw built-in routes and aliases.

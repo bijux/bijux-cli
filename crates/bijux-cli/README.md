@@ -12,7 +12,7 @@ for the Rust runtime.
 - CLI process entrypoint helpers (`src/entrypoint.rs` and `src/bin/bijux-rs.rs`).
 - Execution-kernel primitives and exit mapping (`src/kernel.rs`).
 - Runtime state behavior for config/history/memory/plugin command paths.
-- Runtime query interfaces used by maintainer commands (`src/contracts/query.rs`, `src/routing/inventory.rs`, `src/features/install/query.rs`, and diagnostics query modules).
+- Runtime query interfaces used by maintainer commands (`src/contracts/query.rs`, `src/features/diagnostics/routing_inventory.rs`, `src/features/install/query.rs`, and diagnostics query modules).
 
 ## What This Crate Does Not Own
 
@@ -22,7 +22,7 @@ for the Rust runtime.
 
 ## Module Map
 
-- `src/routing`: command catalog, parser, registry, and read-only routing inventory query.
+- `src/routing`: command catalog, parser, and registry.
 - `src/contracts`: durable command/runtime/plugin/config contracts plus schema helpers and schema inventory query.
 - `src/config`: config domain validation, parsing/serialization, storage, and command service helpers.
 - `src/plugin`: plugin discovery, manifest validation, registry operations, and diagnostics.
