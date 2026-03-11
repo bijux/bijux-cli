@@ -5,7 +5,7 @@
 
 This module defines `QualityArtifactPage`, which implements the
 `StandardArtifactPage` base class to parse and display reports from tools like
-`deptry`, `interrogate`, `REUSE`, and `vulture`.
+`deptry`, `interrogate`, and `vulture`.
 
 Module Constants:
     QUALITY_DIR: The directory where quality artifact logs are stored.
@@ -31,7 +31,6 @@ ORDER = [
     "deptry.log",
     "interrogate.full.txt",
     "interrogate.offenders.txt",
-    "reuse.log",
     "vulture.log",
     "_passed",
 ]
@@ -49,7 +48,6 @@ BLURBS = {
         "Files/symbols missing required docstrings.",
         "Empty or tiny list.",
     ),
-    "reuse.log": ("REUSE compliance (license metadata).", "Compliant with 0 errors."),
     "vulture.log": ("Dead-code finder.", "No actionable dead code."),
     "_passed": ("Suite sentinel.", "Present with OK marker."),
 }
@@ -90,23 +88,6 @@ def _deptry(text: str) -> tuple[int, int, int]:
     return missing, unused, trans
 
 
-def _reuse_status(text: str) -> str | None:
-    """Parses a REUSE log to determine the compliance status.
-
-    Args:
-        text: The raw string content of the REUSE log file.
-
-    Returns:
-        'compliant', 'non-compliant', or None if the status cannot be determined.
-    """
-    low = text.lower()
-    if "not compliant" in low:
-        return "non-compliant"
-    if "compliant" in low:
-        return "compliant"
-    return None
-
-
 def _vulture_items(text: str) -> int:
     """Parses a vulture log to count the number of suspected dead code items.
 
@@ -143,10 +124,9 @@ class QualityArtifactPage(StandardArtifactPage):
     def intro(self) -> str:
         """Returns the introductory text for the quality artifacts page."""
         return (
-            "Reports that guard broader code quality: dependencies, docstring coverage, licensing, and dead code.\n\n"
+            "Reports that guard broader code quality: dependencies, docstring coverage, and dead code.\n\n"
             "- **deptry**: unused / missing / transitive imports\n"
             "- **interrogate**: docstring coverage (full table + offenders)\n"
-            "- **REUSE**: license & SPDX compliance\n"
             "- **vulture**: likely dead code\n"
         )
 
@@ -201,10 +181,6 @@ class QualityArtifactPage(StandardArtifactPage):
         elif label == "interrogate.offenders.txt":
             n = _offenders_count(content)
             extra = f"offenders: {n}"
-        elif label == "reuse.log":
-            status = _reuse_status(content)
-            if status:
-                extra = status
         elif label == "vulture.log":
             extra = f"suspected items: {_vulture_items(content)}"
         elif label == "_passed":
@@ -217,7 +193,6 @@ class QualityArtifactPage(StandardArtifactPage):
             "deptry.log": "Remove unused deps; add direct deps for imported transitive modules.",
             "interrogate.full.txt": "Add concise docstrings where missing; enforce threshold in CI.",
             "interrogate.offenders.txt": "Open listed files and add minimal docstrings.",
-            "reuse.log": "Ensure SPDX headers/REUSE metadata per file; add/maintain `REUSE.toml`.",
             "vulture.log": "Delete true dead code; whitelist false positives.",
             "_passed": "All checks green.",
         }.get(label)

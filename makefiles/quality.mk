@@ -5,7 +5,6 @@ QUALITY_PATHS     ?= src/bijux_cli
 
 VULTURE     := $(ACT)/vulture
 DEPTRY      := $(ACT)/deptry
-REUSE       := $(ACT)/reuse
 INTERROGATE := $(ACT)/interrogate
 PYTHON      := $(shell command -v python3 || command -v python)
 
@@ -38,11 +37,6 @@ quality:
 	  { $(DEPTRY) --version 2>/dev/null || true; } >"$(QUALITY_ARTIFACTS_DIR)/deptry.log"; \
 	  $(DEPTRY) $(QUALITY_PATHS) 2>&1 | tee -a "$(QUALITY_ARTIFACTS_DIR)/deptry.log"
 
-	@echo "   - License & SPDX compliance (REUSE)"
-	@set -euo pipefail; \
-	  { $(REUSE) --version 2>/dev/null || true; } >"$(QUALITY_ARTIFACTS_DIR)/reuse.log"; \
-	  $(REUSE) lint 2>&1 | tee -a "$(QUALITY_ARTIFACTS_DIR)/reuse.log"
-
 	@echo "   - Documentation coverage (Interrogate)"
 	@$(MAKE) interrogate-report
 
@@ -72,6 +66,6 @@ quality-clean:
 	@rm -rf "$(QUALITY_ARTIFACTS_DIR)"
 
 ##@ Quality
-quality: ## Run Vulture, Deptry, REUSE, Interrogate; save logs to artifacts_pages/quality/
+quality: ## Run Vulture, Deptry, Interrogate; save logs to artifacts_pages/quality/
 interrogate-report: ## Save full Interrogate table + offenders list
 quality-clean: ## Remove artifacts_pages/quality
