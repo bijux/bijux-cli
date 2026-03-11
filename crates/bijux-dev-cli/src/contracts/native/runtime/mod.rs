@@ -1,14 +1,19 @@
+mod bridge_and_repl_reports_executor;
 mod catalog;
 mod compatibility_reports_executor;
 mod config_repl_executor;
 mod config_repl_spec;
+mod config_surface_reports_executor;
+mod cross_surface_consistency_executor;
 mod cross_surface_executor;
+mod cross_surface_foundation_executor;
 mod cross_surface_spec;
 mod install_reports_executor;
 mod namespace_install_executor;
 mod namespace_install_spec;
 mod plugin_runtime_reports_executor;
 mod runner;
+mod runtime_law_reports_executor;
 mod runtime_resilience_reports_executor;
 
 pub(crate) use catalog::rows;
