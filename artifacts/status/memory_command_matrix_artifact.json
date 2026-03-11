@@ -1,201 +1,225 @@
 {
   "commands": [
     {
-      "command": "memory",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "complete",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 342,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "command": "memory list",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "complete",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 343,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "command": "memory get",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "partial",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 344,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "command": "memory set",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "partial",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 345,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "command": "memory delete",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "partial",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 346,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "command": "memory clear",
-      "evidence": [
-        "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-        "crates/bijux-cli-bin/tests/memory_parity.rs"
-      ],
-      "status": "partial",
-      "status_model": [
-        "complete",
-        "partial",
-        "shim",
-        "missing"
-      ]
+      "coverage_id": 347,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
+    },
+    {
+      "coverage_id": 348,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
+    },
+    {
+      "coverage_id": 349,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
+    },
+    {
+      "coverage_id": 350,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
+    },
+    {
+      "coverage_id": 351,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
+    },
+    {
+      "coverage_id": 352,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
+    },
+    {
+      "coverage_id": 353,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
+    },
+    {
+      "coverage_id": 354,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
+    },
+    {
+      "coverage_id": 355,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_unwritable_storage_conditions_for_read_and_write_paths"
+    },
+    {
+      "coverage_id": 356,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_config_path_override_does_not_change_home_memory_resolution"
+    },
+    {
+      "coverage_id": 357,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
+    },
+    {
+      "coverage_id": 358,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
+    },
+    {
+      "coverage_id": 359,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_parity_with_python_summary_command"
     }
   ],
-  "generated_at": "2026-03-10T04:54:41.826032+00:00",
-  "generator": "scripts/status/generate_memory_surface_reports.py",
-  "scope": "todo 342-357 memory command matrix",
-  "todo_rows": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 342
+      "coverage_id": 342,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 343
+      "coverage_id": 343,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 344
+      "coverage_id": 344,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 345
+      "coverage_id": 345,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 346
+      "coverage_id": 346,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml",
-      "todo": 347
+      "coverage_id": 347,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_and_list_missing_empty_valid_text_json_yaml"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields",
-      "todo": 348
+      "coverage_id": 348,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields",
-      "todo": 349
+      "coverage_id": 349,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields",
-      "todo": 350
+      "coverage_id": 350,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields",
-      "todo": 351
+      "coverage_id": 351,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_quiet_no_color_and_deterministic_repeated_runs",
-      "todo": 352
+      "coverage_id": 352,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_quiet_no_color_and_deterministic_repeated_runs",
-      "todo": 353
+      "coverage_id": 353,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_quiet_no_color_and_deterministic_repeated_runs",
-      "todo": 354
+      "coverage_id": 354,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_unwritable_storage_conditions_for_read_and_write_paths",
-      "todo": 355
+      "coverage_id": 355,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_unwritable_storage_conditions_for_read_and_write_paths"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_config_path_override_does_not_change_home_memory_resolution",
-      "todo": 356
+      "coverage_id": 356,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_config_path_override_does_not_change_home_memory_resolution"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_quiet_no_color_and_deterministic_repeated_runs",
-      "todo": 357
+      "coverage_id": 357,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_quiet_no_color_and_deterministic_repeated_runs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_command_matrix.rs",
-      "status": "complete",
-      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields",
-      "todo": 358
+      "coverage_id": 358,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_malformed_wrong_type_missing_required_and_extra_fields"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/memory_parity.rs",
-      "status": "complete",
-      "test": "memory_root_parity_with_python_summary_command",
-      "todo": 359
+      "coverage_id": 359,
+      "evidence": "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+      "status": "missing",
+      "test": "memory_root_parity_with_python_summary_command"
     }
-  ]
+  ],
+  "generated_at": "2026-03-11T05:02:23Z",
+  "generator": "bijux-dev-cli",
+  "scope": "memory command matrix"
 }
