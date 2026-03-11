@@ -21,8 +21,8 @@ fn python_bridge_invokes_same_core_entrypoint_as_binary() {
     let root = workspace_root();
     let bindings = fs::read_to_string(root.join("crates/bijux-cli-python/src/bindings.rs"))
         .expect("read python bindings");
-    let bin_main = fs::read_to_string(root.join("crates/bijux-cli/src/bin/bijux.rs"))
-        .expect("read core bin");
+    let bin_main =
+        fs::read_to_string(root.join("crates/bijux-cli/src/bin/bijux.rs")).expect("read core bin");
 
     assert!(bindings.contains("use bijux_cli::interface::cli::dispatch::{run_app, AppRunResult};"));
     assert!(bindings.contains("match run_app(argv)"));

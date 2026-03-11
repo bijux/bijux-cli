@@ -211,9 +211,7 @@ fn history_clear_with_unwritable_parent_fails_stably() {
 fn history_help_and_exit_discipline_for_root_and_clear() {
     let root_help = run(&["history", "--help"]);
     assert_eq!(root_help.status.code(), Some(0));
-    assert!(String::from_utf8(root_help.stdout)
-        .expect("utf-8")
-        .contains("Usage: bijux history"));
+    assert!(String::from_utf8(root_help.stdout).expect("utf-8").contains("Usage: bijux history"));
     assert!(root_help.stderr.is_empty());
 
     let clear_help = run(&["history", "clear", "--help"]);

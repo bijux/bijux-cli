@@ -16,10 +16,8 @@ fn malformed_utf8_argv_is_rejected_without_panic() {
     use std::process::Command;
 
     let bad = OsString::from_vec(vec![0x66, 0x6f, 0x80, 0xff, 0x6f]);
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .arg(bad)
-        .output()
-        .expect("binary should execute");
+    let output =
+        Command::new(env!("CARGO_BIN_EXE_bijux")).arg(bad).output().expect("binary should execute");
 
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());

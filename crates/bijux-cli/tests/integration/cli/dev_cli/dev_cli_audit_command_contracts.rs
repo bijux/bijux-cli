@@ -6,10 +6,8 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> (i32, String, String) {
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should run");
+    let out =
+        Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should run");
     (
         out.status.code().unwrap_or(1),
         String::from_utf8(out.stdout).expect("stdout utf-8"),
