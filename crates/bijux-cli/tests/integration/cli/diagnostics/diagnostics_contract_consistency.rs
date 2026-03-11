@@ -10,7 +10,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn parse_json_stdout(output: &std::process::Output) -> Value {
@@ -21,11 +24,51 @@ fn parse_json_stdout(output: &std::process::Output) -> Value {
 fn diagnostics_json_shape_is_consistent_across_dev_commands() {
     let cases = [
         ["dev", "cli", "doctor", "--format", "json", "--no-pretty"].as_slice(),
-        ["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"].as_slice(),
-        ["dev", "cli", "state-audit", "--format", "json", "--no-pretty"].as_slice(),
-        ["dev", "cli", "plugin-health", "--format", "json", "--no-pretty"].as_slice(),
-        ["dev", "cli", "package-health", "--format", "json", "--no-pretty"].as_slice(),
-        ["dev", "cli", "route-audit", "--format", "json", "--no-pretty"].as_slice(),
+        [
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+        .as_slice(),
+        [
+            "dev",
+            "cli",
+            "state-audit",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+        .as_slice(),
+        [
+            "dev",
+            "cli",
+            "plugin-health",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+        .as_slice(),
+        [
+            "dev",
+            "cli",
+            "package-health",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+        .as_slice(),
+        [
+            "dev",
+            "cli",
+            "route-audit",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+        .as_slice(),
     ];
 
     for args in cases {
@@ -73,6 +116,13 @@ fn diagnostics_exit_codes_follow_usage_runtime_success_contracts() {
     let ok = run(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"]);
     assert_eq!(ok.status.code(), Some(0));
 
-    let usage = run(&["dev", "cli", "not-a-command", "--format", "json", "--no-pretty"]);
+    let usage = run(&[
+        "dev",
+        "cli",
+        "not-a-command",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(usage.status.code(), Some(2));
 }
