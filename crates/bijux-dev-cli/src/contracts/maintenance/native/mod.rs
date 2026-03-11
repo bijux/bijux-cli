@@ -1,7 +1,7 @@
 //! Native status contract inventory and execution logic.
 
-mod catalog;
-mod handlers;
+mod executors;
+mod specs;
 
-pub(crate) use catalog::native_status_contract_rows;
-pub(crate) use handlers::run_native_status_contract;
+pub(crate) use executors::run_native_status_contract;
+pub(crate) use specs::native_status_contract_rows;
