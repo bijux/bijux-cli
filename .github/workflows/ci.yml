@@ -258,102 +258,102 @@ jobs:
       - name: Generate current Rust state artifact
         run: |
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PUBLIC-API
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PUBLIC-API-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CURRENT-RUST-STATE
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TEST-QUALITY-AUDIT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TEST-DOMAIN-VALUE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-LAYER-TEST-COVERAGE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TEST-DOMAIN-VALUE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-LAYER-TEST-COVERAGE-REPORTS
           cargo run -q -p bijux-cli-bin -- dev cli scripts generate --id GEN-STATUS-FLAKY-TEST-LABELS --json --no-pretty > artifacts/status/flaky_generator_run.json
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-REPORT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TRUTH-STATUS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATUS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-TRUTH-STATUS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATUS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-REGISTRY-FUZZ
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RACE-CAMPAIGN
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-REGISTRY-FUZZ-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RACE-CAMPAIGN-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRECEDENCE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-RUN-CORRUPTION-REPEAT-HARNESS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HOSTILE-STATE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RESILIENCE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-RECOVERY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-TRUTH
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PERFORMANCE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EXIT-CODE-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-BUILD
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EXIT-CODE-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-BUILD-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MIGRATION-NOTES
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRIORITY-RANKINGS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-SIMPLIFICATION-PRIORITIES
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLEANUP
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HELP-TREE-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-SIMPLIFICATION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HELP-TREE-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-SIMPLIFICATION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -392,26 +392,26 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --json --no-pretty > artifacts/status/state_doctor_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPO-HEALTH
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPO-HEALTH-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE-REPORTS
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -432,9 +432,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          DEV_CLI_INJECT_STALE_ARTIFACT=1 cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
+          DEV_CLI_INJECT_STALE_ARTIFACT=1 cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS
           DEV_CLI_ALLOW_INJECTION_DRIFT=1 cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS
 
       - name: Warn on new script files without justification
         shell: bash
@@ -579,7 +579,7 @@ jobs:
         run: |
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX
           cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY
-          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY
+          cargo run -q -p bijux-cli --bin bijux -- dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS
 
       - name: Command parity regression gate
         run: |
