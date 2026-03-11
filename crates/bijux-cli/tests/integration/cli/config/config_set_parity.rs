@@ -14,20 +14,14 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-set-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -49,12 +43,7 @@ fn run_with_stdin(args: &[&str], input: &str) -> Output {
         .expect("spawn");
 
     use std::io::Write;
-    child
-        .stdin
-        .as_mut()
-        .expect("stdin")
-        .write_all(input.as_bytes())
-        .expect("write stdin");
+    child.stdin.as_mut().expect("stdin").write_all(input.as_bytes()).expect("write stdin");
 
     child.wait_with_output().expect("wait")
 }
@@ -67,10 +56,7 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .expect("workspace root");
+    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -84,9 +70,7 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut cmd = Command::new(&cli);
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
-        && normalized_args
-            .get(1)
-            .is_some_and(|arg| !arg.starts_with('-'));
+        && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
     if cli == env!("CARGO_BIN_EXE_bijux") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
@@ -110,10 +94,7 @@ fn normalize_snapshot(stdout: String, config_path: &str) -> String {
 fn assert_success_json(out: &Output, context: &str) -> Value {
     assert_eq!(out.status.code(), Some(0), "{context} should succeed");
     assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
-    assert!(
-        !out.stdout.is_empty(),
-        "{context} should emit stdout payload"
-    );
+    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
     serde_json::from_slice(&out.stdout).expect("json payload")
 }
 
@@ -123,16 +104,7 @@ fn config_set_output_snapshots_text_json_yaml() {
     let config_path = temp.join("set.env");
     let path = config_path.to_str().expect("utf-8");
 
-    let text = run(&[
-        "cli",
-        "config",
-        "set",
-        "alpha=1",
-        "--format",
-        "text",
-        "--config-path",
-        path,
-    ]);
+    let text = run(&["cli", "config", "set", "alpha=1", "--format", "text", "--config-path", path]);
     assert!(text.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(text.stdout).expect("utf-8"), path),
@@ -232,9 +204,7 @@ fn config_set_rejects_missing_separator_and_empty_key() {
     assert_eq!(missing_separator_err["status"], "error");
     assert_eq!(missing_separator_err["code"], 2);
     assert!(
-        missing_separator_err["message"]
-            .as_str()
-            .is_some_and(|msg| !msg.trim().is_empty()),
+        missing_separator_err["message"].as_str().is_some_and(|msg| !msg.trim().is_empty()),
         "missing separator error should include a message"
     );
 
@@ -247,9 +217,7 @@ fn config_set_rejects_missing_separator_and_empty_key() {
     assert_eq!(empty_key_err["status"], "error");
     assert_eq!(empty_key_err["code"], 2);
     assert!(
-        empty_key_err["message"]
-            .as_str()
-            .is_some_and(|msg| !msg.trim().is_empty()),
+        empty_key_err["message"].as_str().is_some_and(|msg| !msg.trim().is_empty()),
         "empty key error should include a message"
     );
 }
@@ -316,24 +284,11 @@ fn config_set_stream_routing_and_python_parity() {
     let config_path = temp.join("set.env");
 
     let mut envs = HashMap::new();
-    envs.insert(
-        "BIJUXCLI_CONFIG".to_string(),
-        config_path.display().to_string(),
-    );
+    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
-    let py_ok = run_python(
-        &[
-            "config",
-            "set",
-            "alpha=1",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let py_ok = run_python(&["config", "set", "alpha=1", "--format", "json", "--no-pretty"], &envs);
     let rs_ok = run_with_env(
         &[
             "cli",
@@ -364,17 +319,8 @@ fn config_set_stream_routing_and_python_parity() {
     assert_eq!(py_ok_json["status"], rs_ok_json["status"]);
     assert_eq!(py_ok_json["key"], rs_ok_json["key"]);
 
-    let py_bad = run_python(
-        &[
-            "config",
-            "set",
-            "invalid",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let py_bad =
+        run_python(&["config", "set", "invalid", "--format", "json", "--no-pretty"], &envs);
     let rs_bad = run_with_env(
         &[
             "cli",

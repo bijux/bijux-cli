@@ -25,10 +25,8 @@ fn run(args: &[&str], envs: &[(&str, &str)]) -> Output {
 
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let root = std::env::temp_dir().join(format!(
-        "bijux-hostile-determinism-{name}-{}-{counter}",
-        std::process::id(),
-    ));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-hostile-determinism-{name}-{}-{counter}", std::process::id(),));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -57,10 +55,7 @@ fn setup_python_plugin(root: &Path, plugins_dir: &Path, namespace: &str) {
             "cli",
             "plugins",
             "install",
-            scaffold_dir
-                .join("plugin.manifest.json")
-                .to_str()
-                .expect("utf-8"),
+            scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8"),
         ],
         &envs,
     );
@@ -90,15 +85,7 @@ fn setup_external_plugin(root: &Path, plugins_dir: &Path, namespace: &str, entry
     .expect("write manifest");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let install = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &envs,
-    );
+    let install = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
     assert!(install.status.success());
 }
 
@@ -107,13 +94,7 @@ fn corrupted_config_failure_class_is_stable_across_runs() {
     let root = temp_dir("hostile-state");
     let config = root.join("broken.env");
     fs::write(&config, "BROKEN_LINE\n").expect("write broken config");
-    let args = [
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        config.to_str().expect("utf-8"),
-    ];
+    let args = ["cli", "config", "reload", "--config-path", config.to_str().expect("utf-8")];
 
     let first = run(&args, &[]);
     let second = run(&args, &[]);
@@ -162,14 +143,8 @@ fn malformed_memory_state_recovery_is_stable_across_runs() {
     fs::write(&memory, "{broken").expect("write broken memory");
     let envs = [("HOME", home.to_str().expect("utf-8"))];
 
-    let first = run(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
+    let second = run(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
 
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
@@ -180,13 +155,7 @@ fn malformed_memory_state_recovery_is_stable_across_runs() {
 fn missing_config_file_defaulting_is_stable_across_runs() {
     let root = temp_dir("hostile-state");
     let missing = root.join("missing.env");
-    let args = [
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        missing.to_str().expect("utf-8"),
-    ];
+    let args = ["cli", "config", "reload", "--config-path", missing.to_str().expect("utf-8")];
 
     let first = run(&args, &[]);
     let second = run(&args, &[]);
@@ -199,19 +168,10 @@ fn missing_config_file_defaulting_is_stable_across_runs() {
 fn missing_plugin_directory_empty_behavior_is_stable_across_runs() {
     let root = temp_dir("hostile-state");
     let missing_plugins = root.join("missing-plugins");
-    let envs = [(
-        "BIJUXCLI_PLUGINS_DIR",
-        missing_plugins.to_str().expect("utf-8"),
-    )];
+    let envs = [("BIJUXCLI_PLUGINS_DIR", missing_plugins.to_str().expect("utf-8"))];
 
-    let first = run(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second = run(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
 
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
@@ -228,14 +188,8 @@ fn broken_plugin_does_not_nondeterministically_affect_healthy_output() {
     setup_external_plugin(&root, &plugins_dir, "brokenplug", &missing_entry);
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let first = run(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let second = run(
-        &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second = run(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
 
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
@@ -258,29 +212,11 @@ fn conflicting_plugin_installs_fail_deterministically() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_python_plugin(&root, &plugins_dir, "conflictplug");
 
-    let manifest = root
-        .join("conflictplug_scaffold")
-        .join("plugin.manifest.json");
+    let manifest = root.join("conflictplug_scaffold").join("plugin.manifest.json");
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
 
-    let first = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &envs,
-    );
-    let second = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &envs,
-    );
+    let first = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
+    let second = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
     assert_eq!(first.status.code(), Some(1));
     assert_eq!(second.status.code(), Some(1));
     assert_eq!(first.stderr, second.stderr);
@@ -300,28 +236,8 @@ fn path_shadowing_diagnostics_are_stable_across_runs() {
     let path = joined.to_str().expect("utf-8");
     let envs = [("PATH", path)];
 
-    let first = run(
-        &[
-            "dev",
-            "cli",
-            "runtime-identity",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
-    let second = run(
-        &[
-            "dev",
-            "cli",
-            "runtime-identity",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let first = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
+    let second = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
@@ -340,28 +256,8 @@ fn runtime_identity_output_is_stable_under_same_ambiguous_state() {
     let path_str = path.to_str().expect("utf-8");
 
     let envs = [("PATH", path_str), ("BIJUX_WHEEL_VERSION", "9.9.9")];
-    let first = run(
-        &[
-            "dev",
-            "cli",
-            "runtime-identity",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
-    let second = run(
-        &[
-            "dev",
-            "cli",
-            "runtime-identity",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let first = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
+    let second = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
@@ -423,25 +319,11 @@ fn plugin_doctor_json_is_stable_under_same_corrupted_state() {
     fs::write(plugins_b.join("registry.json"), "{broken-json").expect("write broken b");
 
     let a = run(
-        &[
-            "cli",
-            "plugins",
-            "doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["cli", "plugins", "doctor", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_PLUGINS_DIR", plugins_a.to_str().expect("utf-8"))],
     );
     let b = run(
-        &[
-            "cli",
-            "plugins",
-            "doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["cli", "plugins", "doctor", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_PLUGINS_DIR", plugins_b.to_str().expect("utf-8"))],
     );
     assert_eq!(a.status.code(), Some(0));

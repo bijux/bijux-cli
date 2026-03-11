@@ -30,10 +30,8 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let dir = std::env::temp_dir().join(format!(
-        "bijux-plugin-failure-matrix-{name}-{}-{counter}",
-        std::process::id(),
-    ));
+    let dir = std::env::temp_dir()
+        .join(format!("bijux-plugin-failure-matrix-{name}-{}-{counter}", std::process::id(),));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -61,15 +59,7 @@ fn write_manifest(path: &Path, namespace: &str, entrypoint: &str, min_version: &
 }
 
 fn install_ok(plugins_dir: &Path, manifest: &Path) {
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], plugins_dir);
     assert!(out.status.success(), "install should succeed");
 }
 
@@ -95,15 +85,7 @@ fn simulated_disk_write_failure_during_install() {
     write_manifest(&manifest, "writefail", "plugin:main", "0.1.0");
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
 
     assert_eq!(out.status.code(), Some(1));
@@ -118,12 +100,7 @@ fn simulated_partial_copy_failure_during_install() {
     let missing_manifest = root.join("missing.json");
 
     let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            missing_manifest.to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", missing_manifest.to_str().expect("utf-8")],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));
@@ -145,10 +122,7 @@ fn simulated_registry_write_failure_during_install() {
     write_manifest(&second, "candidate", "plugin:main", "0.1.0");
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &["cli", "plugins", "install", second.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", second.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
 }
@@ -161,15 +135,7 @@ fn simulated_manifest_parse_failure_during_install() {
     let manifest = root.join("bad.json");
     fs::write(&manifest, "{broken-json").expect("write broken");
 
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("manifest parse"));
 }
@@ -182,15 +148,7 @@ fn simulated_compatibility_range_failure_during_install() {
     let manifest = root.join("incompatible.json");
     write_manifest(&manifest, "incompatible", "plugin:main", "9.9.9");
 
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     assert!(!out.stderr.is_empty());
 }
@@ -203,15 +161,7 @@ fn simulated_missing_entrypoint_failure_during_install() {
     let manifest = root.join("missing-entrypoint.json");
     write_manifest(&manifest, "missingentry", "", "0.1.0");
 
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("entrypoint"));
 }
@@ -226,15 +176,7 @@ fn simulated_permission_denied_failure_during_install() {
     write_manifest(&manifest, "deniedplug", "plugin:main", "0.1.0");
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
 
     assert_eq!(out.status.code(), Some(1));
@@ -252,10 +194,7 @@ fn simulated_partial_uninstall_failure() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &["cli", "plugins", "uninstall", "partialuninstall"],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "uninstall", "partialuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
 
     assert_eq!(out.status.code(), Some(1));
@@ -273,10 +212,7 @@ fn simulated_registry_write_failure_during_uninstall() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &["cli", "plugins", "uninstall", "writeuninstall"],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "uninstall", "writeuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
 
     assert_eq!(out.status.code(), Some(1));
@@ -297,11 +233,8 @@ fn simulated_enable_failure_when_plugin_files_missing() {
         serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
             .expect("parse registry");
     registry["plugins"]["enablefail"]["state"] = Value::String("broken".to_string());
-    fs::write(
-        &registry_path,
-        serde_json::to_string_pretty(&registry).expect("serialize registry"),
-    )
-    .expect("write broken state");
+    fs::write(&registry_path, serde_json::to_string_pretty(&registry).expect("serialize registry"))
+        .expect("write broken state");
 
     let out = run(&["cli", "plugins", "enable", "enablefail"], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -334,15 +267,7 @@ fn rollback_proof_install_failure_preserves_existing_plugins() {
     let candidate = root.join("candidate.json");
     write_manifest(&candidate, "candidateproof", "plugin:main", "0.1.0");
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            candidate.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", candidate.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
 
@@ -387,27 +312,13 @@ fn retry_install_after_partial_failure_is_idempotent() {
     write_manifest(&manifest, "retryinstall", "plugin:main", "0.1.0");
 
     chmod_read_only(&plugins_dir);
-    let first = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let first =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(first.status.code(), Some(1));
 
-    let second = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let second =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert!(second.status.success());
 }
 
@@ -423,17 +334,11 @@ fn retry_uninstall_after_partial_failure_is_idempotent() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
-    let first = run(
-        &["cli", "plugins", "uninstall", "retryuninstall"],
-        &plugins_dir,
-    );
+    let first = run(&["cli", "plugins", "uninstall", "retryuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(first.status.code(), Some(1));
 
-    let second = run(
-        &["cli", "plugins", "uninstall", "retryuninstall"],
-        &plugins_dir,
-    );
+    let second = run(&["cli", "plugins", "uninstall", "retryuninstall"], &plugins_dir);
     assert!(second.status.success());
 }
 
@@ -451,10 +356,7 @@ fn failed_install_does_not_leave_claimed_namespace() {
     let failed = root.join("failed.json");
     write_manifest(&failed, "failedns", "plugin:main", "0.1.0");
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &["cli", "plugins", "install", failed.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", failed.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
 
@@ -480,10 +382,7 @@ fn failed_uninstall_does_not_orphan_registry_state_silently() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
-    let out = run(
-        &["cli", "plugins", "uninstall", "orphanproof"],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "uninstall", "orphanproof"], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
 
@@ -515,15 +414,7 @@ fn machine_readable_rollback_diagnostics_are_stable() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let out = run(
-        &[
-            "--format",
-            "json",
-            "--no-pretty",
-            "cli",
-            "plugins",
-            "install",
-            "/missing/manifest.json",
-        ],
+        &["--format", "json", "--no-pretty", "cli", "plugins", "install", "/missing/manifest.json"],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));

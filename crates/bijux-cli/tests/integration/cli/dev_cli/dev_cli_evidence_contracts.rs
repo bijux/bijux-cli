@@ -6,10 +6,7 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(command: &[&str]) -> Value {
@@ -112,18 +109,10 @@ fn evidence_records_have_valid_ids_status_source_and_links() {
             id_has_valid_prefix && id_has_numeric_segment && id_has_suffix,
             "invalid evidence id format: {id}"
         );
+        assert!(allowed_statuses.contains(status), "invalid evidence status: {status}");
+        assert!(!source.trim().is_empty(), "evidence source must be non-empty for id {id}");
         assert!(
-            allowed_statuses.contains(status),
-            "invalid evidence status: {status}"
-        );
-        assert!(
-            !source.trim().is_empty(),
-            "evidence source must be non-empty for id {id}"
-        );
-        assert!(
-            row["artifact_links"]
-                .as_array()
-                .is_some_and(|links| !links.is_empty()),
+            row["artifact_links"].as_array().is_some_and(|links| !links.is_empty()),
             "evidence record must include artifact links for id {id}"
         );
     }
@@ -132,18 +121,12 @@ fn evidence_records_have_valid_ids_status_source_and_links() {
 #[test]
 fn evidence_audit_surfaces_stale_missing_and_orphan_claims() {
     let audit = run_ok_json(&["dev", "cli", "evidence", "audit"]);
-    assert!(
-        audit.get("invalid_ids").is_some(),
-        "audit must expose invalid id list"
-    );
+    assert!(audit.get("invalid_ids").is_some(), "audit must expose invalid id list");
     assert!(
         audit.get("missing_artifact_links").is_some(),
         "audit must expose missing artifact links"
     );
-    assert!(
-        audit.get("orphan_report").is_some(),
-        "audit must expose orphan evidence report"
-    );
+    assert!(audit.get("orphan_report").is_some(), "audit must expose orphan evidence report");
     assert!(
         audit.get("claims_without_evidence_report").is_some(),
         "audit must expose claims-without-evidence report"
@@ -155,11 +138,7 @@ fn evidence_stale_report_is_honest_and_parseable() {
     let stale = run_ok_json(&["dev", "cli", "evidence", "stale"]);
     let count = stale["count"].as_u64().unwrap_or_default();
     let rows = stale["stale"].as_array().cloned().unwrap_or_default();
-    assert_eq!(
-        count as usize,
-        rows.len(),
-        "stale evidence count must match row count"
-    );
+    assert_eq!(count as usize, rows.len(), "stale evidence count must match row count");
 }
 
 #[test]
@@ -185,10 +164,7 @@ fn evidence_exports_reference_known_evidence_ids() {
             .map(ToString::to_string)
             .collect();
         for id in ids {
-            assert!(
-                known_ids.contains(&id),
-                "export references unknown evidence id: {id}"
-            );
+            assert!(known_ids.contains(&id), "export references unknown evidence id: {id}");
         }
     }
 }

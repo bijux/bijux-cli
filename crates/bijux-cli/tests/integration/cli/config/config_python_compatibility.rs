@@ -14,10 +14,7 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-compat-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -37,9 +34,7 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut command = Command::new(&cli);
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
-        && normalized_args
-            .get(1)
-            .is_some_and(|arg| !arg.starts_with('-'));
+        && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
     if cli == env!("CARGO_BIN_EXE_bijux") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
@@ -64,10 +59,7 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .expect("workspace root");
+    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -86,24 +78,12 @@ fn config_set_and_get_match_python_on_exit_and_core_fields() {
     let config_path = temp.join("config.env");
 
     let mut envs = HashMap::new();
-    envs.insert(
-        "BIJUXCLI_CONFIG".to_string(),
-        config_path.display().to_string(),
-    );
+    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
-    let py_set = run_python(
-        &[
-            "config",
-            "set",
-            "alpha=1",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let py_set =
+        run_python(&["config", "set", "alpha=1", "--format", "json", "--no-pretty"], &envs);
     let rs_set = run_with_env(
         env!("CARGO_BIN_EXE_bijux"),
         &[
@@ -130,10 +110,7 @@ fn config_set_and_get_match_python_on_exit_and_core_fields() {
     assert_eq!(py_set_json["key"], rs_set_json["key"]);
     assert_eq!(py_set_json["value"], rs_set_json["value"]);
 
-    let py_get = run_python(
-        &["config", "get", "alpha", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let py_get = run_python(&["config", "get", "alpha", "--format", "json", "--no-pretty"], &envs);
     let rs_get = run_with_env(
         env!("CARGO_BIN_EXE_bijux"),
         &[
@@ -165,24 +142,11 @@ fn config_get_missing_key_matches_python_failure_routing() {
     let config_path = temp.join("config.env");
 
     let mut envs = HashMap::new();
-    envs.insert(
-        "BIJUXCLI_CONFIG".to_string(),
-        config_path.display().to_string(),
-    );
+    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
-    let py = run_python(
-        &[
-            "config",
-            "get",
-            "missing",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let py = run_python(&["config", "get", "missing", "--format", "json", "--no-pretty"], &envs);
     let rs = run_with_env(
         env!("CARGO_BIN_EXE_bijux"),
         &[

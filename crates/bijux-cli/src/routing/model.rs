@@ -5,9 +5,8 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "inspect", "completion", "repl"];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "get", "set", "unset", "clear", "reload", "export", "load", "list",
-];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -100,21 +99,10 @@ pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "command-map",
     "parity-map",
 ];
-pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "rust-owner",
-    "python-owner",
-    "ownership",
-    "drift",
-    "shape",
-    "evidence-map",
-];
-pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] = &[
-    "bridge-status",
-    "surface-status",
-    "sovereignty-audit",
-    "drift",
-    "packaging",
-];
+pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
+pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
+    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
 pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
     &["health", "drift", "inventories", "generated", "stale"];
 pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
@@ -283,11 +271,7 @@ fn build_known_route_paths() -> BTreeSet<String> {
     );
     push_prefixed_routes_to_set(&mut routes, "dev cli rustdoc", DEV_CLI_RUSTDOC_SUBCOMMANDS);
     push_prefixed_routes_to_set(&mut routes, "dev cli release", DEV_CLI_RELEASE_SUBCOMMANDS);
-    push_prefixed_routes_to_set(
-        &mut routes,
-        "dev cli evidence",
-        DEV_CLI_EVIDENCE_SUBCOMMANDS,
-    );
+    push_prefixed_routes_to_set(&mut routes, "dev cli evidence", DEV_CLI_EVIDENCE_SUBCOMMANDS);
     push_prefixed_routes_to_set(&mut routes, "dev cli config", DEV_CLI_CONFIG_SUBCOMMANDS);
     push_prefixed_routes_to_set(&mut routes, "dev cli python", DEV_CLI_PYTHON_SUBCOMMANDS);
     push_prefixed_routes_to_set(&mut routes, "dev cli repo", DEV_CLI_REPO_SUBCOMMANDS);
@@ -318,7 +302,5 @@ pub fn is_known_route(path: &[String]) -> bool {
         .map(|(_, canonical)| *canonical)
         .unwrap_or(key.as_str());
 
-    KNOWN_ROUTE_PATHS
-        .get_or_init(build_known_route_paths)
-        .contains(canonical)
+    KNOWN_ROUTE_PATHS.get_or_init(build_known_route_paths).contains(canonical)
 }

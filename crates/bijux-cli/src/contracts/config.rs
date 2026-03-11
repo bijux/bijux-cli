@@ -23,14 +23,8 @@ impl ConfigKey {
             return Err("config key cannot contain section separator '.'".to_string());
         }
 
-        let normalized = trimmed
-            .strip_prefix("BIJUXCLI_")
-            .unwrap_or(trimmed)
-            .to_ascii_lowercase();
-        if !normalized
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
-        {
+        let normalized = trimmed.strip_prefix("BIJUXCLI_").unwrap_or(trimmed).to_ascii_lowercase();
+        if !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
             return Err("config key must contain only alphanumerics and '_'".to_string());
         }
         Ok(Self(normalized))
@@ -53,10 +47,7 @@ impl ConfigValue {
         if !raw.is_ascii() {
             return Err("config value must be ASCII".to_string());
         }
-        if raw
-            .chars()
-            .any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}'))
-        {
+        if raw.chars().any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}')) {
             return Err("config value cannot contain control characters".to_string());
         }
         Ok(Self(raw.to_string()))
