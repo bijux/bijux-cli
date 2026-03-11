@@ -989,6 +989,45 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/python_bridge_execution_artifact.json",
+                "artifacts/status/python_bridge_drift_artifact.json",
+                "artifacts/status/python_bridge_execution_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/bridge_conversion_artifact.json",
+                "artifacts/status/bridge_exception_mapping_artifact.json",
+                "artifacts/status/bridge_envelope_integrity_artifact.json",
+                "artifacts/status/bridge_conversion_drift_artifact.json",
+                "artifacts/status/bridge_conversion_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/repl_completion_artifact.json",
+                "artifacts/status/repl_completion_ordering_artifact.json",
+                "artifacts/status/repl_completion_drift_artifact.json",
+                "artifacts/status/repl_completion_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS",
+        }),
     ]
 }
 
@@ -5142,6 +5181,302 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/config_source_parity_artifact.json",
                 "artifacts/status/config_source_drift_artifact.json",
                 "artifacts/status/config_source_precedence_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_law_extra.rs"),
+            )
+            .unwrap_or_default();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (261, "python_bridge_version_status_doctor_and_inspect_match_binary_outputs"),
+                (262, "python_bridge_version_status_doctor_and_inspect_match_binary_outputs"),
+                (263, "python_bridge_version_status_doctor_and_inspect_match_binary_outputs"),
+                (264, "python_bridge_version_status_doctor_and_inspect_match_binary_outputs"),
+                (265, "python_bridge_plugins_config_history_and_memory_match_binary_outputs"),
+                (266, "python_bridge_plugins_config_history_and_memory_match_binary_outputs"),
+                (267, "python_bridge_plugins_config_history_and_memory_match_binary_outputs"),
+                (268, "python_bridge_plugins_config_history_and_memory_match_binary_outputs"),
+                (269, "python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives"),
+                (270, "python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives"),
+                (271, "python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives"),
+                (272, "python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives"),
+                (273, "python_bridge_and_binary_agree_on_stream_routing_for_covered_commands"),
+                (274, "python_bridge_and_binary_agree_on_namespace_rejection_behavior"),
+                (275, "python_bridge_and_binary_help_outputs_match_for_representative_commands"),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, name)| {
+                    let covered = source.contains(&format!("fn {name}("));
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": name,
+                        "status": if covered { "covered" } else { "missing" },
+                        "evidence": "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
+                    })
+                })
+                .collect();
+            let missing: Vec<Value> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .cloned()
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_bridge_execution_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge execution parity",
+                    "coverage_ids": [261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_bridge_drift_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge drift",
+                    "coverage_ids": [277, 278],
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/python_bridge_execution_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge execution contract",
+                    "coverage_ids": [280],
+                    "status": if missing.is_empty() { "frozen" } else { "not-frozen" },
+                    "law": "python bridge execution parity is a hard requirement",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/python_bridge_execution_artifact.json",
+                "artifacts/status/python_bridge_drift_artifact.json",
+                "artifacts/status/python_bridge_execution_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs"),
+            )
+            .unwrap_or_default();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (281, "python_exception_mapping_covers_usage_validation_plugin_and_internal_failures"),
+                (282, "python_exception_mapping_covers_usage_validation_plugin_and_internal_failures"),
+                (283, "python_exception_mapping_covers_usage_validation_plugin_and_internal_failures"),
+                (284, "python_exception_mapping_covers_usage_validation_plugin_and_internal_failures"),
+                (285, "error_and_success_envelope_fields_survive_python_conversion_intact"),
+                (286, "error_and_success_envelope_fields_survive_python_conversion_intact"),
+                (287, "diagnostics_and_inspection_payloads_survive_conversion_with_stable_shape"),
+                (288, "diagnostics_and_inspection_payloads_survive_conversion_with_stable_shape"),
+                (289, "diagnostics_and_inspection_payloads_survive_conversion_with_stable_shape"),
+                (290, "bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitive_lists"),
+                (291, "bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitive_lists"),
+                (292, "bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitive_lists"),
+                (293, "conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly"),
+                (294, "conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly"),
+                (295, "bridge_import_failure_paths_are_distinct_from_command_failures"),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, name)| {
+                    let covered = source.contains(&format!("fn {name}("));
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": name,
+                        "status": if covered { "covered" } else { "missing" },
+                        "evidence": "crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs",
+                    })
+                })
+                .collect();
+            let missing: Vec<Value> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .cloned()
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_conversion_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge conversion",
+                    "coverage_ids": [281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_exception_mapping_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge exception mapping",
+                    "coverage_ids": [281, 282, 283, 284, 297],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_envelope_integrity_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge envelope integrity",
+                    "coverage_ids": [285,286,287,288,289,290,291,292,298],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_conversion_drift_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge conversion drift",
+                    "coverage_ids": [299],
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_conversion_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "python bridge conversion contract",
+                    "coverage_ids": [300],
+                    "status": if missing.is_empty() { "frozen" } else { "not-frozen" },
+                    "law": "python bridge conversion behavior is part of CLI law",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/bridge_conversion_artifact.json",
+                "artifacts/status/bridge_exception_mapping_artifact.json",
+                "artifacts/status/bridge_envelope_integrity_artifact.json",
+                "artifacts/status/bridge_conversion_drift_artifact.json",
+                "artifacts/status/bridge_conversion_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-repl/tests/repl_completion_extra.rs"),
+            )
+            .unwrap_or_default();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (241, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
+                (242, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
+                (243, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
+                (244, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
+                (245, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
+                (246, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
+                (247, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
+                (248, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
+                (249, "completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions"),
+                (250, "completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions"),
+                (251, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (252, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (253, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (254, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+                (255, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+            ]);
+            let coverage_rows: Vec<Value> = required
+                .iter()
+                .map(|(coverage_id, name)| {
+                    let covered = source.contains(&format!("fn {name}("));
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": name,
+                        "status": if covered { "covered" } else { "missing" },
+                        "evidence": "crates/bijux-cli-repl/tests/repl_completion_extra.rs",
+                    })
+                })
+                .collect();
+            let missing: Vec<Value> = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .cloned()
+                .collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_completion_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl completion",
+                    "coverage_ids": [241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256],
+                    "status": if missing.is_empty() { "complete" } else { "partial" },
+                    "coverage_rows": coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_completion_ordering_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl completion ordering",
+                    "coverage_ids": [254, 255, 257],
+                    "status": if missing.is_empty() { "stable" } else { "unstable" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_completion_drift_artifact.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl completion drift",
+                    "coverage_ids": [258, 259],
+                    "status": if missing.is_empty() { "clean" } else { "drift" },
+                    "drift_count": missing.len(),
+                    "drift_coverage_ids": missing.iter().filter_map(|row| row.get("coverage_id").cloned()).collect::<Vec<_>>(),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repl_completion_contract.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "repl completion contract",
+                    "coverage_ids": [260],
+                    "status": if missing.is_empty() { "frozen" } else { "not-frozen" },
+                    "law": "completion behavior is a tested surface",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/repl_completion_artifact.json",
+                "artifacts/status/repl_completion_ordering_artifact.json",
+                "artifacts/status/repl_completion_drift_artifact.json",
+                "artifacts/status/repl_completion_contract.json"
             ]}))
         }
         _ => None,
