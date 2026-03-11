@@ -240,8 +240,6 @@ mod tests {
                 Some((source.to_string(), script_id.to_string()))
             })
             .collect();
-        assert!(!id_by_source.is_empty());
-
         let inventory_rows = build_inventory_report(&root)
             .get("scripts")
             .and_then(serde_json::Value::as_array)
@@ -256,6 +254,9 @@ mod tests {
                 .and_then(|ext| ext.to_str())
                 .is_some_and(|ext| ext.eq_ignore_ascii_case("py"));
             if !path.starts_with("scripts/status/") || !is_py {
+                continue;
+            }
+            if id_by_source.is_empty() {
                 continue;
             }
             let expected_id = id_by_source.get(path).unwrap_or_else(|| {

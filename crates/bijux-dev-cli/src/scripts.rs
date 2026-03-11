@@ -271,6 +271,44 @@ fn build_status_scripts_inventory_report(workspace_root: &Path) -> Value {
             "command": format!("bijux dev cli scripts status run --id {script_id}"),
         }));
     }
+    let known_ids = rows
+        .iter()
+        .filter_map(|row| row.get("script_id").and_then(Value::as_str).map(ToString::to_string))
+        .collect::<BTreeSet<_>>();
+    let ci_text =
+        fs::read_to_string(workspace_root.join(".github/workflows/ci.yml")).unwrap_or_default();
+    let mut ci_ids = BTreeSet::<String>::new();
+    for token in ci_text.split_whitespace() {
+        let cleaned = token
+            .trim_matches(|ch: char| !ch.is_ascii_uppercase() && !ch.is_ascii_digit() && ch != '-');
+        if cleaned.starts_with("STATUS-SCRIPT-") {
+            ci_ids.insert(cleaned.to_string());
+        }
+    }
+    for id in ci_ids.difference(&known_ids) {
+        let kind = if id.starts_with("STATUS-SCRIPT-GENERATE-") {
+            "generate"
+        } else if id.starts_with("STATUS-SCRIPT-CHECK-") {
+            "check"
+        } else if id.starts_with("STATUS-SCRIPT-ENFORCE-") {
+            "enforce"
+        } else if id.starts_with("STATUS-SCRIPT-WARN-") {
+            "warn"
+        } else if id.starts_with("STATUS-SCRIPT-RUN-") {
+            "run"
+        } else {
+            "status"
+        };
+        *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
+        rows.push(json!({
+            "script_id": id,
+            "kind": kind,
+            "source_script": Value::Null,
+            "implementation": "rust-compat",
+            "outputs": [],
+            "command": format!("bijux dev cli scripts status run --id {id}"),
+        }));
+    }
     rows.sort_by(|left, right| {
         left.get("script_id")
             .and_then(Value::as_str)
@@ -3408,6 +3446,43 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/stale_report_artifact.json",
                 "artifacts/status/stale_detection_regression_suite.json"
             ]}))
+        }
+        "STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
+            let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
+                .ok()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| workspace_root.to_path_buf());
+            let payload: Value = fs::read_to_string(
+                stale_root.join("artifacts/status/stale_artifact_artifact.json"),
+            )
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .unwrap_or_else(|| json!({}));
+            let summary = payload.get("summary").cloned().unwrap_or_else(|| json!({}));
+            let critical_stale =
+                summary.get("critical_stale_count").and_then(Value::as_i64).unwrap_or(0);
+            let warning_stale =
+                summary.get("warning_stale_count").and_then(Value::as_i64).unwrap_or(0);
+            let injection_mode =
+                summary.get("injection_mode").and_then(Value::as_bool).unwrap_or(false);
+            let allow_injection_drift =
+                std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT").ok().as_deref() == Some("1");
+            if critical_stale > 0 && !(injection_mode && allow_injection_drift) {
+                return Some(json!({
+                    "status":"failed",
+                    "script_id":script_id,
+                    "implementation":"rust",
+                    "error":"critical stale artifacts detected",
+                    "summary": summary
+                }));
+            }
+            Some(json!({
+                "status":"ok",
+                "script_id":script_id,
+                "implementation":"rust",
+                "warnings": warning_stale,
+                "summary": summary
+            }))
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS" => {
             let read_json = |rel_path: &str| -> Value {
@@ -6821,7 +6896,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 for root in &search_roots {
                     for file in collect_files(&root) {
                         let rel = rel(&file, workspace_root);
-                        if !rel.ends_with(".rs") && !rel.ends_with(".py") {
+                        let ext = Path::new(&rel)
+                            .extension()
+                            .and_then(|v| v.to_str())
+                            .unwrap_or_default();
+                        if !ext.eq_ignore_ascii_case("rs") && !ext.eq_ignore_ascii_case("py") {
                             continue;
                         }
                         let content = fs::read_to_string(&file).unwrap_or_default();
@@ -7314,8 +7393,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "status": "complete",
                     "coverage_ids": [536],
                     "runtime_identity": {
-                        "active_binary_selection_is_ambiguous": runtime_identity.get("active_binary_selection_is_ambiguous").cloned().unwrap_or_else(|| json!(false)),
-                        "active_path_is_shadowed": runtime_identity.get("active_path_is_shadowed").cloned().unwrap_or_else(|| json!(false)),
+                        "active_binary_selection_is_ambiguous": runtime_identity.get("active_binary_selection_is_ambiguous").cloned().unwrap_or(json!(false)),
+                        "active_path_is_shadowed": runtime_identity.get("active_path_is_shadowed").cloned().unwrap_or(json!(false)),
                         "diagnostics": runtime_identity.get("diagnostics").cloned().unwrap_or_else(|| json!({})),
                     },
                     "install_source_diagnostics": install_source,
@@ -9483,7 +9562,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "surface": command_surface(command.trim()),
                     "status": status,
                     "owner": item.get("owner").and_then(Value::as_str).unwrap_or(if status == "rust-partial" { "rust-foundation" } else { "" }),
-                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else { "" }),
+                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else if status == "rust-partial" { "parity coverage incomplete" } else { "" }),
                     "reason": item.get("reason").and_then(Value::as_str).unwrap_or(if status == "intentionally-different" { "documented behavior divergence" } else { "" }),
                     "evidence_links": links,
                     "evidence": links,
@@ -9509,7 +9588,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "surface": "repl",
                     "status": status,
                     "owner": item.get("owner").and_then(Value::as_str).unwrap_or(if status == "rust-partial" { "rust-foundation" } else { "" }),
-                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else { "" }),
+                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else if status == "rust-partial" { "parity coverage incomplete" } else { "" }),
                     "reason": item.get("reason").and_then(Value::as_str).unwrap_or(if status == "intentionally-different" { "documented behavior divergence" } else { "" }),
                     "evidence_links": links,
                     "evidence": links,
@@ -9538,7 +9617,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "surface": "python-bridge",
                     "status": status,
                     "owner": item.get("owner").and_then(Value::as_str).unwrap_or(if status == "rust-partial" { "rust-foundation" } else { "" }),
-                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else { "" }),
+                    "blocker": item.get("blocker").and_then(Value::as_str).unwrap_or(if status == "python-only" { "missing rust route or implementation" } else if status == "rust-partial" { "parity coverage incomplete" } else { "" }),
                     "reason": item.get("reason").and_then(Value::as_str).unwrap_or(if status == "intentionally-different" { "documented behavior divergence" } else { "" }),
                     "evidence_links": ["artifacts/parity/python_bridge_parity_matrix.json"],
                     "evidence": ["artifacts/parity/python_bridge_parity_matrix.json"],
@@ -11964,7 +12043,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             ];
             let missing_keys = required_keys
                 .iter()
-                .filter(|k| !inspect.get(**k).is_some())
+                .filter(|k| inspect.get(**k).is_none())
                 .copied()
                 .collect::<Vec<_>>();
             let reserved_inspect = inspect
@@ -12169,17 +12248,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 parity.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
             let partial = parity_rows
                 .iter()
-                .filter_map(|r| {
-                    (r.get("status").and_then(Value::as_str) == Some("partial"))
-                        .then(|| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
-                })
+                .filter(|r| r.get("status").and_then(Value::as_str) == Some("partial"))
+                .map(|r| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                 .collect::<Vec<_>>();
             let missing_cmd = parity_rows
                 .iter()
-                .filter_map(|r| {
-                    (r.get("status").and_then(Value::as_str) == Some("missing"))
-                        .then(|| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
-                })
+                .filter(|r| r.get("status").and_then(Value::as_str) == Some("missing"))
+                .map(|r| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                 .collect::<Vec<_>>();
             let scripts_audit = read("artifacts/status/script_only_behaviors.json");
             let docs_audit = read("artifacts/status/docs_audit.json");
@@ -13389,7 +13464,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             for path in collect_files(&workspace_root.join("scripts")) {
                 let relp = rel(&path, workspace_root);
                 if relp.contains("/__pycache__/")
-                    || relp.ends_with(".pyc")
+                    || Path::new(&relp)
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .is_some_and(|ext| ext.eq_ignore_ascii_case("pyc"))
                     || relp.starts_with("scripts/status/")
                 {
                     continue;

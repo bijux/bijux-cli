@@ -159,8 +159,20 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     let simplification_priorities_text =
         fs::read_to_string(workspace_root.join("artifacts/status/simplification_priorities.txt"))
             .unwrap_or_default();
-    let migration_matrix =
+    let mut migration_matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
+    if let Some(commands) =
+        migration_matrix.get_mut("commands").and_then(serde_json::Value::as_array_mut)
+    {
+        for row in commands {
+            let is_partial = row.get("status").and_then(Value::as_str) == Some("rust-partial");
+            let has_blocker =
+                row.get("blocker").and_then(Value::as_str).is_some_and(|s| !s.trim().is_empty());
+            if is_partial && !has_blocker {
+                row["blocker"] = Value::String("parity coverage incomplete".to_string());
+            }
+        }
+    }
     let migration_rust_partial = read_json_if_exists(
         &workspace_root.join("artifacts/status/command_migration_rust_partial.json"),
     );
