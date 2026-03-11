@@ -64,7 +64,7 @@ def script_inventory() -> list[dict[str, Any]]:
         rel = path.relative_to(ROOT).as_posix()
         if "/__pycache__/" in rel or rel.endswith(".pyc"):
             continue
-        if rel.startswith("scripts/status/") or rel.startswith("scripts/parity/"):
+        if rel.startswith("scripts/status/"):
             continue
         replacement = REPLACEMENTS.get(rel, "")
         out.append(

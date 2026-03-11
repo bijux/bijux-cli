@@ -78,7 +78,22 @@ def main() -> int:
         failures.append("command-tree generation is not deterministic")
 
     # 756: parity artifact generation determinism.
-    parity_gen = ["python3", "scripts/parity/generate_command_parity_matrix.py"]
+    parity_gen = [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "bijux-cli",
+        "--bin",
+        "bijux-rs",
+        "--",
+        "dev",
+        "cli",
+        "parity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]
     p1 = run(parity_gen, env=fixed_env)
     parity_file = PARITY / "command_parity_matrix.json"
     hash1 = stable_json_digest(parity_file) if p1.returncode == 0 and parity_file.exists() else ""
@@ -89,14 +104,14 @@ def main() -> int:
         {
             "name": "parity_artifact_generation",
             "ok": parity_ok,
-            "details": "command_parity_matrix.json hash is stable across repeated generation",
+            "details": "command_parity_matrix.json hash is stable across repeated Rust parity generation",
             "hashes": [hash1, hash2],
         }
     )
     if not parity_ok:
         failures.append("parity artifact generation is not deterministic")
 
-    parity_law_gen = ["python3", "scripts/parity/generate_command_law_reports.py"]
+    parity_law_gen = parity_gen
     l1 = run(parity_law_gen, env=fixed_env)
     law_file = PARITY / "parity_dashboard.json"
     law_hash1 = stable_json_digest(law_file) if l1.returncode == 0 and law_file.exists() else ""
@@ -107,7 +122,7 @@ def main() -> int:
         {
             "name": "parity_dashboard_generation",
             "ok": law_ok,
-            "details": "parity_dashboard.json hash is stable across repeated generation",
+            "details": "parity_dashboard.json hash is stable across repeated Rust parity generation",
             "hashes": [law_hash1, law_hash2],
         }
     )

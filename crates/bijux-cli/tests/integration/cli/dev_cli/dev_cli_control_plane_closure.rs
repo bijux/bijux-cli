@@ -159,7 +159,6 @@ fn script_replacement_suite_tracks_migrated_workflows() {
     );
     let required = [
         "scripts/status/generate_status_reports.py",
-        "scripts/parity/generate_command_law_reports.py",
         "scripts/status/generate_state_audit_reports.py",
         "scripts/status/generate_install_truth_reports.py",
     ];

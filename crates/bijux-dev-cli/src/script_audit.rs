@@ -33,7 +33,7 @@ fn rel_to_root(path: &Path, root: &Path) -> String {
 }
 
 fn classify_script(path: &str) -> &'static str {
-    if path.starts_with("scripts/status/") || path.starts_with("scripts/parity/") {
+    if path.starts_with("scripts/status/") {
         return "replace";
     }
     if path.starts_with("scripts/git-hooks/") || path.starts_with("scripts/docs_builder/") {
@@ -154,7 +154,6 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         },
         "maintainer_script_replacements": [
             {"from": "scripts/status/generate_status_reports.py", "to": "bijux dev cli status"},
-            {"from": "scripts/parity/generate_command_law_reports.py", "to": "bijux dev cli parity"},
             {"from": "scripts/status/generate_route_law_reports.py", "to": "bijux dev cli route-audit"},
             {"from": "scripts/status/generate_state_audit_reports.py", "to": "bijux dev cli state-audit"},
             {"from": "scripts/status/generate_maintainer_control_plane_reports.py", "to": "bijux dev cli script-audit"},

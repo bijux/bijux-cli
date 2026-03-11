@@ -8,7 +8,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MAPPINGS = [
     ("scripts/status/generate_status_reports.py", "bijux dev cli status"),
-    ("scripts/parity/generate_command_law_reports.py", "bijux dev cli parity"),
     ("scripts/status/generate_route_law_reports.py", "bijux dev cli route-audit"),
     ("scripts/status/generate_state_audit_reports.py", "bijux dev cli state-audit"),
     ("scripts/status/generate_maintainer_control_plane_reports.py", "bijux dev cli script-audit"),

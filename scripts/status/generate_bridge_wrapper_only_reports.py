@@ -90,7 +90,7 @@ def main() -> int:
         "proof_tests": test_presence,
         "bridge_vs_binary_parity_artifact": "artifacts/parity/binary_vs_python_bridge_parity_report.json",
         "ci_gates": {
-            "binary_bridge_parity_gate": "scripts/parity/check_binary_bridge_parity_gate.py --enforce",
+            "binary_bridge_parity_gate": "bijux dev cli parity --format json --no-pretty",
             "bridge_duplicate_law_policy_gate": "scripts/status/enforce_bridge_duplicate_law_policy.py",
         },
         "status": "green" if wrapper_only_status else "open",

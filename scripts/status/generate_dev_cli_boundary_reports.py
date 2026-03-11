@@ -153,7 +153,7 @@ def parse_script_replacements() -> list[dict[str, str]]:
 
 
 def classify_script(path: str) -> str:
-    if path.startswith("scripts/status/") or path.startswith("scripts/parity/"):
+    if path.startswith("scripts/status/"):
         return "should-move-to-dev-cli"
     if path.startswith("scripts/git-hooks/") or path.startswith("scripts/docs_builder/"):
         return "keep-as-script"

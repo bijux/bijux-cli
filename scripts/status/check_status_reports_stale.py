@@ -46,7 +46,24 @@ def main() -> int:
     if compatibility_trend.returncode != 0:
         print(compatibility_trend.stderr.strip() or compatibility_trend.stdout.strip())
         return compatibility_trend.returncode
-    parity_law = run(["python3", "scripts/parity/generate_command_law_reports.py"])
+    parity_law = run(
+        [
+            "cargo",
+            "run",
+            "-q",
+            "-p",
+            "bijux-cli",
+            "--bin",
+            "bijux-rs",
+            "--",
+            "dev",
+            "cli",
+            "parity",
+            "--format",
+            "json",
+            "--no-pretty",
+        ]
+    )
     if parity_law.returncode != 0:
         print(parity_law.stderr.strip() or parity_law.stdout.strip())
         return parity_law.returncode

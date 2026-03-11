@@ -71,7 +71,7 @@ def main() -> int:
         "status": "drift-detected" if missing else "clean",
         "drift_count": len(missing),
         "drift_items": missing,
-        "gate": "scripts/parity/check_cross_surface_drift_gate.py --enforce",
+        "gate": "bijux dev cli parity --format json --no-pretty",
     }
 
     contract = {
