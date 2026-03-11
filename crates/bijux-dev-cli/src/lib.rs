@@ -8,7 +8,7 @@
 /// Application building blocks for argument parsing, workspace resolution, and routing.
 pub mod app;
 /// Application-layer command dispatch and runtime query interfaces.
-pub mod application;
+pub mod dispatch;
 /// Stable shared catalogs and contracts used across dev-cli capabilities.
 pub mod catalog;
 /// Maintainer-facing command report modules organized by command intent.
@@ -16,17 +16,15 @@ pub mod commands;
 /// Contract inventories and execution boundaries.
 #[path = "contracts/mod.rs"]
 pub mod contract_engine;
-/// Compatibility aliases for feature-oriented module paths.
-pub mod features;
 /// Reusable technical adapters for filesystem/process/clock concerns.
 pub mod infrastructure;
 /// Status contract inventory and execution services.
 pub mod status_contracts;
 
-pub use application::dispatch;
 pub use catalog::report_envelope as reporting;
 pub use commands::cockpit;
 pub use commands::config;
+pub use commands::control_plane;
 pub use commands::crate_health;
 pub use commands::docs_audit;
 pub use commands::env;
@@ -46,7 +44,6 @@ pub use commands::maintenance_audit;
 pub use commands::state_audit;
 pub use commands::status;
 pub use contract_engine::maintenance as maintenance;
-pub use features::control_plane;
 
 pub use catalog::command_registry::{
     command_registry, DevCliCommand, DevCliCommandGroup, DevCliCommandMetadata, ReportContext,
