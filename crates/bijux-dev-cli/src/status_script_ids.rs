@@ -62,7 +62,7 @@ mod tests {
     use super::{status_script_id, status_script_kind};
 
     #[test]
-    fn status_script_id_is_stable_for_generate_reports() {
+    fn status_script_id_is_stable_for_generate_shape() {
         let path = "scripts/status/generate_state_audit_reports.py";
         assert_eq!(status_script_kind(path), Some("generate"));
         assert_eq!(
