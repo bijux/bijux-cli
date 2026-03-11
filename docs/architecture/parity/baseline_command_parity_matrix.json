@@ -981,7 +981,7 @@
     }
   ],
   "generated_at": "2026-03-09T22:48:17.574899+00:00",
-  "generator": "scripts/parity/generate_command_parity_matrix.py",
+  "generator": "crates/bijux-dev-cli/src/parity.rs::ensure_command_matrix",
   "groups": {
     "cli": [
       {
