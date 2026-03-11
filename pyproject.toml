@@ -137,18 +137,14 @@ include = [
   "CHANGELOG.md",
   "LICENSE",
   "LICENSE",
-  "src/bijux_cli/py.typed",
 ]
 
 [tool.hatch.version]
 source = "vcs"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/bijux_cli"]
+packages = ["crates/bijux-cli-python/python/bijux_cli_py"]
 zip-safe = false
-
-[tool.hatch.build.targets.wheel.package-data]
-"bijux_cli" = ["py.typed"]
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
 content-type = "text/markdown"
@@ -166,7 +162,7 @@ ignore = ["DEP002", "DEP003"]
 # --8<-- [start:interrogate]
 [tool.interrogate]
 fail-under = 98
-exclude = ["src/bijux_cli/core/di.py"]
+exclude = []
 color = true
 # --8<-- [end:interrogate]
 

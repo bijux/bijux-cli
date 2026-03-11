@@ -1,6 +1,6 @@
 # Security Configuration (no SBOM here; SBOM is handled in sbom.mk)
 
-SECURITY_PATHS           ?= src/bijux_cli
+SECURITY_PATHS           ?= crates/bijux-cli-python/python/bijux_cli_py
 BANDIT                   ?= $(if $(ACT),$(ACT)/bandit,bandit)
 PIP_AUDIT                ?= $(if $(ACT),$(ACT)/pip-audit,pip-audit)
 VENV_PYTHON              ?= $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV)/bin/python,python)

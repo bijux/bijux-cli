@@ -1,7 +1,7 @@
 # Test Configuration — zero root pollution (pytest runs from artifacts_pages/test)
 
-TEST_PATHS            ?= tests
-TEST_PATHS_UNIT       ?= tests/unit
+TEST_PATHS            ?= crates/bijux-cli-python/tests/python
+TEST_PATHS_UNIT       ?= crates/bijux-cli-python/tests/python
 TEST_PATHS_E2E        ?= tests/e2e
 TEST_PATHS_NIGHTLY    ?= tests/nightly
 TEST_PATHS_REGRESSION ?= tests/regression
@@ -41,7 +41,7 @@ TEST_PATHS_E2E_ABS    := $(abspath $(TEST_PATHS_E2E))
 TEST_PATHS_NIGHTLY_ABS := $(abspath $(TEST_PATHS_NIGHTLY))
 TEST_PATHS_REGRESSION_ABS := $(abspath $(TEST_PATHS_REGRESSION))
 TEST_PATHS_BENCHMARK_ABS := $(abspath $(TEST_PATHS_BENCHMARK))
-SRC_ABS               := $(abspath src)
+SRC_ABS               := $(abspath crates/bijux-cli-python/python)
 JUNIT_XML_ABS         = $(abspath $(JUNIT_XML))
 TMP_DIR_ABS           := $(abspath $(TMP_DIR))
 HYPOTHESIS_DB_ABS     := $(abspath $(HYPOTHESIS_DB_DIR))
@@ -128,7 +128,7 @@ test-unit:
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_UNIT_ABS)" -m "unit and not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_UNIT_ABS)" -m "not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	else \
 	  echo "   • no $(TEST_PATHS_UNIT); nothing to run"; \
 	fi

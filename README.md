@@ -338,7 +338,7 @@ docs/           Documentation (MkDocs)
 makes/          Make modules
 templates/      Plugin templates (plugins-py, plugins-rs)
 crates/         Rust workspace crates (runtime, maintainer CLI, python bridge)
-tests/          All test layers
+crates/*/tests/ Crate-local test suites
 ```
 
 ---

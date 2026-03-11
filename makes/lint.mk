@@ -7,7 +7,7 @@ PYDOCSTYLE  := $(ACT)/pydocstyle
 RADON       := $(ACT)/radon
 
 # Targets & dirs
-LINT_DIRS           ?= src/bijux_cli tests
+LINT_DIRS           ?= crates/bijux-cli-python/python/bijux_cli_py crates/bijux-cli-python/tests/python
 LINT_ARTIFACTS_DIR  ?= artifacts/lint
 
 # Tool caches inside artifacts_pages/lint

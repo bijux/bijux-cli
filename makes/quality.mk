@@ -1,7 +1,7 @@
 # Quality Configuration (evidence → artifacts_pages/quality)
 
-INTERROGATE_PATHS ?= src/bijux_cli
-QUALITY_PATHS     ?= src/bijux_cli
+INTERROGATE_PATHS ?= crates/bijux-cli-python/python/bijux_cli_py
+QUALITY_PATHS     ?= crates/bijux-cli-python/python/bijux_cli_py
 
 VULTURE     := $(ACT)/vulture
 DEPTRY      := $(ACT)/deptry

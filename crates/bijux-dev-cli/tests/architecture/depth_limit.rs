@@ -72,6 +72,8 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
 
     assert!(!workspace_root.join("scripts").exists());
     assert!(!workspace_root.join("packages").exists());
+    assert!(!workspace_root.join("src").exists());
+    assert!(!workspace_root.join("tests").exists());
 
     let mut rs_files = Vec::<PathBuf>::new();
     collect_rs_files(&crate_root.join("src"), &mut rs_files);
