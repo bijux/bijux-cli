@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli env [OPTIONS]
+Usage: bijux dev cli env [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

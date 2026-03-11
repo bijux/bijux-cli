@@ -1,4 +1,4 @@
-Usage: bijux-rs cli plugins inspect [OPTIONS]
+Usage: bijux cli plugins inspect [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

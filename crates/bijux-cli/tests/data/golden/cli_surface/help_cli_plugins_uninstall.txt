@@ -1,4 +1,4 @@
-Usage: bijux-rs cli plugins uninstall [OPTIONS] [namespace]
+Usage: bijux cli plugins uninstall [OPTIONS] [namespace]
 
 Arguments:
   [namespace]  

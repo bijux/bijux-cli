@@ -1,4 +1,4 @@
-Usage: bijux-rs dev [OPTIONS] [COMMAND]
+Usage: bijux dev [OPTIONS] [COMMAND]
 
 Commands:
   cli   

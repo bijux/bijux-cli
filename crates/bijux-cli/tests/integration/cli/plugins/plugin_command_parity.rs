@@ -30,7 +30,7 @@ fn run(args: &[&str]) -> (i32, String, String) {
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> (i32, String, String) {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_bijux"));
     command.args(args);
     for (key, value) in envs {
         command.env(key, value);

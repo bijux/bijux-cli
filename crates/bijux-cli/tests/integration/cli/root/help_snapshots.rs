@@ -11,7 +11,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run_help(args: &[&str]) -> String {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .output()
         .expect("binary should execute");
@@ -20,7 +20,7 @@ fn run_help(args: &[&str]) -> String {
 }
 
 fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -182,7 +182,7 @@ fn nested_help_and_unknown_command_diagnostics_are_stable() {
     assert!(nested.contains("Usage:"));
     assert!(nested.contains("status"));
 
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["stattus", "--format", "json", "--no-pretty"])
         .output()
         .expect("binary should execute");

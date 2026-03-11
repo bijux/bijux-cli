@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli contracts [OPTIONS]
+Usage: bijux dev cli contracts [OPTIONS]
 
 Options:
       --all                 

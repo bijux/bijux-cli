@@ -21,11 +21,11 @@ fn make_temp_dir(name: &str) -> PathBuf {
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -47,7 +47,7 @@ fn python_cli() -> String {
         return legacy.display().to_string();
     }
 
-    env!("CARGO_BIN_EXE_bijux-rs").to_string()
+    env!("CARGO_BIN_EXE_bijux").to_string()
 }
 
 fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
@@ -56,7 +56,7 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
         && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
-    if cli == env!("CARGO_BIN_EXE_bijux-rs") && needs_cli_prefix {
+    if cli == env!("CARGO_BIN_EXE_bijux") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
             if let Some(config_path) = envs.get("BIJUXCLI_CONFIG") {

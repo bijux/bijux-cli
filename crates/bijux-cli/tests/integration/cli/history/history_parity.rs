@@ -21,7 +21,7 @@ fn make_temp_dir(name: &str) -> PathBuf {
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -43,7 +43,7 @@ fn python_cli() -> String {
         return legacy.display().to_string();
     }
 
-    env!("CARGO_BIN_EXE_bijux-rs").to_string()
+    env!("CARGO_BIN_EXE_bijux").to_string()
 }
 
 fn parse_json(bytes: &[u8]) -> Value {

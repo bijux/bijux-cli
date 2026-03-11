@@ -1,4 +1,4 @@
-Usage: bijux-rs cli paths [OPTIONS]
+Usage: bijux cli paths [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

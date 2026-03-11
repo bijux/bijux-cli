@@ -53,7 +53,7 @@ fn run_case(path: &Path) {
     }
 
     let run_once = || {
-        Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        Command::new(env!("CARGO_BIN_EXE_bijux"))
             .args(&expanded)
             .env("BIJUXCLI_CONFIG_PATH", &config)
             .env("BIJUXCLI_PLUGINS_DIR", &plugins)

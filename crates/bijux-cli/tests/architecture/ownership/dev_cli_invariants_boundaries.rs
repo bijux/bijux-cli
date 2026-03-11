@@ -116,7 +116,7 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
         .expect("read core dispatch source"),
     );
     let bin_source = strip_comments_and_strings(
-        &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bin/bijux-rs.rs"))
+        &std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bin/bijux.rs"))
             .expect("read core bin source"),
     );
 

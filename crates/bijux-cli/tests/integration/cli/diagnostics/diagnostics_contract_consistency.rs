@@ -10,7 +10,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn parse_json_stdout(output: &std::process::Output) -> Value {

@@ -7,7 +7,7 @@ use std::{collections::BTreeMap, fs, path::Path};
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {

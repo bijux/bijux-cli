@@ -1,4 +1,4 @@
-Usage: bijux-rs cli plugins install [OPTIONS] [manifest]
+Usage: bijux cli plugins install [OPTIONS] [manifest]
 
 Arguments:
   [manifest]  

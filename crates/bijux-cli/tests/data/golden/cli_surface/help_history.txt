@@ -1,4 +1,4 @@
-Usage: bijux-rs history [OPTIONS] [COMMAND]
+Usage: bijux history [OPTIONS] [COMMAND]
 
 Commands:
   clear  

@@ -1,4 +1,4 @@
-Usage: bijux-rs audit [OPTIONS]
+Usage: bijux audit [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

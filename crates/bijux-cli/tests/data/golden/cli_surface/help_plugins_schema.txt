@@ -1,4 +1,4 @@
-Usage: bijux-rs plugins schema [OPTIONS]
+Usage: bijux plugins schema [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

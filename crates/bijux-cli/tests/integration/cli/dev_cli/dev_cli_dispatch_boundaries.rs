@@ -4,8 +4,8 @@
 #[test]
 fn main_entrypoint_stays_thin_and_route_agnostic() {
     let source =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bin/bijux-rs.rs"))
-            .expect("read bijux-rs.rs");
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/bin/bijux.rs"))
+            .expect("read bijux.rs");
 
     assert!(
         source.contains("bijux_cli::bootstrap::run::run_cli_from_env"),

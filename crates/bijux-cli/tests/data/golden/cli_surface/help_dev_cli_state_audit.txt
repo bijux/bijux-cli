@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli state-audit [OPTIONS]
+Usage: bijux dev cli state-audit [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

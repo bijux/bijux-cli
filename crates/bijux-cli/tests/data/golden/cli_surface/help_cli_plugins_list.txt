@@ -1,4 +1,4 @@
-Usage: bijux-rs cli plugins list [OPTIONS]
+Usage: bijux cli plugins list [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

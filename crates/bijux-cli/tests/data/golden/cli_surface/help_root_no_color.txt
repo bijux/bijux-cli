@@ -1,4 +1,4 @@
-Usage: bijux-rs [OPTIONS] [COMMAND]
+Usage: bijux [OPTIONS] [COMMAND]
 
 Commands:
   cli         

@@ -1,4 +1,4 @@
-Usage: bijux-rs cli config get [OPTIONS] [key]
+Usage: bijux cli config get [OPTIONS] [key]
 
 Arguments:
   [key]  

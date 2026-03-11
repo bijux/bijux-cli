@@ -43,7 +43,7 @@ fn run_case(case_file: &Path) {
     fs::write(&history, json["history_text"].as_str().unwrap_or_default()).expect("write history");
     fs::write(&memory, json["memory_text"].as_str().unwrap_or_default()).expect("write memory");
 
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .env("HOME", &home)
         .env("BIJUXCLI_PLUGINS_DIR", &plugins)

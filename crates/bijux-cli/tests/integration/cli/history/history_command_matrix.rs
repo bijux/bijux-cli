@@ -13,11 +13,11 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -213,14 +213,14 @@ fn history_help_and_exit_discipline_for_root_and_clear() {
     assert_eq!(root_help.status.code(), Some(0));
     assert!(String::from_utf8(root_help.stdout)
         .expect("utf-8")
-        .contains("Usage: bijux-rs history"));
+        .contains("Usage: bijux history"));
     assert!(root_help.stderr.is_empty());
 
     let clear_help = run(&["history", "clear", "--help"]);
     assert_eq!(clear_help.status.code(), Some(0));
     assert!(String::from_utf8(clear_help.stdout)
         .expect("utf-8")
-        .contains("Usage: bijux-rs history clear"));
+        .contains("Usage: bijux history clear"));
     assert!(clear_help.stderr.is_empty());
 
     let malformed = run(&["history", "--unknown-flag"]);

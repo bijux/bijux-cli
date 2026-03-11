@@ -1,4 +1,4 @@
-Usage: bijux-rs sleep [OPTIONS] [duration]
+Usage: bijux sleep [OPTIONS] [duration]
 
 Arguments:
   [duration]  

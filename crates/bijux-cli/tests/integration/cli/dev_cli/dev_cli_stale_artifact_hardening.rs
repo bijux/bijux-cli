@@ -46,7 +46,7 @@ fn seeded_artifact_root(prefix: &str) -> std::path::PathBuf {
 }
 
 fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(["dev", "cli", "maintenance", "status", "run", "--id", GENERATOR_ID])
         .current_dir(workspace_root())
         .env("DEV_CLI_STALE_ARTIFACT_ROOT", root)
@@ -70,7 +70,7 @@ fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value 
 }
 
 fn run_gate(root: &Path, allow_injection_drift: bool) -> std::process::Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(["dev", "cli", "maintenance", "status", "run", "--id", GATE_ID])
         .current_dir(workspace_root())
         .env("DEV_CLI_STALE_ARTIFACT_ROOT", root);

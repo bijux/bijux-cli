@@ -35,7 +35,7 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
         && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
-    if cli == env!("CARGO_BIN_EXE_bijux-rs") && needs_cli_prefix {
+    if cli == env!("CARGO_BIN_EXE_bijux") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
             if let Some(config_path) = envs.get("BIJUXCLI_CONFIG") {
@@ -65,7 +65,7 @@ fn python_cli() -> String {
         return legacy.display().to_string();
     }
 
-    env!("CARGO_BIN_EXE_bijux-rs").to_string()
+    env!("CARGO_BIN_EXE_bijux").to_string()
 }
 
 fn parse_json(bytes: &[u8]) -> Value {
@@ -85,7 +85,7 @@ fn config_set_and_get_match_python_on_exit_and_core_fields() {
     let py_set =
         run_python(&["config", "set", "alpha=1", "--format", "json", "--no-pretty"], &envs);
     let rs_set = run_with_env(
-        env!("CARGO_BIN_EXE_bijux-rs"),
+        env!("CARGO_BIN_EXE_bijux"),
         &[
             "cli",
             "config",
@@ -112,7 +112,7 @@ fn config_set_and_get_match_python_on_exit_and_core_fields() {
 
     let py_get = run_python(&["config", "get", "alpha", "--format", "json", "--no-pretty"], &envs);
     let rs_get = run_with_env(
-        env!("CARGO_BIN_EXE_bijux-rs"),
+        env!("CARGO_BIN_EXE_bijux"),
         &[
             "cli",
             "config",
@@ -148,7 +148,7 @@ fn config_get_missing_key_matches_python_failure_routing() {
 
     let py = run_python(&["config", "get", "missing", "--format", "json", "--no-pretty"], &envs);
     let rs = run_with_env(
-        env!("CARGO_BIN_EXE_bijux-rs"),
+        env!("CARGO_BIN_EXE_bijux"),
         &[
             "cli",
             "config",

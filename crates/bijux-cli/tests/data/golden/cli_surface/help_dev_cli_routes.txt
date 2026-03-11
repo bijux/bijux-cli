@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli routes [OPTIONS]
+Usage: bijux dev cli routes [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

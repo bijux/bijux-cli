@@ -71,7 +71,7 @@ fn temp_dir(name: &str) -> PathBuf {
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -89,7 +89,7 @@ fn seed_for(domain: Domain) -> Vec<u8> {
         Domain::History => b"status\ndoctor\n".to_vec(),
         Domain::Memory => b"{\"alpha\":{\"value\":\"1\"},\"beta\":{\"value\":\"2\"}}".to_vec(),
         Domain::InstallMetadata => {
-            b"{\"install\":{\"channel\":\"cargo\",\"binary\":\"bijux-rs\",\"version\":\"0.0.0\"}}"
+            b"{\"install\":{\"channel\":\"cargo\",\"binary\":\"bijux\",\"version\":\"0.0.0\"}}"
                 .to_vec()
         }
     }

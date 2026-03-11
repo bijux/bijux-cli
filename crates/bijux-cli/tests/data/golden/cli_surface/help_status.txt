@@ -1,4 +1,4 @@
-Usage: bijux-rs status [OPTIONS]
+Usage: bijux status [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

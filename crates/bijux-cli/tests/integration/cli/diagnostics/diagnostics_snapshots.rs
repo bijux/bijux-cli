@@ -14,7 +14,7 @@ use thiserror as _;
 
 fn run_stdout(args: &[&str]) -> String {
     let home = snapshot_home();
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .env("HOME", &home)
         .output()
@@ -125,7 +125,7 @@ fn state_diagnostics_no_color_snapshots_match() {
 
     for (args, expected) in cases {
         let home = snapshot_home();
-        let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
             .args(args)
             .env("HOME", &home)
             .env("NO_COLOR", "1")

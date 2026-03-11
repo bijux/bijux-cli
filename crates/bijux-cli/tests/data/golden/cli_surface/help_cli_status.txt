@@ -1,4 +1,4 @@
-Usage: bijux-rs cli status [OPTIONS]
+Usage: bijux cli status [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

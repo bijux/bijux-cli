@@ -16,7 +16,7 @@ fn tmp_dir(name: &str) -> PathBuf {
 }
 
 fn run(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (key, value) in envs {
         cmd.env(key, value);

@@ -27,7 +27,7 @@ fn temp_dir(name: &str) -> PathBuf {
 fn run_bin(args: &[&str]) -> io::Result<Output> {
     let mut last_err: Option<io::Error> = None;
     for _ in 0..3 {
-        match Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output() {
+        match Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output() {
             Ok(output) => return Ok(output),
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
                 last_err = Some(err);
@@ -40,7 +40,7 @@ fn run_bin(args: &[&str]) -> io::Result<Output> {
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);

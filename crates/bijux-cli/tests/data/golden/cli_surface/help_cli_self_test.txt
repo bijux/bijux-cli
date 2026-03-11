@@ -1,4 +1,4 @@
-Usage: bijux-rs cli self-test [OPTIONS]
+Usage: bijux cli self-test [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

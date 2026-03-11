@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli state-doctor [OPTIONS]
+Usage: bijux dev cli state-doctor [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

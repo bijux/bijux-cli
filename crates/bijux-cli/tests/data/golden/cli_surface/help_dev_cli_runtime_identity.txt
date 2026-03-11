@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli runtime-identity [OPTIONS]
+Usage: bijux dev cli runtime-identity [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

@@ -1,4 +1,4 @@
-Usage: bijux-rs plugins explain [OPTIONS] [plugin]
+Usage: bijux plugins explain [OPTIONS] [plugin]
 
 Arguments:
   [plugin]  

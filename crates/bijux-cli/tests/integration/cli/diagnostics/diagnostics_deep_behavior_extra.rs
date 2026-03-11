@@ -14,11 +14,11 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (key, value) in envs {
         cmd.env(key, value);
@@ -59,12 +59,12 @@ fn doctor_json_and_text_are_stable_with_no_color_mode() {
     assert_eq!(json_second.status.code(), Some(0));
     assert_eq!(json_first.stdout, json_second.stdout);
 
-    let mut text_cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut text_cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     text_cmd.args(["doctor", "--format", "text"]);
     text_cmd.env("NO_COLOR", "1");
     let text_first = text_cmd.output().expect("doctor text no color");
 
-    let mut text_cmd_again = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut text_cmd_again = Command::new(env!("CARGO_BIN_EXE_bijux"));
     text_cmd_again.args(["doctor", "--format", "text"]);
     text_cmd_again.env("NO_COLOR", "1");
     let text_second = text_cmd_again.output().expect("doctor text no color");
@@ -186,7 +186,7 @@ fn state_doctor_and_plugin_health_match_corruption_harness_findings() {
     assert_eq!(state_json["doctor"]["status"], "degraded");
     assert!(!issues.is_empty());
 
-    let mut plugin_health_cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut plugin_health_cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     plugin_health_cmd.args(["dev", "cli", "plugin-health", "--format", "json", "--no-pretty"]);
     plugin_health_cmd.env("BIJUXCLI_PLUGINS_DIR", &plugins_dir);
     let plugin_health = plugin_health_cmd.output().expect("plugin health");

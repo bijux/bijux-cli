@@ -100,7 +100,7 @@ fn strip_comments_and_strings(source: &str) -> String {
 #[test]
 fn bin_entrypoint_stays_free_of_config_business_logic() {
     let src_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let bin_rs = src_root.join("bin/bijux-rs.rs");
+    let bin_rs = src_root.join("bin/bijux.rs");
     let cleaned = strip_comments_and_strings(&read(&bin_rs));
 
     for forbidden in [

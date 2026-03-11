@@ -22,7 +22,7 @@ fn temp_dir(label: &str) -> PathBuf {
 }
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("execute")
 }
 
 fn run_json_ok(args: &[&str]) -> Value {

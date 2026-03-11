@@ -66,7 +66,7 @@ fn run_case(path: &Path) {
         fs::write(plugins.join("registry.json"), v).expect("write registry");
     }
 
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(&case.command)
         .env("HOME", &home)
         .env("BIJUXCLI_PLUGINS_DIR", &plugins)

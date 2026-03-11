@@ -1,4 +1,4 @@
-Usage: bijux-rs cli plugins scaffold [OPTIONS] [kind] [namespace]
+Usage: bijux cli plugins scaffold [OPTIONS] [kind] [namespace]
 
 Arguments:
   [kind]       

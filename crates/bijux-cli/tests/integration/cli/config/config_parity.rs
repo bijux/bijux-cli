@@ -20,7 +20,7 @@ fn make_temp_dir(name: &str) -> PathBuf {
 }
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn config_get_uses_env_variable_override_for_config_path() {
     let config_path = temp.join("custom.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["cli", "config", "get", "alpha"])
         .env("BIJUXCLI_CONFIG", config_path.display().to_string())
         .output()
@@ -49,7 +49,7 @@ fn config_get_prefers_runtime_env_key_over_file_value() {
     let config_path = temp.join("custom.env");
     fs::write(&config_path, "BIJUXCLI_SAMPLE=file\n").expect("write config");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["cli", "config", "get", "sample"])
         .env("BIJUXCLI_CONFIG", config_path.display().to_string())
         .env("BIJUXCLI_SAMPLE", "env")
@@ -72,7 +72,7 @@ fn config_flag_override_takes_precedence_over_env_path() {
     fs::write(&env_path, "BIJUXCLI_ALPHA=env\n").expect("write env path");
     fs::write(&flag_path, "BIJUXCLI_ALPHA=flag\n").expect("write flag path");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args([
             "cli",
             "config",

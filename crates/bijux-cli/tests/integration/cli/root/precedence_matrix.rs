@@ -12,11 +12,11 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -225,7 +225,7 @@ fn help_fast_path_honors_safe_output_policy() {
     let out = run(&["--quiet", "--help"]);
     assert_eq!(out.status.code(), Some(0));
     let stdout = String::from_utf8(out.stdout).expect("utf-8");
-    assert!(stdout.contains("Usage: bijux-rs"));
+    assert!(stdout.contains("Usage: bijux"));
     assert!(out.stderr.is_empty());
 }
 

@@ -13,7 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn parse_json(bytes: &[u8]) -> Value {

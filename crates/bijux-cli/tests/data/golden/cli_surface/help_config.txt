@@ -1,4 +1,4 @@
-Usage: bijux-rs config [OPTIONS] [COMMAND]
+Usage: bijux config [OPTIONS] [COMMAND]
 
 Commands:
   list    

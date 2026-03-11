@@ -53,7 +53,7 @@ fn temp_dir(name: &str) -> PathBuf {
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn mutate_config(seed: &str, mutator: Mutator, rng: &mut Lcg) -> String {

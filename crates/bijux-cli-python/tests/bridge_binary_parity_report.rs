@@ -35,8 +35,7 @@ fn resolve_bijux_binary() -> PathBuf {
     let target_root = std::env::var_os("CARGO_TARGET_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("artifacts").join("rust").join("target"));
-    let bin_path =
-        target_root.join("debug").join(format!("bijux-rs{}", std::env::consts::EXE_SUFFIX));
+    let bin_path = target_root.join("debug").join(format!("bijux{}", std::env::consts::EXE_SUFFIX));
     if bin_path.exists() {
         return bin_path;
     }
@@ -45,8 +44,8 @@ fn resolve_bijux_binary() -> PathBuf {
         .current_dir(&root)
         .args(["build", "-q", "-p", "bijux-cli"])
         .status()
-        .expect("build bijux-rs binary");
-    assert!(status.success(), "failed to build bijux-rs binary");
+        .expect("build bijux binary");
+    assert!(status.success(), "failed to build bijux binary");
     bin_path
 }
 

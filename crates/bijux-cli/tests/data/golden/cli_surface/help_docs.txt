@@ -1,4 +1,4 @@
-Usage: bijux-rs docs [OPTIONS]
+Usage: bijux docs [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

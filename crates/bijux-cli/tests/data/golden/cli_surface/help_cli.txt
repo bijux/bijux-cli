@@ -1,4 +1,4 @@
-Usage: bijux-rs cli [OPTIONS] [COMMAND]
+Usage: bijux cli [OPTIONS] [COMMAND]
 
 Commands:
   status     

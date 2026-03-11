@@ -11,11 +11,11 @@ use shlex as _;
 use thiserror as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], env: &[(&str, &str)]) -> std::process::Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (key, value) in env {
         cmd.env(key, value);
@@ -74,7 +74,7 @@ fn failure_output_routes_to_stderr_and_not_stdout() {
 
 #[test]
 fn bin_and_core_outputs_match_for_same_argv() {
-    let argv = vec!["bijux-rs".to_string(), "cli".to_string(), "status".to_string()];
+    let argv = vec!["bijux".to_string(), "cli".to_string(), "status".to_string()];
     let core =
         bijux_cli::interface::cli::dispatch::run_app(&argv).expect("core run_app should succeed");
 
@@ -82,6 +82,15 @@ fn bin_and_core_outputs_match_for_same_argv() {
     assert_eq!(out.status.code(), Some(core.exit_code));
     assert_eq!(String::from_utf8_lossy(&out.stdout), core.stdout);
     assert_eq!(String::from_utf8_lossy(&out.stderr), core.stderr);
+}
+
+#[test]
+fn compatibility_alias_binary_still_executes() {
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .arg("version")
+        .output()
+        .expect("compatibility alias binary should execute");
+    assert!(out.status.success(), "legacy alias must remain functional during deprecation window");
 }
 
 #[test]
@@ -185,7 +194,7 @@ fn invalid_utf8_argv_returns_usage_error() {
     use std::os::unix::ffi::OsStringExt;
 
     let invalid = std::ffi::OsString::from_vec(vec![0x66, 0x80, 0x67]);
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .arg(invalid)
         .output()
         .expect("binary should execute");
@@ -201,7 +210,7 @@ fn invalid_utf8_argv_returns_usage_error() {
 fn ctrl_c_exits_safely_on_interactive_repl_process() {
     use std::os::unix::process::ExitStatusExt;
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .arg("repl")
         .spawn()
         .expect("repl process should start");

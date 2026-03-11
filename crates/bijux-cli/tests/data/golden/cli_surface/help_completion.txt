@@ -1,4 +1,4 @@
-Usage: bijux-rs completion [OPTIONS]
+Usage: bijux completion [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

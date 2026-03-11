@@ -1,4 +1,4 @@
-Usage: bijux-rs inspect [OPTIONS]
+Usage: bijux inspect [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

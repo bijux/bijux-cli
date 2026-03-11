@@ -13,7 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[String], plugins_dir: &Path) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .env("BIJUXCLI_PLUGINS_DIR", plugins_dir)
         .output()

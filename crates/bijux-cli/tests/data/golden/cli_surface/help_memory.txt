@@ -1,4 +1,4 @@
-Usage: bijux-rs memory [OPTIONS] [COMMAND]
+Usage: bijux memory [OPTIONS] [COMMAND]
 
 Commands:
   list    

@@ -1,4 +1,4 @@
-Usage: bijux-rs repl [OPTIONS]
+Usage: bijux repl [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

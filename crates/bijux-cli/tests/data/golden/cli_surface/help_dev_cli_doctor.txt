@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli doctor [OPTIONS]
+Usage: bijux dev cli doctor [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

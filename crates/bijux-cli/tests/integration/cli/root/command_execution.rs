@@ -11,7 +11,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> String {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .output()
         .expect("binary should execute");
@@ -22,11 +22,11 @@ fn run(args: &[&str]) -> String {
 }
 
 fn run_raw(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], key: &str, value: &str) -> String {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .env(key, value)
         .output()
@@ -217,7 +217,7 @@ fn executes_dev_cli_namespace_commands() {
 
 #[test]
 fn known_runtime_tool_surface_returns_install_hint_when_binary_is_missing() {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["rag", "status"])
         .env("PATH", "")
         .output()
@@ -233,7 +233,7 @@ fn known_runtime_tool_surface_returns_install_hint_when_binary_is_missing() {
 
 #[test]
 fn known_dev_tool_surface_returns_install_hint_when_binary_is_missing() {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["dev", "rag", "status"])
         .env("PATH", "")
         .output()

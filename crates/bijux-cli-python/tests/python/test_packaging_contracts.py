@@ -26,7 +26,7 @@ def _runtime_binary() -> str:
     if override:
         return override
 
-    for name in ("bijux-rs", "bijux"):
+    for name in ("bijux", "bijux-rs"):
         resolved = shutil.which(name)
         if resolved:
             return resolved

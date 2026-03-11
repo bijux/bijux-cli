@@ -1,4 +1,4 @@
-Usage: bijux-rs dev cli registry [OPTIONS]
+Usage: bijux dev cli registry [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     

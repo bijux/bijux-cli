@@ -48,7 +48,7 @@ fn run_case(case_file: &Path) {
     }
 
     let run_once =
-        || Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(&expanded).output().expect("run case");
+        || Command::new(env!("CARGO_BIN_EXE_bijux")).args(&expanded).output().expect("run case");
 
     let first = run_once();
     let second = run_once();

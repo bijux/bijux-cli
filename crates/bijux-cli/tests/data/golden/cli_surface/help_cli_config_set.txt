@@ -1,4 +1,4 @@
-Usage: bijux-rs cli config set [OPTIONS] [pair]
+Usage: bijux cli config set [OPTIONS] [pair]
 
 Arguments:
   [pair]  

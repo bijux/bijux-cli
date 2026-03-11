@@ -20,7 +20,7 @@ fn temp_dir(name: &str) -> PathBuf {
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(args);
     for (k, v) in envs {
         cmd.env(k, v);
@@ -220,7 +220,7 @@ fn interrupted_process_behavior_is_normalized_for_interactive_entrypoint() {
     use std::os::unix::process::ExitStatusExt;
     use std::time::Duration;
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["sleep", "5"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())

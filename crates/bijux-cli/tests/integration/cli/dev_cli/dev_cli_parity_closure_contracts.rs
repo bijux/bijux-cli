@@ -6,7 +6,7 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(command: &[&str]) -> Value {
@@ -185,7 +185,7 @@ fn parity_output_handles_corrupted_optional_state_without_crashing() {
     std::fs::create_dir_all(&root).expect("mkdir");
     let config = root.join("config.env");
     std::fs::write(&config, "BROKEN=\0\n").expect("write");
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
     cmd.args(["dev", "cli", "parity", "--format", "json", "--no-pretty"]);
     cmd.env("BIJUX_CONFIG_PATH", config.to_string_lossy().to_string());
     let out = cmd.output().expect("run");

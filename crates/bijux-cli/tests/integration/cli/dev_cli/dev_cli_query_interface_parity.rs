@@ -12,7 +12,7 @@ use bijux_cli::routing::registry::RouteRegistry;
 use serde_json::Value;
 
 fn run_ok_json(args: &[&str]) -> Value {
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .output()
         .expect("binary should execute");
@@ -21,7 +21,7 @@ fn run_ok_json(args: &[&str]) -> Value {
 }
 
 fn run_ok_json_with_env(args: &[&str], envs: &[(&str, String)]) -> Value {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_bijux"));
     command.args(args);
     for (key, value) in envs {
         command.env(key, value);

@@ -20,7 +20,7 @@ fn temp_home(label: &str) -> PathBuf {
 }
 
 fn run_with_home(args: &[&str], home: &PathBuf) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
         .env("HOME", home)
         .output()
@@ -48,7 +48,7 @@ fn plugins_root_and_info_are_routed_and_return_success() {
 
 #[test]
 fn history_clear_has_help_and_success_exit_code() {
-    let help = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+    let help = Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(["history", "clear", "--help"])
         .output()
         .expect("binary should execute");
