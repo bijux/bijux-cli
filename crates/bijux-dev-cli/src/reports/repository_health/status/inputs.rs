@@ -7,7 +7,10 @@ use serde_json::{Map, Value};
 use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
 
 const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
-    ("root_commands", "artifacts/status/status_root_commands.json"),
+    (
+        "root_commands",
+        "artifacts/status/status_root_commands.json",
+    ),
     (
         "root_command_remaining_inventory",
         "artifacts/status/root_command_remaining_inventory.json",
@@ -24,7 +27,10 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "root_command_closure_set",
         "artifacts/status/root_command_closure_set.json",
     ),
-    ("cli_subcommands", "artifacts/status/status_cli_subcommands.json"),
+    (
+        "cli_subcommands",
+        "artifacts/status/status_cli_subcommands.json",
+    ),
     (
         "dev_cli_subcommands",
         "artifacts/status/status_dev_cli_subcommands.json",
@@ -65,7 +71,10 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "cli_dev_command_closure_report",
         "artifacts/status/cli_dev_command_closure_report.json",
     ),
-    ("plugin_commands", "artifacts/status/status_plugin_commands.json"),
+    (
+        "plugin_commands",
+        "artifacts/status/status_plugin_commands.json",
+    ),
     (
         "repl_parity_coverage",
         "artifacts/status/status_repl_parity_coverage.json",
@@ -82,12 +91,18 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "state_behavior_coverage",
         "artifacts/status/status_state_behavior_coverage.json",
     ),
-    ("state_paths_report", "artifacts/status/status_state_paths_report.json"),
+    (
+        "state_paths_report",
+        "artifacts/status/status_state_paths_report.json",
+    ),
     (
         "state_corruption_health_report",
         "artifacts/status/status_state_corruption_health_report.json",
     ),
-    ("state_migration_status", "artifacts/status/state_migration_status.json"),
+    (
+        "state_migration_status",
+        "artifacts/status/state_migration_status.json",
+    ),
     (
         "unified_state_behavior_report",
         "artifacts/status/unified_state_behavior_report.json",
@@ -112,8 +127,14 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "unified_state_audit_payload",
         "artifacts/status/unified_state_audit_payload.json",
     ),
-    ("snapshot_coverage", "artifacts/status/status_snapshot_coverage.json"),
-    ("stream_coverage", "artifacts/status/status_stream_coverage.json"),
+    (
+        "snapshot_coverage",
+        "artifacts/status/status_snapshot_coverage.json",
+    ),
+    (
+        "stream_coverage",
+        "artifacts/status/status_stream_coverage.json",
+    ),
     (
         "exit_code_coverage",
         "artifacts/status/status_exit_code_coverage.json",
@@ -375,8 +396,10 @@ fn normalize_migration_matrix(matrix: &mut Value) {
     if let Some(commands) = matrix.get_mut("commands").and_then(Value::as_array_mut) {
         for row in commands {
             let is_partial = row.get("status").and_then(Value::as_str) == Some("rust-partial");
-            let has_blocker =
-                row.get("blocker").and_then(Value::as_str).is_some_and(|s| !s.trim().is_empty());
+            let has_blocker = row
+                .get("blocker")
+                .and_then(Value::as_str)
+                .is_some_and(|s| !s.trim().is_empty());
             if is_partial && !has_blocker {
                 row["blocker"] = Value::String("parity coverage incomplete".to_string());
             }
@@ -391,22 +414,32 @@ pub fn load_status_inputs(workspace_root: &Path) -> StatusInputs {
     reports.extend(load_text_entries(workspace_root, REPORT_TEXT_ITEMS));
 
     let mut command_migration = load_json_entries(workspace_root, COMMAND_MIGRATION_JSON_ITEMS);
-    command_migration.extend(load_text_entries(workspace_root, COMMAND_MIGRATION_TEXT_ITEMS));
+    command_migration.extend(load_text_entries(
+        workspace_root,
+        COMMAND_MIGRATION_TEXT_ITEMS,
+    ));
 
-    let mut matrix = read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
+    let mut matrix =
+        read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
     normalize_migration_matrix(&mut matrix);
     command_migration.insert("matrix".to_string(), matrix);
 
     StatusInputs {
-        state: read_json_if_exists(&workspace_root.join("artifacts/status/current_rust_state.json")),
+        state: read_json_if_exists(
+            &workspace_root.join("artifacts/status/current_rust_state.json"),
+        ),
         parity: read_json_if_exists(
             &workspace_root.join("artifacts/parity/rust_python_parity_report.json"),
         ),
         status_report: read_json_if_exists(&workspace_root.join("artifacts/status/status.json")),
         reports,
         command_migration,
-        priority_plan: read_json_if_exists(&workspace_root.join("artifacts/status/priority_plan.json")),
-        priority_plan_text: read_text_if_exists(&workspace_root.join("artifacts/status/priority_plan.txt")),
+        priority_plan: read_json_if_exists(
+            &workspace_root.join("artifacts/status/priority_plan.json"),
+        ),
+        priority_plan_text: read_text_if_exists(
+            &workspace_root.join("artifacts/status/priority_plan.txt"),
+        ),
         simplification_priorities: read_json_if_exists(
             &workspace_root.join("artifacts/status/simplification_priorities.json"),
         ),
