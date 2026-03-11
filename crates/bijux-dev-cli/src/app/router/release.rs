@@ -1,10 +1,9 @@
-use anyhow::Result;
 use serde_json::Value;
 
 use crate::app::workspace::workspace_root;
 use crate::reports::release as dev_release;
 
-pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
+pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
     let payload = match normalized_path {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "status" => {
             dev_release::build_status_report(&workspace_root())
@@ -46,8 +45,8 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         {
             dev_release::build_compatibility_leftovers_report(&workspace_root())
         }
-        _ => return Ok(None),
+        _ => return None,
     };
 
-    Ok(Some(payload))
+    Some(payload)
 }

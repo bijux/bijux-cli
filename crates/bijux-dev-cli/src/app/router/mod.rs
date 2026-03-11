@@ -44,22 +44,22 @@ pub fn try_handle(
     argv: &[String],
     runtime: &dyn RuntimeQueryProvider,
 ) -> Result<Option<Value>> {
-    if let Some(payload) = root::try_handle(normalized_path, argv, runtime)? {
+    if let Some(payload) = root::try_handle(normalized_path, argv, runtime) {
         return Ok(Some(payload));
     }
     if let Some(payload) = maintenance::try_handle(normalized_path, argv)? {
         return Ok(Some(payload));
     }
-    if let Some(payload) = rustdoc::try_handle(normalized_path)? {
+    if let Some(payload) = rustdoc::try_handle(normalized_path) {
         return Ok(Some(payload));
     }
-    if let Some(payload) = release::try_handle(normalized_path)? {
+    if let Some(payload) = release::try_handle(normalized_path) {
         return Ok(Some(payload));
     }
     if let Some(payload) = evidence::try_handle(normalized_path, argv)? {
         return Ok(Some(payload));
     }
-    if let Some(payload) = config_python_repo::try_handle(normalized_path)? {
+    if let Some(payload) = config_python_repo::try_handle(normalized_path) {
         return Ok(Some(payload));
     }
     Ok(None)

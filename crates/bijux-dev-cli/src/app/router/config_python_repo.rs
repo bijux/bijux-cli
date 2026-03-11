@@ -1,10 +1,9 @@
-use anyhow::Result;
 use serde_json::Value;
 
 use crate::app::workspace::workspace_root;
 use crate::reports::{config as dev_config, python as dev_python, repo as dev_repo};
 
-pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
+pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
     let payload = match normalized_path {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "rust-owner" => {
             dev_config::build_rust_owner_report(&workspace_root())
@@ -54,8 +53,8 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "stale" => {
             dev_repo::build_stale_report(&workspace_root())
         }
-        _ => return Ok(None),
+        _ => return None,
     };
 
-    Ok(Some(payload))
+    Some(payload)
 }

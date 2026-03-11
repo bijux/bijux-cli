@@ -8,10 +8,7 @@ use std::{fs, path::PathBuf};
 fn report_platform_and_status_contract_namespaces_exist() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(crate_root.join("src/reports").is_dir());
-    assert!(
-        !crate_root.join("src/domains").exists(),
-        "legacy domains module must be removed"
-    );
+    assert!(!crate_root.join("src/domains").exists(), "legacy domains module must be removed");
     assert!(crate_root.join("src/platform").is_dir());
     assert!(crate_root.join("src/status_contracts").is_dir());
 }
@@ -104,11 +101,7 @@ fn native_contract_modules_use_suite_layout() {
     let native_dir = crate_root.join("src/contracts/native");
     for suite in ["control_plane", "runtime", "resilience", "quality"] {
         let suite_dir = native_dir.join(suite);
-        assert!(
-            suite_dir.is_dir(),
-            "missing suite directory {}",
-            suite_dir.display()
-        );
+        assert!(suite_dir.is_dir(), "missing suite directory {}", suite_dir.display());
         assert!(
             suite_dir.join("mod.rs").is_file(),
             "missing suite module file {}",
@@ -131,7 +124,7 @@ fn native_contract_modules_use_suite_layout() {
     let mut violations = Vec::new();
 
     for path in files {
-        if path.extension().map_or(true, |ext| ext != "rs") {
+        if path.extension().is_none_or(|ext| ext != "rs") {
             continue;
         }
         let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
@@ -282,16 +275,8 @@ fn allowlists_are_centralized_under_configs_as_toml() {
     let automation_allowlist = workspace_root.join("configs/allowlists/automation.toml");
     let public_api_allowlist = workspace_root.join("configs/allowlists/public_api.toml");
 
-    assert!(
-        automation_allowlist.exists(),
-        "missing {}",
-        automation_allowlist.display()
-    );
-    assert!(
-        public_api_allowlist.exists(),
-        "missing {}",
-        public_api_allowlist.display()
-    );
+    assert!(automation_allowlist.exists(), "missing {}", automation_allowlist.display());
+    assert!(public_api_allowlist.exists(), "missing {}", public_api_allowlist.display());
 
     let automation_text = fs::read_to_string(&automation_allowlist).expect("read automation");
     let public_api_text = fs::read_to_string(&public_api_allowlist).expect("read public api");
@@ -301,13 +286,7 @@ fn allowlists_are_centralized_under_configs_as_toml() {
     toml::from_str::<toml::Value>(&public_api_text)
         .expect("public api allowlist must be valid toml");
 
-    assert!(!workspace_root
-        .join(".github/maintenance_additions_allowlist.txt")
-        .exists());
-    assert!(!workspace_root
-        .join(".github/root_maintenance_additions_allowlist.txt")
-        .exists());
-    assert!(!workspace_root
-        .join(".github/public_api_allowlist.txt")
-        .exists());
+    assert!(!workspace_root.join(".github/maintenance_additions_allowlist.txt").exists());
+    assert!(!workspace_root.join(".github/root_maintenance_additions_allowlist.txt").exists());
+    assert!(!workspace_root.join(".github/public_api_allowlist.txt").exists());
 }

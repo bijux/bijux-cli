@@ -1,10 +1,9 @@
-use anyhow::Result;
 use serde_json::Value;
 
 use crate::app::workspace::workspace_root;
 use crate::reports::rustdoc as dev_rustdoc;
 
-pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
+pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
     let payload = match normalized_path {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "audit" => {
             dev_rustdoc::build_audit_report(&workspace_root())
@@ -37,8 +36,8 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Result<Option<Value>> {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "python-link-proof" => {
             dev_rustdoc::build_python_link_proof_report(&workspace_root())
         }
-        _ => return Ok(None),
+        _ => return None,
     };
 
-    Ok(Some(payload))
+    Some(payload)
 }

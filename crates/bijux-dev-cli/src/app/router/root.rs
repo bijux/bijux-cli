@@ -1,6 +1,5 @@
 use std::fs;
 
-use anyhow::Result;
 use serde_json::Value;
 
 use crate::app::args::{command_has_flag, command_option_value};
@@ -23,7 +22,7 @@ pub(super) fn try_handle(
     normalized_path: &[String],
     argv: &[String],
     runtime: &dyn RuntimeQueryProvider,
-) -> Result<Option<Value>> {
+) -> Option<Value> {
     let payload = match normalized_path {
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             let context = routing_context();
@@ -152,17 +151,14 @@ pub(super) fn try_handle(
         [a, b, c] if a == "dev" && b == "cli" && c == "runtime-identity" => {
             dev_runtime_identity::build_report(runtime.runtime_identity_input())
         }
-        _ => return Ok(None),
+        _ => return None,
     };
 
-    Ok(Some(payload))
+    Some(payload)
 }
 
 fn routing_context() -> ReportContext {
-    ReportContext {
-        generated_at: String::new(),
-        data_source: "bijux-cli::routing".to_string(),
-    }
+    ReportContext { generated_at: String::new(), data_source: "bijux-cli::routing".to_string() }
 }
 
 fn markdown_docs() -> Vec<String> {
@@ -178,10 +174,7 @@ fn snapshot_fixtures() -> Vec<String> {
     let root = workspace_root();
     collect_files_recursive(&root.join("crates"))
         .into_iter()
-        .filter(|p| {
-            p.to_string_lossy()
-                .contains("tests/data/golden/cli_surface/")
-        })
+        .filter(|p| p.to_string_lossy().contains("tests/data/golden/cli_surface/"))
         .map(|p| relative_to_root(&p, &root))
         .collect()
 }
