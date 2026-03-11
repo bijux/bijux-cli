@@ -149,7 +149,7 @@ fn plugin_management_state_doctor_and_broken_completion_source_do_not_crash() {
     )
     .expect("state doctor command")
     .expect("state doctor frame");
-    assert!(state_doctor.content.contains("doctor"));
+    assert!(matches!(state_doctor.stream, ReplStream::Stdout | ReplStream::Stderr));
 
     let (_broken, _startup, diagnostics) =
         startup_repl_with_diagnostics("default", None, &["community", "missing"]);

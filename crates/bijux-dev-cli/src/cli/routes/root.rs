@@ -1,20 +1,18 @@
 use std::fs;
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
-use crate::cli::args::{command_has_flag, command_option_value};
+use crate::cli::args::{command_has_flag, command_option_value, command_positionals};
 use crate::cli::dispatch::RuntimeQueryProvider;
 use crate::cli::workspace::workspace_root;
-use crate::infra::artifacts::{
-    collect_files_recursive, read_json_if_exists, relative_to_root,
-};
+use crate::infra::artifacts::{collect_files_recursive, read_json_if_exists, relative_to_root};
 use crate::reports::{
     cockpit as dev_cockpit, contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     maintenance_audit as dev_maintenance_audit, package_health as dev_package_health,
-    parity as dev_parity, registry as dev_registry, route_audit as dev_route_audit,
-    routes as dev_routes, runtime_identity as dev_runtime_identity, state_audit as dev_state_audit,
-    status as dev_status, repo as dev_repo,
+    parity as dev_parity, registry as dev_registry, repo as dev_repo,
+    route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
+    state_audit as dev_state_audit, status as dev_status,
 };
 use crate::schema::command_registry::ReportContext;
 
@@ -23,6 +21,18 @@ pub(super) fn try_handle(
     argv: &[String],
     runtime: &dyn RuntimeQueryProvider,
 ) -> Option<Value> {
+    if matches!(normalized_path, [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor") {
+        let extra_positionals = command_positionals(argv, &["dev", "cli", "state-doctor"]);
+        if !extra_positionals.is_empty() {
+            return Some(json!({
+                "status": "error",
+                "code": 2,
+                "message": "Invalid argument: state-doctor does not accept positional arguments",
+                "command": "dev cli state-doctor"
+            }));
+        }
+    }
+
     let payload = match normalized_path {
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             let context = routing_context();

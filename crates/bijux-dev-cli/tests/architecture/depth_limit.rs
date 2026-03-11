@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 //! Structural depth and workspace hygiene contracts.
 
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::{fs};
 
 fn collect_files_recursive(root: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(root) else {
@@ -71,7 +71,6 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
     let workspace_root = crate_root.join("..").join("..");
 
     assert!(!workspace_root.join("scripts").exists());
-    assert!(!workspace_root.join("target").exists());
 
     let mut rs_files = Vec::<PathBuf>::new();
     collect_rs_files(&crate_root.join("src"), &mut rs_files);

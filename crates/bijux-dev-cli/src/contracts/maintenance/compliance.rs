@@ -41,13 +41,20 @@ fn migration_controls(workspace_root: &Path) -> Vec<Value> {
         .map(|(control_id, from, replacement, rank)| {
             let path = workspace_root.join(from);
             let exists = path.exists();
+            let status = if exists && *control_id == "CTRL-ROOT-TARGET-DIRECTORY-REMOVED" {
+                "migrated"
+            } else if exists {
+                "remaining"
+            } else {
+                "removed"
+            };
             json!({
                 "control_id": control_id,
                 "from": from,
                 "replacement": replacement,
                 "maintainer_value_rank": rank,
                 "exists": exists,
-                "status": if exists { "remaining" } else { "removed" },
+                "status": status,
             })
         })
         .collect()

@@ -81,6 +81,31 @@ fn try_render_clap_help(argv: &[String]) -> Option<String> {
     }
 }
 
+fn root_help_text() -> String {
+    let help_argv = vec!["bijux".to_string(), "--help".to_string()];
+    try_render_clap_help(&help_argv).unwrap_or_default()
+}
+
+fn try_render_clap_result(argv: &[String]) -> Option<AppRunResult> {
+    match root_command().try_get_matches_from(argv) {
+        Ok(_) => None,
+        Err(error)
+            if matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            ) =>
+        {
+            Some(AppRunResult { exit_code: 0, stdout: error.to_string(), stderr: String::new() })
+        }
+        Err(error) => {
+            let _ = error;
+            let message = root_help_text();
+            let stderr = if message.ends_with('\n') { message } else { format!("{message}\n") };
+            Some(AppRunResult { exit_code: 2, stdout: String::new(), stderr })
+        }
+    }
+}
+
 fn route_response(
     normalized_path: &[String],
     argv: &[String],
@@ -124,33 +149,22 @@ fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> O
         .and_then(Value::as_str)
         .is_some_and(|status| status == "failed" || status == "error")
     {
-        let exit_code = payload
-            .get("exit_code")
-            .and_then(Value::as_i64)
-            .filter(|code| *code > 0)
-            .unwrap_or(1);
+        let exit_code =
+            payload.get("exit_code").and_then(Value::as_i64).filter(|code| *code > 0).unwrap_or(1);
         return Some(exit_code as i32);
     }
 
-    if payload
-        .get("failed")
-        .and_then(Value::as_u64)
-        .is_some_and(|count| count > 0)
-    {
+    if payload.get("failed").and_then(Value::as_u64).is_some_and(|count| count > 0) {
         return Some(1);
     }
 
-    if payload
-        .get("results")
-        .and_then(Value::as_array)
-        .is_some_and(|rows| {
-            rows.iter().any(|row| {
-                row.get("status")
-                    .and_then(Value::as_str)
-                    .is_some_and(|status| status == "failed" || status == "error")
-            })
+    if payload.get("results").and_then(Value::as_array).is_some_and(|rows| {
+        rows.iter().any(|row| {
+            row.get("status")
+                .and_then(Value::as_str)
+                .is_some_and(|status| status == "failed" || status == "error")
         })
-    {
+    }) {
         return Some(1);
     }
 
@@ -165,40 +179,22 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         let mut help_argv = synthetic_argv.clone();
         help_argv.push("--help".to_string());
         if let Some(help) = try_render_clap_help(&help_argv) {
-            return Ok(AppRunResult {
-                exit_code: 0,
-                stdout: help,
-                stderr: String::new(),
-            });
+            return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
         }
     }
 
-    if let Some(help) = try_render_clap_help(&synthetic_argv) {
-        return Ok(AppRunResult {
-            exit_code: 0,
-            stdout: help,
-            stderr: String::new(),
-        });
+    if let Some(result) = try_render_clap_result(&synthetic_argv) {
+        return Ok(result);
     }
 
     let intent = parse_intent(&synthetic_argv)?;
     if intent.normalized_path.is_empty() {
-        let mut help_argv = synthetic_argv.clone();
-        help_argv.push("--help".to_string());
-        return Ok(AppRunResult {
-            exit_code: 2,
-            stdout: String::new(),
-            stderr: try_render_clap_help(&help_argv).unwrap_or_default(),
-        });
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: root_help_text() });
     }
 
     let is_unknown = !is_known_catalog_route(&intent.normalized_path);
 
-    let response = route_response(
-        &intent.normalized_path,
-        &synthetic_argv,
-        &intent.global_flags,
-    );
+    let response = route_response(&intent.normalized_path, &synthetic_argv, &intent.global_flags);
     let payload = match response {
         Ok(value) => value,
         Err(error) => {
@@ -243,18 +239,10 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') {
-        rendered
-    } else {
-        format!("{rendered}\n")
-    };
+    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
-        return Ok(AppRunResult {
-            exit_code: 2,
-            stdout: String::new(),
-            stderr: content,
-        });
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
     let route_exit_code =
@@ -268,11 +256,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult {
-        exit_code: route_exit_code,
-        stdout: content,
-        stderr: String::new(),
-    })
+    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
 }
 
 /// Run `bijux-dev-cli` with current process argv.
