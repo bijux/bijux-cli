@@ -16,6 +16,10 @@ pub mod marker;
 pub mod plugin;
 /// Official product-mount reservation contracts.
 pub mod product_mount;
+/// Read-only schema inventory query interfaces.
+pub mod query;
+/// JSON Schema generation helpers.
+pub mod schema;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
 pub use config::{
@@ -44,3 +48,5 @@ pub use product_mount::{
     known_bijux_tool, KnownBijuxTool, ProductMountMetadata, KNOWN_BIJUX_TOOLS,
     KNOWN_BIJUX_TOOL_NAMESPACES, OFFICIAL_PRODUCT_NAMESPACES,
 };
+pub use query::{contracts_schema_query, ContractsSchemaQuery};
+pub use schema::{error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema};

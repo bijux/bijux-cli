@@ -1,10 +1,10 @@
 #![forbid(unsafe_code)]
-//! Read-only contracts/schema query interfaces for maintainer tooling.
+//! Read-only contract schema inventory interfaces for maintainer tooling.
 
-/// Structured schema inventory queried from routing contracts.
+/// Structured schema inventory queried from durable contracts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContractsSchemaQuery {
-    /// Stable schema ids exposed by routing contracts.
+    /// Stable schema ids exposed by contract types.
     pub schema_ids: Vec<String>,
     /// Schema inventory version marker.
     pub schema_version: String,

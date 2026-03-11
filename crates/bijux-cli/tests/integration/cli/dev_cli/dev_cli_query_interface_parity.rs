@@ -6,7 +6,7 @@ use std::process::Command;
 use bijux_cli::features::diagnostics::state_diagnostics_query;
 use bijux_cli::features::install::query::runtime_identity_query;
 use bijux_cli::routing::inventory::{registry_inventory, route_inventory};
-use bijux_cli::routing::query::contracts_schema_query;
+use bijux_cli::contracts::contracts_schema_query;
 use bijux_cli::routing::registry::RouteRegistry;
 use serde_json::Value;
 

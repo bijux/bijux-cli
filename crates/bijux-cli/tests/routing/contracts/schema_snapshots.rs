@@ -2,7 +2,7 @@
 
 //! Schema snapshot tests to detect accidental drift.
 
-use bijux_cli::routing::schema::{
+use bijux_cli::contracts::{
     error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema,
 };
 use clap as _;

@@ -146,7 +146,7 @@ fn runtime_query_provider_inventory_is_explicit() {
         "crates/bijux-cli/src/features/diagnostics/state_diagnostics.rs",
         "crates/bijux-cli/src/features/diagnostics/parity_status.rs",
         "crates/bijux-cli/src/features/install/query.rs",
-        "crates/bijux-cli/src/routing/query.rs",
+        "crates/bijux-cli/src/contracts/query.rs",
         "crates/bijux-cli/src/routing/inventory.rs",
     ];
 
@@ -166,7 +166,7 @@ fn query_interfaces_remain_data_only_without_ui_or_side_effecting_writes() {
         "crates/bijux-cli/src/features/diagnostics/state_diagnostics.rs",
         "crates/bijux-cli/src/features/diagnostics/parity_status.rs",
         "crates/bijux-cli/src/features/install/query.rs",
-        "crates/bijux-cli/src/routing/query.rs",
+        "crates/bijux-cli/src/contracts/query.rs",
         "crates/bijux-cli/src/routing/inventory.rs",
     ];
 

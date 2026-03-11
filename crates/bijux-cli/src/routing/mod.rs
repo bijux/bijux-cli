@@ -4,9 +4,7 @@
 pub mod catalog;
 pub mod inventory;
 pub mod parser;
-pub mod query;
 pub mod registry;
-pub mod schema;
 
 #[cfg(test)]
 use proptest as _;

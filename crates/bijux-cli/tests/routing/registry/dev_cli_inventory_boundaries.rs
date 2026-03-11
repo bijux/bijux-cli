@@ -16,7 +16,7 @@ fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
         "routing module must keep read-only inventory query module"
     );
     assert!(
-        source.contains("pub mod query;"),
-        "routing module must keep read-only contracts query module"
+        !source.contains("pub mod query;"),
+        "routing module must not expose contract schema query interfaces"
     );
 }
