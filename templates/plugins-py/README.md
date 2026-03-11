@@ -9,7 +9,7 @@ A starter template for building **Bijux CLI** plugins—clean, typed, and ready 
 ```bash
 # 1) Scaffold from this template (run from your workspace)
 mkdir -p ./tmp && cd ./tmp
-bijux plugins scaffold my_plugin --template=../plugin_template --force
+bijux plugins scaffold my_plugin --template=../templates/plugins-py --force
 
 # 2) Install the new plugin (name inferred from folder basename)
 cd ..

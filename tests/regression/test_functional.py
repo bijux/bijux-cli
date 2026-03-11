@@ -30,7 +30,7 @@ from unittest.mock import patch
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-_template_dir_path = ROOT / "plugin_template"
+_template_dir_path = ROOT / "templates" / "plugins-py"
 TEMPLATE_DIR: Path | None = _template_dir_path if _template_dir_path.exists() else None
 
 

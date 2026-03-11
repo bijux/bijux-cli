@@ -177,8 +177,8 @@ Bijux relies on POSIX filesystem and process semantics.
 ## Plugins in 60 Seconds
 
 ```bash
-# Scaffold a plugin
-bijux plugins scaffold my_plugin --template ./plugin_template --force
+# Scaffold a Python plugin from repository templates
+bijux plugins scaffold my_plugin --template ./templates/plugins-py --force
 
 # Install and explore
 bijux plugins install ./my_plugin --force
@@ -332,8 +332,8 @@ Artifacts:
 api/            OpenAPI schemas
 configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
-makes/      Make modules
-plugin_template/Plugin scaffold
+makes/          Make modules
+templates/      Plugin templates
 scripts/        Helper scripts
 src/bijux_cli/  Core implementation
 tests/          All test layers

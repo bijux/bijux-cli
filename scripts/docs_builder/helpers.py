@@ -397,7 +397,10 @@ def rewrite_links_tree(md: str) -> str:
         href = m.group(1)
         if href.startswith("src/"):
             return f"]({repo_base}{href})"
-        if href in ("#source-code-srcbijux_cli", "#plugin-template-plugin_template"):
+        if href in (
+            "#source-code-srcbijux_cli",
+            "#templates-templates",
+        ):
             return "](#top)"
         return m.group(0)
 
