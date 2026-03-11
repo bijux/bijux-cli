@@ -1,8 +1,7 @@
 #![forbid(unsafe_code)]
-//! Command-surface contracts plus routing graph and namespace resolution.
+//! Routing graph, parser normalization, and namespace resolution.
 
 pub mod catalog;
-pub mod contracts;
 pub mod inventory;
 pub mod parser;
 pub mod query;
@@ -17,7 +16,7 @@ use serde as _;
 #[cfg(test)]
 use serde_json as _;
 
-pub use contracts::{
+pub use crate::contracts::{
     known_bijux_tool, AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange,
     ConfigClearResult, ConfigCommandResult, ConfigConflictError, ConfigEntry, ConfigErrorKind,
     ConfigExportFormat, ConfigKey, ConfigLoadResult, ConfigMutation, ConfigParseError,

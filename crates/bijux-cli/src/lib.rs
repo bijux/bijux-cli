@@ -3,6 +3,7 @@
 //! Core runtime primitives for Rust bijux-cli.
 
 pub mod bootstrap;
+pub mod contracts;
 pub mod features;
 pub mod infrastructure;
 pub mod interface;
