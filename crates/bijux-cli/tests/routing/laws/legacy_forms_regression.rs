@@ -62,8 +62,17 @@ fn removed_dev_alias_paths_resolve_as_unknown_and_canonical_path_still_resolves(
     assert!(matches!(legacy_err, bijux_cli::api::routing::registry::RouteError::Unknown(_)));
 
     let canonical = vec!["dev".to_string(), "cli".to_string(), "docs".to_string()];
-    let canonical_target = registry.resolve(&canonical).expect("canonical route should resolve");
-    assert_eq!(canonical_target, RouteTarget::BuiltIn);
+    assert!(
+        bijux_cli::api::routing::catalog::is_known_route(&canonical),
+        "canonical dev cli command should remain known for runtime delegation"
+    );
+    let canonical_err = registry
+        .resolve(&canonical)
+        .expect_err("canonical dev cli command should remain outside runtime registry");
+    assert!(matches!(
+        canonical_err,
+        bijux_cli::api::routing::registry::RouteError::Unknown(_)
+    ));
 }
 
 #[test]
@@ -92,7 +101,16 @@ fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
         vec!["dev".to_string(), "cli".to_string(), "maintenance-audit".to_string()],
     ];
     for path in canonical_paths {
-        let target = registry.resolve(&path).expect("canonical route should resolve");
-        assert_eq!(target, RouteTarget::BuiltIn);
+        assert!(
+            bijux_cli::api::routing::catalog::is_known_route(&path),
+            "canonical dev cli command should remain known for runtime delegation"
+        );
+        let err = registry
+            .resolve(&path)
+            .expect_err("canonical dev cli command should remain outside runtime registry");
+        assert!(matches!(
+            err,
+            bijux_cli::api::routing::registry::RouteError::Unknown(_)
+        ));
     }
 }

@@ -42,11 +42,22 @@ fn parse_cases_match_expected_normalization_and_routing() {
         );
 
         let resolved = registry.resolve(&intent.normalized_path);
-        match (case.routed, resolved) {
-            (true, Ok(RouteTarget::BuiltIn | RouteTarget::Plugin(_))) => {}
-            (true, other) => panic!("expected routed case, got: {other:?} for {:?}", case.argv),
-            (false, Err(_)) => {}
-            (false, other) => panic!("expected unrouted case, got: {other:?} for {:?}", case.argv),
+        let delegated_dev_cli = matches!(
+            intent.normalized_path.as_slice(),
+            [a, b, ..] if a == "dev" && b == "cli"
+        );
+
+        match (case.routed, delegated_dev_cli, resolved) {
+            (true, true, Err(_)) => {}
+            (true, true, Ok(_)) => {}
+            (true, false, Ok(RouteTarget::BuiltIn | RouteTarget::Plugin(_))) => {}
+            (true, false, other) => {
+                panic!("expected routed case, got: {other:?} for {:?}", case.argv)
+            }
+            (false, _, Err(_)) => {}
+            (false, _, other) => {
+                panic!("expected unrouted case, got: {other:?} for {:?}", case.argv)
+            }
         }
     }
 }
@@ -88,8 +99,13 @@ fn parser_flag_order_permutations_keep_same_result() {
         vec!["bijux", "--format", "json", "cli", "status", "--quiet"],
     ];
 
-    let baseline = parse_intent(&variants[0].iter().map(|x| x.to_string()).collect::<Vec<_>>())
-        .expect("baseline parse");
+    let baseline = parse_intent(
+        &variants[0]
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>(),
+    )
+    .expect("baseline parse");
 
     for variant in variants.iter().skip(1) {
         let intent = parse_intent(&variant.iter().map(|x| x.to_string()).collect::<Vec<_>>())
@@ -152,7 +168,10 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
 fn hidden_compatibility_aliases_are_normalized() {
     let cases = [
         (vec!["bijux", "status"], vec!["status"]),
-        (vec!["bijux", "plugins", "inspect"], vec!["cli", "plugins", "inspect"]),
+        (
+            vec!["bijux", "plugins", "inspect"],
+            vec!["cli", "plugins", "inspect"],
+        ),
         (vec!["bijux", "dev", "doctor"], vec!["dev", "cli", "doctor"]),
     ];
 

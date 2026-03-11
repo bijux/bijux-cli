@@ -25,11 +25,22 @@ fn pick<'a>(values: &'a [&'a str], seed: &mut u64) -> &'a str {
 
 #[test]
 fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
-    let roots = ["status", "audit", "docs", "doctor", "version", "history", "memory"];
+    let roots = [
+        "status", "audit", "docs", "doctor", "version", "history", "memory",
+    ];
     let cli_sub = ["status", "paths", "self-test", "config", "plugins"];
     let dev_sub = dev_cli_subcommands();
     let plugin_sub = ["list", "inspect", "check", "install", "uninstall", "doctor"];
-    let junk = ["--unknown", "--format", "???", "", "###", "--log-level", "noise", "--color"];
+    let junk = [
+        "--unknown",
+        "--format",
+        "???",
+        "",
+        "###",
+        "--log-level",
+        "noise",
+        "--color",
+    ];
 
     let mut seed = 0xBAD5_EED_u64;
     for _ in 0..160_u16 {
@@ -64,7 +75,10 @@ fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
 
         let parsed =
             parse_intent(&argv).expect("parser should not panic on randomized malformed corpus");
-        assert!(parsed.command_path.len() <= 6, "path exploded for argv={argv:?}");
+        assert!(
+            parsed.command_path.len() <= 6,
+            "path exploded for argv={argv:?}"
+        );
     }
 }
 
@@ -142,16 +156,24 @@ fn parser_shell_hostile_and_confusable_namespace_tokens_do_not_hijack_reserved_p
 #[test]
 fn unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguity() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("community").expect("plugin");
-    registry.register_plugin_namespace("commander").expect("plugin");
+    registry
+        .register_plugin_namespace("community")
+        .expect("plugin");
+    registry
+        .register_plugin_namespace("commander")
+        .expect("plugin");
 
-    let suggested = registry.suggest_namespace("commnad").expect("suggestion should exist");
+    let suggested = registry
+        .suggest_namespace("commnad")
+        .expect("suggestion should exist");
     assert!(suggested == "community" || suggested == "commander");
 
     let reserved_suggestion = registry.suggest_namespace("hepl").expect("suggestion");
     assert_eq!(reserved_suggestion, "help");
 
-    let err = registry.resolve(&["help".to_string(), "version".to_string()]).expect_err("unknown");
+    let err = registry
+        .resolve(&["help".to_string(), "version".to_string()])
+        .expect_err("unknown");
     assert!(matches!(err, RouteError::Unknown(_)));
 }
 
@@ -159,13 +181,21 @@ fn unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguit
 fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
     let mut registry = RouteRegistry::default();
     for blocked in ["help", "version", "dev", "cli", "doctor"] {
-        let err =
-            registry.register_plugin_namespace(blocked).expect_err("blocked namespace should fail");
-        assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
+        let err = registry
+            .register_plugin_namespace(blocked)
+            .expect_err("blocked namespace should fail");
+        assert!(matches!(
+            err,
+            RouteError::Reserved(_) | RouteError::Conflict(_)
+        ));
     }
 
-    registry.register_plugin_namespace("community").expect("valid plugin namespace");
-    registry.register_plugin_namespace("registry").expect("non-reserved namespace should register");
+    registry
+        .register_plugin_namespace("community")
+        .expect("valid plugin namespace");
+    registry
+        .register_plugin_namespace("registry")
+        .expect("non-reserved namespace should register");
 
     let resolved = registry
         .resolve(&["community".to_string(), "run".to_string()])
@@ -174,8 +204,8 @@ fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
 
     let dev_registry = registry
         .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
-        .expect("canonical dev cli registry route must remain builtin");
-    assert!(matches!(dev_registry, RouteTarget::BuiltIn));
+        .expect_err("runtime registry no longer owns delegated dev-cli subcommands");
+    assert!(matches!(dev_registry, RouteError::Unknown(_)));
 }
 
 #[test]
@@ -184,12 +214,15 @@ fn route_tree_and_command_tree_are_deterministic_under_shuffled_plugin_registrat
 
     let mut left = RouteRegistry::default();
     for name in plugin_names {
-        left.register_plugin_namespace(name).expect("left registration");
+        left.register_plugin_namespace(name)
+            .expect("left registration");
     }
 
     let mut right = RouteRegistry::default();
     for name in plugin_names.iter().rev() {
-        right.register_plugin_namespace(name).expect("right registration");
+        right
+            .register_plugin_namespace(name)
+            .expect("right registration");
     }
 
     assert_eq!(left.route_tree(), right.route_tree());
@@ -199,7 +232,9 @@ fn route_tree_and_command_tree_are_deterministic_under_shuffled_plugin_registrat
 #[test]
 fn command_tree_export_is_stable_across_repeated_calls() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("community").expect("plugin");
+    registry
+        .register_plugin_namespace("community")
+        .expect("plugin");
 
     let first = registry.render_command_tree();
     let second = registry.render_command_tree();
