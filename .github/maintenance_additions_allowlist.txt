@@ -1,0 +1,3 @@
+# New maintenance entries require an inline justification in this file.
+# Format: maintenance/path/to/file # reason
+# Empty by default while maintenance automation stays command-driven.

@@ -1,3 +1,0 @@
-# New scripts require an inline justification in this file.
-# Format: scripts/path/to/file.py # reason
-# Script directory has been retired; keep this file empty until script governance is reintroduced.

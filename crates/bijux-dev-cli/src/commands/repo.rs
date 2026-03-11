@@ -62,15 +62,15 @@ fn stale_inventories(root: &Path) -> Vec<String> {
         .collect()
 }
 
-fn dead_script_references(root: &Path) -> Vec<String> {
-    let allowlist = root.join(".github/script_additions_allowlist.txt");
+fn dead_maintenance_references(root: &Path) -> Vec<String> {
+    let allowlist = root.join(".github/maintenance_additions_allowlist.txt");
     let content = fs::read_to_string(&allowlist).unwrap_or_default();
     content
         .lines()
         .filter_map(|line| line.split('#').next())
         .map(str::trim)
-        .filter(|line| line.starts_with("scripts/") && !line.is_empty())
-        .filter(|script| !root.join(script).exists())
+        .filter(|line| line.starts_with("maintenance/") && !line.is_empty())
+        .filter(|entry| !root.join(entry).exists())
         .map(ToString::to_string)
         .collect()
 }
@@ -172,13 +172,13 @@ pub fn build_stale_report(workspace_root: &Path) -> Value {
 /// `dev cli repo drift`
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
-    let dead_scripts = dead_script_references(workspace_root);
+    let dead_maintenance = dead_maintenance_references(workspace_root);
     let dead_docs = dead_docs_references(workspace_root);
     let dead_evidence = dead_evidence_references(workspace_root);
     let dead_commands = dead_command_references(workspace_root);
     json!({
-        "status": if dead_scripts.is_empty() && dead_docs.is_empty() && dead_evidence.is_empty() && dead_commands.is_empty() { "clean" } else { "drift" },
-        "dead_scripts_references": dead_scripts,
+        "status": if dead_maintenance.is_empty() && dead_docs.is_empty() && dead_evidence.is_empty() && dead_commands.is_empty() { "clean" } else { "drift" },
+        "dead_maintenance_references": dead_maintenance,
         "dead_docs_references": dead_docs,
         "dead_evidence_references": dead_evidence,
         "dead_command_references": dead_commands,

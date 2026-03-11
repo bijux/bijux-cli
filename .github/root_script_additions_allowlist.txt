@@ -1,2 +1,0 @@
-# Format: path/to/script.py # reason
-# Empty by default. New root-level scripts require explicit justification.
