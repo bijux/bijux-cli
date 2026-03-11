@@ -91,12 +91,12 @@ fn strip_comments_and_strings(source: &str) -> String {
     out
 }
 
-fn read_dev_cli_router_source() -> String {
+fn read_dev_cli_source() -> String {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    let router_root = crate_root.join("../bijux-dev-cli/src/cli");
     assert!(
         router_root.is_dir(),
-        "expected modular dev-cli router directory at {}",
+        "expected modular dev-cli source directory at {}",
         router_root.display()
     );
     let mut files = Vec::<PathBuf>::new();
@@ -104,7 +104,7 @@ fn read_dev_cli_router_source() -> String {
     files.sort();
     assert!(
         !files.is_empty(),
-        "expected dev-cli router source files under {}",
+        "expected dev-cli source files under {}",
         router_root.display()
     );
 
@@ -152,43 +152,43 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
 
 #[test]
 fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
-    let adapter_source_raw = std::fs::read_to_string(concat!(
+    let dispatch_source_raw = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/features/developer/runtime_query_adapter.rs"
+        "/src/interface/cli/dispatch.rs"
     ))
-    .expect("read dev cli command source");
-    let dispatch_source_raw = read_dev_cli_router_source();
-    let adapter_source = strip_comments_and_strings(&adapter_source_raw);
+    .expect("read runtime dispatch source");
+    let dev_cli_source_raw = read_dev_cli_source();
     let dispatch_source = strip_comments_and_strings(&dispatch_source_raw);
+    let dev_cli_source = strip_comments_and_strings(&dev_cli_source_raw);
 
     assert!(
-        adapter_source.contains("dev_dispatch::try_handle"),
-        "core adapter must delegate dev cli command routing to bijux-dev-cli dispatch"
+        dispatch_source.contains("delegate_dev_cli(&argv[3..])"),
+        "runtime dispatch must delegate canonical dev cli namespace to external dev-cli binary"
     );
     assert!(
-        !adapter_source.contains("dev_control_plane::build_doctor_report"),
-        "core adapter must not assemble dev cli report payloads directly"
+        dispatch_source.contains("delegate_dev_cli(&argv[2..])"),
+        "runtime dispatch must delegate legacy `dev <alias>` routes to external dev-cli binary"
     );
     assert!(
-        !adapter_source.contains("match normalized_path"),
-        "core adapter must not own command branch dispatch tables"
+        !dispatch_source.contains("runtime_query_adapter::try_handle"),
+        "runtime dispatch must not retain in-process dev-cli routing adapters"
     );
     assert!(
-        !adapter_source.contains("::build_"),
-        "core adapter must not call report builder functions directly"
+        !dispatch_source.contains("bijux_dev_cli"),
+        "runtime dispatch must not import dev-cli crate symbols directly"
     );
 
     let delegated = [
-        "dev_control_plane::build_snapshots_audit_report",
-        "dev_control_plane::build_fixture_audit_report",
-        "dev_control_plane::build_plugin_health_report",
-        "dev_control_plane::build_doctor_report",
+        "root::try_handle",
+        "maintenance::try_handle",
+        "rustdoc::try_handle",
+        "release::try_handle",
     ];
     for needle in delegated {
-        assert!(dispatch_source.contains(needle), "missing delegation for {needle}");
+        assert!(dev_cli_source.contains(needle), "missing dev-cli dispatch delegation for {needle}");
     }
     assert!(
-        dispatch_source.contains("pub fn owns_path"),
+        dev_cli_source.contains("pub fn owns_path"),
         "dev-cli dispatch must own path classification contract"
     );
 }

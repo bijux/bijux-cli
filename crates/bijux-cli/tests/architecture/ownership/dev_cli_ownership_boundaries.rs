@@ -88,12 +88,12 @@ fn strip_comments_and_strings(source: &str) -> String {
     out
 }
 
-fn read_dev_cli_router_source() -> String {
+fn read_dev_cli_source() -> String {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
+    let router_root = crate_root.join("../bijux-dev-cli/src/cli");
     assert!(
         router_root.is_dir(),
-        "expected modular dev-cli router directory at {}",
+        "expected modular dev-cli source directory at {}",
         router_root.display()
     );
     let mut files = Vec::<PathBuf>::new();
@@ -101,7 +101,7 @@ fn read_dev_cli_router_source() -> String {
     files.sort();
     assert!(
         !files.is_empty(),
-        "expected dev-cli router source files under {}",
+        "expected dev-cli source files under {}",
         router_root.display()
     );
 
@@ -130,40 +130,36 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
 }
 
 #[test]
-fn core_adapter_is_runtime_query_only_and_delegates_dispatch() {
+fn core_runtime_delegates_dev_cli_at_process_boundary() {
     let source = strip_comments_and_strings(
         &std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/features/developer/runtime_query_adapter.rs"
+            "/src/interface/cli/dispatch.rs"
         ))
-        .expect("read dev cli adapter source"),
+        .expect("read runtime dispatch source"),
     );
 
     assert!(
-        source.contains("impl RuntimeQueryProvider for RuntimeQueryAdapter"),
-        "core dev cli module must only provide runtime query adapter implementation"
+        source.contains("delegate_dev_cli(&argv[3..])"),
+        "runtime dispatch must delegate canonical `dev cli` routes to external binary"
     );
     assert!(
-        source.contains("dev_dispatch::try_handle"),
-        "core dev cli module must delegate dispatch to bijux-dev-cli"
+        source.contains("delegate_dev_cli(&argv[2..])"),
+        "runtime dispatch must delegate legacy `dev <alias>` routes to external binary"
     );
     assert!(
-        !source.contains("match normalized_path"),
-        "core dev cli module must not own command branch dispatch"
+        !source.contains("runtime_query_adapter::try_handle"),
+        "runtime dispatch must not keep in-process dev-cli adapters"
     );
     assert!(
-        !source.contains("dev_control_plane::build_doctor_report"),
-        "core dev cli module must not assemble maintainer report payloads"
-    );
-    assert!(
-        !source.contains("dev_routes::build_report_from_query"),
-        "core dev cli module must not call route report builders"
+        !source.contains("bijux_dev_cli"),
+        "runtime dispatch must not import dev-cli crate directly"
     );
 }
 
 #[test]
 fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
-    let source = strip_comments_and_strings(&read_dev_cli_router_source());
+    let source = strip_comments_and_strings(&read_dev_cli_source());
 
     assert!(
         source.contains("match normalized_path"),

@@ -1,50 +1,18 @@
 #![forbid(unsafe_code)]
-//! Ensures every routed dev-cli command is implemented in bijux-dev-cli dispatch.
+//! Ensures routed dev-cli commands remain owned by bijux-dev-cli dispatch modules.
 
-use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::collections::BTreeSet;
 
 fn read(path: &str) -> String {
     std::fs::read_to_string(path).unwrap_or_else(|err| panic!("failed to read {path}: {err}"))
 }
 
-fn read_dev_cli_router_source() -> String {
-    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let router_root = crate_root.join("../bijux-dev-cli/src/app/router");
-    assert!(
-        router_root.is_dir(),
-        "expected modular dev-cli router directory at {}",
-        router_root.display()
-    );
-    let mut files = Vec::<PathBuf>::new();
-    collect_rs_files(&router_root, &mut files);
-    files.sort();
-    assert!(
-        !files.is_empty(),
-        "expected dev-cli router source files under {}",
-        router_root.display()
-    );
-
-    let mut source = String::new();
-    for file in files {
-        source.push_str(&read(&file.to_string_lossy()));
-        source.push('\n');
-    }
-    source
+fn read_dev_cli_dispatch_source() -> String {
+    read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/cli/dispatch.rs"))
 }
 
-fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(root) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            collect_rs_files(&path, out);
-        } else if path.extension().is_some_and(|ext| ext == "rs") {
-            out.push(path);
-        }
-    }
+fn read_dev_cli_root_route_source() -> String {
+    read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/cli/routes/root.rs"))
 }
 
 fn extract_guard_values(source: &str, prefix: &str) -> BTreeSet<String> {
@@ -84,62 +52,64 @@ fn fixture_dev_cli_top_level_commands() -> BTreeSet<String> {
 }
 
 #[test]
-fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
-    let source = read_dev_cli_router_source();
+fn dev_cli_subcommand_fixture_matches_dispatch_ownership() {
+    let root_source = read_dev_cli_root_route_source();
+    let dispatch_source = read_dev_cli_dispatch_source();
     let fixture_commands = fixture_dev_cli_top_level_commands();
+
     let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
-    let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
+    let four_segment_namespace_prefix =
+        "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
 
-    let dispatch_three_segment_commands =
-        extract_guard_values(&source, three_segment_branch_prefix);
-    let nested_namespaces = extract_guard_values(&source, four_segment_namespace_prefix);
+    let root_three_segment_commands = extract_guard_values(&root_source, three_segment_branch_prefix);
+    let root_nested_namespaces = extract_guard_values(&root_source, four_segment_namespace_prefix);
+    let delegated_namespaces: BTreeSet<String> =
+        ["maintenance", "rustdoc", "release", "evidence", "config", "python"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
 
-    let expected_three_segment_commands: BTreeSet<String> =
-        fixture_commands.difference(&nested_namespaces).cloned().collect();
+    for namespace in &delegated_namespaces {
+        let delegate = format!("{namespace}::try_handle");
+        assert!(dispatch_source.contains(&delegate), "missing dispatch delegate `{delegate}`");
+    }
+
+    let expected_root_three_segment_commands: BTreeSet<String> = fixture_commands
+        .difference(&root_nested_namespaces)
+        .filter(|command| !delegated_namespaces.contains(*command))
+        .cloned()
+        .collect();
 
     assert_eq!(
-        dispatch_three_segment_commands, expected_three_segment_commands,
-        "dev-cli top-level command fixture drifted from dispatch ownership"
+        root_three_segment_commands, expected_root_three_segment_commands,
+        "dev-cli top-level command fixture drifted from root dispatch ownership"
     );
 }
 
 #[test]
 fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
-    let source = read_dev_cli_router_source();
+    let root_source = read_dev_cli_root_route_source();
+    let dispatch_source = read_dev_cli_dispatch_source();
 
     let branch_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
-    let observed_namespaces = extract_guard_values(&source, branch_prefix);
-    let expected_namespaces: BTreeSet<String> =
-        ["maintenance", "rustdoc", "release", "evidence", "config", "python", "repo"]
-            .into_iter()
-            .map(str::to_string)
-            .collect();
+    let observed_root_namespaces = extract_guard_values(&root_source, branch_prefix);
+    let expected_root_namespaces: BTreeSet<String> =
+        ["repo"].into_iter().map(str::to_string).collect();
 
     assert_eq!(
-        observed_namespaces, expected_namespaces,
-        "nested namespace dispatch ownership drifted from expected architecture"
+        observed_root_namespaces, expected_root_namespaces,
+        "root-route namespace ownership drifted from expected architecture"
     );
 
-    let expected_delegate_prefixes = BTreeMap::from([
-        ("maintenance", "dev_maintenance::build_"),
-        ("rustdoc", "dev_rustdoc::build_"),
-        ("release", "dev_release::build_"),
-        ("evidence", "dev_evidence::build_"),
-        ("config", "dev_config::build_"),
-        ("python", "dev_python::build_"),
-        ("repo", "dev_repo::build_"),
-    ]);
-    for (namespace, delegate_prefix) in expected_delegate_prefixes {
-        assert!(
-            source.contains(delegate_prefix),
-            "namespace `{namespace}` must delegate to `{delegate_prefix}*` implementations"
-        );
+    for namespace in ["maintenance", "rustdoc", "release", "evidence", "config", "python"] {
+        let delegate = format!("{namespace}::try_handle");
+        assert!(dispatch_source.contains(&delegate), "namespace `{namespace}` missing delegate");
     }
 }
 
 #[test]
 fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
-    let source = read_dev_cli_router_source();
+    let root_source = read_dev_cli_root_route_source();
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report_from_query"),
@@ -176,7 +146,7 @@ fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
 
     for (subcommand, delegate) in expected_delegates {
         let branch = format!("[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"{subcommand}\"");
-        assert!(source.contains(&branch), "missing route branch for {subcommand}");
-        assert!(source.contains(delegate), "missing dev-cli delegate for {subcommand}");
+        assert!(root_source.contains(&branch), "missing route branch for {subcommand}");
+        assert!(root_source.contains(delegate), "missing dev-cli delegate for {subcommand}");
     }
 }

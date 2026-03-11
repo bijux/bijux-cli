@@ -120,7 +120,10 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
             .expect("read core bin source"),
     );
 
-    assert!(core_source.contains("runtime_query_adapter::try_handle"));
+    assert!(
+        core_source.contains("delegate_dev_cli("),
+        "core dispatch must delegate dev-cli commands through external binary boundary"
+    );
     assert!(
         !core_source.contains("handlers::developer"),
         "core dispatch must not own dedicated developer handler modules"
@@ -129,10 +132,7 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
         !core_source.contains("handlers::developer_runtime"),
         "core dispatch must not route dev cli through interface handler facades"
     );
-    assert!(
-        core_source.contains("owns_dev_cli_path"),
-        "core route target classification must use bijux-dev-cli ownership helper"
-    );
+    assert!(!core_source.contains("runtime_query_adapter::try_handle"));
     assert!(!bin_source.contains("dev cli"), "bin must not own dev cli dispatch");
     assert!(!bin_source.contains("bijux_dev_cli"), "bin must not import bijux-dev-cli crate");
 }

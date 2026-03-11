@@ -7,7 +7,6 @@ use std::process::Command;
 
 use anyhow as _;
 use bijux_cli as _;
-use bijux_dev_cli as _;
 use clap as _;
 use futures as _;
 use serde_json::Value;
@@ -73,8 +72,11 @@ fn enforces_internal_crate_boundaries() {
         root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<(&str, &str)>> = BTreeMap::from([
-        ("bijux-dev-cli", BTreeSet::from([("normal", "bijux-cli-evidence")])),
-        ("bijux-cli", BTreeSet::from([("normal", "bijux-dev-cli")])),
+        (
+            "bijux-dev-cli",
+            BTreeSet::from([("normal", "bijux-cli"), ("normal", "bijux-cli-evidence")]),
+        ),
+        ("bijux-cli", BTreeSet::new()),
         ("bijux-cli-evidence", BTreeSet::new()),
         ("bijux-cli-python", BTreeSet::from([("normal", "bijux-cli")])),
     ]);
