@@ -861,6 +861,46 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/flag_normalization_matrix.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/plugin_lifecycle_test_matrix.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/plugin_failure_rollback_test_matrix.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/reserved_namespace_test_matrix.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
+        }),
     ]
 }
 
@@ -4235,6 +4275,255 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/runtime_dev_leakage_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let rows: Vec<(i64, &str)> = vec![
+                (81, "global_flags_before_namespace_are_accepted"),
+                (82, "global_flags_after_namespace_are_accepted_when_supported"),
+                (83, "global_flags_before_and_after_namespace_normalize_to_same_intent"),
+                (84, "repeated_format_flags_are_rejected_deterministically"),
+                (85, "repeated_pretty_flags_are_rejected_deterministically"),
+                (86, "repeated_no_pretty_flags_are_rejected_deterministically"),
+                (87, "repeated_quiet_flags_are_rejected_deterministically"),
+                (88, "repeated_trace_flags_are_rejected_deterministically"),
+                (89, "repeated_color_flags_are_rejected_deterministically"),
+                (90, "repeated_config_flags_are_rejected_deterministically"),
+                (91, "conflicting_pretty_and_no_pretty_have_stable_resolution"),
+                (92, "conflicting_color_always_and_never_are_rejected"),
+                (93, "invalid_format_value_is_rejected"),
+                (94, "invalid_color_value_is_rejected"),
+                (95, "missing_value_after_config_flag_is_rejected"),
+                (96, "missing_value_after_format_flag_is_rejected"),
+                (97, "unknown_global_flag_at_root_is_rejected"),
+                (98, "unknown_local_flag_in_grouped_command_is_rejected"),
+                (99, "mixed_global_local_flag_ordering_abuse_is_rejected"),
+            ];
+            let matrix_rows: Vec<Value> = rows
+                .iter()
+                .map(|(coverage_id, name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs",
+                    })
+                })
+                .collect();
+            let complete = matrix_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/flag_normalization_matrix.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "flag normalization tests",
+                    "rows": matrix_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                        "artifact_todo": 100,
+                        "artifact_path": "artifacts/status/flag_normalization_matrix.json",
+                    },
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/flag_normalization_matrix.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let rows: Vec<(i64, &str)> = vec![
+                (21, "python_scaffold_install_list_inspect_uninstall_end_to_end"),
+                (22, "rust_scaffold_install_list_inspect_uninstall_end_to_end"),
+                (23, "installed_plugin_help_entrypoint_is_deterministic"),
+                (24, "installed_plugin_disable_rejects_plugin_check"),
+                (25, "disabled_plugin_enable_restores_plugin_check"),
+                (26, "duplicate_install_without_force_is_deterministic_rejection"),
+                (27, "duplicate_install_force_flag_behavior_is_deterministic_when_unsupported"),
+                (28, "uninstall_missing_plugin_returns_stable_failure"),
+                (29, "inspect_broken_registry_returns_stable_diagnostics"),
+                (30, "plugin_check_after_entrypoint_deletion_reports_stable_failure"),
+                (31, "plugin_help_flows_through_root_help_tree"),
+                (32, "plugin_command_output_uses_core_envelope_rules"),
+                (33, "plugin_command_stderr_stdout_discipline_is_stable"),
+                (34, "plugin_command_exit_codes_map_through_core_rules"),
+                (35, "two_plugins_keep_stable_ordering_in_list"),
+                (36, "uninstalling_one_plugin_does_not_affect_other"),
+                (37, "registry_survives_restart_after_successful_install"),
+                (38, "registry_survives_restart_after_successful_uninstall"),
+                (39, "plugin_check_reports_healthy_and_unhealthy_in_same_registry"),
+            ];
+            let matrix_rows: Vec<Value> = rows
+                .iter()
+                .map(|(coverage_id, name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs",
+                    })
+                })
+                .collect();
+            let complete = matrix_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/plugin_lifecycle_test_matrix.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin lifecycle integration tests",
+                    "rows": matrix_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                        "artifact_todo": 40,
+                        "artifact_path": "artifacts/status/plugin_lifecycle_test_matrix.json",
+                    },
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_lifecycle_test_matrix.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/plugin_failure_rollback_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let rows: Vec<(i64, &str)> = vec![
+                (41, "simulated_disk_write_failure_during_install"),
+                (42, "simulated_partial_copy_failure_during_install"),
+                (43, "simulated_registry_write_failure_during_install"),
+                (44, "simulated_manifest_parse_failure_during_install"),
+                (45, "simulated_compatibility_range_failure_during_install"),
+                (46, "simulated_missing_entrypoint_failure_during_install"),
+                (47, "simulated_permission_denied_failure_during_install"),
+                (48, "simulated_partial_uninstall_failure"),
+                (49, "simulated_registry_write_failure_during_uninstall"),
+                (50, "simulated_enable_failure_when_plugin_files_missing"),
+                (51, "simulated_disable_failure_when_registry_is_corrupted"),
+                (52, "rollback_proof_install_failure_preserves_existing_plugins"),
+                (53, "rollback_proof_uninstall_failure_preserves_existing_plugins"),
+                (54, "retry_install_after_partial_failure_is_idempotent"),
+                (55, "retry_uninstall_after_partial_failure_is_idempotent"),
+                (56, "failed_install_does_not_leave_claimed_namespace"),
+                (57, "failed_uninstall_does_not_orphan_registry_state_silently"),
+                (58, "plugin_doctor_reports_rollback_relevant_damage_clearly"),
+                (59, "machine_readable_rollback_diagnostics_are_stable"),
+            ];
+            let matrix_rows: Vec<Value> = rows
+                .iter()
+                .map(|(coverage_id, name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_failure_rollback_matrix.rs",
+                    })
+                })
+                .collect();
+            let complete = matrix_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/plugin_failure_rollback_test_matrix.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin failure and rollback tests",
+                    "rows": matrix_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                        "artifact_todo": 60,
+                        "artifact_path": "artifacts/status/plugin_failure_rollback_test_matrix.json",
+                    },
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_failure_rollback_test_matrix.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {
+            let source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs"),
+            )
+            .unwrap_or_default();
+            let rows: Vec<(i64, &str)> = vec![
+                (1, "rejects_plugin_namespace_cli"),
+                (2, "rejects_plugin_namespace_dev"),
+                (3, "rejects_plugin_namespace_help"),
+                (4, "rejects_plugin_namespace_version"),
+                (5, "rejects_plugin_namespace_doctor"),
+                (6, "rejects_plugin_namespace_plugins"),
+                (7, "rejects_plugin_namespace_repl"),
+                (8, "rejects_official_product_namespace_dag"),
+                (9, "rejects_official_product_namespace_atlas"),
+                (10, "rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen"),
+                (11, "rejects_case_insensitive_normalized_collision"),
+                (12, "rejects_namespace_with_leading_digit"),
+                (13, "rejects_namespace_with_whitespace"),
+                (14, "rejects_namespace_with_shell_hostile_punctuation"),
+                (15, "rejects_empty_namespace"),
+                (16, "rejects_namespace_differing_only_by_hidden_alias_collision"),
+                (17, "rejection_messages_explain_the_reason_clearly"),
+                (18, "json_error_envelopes_for_namespace_rejection_are_stable"),
+                (19, "text_errors_for_namespace_rejection_are_stable"),
+            ];
+            let matrix_rows: Vec<Value> = rows
+                .iter()
+                .map(|(coverage_id, name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs",
+                    })
+                })
+                .collect();
+            let complete = matrix_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/reserved_namespace_test_matrix.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin namespace law tests",
+                    "rows": matrix_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                    },
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/reserved_namespace_test_matrix.json"
             ]}))
         }
         _ => None,
