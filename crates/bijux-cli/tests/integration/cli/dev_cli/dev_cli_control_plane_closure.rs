@@ -154,17 +154,17 @@ fn script_replacement_suite_tracks_migrated_workflows() {
     assert!(script.status.success());
     let payload: Value = serde_json::from_slice(&script.stdout).expect("script json");
     let scripts = payload["rows"].as_array().expect("scripts rows");
-    assert_eq!(payload["id_policy"], "STATUS-SCRIPT-<KIND>-<SLUG>");
+    assert_eq!(payload["id_policy"], "STATUS-CONTRACT-<KIND>-<SLUG>");
     let required = [
-        "STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
-        "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
-        "STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS",
+        "STATUS-CONTRACT-GENERATE-STATUS-REPORTS",
+        "STATUS-CONTRACT-GENERATE-STATE-AUDIT-REPORTS",
+        "STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS",
     ];
-    for script_id in required {
+    for contract_id in required {
         let found = scripts
             .iter()
-            .any(|row| row.get("script_id") == Some(&Value::String(script_id.to_string())));
-        assert!(found, "missing script inventory row for replacement candidate: {script_id}");
+            .any(|row| row.get("contract_id") == Some(&Value::String(contract_id.to_string())));
+        assert!(found, "missing script inventory row for replacement candidate: {contract_id}");
     }
 }
 

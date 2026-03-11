@@ -7,8 +7,8 @@ use std::process::Command;
 
 use serde_json::Value;
 
-const GENERATOR_ID: &str = "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS";
-const GATE_ID: &str = "STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE";
+const GENERATOR_ID: &str = "STATUS-CONTRACT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS";
+const GATE_ID: &str = "STATUS-CONTRACT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE";
 
 fn workspace_root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
