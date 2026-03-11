@@ -1,13 +1,13 @@
 mod catalog;
-mod diagnostics_ownership_executor;
-mod diagnostics_surface_reports_executor;
-mod orchestration_bundle_executor;
-mod orchestration_executor;
-mod orchestration_reports_executor;
-mod ownership_invariants_executor;
-mod runner;
-mod scope_bridge_executor;
-mod stale_artifact_gate_executor;
+mod ownership;
+mod ownership_diagnostics_surface;
+mod orchestration_bundle;
+mod orchestration;
+mod orchestration_reports;
+mod ownership_invariants;
+mod run;
+mod ownership_scope_bridge;
+mod stale_artifacts;
 
 pub(crate) use catalog::rows;
-pub(crate) use runner::run;
+pub(crate) use run::run;

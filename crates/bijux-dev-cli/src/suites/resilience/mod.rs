@@ -1,13 +1,13 @@
 mod catalog;
-mod command_migration_campaigns_executor;
-mod environment_stress_campaigns_executor;
-mod evidence_surfaces_executor;
-mod hardening_executor;
-mod migration_notes_executor;
-mod output_integrity_executor;
-mod parser_cleanup_executor;
-mod runner;
-mod stress_campaigns_executor;
+mod corruption_campaigns_command_migration;
+mod fs_process_environment_stress;
+mod fs_process_evidence_surfaces;
+mod fs_process_adversarial;
+mod fs_process_migration_notes;
+mod fs_process_output_integrity;
+mod parser_fuzz;
+mod run;
+mod corruption_campaigns;
 
 pub(crate) use catalog::rows;
-pub(crate) use runner::run;
+pub(crate) use run::run;
