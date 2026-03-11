@@ -43,22 +43,18 @@ fn write_json_if_changed(path: &Path, payload: &Value) {
 }
 
 fn classify_group(command: &str) -> &'static str {
-    if command.starts_with("dev cli ") {
-        "dev-cli"
-    } else if command.starts_with("cli config ") {
-        "config"
-    } else if command.starts_with("cli plugins ") || command.starts_with("plugins ") {
-        "plugin"
-    } else if command.starts_with("cli ") {
-        "cli"
-    } else if command.starts_with("config") {
-        "config"
-    } else if command.starts_with("history") {
-        "history"
-    } else if command.starts_with("memory") {
-        "memory"
-    } else {
-        "root"
+    let mut parts = command.split_whitespace();
+    let first = parts.next().unwrap_or_default();
+    let second = parts.next().unwrap_or_default();
+
+    match (first, second) {
+        ("dev", "cli") => "dev-cli",
+        ("cli", "config") | ("config", _) => "config",
+        ("cli", "plugins") | ("plugins", _) => "plugin",
+        ("cli", _) => "cli",
+        ("history", _) => "history",
+        ("memory", _) => "memory",
+        _ => "root",
     }
 }
 
@@ -904,6 +900,18 @@ pub fn build_report(workspace_root: &Path) -> Value {
     let parity_dashboard_text =
         fs::read_to_string(workspace_root.join("artifacts/parity/parity_dashboard.txt"))
             .unwrap_or_default();
+    let parity_dashboard_gate = read_json_if_exists(
+        &workspace_root.join("artifacts/parity/parity_dashboard_gate_report.json"),
+    );
+    let parity_regression_gate = read_json_if_exists(
+        &workspace_root.join("artifacts/parity/parity_regression_gate_report.json"),
+    );
+    let binary_bridge_gate = read_json_if_exists(
+        &workspace_root.join("artifacts/parity/binary_bridge_parity_gate_report.json"),
+    );
+    let cross_surface_drift_gate = read_json_if_exists(
+        &workspace_root.join("artifacts/parity/cross_surface_drift_gate_report.json"),
+    );
     let config_parity =
         read_json_if_exists(&workspace_root.join("artifacts/parity/config_parity_report.json"));
     let history_parity =
@@ -942,6 +950,12 @@ pub fn build_report(workspace_root: &Path) -> Value {
         "machine_output_diff_report": machine_output_report,
         "parity_dashboard": parity_dashboard,
         "parity_dashboard_text": parity_dashboard_text,
+        "automation_gates": {
+            "parity_dashboard": parity_dashboard_gate,
+            "parity_regression": parity_regression_gate,
+            "binary_bridge": binary_bridge_gate,
+            "cross_surface_drift": cross_surface_drift_gate,
+        },
         "repl_cli_output_diff": repl_cli_output_diff,
         "state_parity": {
             "config": config_parity,
