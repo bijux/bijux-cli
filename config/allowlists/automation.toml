@@ -1,0 +1,7 @@
+version = 1
+
+[maintenance_additions]
+paths = []
+
+[root_maintenance_additions]
+paths = []

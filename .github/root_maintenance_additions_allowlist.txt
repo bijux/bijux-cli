@@ -1,2 +1,0 @@
-# Format: path/to/maintenance-entry # reason
-# Empty by default. New root-level maintenance entries require explicit justification.

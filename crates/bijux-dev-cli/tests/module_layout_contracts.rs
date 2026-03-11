@@ -19,10 +19,10 @@ fn legacy_native_directory_names_are_removed() {
 }
 
 #[test]
-fn feature_module_is_alias_only() {
-    let features_mod = include_str!("../src/features/mod.rs");
-    assert!(features_mod.contains("Compatibility aliases"));
-    assert!(features_mod.contains("pub use crate::commands::status;"));
+fn legacy_alias_modules_are_removed() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert!(!crate_root.join("src/application").exists());
+    assert!(!crate_root.join("src/features").exists());
 }
 
 #[test]
@@ -125,4 +125,26 @@ fn workspace_crate_src_tree_depth_is_bounded() {
         "crate src path depth must be <= 7 for every file under crates/*/src; violations:\n{}",
         violations.join("\n")
     );
+}
+
+#[test]
+fn allowlists_are_centralized_under_config_as_toml() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let workspace_root = crate_root.join("..").join("..");
+
+    let automation_allowlist = workspace_root.join("config/allowlists/automation.toml");
+    let public_api_allowlist = workspace_root.join("config/allowlists/public_api.toml");
+
+    assert!(automation_allowlist.exists(), "missing {}", automation_allowlist.display());
+    assert!(public_api_allowlist.exists(), "missing {}", public_api_allowlist.display());
+
+    let automation_text = fs::read_to_string(&automation_allowlist).expect("read automation");
+    let public_api_text = fs::read_to_string(&public_api_allowlist).expect("read public api");
+
+    toml::from_str::<toml::Value>(&automation_text).expect("automation allowlist must be valid toml");
+    toml::from_str::<toml::Value>(&public_api_text).expect("public api allowlist must be valid toml");
+
+    assert!(!workspace_root.join(".github/maintenance_additions_allowlist.txt").exists());
+    assert!(!workspace_root.join(".github/root_maintenance_additions_allowlist.txt").exists());
+    assert!(!workspace_root.join(".github/public_api_allowlist.txt").exists());
 }

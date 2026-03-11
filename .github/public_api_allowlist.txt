@@ -1,2 +1,0 @@
-# Public API additions must include symbol: justification.
-# Keep entries only while the symbol remains newly introduced on this branch.

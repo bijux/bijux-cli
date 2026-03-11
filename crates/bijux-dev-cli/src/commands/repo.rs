@@ -3,9 +3,22 @@
 use std::fs;
 use std::path::Path;
 
+use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::infrastructure::artifacts::{collect_files_recursive, relative_to_root};
+
+#[derive(Debug, Default, Deserialize)]
+struct AutomationAllowlists {
+    #[serde(default)]
+    maintenance_additions: PathAllowlist,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct PathAllowlist {
+    #[serde(default)]
+    paths: Vec<String>,
+}
 
 fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     let status = root.join("artifacts/status");
@@ -62,16 +75,20 @@ fn stale_inventories(root: &Path) -> Vec<String> {
         .collect()
 }
 
-fn dead_maintenance_references(root: &Path) -> Vec<String> {
-    let allowlist = root.join(".github/maintenance_additions_allowlist.txt");
+fn maintenance_allowlist_paths(root: &Path) -> Vec<String> {
+    let allowlist = root.join("config/allowlists/automation.toml");
     let content = fs::read_to_string(&allowlist).unwrap_or_default();
-    content
-        .lines()
-        .filter_map(|line| line.split('#').next())
-        .map(str::trim)
+    toml::from_str::<AutomationAllowlists>(&content)
+        .unwrap_or_default()
+        .maintenance_additions
+        .paths
+}
+
+fn dead_maintenance_references(root: &Path) -> Vec<String> {
+    maintenance_allowlist_paths(root)
+        .into_iter()
         .filter(|line| line.starts_with("maintenance/") && !line.is_empty())
         .filter(|entry| !root.join(entry).exists())
-        .map(ToString::to_string)
         .collect()
 }
 
@@ -215,7 +232,7 @@ mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{build_generated_report, build_health_report};
+    use super::{build_generated_report, build_health_report, build_drift_report};
 
     fn temp_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -244,5 +261,21 @@ mod tests {
         let generated = build_generated_report(&root);
         let orphan = generated["orphan_generated_outputs"].as_array().expect("orphan");
         assert!(!orphan.is_empty());
+    }
+
+    #[test]
+    fn repo_drift_reads_maintenance_allowlist_from_config_toml() {
+        let root = temp_root("allowlist");
+        fs::create_dir_all(root.join("config/allowlists")).expect("mkdir allowlists");
+        fs::write(
+            root.join("config/allowlists/automation.toml"),
+            "version = 1\n[maintenance_additions]\npaths = [\"maintenance/missing_target\"]\n",
+        )
+        .expect("write allowlist");
+
+        let drift = build_drift_report(&root);
+        let dead = drift["dead_maintenance_references"].as_array().expect("dead refs");
+        assert_eq!(dead.len(), 1);
+        assert_eq!(dead[0], "maintenance/missing_target");
     }
 }
