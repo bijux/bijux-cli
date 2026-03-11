@@ -21,6 +21,6 @@ This document freezes the first Python-package convergence baseline.
 
 Any change that alters package invocation semantics, script ownership, or runtime parity for covered commands requires:
 
-1. Updated tests in `packages/bijux-cli-py/tests`.
+1. Updated tests in `crates/bijux-cli-python/tests/python`.
 2. Updated convergence report (`python-package-convergence-report.md`).
 3. Explicit compatibility decision in release documentation.

@@ -337,7 +337,7 @@ configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
 makes/          Make modules
 templates/      Plugin templates (plugins-py, plugins-rs)
-src/bijux_cli/  Core implementation
+crates/         Rust workspace crates (runtime, maintainer CLI, python bridge)
 tests/          All test layers
 ```
 

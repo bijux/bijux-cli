@@ -3,7 +3,7 @@
 ## Build Stack
 
 - Primary binding path: `PyO3 + maturin`
-- Python package root: `packages/bijux-cli-py`
+- Python package root: `crates/bijux-cli-python`
 - Rust extension source: `crates/bijux-cli-python`
 
 ## Package Naming

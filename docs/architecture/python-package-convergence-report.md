@@ -11,7 +11,7 @@ The Python distribution now executes through the same Rust route graph and runti
 - `361`: complete. Python package command execution defaults to Rust-backed runtime (`_native` when available, subprocess runtime fallback otherwise).
 - `362`: complete. Wrapper layers retain thin facade behavior only and avoid duplicate command-law logic.
 - `363`: complete. Bridge execution path uses core `run_app` through `crates/bijux-cli-python/src/bindings.rs`.
-- `364`: complete. End-to-end invocation parity covered via runtime subprocess comparisons in `packages/bijux-cli-py/tests/test_runtime_parity.py`.
+- `364`: complete. End-to-end invocation parity covered via runtime subprocess comparisons in `crates/bijux-cli-python/tests/python/test_runtime_parity.py`.
 - `365`: complete. `python -m bijux_cli_py` parity checks are covered in runtime tests.
 - `366`: complete. `pipx` install path behavior is covered by install guidance and path ambiguity diagnostics; direct runtime parity surfaces are shared with console-script invocation.
 - `367`: complete. Version parity checks are covered between runtime binary and Python facade.
@@ -31,9 +31,9 @@ The Python distribution now executes through the same Rust route graph and runti
 
 ## Evidence
 
-- `packages/bijux-cli-py/tests/test_runtime_parity.py`
-- `packages/bijux-cli-py/tests/test_runtime_resilience.py`
-- `packages/bijux-cli-py/tests/test_packaging_contracts.py`
+- `crates/bijux-cli-python/tests/python/test_runtime_parity.py`
+- `crates/bijux-cli-python/tests/python/test_runtime_resilience.py`
+- `crates/bijux-cli-python/tests/python/test_packaging_contracts.py`
 - `crates/bijux-cli-python/src/bindings.rs`
 
 ## Remaining follow-ups after baseline

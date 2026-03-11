@@ -142,8 +142,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -U pip build
-          python -m build --outdir artifacts/build
+          python -m pip install -U pip build maturin
+          python -m build --outdir artifacts/build crates/bijux-cli-python
           # Fail if still no dist
           if [ ! -d artifacts/build ] || ! compgen -G "artifacts/build/*" >/dev/null; then
             echo "::error::No dist artifacts available after fallback build"

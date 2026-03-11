@@ -3,24 +3,25 @@
 # Dirs & flags
 BUILD_DIR        ?= artifacts/build
 CHECK_DISTS      ?= 1             # set to 0 to skip twine check
+PYTHON_DIST_DIR  ?= crates/bijux-cli-python
 
 # Absolute paths (safer if a target changes CWD)
 BUILD_DIR_ABS    := $(abspath $(BUILD_DIR))
-PYPROJECT_ABS    := $(abspath pyproject.toml)
+PYPROJECT_ABS    := $(abspath $(PYTHON_DIST_DIR)/pyproject.toml)
 
 .PHONY: build build-sdist build-wheel build-check build-tools build-clean
 
 build-tools: | $(VENV)
 	@echo "→ Ensuring build toolchain..."
 	@$(VENV_PYTHON) -m pip install -U pip
-	@$(VENV_PYTHON) -m pip install --upgrade build twine
+	@$(VENV_PYTHON) -m pip install --upgrade build twine maturin
 
 build: build-tools
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@echo "→ Preparing Python package artifacts..."
 	@mkdir -p "$(BUILD_DIR_ABS)"
-	@echo "→ Building wheel + sdist → $(BUILD_DIR_ABS)"
-	@$(VENV_PYTHON) -m build --wheel --sdist --outdir "$(BUILD_DIR_ABS)" .
+	@echo "→ Building wheel + sdist from $(PYTHON_DIST_DIR) → $(BUILD_DIR_ABS)"
+	@$(VENV_PYTHON) -m build --wheel --sdist --outdir "$(BUILD_DIR_ABS)" "$(PYTHON_DIST_DIR)"
 	@if [ "$(CHECK_DISTS)" = "1" ]; then \
 	  echo "→ Validating distributions with twine"; \
 	  $(VENV_PYTHON) -m twine check "$(BUILD_DIR_ABS)"/* 2>&1 | tee "$(BUILD_DIR_ABS)/twine-check.log"; \
@@ -33,14 +34,14 @@ build: build-tools
 build-sdist: build-tools
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@mkdir -p "$(BUILD_DIR_ABS)"
-	@echo "→ Building sdist → $(BUILD_DIR_ABS)"
-	@$(VENV_PYTHON) -m build --sdist --outdir "$(BUILD_DIR_ABS)" .
+	@echo "→ Building sdist from $(PYTHON_DIST_DIR) → $(BUILD_DIR_ABS)"
+	@$(VENV_PYTHON) -m build --sdist --outdir "$(BUILD_DIR_ABS)" "$(PYTHON_DIST_DIR)"
 
 build-wheel: build-tools
 	@if [ ! -f "$(PYPROJECT_ABS)" ]; then echo "✘ pyproject.toml not found"; exit 1; fi
 	@mkdir -p "$(BUILD_DIR_ABS)"
-	@echo "→ Building wheel → $(BUILD_DIR_ABS)"
-	@$(VENV_PYTHON) -m build --wheel --outdir "$(BUILD_DIR_ABS)" .
+	@echo "→ Building wheel from $(PYTHON_DIST_DIR) → $(BUILD_DIR_ABS)"
+	@$(VENV_PYTHON) -m build --wheel --outdir "$(BUILD_DIR_ABS)" "$(PYTHON_DIST_DIR)"
 
 build-check:
 	@if ls "$(BUILD_DIR_ABS)"/* 1>/dev/null 2>&1; then \
