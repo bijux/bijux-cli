@@ -68,7 +68,7 @@ fn status_json_is_byte_stable_across_runs() {
 
 #[test]
 fn plugins_list_json_is_byte_stable_across_runs() {
-    let root = temp_dir("todo-122");
+    let root = temp_dir("deterministic-output");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_plugin(&root, &plugins_dir, "stablelist");
@@ -84,7 +84,7 @@ fn plugins_list_json_is_byte_stable_across_runs() {
 
 #[test]
 fn config_get_json_is_byte_stable_across_runs() {
-    let root = temp_dir("todo-123");
+    let root = temp_dir("deterministic-output");
     let config_path = root.join("config.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=stable\n").expect("write config");
 
@@ -144,7 +144,7 @@ fn yaml_envelope_field_order_is_stable() {
 
 #[test]
 fn plugin_list_machine_output_order_is_stable() {
-    let root = temp_dir("todo-128");
+    let root = temp_dir("deterministic-output");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_plugin(&root, &plugins_dir, "zetaorder");
@@ -174,7 +174,7 @@ fn diagnostic_ordering_is_stable_in_machine_output() {
 
 #[test]
 fn state_doctor_ordering_is_stable_in_machine_output() {
-    let root = temp_dir("todo-130");
+    let root = temp_dir("deterministic-output");
     let home = root.join("home");
     fs::create_dir_all(&home).expect("mkdir home");
     let home_str = home.to_str().expect("utf-8");
@@ -210,7 +210,7 @@ fn repeated_runs_do_not_introduce_path_order_noise() {
 
 #[test]
 fn repeated_runs_do_not_introduce_plugin_discovery_order_noise() {
-    let root = temp_dir("todo-133");
+    let root = temp_dir("deterministic-output");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_plugin(&root, &plugins_dir, "omegaorder");

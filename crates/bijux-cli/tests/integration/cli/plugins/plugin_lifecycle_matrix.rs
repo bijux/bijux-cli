@@ -77,7 +77,7 @@ fn write_external_exec_manifest(path: &Path, namespace: &str, entrypoint: &Path)
 
 #[test]
 fn python_scaffold_install_list_inspect_uninstall_end_to_end() {
-    let root = tmp_dir("todo-21");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -99,7 +99,7 @@ fn python_scaffold_install_list_inspect_uninstall_end_to_end() {
 
 #[test]
 fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
-    let root = tmp_dir("todo-22");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -121,7 +121,7 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
 
 #[test]
 fn installed_plugin_help_entrypoint_is_deterministic() {
-    let root = tmp_dir("todo-23");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -135,7 +135,7 @@ fn installed_plugin_help_entrypoint_is_deterministic() {
 
 #[test]
 fn installed_plugin_disable_rejects_plugin_check() {
-    let root = tmp_dir("todo-24");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -150,7 +150,7 @@ fn installed_plugin_disable_rejects_plugin_check() {
 
 #[test]
 fn disabled_plugin_enable_restores_plugin_check() {
-    let root = tmp_dir("todo-25");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -165,7 +165,7 @@ fn disabled_plugin_enable_restores_plugin_check() {
 
 #[test]
 fn duplicate_install_without_force_is_deterministic_rejection() {
-    let root = tmp_dir("todo-26");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -177,7 +177,7 @@ fn duplicate_install_without_force_is_deterministic_rejection() {
 
 #[test]
 fn duplicate_install_force_flag_behavior_is_deterministic_when_unsupported() {
-    let root = tmp_dir("todo-27");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -190,7 +190,7 @@ fn duplicate_install_force_flag_behavior_is_deterministic_when_unsupported() {
 
 #[test]
 fn uninstall_missing_plugin_returns_stable_failure() {
-    let root = tmp_dir("todo-28");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -201,7 +201,7 @@ fn uninstall_missing_plugin_returns_stable_failure() {
 
 #[test]
 fn inspect_broken_registry_returns_stable_diagnostics() {
-    let root = tmp_dir("todo-29");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -216,7 +216,7 @@ fn inspect_broken_registry_returns_stable_diagnostics() {
 
 #[test]
 fn plugin_check_after_entrypoint_deletion_reports_stable_failure() {
-    let root = tmp_dir("todo-30");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -234,7 +234,7 @@ fn plugin_check_after_entrypoint_deletion_reports_stable_failure() {
 
 #[test]
 fn plugin_help_flows_through_root_help_tree() {
-    let root = tmp_dir("todo-31");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -247,7 +247,7 @@ fn plugin_help_flows_through_root_help_tree() {
 
 #[test]
 fn plugin_command_output_uses_core_envelope_rules() {
-    let root = tmp_dir("todo-32");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -258,7 +258,7 @@ fn plugin_command_output_uses_core_envelope_rules() {
 
 #[test]
 fn plugin_command_stderr_stdout_discipline_is_stable() {
-    let root = tmp_dir("todo-33");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -270,7 +270,7 @@ fn plugin_command_stderr_stdout_discipline_is_stable() {
 
 #[test]
 fn plugin_command_exit_codes_map_through_core_rules() {
-    let root = tmp_dir("todo-34");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -283,7 +283,7 @@ fn plugin_command_exit_codes_map_through_core_rules() {
 
 #[test]
 fn two_plugins_keep_stable_ordering_in_list() {
-    let root = tmp_dir("todo-35");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -302,7 +302,7 @@ fn two_plugins_keep_stable_ordering_in_list() {
 
 #[test]
 fn uninstalling_one_plugin_does_not_affect_other() {
-    let root = tmp_dir("todo-36");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -323,7 +323,7 @@ fn uninstalling_one_plugin_does_not_affect_other() {
 
 #[test]
 fn registry_survives_restart_after_successful_install() {
-    let root = tmp_dir("todo-37");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -336,7 +336,7 @@ fn registry_survives_restart_after_successful_install() {
 
 #[test]
 fn registry_survives_restart_after_successful_uninstall() {
-    let root = tmp_dir("todo-38");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -351,7 +351,7 @@ fn registry_survives_restart_after_successful_uninstall() {
 
 #[test]
 fn plugin_check_reports_healthy_and_unhealthy_in_same_registry() {
-    let root = tmp_dir("todo-39");
+    let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 

@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Help tree law coverage for TODOs 341-355.
+//! Help tree law coverage for stable behavior contracts.
 //! test_type: help-law
 
 use std::collections::BTreeSet;

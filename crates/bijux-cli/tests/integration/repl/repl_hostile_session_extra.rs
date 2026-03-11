@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Extra hostile-session transcript coverage for TODOs 221-240.
+//! Extra hostile-session transcript coverage for stable behavior contracts.
 
 use libc as _;
 use std::fs;

@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Deep diagnostics and doctor behavior coverage for TODOs 141-153.
+//! Deep diagnostics and doctor behavior coverage for stable behavior contracts.
 
 use std::collections::BTreeSet;
 use std::fs;

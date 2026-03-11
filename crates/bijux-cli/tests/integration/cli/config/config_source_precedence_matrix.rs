@@ -35,7 +35,7 @@ fn temp_dir(name: &str) -> PathBuf {
 
 #[test]
 fn cli_flags_override_env_backed_values_and_config_path() {
-    let root = temp_dir("todo-301-304");
+    let root = temp_dir("config-source-precedence");
     let env_path = root.join("env.env");
     let arg_path = root.join("arg.env");
     fs::write(&env_path, "BIJUXCLI_ALPHA=from-env-path\n").expect("env cfg");
@@ -66,7 +66,7 @@ fn cli_flags_override_env_backed_values_and_config_path() {
 
 #[test]
 fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
-    let root = temp_dir("todo-302-303-305");
+    let root = temp_dir("config-source-precedence");
     let file = root.join("config.env");
     let missing = root.join("missing.env");
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("file cfg");
@@ -119,7 +119,7 @@ fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
 
 #[test]
 fn malformed_and_duplicate_config_source_behavior_is_stable() {
-    let root = temp_dir("todo-306-307");
+    let root = temp_dir("config-source-precedence");
     let malformed = root.join("malformed.env");
     let duplicate = root.join("duplicate.env");
     fs::write(&malformed, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("malformed");
@@ -163,7 +163,7 @@ fn malformed_and_duplicate_config_source_behavior_is_stable() {
 
 #[test]
 fn source_metadata_and_dev_cli_env_precedence_are_reported() {
-    let root = temp_dir("todo-308-310");
+    let root = temp_dir("config-source-precedence");
     let file = root.join("config.env");
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("seed");
 
@@ -197,7 +197,7 @@ fn source_metadata_and_dev_cli_env_precedence_are_reported() {
 
 #[test]
 fn source_reports_json_text_are_deterministic_ignore_noise_and_env_order() {
-    let root = temp_dir("todo-311-315");
+    let root = temp_dir("config-source-precedence");
     let file = root.join("config.env");
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("seed");
 
@@ -244,7 +244,7 @@ fn source_reports_json_text_are_deterministic_ignore_noise_and_env_order() {
 
 #[test]
 fn cross_command_source_precedence_consistency() {
-    let root = temp_dir("todo-316");
+    let root = temp_dir("config-source-precedence");
     let file = root.join("config.env");
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("seed");
 

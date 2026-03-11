@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! REPL execution law coverage for TODOs 201-220.
+//! REPL execution law coverage for stable behavior contracts.
 
 use std::fs;
 use std::path::PathBuf;

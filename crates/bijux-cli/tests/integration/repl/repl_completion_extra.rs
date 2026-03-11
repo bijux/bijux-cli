@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! REPL completion coverage for TODOs 241-255.
+//! REPL completion coverage for stable behavior contracts.
 
 use libc as _;
 use std::fs;

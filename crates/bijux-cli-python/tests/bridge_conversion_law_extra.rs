@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Python bridge conversion and exception mapping coverage for TODOs 281-295.
+//! Python bridge conversion and exception mapping coverage for runtime contracts.
 
 use bijux_cli as _;
 use bijux_cli_python::{

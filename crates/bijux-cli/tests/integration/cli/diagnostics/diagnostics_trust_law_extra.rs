@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Diagnostics trust law coverage for TODOs 361-374.
+//! Diagnostics trust law coverage for stable behavior contracts.
 //! test_type: diagnostics-trust
 
 use std::collections::BTreeSet;

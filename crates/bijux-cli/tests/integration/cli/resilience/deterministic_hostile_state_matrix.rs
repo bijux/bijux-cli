@@ -87,7 +87,7 @@ fn setup_external_plugin(root: &Path, plugins_dir: &Path, namespace: &str, entry
 
 #[test]
 fn corrupted_config_failure_class_is_stable_across_runs() {
-    let root = temp_dir("todo-141");
+    let root = temp_dir("hostile-state");
     let config = root.join("broken.env");
     fs::write(&config, "BROKEN_LINE\n").expect("write broken config");
     let args = ["cli", "config", "reload", "--config-path", config.to_str().expect("utf-8")];
@@ -101,7 +101,7 @@ fn corrupted_config_failure_class_is_stable_across_runs() {
 
 #[test]
 fn corrupted_plugin_registry_failure_class_is_stable_across_runs() {
-    let root = temp_dir("todo-142");
+    let root = temp_dir("hostile-state");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write broken registry");
@@ -117,7 +117,7 @@ fn corrupted_plugin_registry_failure_class_is_stable_across_runs() {
 
 #[test]
 fn broken_history_file_recovery_is_stable_across_runs() {
-    let root = temp_dir("todo-143");
+    let root = temp_dir("hostile-state");
     let history = root.join("broken.history");
     fs::write(&history, "{oops:true}").expect("write broken history");
     let envs = [("BIJUXCLI_HISTORY_FILE", history.to_str().expect("utf-8"))];
@@ -132,7 +132,7 @@ fn broken_history_file_recovery_is_stable_across_runs() {
 
 #[test]
 fn malformed_memory_state_recovery_is_stable_across_runs() {
-    let root = temp_dir("todo-144");
+    let root = temp_dir("hostile-state");
     let home = root.join("home");
     let memory = home.join(".bijux").join(".memory.json");
     fs::create_dir_all(memory.parent().expect("parent")).expect("mkdir");
@@ -149,7 +149,7 @@ fn malformed_memory_state_recovery_is_stable_across_runs() {
 
 #[test]
 fn missing_config_file_defaulting_is_stable_across_runs() {
-    let root = temp_dir("todo-145");
+    let root = temp_dir("hostile-state");
     let missing = root.join("missing.env");
     let args = ["cli", "config", "reload", "--config-path", missing.to_str().expect("utf-8")];
 
@@ -162,7 +162,7 @@ fn missing_config_file_defaulting_is_stable_across_runs() {
 
 #[test]
 fn missing_plugin_directory_empty_behavior_is_stable_across_runs() {
-    let root = temp_dir("todo-146");
+    let root = temp_dir("hostile-state");
     let missing_plugins = root.join("missing-plugins");
     let envs = [("BIJUXCLI_PLUGINS_DIR", missing_plugins.to_str().expect("utf-8"))];
 
@@ -176,7 +176,7 @@ fn missing_plugin_directory_empty_behavior_is_stable_across_runs() {
 
 #[test]
 fn broken_plugin_does_not_nondeterministically_affect_healthy_output() {
-    let root = temp_dir("todo-147");
+    let root = temp_dir("hostile-state");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_python_plugin(&root, &plugins_dir, "healthyplug");
@@ -203,7 +203,7 @@ fn broken_plugin_does_not_nondeterministically_affect_healthy_output() {
 
 #[test]
 fn conflicting_plugin_installs_fail_deterministically() {
-    let root = temp_dir("todo-148");
+    let root = temp_dir("hostile-state");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_python_plugin(&root, &plugins_dir, "conflictplug");
@@ -220,7 +220,7 @@ fn conflicting_plugin_installs_fail_deterministically() {
 
 #[test]
 fn path_shadowing_diagnostics_are_stable_across_runs() {
-    let root = temp_dir("todo-149");
+    let root = temp_dir("hostile-state");
     let first_dir = root.join("first");
     let second_dir = root.join("second");
     fs::create_dir_all(&first_dir).expect("mkdir first");
@@ -241,7 +241,7 @@ fn path_shadowing_diagnostics_are_stable_across_runs() {
 
 #[test]
 fn runtime_identity_output_is_stable_under_same_ambiguous_state() {
-    let root = temp_dir("todo-150");
+    let root = temp_dir("hostile-state");
     let first_dir = root.join("one");
     let second_dir = root.join("two");
     fs::create_dir_all(&first_dir).expect("mkdir one");
@@ -261,7 +261,7 @@ fn runtime_identity_output_is_stable_under_same_ambiguous_state() {
 
 #[test]
 fn state_doctor_json_is_stable_under_same_corrupted_state() {
-    let root = temp_dir("todo-151");
+    let root = temp_dir("hostile-state");
     let config = root.join("corrupt.env");
     fs::write(&config, "BROKEN_LINE\n").expect("write corrupt config");
     let args = [
@@ -283,7 +283,7 @@ fn state_doctor_json_is_stable_under_same_corrupted_state() {
 
 #[test]
 fn state_doctor_text_is_stable_under_same_corrupted_state() {
-    let root = temp_dir("todo-152");
+    let root = temp_dir("hostile-state");
     let config = root.join("corrupt.env");
     fs::write(&config, "BROKEN_LINE\n").expect("write corrupt config");
     let args = [
@@ -304,12 +304,12 @@ fn state_doctor_text_is_stable_under_same_corrupted_state() {
 
 #[test]
 fn plugin_doctor_json_is_stable_under_same_corrupted_state() {
-    let root_a = temp_dir("todo-153-a");
+    let root_a = temp_dir("hostile-state-a");
     let plugins_a = root_a.join("plugins");
     fs::create_dir_all(&plugins_a).expect("mkdir plugins a");
     fs::write(plugins_a.join("registry.json"), "{broken-json").expect("write broken a");
 
-    let root_b = temp_dir("todo-153-b");
+    let root_b = temp_dir("hostile-state-b");
     let plugins_b = root_b.join("plugins");
     fs::create_dir_all(&plugins_b).expect("mkdir plugins b");
     fs::write(plugins_b.join("registry.json"), "{broken-json").expect("write broken b");
@@ -329,12 +329,12 @@ fn plugin_doctor_json_is_stable_under_same_corrupted_state() {
 
 #[test]
 fn plugin_doctor_text_is_stable_under_same_corrupted_state() {
-    let root_a = temp_dir("todo-154-a");
+    let root_a = temp_dir("hostile-state-a");
     let plugins_a = root_a.join("plugins");
     fs::create_dir_all(&plugins_a).expect("mkdir plugins a");
     fs::write(plugins_a.join("registry.json"), "{broken-json").expect("write broken a");
 
-    let root_b = temp_dir("todo-154-b");
+    let root_b = temp_dir("hostile-state-b");
     let plugins_b = root_b.join("plugins");
     fs::create_dir_all(&plugins_b).expect("mkdir plugins b");
     fs::write(plugins_b.join("registry.json"), "{broken-json").expect("write broken b");
@@ -354,7 +354,7 @@ fn plugin_doctor_text_is_stable_under_same_corrupted_state() {
 
 #[test]
 fn command_tree_export_is_stable_with_broken_optional_state() {
-    let root = temp_dir("todo-155");
+    let root = temp_dir("hostile-state");
     let history = root.join("broken.history");
     fs::write(&history, "{oops:true}").expect("write broken history");
     let plugins = root.join("plugins");

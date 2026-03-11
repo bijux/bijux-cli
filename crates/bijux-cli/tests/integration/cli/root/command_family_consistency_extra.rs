@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Command-family consistency coverage for TODOs 161-174.
+//! Command-family consistency coverage for stable behavior contracts.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

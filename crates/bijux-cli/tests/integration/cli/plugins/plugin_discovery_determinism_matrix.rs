@@ -92,13 +92,13 @@ fn plugin_names(listed: &Value) -> Vec<String> {
 
 #[test]
 fn deterministic_discovery_under_shuffled_install_order() {
-    let root_a = temp_dir("todo-61-a");
+    let root_a = temp_dir("plugin-discovery-a");
     let dir_a = root_a.join("plugins");
     fs::create_dir_all(&dir_a).expect("mkdir plugins");
     install_python(&root_a, &dir_a, "gamma");
     install_python(&root_a, &dir_a, "alpha");
 
-    let root_b = temp_dir("todo-61-b");
+    let root_b = temp_dir("plugin-discovery-b");
     let dir_b = root_b.join("plugins");
     fs::create_dir_all(&dir_b).expect("mkdir plugins");
     install_python(&root_b, &dir_b, "alpha");
@@ -112,7 +112,7 @@ fn deterministic_discovery_under_shuffled_install_order() {
 
 #[test]
 fn deterministic_plugin_list_ordering() {
-    let root = temp_dir("todo-62");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "zeta");
@@ -124,7 +124,7 @@ fn deterministic_plugin_list_ordering() {
 
 #[test]
 fn deterministic_plugin_inspect_ordering_multiple_plugins() {
-    let root = temp_dir("todo-63");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "omega");
@@ -137,7 +137,7 @@ fn deterministic_plugin_inspect_ordering_multiple_plugins() {
 
 #[test]
 fn deterministic_help_ordering_with_plugins_installed() {
-    let root = temp_dir("todo-64");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "helpalpha");
@@ -151,13 +151,13 @@ fn deterministic_help_ordering_with_plugins_installed() {
 
 #[test]
 fn deterministic_route_registration_with_different_install_orders() {
-    let root_a = temp_dir("todo-65-a");
+    let root_a = temp_dir("plugin-discovery-a");
     let dir_a = root_a.join("plugins");
     fs::create_dir_all(&dir_a).expect("mkdir plugins");
     install_python(&root_a, &dir_a, "routegamma");
     install_python(&root_a, &dir_a, "routealpha");
 
-    let root_b = temp_dir("todo-65-b");
+    let root_b = temp_dir("plugin-discovery-b");
     let dir_b = root_b.join("plugins");
     fs::create_dir_all(&dir_b).expect("mkdir plugins");
     install_python(&root_b, &dir_b, "routealpha");
@@ -172,7 +172,7 @@ fn deterministic_route_registration_with_different_install_orders() {
 
 #[test]
 fn deterministic_route_registration_after_uninstall_reinstall_cycles() {
-    let root = temp_dir("todo-66");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = scaffold_manifest(&root, &plugins_dir, "cycleplug");
@@ -192,7 +192,7 @@ fn deterministic_route_registration_after_uninstall_reinstall_cycles() {
 
 #[test]
 fn deterministic_namespace_conflict_resolution_messages() {
-    let root = temp_dir("todo-67");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "dupeplug");
@@ -209,7 +209,7 @@ fn deterministic_namespace_conflict_resolution_messages() {
 
 #[test]
 fn deterministic_plugins_list_json_output() {
-    let root = temp_dir("todo-68");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "jsonlist");
@@ -222,7 +222,7 @@ fn deterministic_plugins_list_json_output() {
 
 #[test]
 fn deterministic_plugins_check_json_output() {
-    let root = temp_dir("todo-69");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "jsoncheck");
@@ -241,7 +241,7 @@ fn deterministic_plugins_check_json_output() {
 
 #[test]
 fn deterministic_plugins_inspect_json_output() {
-    let root = temp_dir("todo-70");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "jsoninspect");
@@ -256,7 +256,7 @@ fn deterministic_plugins_inspect_json_output() {
 
 #[test]
 fn discovery_ignores_unrelated_filesystem_clutter() {
-    let root = temp_dir("todo-71");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "cleanplug");
@@ -271,7 +271,7 @@ fn discovery_ignores_unrelated_filesystem_clutter() {
 
 #[test]
 fn discovery_ignores_partially_written_temporary_files() {
-    let root = temp_dir("todo-72");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "stableplug");
@@ -285,7 +285,7 @@ fn discovery_ignores_partially_written_temporary_files() {
 
 #[test]
 fn discovery_ignores_invalid_directories_cleanly() {
-    let root = temp_dir("todo-73");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "validplug");
@@ -304,7 +304,7 @@ fn discovery_ignores_invalid_directories_cleanly() {
 fn discovery_is_stable_under_broken_symlink_entries() {
     use std::os::unix::fs::symlink;
 
-    let root = temp_dir("todo-74");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "symlinkplug");
@@ -319,7 +319,7 @@ fn discovery_is_stable_under_broken_symlink_entries() {
 
 #[test]
 fn broken_plugin_does_not_reorder_healthy_plugins() {
-    let root = temp_dir("todo-75");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -336,7 +336,7 @@ fn broken_plugin_does_not_reorder_healthy_plugins() {
 
 #[test]
 fn broken_plugin_does_not_hide_healthy_plugins() {
-    let root = temp_dir("todo-76");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -352,7 +352,7 @@ fn broken_plugin_does_not_hide_healthy_plugins() {
 
 #[test]
 fn registry_and_discovery_disagreement_diagnostics_are_deterministic() {
-    let root = temp_dir("todo-77");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -365,7 +365,7 @@ fn registry_and_discovery_disagreement_diagnostics_are_deterministic() {
 
 #[test]
 fn plugin_metadata_ordering_is_stable_in_machine_output() {
-    let root = temp_dir("todo-78");
+    let root = temp_dir("plugin-discovery");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "metastable");

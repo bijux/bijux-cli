@@ -54,7 +54,7 @@ fn strip_ansi(input: &str) -> String {
 
 #[test]
 fn cli_flags_override_env_values() {
-    let root = temp_dir("todo-101");
+    let root = temp_dir("precedence-matrix");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -70,7 +70,7 @@ fn cli_flags_override_env_values() {
 
 #[test]
 fn env_values_override_config_file_values() {
-    let root = temp_dir("todo-102");
+    let root = temp_dir("precedence-matrix");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -85,7 +85,7 @@ fn env_values_override_config_file_values() {
 
 #[test]
 fn config_file_values_override_defaults() {
-    let root = temp_dir("todo-103");
+    let root = temp_dir("precedence-matrix");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -106,7 +106,7 @@ fn defaults_apply_when_nothing_is_supplied() {
 
 #[test]
 fn explicit_config_path_overrides_default_config_path() {
-    let root = temp_dir("todo-105");
+    let root = temp_dir("precedence-matrix");
     let path_a = root.join("a.env");
     let path_b = root.join("b.env");
     fs::write(&path_a, "BIJUXCLI_ALPHA=from_a\n").expect("write a");
@@ -123,7 +123,7 @@ fn explicit_config_path_overrides_default_config_path() {
 
 #[test]
 fn explicit_config_path_overrides_env_config_path() {
-    let root = temp_dir("todo-106");
+    let root = temp_dir("precedence-matrix");
     let env_path = root.join("env.env");
     let arg_path = root.join("arg.env");
     fs::write(&env_path, "BIJUXCLI_ALPHA=from_env_path\n").expect("write env path");

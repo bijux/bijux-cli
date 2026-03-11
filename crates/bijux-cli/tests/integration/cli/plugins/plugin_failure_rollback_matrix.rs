@@ -74,7 +74,7 @@ fn chmod_writable(path: &Path) {
 #[test]
 #[cfg(unix)]
 fn simulated_disk_write_failure_during_install() {
-    let root = temp_dir("todo-41");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("writefail.json");
@@ -90,7 +90,7 @@ fn simulated_disk_write_failure_during_install() {
 
 #[test]
 fn simulated_partial_copy_failure_during_install() {
-    let root = temp_dir("todo-42");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let missing_manifest = root.join("missing.json");
@@ -106,7 +106,7 @@ fn simulated_partial_copy_failure_during_install() {
 #[test]
 #[cfg(unix)]
 fn simulated_registry_write_failure_during_install() {
-    let root = temp_dir("todo-43");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -125,7 +125,7 @@ fn simulated_registry_write_failure_during_install() {
 
 #[test]
 fn simulated_manifest_parse_failure_during_install() {
-    let root = temp_dir("todo-44");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("bad.json");
@@ -138,7 +138,7 @@ fn simulated_manifest_parse_failure_during_install() {
 
 #[test]
 fn simulated_compatibility_range_failure_during_install() {
-    let root = temp_dir("todo-45");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("incompatible.json");
@@ -151,7 +151,7 @@ fn simulated_compatibility_range_failure_during_install() {
 
 #[test]
 fn simulated_missing_entrypoint_failure_during_install() {
-    let root = temp_dir("todo-46");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("missing-entrypoint.json");
@@ -165,7 +165,7 @@ fn simulated_missing_entrypoint_failure_during_install() {
 #[test]
 #[cfg(unix)]
 fn simulated_permission_denied_failure_during_install() {
-    let root = temp_dir("todo-47");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("denied.json");
@@ -181,7 +181,7 @@ fn simulated_permission_denied_failure_during_install() {
 #[test]
 #[cfg(unix)]
 fn simulated_partial_uninstall_failure() {
-    let root = temp_dir("todo-48");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -199,7 +199,7 @@ fn simulated_partial_uninstall_failure() {
 #[test]
 #[cfg(unix)]
 fn simulated_registry_write_failure_during_uninstall() {
-    let root = temp_dir("todo-49");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -216,7 +216,7 @@ fn simulated_registry_write_failure_during_uninstall() {
 
 #[test]
 fn simulated_enable_failure_when_plugin_files_missing() {
-    let root = temp_dir("todo-50");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -239,7 +239,7 @@ fn simulated_enable_failure_when_plugin_files_missing() {
 
 #[test]
 fn simulated_disable_failure_when_registry_is_corrupted() {
-    let root = temp_dir("todo-51");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write corrupt registry");
@@ -252,7 +252,7 @@ fn simulated_disable_failure_when_registry_is_corrupted() {
 #[test]
 #[cfg(unix)]
 fn rollback_proof_install_failure_preserves_existing_plugins() {
-    let root = temp_dir("todo-52");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -280,7 +280,7 @@ fn rollback_proof_install_failure_preserves_existing_plugins() {
 #[test]
 #[cfg(unix)]
 fn rollback_proof_uninstall_failure_preserves_existing_plugins() {
-    let root = temp_dir("todo-53");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -300,7 +300,7 @@ fn rollback_proof_uninstall_failure_preserves_existing_plugins() {
 #[test]
 #[cfg(unix)]
 fn retry_install_after_partial_failure_is_idempotent() {
-    let root = temp_dir("todo-54");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -321,7 +321,7 @@ fn retry_install_after_partial_failure_is_idempotent() {
 #[test]
 #[cfg(unix)]
 fn retry_uninstall_after_partial_failure_is_idempotent() {
-    let root = temp_dir("todo-55");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -341,7 +341,7 @@ fn retry_uninstall_after_partial_failure_is_idempotent() {
 #[test]
 #[cfg(unix)]
 fn failed_install_does_not_leave_claimed_namespace() {
-    let root = temp_dir("todo-56");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -369,7 +369,7 @@ fn failed_install_does_not_leave_claimed_namespace() {
 #[test]
 #[cfg(unix)]
 fn failed_uninstall_does_not_orphan_registry_state_silently() {
-    let root = temp_dir("todo-57");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
@@ -392,7 +392,7 @@ fn failed_uninstall_does_not_orphan_registry_state_silently() {
 
 #[test]
 fn plugin_doctor_reports_rollback_relevant_damage_clearly() {
-    let root = temp_dir("todo-58");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write corrupt registry");
@@ -405,7 +405,7 @@ fn plugin_doctor_reports_rollback_relevant_damage_clearly() {
 
 #[test]
 fn machine_readable_rollback_diagnostics_are_stable() {
-    let root = temp_dir("todo-59");
+    let root = temp_dir("plugin-failure-rollback");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
