@@ -71,10 +71,16 @@ fn plugins_check_parity_exit_and_stream_routing_matches_capture_overlap() {
     let env_overrides = py["env_overrides"].as_object().expect("env_overrides");
     let owned_env: Vec<(String, String)> = env_overrides
         .iter()
-        .filter_map(|(key, value)| value.as_str().map(|text| (key.to_string(), text.to_string())))
+        .filter_map(|(key, value)| {
+            value
+                .as_str()
+                .map(|text| (key.to_string(), text.to_string()))
+        })
         .collect();
-    let env_refs: Vec<(&str, &str)> =
-        owned_env.iter().map(|(key, value)| (key.as_str(), value.as_str())).collect();
+    let env_refs: Vec<(&str, &str)> = owned_env
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
 
     let (code, out, err) = run_with_env(&args, &env_refs);
     let expected_code = py["exit_code"].as_i64().unwrap_or(0) as i32;
