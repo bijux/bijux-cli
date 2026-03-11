@@ -3,7 +3,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
-use super::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -136,7 +136,7 @@ pub fn install_plugin(
     let trust_level = request.trust_level;
     let record = PluginRecord {
         manifest: validated.manifest,
-        state: crate::routing::PluginLifecycleState::Installed,
+        state: crate::contracts::PluginLifecycleState::Installed,
         source,
         trust_level,
         manifest_checksum_sha256,
@@ -168,7 +168,7 @@ pub fn uninstall_plugin(registry_path: &Path, namespace: &str) -> Result<(), Plu
 fn set_plugin_state(
     registry_path: &Path,
     namespace: &str,
-    state: crate::routing::PluginLifecycleState,
+    state: crate::contracts::PluginLifecycleState,
 ) -> Result<PluginRecord, PluginError> {
     let mut updated: Option<PluginRecord> = None;
 
@@ -177,8 +177,8 @@ fn set_plugin_state(
             .plugins
             .get_mut(namespace)
             .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
-        if state == crate::routing::PluginLifecycleState::Enabled
-            && plugin.state == crate::routing::PluginLifecycleState::Broken
+        if state == crate::contracts::PluginLifecycleState::Enabled
+            && plugin.state == crate::contracts::PluginLifecycleState::Broken
         {
             return Err(PluginError::InvalidField("cannot enable broken plugin".to_string()));
         }
@@ -192,12 +192,12 @@ fn set_plugin_state(
 
 /// Enable installed plugin.
 pub fn enable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, crate::routing::PluginLifecycleState::Enabled)
+    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Enabled)
 }
 
 /// Disable installed plugin.
 pub fn disable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, crate::routing::PluginLifecycleState::Disabled)
+    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Disabled)
 }
 
 /// Inspect plugin by namespace.
@@ -240,10 +240,10 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
     let mut incompatible = Vec::new();
 
     for (namespace, plugin) in &registry.plugins {
-        if plugin.state == crate::routing::PluginLifecycleState::Broken {
+        if plugin.state == crate::contracts::PluginLifecycleState::Broken {
             broken.push(namespace.clone());
         }
-        if plugin.state == crate::routing::PluginLifecycleState::Incompatible {
+        if plugin.state == crate::contracts::PluginLifecycleState::Incompatible {
             incompatible.push(namespace.clone());
         }
     }
@@ -253,7 +253,7 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
 
 /// Check plugin compatibility against host version without mutating registry.
 pub fn compatibility_check(
-    manifest: &crate::routing::PluginManifestV1,
+    manifest: &crate::contracts::PluginManifestV1,
     host_version: &str,
 ) -> Result<bool, PluginError> {
     let _ = semver::VersionReq::parse(&format!("={host_version}"))
@@ -282,14 +282,14 @@ pub fn plugin_load_order(registry_path: &Path) -> Result<Vec<PluginLoadEntry>, P
     Ok(items)
 }
 
-fn state_rank(state: crate::routing::PluginLifecycleState) -> u8 {
+fn state_rank(state: crate::contracts::PluginLifecycleState) -> u8 {
     match state {
-        crate::routing::PluginLifecycleState::Enabled => 0,
-        crate::routing::PluginLifecycleState::Installed
-        | crate::routing::PluginLifecycleState::Validated => 1,
-        crate::routing::PluginLifecycleState::Disabled => 2,
-        crate::routing::PluginLifecycleState::Discovered => 3,
-        crate::routing::PluginLifecycleState::Incompatible => 4,
-        crate::routing::PluginLifecycleState::Broken => 5,
+        crate::contracts::PluginLifecycleState::Enabled => 0,
+        crate::contracts::PluginLifecycleState::Installed
+        | crate::contracts::PluginLifecycleState::Validated => 1,
+        crate::contracts::PluginLifecycleState::Disabled => 2,
+        crate::contracts::PluginLifecycleState::Discovered => 3,
+        crate::contracts::PluginLifecycleState::Incompatible => 4,
+        crate::contracts::PluginLifecycleState::Broken => 5,
     }
 }

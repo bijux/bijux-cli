@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::routing::PluginKind;
+use crate::contracts::PluginKind;
 
 use super::errors::PluginError;
 use super::manifest::is_version_compatible;
@@ -20,7 +20,7 @@ pub fn load_time_diagnostics(
     let mut diagnostics = Vec::new();
 
     for (namespace, record) in &registry.plugins {
-        if record.state == crate::routing::PluginLifecycleState::Broken {
+        if record.state == crate::contracts::PluginLifecycleState::Broken {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),
                 severity: "error".to_string(),

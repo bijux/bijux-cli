@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use crate::routing::{PluginLifecycleState, PluginManifestV1};
+use crate::contracts::{PluginLifecycleState, PluginManifestV1};
 use serde::{Deserialize, Serialize};
 
 /// Runtime-facing plugin record persisted in registry.

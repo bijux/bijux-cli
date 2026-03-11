@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
+use crate::contracts::{PluginKind, PluginLifecycleState};
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
@@ -14,7 +15,6 @@ use crate::features::plugins::{
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
     KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
 };
-use crate::routing::{PluginKind, PluginLifecycleState};
 
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
     let plugins = list_plugins(plugin_registry_path).unwrap_or_default();

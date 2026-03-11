@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Output encoding and envelope rendering surfaces for core app execution.
 
-use crate::routing::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
+use crate::contracts::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
 use serde_json::Value;
 
 /// Output stream target for emitters.

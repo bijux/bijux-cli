@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
+use crate::contracts::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use crate::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
-use crate::routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 
 use super::types::{ReplSession, ReplShutdownContract, ReplStartupContract};
 

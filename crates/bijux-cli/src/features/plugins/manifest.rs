@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::routing::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
 use semver::Version;
 
 use super::constants::{is_reserved_namespace, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES};
@@ -29,7 +29,7 @@ pub fn validate_manifest(
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
 
-    Ok(ValidatedPlugin { manifest, state: crate::routing::PluginLifecycleState::Validated })
+    Ok(ValidatedPlugin { manifest, state: crate::contracts::PluginLifecycleState::Validated })
 }
 
 fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginError> {

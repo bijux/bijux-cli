@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::routing::{
+use crate::contracts::{
     CommandPath, DiagnosticRecord, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags,
     InvocationEvent, InvocationTrace, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
@@ -15,6 +15,7 @@ use serde_json::{json, Value};
 
 /// Lifecycle stages executed by the kernel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum LifecycleStage {
     /// Process bootstrap and runtime setup.
     Bootstrap,
@@ -128,6 +129,7 @@ pub trait AsyncHandler: Send + Sync {
 }
 
 /// Unified handler variant supporting sync and async.
+#[cfg_attr(not(test), allow(dead_code))]
 pub enum Handler {
     /// Sync handler variant.
     Sync(Box<dyn SyncHandler>),

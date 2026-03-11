@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::routing::PluginKind;
+use crate::contracts::PluginKind;
 
 /// Plugin manifest parsing/validation/registry errors.
 #[derive(Debug, thiserror::Error)]

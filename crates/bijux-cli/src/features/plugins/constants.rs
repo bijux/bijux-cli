@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use crate::routing::KNOWN_BIJUX_TOOL_NAMESPACES;
+use crate::contracts::KNOWN_BIJUX_TOOL_NAMESPACES;
 
 /// Registry schema version.
 pub const REGISTRY_VERSION: &str = "1";

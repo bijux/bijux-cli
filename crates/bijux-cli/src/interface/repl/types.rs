@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use crate::routing::ExecutionPolicy;
+use crate::contracts::ExecutionPolicy;
 
 /// REPL startup latency budget in milliseconds.
 pub const REPL_STARTUP_LATENCY_BUDGET_MS: u128 = 50;

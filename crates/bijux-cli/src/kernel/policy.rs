@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
 //! Kernel policy resolution utilities.
 
-use crate::routing::{ColorMode, ExecutionPolicy, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
+use crate::contracts::{
+    ColorMode, ExecutionPolicy, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
+};
 
 use super::pipeline::ExecutionIntent;
 

@@ -1,6 +1,6 @@
+use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use crate::interface::cli::dispatch::run_app;
 use crate::routing::parser::root_command;
-use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 use super::history::push_history;
 use super::types::{
