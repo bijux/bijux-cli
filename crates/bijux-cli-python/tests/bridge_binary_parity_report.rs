@@ -35,9 +35,8 @@ fn resolve_bijux_binary() -> PathBuf {
     let target_root = std::env::var_os("CARGO_TARGET_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("artifacts").join("rust").join("target"));
-    let bin_path = target_root
-        .join("debug")
-        .join(format!("bijux-rs{}", std::env::consts::EXE_SUFFIX));
+    let bin_path =
+        target_root.join("debug").join(format!("bijux-rs{}", std::env::consts::EXE_SUFFIX));
     if bin_path.exists() {
         return bin_path;
     }
@@ -52,10 +51,8 @@ fn resolve_bijux_binary() -> PathBuf {
 }
 
 fn run_bridge(argv: &[&str]) -> (i32, String, String) {
-    let as_vec: Vec<String> = std::iter::once("bijux")
-        .chain(argv.iter().copied())
-        .map(ToString::to_string)
-        .collect();
+    let as_vec: Vec<String> =
+        std::iter::once("bijux").chain(argv.iter().copied()).map(ToString::to_string).collect();
     let raw = execution_outcome_api(&as_vec).expect("bridge execution outcome");
     let payload: Value = serde_json::from_str(&raw).expect("valid bridge payload");
     (
@@ -99,11 +96,8 @@ fn binary_and_python_bridge_parity_report_is_generated() {
         .join("parity")
         .join("binary_vs_python_bridge_parity_report.json");
     out_path.parent().expect("parent").mkdir_p();
-    fs::write(
-        &out_path,
-        serde_json::to_string_pretty(&payload).expect("serialize") + "\n",
-    )
-    .expect("write report");
+    fs::write(&out_path, serde_json::to_string_pretty(&payload).expect("serialize") + "\n")
+        .expect("write report");
 
     for case in payload["cases"].as_array().expect("array") {
         assert!(
