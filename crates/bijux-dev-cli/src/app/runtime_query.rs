@@ -5,9 +5,8 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 use crate::{
-    commands::env as dev_env, commands::registry as dev_registry,
-    commands::runtime_identity as dev_runtime_identity, commands::state_audit as dev_state_audit,
-    control_plane as dev_control_plane,
+    control_plane as dev_control_plane, domains::env as dev_env, domains::registry as dev_registry,
+    domains::runtime_identity as dev_runtime_identity, domains::state_audit as dev_state_audit,
 };
 
 /// Runtime route inventory queried by maintainer route diagnostics.

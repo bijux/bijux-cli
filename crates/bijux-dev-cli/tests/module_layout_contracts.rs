@@ -5,9 +5,10 @@ use std::path::Path;
 use std::{fs, path::PathBuf};
 
 #[test]
-fn command_and_status_contract_namespaces_exist() {
+fn domain_platform_and_status_contract_namespaces_exist() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert!(crate_root.join("src/commands").is_dir());
+    assert!(crate_root.join("src/domains").is_dir());
+    assert!(crate_root.join("src/platform").is_dir());
     assert!(crate_root.join("src/status_contracts").is_dir());
 }
 
