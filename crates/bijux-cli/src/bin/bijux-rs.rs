@@ -4,8 +4,6 @@
 use std::process::ExitCode;
 
 #[cfg(test)]
-use bijux_cli_python as _;
-#[cfg(test)]
 use libc as _;
 
 fn main() -> ExitCode {

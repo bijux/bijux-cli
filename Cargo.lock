@@ -69,7 +69,6 @@ name = "bijux-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bijux-cli-python",
  "bijux-dev-cli",
  "clap",
  "futures",
