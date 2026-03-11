@@ -46,6 +46,20 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+fn collect_files_recursive(root: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_files_recursive(&path, out);
+        } else if path.is_file() {
+            out.push(path);
+        }
+    }
+}
+
 #[test]
 fn workspace_root_scripts_directory_is_removed_and_name_is_blocked() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -71,4 +85,44 @@ fn workspace_root_scripts_directory_is_removed_and_name_is_blocked() {
             file.display()
         );
     }
+}
+
+#[test]
+fn workspace_crate_src_tree_depth_is_bounded() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let workspace_root = crate_root.join("..").join("..");
+    let crates_root = workspace_root.join("crates");
+
+    let mut violations = Vec::<String>::new();
+    let Ok(crate_entries) = fs::read_dir(&crates_root) else {
+        panic!("missing crates directory at {}", crates_root.display());
+    };
+    for crate_entry in crate_entries.flatten() {
+        let crate_path = crate_entry.path();
+        if !crate_path.is_dir() {
+            continue;
+        }
+        let src_path = crate_path.join("src");
+        if !src_path.is_dir() {
+            continue;
+        }
+        let mut files = Vec::<PathBuf>::new();
+        collect_files_recursive(&src_path, &mut files);
+        for file in files {
+            let Ok(rel) = file.strip_prefix(&workspace_root) else {
+                continue;
+            };
+            let depth = rel.components().count();
+            if depth > 7 {
+                violations.push(format!("depth={depth} path={}", rel.display()));
+            }
+        }
+    }
+
+    violations.sort();
+    assert!(
+        violations.is_empty(),
+        "crate src path depth must be <= 7 for every file under crates/*/src; violations:\n{}",
+        violations.join("\n")
+    );
 }
