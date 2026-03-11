@@ -11,6 +11,11 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Changed
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
+- Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
+
+### Removed
+- Removed the `scripts/` directory from the repository.
+- Removed the MkDocs `docs_builder` script pipeline; documentation now builds from the simplified docs layout.
 
 ---
 
@@ -68,7 +73,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## [0.1.2] – 2025-08-17
 
 ### Added
-* **New Documentation Engine:** Introduced a new modular documentation builder that replaced the previous helper script.
+* **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
 * **CI Artifact Pages:** The documentation site now automatically generates detailed pages for all CI artifacts, including tests, linting, code quality, security, API tests, SBOMs, and citation files.
 * **Release Evidence:** The `publish` workflow now downloads all artifacts from the `CI` run, packages them as `evidence/*.tar.gz` bundles, and attaches them to the GitHub Release for traceability.
 * **Build Hygiene:** Make modules now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
@@ -105,7 +110,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Docs assets:** Community landing page, Plausible analytics partial, and CSS overrides.
 
 ### Changed
-* **Docs generator (MkDocs manager module):**
+* **Docs generator (`scripts/docs_builder/mkdocs_manager.py`):**
   * Copies **README**, **USAGE**, **TESTS**, **PROJECT_TREE**, and **TOOLING** into the site with link rewrites and `{#top}` anchors.
   * Generates mkdocstrings pages for all modules under `src/bijux_cli/**`.
   * Builds **one** consolidated **API Reference** with this structure:
