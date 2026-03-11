@@ -17,7 +17,11 @@ pub(crate) struct HistoryListOptions {
 
 impl Default for HistoryListOptions {
     fn default() -> Self {
-        Self { limit: 20, filter_contains: None, sort_by_timestamp: false }
+        Self {
+            limit: 20,
+            filter_contains: None,
+            sort_by_timestamp: false,
+        }
     }
 }
 
@@ -38,7 +42,8 @@ pub(crate) fn list_history(history_file: &Path, options: &HistoryListOptions) ->
         entries.sort_by(|a, b| {
             let left = a.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
             let right = b.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
-            left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal)
+            left.partial_cmp(&right)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
     }
 
@@ -46,8 +51,9 @@ pub(crate) fn list_history(history_file: &Path, options: &HistoryListOptions) ->
 }
 
 pub(crate) fn clear_history(history_file: &Path) -> Result<Value> {
-    let removed =
-        read_history_entries(history_file, usize::MAX).map(|entries| entries.len()).unwrap_or(0);
+    let removed = read_history_entries(history_file, usize::MAX)
+        .map(|entries| entries.len())
+        .unwrap_or(0);
     write_history_entries(history_file, &[])?;
 
     Ok(json!({"status": "cleared", "removed_entries": removed, "file": history_file}))
