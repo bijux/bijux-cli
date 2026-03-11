@@ -123,7 +123,7 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
     let source = strip_comments_and_strings(
         &std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../bijux-dev-cli/src/interface/dispatch.rs"
+            "/../bijux-dev-cli/src/application/dispatch.rs"
         ))
         .expect("read dev cli dispatch source"),
     );

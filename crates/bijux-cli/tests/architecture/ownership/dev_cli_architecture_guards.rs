@@ -116,7 +116,7 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
     .expect("read dev cli command source");
     let dispatch_source_raw = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../bijux-dev-cli/src/interface/dispatch.rs"
+        "/../bijux-dev-cli/src/application/dispatch.rs"
     ))
     .expect("read dev cli dispatch source");
     let adapter_source = strip_comments_and_strings(&adapter_source_raw);
