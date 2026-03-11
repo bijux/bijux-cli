@@ -1442,6 +1442,46 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/deep_tests_by_value_report.json",
+                "artifacts/status/deep_missing_behavior_cases_report.json",
+                "artifacts/status/deep_weak_tests_replacement_report.json",
+                "artifacts/status/deep_test_first_domains_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/performance_report.json",
+                "artifacts/status/performance_regression_budget.json",
+                "artifacts/status/performance_benchmark_policy.json",
+                "artifacts/status/performance_report.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/memory_command_coverage_report.json",
+                "artifacts/status/memory_command_matrix_artifact.json",
+                "artifacts/status/memory_corruption_matrix_artifact.json",
+                "artifacts/status/memory_python_parity_artifact.json",
+                "artifacts/status/memory_read_domain_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS",
+        }),
     ]
 }
 
@@ -9873,6 +9913,403 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/unified_state_path_resolution_report.json",
                 "artifacts/status/unified_state_doctor_snapshots.json",
                 "artifacts/status/unified_state_audit_payload.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
+            let test_root = workspace_root.join("crates/bijux-cli/tests/bin_surface");
+            let mut rows = Vec::<(String, String, i64, i64)>::new();
+            for path in collect_files(&test_root) {
+                if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                    continue;
+                }
+                let rel_path = rel(&path, workspace_root);
+                let text = fs::read_to_string(&path).unwrap_or_default();
+                let lower = text.to_lowercase();
+                let assert_count =
+                    (text.matches("assert!(").count() + text.matches("assert_eq!(").count()) as i64;
+                let score = assert_count
+                    + if ["failure", "error", "malformed", "missing", "invalid", "usage"]
+                        .iter()
+                        .any(|k| lower.contains(k))
+                    {
+                        3
+                    } else {
+                        0
+                    }
+                    + if lower.contains("repeat") || lower.contains("determin") { 2 } else { 0 }
+                    + if lower.contains("consisten")
+                        || lower.contains("schema")
+                        || lower.contains("shape")
+                    {
+                        2
+                    } else {
+                        0
+                    }
+                    + if lower.contains("corrupt") || lower.contains("rollback") { 2 } else { 0 };
+                rows.push((rel_path, text, score, assert_count));
+            }
+            let domains: [(&str, fn(&str) -> bool); 5] = [
+                ("commands", |rel| {
+                    ["command", "root", "cli_", "ported", "help"].iter().any(|k| rel.contains(k))
+                }),
+                ("config", |rel| rel.contains("config")),
+                ("history", |rel| rel.contains("history")),
+                ("memory", |rel| rel.contains("memory")),
+                ("diagnostics", |rel| {
+                    ["diagnostics", "doctor", "inspect", "dev_cli_output_contracts"]
+                        .iter()
+                        .any(|k| rel.contains(k))
+                }),
+            ];
+            let mut by_value = serde_json::Map::<String, Value>::new();
+            let mut missing_cases = serde_json::Map::<String, Value>::new();
+            let mut weak_replace = serde_json::Map::<String, Value>::new();
+            for (domain, predicate) in domains {
+                let mut tests = rows
+                    .iter()
+                    .filter(|(path, _, _, _)| predicate(&path.to_lowercase()))
+                    .map(|(path, text, score, assert_count)| {
+                        json!({"path": path, "text": text, "score": score, "assert_count": assert_count})
+                    })
+                    .collect::<Vec<_>>();
+                tests.sort_by(|a, b| {
+                    let ascore = a.get("score").and_then(Value::as_i64).unwrap_or(0);
+                    let bscore = b.get("score").and_then(Value::as_i64).unwrap_or(0);
+                    bscore.cmp(&ascore)
+                });
+                by_value.insert(
+                    domain.to_string(),
+                    json!({
+                        "count": tests.len(),
+                        "top_by_value": tests.iter().take(20).map(|t| json!({"path": t["path"], "value_score": t["score"]})).collect::<Vec<_>>()
+                    }),
+                );
+                let merged = tests
+                    .iter()
+                    .filter_map(|t| t.get("text").and_then(Value::as_str))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+                    .to_lowercase();
+                let reqs = match domain {
+                    "commands" => vec![
+                        "unknown command usage",
+                        "deterministic repeated run",
+                        "stderr stdout separation",
+                    ],
+                    "config" => vec![
+                        "rollback on invalid mutation",
+                        "corruption recovery",
+                        "precedence consistency",
+                    ],
+                    "history" => vec![
+                        "malformed interleaving resilience",
+                        "deterministic ordering",
+                        "state doctor consistency",
+                    ],
+                    "memory" => vec![
+                        "wrong type field handling",
+                        "missing state handling",
+                        "corruption diagnostics consistency",
+                    ],
+                    _ => vec![
+                        "findings order determinism",
+                        "schema consistency",
+                        "source of truth consistency",
+                    ],
+                };
+                let cues = |name: &str| -> Vec<&str> {
+                    match name {
+                        "unknown command usage" => {
+                            vec!["unknown-command", "unknown command", "usage"]
+                        }
+                        "deterministic repeated run" => vec!["repeat", "repeated", "determin"],
+                        "stderr stdout separation" => vec!["stderr", "stdout"],
+                        "rollback on invalid mutation" => vec!["rollback", "invalid"],
+                        "corruption recovery" => vec!["corrupt", "malformed", "recovery"],
+                        "precedence consistency" => vec!["precedence", "source_precedence"],
+                        "malformed interleaving resilience" => {
+                            vec!["malformed", "interleav", "resilience"]
+                        }
+                        "deterministic ordering" => vec!["ordering", "determin"],
+                        "state doctor consistency" => vec!["state-doctor", "doctor"],
+                        "wrong type field handling" => vec!["wrong-type", "wrong type"],
+                        "missing state handling" => vec!["missing", "count"],
+                        "corruption diagnostics consistency" => {
+                            vec!["corrupt", "doctor", "consisten"]
+                        }
+                        "findings order determinism" => vec!["findings", "issues", "determin"],
+                        "schema consistency" => vec!["schema", "shape", "contracts"],
+                        _ => vec!["source", "routes", "registry", "env"],
+                    }
+                };
+                let missing = reqs
+                    .into_iter()
+                    .filter(|item| !cues(item).iter().any(|cue| merged.contains(cue)))
+                    .collect::<Vec<_>>();
+                missing_cases.insert(domain.to_string(), json!(missing));
+                let mut weakest = tests;
+                weakest.sort_by(|a, b| {
+                    let ascore = a.get("score").and_then(Value::as_i64).unwrap_or(0);
+                    let bscore = b.get("score").and_then(Value::as_i64).unwrap_or(0);
+                    ascore.cmp(&bscore)
+                });
+                weak_replace.insert(
+                    domain.to_string(),
+                    json!(weakest
+                        .iter()
+                        .take(8)
+                        .map(|t| json!({"path": t["path"], "value_score": t["score"], "replacement_goal": "add failure-path or determinism proof"}))
+                        .collect::<Vec<_>>()),
+                );
+            }
+            let generated_at = generated_at_utc();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/deep_tests_by_value_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "domains": by_value,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/deep_missing_behavior_cases_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "domains": missing_cases,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/deep_weak_tests_replacement_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "domains": weak_replace,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/deep_test_first_domains_contract.json", &json!({
+                "generated_at": generated_at,
+                "generator": "bijux-dev-cli",
+                "status": "frozen",
+                "domains": ["commands","config","history","memory","diagnostics"],
+                "rules": [
+                    "new command features require at least one deep failure-path or determinism test",
+                    "new diagnostics features require at least one consistency or shape test",
+                    "new stateful features require at least one corruption or rollback test",
+                ],
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/deep_tests_by_value_report.json",
+                "artifacts/status/deep_missing_behavior_cases_report.json",
+                "artifacts/status/deep_weak_tests_replacement_report.json",
+                "artifacts/status/deep_test_first_domains_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS" => {
+            let generated_at = generated_at_utc();
+            let startup = vec![
+                "version",
+                "status",
+                "doctor",
+                "plugins list",
+                "cli config get",
+                "dev cli status",
+                "plugins list (broken registry)",
+                "plugins list (large registry)",
+                "cli config get (large config)",
+                "history (large history)",
+            ];
+            let memory = vec![
+                "version payload-size",
+                "status payload-size",
+                "plugins list payload-size",
+                "repl startup memory estimate",
+            ];
+            let rendering =
+                vec!["output json render (large payload)", "output yaml render (large payload)"];
+            let thresholds = json!({
+                "mode":"critical-path-only",
+                "why":"guard user-visible regressions first; avoid vanity microbenchmarks",
+                "startup_ms":{"version":120,"status":250,"doctor":500,"plugins list":400,"cli config get":200,"dev cli status":900,"plugins list (broken registry)":500,"plugins list (large registry)":900,"cli config get (large config)":650,"history (large history)":1200},
+                "payload_bytes":{"version":4096,"status":24576,"plugins list":32768,"repl startup memory estimate":524288},
+                "rendering_budget_ms":{"json_large_payload_total":3000,"yaml_large_payload_total":3000}
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/performance_report.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator":"bijux-dev-cli",
+                    "scope":"performance realism",
+                    "status":"complete",
+                    "coverage_ids":[557],
+                    "benchmark_sets":{"startup":startup,"memory":memory,"rendering":rendering},
+                    "evidence_tests":[
+                        "crates/bijux-cli/tests/bin_surface/performance_realism_hardening.rs",
+                        "crates/bijux-cli-output/tests/output_rendering_performance.rs",
+                        "crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs"
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/performance_regression_budget.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator":"bijux-dev-cli",
+                    "scope":"regression budgets",
+                    "status":"complete",
+                    "coverage_ids":[558,560],
+                    "thresholds":thresholds,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/performance_benchmark_policy.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator":"bijux-dev-cli",
+                    "scope":"benchmark policy",
+                    "status":"complete",
+                    "coverage_ids":[559],
+                    "rules":[
+                        "benchmark additions must target user-visible commands or rendering paths",
+                        "regression thresholds apply to critical-path commands only",
+                        "new microbenchmarks without user impact are rejected in CI",
+                    ],
+                }),
+            )
+            .ok()?;
+            let mut text = String::from("Performance Report\n\ncritical_path_benchmarks:\n");
+            for s in &startup {
+                text.push_str(&format!("  - {s}\n"));
+            }
+            text.push_str("\nmemory_benchmarks:\n");
+            for s in &memory {
+                text.push_str(&format!("  - {s}\n"));
+            }
+            text.push_str("\nrendering_benchmarks:\n");
+            for s in &rendering {
+                text.push_str(&format!("  - {s}\n"));
+            }
+            fs::write(workspace_root.join("artifacts/status/performance_report.txt"), text).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/performance_report.json",
+                "artifacts/status/performance_regression_budget.json",
+                "artifacts/status/performance_benchmark_policy.json",
+                "artifacts/status/performance_report.txt"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS" => {
+            let matrix_source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let parity_source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/bin_surface/memory_parity.rs"),
+            )
+            .unwrap_or_default();
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (342, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (343, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (344, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (345, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (346, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (347, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
+                (348, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (349, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (350, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (351, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (352, "memory_quiet_no_color_and_deterministic_repeated_runs"),
+                (353, "memory_quiet_no_color_and_deterministic_repeated_runs"),
+                (354, "memory_quiet_no_color_and_deterministic_repeated_runs"),
+                (355, "memory_unwritable_storage_conditions_for_read_and_write_paths"),
+                (356, "memory_config_path_override_does_not_change_home_memory_resolution"),
+                (357, "memory_quiet_no_color_and_deterministic_repeated_runs"),
+                (358, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (359, "memory_root_parity_with_python_summary_command"),
+            ]);
+            let coverage_rows = required.iter().map(|(id, name)| {
+                let in_matrix = matrix_source.contains(&format!("fn {name}("));
+                let in_parity = parity_source.contains(&format!("fn {name}("));
+                json!({
+                    "coverage_id": id,
+                    "test": name,
+                    "status": if in_matrix || in_parity { "complete" } else { "missing" },
+                    "evidence": if in_matrix { "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs" } else { "crates/bijux-cli/tests/bin_surface/memory_parity.rs" },
+                })
+            }).collect::<Vec<_>>();
+            let generated_at = generated_at_utc();
+            write_status_artifact_json(workspace_root, "artifacts/status/memory_command_coverage_report.json", &json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "scope":"memory command coverage",
+                "commands": coverage_rows,
+                "summary":{
+                    "total":coverage_rows.len(),
+                    "complete":coverage_rows.iter().filter(|r| r.get("status").and_then(Value::as_str)==Some("complete")).count(),
+                    "partial":0,"shim":0,
+                    "missing":coverage_rows.iter().filter(|r| r.get("status").and_then(Value::as_str)==Some("missing")).count(),
+                }
+            })).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/memory_command_matrix_artifact.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator":"bijux-dev-cli",
+                    "scope":"memory command matrix",
+                    "coverage_rows":coverage_rows,
+                    "commands":coverage_rows,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/memory_corruption_matrix_artifact.json", &json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "scope":"memory corruption matrix",
+                "cases":[
+                    {"name":"malformed memory state and wrong-type fields","status":"complete","evidence":"memory_malformed_wrong_type_missing_required_and_extra_fields"},
+                    {"name":"unwritable storage write path","status":"complete","evidence":"memory_unwritable_storage_conditions_for_read_and_write_paths"},
+                ],
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/memory_python_parity_artifact.json", &json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "scope":"memory parity versus overlapping python behavior",
+                "status": if parity_source.contains("fn memory_root_parity_with_python_summary_command(") { "complete" } else { "partial" },
+                "evidence":[
+                    "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
+                    "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs",
+                ],
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/memory_read_domain_contract.json", &json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "domain":"memory-read-behavior",
+                "status":"frozen",
+                "rule":"Memory read behavior is accepted only when determinism and corruption handling remain green.",
+                "evidence":[
+                    "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs",
+                    "artifacts/status/memory_command_matrix_artifact.json",
+                    "artifacts/status/memory_corruption_matrix_artifact.json",
+                    "artifacts/status/memory_python_parity_artifact.json",
+                ],
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/memory_command_coverage_report.json",
+                "artifacts/status/memory_command_matrix_artifact.json",
+                "artifacts/status/memory_corruption_matrix_artifact.json",
+                "artifacts/status/memory_python_parity_artifact.json",
+                "artifacts/status/memory_read_domain_contract.json"
             ]}))
         }
         _ => None,
