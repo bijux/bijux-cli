@@ -353,10 +353,7 @@ fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Value, String>
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "command failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -371,10 +368,7 @@ fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<String, String
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "command failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -564,67 +558,154 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             for (artifact, _label, cmd) in report_writers {
                 let payload = match run_bijux_json(workspace_root, &cmd) {
                     Ok(payload) => payload,
-                    Err(err) => return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err})),
+                    Err(err) => {
+                        return Some(
+                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        )
+                    }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
-                    return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                    return Some(
+                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    );
                 }
                 outputs.push(artifact.to_string());
             }
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}))
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+            )
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE-REPORTS" => {
             let rows = [
-                ("artifacts/status/dev_cli_evidence_list_report.json", ["dev", "cli", "evidence", "list"]),
-                ("artifacts/status/dev_cli_evidence_audit_report.json", ["dev", "cli", "evidence", "audit"]),
-                ("artifacts/status/dev_cli_evidence_stale_report.json", ["dev", "cli", "evidence", "stale"]),
-                ("artifacts/status/dev_cli_evidence_matrix_report.json", ["dev", "cli", "evidence", "matrix"]),
-                ("artifacts/status/dev_cli_evidence_website_export_report.json", ["dev", "cli", "evidence", "website-export"]),
-                ("artifacts/status/dev_cli_evidence_ci_export_report.json", ["dev", "cli", "evidence", "ci-export"]),
-                ("artifacts/status/dev_cli_evidence_release_export_report.json", ["dev", "cli", "evidence", "release-export"]),
-                ("artifacts/status/dev_cli_evidence_command_map_report.json", ["dev", "cli", "evidence", "command-map"]),
-                ("artifacts/status/dev_cli_evidence_parity_map_report.json", ["dev", "cli", "evidence", "parity-map"]),
+                (
+                    "artifacts/status/dev_cli_evidence_list_report.json",
+                    ["dev", "cli", "evidence", "list"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_audit_report.json",
+                    ["dev", "cli", "evidence", "audit"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_stale_report.json",
+                    ["dev", "cli", "evidence", "stale"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_matrix_report.json",
+                    ["dev", "cli", "evidence", "matrix"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_website_export_report.json",
+                    ["dev", "cli", "evidence", "website-export"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_ci_export_report.json",
+                    ["dev", "cli", "evidence", "ci-export"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_release_export_report.json",
+                    ["dev", "cli", "evidence", "release-export"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_command_map_report.json",
+                    ["dev", "cli", "evidence", "command-map"],
+                ),
+                (
+                    "artifacts/status/dev_cli_evidence_parity_map_report.json",
+                    ["dev", "cli", "evidence", "parity-map"],
+                ),
             ];
             let mut outputs = Vec::<String>::new();
             for (artifact, cmd) in rows {
                 let payload = match run_bijux_json(workspace_root, &cmd) {
                     Ok(payload) => payload,
-                    Err(err) => return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err})),
+                    Err(err) => {
+                        return Some(
+                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        )
+                    }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
-                    return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                    return Some(
+                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    );
                 }
                 outputs.push(artifact.to_string());
             }
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}))
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+            )
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-REPORTS" => {
             let rows = [
-                ("artifacts/status/dev_cli_release_status_report.json", ["dev", "cli", "release", "status"]),
-                ("artifacts/status/dev_cli_release_evidence_report.json", ["dev", "cli", "release", "evidence"]),
-                ("artifacts/status/dev_cli_release_readiness_report.json", ["dev", "cli", "release", "readiness"]),
-                ("artifacts/status/dev_cli_release_diff_report.json", ["dev", "cli", "release", "diff"]),
-                ("artifacts/status/dev_cli_release_gaps_report.json", ["dev", "cli", "release", "gaps"]),
-                ("artifacts/status/dev_cli_release_summary_report.json", ["dev", "cli", "release", "summary"]),
-                ("artifacts/status/dev_cli_release_manifest_report.json", ["dev", "cli", "release", "manifest"]),
-                ("artifacts/status/dev_cli_release_notes_report.json", ["dev", "cli", "release", "notes"]),
-                ("artifacts/status/dev_cli_release_behavior_changes_report.json", ["dev", "cli", "release", "behavior-changes"]),
-                ("artifacts/status/dev_cli_release_intentional_differences_report.json", ["dev", "cli", "release", "intentional-differences"]),
-                ("artifacts/status/dev_cli_release_unresolved_gaps_report.json", ["dev", "cli", "release", "unresolved-gaps"]),
-                ("artifacts/status/dev_cli_release_compatibility_leftovers_report.json", ["dev", "cli", "release", "compatibility-leftovers"]),
+                (
+                    "artifacts/status/dev_cli_release_status_report.json",
+                    ["dev", "cli", "release", "status"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_evidence_report.json",
+                    ["dev", "cli", "release", "evidence"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_readiness_report.json",
+                    ["dev", "cli", "release", "readiness"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_diff_report.json",
+                    ["dev", "cli", "release", "diff"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_gaps_report.json",
+                    ["dev", "cli", "release", "gaps"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_summary_report.json",
+                    ["dev", "cli", "release", "summary"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_manifest_report.json",
+                    ["dev", "cli", "release", "manifest"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_notes_report.json",
+                    ["dev", "cli", "release", "notes"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_behavior_changes_report.json",
+                    ["dev", "cli", "release", "behavior-changes"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_intentional_differences_report.json",
+                    ["dev", "cli", "release", "intentional-differences"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_unresolved_gaps_report.json",
+                    ["dev", "cli", "release", "unresolved-gaps"],
+                ),
+                (
+                    "artifacts/status/dev_cli_release_compatibility_leftovers_report.json",
+                    ["dev", "cli", "release", "compatibility-leftovers"],
+                ),
             ];
             let mut outputs = Vec::<String>::new();
             for (artifact, cmd) in rows {
                 let payload = match run_bijux_json(workspace_root, &cmd) {
                     Ok(payload) => payload,
-                    Err(err) => return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err})),
+                    Err(err) => {
+                        return Some(
+                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        )
+                    }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
-                    return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                    return Some(
+                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    );
                 }
                 outputs.push(artifact.to_string());
             }
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}))
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+            )
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT-REPORTS" => {
             let rows = [
@@ -641,20 +722,30 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             for (artifact, cmd) in rows {
                 let payload = match run_bijux_json(workspace_root, &cmd) {
                     Ok(payload) => payload,
-                    Err(err) => return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err})),
+                    Err(err) => {
+                        return Some(
+                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        )
+                    }
                 };
                 let artifact_path = format!("artifacts/status/{artifact}");
-                if let Err(err) = write_status_artifact_json(workspace_root, &artifact_path, &payload) {
-                    return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                if let Err(err) =
+                    write_status_artifact_json(workspace_root, &artifact_path, &payload)
+                {
+                    return Some(
+                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    );
                 }
                 let text = match run_bijux_text(workspace_root, &cmd) {
                     Ok(text) => text,
-                    Err(err) => return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err})),
+                    Err(err) => {
+                        return Some(
+                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        )
+                    }
                 };
-                text_heads.insert(
-                    cmd.join(" "),
-                    text.lines().take(3).collect::<Vec<_>>().join("\n"),
-                );
+                text_heads
+                    .insert(cmd.join(" "), text.lines().take(3).collect::<Vec<_>>().join("\n"));
                 payloads.insert(artifact.to_string(), payload);
                 outputs.push(artifact_path);
             }
@@ -663,7 +754,9 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/dev_cli_cockpit_text_heads.json",
                 &json!(text_heads),
             ) {
-                return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                return Some(
+                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                );
             }
             let status_summary = payloads
                 .get("dev_cli_status_report.json")
@@ -714,7 +807,9 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 .unwrap_or_default()
                 .into_iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("complete"))
-                .filter_map(|row| row.get("command").and_then(Value::as_str).map(ToString::to_string))
+                .filter_map(|row| {
+                    row.get("command").and_then(Value::as_str).map(ToString::to_string)
+                })
                 .collect();
             let blocker_commands: Vec<String> = blockers
                 .into_iter()
@@ -725,7 +820,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                         .or_else(|| row.as_str().map(ToString::to_string))
                 })
                 .collect();
-            let blocker_subset_ok = blocker_commands.iter().all(|command| unresolved.contains(command));
+            let blocker_subset_ok =
+                blocker_commands.iter().all(|command| unresolved.contains(command));
             let next_policy = payloads
                 .get("dev_cli_next_report.json")
                 .and_then(|v| v.get("next"))
@@ -737,9 +833,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 .get("manual_curated_priority_lists_allowed")
                 .and_then(Value::as_bool)
                 == Some(false)
-                && next_policy
-                    .get("roadmap_requires_generated_artifacts")
-                    .and_then(Value::as_bool)
+                && next_policy.get("roadmap_requires_generated_artifacts").and_then(Value::as_bool)
                     == Some(true)
                 && next_policy
                     .get("required_artifacts")
@@ -751,7 +845,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 .and_then(|v| v.get("status"))
                 .and_then(|v| v.get("summary"))
                 == Some(&status_summary);
-            let count_alignment_ok = status_summary.get("complete").and_then(Value::as_i64) == Some(truth_done)
+            let count_alignment_ok = status_summary.get("complete").and_then(Value::as_i64)
+                == Some(truth_done)
                 && status_summary.get("missing").and_then(Value::as_i64) == Some(truth_missing)
                 && status_summary.get("partial").and_then(Value::as_i64).unwrap_or(0)
                     + status_summary.get("shim").and_then(Value::as_i64).unwrap_or(0)
@@ -789,27 +884,51 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/dev_cli_summary_surface_artifact.json",
                 &summary_artifact,
             ) {
-                return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                return Some(
+                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                );
             }
             if let Err(err) = write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/dev_cli_summary_surface_drift_artifact.json",
                 &drift_artifact,
             ) {
-                return Some(json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}));
+                return Some(
+                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                );
             }
             outputs.push("artifacts/status/dev_cli_cockpit_text_heads.json".to_string());
             outputs.push("artifacts/status/dev_cli_summary_surface_artifact.json".to_string());
-            outputs.push("artifacts/status/dev_cli_summary_surface_drift_artifact.json".to_string());
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}))
+            outputs
+                .push("artifacts/status/dev_cli_summary_surface_drift_artifact.json".to_string());
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+            )
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS" => {
-            let remaining = run_bijux_json(workspace_root, &["dev", "cli", "scripts", "remaining"]).ok()?;
-            let migrated = run_bijux_json(workspace_root, &["dev", "cli", "scripts", "migrated"]).ok()?;
+            let remaining =
+                run_bijux_json(workspace_root, &["dev", "cli", "scripts", "remaining"]).ok()?;
+            let migrated =
+                run_bijux_json(workspace_root, &["dev", "cli", "scripts", "migrated"]).ok()?;
             let diff = run_bijux_json(workspace_root, &["dev", "cli", "scripts", "diff"]).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_scripts_remaining_report.json", &remaining).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_scripts_migrated_report.json", &migrated).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_scripts_diff_report.json", &diff).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_scripts_remaining_report.json",
+                &remaining,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_scripts_migrated_report.json",
+                &migrated,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_scripts_diff_report.json",
+                &diff,
+            )
+            .ok()?;
             let mut ranking: Vec<Value> = migrated
                 .get("migrated")
                 .and_then(Value::as_array)
@@ -829,7 +948,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 let r = right.get("maintainer_value_rank").and_then(Value::as_i64).unwrap_or(0);
                 r.cmp(&l)
             });
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_script_value_ranking.json", &json!({"ranking": ranking})).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_script_value_ranking.json",
+                &json!({"ranking": ranking}),
+            )
+            .ok()?;
             let make_targets = remaining
                 .get("make_targets")
                 .and_then(Value::as_array)
@@ -856,7 +980,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
             let docs = run_bijux_json(workspace_root, &["dev", "cli", "docs-audit"]).ok()?;
             let scripts = run_bijux_json(workspace_root, &["dev", "cli", "script-audit"]).ok()?;
-            let crate_health = run_bijux_json(workspace_root, &["dev", "cli", "crate-health"]).ok()?;
+            let crate_health =
+                run_bijux_json(workspace_root, &["dev", "cli", "crate-health"]).ok()?;
             let checks = json!({
                 "repo_health_payload_present": repo.get("repo_health").is_some_and(Value::is_object),
                 "docs_payload_present": docs.get("docs").is_some_and(Value::is_array),
@@ -872,21 +997,36 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             });
             let drift_checks: Vec<String> = checks
                 .as_object()
-                .map(|o| o.iter().filter(|(_, v)| v.as_bool() != Some(true)).map(|(k, _)| k.to_string()).collect())
+                .map(|o| {
+                    o.iter()
+                        .filter(|(_, v)| v.as_bool() != Some(true))
+                        .map(|(k, _)| k.to_string())
+                        .collect()
+                })
                 .unwrap_or_default();
-            write_status_artifact_json(workspace_root, "artifacts/status/repo_docs_scripts_crate_health_artifact.json", &json!({
-                "scope": "repo/docs/scripts/crate-health truth",
-                "generator": "bijux-dev-cli",
-                "checks": checks,
-                "status": if drift_checks.is_empty() { "complete" } else { "partial" },
-            })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json", &json!({
-                "scope": "repo/docs/scripts/crate-health drift",
-                "generator": "bijux-dev-cli",
-                "drift_checks": drift_checks,
-                "drift_count": drift_checks.len(),
-                "status": if drift_checks.is_empty() { "clean" } else { "drift" },
-            })).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
+                &json!({
+                    "scope": "repo/docs/scripts/crate-health truth",
+                    "generator": "bijux-dev-cli",
+                    "checks": checks,
+                    "status": if drift_checks.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json",
+                &json!({
+                    "scope": "repo/docs/scripts/crate-health drift",
+                    "generator": "bijux-dev-cli",
+                    "drift_checks": drift_checks,
+                    "drift_count": drift_checks.len(),
+                    "status": if drift_checks.is_empty() { "clean" } else { "drift" },
+                }),
+            )
+            .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
                 "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json"
@@ -898,10 +1038,34 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             let env = run_bijux_json(workspace_root, &["dev", "cli", "env"]).ok()?;
             let contracts = run_bijux_json(workspace_root, &["dev", "cli", "contracts"]).ok()?;
             let inspect = run_bijux_json(workspace_root, &["inspect"]).ok()?;
-            let route_roots: BTreeSet<String> = routes.get("routes").and_then(Value::as_array).cloned().unwrap_or_default().into_iter()
-                .filter_map(|row| row.get("segments").and_then(Value::as_array).and_then(|s| s.first()).and_then(Value::as_str).map(ToString::to_string)).collect();
-            let inspect_roots: BTreeSet<String> = inspect.get("route_sources").and_then(Value::as_array).cloned().unwrap_or_default().into_iter()
-                .filter_map(|row| row.get("segments").and_then(Value::as_array).and_then(|s| s.first()).and_then(Value::as_str).map(ToString::to_string)).collect();
+            let route_roots: BTreeSet<String> = routes
+                .get("routes")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|row| {
+                    row.get("segments")
+                        .and_then(Value::as_array)
+                        .and_then(|s| s.first())
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
+                .collect();
+            let inspect_roots: BTreeSet<String> = inspect
+                .get("route_sources")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|row| {
+                    row.get("segments")
+                        .and_then(Value::as_array)
+                        .and_then(|s| s.first())
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
+                .collect();
             let checks = json!({
                 "routes_payload_present": routes.get("routes").is_some_and(Value::is_array),
                 "registry_payload_present": registry.get("registry").is_some_and(Value::is_array),
@@ -914,21 +1078,36 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             });
             let drift_checks: Vec<String> = checks
                 .as_object()
-                .map(|o| o.iter().filter(|(_, v)| v.as_bool() != Some(true)).map(|(k, _)| k.to_string()).collect())
+                .map(|o| {
+                    o.iter()
+                        .filter(|(_, v)| v.as_bool() != Some(true))
+                        .map(|(k, _)| k.to_string())
+                        .collect()
+                })
                 .unwrap_or_default();
-            write_status_artifact_json(workspace_root, "artifacts/status/route_registry_env_contracts_artifact.json", &json!({
-                "scope": "routes/registry/env/contracts truth",
-                "generator": "bijux-dev-cli",
-                "checks": checks,
-                "status": if drift_checks.is_empty() { "complete" } else { "partial" },
-            })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/route_registry_env_contracts_drift_artifact.json", &json!({
-                "scope": "routes/registry/env/contracts drift",
-                "generator": "bijux-dev-cli",
-                "drift_checks": drift_checks,
-                "drift_count": drift_checks.len(),
-                "status": if drift_checks.is_empty() { "clean" } else { "drift" },
-            })).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/route_registry_env_contracts_artifact.json",
+                &json!({
+                    "scope": "routes/registry/env/contracts truth",
+                    "generator": "bijux-dev-cli",
+                    "checks": checks,
+                    "status": if drift_checks.is_empty() { "complete" } else { "partial" },
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/route_registry_env_contracts_drift_artifact.json",
+                &json!({
+                    "scope": "routes/registry/env/contracts drift",
+                    "generator": "bijux-dev-cli",
+                    "drift_checks": drift_checks,
+                    "drift_count": drift_checks.len(),
+                    "status": if drift_checks.is_empty() { "clean" } else { "drift" },
+                }),
+            )
+            .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/route_registry_env_contracts_artifact.json",
                 "artifacts/status/route_registry_env_contracts_drift_artifact.json"
@@ -936,11 +1115,24 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
             let audit = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
-            let coverage = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "coverage"]).ok()?;
-            let audit_text = run_bijux_text(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/rustdoc_audit_report.json", &audit).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/rustdoc_public_api_coverage_report.json", &coverage).ok()?;
-            fs::write(workspace_root.join("artifacts/status/rustdoc_audit_report.txt"), audit_text).ok()?;
+            let coverage =
+                run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "coverage"]).ok()?;
+            let audit_text =
+                run_bijux_text(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/rustdoc_audit_report.json",
+                &audit,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/rustdoc_public_api_coverage_report.json",
+                &coverage,
+            )
+            .ok()?;
+            fs::write(workspace_root.join("artifacts/status/rustdoc_audit_report.txt"), audit_text)
+                .ok()?;
             Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
                 "artifacts/status/rustdoc_audit_report.json",
                 "artifacts/status/rustdoc_public_api_coverage_report.json",
@@ -964,17 +1156,26 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 reports.insert(name.to_string(), run_bijux_json(workspace_root, &cmd).ok()?);
             }
             let gaps = reports.get("gaps").cloned().unwrap_or_else(|| json!({}));
-            let unresolved = gaps.get("unresolved_gaps").and_then(Value::as_array).map_or(0, Vec::len);
-            let missing = gaps.get("missing_evidence").and_then(Value::as_array).map_or(0, Vec::len);
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_release_truth_bundle.json", &json!({
-                "source": "dev cli release *",
-                "reports": reports,
-                "summary": {
-                    "unresolved_gaps": unresolved,
-                    "missing_evidence": missing,
-                }
-            })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_release_truth_bundle.json"]}))
+            let unresolved =
+                gaps.get("unresolved_gaps").and_then(Value::as_array).map_or(0, Vec::len);
+            let missing =
+                gaps.get("missing_evidence").and_then(Value::as_array).map_or(0, Vec::len);
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_release_truth_bundle.json",
+                &json!({
+                    "source": "dev cli release *",
+                    "reports": reports,
+                    "summary": {
+                        "unresolved_gaps": unresolved,
+                        "missing_evidence": missing,
+                    }
+                }),
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_release_truth_bundle.json"]}),
+            )
         }
         "STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
             let commands = [
@@ -998,7 +1199,8 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "payload": row,
                 }));
             }
-            let ownership_path = workspace_root.join("artifacts/status/dev_cli_ownership_report.json");
+            let ownership_path =
+                workspace_root.join("artifacts/status/dev_cli_ownership_report.json");
             let ownership = fs::read_to_string(&ownership_path)
                 .ok()
                 .and_then(|text| serde_json::from_str::<Value>(&text).ok());
@@ -1009,8 +1211,15 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             if let Some(ownership) = ownership {
                 out["ownership_report"] = ownership;
             }
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_control_plane_bundle.json", &out).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_control_plane_bundle.json"]}))
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/dev_cli_control_plane_bundle.json",
+                &out,
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_control_plane_bundle.json"]}),
+            )
         }
         _ => None,
     }
