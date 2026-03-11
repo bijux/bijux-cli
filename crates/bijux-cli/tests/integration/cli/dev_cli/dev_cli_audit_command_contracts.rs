@@ -24,15 +24,48 @@ fn head(text: &str, lines: usize) -> String {
 #[test]
 fn maintenance_docs_crate_health_json_contracts_are_stable() {
     let cases = [
-        (vec!["dev", "cli", "maintenance-audit", "--format", "json", "--no-pretty"], "maintenance"),
-        (vec!["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"], "docs"),
-        (vec!["dev", "cli", "crate-health", "--format", "json", "--no-pretty"], "crate_metrics"),
+        (
+            vec![
+                "dev",
+                "cli",
+                "maintenance-audit",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
+            "maintenance",
+        ),
+        (
+            vec![
+                "dev",
+                "cli",
+                "docs-audit",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
+            "docs",
+        ),
+        (
+            vec![
+                "dev",
+                "cli",
+                "crate-health",
+                "--format",
+                "json",
+                "--no-pretty",
+            ],
+            "crate_metrics",
+        ),
     ];
 
     for (args, key) in cases {
         let (code, stdout, stderr) = run(&args);
         assert_eq!(code, 0, "command failed: {args:?}");
-        assert!(stderr.is_empty(), "stderr must be empty for success: {args:?}");
+        assert!(
+            stderr.is_empty(),
+            "stderr must be empty for success: {args:?}"
+        );
 
         let payload: Value = serde_json::from_str(&stdout).expect("json parse");
         assert!(payload.get(key).is_some(), "missing key {key} for {args:?}");
@@ -49,7 +82,9 @@ fn maintenance_docs_crate_health_text_snapshot_heads_match() {
     let cases = [
         (
             vec!["dev", "cli", "maintenance-audit", "--format", "text"],
-            include_str!("../../../data/golden/cli_surface/dev_cli_maintenance_audit_text_head.txt"),
+            include_str!(
+                "../../../data/golden/cli_surface/dev_cli_maintenance_audit_text_head.txt"
+            ),
         ),
         (
             vec!["dev", "cli", "docs-audit", "--format", "text"],
@@ -64,7 +99,14 @@ fn maintenance_docs_crate_health_text_snapshot_heads_match() {
     for (args, expected_head) in cases {
         let (code, stdout, stderr) = run(&args);
         assert_eq!(code, 0, "command failed: {args:?}");
-        assert!(stderr.is_empty(), "stderr must be empty for success: {args:?}");
-        assert_eq!(head(&stdout, 24), expected_head, "text snapshot head drift for {args:?}");
+        assert!(
+            stderr.is_empty(),
+            "stderr must be empty for success: {args:?}"
+        );
+        assert_eq!(
+            head(&stdout, 24),
+            expected_head,
+            "text snapshot head drift for {args:?}"
+        );
     }
 }
