@@ -45,7 +45,8 @@ fn fixture_dev_cli_top_level_commands() -> BTreeSet<String> {
 
 #[test]
 fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/dispatch.rs"));
+    let source =
+        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/interface/dispatch.rs"));
     let fixture_commands = fixture_dev_cli_top_level_commands();
     let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
     let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
@@ -65,7 +66,8 @@ fn dev_cli_subcommand_fixture_exactly_matches_three_segment_dispatch_surface() {
 
 #[test]
 fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/dispatch.rs"));
+    let source =
+        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/interface/dispatch.rs"));
 
     let branch_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
     let observed_namespaces = extract_guard_values(&source, branch_prefix);
@@ -99,7 +101,8 @@ fn nested_dev_cli_namespaces_have_owned_dispatch_branches() {
 
 #[test]
 fn every_dev_cli_top_level_command_keeps_explicit_delegate_owner() {
-    let source = read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/dispatch.rs"));
+    let source =
+        read(concat!(env!("CARGO_MANIFEST_DIR"), "/../bijux-dev-cli/src/interface/dispatch.rs"));
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report_from_query"),
