@@ -1,9 +1,8 @@
 //! Top-level application entrypoint and route execution.
 
 use std::env;
+use std::path::Path;
 use std::process::Command;
-
-use crate::features::developer::runtime_query_adapter;
 use crate::interface::cli::handlers::{
     cli as cli_handlers, config as config_handlers, history as history_handlers,
     memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
@@ -14,7 +13,6 @@ use crate::routing::known_bijux_tool;
 use crate::routing::registry::{RouteRegistry, RouteTarget};
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use anyhow::Result;
-use bijux_dev_cli::cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
 use crate::features::diagnostics::state_paths::resolve_state_paths;
@@ -31,6 +29,9 @@ pub struct AppRunResult {
     /// Payload that should be written to stderr.
     pub stderr: String,
 }
+
+const DEV_CLI_BINARY: &str = "bijux-dev-cli";
+const DEV_CLI_PACKAGE: &str = "bijux-dev-cli";
 
 fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
     EmitterConfig {
@@ -80,7 +81,6 @@ fn route_response(
         {
             RouteTarget::BuiltIn
         }
-        _ if owns_dev_cli_path(normalized_path) => RouteTarget::BuiltIn,
         _ => registry.resolve(normalized_path)?,
     };
     if matches!(target, RouteTarget::Plugin(_)) {
@@ -107,15 +107,6 @@ fn route_response(
     if let Some(payload) =
         plugins_handlers::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
     {
-        return Ok(payload);
-    }
-    if let Some(payload) = runtime_query_adapter::try_handle(
-        normalized_path,
-        argv,
-        &registry,
-        &paths,
-        &plugin_registry_path,
-    )? {
         return Ok(payload);
     }
     if let Some(payload) =
@@ -166,6 +157,62 @@ fn delegate_to_external_binary(
             AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
         }
     }
+}
+
+fn try_delegate_with_cargo_package_fallback(
+    package_name: &str,
+    forwarded_args: &[String],
+) -> Option<AppRunResult> {
+    let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    if !Path::new("Cargo.toml").exists() {
+        return None;
+    }
+
+    let output = Command::new(cargo)
+        .args(["run", "--quiet", "-p", package_name, "--bin", package_name, "--"])
+        .args(forwarded_args)
+        .output()
+        .ok()?;
+
+    Some(AppRunResult {
+        exit_code: output.status.code().unwrap_or(1),
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
+}
+
+fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
+    let binary = env::var("BIJUX_DEV_CLI_BIN").unwrap_or_else(|_| DEV_CLI_BINARY.to_string());
+    let delegated =
+        delegate_to_external_binary(&binary, DEV_CLI_PACKAGE, "bijux dev cli", forwarded_args);
+    if delegated.exit_code == 0 || !delegated.stderr.contains("failed to run `bijux dev cli`") {
+        return delegated;
+    }
+    try_delegate_with_cargo_package_fallback(DEV_CLI_PACKAGE, forwarded_args).unwrap_or(delegated)
+}
+
+fn is_dev_cli_legacy_alias(route: &str) -> bool {
+    matches!(
+        route,
+        "inventory"
+            | "parity"
+            | "docs-audit"
+            | "plugin-health"
+            | "status"
+            | "maintenance-audit"
+            | "crate-health"
+            | "package-health"
+            | "route-audit"
+            | "doctor"
+            | "runtime-identity"
+            | "docs-prune-plan"
+            | "state-audit"
+            | "state-doctor"
+            | "atlas"
+            | "di"
+            | "list-products"
+            | "list-plugins"
+    )
 }
 
 fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
@@ -236,7 +283,10 @@ fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
     if first == "dev" {
         let tool_namespace = argv.get(2)?;
         if tool_namespace == "cli" {
-            return None;
+            return Some(delegate_dev_cli(&argv[3..]));
+        }
+        if is_dev_cli_legacy_alias(tool_namespace) {
+            return Some(delegate_dev_cli(&argv[2..]));
         }
         if let Some(tool) = known_bijux_tool(tool_namespace) {
             let command_surface = format!("bijux dev {}", tool.namespace);

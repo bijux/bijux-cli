@@ -3,8 +3,6 @@
 
 /// Configuration domain logic and command behavior.
 pub mod config;
-/// Developer command behavior and runtime-query integration.
-pub mod developer;
 /// Read-only runtime diagnostics query providers.
 pub mod diagnostics;
 /// History state management and command behavior.

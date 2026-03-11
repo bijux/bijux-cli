@@ -17,7 +17,7 @@ for the Rust runtime.
 ## What This Crate Does Not Own
 
 - Maintainer control-plane report assembly and maintainer workflow orchestration.
-  Those live in `bijux-dev-cli` and are invoked through delegation from runtime query data.
+  Those live in `bijux-dev-cli` and are invoked through external binary delegation.
 - A second executable surface. `bijux-rs` remains a thin process entrypoint.
 
 ## Module Map
@@ -35,7 +35,7 @@ for the Rust runtime.
 
 - All command behavior must resolve through routing normalization before execution.
 - Help, error envelopes, and output formatting must stay deterministic across repeated runs.
-- Dev CLI runtime commands must delegate report formatting to `bijux-dev-cli` from query data, not assemble report text directly in routing/runtime internals.
+- Dev CLI runtime commands must delegate to the `bijux-dev-cli` executable, not assemble maintainer report payloads inside runtime routing internals.
 - Process entrypoint remains thin: decode argv, call runtime, write streams, map exit code.
 
 ## Testing Shape
