@@ -151,7 +151,7 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
         exit_code=result.returncode,
         stdout=result.stdout,
         stderr=result.stderr,
-        error_kind=_classify_process_error_kind(result.returncode, result.stderr),
+        error_kind=_classify_process_error_kind(result.returncode),
     )
 
 
@@ -209,27 +209,23 @@ def check_python_runtime_supported(version_info: tuple[int, int] | None = None) 
 
 
 def migration_warnings(legacy_python_only: bool = False) -> list[str]:
-    warnings_out: list[str] = []
-    if legacy_python_only:
-        warnings_out.append(
-            "Python-only runtime assumptions are deprecated; commands now delegate to Rust-backed engine."
-        )
-    if os.environ.get("BIJUXCLI_PY_LEGACY") == "1":
-        warnings_out.append("Detected legacy Python metadata mode; compatibility shims are active.")
-    return warnings_out
+    if not legacy_python_only:
+        return []
+    return ["Python-only runtime assumptions are deprecated; commands delegate to Rust runtime."]
 
 
 def post_install_diagnostics() -> dict[str, object]:
+    warnings_out: list[str] = []
     diagnostics = {
         "runtime_supported": check_python_runtime_supported(),
         "native_extension_available": NATIVE_AVAILABLE,
         "runtime_binary": None,
-        "warnings": migration_warnings(),
+        "warnings": warnings_out,
     }
     try:
         diagnostics["runtime_binary"] = _resolve_binary().binary
     except PlatformWheelUnavailable as error:
-        diagnostics["warnings"].append(str(error))
+        warnings_out.append(str(error))
     return diagnostics
 
 
@@ -258,12 +254,11 @@ def _extract_error_message(payload: dict[str, object]) -> str:
     return "Unknown bijux-cli error"
 
 
-def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
+def _classify_process_error_kind(exit_code: int) -> str | None:
     if exit_code == 0:
         return None
-    lower = stderr.lower()
-    if "unknown route" in lower or "unknown namespace" in lower or "usage" in lower:
+    if exit_code == 2:
         return "UsageError"
-    if "validation" in lower or "invalid" in lower:
+    if exit_code == 3:
         return "ValidationError"
     return "InternalError"

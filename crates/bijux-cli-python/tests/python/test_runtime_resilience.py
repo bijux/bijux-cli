@@ -15,10 +15,10 @@ from bijux_cli_py._facade import (
 from bijux_cli_py._exceptions import InternalError, UsageError, ValidationError
 
 
-def test_mixed_environment_with_legacy_metadata_warning(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("BIJUXCLI_PY_LEGACY", "1")
-    warnings = migration_warnings()
-    assert any("legacy" in warning.lower() for warning in warnings)
+def test_legacy_runtime_warning_is_opt_in() -> None:
+    assert migration_warnings() == []
+    warnings = migration_warnings(legacy_python_only=True)
+    assert any("deprecated" in warning.lower() for warning in warnings)
 
 
 def test_platform_wheel_unavailable_error(monkeypatch: pytest.MonkeyPatch) -> None:
