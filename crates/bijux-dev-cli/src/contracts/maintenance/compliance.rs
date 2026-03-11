@@ -74,10 +74,7 @@ fn build_requirement_catalog(workspace_root: &Path) -> Value {
 
     let mut rows = Vec::<Value>::new();
     for (index, row) in status_rows.iter().enumerate() {
-        let contract_id = row
-            .get("contract_id")
-            .and_then(Value::as_str)
-            .unwrap_or("UNKNOWN");
+        let contract_id = row.get("contract_id").and_then(Value::as_str).unwrap_or("UNKNOWN");
         rows.push(json!({
             "requirement_id": format!("REQ-STATUS-{index:03}", index = index + 1),
             "domain": "STATUS",
@@ -92,10 +89,7 @@ fn build_requirement_catalog(workspace_root: &Path) -> Value {
     }
 
     for (index, row) in generator_rows.iter().enumerate() {
-        let generator_id = row
-            .get("generator_id")
-            .and_then(Value::as_str)
-            .unwrap_or("UNKNOWN");
+        let generator_id = row.get("generator_id").and_then(Value::as_str).unwrap_or("UNKNOWN");
         rows.push(json!({
             "requirement_id": format!("REQ-GENERATOR-{index:03}", index = index + 1),
             "domain": "GENERATOR",
@@ -137,12 +131,8 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     let mut tests = Vec::<Value>::new();
     for path in collect_files(&workspace_root.join("crates")) {
         if path.extension().is_none_or(|ext| ext != "rs")
-            || !path
-                .components()
-                .any(|segment| segment.as_os_str() == "tests")
-            || path
-                .components()
-                .any(|segment| segment.as_os_str() == "target")
+            || !path.components().any(|segment| segment.as_os_str() == "tests")
+            || path.components().any(|segment| segment.as_os_str() == "target")
         {
             continue;
         }
@@ -192,10 +182,8 @@ pub fn build_migrated_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
-    let removed = controls
-        .iter()
-        .filter(|row| row.get("status") == Some(&json!("removed")))
-        .count();
+    let removed =
+        controls.iter().filter(|row| row.get("status") == Some(&json!("removed"))).count();
 
     json!({
         "generated_at_utc": generated_at_utc(),
@@ -221,10 +209,7 @@ pub fn build_remaining_report(workspace_root: &Path) -> Value {
 
     let root_maintenance: Vec<String> = collect_files(&workspace_root.join("maintenance"))
         .into_iter()
-        .filter(|p| {
-            p.parent()
-                .is_some_and(|parent| parent.ends_with("maintenance"))
-        })
+        .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("maintenance")))
         .map(|p| rel(&p, workspace_root))
         .collect();
 
@@ -272,11 +257,7 @@ pub fn build_diff_report(workspace_root: &Path) -> Value {
         .cloned()
         .unwrap_or_default()
         .into_iter()
-        .filter_map(|row| {
-            row.get("control_id")
-                .and_then(Value::as_str)
-                .map(ToString::to_string)
-        })
+        .filter_map(|row| row.get("control_id").and_then(Value::as_str).map(ToString::to_string))
         .collect();
 
     json!({

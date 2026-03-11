@@ -32,10 +32,7 @@ fn src_tree_matches_cli_contracts_suites_reports_infra_schema_layout() {
         "src/infra",
         "src/schema",
     ] {
-        assert!(
-            crate_root.join(directory).is_dir(),
-            "missing directory {directory}"
-        );
+        assert!(crate_root.join(directory).is_dir(), "missing directory {directory}");
     }
 
     for file in [
@@ -108,10 +105,7 @@ fn legacy_namespaces_and_legacy_suffix_files_are_removed() {
         "src/contracts/native",
         "src/contracts/maintenance/shared.rs",
     ] {
-        assert!(
-            !crate_root.join(legacy).exists(),
-            "legacy path must not exist: {legacy}"
-        );
+        assert!(!crate_root.join(legacy).exists(), "legacy path must not exist: {legacy}");
     }
 
     let suites_root = crate_root.join("src/suites");
@@ -121,10 +115,7 @@ fn legacy_namespaces_and_legacy_suffix_files_are_removed() {
         if file.extension().is_none_or(|ext| ext != "rs") {
             continue;
         }
-        let name = file
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or_default();
+        let name = file.file_name().and_then(|name| name.to_str()).unwrap_or_default();
         assert!(
             !name.ends_with("_executor.rs") && !name.ends_with("_spec.rs"),
             "legacy suffix file must be removed: {}",

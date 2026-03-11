@@ -99,15 +99,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/history_corruption_matrix.json",
-                    "artifacts/status/memory_corruption_matrix.json",
-                    "artifacts/status/state_recovery_guidance.json",
-                    "artifacts/status/state_recovery_guidance.txt",
-                    "artifacts/status/state_resilience_summary.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/history_corruption_matrix.json",
+                "artifacts/status/memory_corruption_matrix.json",
+                "artifacts/status/state_recovery_guidance.json",
+                "artifacts/status/state_recovery_guidance.txt",
+                "artifacts/status/state_resilience_summary.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
@@ -218,13 +216,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/command_surface_consistency_artifact.json",
-                    "artifacts/status/command_surface_consistency_drift_artifact.json",
-                    "artifacts/status/command_surface_consistency_summary.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/command_surface_consistency_artifact.json",
+                "artifacts/status/command_surface_consistency_drift_artifact.json",
+                "artifacts/status/command_surface_consistency_summary.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
@@ -238,11 +234,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({"commands":[]}));
-            let complete_commands = matrix
-                .get("commands")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
+            let complete_commands =
+                matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (161, "root_status_and_cli_status_agree_where_semantics_overlap"),
                                 (162, "root_config_listing_and_cli_config_views_agree_where_both_exist"),
@@ -342,14 +335,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/command_family_consistency_artifact.json",
-                    "artifacts/status/cross_family_drift_artifact.json",
-                    "artifacts/status/shared_law_proof_artifact.json",
-                    "artifacts/status/command_family_consistency_requirement.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/command_family_consistency_artifact.json",
+                "artifacts/status/cross_family_drift_artifact.json",
+                "artifacts/status/shared_law_proof_artifact.json",
+                "artifacts/status/command_family_consistency_requirement.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS" => {
             let source = fs::read_to_string(
@@ -379,11 +370,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (153, "output_envelopes_do_not_drift_across_surfaces", "output envelopes stable across surfaces", vec!["unknown-command"]),
                                 (154, "exit_code_classes_do_not_drift_across_surfaces", "exit-code classes stable across surfaces", vec!["status", "unknown-command"]),
                             ];
-            let matrix_rows = matrix
-                .get("rows")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
+            let matrix_rows =
+                matrix.get("rows").and_then(Value::as_array).cloned().unwrap_or_default();
             let migration_status = |command: &str| -> String {
                 matrix_rows
                     .iter()
@@ -474,13 +462,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/cross_surface_consistency_artifact.json",
-                    "artifacts/status/cross_surface_drift_artifact.json",
-                    "artifacts/status/cross_surface_consistency_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/cross_surface_consistency_artifact.json",
+                "artifacts/status/cross_surface_drift_artifact.json",
+                "artifacts/status/cross_surface_consistency_contract.json"
+            ]}))
         }
         _ => None,
     }

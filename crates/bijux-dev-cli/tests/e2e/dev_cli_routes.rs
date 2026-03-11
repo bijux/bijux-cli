@@ -52,11 +52,7 @@ impl RuntimeQueryProvider for StubRuntime {
     }
 
     fn doctor_report_input(&self) -> DoctorReportInput {
-        DoctorReportInput {
-            config_issues: vec![],
-            path_issues: vec![],
-            plugin_issues: vec![],
-        }
+        DoctorReportInput { config_issues: vec![], path_issues: vec![], plugin_issues: vec![] }
     }
 
     fn state_audit_input(&self) -> StateAuditInput {
@@ -76,10 +72,7 @@ impl RuntimeQueryProvider for StubRuntime {
     }
 
     fn contracts_schema_input(&self) -> ContractsSchemaInput {
-        ContractsSchemaInput {
-            schema_ids: vec![],
-            schema_version: "v1".into(),
-        }
+        ContractsSchemaInput { schema_ids: vec![], schema_version: "v1".into() }
     }
 
     fn runtime_identity_input(&self) -> runtime_identity::RuntimeIdentityInput {
@@ -108,21 +101,13 @@ impl RuntimeQueryProvider for StubRuntime {
 #[test]
 fn known_route_returns_payload_and_unknown_route_returns_none() {
     let runtime = StubRuntime;
-    let payload = try_handle(
-        &["dev".into(), "cli".into(), "registry".into()],
-        &[],
-        &runtime,
-    )
-    .expect("dispatch should succeed")
-    .expect("known route should return payload");
+    let payload = try_handle(&["dev".into(), "cli".into(), "registry".into()], &[], &runtime)
+        .expect("dispatch should succeed")
+        .expect("known route should return payload");
 
     assert!(payload.get("registry").is_some());
 
-    let none_payload = try_handle(
-        &["dev".into(), "cli".into(), "unknown".into()],
-        &[],
-        &runtime,
-    )
-    .expect("dispatch should succeed for unknown paths");
+    let none_payload = try_handle(&["dev".into(), "cli".into(), "unknown".into()], &[], &runtime)
+        .expect("dispatch should succeed for unknown paths");
     assert!(none_payload.is_none());
 }

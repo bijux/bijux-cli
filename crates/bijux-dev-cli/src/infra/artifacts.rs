@@ -47,10 +47,7 @@ pub fn collect_files_recursive(base: &Path) -> Vec<PathBuf> {
 /// Render a path relative to workspace root with normalized separators.
 #[must_use]
 pub fn relative_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 /// Parse makefile target names from a `makes/*.mk` style file.

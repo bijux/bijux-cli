@@ -10,36 +10,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ("readiness", ["dev", "cli", "release", "readiness"]),
                 ("diff", ["dev", "cli", "release", "diff"]),
                 ("gaps", ["dev", "cli", "release", "gaps"]),
-                (
-                    "behavior_changes",
-                    ["dev", "cli", "release", "behavior-changes"],
-                ),
-                (
-                    "intentional_differences",
-                    ["dev", "cli", "release", "intentional-differences"],
-                ),
-                (
-                    "unresolved_gaps",
-                    ["dev", "cli", "release", "unresolved-gaps"],
-                ),
-                (
-                    "compatibility_leftovers",
-                    ["dev", "cli", "release", "compatibility-leftovers"],
-                ),
+                ("behavior_changes", ["dev", "cli", "release", "behavior-changes"]),
+                ("intentional_differences", ["dev", "cli", "release", "intentional-differences"]),
+                ("unresolved_gaps", ["dev", "cli", "release", "unresolved-gaps"]),
+                ("compatibility_leftovers", ["dev", "cli", "release", "compatibility-leftovers"]),
             ];
             let mut reports = serde_json::Map::new();
             for (name, cmd) in commands {
                 reports.insert(name.to_string(), run_bijux_json(workspace_root, &cmd).ok()?);
             }
             let gaps = reports.get("gaps").cloned().unwrap_or_else(|| json!({}));
-            let unresolved = gaps
-                .get("unresolved_gaps")
-                .and_then(Value::as_array)
-                .map_or(0, Vec::len);
-            let missing = gaps
-                .get("missing_evidence")
-                .and_then(Value::as_array)
-                .map_or(0, Vec::len);
+            let unresolved =
+                gaps.get("unresolved_gaps").and_then(Value::as_array).map_or(0, Vec::len);
+            let missing =
+                gaps.get("missing_evidence").and_then(Value::as_array).map_or(0, Vec::len);
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/dev_cli_release_truth_bundle.json",
@@ -102,19 +86,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
-            let commands = [
-                "dev cli env",
-                "dev cli contracts",
-                "dev cli parity",
-                "dev cli status",
-            ];
+            let commands = ["dev cli env", "dev cli contracts", "dev cli parity", "dev cli status"];
             let mut input_map = BTreeMap::<&str, Vec<&str>>::new();
             input_map.insert(
                 "dev cli env",
-                vec![
-                    "process environment",
-                    "resolved config/history/plugins paths",
-                ],
+                vec!["process environment", "resolved config/history/plugins paths"],
             );
             input_map.insert(
                 "dev cli contracts",
@@ -199,12 +175,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     if valid_statuses.contains(status) {
                         None
                     } else {
-                        Some(
-                            row.get("command")
-                                .and_then(Value::as_str)
-                                .unwrap_or("")
-                                .to_string(),
-                        )
+                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                     }
                 })
                 .collect();
@@ -212,12 +183,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("rust-partial"))
                 .filter_map(|row| {
-                    let blocker = row
-                        .get("blocker")
-                        .and_then(Value::as_str)
-                        .unwrap_or("")
-                        .trim()
-                        .to_string();
+                    let blocker =
+                        row.get("blocker").and_then(Value::as_str).unwrap_or("").trim().to_string();
                     let shim_alias = row
                         .get("shim_alias_dependency")
                         .and_then(Value::as_object)
@@ -236,12 +203,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .and_then(Value::as_object)
                         .is_some_and(|obj| obj.values().any(|v| v == &Value::Bool(false)));
                     if blocker.is_empty() && !has_shim_alias && !has_parity_mismatch {
-                        Some(
-                            row.get("command")
-                                .and_then(Value::as_str)
-                                .unwrap_or("")
-                                .to_string(),
-                        )
+                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                     } else {
                         None
                     }
@@ -253,18 +215,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     row.get("status").and_then(Value::as_str) == Some("intentionally-different")
                 })
                 .filter_map(|row| {
-                    let reason = row
-                        .get("reason")
-                        .and_then(Value::as_str)
-                        .unwrap_or("")
-                        .trim();
+                    let reason = row.get("reason").and_then(Value::as_str).unwrap_or("").trim();
                     if reason.is_empty() {
-                        Some(
-                            row.get("command")
-                                .and_then(Value::as_str)
-                                .unwrap_or("")
-                                .to_string(),
-                        )
+                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                     } else {
                         None
                     }
@@ -274,17 +227,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("rust-complete"))
                 .filter_map(|row| {
-                    if row
-                        .get("evidence_links")
-                        .and_then(Value::as_array)
-                        .is_none_or(Vec::is_empty)
+                    if row.get("evidence_links").and_then(Value::as_array).is_none_or(Vec::is_empty)
                     {
-                        Some(
-                            row.get("command")
-                                .and_then(Value::as_str)
-                                .unwrap_or("")
-                                .to_string(),
-                        )
+                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
                     } else {
                         None
                     }
@@ -310,10 +255,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .map(ToString::to_string)
                 })
                 .collect();
-            let missing_from_migration: Vec<String> = parity_commands
-                .difference(&migration_commands)
-                .cloned()
-                .collect();
+            let missing_from_migration: Vec<String> =
+                parity_commands.difference(&migration_commands).cloned().collect();
             let parity_complete = parity_first
                 .get("command_matrix")
                 .and_then(|v| v.get("summary"))

@@ -33,43 +33,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     266,
                     "root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior",
                 ),
-                (
-                    267,
-                    "config_get_existing_missing_invalid_with_path_and_env_override",
-                ),
-                (
-                    268,
-                    "config_get_existing_missing_invalid_with_path_and_env_override",
-                ),
-                (
-                    269,
-                    "config_get_existing_missing_invalid_with_path_and_env_override",
-                ),
-                (
-                    270,
-                    "config_get_existing_missing_invalid_with_path_and_env_override",
-                ),
-                (
-                    271,
-                    "config_get_existing_missing_invalid_with_path_and_env_override",
-                ),
+                (267, "config_get_existing_missing_invalid_with_path_and_env_override"),
+                (268, "config_get_existing_missing_invalid_with_path_and_env_override"),
+                (269, "config_get_existing_missing_invalid_with_path_and_env_override"),
+                (270, "config_get_existing_missing_invalid_with_path_and_env_override"),
+                (271, "config_get_existing_missing_invalid_with_path_and_env_override"),
                 (272, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (273, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (274, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (275, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (276, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
-                (
-                    277,
-                    "config_listing_repeated_run_determinism_and_field_order_stability",
-                ),
-                (
-                    278,
-                    "config_listing_repeated_run_determinism_and_field_order_stability",
-                ),
-                (
-                    279,
-                    "config_listing_repeated_run_determinism_and_field_order_stability",
-                ),
+                (277, "config_listing_repeated_run_determinism_and_field_order_stability"),
+                (278, "config_listing_repeated_run_determinism_and_field_order_stability"),
+                (279, "config_listing_repeated_run_determinism_and_field_order_stability"),
             ]);
             let coverage_rows: Vec<Value> = required
                                 .iter()
@@ -116,12 +92,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/config_read_matrix_artifact.json",
-                    "artifacts/status/config_read_domain_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/config_read_matrix_artifact.json",
+                "artifacts/status/config_read_domain_contract.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -129,44 +103,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (
-                    281,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
-                (
-                    282,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
-                (
-                    283,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
-                (
-                    284,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
-                (
-                    285,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
-                (
-                    286,
-                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
-                ),
+                (281, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (282, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (283, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (284, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (285, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (286, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
                 (287, "config_unset_existing_and_missing_keys"),
                 (288, "config_unset_existing_and_missing_keys"),
-                (
-                    289,
-                    "config_clear_populated_and_empty_and_reload_after_external_change",
-                ),
-                (
-                    290,
-                    "config_clear_populated_and_empty_and_reload_after_external_change",
-                ),
-                (
-                    291,
-                    "config_clear_populated_and_empty_and_reload_after_external_change",
-                ),
+                (289, "config_clear_populated_and_empty_and_reload_after_external_change"),
+                (290, "config_clear_populated_and_empty_and_reload_after_external_change"),
+                (291, "config_clear_populated_and_empty_and_reload_after_external_change"),
                 (292, "config_export_text_json_yaml_and_load_valid_malformed"),
                 (293, "config_export_text_json_yaml_and_load_valid_malformed"),
                 (294, "config_export_text_json_yaml_and_load_valid_malformed"),
@@ -221,12 +168,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/config_mutation_matrix_artifact.json",
-                    "artifacts/status/config_mutation_domain_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/config_mutation_matrix_artifact.json",
+                "artifacts/status/config_mutation_domain_contract.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -236,59 +181,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (301, "cli_flags_override_env_backed_values_and_config_path"),
-                (
-                    302,
-                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
-                ),
-                (
-                    303,
-                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
-                ),
+                (302, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
+                (303, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
                 (304, "cli_flags_override_env_backed_values_and_config_path"),
-                (
-                    305,
-                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
-                ),
-                (
-                    306,
-                    "malformed_and_duplicate_config_source_behavior_is_stable",
-                ),
-                (
-                    307,
-                    "malformed_and_duplicate_config_source_behavior_is_stable",
-                ),
-                (
-                    308,
-                    "source_metadata_and_dev_cli_env_precedence_are_reported",
-                ),
-                (
-                    309,
-                    "source_metadata_and_dev_cli_env_precedence_are_reported",
-                ),
-                (
-                    310,
-                    "source_metadata_and_dev_cli_env_precedence_are_reported",
-                ),
-                (
-                    311,
-                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
-                ),
-                (
-                    312,
-                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
-                ),
-                (
-                    313,
-                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
-                ),
-                (
-                    314,
-                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
-                ),
-                (
-                    315,
-                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
-                ),
+                (305, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
+                (306, "malformed_and_duplicate_config_source_behavior_is_stable"),
+                (307, "malformed_and_duplicate_config_source_behavior_is_stable"),
+                (308, "source_metadata_and_dev_cli_env_precedence_are_reported"),
+                (309, "source_metadata_and_dev_cli_env_precedence_are_reported"),
+                (310, "source_metadata_and_dev_cli_env_precedence_are_reported"),
+                (311, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
+                (312, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
+                (313, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
+                (314, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
+                (315, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
                 (316, "cross_command_source_precedence_consistency"),
                 (317, "cross_command_source_precedence_consistency"),
                 (318, "cross_command_source_precedence_consistency"),
@@ -314,19 +220,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()?;
             let dev_env_payload =
                 run_bijux_json_env(workspace_root, &["dev", "cli", "env"], &envs).ok()?;
-            let source_path = get_payload
-                .get("source_path")
-                .cloned()
-                .unwrap_or(Value::Null);
+            let source_path = get_payload.get("source_path").cloned().unwrap_or(Value::Null);
             let active_config = dev_env_payload
                 .get("active")
                 .and_then(|v| v.get("config_file"))
                 .cloned()
                 .unwrap_or(Value::Null);
-            let precedence = dev_env_payload
-                .get("source_precedence")
-                .cloned()
-                .unwrap_or(Value::Null);
+            let precedence =
+                dev_env_payload.get("source_precedence").cloned().unwrap_or(Value::Null);
             let mut drift_reasons = Vec::<String>::new();
             if source_path != active_config {
                 drift_reasons.push(
@@ -386,13 +287,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/config_source_parity_artifact.json",
-                    "artifacts/status/config_source_drift_artifact.json",
-                    "artifacts/status/config_source_precedence_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/config_source_parity_artifact.json",
+                "artifacts/status/config_source_drift_artifact.json",
+                "artifacts/status/config_source_precedence_contract.json"
+            ]}))
         }
         _ => None,
     }
