@@ -46,11 +46,15 @@ pub struct PluginRegistry {
 
 impl Default for PluginRegistry {
     fn default() -> Self {
-        Self { version: super::constants::REGISTRY_VERSION.to_string(), plugins: BTreeMap::new() }
+        Self {
+            version: super::constants::REGISTRY_VERSION.to_string(),
+            plugins: BTreeMap::new(),
+        }
     }
 }
 
 /// Plugin discovery cache.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PluginDiscoveryCache {
     /// Discovery root path.
@@ -62,6 +66,7 @@ pub struct PluginDiscoveryCache {
 }
 
 /// Load ordering entry for diagnostics and deterministic execution.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PluginLoadEntry {
     /// Namespace.

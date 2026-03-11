@@ -10,6 +10,7 @@ use super::manifest::parse_manifest_v1;
 use super::models::PluginDiscoveryCache;
 
 /// Scan plugin directory tree for manifests at `<plugin-dir>/*/plugin.json`.
+#[allow(dead_code)]
 pub fn discover_plugin_manifests(plugins_dir: &Path) -> Result<Vec<PathBuf>, PluginError> {
     if !plugins_dir.exists() {
         return Ok(Vec::new());
@@ -33,6 +34,7 @@ pub fn discover_plugin_manifests(plugins_dir: &Path) -> Result<Vec<PathBuf>, Plu
 }
 
 /// Refresh discovery cache from plugin directory scan.
+#[allow(dead_code)]
 pub fn refresh_discovery_cache(
     cache: &mut PluginDiscoveryCache,
     plugins_dir: &Path,
@@ -48,8 +50,9 @@ pub fn refresh_discovery_cache(
 
     cache.root = plugins_dir.to_path_buf();
     cache.manifests = manifests;
-    cache.last_updated_millis =
-        SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |duration| duration.as_millis());
+    cache.last_updated_millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_millis());
     Ok(())
 }
 

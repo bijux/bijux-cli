@@ -7,9 +7,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::contracts::diagnostics::{DiagnosticRecord, InvocationEvent, InvocationTrace};
 use crate::contracts::{
-    CommandPath, DiagnosticRecord, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags,
-    InvocationEvent, InvocationTrace, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
+    CommandPath, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags, Namespace,
+    OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use serde_json::{json, Value};
 
@@ -181,7 +182,11 @@ pub fn build_intent_from_argv(argv: &[String]) -> ExecutionIntent {
         include_runtime: argv.iter().any(|v| v == "--trace"),
     };
 
-    ExecutionIntent { command_path, global_flags: flags, args }
+    ExecutionIntent {
+        command_path,
+        global_flags: flags,
+        args,
+    }
 }
 
 /// Assemble execution context.
@@ -194,7 +199,13 @@ pub(crate) fn assemble_context(
     cancelled: Arc<AtomicBool>,
     trace_mode: bool,
 ) -> ExecutionContext {
-    ExecutionContext { intent, policy, timeout, cancelled, trace_mode }
+    ExecutionContext {
+        intent,
+        policy,
+        timeout,
+        cancelled,
+        trace_mode,
+    }
 }
 
 #[allow(dead_code)]
@@ -202,7 +213,12 @@ fn success_meta(ctx: &ExecutionContext) -> OutputEnvelopeMetaV1 {
     OutputEnvelopeMetaV1 {
         version: "v1".to_string(),
         command: CommandPath {
-            segments: ctx.intent.command_path.iter().map(|v| Namespace(v.clone())).collect(),
+            segments: ctx
+                .intent
+                .command_path
+                .iter()
+                .map(|v| Namespace(v.clone()))
+                .collect(),
         },
         timestamp: "1970-01-01T00:00:00Z".to_string(),
     }
@@ -215,9 +231,10 @@ fn map_outcome_to_emission(outcome: HandlerOutcome, quiet: bool) -> Option<Emiss
     }
 
     match outcome {
-        HandlerOutcome::Success(payload) => {
-            Some(Emission { stream: OutputStream::Stdout, payload })
-        }
+        HandlerOutcome::Success(payload) => Some(Emission {
+            stream: OutputStream::Stdout,
+            payload,
+        }),
         HandlerOutcome::Error(err) => Some(Emission {
             stream: OutputStream::Stderr,
             payload: serde_json::to_value(err).expect("error envelope must serialize"),
@@ -316,7 +333,12 @@ pub(crate) fn execute_pipeline(
         });
     }
 
-    if ctx.intent.command_path.first().is_some_and(|v| v == "plugins") {
+    if ctx
+        .intent
+        .command_path
+        .first()
+        .is_some_and(|v| v == "plugins")
+    {
         for hook in lifecycle {
             hook.on_plugin_load();
         }
@@ -361,7 +383,10 @@ pub(crate) fn execute_pipeline(
         timestamp: "1970-01-01T00:00:00Z".to_string(),
         name: "dispatch".to_string(),
         payload: BTreeMap::from([
-            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+            (
+                "command".to_string(),
+                json!(ctx.intent.command_path.join(" ")),
+            ),
             ("emission".to_string(), json!("mapped")),
         ]),
     });

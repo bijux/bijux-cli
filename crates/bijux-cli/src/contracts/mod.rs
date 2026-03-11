@@ -22,17 +22,6 @@ pub mod query;
 pub mod schema;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
-pub use config::{
-    ConfigClearResult, ConfigCommandResult, ConfigConflictError, ConfigEntry, ConfigErrorKind,
-    ConfigExportFormat, ConfigKey, ConfigLoadResult, ConfigMutation, ConfigParseError,
-    ConfigPathSet, ConfigPersistenceError, ConfigReloadResult, ConfigSnapshot,
-    ConfigSource as ConfigReadSource, ConfigValidationError, ConfigValue, ConfigWriteResult,
-    ResolvedConfigValue,
-};
-pub use diagnostics::{
-    AliasRewrite, DiagnosticRecord, InspectReport, InvocationEvent, InvocationTrace, MemoryKeyList,
-    MemorySummary, RouteSourceMetadata,
-};
 pub use envelope::{
     ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };

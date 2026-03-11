@@ -56,6 +56,7 @@ pub fn legacy_installer_conflicts(path_value: &str) -> Vec<String> {
 }
 
 /// Initialize first-run filesystem state and return whether setup ran this invocation.
+#[allow(dead_code)]
 pub fn initialize_first_run_state(state_root: &Path) -> io::Result<bool> {
     fs::create_dir_all(state_root)?;
     let marker = state_root.join(".first-run-ready");
