@@ -12,6 +12,57 @@ fn read_json_if_exists(path: &Path) -> Value {
         .unwrap_or_else(|| json!({}))
 }
 
+fn read_first_json(paths: &[&Path]) -> Value {
+    for path in paths {
+        let payload = read_json_if_exists(path);
+        if payload != json!({}) {
+            return payload;
+        }
+    }
+    json!({})
+}
+
+fn ensure_evidence_first_policy(
+    mut payload: Value,
+    required_artifacts: &[&str],
+    require_generated_roadmap: bool,
+) -> Value {
+    if !payload.is_object() {
+        payload = json!({});
+    }
+    let Value::Object(payload_obj) = &mut payload else {
+        return payload;
+    };
+
+    let mut policy = payload_obj.remove("evidence_first_policy").unwrap_or_else(|| json!({}));
+    if !policy.is_object() {
+        policy = json!({});
+    }
+    let Value::Object(policy_obj) = &mut policy else {
+        return payload;
+    };
+
+    policy_obj
+        .entry("manual_curated_priority_lists_allowed".to_string())
+        .or_insert_with(|| json!(false));
+    if require_generated_roadmap {
+        policy_obj
+            .entry("roadmap_requires_generated_artifacts".to_string())
+            .or_insert_with(|| json!(true));
+    }
+
+    let has_required_artifacts = policy_obj
+        .get("required_artifacts")
+        .and_then(Value::as_array)
+        .is_some_and(|rows| !rows.is_empty());
+    if !has_required_artifacts {
+        policy_obj.insert("required_artifacts".to_string(), json!(required_artifacts));
+    }
+
+    payload_obj.insert("evidence_first_policy".to_string(), policy);
+    payload
+}
+
 /// `dev cli dashboard`
 #[must_use]
 pub fn build_dashboard_report(workspace_root: &Path) -> Value {
@@ -85,10 +136,23 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
 /// `dev cli next`
 #[must_use]
 pub fn build_next_report(workspace_root: &Path) -> Value {
-    let priorities =
-        read_json_if_exists(&workspace_root.join("artifacts/status/priority_plan_priorities.json"));
-    let minimalism = read_json_if_exists(
-        &workspace_root.join("artifacts/status/simplification_priorities.json"),
+    let priorities = ensure_evidence_first_policy(
+        read_first_json(&[
+            &workspace_root.join("artifacts/status/priority_plan_priorities.json"),
+            &workspace_root.join("artifacts/status/priority_plan.json"),
+        ]),
+        &["artifacts/status/priority_plan.json", "artifacts/status/priority_plan.txt"],
+        false,
+    );
+    let minimalism = ensure_evidence_first_policy(
+        read_json_if_exists(
+            &workspace_root.join("artifacts/status/simplification_priorities.json"),
+        ),
+        &[
+            "artifacts/status/simplification_priorities.json",
+            "artifacts/status/simplification_priorities.txt",
+        ],
+        true,
     );
     json!({
         "next": {
@@ -100,7 +164,10 @@ pub fn build_next_report(workspace_root: &Path) -> Value {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
     use std::path::Path;
+
+    use serde_json::Value;
 
     use super::{
         build_blockers_report, build_dashboard_report, build_next_report, build_quickcheck_report,
@@ -115,5 +182,20 @@ mod tests {
         assert!(build_truth_report(&root).get("truth").is_some());
         assert!(build_blockers_report(&root).get("blockers").is_some());
         assert!(build_next_report(&root).get("next").is_some());
+    }
+
+    #[test]
+    fn next_report_keeps_evidence_policy_contract_when_artifacts_are_missing() {
+        let root = std::env::temp_dir().join(format!("bijux-next-missing-{}", std::process::id()));
+        fs::create_dir_all(root.join("artifacts/status")).expect("create status dir");
+
+        let report = build_next_report(&root);
+        let policy = &report["next"]["minimalism"]["evidence_first_policy"];
+        assert_eq!(policy["manual_curated_priority_lists_allowed"], Value::Bool(false));
+        assert_eq!(policy["roadmap_requires_generated_artifacts"], Value::Bool(true));
+        assert!(
+            policy["required_artifacts"].as_array().is_some_and(|rows| !rows.is_empty()),
+            "minimalism evidence policy must declare required artifacts"
+        );
     }
 }
