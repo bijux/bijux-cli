@@ -7,16 +7,6 @@ use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Read UTF-8 text from a file path.
-pub fn read_text(path: &Path) -> std::io::Result<String> {
-    fs::read_to_string(path)
-}
-
-/// Write UTF-8 text to a file path.
-pub fn write_text(path: &Path, content: &str) -> std::io::Result<()> {
-    fs::write(path, content)
-}
-
 /// Write text to a target path using a temp-file + rename flow.
 pub fn atomic_write_text(path: &Path, content: &str) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
@@ -42,12 +32,6 @@ pub fn atomic_write_text(path: &Path, content: &str) -> std::io::Result<()> {
         std::io::ErrorKind::AlreadyExists,
         format!("unable to allocate unique temp file for {}", path.display()),
     ))
-}
-
-/// Check whether a path exists.
-#[must_use]
-pub fn exists(path: &Path) -> bool {
-    path.exists()
 }
 
 fn unique_temp_path(path: &Path, attempt: u32) -> std::path::PathBuf {
