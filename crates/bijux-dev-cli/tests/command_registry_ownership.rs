@@ -15,10 +15,8 @@ fn command_registry_covers_all_known_dev_cli_subcommands() {
         .filter(|line| !line.is_empty())
         .map(ToString::to_string)
         .collect();
-    let registered: BTreeSet<String> = command_registry()
-        .iter()
-        .map(|entry| entry.command.as_str().to_string())
-        .collect();
+    let registered: BTreeSet<String> =
+        command_registry().iter().map(|entry| entry.command.as_str().to_string()).collect();
 
     assert_eq!(
         registered, known,
@@ -76,19 +74,11 @@ fn command_registry_includes_internal_and_visible_commands() {
     let has_visible = command_registry().iter().any(|entry| entry.visible);
     let has_internal = command_registry().iter().any(|entry| !entry.visible);
 
-    assert!(
-        has_visible,
-        "registry must include visible maintainer commands"
-    );
-    assert!(
-        has_internal,
-        "registry must include internal maintainer commands"
-    );
+    assert!(has_visible, "registry must include visible maintainer commands");
+    assert!(has_internal, "registry must include internal maintainer commands");
 
     assert!(
-        command_registry()
-            .iter()
-            .any(|entry| matches!(entry.command, DevCliCommand::Status)),
+        command_registry().iter().any(|entry| matches!(entry.command, DevCliCommand::Status)),
         "registry must include status command"
     );
 }
