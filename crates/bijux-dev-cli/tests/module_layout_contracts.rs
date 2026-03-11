@@ -9,6 +9,13 @@ fn report_platform_and_status_contract_namespaces_exist() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(crate_root.join("src/reports").is_dir());
     assert!(crate_root.join("src/domains/mod.rs").is_file());
+    let domains_dir = crate_root.join("src/domains");
+    let domain_entries = fs::read_dir(&domains_dir).expect("read src/domains");
+    let domain_entry_count = domain_entries.count();
+    assert_eq!(
+        domain_entry_count, 1,
+        "src/domains must stay a compatibility shim with only mod.rs"
+    );
     assert!(crate_root.join("src/platform").is_dir());
     assert!(crate_root.join("src/status_contracts").is_dir());
 }
