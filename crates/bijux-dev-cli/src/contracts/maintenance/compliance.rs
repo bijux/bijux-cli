@@ -4,9 +4,9 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
+use super::build_status_contracts_report;
 use super::generator_runner::build_generators_report;
 use super::shared::{collect_files, generated_at_utc, parse_make_targets, rel};
-use super::status_contract_bridge::build_status_contracts_report;
 
 const MIGRATION_CONTROLS: [(&str, &str, &str, usize); 4] = [
     (

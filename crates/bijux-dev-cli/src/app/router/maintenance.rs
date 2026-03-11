@@ -36,20 +36,20 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate-all" => {
             dev_maintenance::run_all_generators(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "requirements" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "requirements" => {
             dev_maintenance::build_requirement_catalog_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "flaky-tests" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "flaky-tests" => {
             dev_maintenance::build_flaky_tests_report(&workspace_root())
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "inventory" =>
+            if a == "dev"
+                && b == "cli"
+                && c == "maintenance"
+                && d == "status"
+                && e == "inventory" =>
         {
-            dev_maintenance::build_status_maintenance_report(&workspace_root())
+            dev_maintenance::build_status_contracts_report(&workspace_root())
         }
         [a, b, c, d, e]
             if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run" =>
@@ -65,10 +65,14 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
             )
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run-all" =>
+            if a == "dev"
+                && b == "cli"
+                && c == "maintenance"
+                && d == "status"
+                && e == "run-all" =>
         {
             let passthrough = command_passthrough_args(argv);
-            dev_maintenance::run_all_status_maintenance(
+            dev_maintenance::run_all_status_contracts(
                 &workspace_root(),
                 command_option_value(argv, "--kind").as_deref(),
                 &passthrough,
