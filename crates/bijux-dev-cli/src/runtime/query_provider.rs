@@ -5,9 +5,10 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use bijux_cli::contracts::contracts_schema_query;
 use bijux_cli::features::config::validate_config_file;
 use bijux_cli::features::diagnostics::{
-    state_diagnostics_query,
+    registry_inventory, route_inventory, state_diagnostics_query,
     state_paths::{
         env_map, resolve_state_paths, state_diagnostics, state_path_status_value,
         ResolvedStatePaths,
@@ -19,8 +20,6 @@ use bijux_cli::features::install::{
 };
 use bijux_cli::features::plugins::{list_plugins, load_time_diagnostics};
 use bijux_cli::interface::cli::parser::ParsedGlobalFlags;
-use bijux_cli::routing::inventory::{registry_inventory, route_inventory};
-use bijux_cli::routing::query::contracts_schema_query;
 use bijux_cli::routing::registry::RouteRegistry;
 use bijux_cli::routing::KNOWN_BIJUX_TOOLS;
 use serde_json::{json, Value};
