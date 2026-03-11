@@ -4,7 +4,7 @@ use crate::contract_engine::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-MIGRATION-NOTES" => {
-            let generated_at = "1970-01-01T00:00:00+00:00";
+            let generated_at = generated_at_utc();
             let parity_matrix = fs::read_to_string(
                 workspace_root.join("artifacts/parity/command_parity_matrix.json"),
             )

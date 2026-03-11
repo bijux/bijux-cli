@@ -15,7 +15,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let shim_delta = read_json("artifacts/status/compatibility_shim_count_delta.json");
             let alias_delta = read_json("artifacts/status/compatibility_alias_count_delta.json");
             let payload = json!({
-                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generated_at": generated_at_utc(),
                 "generator": "bijux-dev-cli",
                 "scope": "compatibility debt trend",
                 "series": {
@@ -113,7 +113,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ),
             ];
             write_status_artifact_json(workspace_root, "artifacts/status/deterministic_hostile_state_report.json", &json!({
-                                "generated_at": "1970-01-01T00:00:00+00:00",
+                                "generated_at": generated_at_utc(),
                                 "generator": "bijux-dev-cli",
                                 "scope": "deterministic hostile-state behavior",
                                 "rows": rows.iter().map(|(id,name)| json!({
@@ -127,14 +127,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/failure_class_stability_report.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "harness_file": "artifacts/status/repeated_run_corruption_harness.json",
                     "covers_todo": 157
                 }),
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/deterministic_failure_quality_bar.json", &json!({
-                                "generated_at": "1970-01-01T00:00:00+00:00",
+                                "generated_at": generated_at_utc(),
                                 "status": "frozen",
                                 "quality_bar": "deterministic failure behavior required for hostile-state covered commands",
                                 "required_artifacts": [
@@ -180,7 +180,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/precedence_regression_matrix.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "scope": "precedence tests",
                     "rows": precedence_rows,
@@ -191,7 +191,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/parity/command_precedence_report.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "source_precedence": source_precedence,
                     "shared_contract": "flags > env > config > defaults"
                 }),
@@ -201,7 +201,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/precedence_contract.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "contract": "precedence is one shared behavioral contract",
                     "status": "frozen",
                     "source_precedence": source_precedence

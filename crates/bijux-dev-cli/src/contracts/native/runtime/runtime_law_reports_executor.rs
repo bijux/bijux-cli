@@ -328,7 +328,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/diagnostics_taxonomy.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "taxonomy": taxonomy_rows,
                 }),
@@ -338,7 +338,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/diagnostics_usefulness_review.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "severity_model": ["error", "warning", "info"],
                     "actionable_next_step_model": {

@@ -290,7 +290,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/bridge_duplicate_law_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "source": "crates/bijux-cli-python/src/bindings.rs",
                                     "checks": details,
@@ -312,7 +312,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/plugin_state_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "plugin_commands": {
                                         "complete": [

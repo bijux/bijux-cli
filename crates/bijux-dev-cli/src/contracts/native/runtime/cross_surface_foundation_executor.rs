@@ -319,7 +319,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/plugin_discovery_determinism_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "scope": "plugin discovery and ordering determinism",
                                     "rows": matrix_rows,
@@ -336,7 +336,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/plugin_ordering_law.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "law": "plugin ordering is deterministic",
                     "status": "frozen",
                     "evidence": [
@@ -359,7 +359,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/plugin_lifecycle_failure_injection_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "scope": "plugin lifecycle failure injection",
                                     "status": "complete",
@@ -403,7 +403,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/plugin_rollback_proof_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "scope": "plugin rollback and write-path proofs",
                                     "status": "complete",

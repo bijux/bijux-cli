@@ -37,7 +37,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/official_product_mount_registry.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "registry": registry,
                 }),
@@ -47,7 +47,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/product_mount_readiness_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "official_namespaces": namespaces,
                                     "placeholder_entries": placeholder_entries,
@@ -60,7 +60,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 workspace_root,
                                 "artifacts/status/product_mount_support_report.json",
                                 &json!({
-                                    "generated_at": "1970-01-01T00:00:00+00:00",
+                                    "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "supports_today": [
                                         "reserved namespace rejection for official mounts",
@@ -82,7 +82,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/product_mount_gap_report.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "not_committed": [
                         "dynamic product runtime loading",

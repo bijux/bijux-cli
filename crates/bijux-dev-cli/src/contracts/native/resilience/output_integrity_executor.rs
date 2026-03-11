@@ -56,7 +56,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/deterministic_output_report.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
                     "scope": "deterministic output tests",
                     "rows": report_rows,
@@ -73,7 +73,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/determinism_dashboard.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "dashboard": "command-by-command determinism",
                     "commands": [
                         "status --format json --no-pretty",
@@ -95,7 +95,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/determinism_expectations.json",
                 &json!({
-                    "generated_at": "1970-01-01T00:00:00+00:00",
+                    "generated_at": generated_at_utc(),
                     "expectation": "byte stability is required where explicitly claimed",
                     "status": "frozen",
                     "evidence": [

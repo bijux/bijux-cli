@@ -254,7 +254,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-CLEANUP-REPORTS" => {
-            let generated_at = "1970-01-01T00:00:00+00:00";
+            let generated_at = generated_at_utc();
             let deleted_docs = vec![
                 "docs/architecture/newly-ported-command-parity.md",
                 "docs/architecture/next-five-command-priorities.md",
