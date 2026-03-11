@@ -30,7 +30,7 @@ $(VENV):
 install: $(VENV) ## Install project in editable mode into .venv
 	@echo "→ Installing dependencies..."
 	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
-	@$(VENV_PYTHON) -m pip install -e ".[dev]"
+	@$(VENV_PYTHON) -m pip install -e "./crates/bijux-cli-python[dev]"
 
 bootstrap: $(VENV) ## Setup environment
 .PHONY: bootstrap
@@ -80,7 +80,7 @@ endef
 define read_pyproject_version
 $(strip $(shell \
   python3 -c 'import tomllib; \
-  print(tomllib.load(open("configs/python/pyproject.toml","rb"))["project"]["version"])' \
+  print(tomllib.load(open("crates/bijux-cli-python/pyproject.toml","rb"))["project"]["version"])' \
   2>/dev/null || echo 0.0.0 \
 ))
 endef

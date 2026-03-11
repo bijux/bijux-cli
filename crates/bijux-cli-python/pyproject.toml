@@ -6,24 +6,263 @@ build-backend = "maturin"
 name = "bijux-cli"
 version = "0.1.0"
 description = "Rust-backed Bijux CLI Python distribution"
-requires-python = ">=3.9"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Bijux" }]
+authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
+keywords = ["cli", "developer-tools", "plugins", "dependency-injection", "repl", "fastapi", "typer", "pluggy"]
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Rust",
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Rust",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Terminals",
+  "Topic :: Utilities",
+  "Framework :: FastAPI",
+  "Framework :: Pytest",
+  "Typing :: Typed",
 ]
 
 [project.scripts]
 bijux = "bijux_cli_py.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "typer>=0.12.5",
+  "click>=8.1.7",
+  "pydantic>=2.9.2,<3.0",
+  "pydantic-settings~=2.0",
+  "packaging>=23.0",
+  "injector>=0.20.1",
+  "fastapi>=0.110,<1.0",
+  "orjson>=3.9.0",
+  "pyyaml>=6.0.2",
+  "cookiecutter>=2.3.0",
+  "cryptography>=44.0.1",
+  "psutil>=6.0.0",
+  "rapidfuzz>=3.0.0",
+  "prompt_toolkit>=3.0.0",
+  "structlog>=24.4.0",
+  "colorama>=0.4.6",
+  "pluggy>=1.0.0",
+  "types-PyYAML>=6.0.12,<7.0",
+  "types-orjson>=3.6.0,<4.0",
+  "types-colorama>=0.0.14,<1.0",
+  "types-psutil>=6.0.0,<7.0",
+  "typing-extensions>=4.5.0,<5.0",
+  "types-pexpect>=4.9.0,<5.0",
+  "pytest>=8.4.1,<9.0",
+  "pytest-cov>=6.2.1,<7.0",
+  "pytest-asyncio>=1.0.0,<2.0",
+  "pytest-timeout>=2.4.0,<3.0",
+  "pytest-rerunfailures>=13.0,<14.0",
+  "pytest-benchmark>=4.0.0,<5.0",
+  "pytest-mock>=3.14.1,<4.0",
+  "hypothesis>=6.103.0,<7.0",
+  "hypothesis-jsonschema>=0.23.0,<1.0",
+  "pexpect>=4.8.0,<5.0",
+  "ruff>=0.6.8,<1.0",
+  "mypy>=1.11.2,<2.0",
+  "codespell>=2.3.0,<3.0",
+  "pydocstyle>=6.2.1,<7.0",
+  "radon>=6.0.0",
+  "vulture>=2.7,<3.0",
+  "deptry>=0.10.0,<1.0",
+  "build>=1.0.3,<2.0",
+  "bandit>=1.7.10,<2.0",
+  "pip-audit>=2.7.3,<3.0",
+  "commitizen>=4.0.0,<5.0",
+  "interrogate>=1.7.0,<2.0",
+  "mkdocs>=1.6.1,<2.0",
+  "mkdocs-material>=9.5.39,<10.0",
+  "mkdocstrings[python]>=0.26.1,<1.0",
+  "mkdocs-git-revision-date-localized-plugin>=1.2.0,<2.0",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-redirects>=1.2,<2.0",
+  "mkdocs-minify-plugin>=0.7,<1.0",
+  "mkdocs-glightbox>=0.3,<1.0",
+  "mkdocs-material[imaging]>=9.5.39,<10.0",
+  "prance>=25.4.0.0",
+  "openapi-spec-validator>=0.7.1,<1.0",
+  "schemathesis>=4.0,<5.0",
+  "anyio>=4.4.0,<5.0",
+  "uvicorn>=0.30.1,<1.0",
+  "twine>=6.1.0,<7.0",
+  "mutmut>=3.0",
+  "maturin>=1.7,<2.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/bijux/bijux-cli"
+"Repository" = "https://github.com/bijux/bijux-cli.git"
+"Bug Tracker" = "https://github.com/bijux/bijux-cli/issues"
+"Documentation" = "https://bijux.github.io/bijux-cli/"
+"Changelog" = "https://bijux.github.io/bijux-cli/changelog"
+"Discussions" = "https://github.com/bijux/bijux-cli/discussions"
 
 [tool.maturin]
 python-source = "python"
 module-name = "bijux_cli_py._native"
 manifest-path = "Cargo.toml"
 features = ["python-extension"]
+
+# --8<-- [start:bijux]
+[tool.bijux]
+api_version = "0.1.0"
+# --8<-- [end:bijux]
+
+# --8<-- [start:deptry]
+[tool.deptry]
+ignore = ["DEP002", "DEP003"]
+# --8<-- [end:deptry]
+
+# --8<-- [start:interrogate]
+[tool.interrogate]
+fail-under = 98
+exclude = []
+color = true
+# --8<-- [end:interrogate]
+
+# --8<-- [start:commitizen]
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+update_changelog_on_bump = false
+# --8<-- [end:commitizen]
+
+# --8<-- [start:security]
+[tool.security]
+
+[[tool.security.pip_audit_ignore]]
+id = "PYSEC-2022-42969"
+dependency = "pip-audit"
+reason = "Upstream false positive for this project; tracked in security notes."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-59940"
+dependency = "mkdocs-include-markdown-plugin"
+reason = "Docs-only dependency; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-62727"
+dependency = "starlette"
+reason = "Indirect via dev tooling; not in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66221"
+dependency = "werkzeug"
+reason = "Docs/test tooling only; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66418"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66471"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-67221"
+dependency = "orjson"
+reason = "Tooling/benchmark context; no untrusted input in this path."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-68146"
+dependency = "filelock"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69223"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69224"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69225"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69226"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69227"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69228"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69229"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69230"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-8869"
+dependency = "pip"
+reason = "Tooling only; no runtime usage in packaged CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-21441"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-21860"
+dependency = "werkzeug"
+reason = "Docs/test tooling only; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-22701"
+dependency = "filelock"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-22702"
+dependency = "virtualenv"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-23949"
+dependency = "jaraco-context"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-24049"
+dependency = "wheel"
+reason = "Build tool only; not in runtime."
+# --8<-- [end:security]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

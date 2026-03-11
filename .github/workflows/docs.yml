@@ -31,13 +31,13 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: |
-            configs/python/pyproject.toml
+            crates/bijux-cli-python/pyproject.toml
             mkdocs.yml
 
       - name: Install dev toolchain (MkDocs + docs builder deps)
         run: |
           python -m pip install -U pip
-          pip install ".[dev]" tox
+          pip install -e "./crates/bijux-cli-python[dev]" tox
           mkdocs --version
 
       - name: Determine target commit SHA
