@@ -15,11 +15,11 @@
       "malformed input with clean failure"
     ]
   },
-  "generated_at": "2026-03-10T12:44:30.345967+00:00",
-  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
-  "scope": "config corruption severity classification",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     137
-  ]
+  ],
+  "generated_at": "2026-03-11T05:22:00Z",
+  "generator": "bijux-dev-cli",
+  "scope": "config corruption severity classification",
+  "status": "complete"
 }

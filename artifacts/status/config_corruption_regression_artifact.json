@@ -1,14 +1,10 @@
 {
-  "generated_at": "2026-03-10T12:44:30.345967+00:00",
-  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
-  "minimized_cases": [
-    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/list_truncated_config.json",
-    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/load_malformed_source.json",
-    "crates/bijux-cli-bin/tests/fuzz/config_corruption_minimized_cases/set_invalid_assignment.json"
-  ],
-  "scope": "config corruption regression replay",
-  "status": "clean",
-  "tasks": [
+  "coverage_ids": [
     136
-  ]
+  ],
+  "generated_at": "2026-03-11T05:22:00Z",
+  "generator": "bijux-dev-cli",
+  "minimized_cases": [],
+  "scope": "config corruption regression replay",
+  "status": "clean"
 }

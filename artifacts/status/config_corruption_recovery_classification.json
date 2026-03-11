@@ -1,6 +1,9 @@
 {
-  "generated_at": "2026-03-10T12:44:30.345967+00:00",
-  "generator": "scripts/status/generate_config_corruption_campaign_reports.py",
+  "coverage_ids": [
+    138
+  ],
+  "generated_at": "2026-03-11T05:22:00Z",
+  "generator": "bijux-dev-cli",
   "paths": {
     "rollback_preserved": [
       "failed load keeps previous coherent config"
@@ -13,8 +16,5 @@
     ]
   },
   "scope": "config corruption recovery classification",
-  "status": "complete",
-  "tasks": [
-    138
-  ]
+  "status": "complete"
 }
