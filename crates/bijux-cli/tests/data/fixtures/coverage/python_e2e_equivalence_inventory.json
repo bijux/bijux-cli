@@ -1,0 +1,81 @@
+{
+  "entries": [
+    {
+      "python_test_file": "tests/e2e/precedence/test_precedence.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/precedence_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/exit_code_law_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/stream_discipline_matrix.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/command_sequences/test_command_sequences.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/cross_command_consistency_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/resilience/adversarial_fs_process_campaigns.rs",
+        "crates/bijux-cli/tests/integration/cli/resilience/deterministic_hostile_state_matrix.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/config_state/test_config_state.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/config/config_core_parity.rs",
+        "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/config/config_set_parity.rs",
+        "crates/bijux-cli/tests/integration/cli/config/config_get_parity.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/exit_policy/test_exit_policy.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/root/exit_code_law_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/stream_discipline_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/flag_normalization_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/plugin_lifecycle/test_plugin_lifecycle.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/plugin_lifecycle/test_plugins_smoke.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_minimal.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs",
+        "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs",
+        "crates/bijux-cli/tests/integration/cli/root/help_tree_law_extra.rs"
+      ]
+    },
+    {
+      "python_test_file": "tests/e2e/api_cli_parity/test_api_cli_parity.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/integration/cli/root/cross_surface_equivalence.rs",
+        "crates/bijux-cli/tests/integration/cli/root/app_direct_invocation.rs",
+        "crates/bijux-cli/tests/integration/cli/root/cross_command_consistency_matrix.rs",
+        "crates/bijux-cli/tests/integration/cli/root/bin_core_integration.rs",
+        "crates/bijux-cli/tests/integration/cli/root/python_command_port_parity.rs"
+      ]
+    }
+  ]
+}
