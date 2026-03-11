@@ -20,7 +20,8 @@
 
 - `app/`: argument parsing, workspace discovery, route handling entrypoints.
 - `contracts/`: status/maintenance contract catalogs and native executors.
-- `domains/`: maintainer report builders grouped by business domain.
+- `reports/`: maintainer report builders grouped by business domain.
+- `domains/`: backward-compatible alias that re-exports `reports`.
 - `platform/`: shared command registry and report envelope primitives.
 - `infrastructure/`: filesystem/process adapters used by report and contract code.
 - `status_contracts/`: status contract inventory and runner services.
@@ -42,7 +43,7 @@ Each suite owns:
 
 - `crates/*/src` path depth must stay `<= 7`.
 - `scripts/` at workspace root is forbidden.
-- single-file domains must be `domains/<name>.rs` (no one-file `<name>/mod.rs` directories).
+- single-file report modules must be `reports/<name>.rs` (no one-file `<name>/mod.rs` directories).
 - legacy `contracts/maintenance/native` is removed; native suites live under `contracts/native`.
 
 Enforcement is in [`tests/module_layout_contracts.rs`](./tests/module_layout_contracts.rs).

@@ -5,7 +5,7 @@ use std::path::Path;
 use std::{fs, path::PathBuf};
 
 #[test]
-fn domain_platform_and_status_contract_namespaces_exist() {
+fn report_platform_and_status_contract_namespaces_exist() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(crate_root.join("src/reports").is_dir());
     assert!(crate_root.join("src/domains/mod.rs").is_file());
@@ -28,7 +28,7 @@ fn legacy_alias_modules_are_removed() {
 }
 
 #[test]
-fn single_domain_modules_use_intention_named_files() {
+fn single_report_modules_use_intention_named_files() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let domains_root = crate_root.join("src/reports");
     for legacy_dir in [
@@ -59,6 +59,32 @@ fn single_domain_modules_use_intention_named_files() {
             domains_root.join(domain_file).is_file(),
             "missing domain module file {}",
             domains_root.join(domain_file).display()
+        );
+    }
+}
+
+#[test]
+fn router_is_split_into_command_family_modules() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let router_dir = crate_root.join("src/app/router");
+    assert!(
+        !crate_root.join("src/app/router.rs").exists(),
+        "legacy single-file router module must be removed"
+    );
+    assert!(router_dir.is_dir(), "missing {}", router_dir.display());
+    for file in [
+        "mod.rs",
+        "root.rs",
+        "maintenance.rs",
+        "rustdoc.rs",
+        "release.rs",
+        "evidence.rs",
+        "config_python_repo.rs",
+    ] {
+        assert!(
+            router_dir.join(file).is_file(),
+            "missing router module file {}",
+            router_dir.join(file).display()
         );
     }
 }

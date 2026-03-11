@@ -1,0 +1,109 @@
+use std::path::Path;
+
+use anyhow::{anyhow, Result};
+use serde_json::Value;
+
+use crate::app::args::{command_option_value, command_passthrough_args};
+use crate::app::workspace::workspace_root;
+use crate::maintenance as dev_maintenance;
+
+pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<Option<Value>> {
+    let payload = match normalized_path {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "remaining" => {
+            dev_maintenance::build_remaining_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "migrated" => {
+            dev_maintenance::build_migrated_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "diff" => {
+            dev_maintenance::build_diff_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "audit" => {
+            dev_maintenance::build_audit_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generators" => {
+            dev_maintenance::build_generators_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate" => {
+            let source_ref = command_option_value(argv, "--source-ref")
+                .or_else(|| command_option_value(argv, "--source"));
+            dev_maintenance::run_generator(
+                &workspace_root(),
+                command_option_value(argv, "--id").as_deref(),
+                source_ref.as_deref(),
+            )
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate-all" => {
+            dev_maintenance::run_all_generators(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "requirements" =>
+        {
+            dev_maintenance::build_requirement_catalog_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "flaky-tests" =>
+        {
+            dev_maintenance::build_flaky_tests_report(&workspace_root())
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "inventory" =>
+        {
+            dev_maintenance::build_status_maintenance_report(&workspace_root())
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run" =>
+        {
+            let passthrough = command_passthrough_args(argv);
+            let source_ref = command_option_value(argv, "--source-ref")
+                .or_else(|| command_option_value(argv, "--source"));
+            dev_maintenance::run_status_contract(
+                &workspace_root(),
+                command_option_value(argv, "--id").as_deref(),
+                source_ref.as_deref(),
+                &passthrough,
+            )
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run-all" =>
+        {
+            let passthrough = command_passthrough_args(argv);
+            dev_maintenance::run_all_status_maintenance(
+                &workspace_root(),
+                command_option_value(argv, "--kind").as_deref(),
+                &passthrough,
+            )
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "package-metadata" =>
+        {
+            dev_maintenance::build_package_metadata_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "e2e-contract" => {
+            dev_maintenance::build_e2e_contract_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "pip-audit" => {
+            dev_maintenance::build_pip_audit_report(
+                &workspace_root(),
+                command_option_value(argv, "--report-path").as_deref(),
+            )
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "capture-python-behavior" =>
+        {
+            dev_maintenance::build_python_capture_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "provenance-statement" =>
+        {
+            let tag = command_option_value(argv, "--tag")
+                .ok_or_else(|| anyhow!("Missing argument: --tag required"))?;
+            let output_dir = command_option_value(argv, "--output-dir")
+                .ok_or_else(|| anyhow!("Missing argument: --output-dir required"))?;
+            dev_maintenance::build_provenance_statement_report(&tag, Path::new(&output_dir))
+        }
+        _ => return Ok(None),
+    };
+
+    Ok(Some(payload))
+}
