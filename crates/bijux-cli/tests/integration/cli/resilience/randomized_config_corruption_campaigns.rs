@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -22,7 +21,10 @@ impl Lcg {
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -46,15 +48,20 @@ enum Mutator {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path =
-        std::env::temp_dir().join(format!("bijux-config-campaign-{name}-{}", std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "bijux-config-campaign-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn mutate_config(seed: &str, mutator: Mutator, rng: &mut Lcg) -> String {
@@ -237,15 +244,39 @@ fn config_corruption_has_stable_failure_class_and_recovery_path() {
     fs::write(&config, "BROKEN_LINE\n").expect("write broken");
     let cfg = config.to_str().expect("utf-8");
 
-    let first =
-        run(&["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg]);
-    let second =
-        run(&["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg]);
+    let first = run(&[
+        "cli",
+        "config",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        cfg,
+    ]);
+    let second = run(&[
+        "cli",
+        "config",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        cfg,
+    ]);
     assert_eq!(first.status.code(), second.status.code());
 
     fs::write(&config, "BIJUXCLI_ALPHA=1\n").expect("repair");
-    let repaired =
-        run(&["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg]);
+    let repaired = run(&[
+        "cli",
+        "config",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        cfg,
+    ]);
     assert_eq!(repaired.status.code(), Some(0));
 }
 
@@ -302,7 +333,9 @@ fn state_doctor_reports_corruption_introduced_by_campaign_harness() {
     ]);
     assert_known_status(&out, "state doctor");
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
-    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    let issues = payload["doctor"]["issues"]
+        .as_array()
+        .expect("issues array");
     assert!(issues.iter().any(|i| i["area"] == "config"));
 }
 
@@ -317,8 +350,27 @@ fn repeated_run_corruption_inputs_are_deterministic_for_config_command_set() {
     let cfg = config.to_str().expect("utf-8");
     let src = source.to_str().expect("utf-8");
     let cases: [&[&str]; 8] = [
-        &["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg],
-        &["cli", "config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", cfg],
+        &[
+            "cli",
+            "config",
+            "list",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg,
+        ],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg,
+        ],
         &["cli", "config", "set", "delta=1", "--config-path", cfg],
         &[
             "cli",
@@ -331,15 +383,47 @@ fn repeated_run_corruption_inputs_are_deterministic_for_config_command_set() {
             "--config-path",
             cfg,
         ],
-        &["cli", "config", "clear", "--format", "json", "--no-pretty", "--config-path", cfg],
-        &["cli", "config", "export", src, "--format", "json", "--no-pretty", "--config-path", cfg],
+        &[
+            "cli",
+            "config",
+            "clear",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg,
+        ],
+        &[
+            "cli",
+            "config",
+            "export",
+            src,
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg,
+        ],
         &["cli", "config", "load", src, "--config-path", cfg],
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty", "--config-path", cfg],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            cfg,
+        ],
     ];
 
     for args in cases {
         let first = run(args);
         let second = run(args);
-        assert_eq!(first.status.code(), second.status.code(), "exit drift for {args:?}");
+        assert_eq!(
+            first.status.code(),
+            second.status.code(),
+            "exit drift for {args:?}"
+        );
     }
 }

@@ -7,7 +7,6 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -30,7 +29,10 @@ fn minimized_scaffold_cases_replay_with_deterministic_exit_codes() {
         .filter(|p| p.extension().is_some_and(|ext| ext == "argv"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "scaffold minimized corpus must not be empty");
+    assert!(
+        !files.is_empty(),
+        "scaffold minimized corpus must not be empty"
+    );
 
     let root =
         std::env::temp_dir().join(format!("bijux-scaffold-fuzz-replay-{}", std::process::id()));

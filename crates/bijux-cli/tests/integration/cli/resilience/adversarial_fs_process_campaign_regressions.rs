@@ -6,7 +6,6 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -35,15 +34,21 @@ fn run_case(path: &Path) {
     let plugins = temp.join("plugins");
     let history = temp.join("history.log");
     fs::create_dir_all(&plugins).expect("mkdir plugins");
-    fs::write(&config, json["config_text"].as_str().unwrap_or("BIJUXCLI_ALPHA=1\n"))
-        .expect("write config");
+    fs::write(
+        &config,
+        json["config_text"].as_str().unwrap_or("BIJUXCLI_ALPHA=1\n"),
+    )
+    .expect("write config");
     fs::write(
         plugins.join("registry.json"),
         json["registry_text"].as_str().unwrap_or("{\"plugins\":[]}"),
     )
     .expect("write registry");
-    fs::write(&history, json["history_text"].as_str().unwrap_or("status\n"))
-        .expect("write history");
+    fs::write(
+        &history,
+        json["history_text"].as_str().unwrap_or("status\n"),
+    )
+    .expect("write history");
 
     let mut expanded = Vec::new();
     for arg in args {
@@ -98,9 +103,24 @@ fn run_case(path: &Path) {
         }
     }
 
-    assert_eq!(first.status.code(), second.status.code(), "exit code drift for {}", path.display());
-    assert_eq!(first.stdout, second.stdout, "stdout drift for {}", path.display());
-    assert_eq!(first.stderr, second.stderr, "stderr drift for {}", path.display());
+    assert_eq!(
+        first.status.code(),
+        second.status.code(),
+        "exit code drift for {}",
+        path.display()
+    );
+    assert_eq!(
+        first.stdout,
+        second.stdout,
+        "stdout drift for {}",
+        path.display()
+    );
+    assert_eq!(
+        first.stderr,
+        second.stderr,
+        "stderr drift for {}",
+        path.display()
+    );
 }
 
 #[test]
@@ -114,7 +134,10 @@ fn minimized_adversarial_cases_replay_without_panics() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "retain at least one adversarial minimized case");
+    assert!(
+        !files.is_empty(),
+        "retain at least one adversarial minimized case"
+    );
 
     for file in files {
         run_case(&file);

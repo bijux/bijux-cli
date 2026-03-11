@@ -6,7 +6,6 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -94,7 +93,10 @@ fn minimized_corrupted_state_reproducers_replay_without_crashing() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "at least one minimized reproducer must be retained");
+    assert!(
+        !files.is_empty(),
+        "at least one minimized reproducer must be retained"
+    );
 
     for file in files {
         run_case(&file);

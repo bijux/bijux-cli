@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -41,17 +40,31 @@ fn history_doctor_and_state_doctor_agree_on_history_corruption_findings() {
     fs::write(&history, "{oops:true}\n").expect("write malformed history");
     let envs = [("BIJUXCLI_HISTORY_FILE", history.display().to_string())];
 
-    let doctor = run_with_env(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"], &envs);
-    let state_doctor =
-        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
+    let doctor = run_with_env(
+        &["dev", "cli", "doctor", "--format", "json", "--no-pretty"],
+        &envs,
+    );
+    let state_doctor = run_with_env(
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &envs,
+    );
     assert_eq!(doctor.status.code(), Some(0));
     assert_eq!(state_doctor.status.code(), Some(0));
 
     let doctor_json = parse_json(&doctor.stdout);
     let state_json = parse_json(&state_doctor.stdout);
 
-    let doctor_has_history_issue =
-        doctor_json["issues"]["history"].as_array().map(|rows| !rows.is_empty()).unwrap_or(false);
+    let doctor_has_history_issue = doctor_json["issues"]["history"]
+        .as_array()
+        .map(|rows| !rows.is_empty())
+        .unwrap_or(false);
     let state_has_history_issue = state_json["doctor"]["issues"]
         .as_array()
         .map(|rows| rows.iter().any(|row| row["area"] == "history"))
