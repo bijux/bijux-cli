@@ -9,7 +9,7 @@ use anyhow::Result;
 use serde_json::Value;
 
 use crate::{
-    cockpit as dev_cockpit, config as dev_config, contracts as dev_contracts,
+    capabilities::runtime_contracts as dev_contracts, cockpit as dev_cockpit, config as dev_config,
     control_plane as dev_control_plane, crate_health as dev_crate_health,
     docs_audit as dev_docs_audit, env as dev_env, evidence as dev_evidence,
     package_health as dev_package_health, parity as dev_parity, python as dev_python,

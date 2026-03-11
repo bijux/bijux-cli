@@ -1,6 +1,5 @@
 pub mod cockpit;
 pub mod config;
-pub mod contracts;
 pub mod control_plane;
 pub mod crate_health;
 pub mod docs_audit;
@@ -12,9 +11,9 @@ pub mod python;
 pub mod registry;
 pub mod release;
 pub mod repo;
-pub mod reporting;
 pub mod route_audit;
 pub mod routes;
+pub mod runtime_contracts;
 pub mod runtime_identity;
 pub mod rustdoc;
 pub mod script_audit;
