@@ -108,6 +108,7 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
         {
             true
         }
+        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "scripts" && d == "status" => true,
         _ => false,
     }
 }
@@ -159,6 +160,13 @@ fn command_option_value(argv: &[String], name: &str) -> Option<String> {
         return Some(found[prefixed.len()..].to_string());
     }
     argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
+}
+
+fn command_passthrough_args(argv: &[String]) -> Vec<String> {
+    argv.iter()
+        .position(|arg| arg == "--")
+        .and_then(|idx| argv.get(idx + 1..))
+        .map_or_else(Vec::new, |tail| tail.to_vec())
 }
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
@@ -359,6 +367,32 @@ pub fn try_handle(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "flaky-tests" => {
             dev_scripts::build_flaky_tests_report(&workspace_root())
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "inventory" =>
+        {
+            dev_scripts::build_status_scripts_report(&workspace_root())
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "run" =>
+        {
+            let passthrough = command_passthrough_args(argv);
+            dev_scripts::run_status_script(
+                &workspace_root(),
+                command_option_value(argv, "--id").as_deref(),
+                command_option_value(argv, "--source").as_deref(),
+                &passthrough,
+            )
+        }
+        [a, b, c, d, e]
+            if a == "dev" && b == "cli" && c == "scripts" && d == "status" && e == "run-all" =>
+        {
+            let passthrough = command_passthrough_args(argv);
+            dev_scripts::run_all_status_scripts(
+                &workspace_root(),
+                command_option_value(argv, "--kind").as_deref(),
+                &passthrough,
+            )
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" && d == "package-metadata" => {
             dev_scripts::build_package_metadata_report(&workspace_root())

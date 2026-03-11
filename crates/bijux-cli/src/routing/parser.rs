@@ -214,6 +214,31 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("generate-all"))
                 .subcommand(Command::new("requirements"))
                 .subcommand(Command::new("flaky-tests"))
+                .subcommand(
+                    Command::new("status")
+                        .subcommand(Command::new("inventory"))
+                        .subcommand(
+                            Command::new("run")
+                                .arg(Arg::new("id").long("id").num_args(1))
+                                .arg(Arg::new("source").long("source").num_args(1))
+                                .arg(
+                                    Arg::new("args")
+                                        .num_args(0..)
+                                        .trailing_var_arg(true)
+                                        .allow_hyphen_values(true),
+                                ),
+                        )
+                        .subcommand(
+                            Command::new("run-all")
+                                .arg(Arg::new("kind").long("kind").num_args(1))
+                                .arg(
+                                    Arg::new("args")
+                                        .num_args(0..)
+                                        .trailing_var_arg(true)
+                                        .allow_hyphen_values(true),
+                                ),
+                        ),
+                )
                 .subcommand(Command::new("package-metadata"))
                 .subcommand(Command::new("e2e-contract"))
                 .subcommand(

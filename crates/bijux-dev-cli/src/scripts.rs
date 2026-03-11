@@ -108,6 +108,56 @@ fn status_generator_id(script_path: &str) -> String {
     format!("GEN-STATUS-{}", status_generator_slug(script_path))
 }
 
+fn status_script_sources(workspace_root: &Path) -> Vec<String> {
+    collect_files(&workspace_root.join("scripts").join("status"))
+        .into_iter()
+        .filter(|path| is_python_file(path))
+        .map(|path| rel(&path, workspace_root))
+        .collect()
+}
+
+fn status_script_kind(script_path: &str) -> Option<&'static str> {
+    let file = script_path.rsplit('/').next().unwrap_or(script_path);
+    if file.starts_with("generate_") {
+        return Some("generate");
+    }
+    if file.starts_with("enforce_") {
+        return Some("enforce");
+    }
+    if file.starts_with("check_") {
+        return Some("check");
+    }
+    if file.starts_with("warn_") {
+        return Some("warn");
+    }
+    if file.starts_with("run_") {
+        return Some("run");
+    }
+    None
+}
+
+fn status_script_slug(script_path: &str) -> Option<String> {
+    let kind = status_script_kind(script_path)?;
+    let file = script_path.rsplit('/').next().unwrap_or(script_path);
+    let stem = file.strip_suffix(".py").unwrap_or(file);
+    let stem = stem.strip_prefix(&format!("{kind}_")).unwrap_or(stem);
+    Some(
+        stem.chars()
+            .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
+            .collect::<String>()
+            .split('-')
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("-"),
+    )
+}
+
+fn status_script_id(script_path: &str) -> Option<String> {
+    let kind = status_script_kind(script_path)?;
+    let slug = status_script_slug(script_path)?;
+    Some(format!("STATUS-SCRIPT-{}-{slug}", kind.to_ascii_uppercase()))
+}
+
 fn extract_artifact_paths(source: &str) -> Vec<String> {
     let mut out = BTreeSet::<String>::new();
     for line in source.lines() {
@@ -211,6 +261,42 @@ fn build_status_generators_report(workspace_root: &Path) -> Value {
     })
 }
 
+fn build_status_scripts_inventory_report(workspace_root: &Path) -> Value {
+    let mut rows = Vec::<Value>::new();
+    let mut kind_counts = BTreeMap::<String, usize>::new();
+    for source_script in status_script_sources(workspace_root) {
+        let Some(script_id) = status_script_id(&source_script) else {
+            continue;
+        };
+        let Some(kind) = status_script_kind(&source_script) else {
+            continue;
+        };
+        let source = fs::read_to_string(workspace_root.join(&source_script)).unwrap_or_default();
+        let outputs = extract_artifact_paths(&source);
+        *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
+        rows.push(json!({
+            "script_id": script_id,
+            "kind": kind,
+            "source_script": source_script,
+            "implementation": "python-script",
+            "outputs": outputs,
+            "command": format!("bijux dev cli scripts status run --id {script_id}"),
+        }));
+    }
+    rows.sort_by(|left, right| {
+        left.get("script_id")
+            .and_then(Value::as_str)
+            .cmp(&right.get("script_id").and_then(Value::as_str))
+    });
+    json!({
+        "id_policy": "STATUS-SCRIPT-<KIND>-<SLUG>",
+        "kinds": kind_counts,
+        "count": rows.len(),
+        "generated_at_utc": generated_at_utc(),
+        "rows": rows,
+    })
+}
+
 fn write_json(path: &Path, payload: &Value) -> Result<(), String> {
     fs::create_dir_all(path.parent().unwrap_or_else(|| Path::new(".")))
         .map_err(|err| format!("failed to create parent dir for {}: {err}", path.display()))?;
@@ -245,6 +331,48 @@ fn run_python_generator(workspace_root: &Path, source_script: &str, outputs: &[S
             "implementation": "python-script",
             "error": format!("failed to launch python3 for {source_script}: {err}"),
             "outputs": outputs,
+        }),
+    }
+}
+
+fn run_python_status_script(
+    workspace_root: &Path,
+    source_script: &str,
+    script_id: &str,
+    kind: &str,
+    args: &[String],
+) -> Value {
+    let script = workspace_root.join(source_script);
+    let source = fs::read_to_string(&script).unwrap_or_default();
+    let outputs = extract_artifact_paths(&source);
+    let executed =
+        Command::new("python3").arg(&script).args(args).current_dir(workspace_root).output();
+    match executed {
+        Ok(output) => {
+            let exit_code = output.status.code().unwrap_or(1);
+            let status = if output.status.success() { "ok" } else { "failed" };
+            json!({
+                "status": status,
+                "script_id": script_id,
+                "kind": kind,
+                "source_script": source_script,
+                "implementation": "python-script",
+                "args": args,
+                "outputs": outputs,
+                "exit_code": exit_code,
+                "stdout": String::from_utf8_lossy(&output.stdout).trim(),
+                "stderr": String::from_utf8_lossy(&output.stderr).trim(),
+            })
+        }
+        Err(err) => json!({
+            "status": "failed",
+            "script_id": script_id,
+            "kind": kind,
+            "source_script": source_script,
+            "implementation": "python-script",
+            "args": args,
+            "outputs": outputs,
+            "error": format!("failed to launch python3 for {source_script}: {err}"),
         }),
     }
 }
@@ -361,6 +489,97 @@ pub fn run_all_generators(workspace_root: &Path) -> Value {
     })
 }
 
+/// Builds `dev cli scripts status inventory` report payload.
+#[must_use]
+pub fn build_status_scripts_report(workspace_root: &Path) -> Value {
+    build_status_scripts_inventory_report(workspace_root)
+}
+
+fn find_status_script_row(
+    workspace_root: &Path,
+    script_id: Option<&str>,
+    source_script: Option<&str>,
+) -> Option<Value> {
+    let rows = build_status_scripts_inventory_report(workspace_root)
+        .get("rows")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if let Some(id) = script_id {
+        return rows
+            .into_iter()
+            .find(|row| row.get("script_id").and_then(Value::as_str) == Some(id));
+    }
+    if let Some(source) = source_script {
+        return rows
+            .into_iter()
+            .find(|row| row.get("source_script").and_then(Value::as_str) == Some(source));
+    }
+    None
+}
+
+/// Runs one `scripts/status/*.py` script by stable id or source path.
+#[must_use]
+pub fn run_status_script(
+    workspace_root: &Path,
+    script_id: Option<&str>,
+    source_script: Option<&str>,
+    args: &[String],
+) -> Value {
+    let Some(row) = find_status_script_row(workspace_root, script_id, source_script) else {
+        return json!({
+            "status": "failed",
+            "error": "status script not found; pass --id or --source with a known scripts/status/*.py path",
+        });
+    };
+    let script_id = row.get("script_id").and_then(Value::as_str).unwrap_or("unknown");
+    let source_script = row.get("source_script").and_then(Value::as_str).unwrap_or("");
+    let kind = row.get("kind").and_then(Value::as_str).unwrap_or("unknown");
+    run_python_status_script(workspace_root, source_script, script_id, kind, args)
+}
+
+/// Runs all `scripts/status/*.py` scripts, optionally filtered by kind.
+#[must_use]
+pub fn run_all_status_scripts(
+    workspace_root: &Path,
+    kind_filter: Option<&str>,
+    args: &[String],
+) -> Value {
+    let mut rows = build_status_scripts_inventory_report(workspace_root)
+        .get("rows")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if let Some(kind) = kind_filter {
+        let kind = kind.to_ascii_lowercase();
+        rows.retain(|row| row.get("kind").and_then(Value::as_str).is_some_and(|item| item == kind));
+    }
+
+    let mut results = Vec::<Value>::new();
+    let mut ok = 0usize;
+    let mut failed = 0usize;
+    for row in rows {
+        let script_id = row.get("script_id").and_then(Value::as_str);
+        let source_script = row.get("source_script").and_then(Value::as_str);
+        let result = run_status_script(workspace_root, script_id, source_script, args);
+        if result.get("status").and_then(Value::as_str) == Some("ok") {
+            ok += 1;
+        } else {
+            failed += 1;
+        }
+        results.push(result);
+    }
+
+    json!({
+        "generated_at_utc": generated_at_utc(),
+        "kind_filter": kind_filter.map(|kind| kind.to_ascii_lowercase()),
+        "count": results.len(),
+        "ok": ok,
+        "failed": failed,
+        "results": results,
+    })
+}
+
 fn build_requirement_catalog(workspace_root: &Path) -> Value {
     let mut by_script = BTreeMap::<String, Vec<String>>::new();
     for path in collect_files(&workspace_root.join("scripts").join("status")) {
@@ -435,7 +654,6 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     }
     json!({
         "generated_at_utc": generated_at_utc(),
-        "generator": "bijux dev cli scripts flaky-tests",
         "label": "flaky",
         "count": tests.len(),
         "tests": tests,
@@ -523,6 +741,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
         "remaining": build_remaining_report(workspace_root),
         "diff": build_diff_report(workspace_root),
         "status_generators": build_status_generators_report(workspace_root),
+        "status_scripts": build_status_scripts_inventory_report(workspace_root),
         "requirement_catalog": build_requirement_catalog(workspace_root),
         "flaky_tests": build_flaky_tests_report(workspace_root),
     })
@@ -696,7 +915,7 @@ mod tests {
 
     use super::{
         build_audit_report, build_diff_report, build_generators_report, build_migrated_report,
-        build_remaining_report, build_requirement_catalog_report,
+        build_remaining_report, build_requirement_catalog_report, build_status_scripts_report,
     };
 
     #[test]
@@ -708,6 +927,7 @@ mod tests {
         let audit = build_audit_report(&root);
         assert!(audit.get("diff").is_some());
         assert!(audit.get("status_generators").is_some());
+        assert!(audit.get("status_scripts").is_some());
         assert!(audit.get("requirement_catalog").is_some());
         assert!(audit.get("flaky_tests").is_some());
     }
@@ -738,6 +958,21 @@ mod tests {
         for row in rows {
             let id = row.get("requirement_id").and_then(serde_json::Value::as_str).unwrap_or("");
             assert!(id.starts_with("REQ-"));
+        }
+    }
+
+    #[test]
+    fn status_script_ids_are_stable_and_prefixed() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let rows = build_status_scripts_report(&root)
+            .get("rows")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        assert!(!rows.is_empty());
+        for row in rows {
+            let id = row.get("script_id").and_then(serde_json::Value::as_str).unwrap_or("");
+            assert!(id.starts_with("STATUS-SCRIPT-"));
         }
     }
 }

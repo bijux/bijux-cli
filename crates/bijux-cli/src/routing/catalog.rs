@@ -117,6 +117,7 @@ const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "capture-python-behavior",
     "provenance-statement",
 ];
+const DEV_CLI_SCRIPTS_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
 const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
     "parity",
@@ -214,6 +215,15 @@ pub fn is_known_route(path: &[String]) -> bool {
                 && b == "cli"
                 && c == "scripts"
                 && contains(DEV_CLI_SCRIPTS_SUBCOMMANDS, d) =>
+        {
+            true
+        }
+        [a, b, c, d, e]
+            if a == "dev"
+                && b == "cli"
+                && c == "scripts"
+                && d == "status"
+                && contains(DEV_CLI_SCRIPTS_STATUS_SUBCOMMANDS, e) =>
         {
             true
         }
