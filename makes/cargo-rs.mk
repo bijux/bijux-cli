@@ -55,7 +55,8 @@ endef
 fmt-rs:
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
 	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+	@set -o pipefail; \
+	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
 	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
@@ -65,7 +66,8 @@ fmt-rs:
 lint-rs:
 	@mkdir -p "$(dir $(RS_LINT_REPORT))"
 	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
-	@CLIPPY_CONF_DIR="configs/rust" \
+	@set -o pipefail; \
+	CLIPPY_CONF_DIR="configs/rust" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -156,7 +158,7 @@ audit-rs:
 	$(call rs_require_tool,cargo-deny)
 	$(call rs_require_tool,cargo-audit)
 	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
-	@{ \
+	@set -o pipefail; { \
 		echo "run: cargo deny check --config configs/rust/deny.toml"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check --config configs/rust/deny.toml; \
 		echo; \
