@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::fs;
 use std::path::Path;
 
 use super::{
@@ -138,42 +137,27 @@ fn status_contract_ids_are_stable_and_prefixed() {
 }
 
 #[test]
-fn ci_status_contract_ids_match_status_inventory() {
+fn status_inventory_commands_use_canonical_maintenance_route() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let ci = fs::read_to_string(root.join(".github/workflows/ci.yml")).expect("read ci");
-    let referenced: BTreeSet<String> = ci
-        .split_whitespace()
-        .map(|token| {
-            token.trim_matches(|ch: char| {
-                !ch.is_ascii_uppercase() && !ch.is_ascii_digit() && ch != '-'
-            })
-        })
-        .filter(|token| token.starts_with("STATUS-CONTRACT-"))
-        .map(ToString::to_string)
-        .collect();
-    assert!(
-        !referenced.is_empty(),
-        "expected STATUS-CONTRACT IDs in CI workflow"
-    );
-
-    let valid: BTreeSet<String> = build_status_contracts_report(&root)
+    let rows = build_status_contracts_report(&root)
         .get("rows")
         .and_then(serde_json::Value::as_array)
         .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|row| {
-            row.get("contract_id")
-                .and_then(serde_json::Value::as_str)
-                .map(ToString::to_string)
-        })
-        .collect();
-    assert!(!valid.is_empty(), "expected status contract inventory rows");
+        .unwrap_or_default();
+    assert!(!rows.is_empty(), "expected status contract inventory rows");
 
-    let missing: Vec<String> = referenced.difference(&valid).cloned().collect();
-    assert!(
-        missing.is_empty(),
-        "CI references unknown STATUS-CONTRACT IDs; missing:\n{}",
-        missing.join("\n")
-    );
+    for row in rows {
+        let contract_id = row
+            .get("contract_id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("<missing-contract-id>");
+        let command = row
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+        assert!(
+            command.contains("dev cli maintenance status run --id"),
+            "{contract_id} must use canonical maintenance status route: {command}"
+        );
+    }
 }

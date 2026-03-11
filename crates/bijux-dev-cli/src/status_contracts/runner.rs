@@ -46,7 +46,7 @@ pub fn run_contract(
         });
     };
 
-    if spec.implementation == "rust" || spec.implementation == "rust-compat" {
+    if spec.implementation == "rust" {
         if let Some(result) = run_native_status_contract(workspace_root, &spec.contract_id) {
             return result;
         }
