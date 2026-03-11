@@ -7,21 +7,26 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-cli-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 #[test]
@@ -106,7 +111,9 @@ fn config_failure_routes_machine_error_to_stderr() {
     assert_eq!(payload["code"], 2);
     assert_eq!(payload["status"], "error");
     assert!(
-        payload["message"].as_str().is_some_and(|msg| msg.to_ascii_lowercase().contains("missing")),
+        payload["message"]
+            .as_str()
+            .is_some_and(|msg| msg.to_ascii_lowercase().contains("missing")),
         "missing-key failure should include a missing-key diagnostic"
     );
 }
@@ -129,5 +136,8 @@ fn invalid_config_set_input_rolls_back_without_mutating_existing_file() {
     assert_eq!(failed.status.code(), Some(2));
 
     let after = fs::read_to_string(&config_path).expect("read after");
-    assert_eq!(before, after, "invalid mutation must not alter persisted config");
+    assert_eq!(
+        before, after,
+        "invalid mutation must not alter persisted config"
+    );
 }
