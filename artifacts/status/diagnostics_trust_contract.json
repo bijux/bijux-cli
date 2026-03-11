@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-03-10T12:03:48.075687+00:00",
-  "generator": "scripts/status/generate_diagnostics_trust_reports.py",
+  "coverage_ids": [
+    380
+  ],
+  "generated_at": "2026-03-11T05:26:19Z",
+  "generator": "bijux-dev-cli",
   "law": "diagnostics are credible operator output",
   "scope": "diagnostics trust contract",
-  "status": "frozen",
-  "tasks": [
-    380
-  ]
+  "status": "not-frozen"
 }

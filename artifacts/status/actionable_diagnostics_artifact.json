@@ -4,15 +4,15 @@
     "plugin_health_has_guidance": true,
     "runtime_identity_payload_present": true
   },
-  "generated_at": "2026-03-10T12:03:48.075687+00:00",
-  "generator": "scripts/status/generate_diagnostics_trust_reports.py",
-  "scope": "actionable diagnostics",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     368,
     369,
     370,
     371,
     376
-  ]
+  ],
+  "generated_at": "2026-03-11T05:26:18Z",
+  "generator": "bijux-dev-cli",
+  "scope": "actionable diagnostics",
+  "status": "partial"
 }

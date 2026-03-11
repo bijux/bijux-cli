@@ -1,6 +1,11 @@
 {
-  "generated_at": "2026-03-10T12:03:48.075687+00:00",
-  "generator": "scripts/status/generate_diagnostics_trust_reports.py",
+  "coverage_ids": [
+    372,
+    373,
+    377
+  ],
+  "generated_at": "2026-03-11T05:26:19Z",
+  "generator": "bijux-dev-cli",
   "json_commands_checked": [
     "dev cli contracts",
     "dev cli crate-health",
@@ -12,12 +17,7 @@
     "dev cli routes",
     "dev cli runtime-identity"
   ],
-  "json_schema_drift_count": 0,
+  "json_schema_drift_count": 2,
   "scope": "diagnostics minimalism",
-  "status": "complete",
-  "tasks": [
-    372,
-    373,
-    377
-  ]
+  "status": "partial"
 }
