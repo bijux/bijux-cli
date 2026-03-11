@@ -1,1842 +1,10 @@
-//! Maintainer script replacement and inventory helpers.
+#[allow(clippy::wildcard_imports)]
+use super::super::*;
 
-use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-
-use serde_json::{json, Value};
-
-fn collect_files(base: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    if !base.exists() {
-        return out;
-    }
-    let mut stack = vec![base.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        if let Ok(entries) = fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    stack.push(path);
-                } else if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
-    }
-    out.sort();
-    out
-}
-
-fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
-
-fn migrated_rows() -> &'static [(&'static str, &'static str, usize)] {
-    &[
-        ("scripts/check-package-metadata.py", "bijux dev cli scripts package-metadata", 100),
-        ("scripts/check_e2e_contract.py", "bijux dev cli scripts e2e-contract", 95),
-        ("scripts/helper_pip_audit.py", "bijux dev cli scripts pip-audit", 90),
-        ("scripts/capture_python_behavior.py", "bijux dev cli scripts capture-python-behavior", 85),
-        (
-            "scripts/generate-provenance-statement.sh",
-            "bijux dev cli scripts provenance-statement",
-            80,
-        ),
-    ]
-}
-
-fn parse_make_targets(path: &Path) -> Vec<String> {
-    let Ok(text) = fs::read_to_string(path) else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for line in text.lines() {
-        if line.starts_with('\t') || line.starts_with('#') || line.trim().is_empty() {
-            continue;
-        }
-        let Some((left, _)) = line.split_once(':') else {
-            continue;
-        };
-        let target = left.trim();
-        if !target.is_empty()
-            && !target.contains(' ')
-            && !target.contains('=')
-            && !target.starts_with('.')
-        {
-            out.push(target.to_string());
-        }
-    }
-    out.sort();
-    out.dedup();
-    out
-}
-
-fn is_python_file(path: &Path) -> bool {
-    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext.eq_ignore_ascii_case("py"))
-}
-
-fn status_generator_sources(workspace_root: &Path) -> Vec<String> {
-    collect_files(&workspace_root.join("scripts").join("status"))
-        .into_iter()
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("generate_"))
-                && is_python_file(path)
-        })
-        .map(|path| rel(&path, workspace_root))
-        .collect()
-}
-
-fn status_generator_slug(script_path: &str) -> String {
-    let file = script_path.rsplit('/').next().unwrap_or(script_path);
-    let stem = file.strip_suffix(".py").unwrap_or(file);
-    let stem = stem.strip_prefix("generate_").unwrap_or(stem);
-    let stem = stem.strip_suffix("_reports").unwrap_or(stem);
-    stem.chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '-' })
-        .collect::<String>()
-        .split('-')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("-")
-}
-
-fn status_slug_for_name(value: &str) -> String {
-    let mut slug = String::new();
-    let mut last_was_dash = false;
-    for ch in value.chars().flat_map(|c| c.to_lowercase()) {
-        if ch.is_ascii_alphanumeric() {
-            slug.push(ch);
-            last_was_dash = false;
-        } else if !last_was_dash {
-            slug.push('-');
-            last_was_dash = true;
-        }
-    }
-    let mut cleaned = slug.trim_matches('-').to_string();
-    for suffix in ["-report", "-audit", "-baseline", "-guide", "-rules", "-law", "-status"] {
-        if cleaned.ends_with(suffix) {
-            cleaned.truncate(cleaned.len().saturating_sub(suffix.len()));
-        }
-    }
-    cleaned.trim_matches('-').to_string()
-}
-
-fn status_generator_id(script_path: &str) -> String {
-    format!("GEN-STATUS-{}", status_generator_slug(script_path))
-}
-
-fn extract_artifact_paths(source: &str) -> Vec<String> {
-    let mut out = BTreeSet::<String>::new();
-    for line in source.lines() {
-        let mut search = line;
-        while let Some(idx) = search.find("artifacts/") {
-            let tail = &search[idx..];
-            let token = tail
-                .chars()
-                .take_while(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '/' | '_' | '-' | '.'))
-                .collect::<String>()
-                .trim_end_matches('.')
-                .trim_end_matches(',')
-                .trim_end_matches(')')
-                .trim_end_matches('"')
-                .trim_end_matches('\'')
-                .to_string();
-            if token.starts_with("artifacts/") {
-                out.insert(token);
-            }
-            search = &tail["artifacts/".len()..];
-        }
-    }
-    out.into_iter().collect()
-}
-
-fn extract_required_test_names(source: &str) -> Vec<String> {
-    let Some(start) = source.find("REQUIRED_TESTS = {") else {
-        return Vec::new();
-    };
-    let block = &source[start..];
-    let Some(end) = block.find("\n}") else {
-        return Vec::new();
-    };
-    let mut out = Vec::<String>::new();
-    for line in block[..end].lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("REQUIRED_TESTS = {") || trimmed.is_empty() {
-            continue;
-        }
-        let Some(first_quote) = trimmed.find('"') else {
-            continue;
-        };
-        let tail = &trimmed[first_quote + 1..];
-        let Some(second_quote) = tail.find('"') else {
-            continue;
-        };
-        let test_name = &tail[..second_quote];
-        if !test_name.is_empty() {
-            out.push(test_name.to_string());
-        }
-    }
-    out.sort();
-    out.dedup();
-    out
-}
-
-fn generated_at_utc() -> String {
-    Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .unwrap_or_else(|| "1970-01-01T00:00:00Z\n".to_string())
-        .trim()
-        .to_string()
-}
-
-fn build_status_generators_report(workspace_root: &Path) -> Value {
-    let mut rows: Vec<Value> = status_generator_sources(workspace_root)
-        .into_iter()
-        .map(|path| {
-            let source = fs::read_to_string(workspace_root.join(&path)).unwrap_or_default();
-            let outputs = extract_artifact_paths(&source);
-            let id = status_generator_id(&path);
-            json!({
-                "generator_id": id,
-                "source_script": path,
-                "implementation": "python-script",
-                "outputs": outputs,
-                "command": format!("bijux dev cli scripts generate --id {id}"),
-            })
-        })
-        .collect();
-    rows.push(json!({
-        "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
-        "source_script": Value::Null,
-        "implementation": "rust",
-        "outputs": ["artifacts/status/flaky_tests.json"],
-        "command": "bijux dev cli scripts generate --id GEN-STATUS-FLAKY-TEST-LABELS",
-    }));
-    rows.sort_by(|left, right| {
-        left.get("generator_id")
-            .and_then(Value::as_str)
-            .cmp(&right.get("generator_id").and_then(Value::as_str))
-    });
-    json!({
-        "id_policy": "GEN-STATUS-<GENERATOR-SLUG>",
-        "generated_at_utc": generated_at_utc(),
-        "count": rows.len(),
-        "rows": rows,
-    })
-}
-
-fn build_status_scripts_inventory_report(workspace_root: &Path) -> Value {
-    let mut rows = Vec::<Value>::new();
-    let mut kind_counts = BTreeMap::<String, usize>::new();
-    for row in native_status_script_rows() {
-        let Some(kind) = row.get("kind").and_then(Value::as_str) else {
-            continue;
-        };
-        *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
-        rows.push(row);
-    }
-    let known_ids = rows
-        .iter()
-        .filter_map(|row| row.get("script_id").and_then(Value::as_str).map(ToString::to_string))
-        .collect::<BTreeSet<_>>();
-    let ci_text =
-        fs::read_to_string(workspace_root.join(".github/workflows/ci.yml")).unwrap_or_default();
-    let mut ci_ids = BTreeSet::<String>::new();
-    for token in ci_text.split_whitespace() {
-        let cleaned = token
-            .trim_matches(|ch: char| !ch.is_ascii_uppercase() && !ch.is_ascii_digit() && ch != '-');
-        if cleaned.starts_with("STATUS-SCRIPT-") {
-            ci_ids.insert(cleaned.to_string());
-        }
-    }
-    for id in ci_ids.difference(&known_ids) {
-        let kind = if id.starts_with("STATUS-SCRIPT-GENERATE-") {
-            "generate"
-        } else if id.starts_with("STATUS-SCRIPT-CHECK-") {
-            "check"
-        } else if id.starts_with("STATUS-SCRIPT-ENFORCE-") {
-            "enforce"
-        } else if id.starts_with("STATUS-SCRIPT-WARN-") {
-            "warn"
-        } else if id.starts_with("STATUS-SCRIPT-RUN-") {
-            "run"
-        } else {
-            "status"
-        };
-        *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
-        rows.push(json!({
-            "script_id": id,
-            "kind": kind,
-            "source_script": Value::Null,
-            "implementation": "rust-compat",
-            "outputs": [],
-            "command": format!("bijux dev cli scripts status run --id {id}"),
-        }));
-    }
-    rows.sort_by(|left, right| {
-        left.get("script_id")
-            .and_then(Value::as_str)
-            .cmp(&right.get("script_id").and_then(Value::as_str))
-    });
-    json!({
-        "id_policy": "STATUS-SCRIPT-<KIND>-<SLUG>",
-        "kinds": kind_counts,
-        "count": rows.len(),
-        "generated_at_utc": generated_at_utc(),
-        "rows": rows,
-    })
-}
-
-fn write_json(path: &Path, payload: &Value) -> Result<(), String> {
-    fs::create_dir_all(path.parent().unwrap_or_else(|| Path::new(".")))
-        .map_err(|err| format!("failed to create parent dir for {}: {err}", path.display()))?;
-    let serialized = serde_json::to_string_pretty(payload)
-        .map_err(|err| format!("failed to serialize json for {}: {err}", path.display()))?;
-    fs::write(path, serialized + "\n")
-        .map_err(|err| format!("failed to write {}: {err}", path.display()))
-}
-
-fn run_python_generator(workspace_root: &Path, source_script: &str, outputs: &[String]) -> Value {
-    let script = workspace_root.join(source_script);
-    let executed = Command::new("python3").arg(&script).current_dir(workspace_root).output();
-    match executed {
-        Ok(output) => {
-            let exit_code = output.status.code().unwrap_or(1);
-            let status = if output.status.success() { "ok" } else { "failed" };
-            json!({
-                "status": status,
-                "generator_id": status_generator_id(source_script),
-                "source_script": source_script,
-                "implementation": "python-script",
-                "exit_code": exit_code,
-                "stdout": String::from_utf8_lossy(&output.stdout).trim(),
-                "stderr": String::from_utf8_lossy(&output.stderr).trim(),
-                "outputs": outputs,
-            })
-        }
-        Err(err) => json!({
-            "status": "failed",
-            "generator_id": status_generator_id(source_script),
-            "source_script": source_script,
-            "implementation": "python-script",
-            "error": format!("failed to launch python3 for {source_script}: {err}"),
-            "outputs": outputs,
-        }),
-    }
-}
-
-fn run_python_status_script(
+pub(crate) fn run_native_status_contract(
     workspace_root: &Path,
-    source_script: &str,
-    script_id: &str,
-    kind: &str,
-    args: &[String],
-) -> Value {
-    let script = workspace_root.join(source_script);
-    let source = fs::read_to_string(&script).unwrap_or_default();
-    let outputs = extract_artifact_paths(&source);
-    let executed =
-        Command::new("python3").arg(&script).args(args).current_dir(workspace_root).output();
-    match executed {
-        Ok(output) => {
-            let exit_code = output.status.code().unwrap_or(1);
-            let status = if output.status.success() { "ok" } else { "failed" };
-            json!({
-                "status": status,
-                "script_id": script_id,
-                "kind": kind,
-                "source_script": source_script,
-                "implementation": "python-script",
-                "args": args,
-                "outputs": outputs,
-                "exit_code": exit_code,
-                "stdout": String::from_utf8_lossy(&output.stdout).trim(),
-                "stderr": String::from_utf8_lossy(&output.stderr).trim(),
-            })
-        }
-        Err(err) => json!({
-            "status": "failed",
-            "script_id": script_id,
-            "kind": kind,
-            "source_script": source_script,
-            "implementation": "python-script",
-            "args": args,
-            "outputs": outputs,
-            "error": format!("failed to launch python3 for {source_script}: {err}"),
-        }),
-    }
-}
-
-fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Value, String> {
-    let output = Command::new("cargo")
-        .args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
-        .args(["--format", "json", "--no-pretty"])
-        .current_dir(workspace_root)
-        .output()
-        .map_err(|err| format!("failed to run bijux command: {err}"))?;
-    if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
-    }
-    serde_json::from_slice::<Value>(&output.stdout)
-        .map_err(|err| format!("failed to parse command JSON output: {err}"))
-}
-
-fn run_bijux_json_env(
-    workspace_root: &Path,
-    args: &[&str],
-    envs: &[(&str, String)],
-) -> Result<Value, String> {
-    let mut cmd = Command::new("cargo");
-    cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
-        .args(["--format", "json", "--no-pretty"])
-        .current_dir(workspace_root);
-    for (key, value) in envs {
-        cmd.env(key, value);
-    }
-    let output = cmd.output().map_err(|err| format!("failed to run bijux command: {err}"))?;
-    if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
-    }
-    serde_json::from_slice::<Value>(&output.stdout)
-        .map_err(|err| format!("failed to parse command JSON output: {err}"))
-}
-
-fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<String, String> {
-    let output = Command::new("cargo")
-        .args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
-        .args(["--format", "text"])
-        .current_dir(workspace_root)
-        .output()
-        .map_err(|err| format!("failed to run bijux command: {err}"))?;
-    if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
-}
-
-fn write_status_artifact_json(
-    workspace_root: &Path,
-    artifact: &str,
-    payload: &Value,
-) -> Result<String, String> {
-    let path = workspace_root.join(artifact);
-    write_json(&path, payload)?;
-    Ok(artifact.to_string())
-}
-
-fn native_status_script_rows() -> Vec<Value> {
-    vec![
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPO-HEALTH-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repo_health_report.json",
-                "artifacts/status/repo_drift_report.json",
-                "artifacts/status/repo_inventories_report.json",
-                "artifacts/status/repo_generated_report.json",
-                "artifacts/status/repo_stale_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPO-HEALTH-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_evidence_list_report.json",
-                "artifacts/status/dev_cli_evidence_audit_report.json",
-                "artifacts/status/dev_cli_evidence_stale_report.json",
-                "artifacts/status/dev_cli_evidence_matrix_report.json",
-                "artifacts/status/dev_cli_evidence_website_export_report.json",
-                "artifacts/status/dev_cli_evidence_ci_export_report.json",
-                "artifacts/status/dev_cli_evidence_release_export_report.json",
-                "artifacts/status/dev_cli_evidence_command_map_report.json",
-                "artifacts/status/dev_cli_evidence_parity_map_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_status_report.json",
-                "artifacts/status/dev_cli_dashboard_report.json",
-                "artifacts/status/dev_cli_quickcheck_report.json",
-                "artifacts/status/dev_cli_truth_report.json",
-                "artifacts/status/dev_cli_blockers_report.json",
-                "artifacts/status/dev_cli_next_report.json",
-                "artifacts/status/dev_cli_cockpit_text_heads.json",
-                "artifacts/status/dev_cli_summary_surface_artifact.json",
-                "artifacts/status/dev_cli_summary_surface_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_release_status_report.json",
-                "artifacts/status/dev_cli_release_evidence_report.json",
-                "artifacts/status/dev_cli_release_readiness_report.json",
-                "artifacts/status/dev_cli_release_diff_report.json",
-                "artifacts/status/dev_cli_release_gaps_report.json",
-                "artifacts/status/dev_cli_release_summary_report.json",
-                "artifacts/status/dev_cli_release_manifest_report.json",
-                "artifacts/status/dev_cli_release_notes_report.json",
-                "artifacts/status/dev_cli_release_behavior_changes_report.json",
-                "artifacts/status/dev_cli_release_intentional_differences_report.json",
-                "artifacts/status/dev_cli_release_unresolved_gaps_report.json",
-                "artifacts/status/dev_cli_release_compatibility_leftovers_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_scripts_remaining_report.json",
-                "artifacts/status/dev_cli_scripts_migrated_report.json",
-                "artifacts/status/dev_cli_scripts_diff_report.json",
-                "artifacts/status/dev_cli_script_value_ranking.json",
-                "artifacts/status/dev_cli_make_target_inventory.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
-                "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/route_registry_env_contracts_artifact.json",
-                "artifacts/status/route_registry_env_contracts_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/rustdoc_audit_report.json",
-                "artifacts/status/rustdoc_public_api_coverage_report.json",
-                "artifacts/status/rustdoc_audit_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_release_truth_bundle.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_control_plane_bundle.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_maintainer_report_io_map.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/migration_truth_artifact.json",
-                "artifacts/status/parity_evidence_consistency_artifact.json",
-                "artifacts/status/parity_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_invariants_artifact.json",
-                "artifacts/status/dev_cli_invariants_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_route_registry_ownership_diff.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_diagnostics_source_map.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_interface_bridge_report.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_ownership_report.json",
-                "artifacts/status/dev_cli_ownership_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/stale_artifact_artifact.json",
-                "artifacts/status/stale_evidence_artifact.json",
-                "artifacts/status/stale_report_artifact.json",
-                "artifacts/status/stale_detection_regression_suite.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/state_audit_truth_artifact.json",
-                "artifacts/status/state_doctor_truth_artifact.json",
-                "artifacts/status/corrupted_state_truth_artifact.json",
-                "artifacts/status/state_diagnostics_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_owned_behaviors_inventory.json",
-                "artifacts/status/runtime_owned_behaviors_inventory.json",
-                "artifacts/status/misplaced_dev_behaviors_report.json",
-                "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_command_coverage_report.json",
-                "artifacts/status/dev_cli_command_matrix_artifact.json",
-                "artifacts/status/dev_cli_command_surface_domain_contract.json",
-                "artifacts/status/dev_cli_command_remaining_inventory.json",
-                "artifacts/status/dev_cli_command_value_ranking.json",
-                "artifacts/status/dev_cli_command_completion_report.json",
-                "artifacts/status/dev_cli_command_closure_set.json",
-                "artifacts/status/cli_dev_command_closure_report.json",
-                "artifacts/status/cli_dev_command_closure_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_dispatch_ownership_report.json",
-                "artifacts/status/bin_entrypoint_responsibility_diff.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
-                "artifacts/status/dev_cli_determinism_artifact.json",
-                "artifacts/status/dev_cli_side_effect_audit_artifact.json",
-                "artifacts/status/dev_cli_resilience_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/runtime_responsibility_reassessment.json"],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/bridge_wrapper_only_closure_report.json",
-                "artifacts/status/bridge_wrapper_only_closure_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/compatibility_debt_trend_report.json",
-                "artifacts/status/compatibility_debt_trend_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/deterministic_hostile_state_report.json",
-                "artifacts/status/failure_class_stability_report.json",
-                "artifacts/status/deterministic_failure_quality_bar.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/precedence_regression_matrix.json",
-                "artifacts/parity/command_precedence_report.json",
-                "artifacts/status/precedence_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/namespace_abuse_report.json",
-                "artifacts/status/reserved_namespace_inventory.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/install_source_diagnostics.json",
-                "artifacts/status/ambiguous_runtime_diagnostics.json",
-                "artifacts/status/install_health_report.json",
-                "artifacts/status/install_health_report.txt",
-                "artifacts/status/remaining_install_ambiguities.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/install_neutrality_report.json",
-                "artifacts/status/active_runtime_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/install_runtime_identity_artifact.json",
-                "artifacts/status/install_ambiguity_artifact.json",
-                "artifacts/status/package_health_artifact.json",
-                "artifacts/status/install_runtime_identity_drift_artifact.json",
-                "artifacts/status/install_runtime_identity_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_corruption_matrix.json",
-                "artifacts/status/config_rollback_proof.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/docs_duplication_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/parser_abuse_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repl_hostile_session_report.json",
-                "artifacts/status/repl_recovery_behavior_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/python_bridge_status_report.json",
-                "artifacts/status/python_surface_status_report.json",
-                "artifacts/status/python_sovereignty_audit_report.json",
-                "artifacts/status/python_desovereignization_report.json",
-                "artifacts/status/python_desovereignization_report.txt",
-                "artifacts/status/python_drift_report.json",
-                "artifacts/status/python_packaging_direction_report.json",
-                "artifacts/status/python_surface_direction_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/runtime_dev_leakage_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/flag_normalization_matrix.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_lifecycle_test_matrix.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_failure_rollback_test_matrix.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/reserved_namespace_test_matrix.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/bridge_duplicate_law_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-STATE-REPORT",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_state_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-REPORT",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/runtime_identity_diagnostics_artifact.json",
-                "artifacts/status/package_health_diagnostics_artifact.json",
-                "artifacts/status/install_ambiguity_diagnostics_artifact.json",
-                "artifacts/status/runtime_package_diagnostics_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_read_matrix_artifact.json",
-                "artifacts/status/config_read_domain_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_mutation_matrix_artifact.json",
-                "artifacts/status/config_mutation_domain_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_source_parity_artifact.json",
-                "artifacts/status/config_source_drift_artifact.json",
-                "artifacts/status/config_source_precedence_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/python_bridge_execution_artifact.json",
-                "artifacts/status/python_bridge_drift_artifact.json",
-                "artifacts/status/python_bridge_execution_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/bridge_conversion_artifact.json",
-                "artifacts/status/bridge_exception_mapping_artifact.json",
-                "artifacts/status/bridge_envelope_integrity_artifact.json",
-                "artifacts/status/bridge_conversion_drift_artifact.json",
-                "artifacts/status/bridge_conversion_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repl_completion_artifact.json",
-                "artifacts/status/repl_completion_ordering_artifact.json",
-                "artifacts/status/repl_completion_drift_artifact.json",
-                "artifacts/status/repl_completion_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repl_only_behaviors.json",
-                "artifacts/parity/repl_cli_output_diff.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repl_shared_law_artifact.json",
-                "artifacts/status/repl_cli_diff_artifact.json",
-                "artifacts/status/repl_shared_law_drift_artifact.json",
-                "artifacts/status/repl_shared_law_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/repl_hostile_session_artifact.json",
-                "artifacts/status/repl_recovery_artifact.json",
-                "artifacts/status/repl_startup_resilience_artifact.json",
-                "artifacts/status/repl_command_loop_failure_class_artifact.json",
-                "artifacts/status/repl_hostile_session_contract.json",
-                "artifacts/status/repl_hostile_session_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/kernel_invariants_report.json",
-                "artifacts/status/kernel_invariants_diff.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-HELP-TREE-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/help_law_artifact.json",
-                "artifacts/status/command_tree_help_consistency_artifact.json",
-                "artifacts/status/help_drift_artifact.json",
-                "artifacts/status/help_tree_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HELP-TREE-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/diagnostics_taxonomy.json",
-                "artifacts/status/diagnostics_usefulness_review.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/cross_surface_equivalence_report.json",
-                "artifacts/status/cross_surface_drift_report.json",
-                "artifacts/status/cross_surface_duality_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/cross_surface_state_consistency_artifact.json",
-                "artifacts/status/cross_surface_state_drift_artifact.json",
-                "artifacts/status/cross_surface_state_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_discovery_determinism_report.json",
-                "artifacts/status/plugin_ordering_law.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
-                "artifacts/status/plugin_rollback_proof_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/packaging_ambiguity_report.json",
-                "artifacts/status/install_state_assumptions_report.json",
-                "artifacts/status/package_health_report.json",
-                "artifacts/status/package_health_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/history_corruption_matrix.json",
-                "artifacts/status/memory_corruption_matrix.json",
-                "artifacts/status/state_recovery_guidance.json",
-                "artifacts/status/state_recovery_guidance.txt",
-                "artifacts/status/state_resilience_summary.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/command_surface_consistency_artifact.json",
-                "artifacts/status/command_surface_consistency_drift_artifact.json",
-                "artifacts/status/command_surface_consistency_summary.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/command_family_consistency_artifact.json",
-                "artifacts/status/cross_family_drift_artifact.json",
-                "artifacts/status/shared_law_proof_artifact.json",
-                "artifacts/status/command_family_consistency_requirement.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/cross_surface_consistency_artifact.json",
-                "artifacts/status/cross_surface_drift_artifact.json",
-                "artifacts/status/cross_surface_consistency_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/deterministic_output_report.json",
-                "artifacts/status/determinism_dashboard.json",
-                "artifacts/status/determinism_expectations.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/output_crash_triage_artifact.json",
-                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
-                "artifacts/status/output_fuzz_regression_artifact.json",
-                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
-                "artifacts/status/output_envelope_fuzz_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/parser_crash_triage_artifact.json",
-                "artifacts/status/parser_fuzz_regression_artifact.json",
-                "artifacts/status/parser_fuzz_campaign_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/docs_unreferenced_candidates.json",
-                "artifacts/status/stale_snapshot_candidates.json",
-                "artifacts/status/dead_generated_artifact_candidates.json",
-                "artifacts/status/cleanup_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-MIGRATION-NOTES",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/migration_notes_commands.json",
-                "artifacts/status/migration_notes_packaging.json",
-                "artifacts/status/migration_notes_plugin_lifecycle.json",
-                "artifacts/status/migration_notes_state_behavior.json",
-                "artifacts/status/migration_notes.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MIGRATION-NOTES",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/official_product_mount_registry.json",
-                "artifacts/status/product_mount_readiness_report.json",
-                "artifacts/status/product_mount_support_report.json",
-                "artifacts/status/product_mount_gap_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_parser_crash_triage_artifact.json",
-                "artifacts/status/config_serializer_crash_triage_artifact.json",
-                "artifacts/status/config_fuzz_regression_artifact.json",
-                "artifacts/status/config_fuzz_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/adversarial_fs_process_matrix.json",
-                "artifacts/status/adversarial_fs_process_artifact.json",
-                "artifacts/status/adversarial_fs_process_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/state_corruption_campaign_artifact.json",
-                "artifacts/status/state_corruption_reproducer_retention_artifact.json",
-                "artifacts/status/state_corruption_harness_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/documented_python_commands_not_proven_in_rust.json",
-                "artifacts/status/public_python_paths_still_reachable.json",
-                "artifacts/status/legacy_alias_paths_still_accepted.json",
-                "artifacts/status/compatibility_shims_still_active.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_closure_report.json",
-                "artifacts/status/plugins_closure_report.json",
-                "artifacts/status/history_closure_report.json",
-                "artifacts/status/memory_closure_report.json",
-                "artifacts/status/diagnostics_closure_report.json",
-                "artifacts/status/repl_shared_law_closure_report.json",
-                "artifacts/status/command_family_closure_report.json",
-                "artifacts/status/command_family_closure_report.txt",
-                "artifacts/status/command_family_partial_area_acceptance.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/command_migration_matrix.json",
-                "artifacts/status/command_migration_rust_partial.json",
-                "artifacts/status/command_migration_python_only.json",
-                "artifacts/status/command_migration_intentional_differences.json",
-                "artifacts/status/command_migration_matrix.txt",
-                "artifacts/status/command_migration_repl_paths.json",
-                "artifacts/status/command_migration_python_bridge_entrypoints.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/evidence_coverage_report.json",
-                "artifacts/status/evidence_integrity_artifact.json",
-                "artifacts/status/orphan_evidence_report.json",
-                "artifacts/status/orphan_evidence_artifact.json",
-                "artifacts/status/claim_without_evidence_report.json",
-                "artifacts/status/evidence_command_map_report.json",
-                "artifacts/status/evidence_parity_map_report.json",
-                "artifacts/status/config_owners_by_layer_report.json",
-                "artifacts/status/config_file_schema_owners_report.json",
-                "artifacts/status/config_python_compatibility_shims_report.json",
-                "artifacts/status/config_rust_sources_report.json",
-                "artifacts/status/config_precedence_proofs_report.json",
-                "artifacts/status/config_mutation_rollback_proofs_report.json",
-                "artifacts/status/config_corruption_evidence_report.json",
-                "artifacts/status/config_owner_drift_report.json",
-                "artifacts/status/config_evidence_link_report.json",
-                "artifacts/status/config_ownership_truth.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-HISTORY-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/history_command_coverage_report.json",
-                "artifacts/status/history_command_matrix_artifact.json",
-                "artifacts/status/history_corruption_matrix_artifact.json",
-                "artifacts/status/history_read_domain_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/diagnostics_command_coverage_report.json",
-                "artifacts/status/diagnostics_matrix_artifact.json",
-                "artifacts/status/diagnostics_shape_drift_artifact.json",
-                "artifacts/status/diagnostics_operator_truth_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/state_migration_status.json",
-                "artifacts/status/unified_state_behavior_report.json",
-                "artifacts/status/unified_state_corruption_report.json",
-                "artifacts/status/unified_state_rollback_report.json",
-                "artifacts/status/unified_state_path_resolution_report.json",
-                "artifacts/status/unified_state_doctor_snapshots.json",
-                "artifacts/status/unified_state_audit_payload.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/deep_tests_by_value_report.json",
-                "artifacts/status/deep_missing_behavior_cases_report.json",
-                "artifacts/status/deep_weak_tests_replacement_report.json",
-                "artifacts/status/deep_test_first_domains_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/performance_report.json",
-                "artifacts/status/performance_regression_budget.json",
-                "artifacts/status/performance_benchmark_policy.json",
-                "artifacts/status/performance_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/memory_command_coverage_report.json",
-                "artifacts/status/memory_command_matrix_artifact.json",
-                "artifacts/status/memory_corruption_matrix_artifact.json",
-                "artifacts/status/memory_python_parity_artifact.json",
-                "artifacts/status/memory_read_domain_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/state_file_inventory.json",
-                "artifacts/status/state_file_readers.json",
-                "artifacts/status/state_file_writers.json",
-                "artifacts/status/state_file_mutation_paths.json",
-                "artifacts/status/state_write_guarantees.json",
-                "artifacts/status/state_recovery_guarantees.json",
-                "artifacts/status/state_complexity_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/stream_discipline_artifact.json",
-                "artifacts/status/stream_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/history_semantic_artifact.json",
-                "artifacts/status/history_determinism_artifact.json",
-                "artifacts/status/history_corruption_artifact.json",
-                "artifacts/status/history_repl_interop_artifact.json",
-                "artifacts/status/history_stream_discipline_artifact.json",
-                "artifacts/status/history_failure_class_artifact.json",
-                "artifacts/status/history_deep_behavior_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/memory_semantic_artifact.json",
-                "artifacts/status/memory_determinism_artifact.json",
-                "artifacts/status/memory_corruption_artifact.json",
-                "artifacts/status/memory_diagnostics_consistency_artifact.json",
-                "artifacts/status/memory_failure_class_artifact.json",
-                "artifacts/status/memory_path_behavior_artifact.json",
-                "artifacts/status/memory_deep_behavior_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-ROUTE-LAW-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/route_command_owner_mapping.json",
-                "artifacts/status/route_command_test_coverage_mapping.json",
-                "artifacts/status/route_command_parity_status_mapping.json",
-                "artifacts/status/route_special_cases.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROUTE-LAW-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/root_command_coverage_report.json",
-                "artifacts/status/root_command_matrix_artifact.json",
-                "artifacts/status/root_command_surface_domain_contract.json",
-                "artifacts/status/root_command_remaining_inventory.json",
-                "artifacts/status/root_command_impact_ranking.json",
-                "artifacts/status/root_command_completion_report.json",
-                "artifacts/status/root_command_closure_set.json",
-                "artifacts/status/root_command_completion_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/cli_command_coverage_report.json",
-                "artifacts/status/cli_command_matrix_artifact.json",
-                "artifacts/status/cli_command_surface_domain_contract.json",
-                "artifacts/status/cli_command_remaining_inventory.json",
-                "artifacts/status/cli_command_value_ranking.json",
-                "artifacts/status/cli_command_completion_report.json",
-                "artifacts/status/cli_command_closure_set.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/compatibility_shim_inventory.json",
-                "artifacts/status/compatibility_alias_inventory.json",
-                "artifacts/status/hidden_alias_inventory.json",
-                "artifacts/status/old_python_path_tolerance_inventory.json",
-                "artifacts/status/compatibility_shim_count_delta.json",
-                "artifacts/status/compatibility_alias_count_delta.json",
-                "artifacts/status/compatibility_shim_count_report.json",
-                "artifacts/status/compatibility_alias_count_report.json",
-                "artifacts/status/live_compatibility_shims.json",
-                "artifacts/status/live_compatibility_aliases.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/command_metadata_artifact.json",
-                "artifacts/status/route_metadata_artifact.json",
-                "artifacts/status/metadata_drift_artifact.json",
-                "artifacts/status/command_ownership_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-RELEASE-BUILD-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/release_binary_size_report.json",
-                "artifacts/status/debug_binary_size_report.json",
-                "artifacts/status/release_binary_size_contributors.json",
-                "artifacts/status/release_dependency_inventory.json",
-                "artifacts/status/license_inventory.json",
-                "artifacts/status/reproducible_build_assumptions.json",
-                "artifacts/status/release_artifact_manifest.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-BUILD-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/release_evidence_bundle.json",
-                "artifacts/status/release_status_manifest.json",
-                "artifacts/status/release_truth_report.json",
-                "artifacts/status/release_truth_report.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_scaffold_python_inventory.json",
-                "artifacts/status/plugin_scaffold_rust_inventory.json",
-                "artifacts/status/plugin_scaffold_diff.json",
-                "artifacts/status/plugin_scaffold_non_behavioral_files.json",
-                "artifacts/status/plugin_scaffold_file_justification.json",
-                "artifacts/status/plugin_scaffold_minimalism_summary.txt"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_lifecycle_ownership_report.json",
-                "artifacts/status/plugin_scaffold_efficiency_report.json",
-                "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
-                "artifacts/status/plugin_namespace_abuse_proof_report.json",
-                "artifacts/status/plugin_doctor_clarity_report.json",
-                "artifacts/status/plugin_explain_clarity_report.json",
-                "artifacts/status/plugin_where_ownership_report.json",
-                "artifacts/status/plugin_command_set_status.json",
-                "artifacts/status/plugin_migration_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_manifest_crash_triage_artifact.json",
-                "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
-                "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/plugin_state_corruption_campaign_artifact.json",
-                "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
-                "artifacts/status/plugin_state_corruption_triage_artifact.json",
-                "artifacts/status/plugin_state_corruption_regression_artifact.json",
-                "artifacts/status/plugin_state_corruption_severity_classification.json",
-                "artifacts/status/plugin_state_corruption_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_semantic_roundtrip_artifact.json",
-                "artifacts/status/config_precedence_artifact.json",
-                "artifacts/status/config_determinism_artifact.json",
-                "artifacts/status/config_corruption_recovery_artifact.json",
-                "artifacts/status/config_deep_behavior_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/config_corruption_campaign_artifact.json",
-                "artifacts/status/config_corruption_invariants_artifact.json",
-                "artifacts/status/config_corruption_corpus_retention_artifact.json",
-                "artifacts/status/config_corruption_triage_artifact.json",
-                "artifacts/status/config_corruption_regression_artifact.json",
-                "artifacts/status/config_corruption_severity_classification.json",
-                "artifacts/status/config_corruption_recovery_classification.json",
-                "artifacts/status/config_corruption_determinism_artifact.json",
-                "artifacts/status/config_corruption_release_blocking_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/diagnostics_consistency_artifact.json",
-                "artifacts/status/doctor_determinism_artifact.json",
-                "artifacts/status/diagnostics_schema_drift_artifact.json",
-                "artifacts/status/diagnostics_source_of_truth_artifact.json",
-                "artifacts/status/findings_order_artifact.json",
-                "artifacts/status/diagnostics_contract_artifact.json",
-                "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/diagnostics_trust_artifact.json",
-                "artifacts/status/actionable_diagnostics_artifact.json",
-                "artifacts/status/diagnostics_minimalism_artifact.json",
-                "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
-                "artifacts/status/diagnostics_trust_contract.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/status.json",
-                "artifacts/status/status_root_commands.json",
-                "artifacts/status/status_cli_subcommands.json",
-                "artifacts/status/status_dev_cli_subcommands.json",
-                "artifacts/status/status_plugin_commands.json",
-                "artifacts/status/status_repl_parity_coverage.json",
-                "artifacts/status/status_python_bridge_parity_coverage.json",
-                "artifacts/status/status_install_packaging_parity_coverage.json",
-                "artifacts/status/status_state_behavior_coverage.json",
-                "artifacts/status/status_state_paths_report.json",
-                "artifacts/status/status_state_corruption_health_report.json",
-                "artifacts/status/status_snapshot_coverage.json",
-                "artifacts/status/status_stream_coverage.json",
-                "artifacts/status/status_exit_code_coverage.json",
-                "artifacts/status/status_failure_path_coverage.json",
-                "artifacts/status/status_compatibility_aliases.json",
-                "artifacts/status/status_known_parity_gaps.json",
-                "artifacts/status/status_intentional_differences.json",
-                "artifacts/status/status_unowned_scripts.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/maintainer_scripts_outside_dev_cli.json",
-                "artifacts/status/maintainer_control_plane_commands.json",
-                "artifacts/status/maintainer_control_plane_text_report.txt",
-                "artifacts/status/maintainer_control_plane_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
-        }),
-        json!({
-            "script_id": "STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS",
-            "kind": "generate",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": [
-                "artifacts/status/crate_boundary_metrics.json",
-                "artifacts/status/crate_boundary_report.json"
-            ],
-            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS",
-        }),
-    ]
-}
-
-fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Value> {
+    contract_id: &str,
+) -> Option<Value> {
     let report_writers: [(&str, &str, [&str; 4]); 5] = [
         (
             "artifacts/status/repo_health_report.json",
@@ -1865,30 +33,30 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
         ),
     ];
 
-    match script_id {
-        "STATUS-SCRIPT-GENERATE-REPO-HEALTH-REPORTS" => {
+    match contract_id {
+        "STATUS-CONTRACT-GENERATE-REPO-HEALTH-REPORTS" => {
             let mut outputs = Vec::<String>::new();
             for (artifact, _label, cmd) in report_writers {
                 let payload = match run_bijux_json(workspace_root, &cmd) {
                     Ok(payload) => payload,
                     Err(err) => {
                         return Some(
-                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                            json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                         )
                     }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
                     return Some(
-                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                     );
                 }
                 outputs.push(artifact.to_string());
             }
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-EVIDENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-EVIDENCE-REPORTS" => {
             let rows = [
                 (
                     "artifacts/status/dev_cli_evidence_list_report.json",
@@ -1933,22 +101,22 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     Ok(payload) => payload,
                     Err(err) => {
                         return Some(
-                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                            json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                         )
                     }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
                     return Some(
-                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                     );
                 }
                 outputs.push(artifact.to_string());
             }
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-REPORTS" => {
             let rows = [
                 (
                     "artifacts/status/dev_cli_release_status_report.json",
@@ -2005,22 +173,22 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     Ok(payload) => payload,
                     Err(err) => {
                         return Some(
-                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                            json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                         )
                     }
                 };
                 if let Err(err) = write_status_artifact_json(workspace_root, artifact, &payload) {
                     return Some(
-                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                     );
                 }
                 outputs.push(artifact.to_string());
             }
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-COCKPIT-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-COCKPIT-REPORTS" => {
             let rows = [
                 ("dev_cli_status_report.json", ["dev", "cli", "status"]),
                 ("dev_cli_dashboard_report.json", ["dev", "cli", "dashboard"]),
@@ -2037,7 +205,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     Ok(payload) => payload,
                     Err(err) => {
                         return Some(
-                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                            json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                         )
                     }
                 };
@@ -2046,14 +214,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     write_status_artifact_json(workspace_root, &artifact_path, &payload)
                 {
                     return Some(
-                        json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                        json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                     );
                 }
                 let text = match run_bijux_text(workspace_root, &cmd) {
                     Ok(text) => text,
                     Err(err) => {
                         return Some(
-                            json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                            json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                         )
                     }
                 };
@@ -2068,7 +236,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &json!(text_heads),
             ) {
                 return Some(
-                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                 );
             }
             let status_summary = payloads
@@ -2198,7 +366,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &summary_artifact,
             ) {
                 return Some(
-                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                 );
             }
             if let Err(err) = write_status_artifact_json(
@@ -2207,7 +375,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &drift_artifact,
             ) {
                 return Some(
-                    json!({"status":"failed","script_id":script_id,"implementation":"rust","error":err}),
+                    json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                 );
             }
             outputs.push("artifacts/status/dev_cli_cockpit_text_heads.json".to_string());
@@ -2215,10 +383,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             outputs
                 .push("artifacts/status/dev_cli_summary_surface_drift_artifact.json".to_string());
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":outputs}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-SCRIPT-MIGRATION-REPORTS" => {
             let remaining =
                 run_bijux_json(workspace_root, &["dev", "cli", "scripts", "remaining"]).ok()?;
             let migrated =
@@ -2281,7 +449,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_scripts_remaining_report.json",
                 "artifacts/status/dev_cli_scripts_migrated_report.json",
                 "artifacts/status/dev_cli_scripts_diff_report.json",
@@ -2289,7 +457,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/dev_cli_make_target_inventory.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-SCRIPTS-CRATE-HEALTH-REPORTS" => {
             let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
             let docs = run_bijux_json(workspace_root, &["dev", "cli", "docs-audit"]).ok()?;
             let scripts = run_bijux_json(workspace_root, &["dev", "cli", "script-audit"]).ok()?;
@@ -2340,12 +508,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repo_docs_scripts_crate_health_artifact.json",
                 "artifacts/status/repo_docs_scripts_crate_health_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
             let routes = run_bijux_json(workspace_root, &["dev", "cli", "routes"]).ok()?;
             let registry = run_bijux_json(workspace_root, &["dev", "cli", "registry"]).ok()?;
             let env = run_bijux_json(workspace_root, &["dev", "cli", "env"]).ok()?;
@@ -2421,12 +589,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/route_registry_env_contracts_artifact.json",
                 "artifacts/status/route_registry_env_contracts_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
             let audit = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
             let coverage =
                 run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "coverage"]).ok()?;
@@ -2446,13 +614,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             fs::write(workspace_root.join("artifacts/status/rustdoc_audit_report.txt"), audit_text)
                 .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/rustdoc_audit_report.json",
                 "artifacts/status/rustdoc_public_api_coverage_report.json",
                 "artifacts/status/rustdoc_audit_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE" => {
             let commands = [
                 ("status", ["dev", "cli", "release", "status"]),
                 ("evidence", ["dev", "cli", "release", "evidence"]),
@@ -2487,10 +655,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_release_truth_bundle.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_release_truth_bundle.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
             let commands = [
                 "dev cli status",
                 "dev cli parity",
@@ -2531,10 +699,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_control_plane_bundle.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_control_plane_bundle.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
             let commands = ["dev cli env", "dev cli contracts", "dev cli parity", "dev cli status"];
             let mut input_map = BTreeMap::<&str, Vec<&str>>::new();
             input_map.insert(
@@ -2586,10 +754,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_maintainer_report_io_map.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_maintainer_report_io_map.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS" => {
             let parity_first = run_bijux_json(workspace_root, &["dev", "cli", "parity"]).ok()?;
             let parity_second = run_bijux_json(workspace_root, &["dev", "cli", "parity"]).ok()?;
             let status_payload = run_bijux_json(workspace_root, &["dev", "cli", "status"]).ok()?;
@@ -2811,7 +979,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             Some(json!({
                 "status":"ok",
-                "script_id":script_id,
+                "contract_id":contract_id,
                 "implementation":"rust",
                 "outputs":[
                     "artifacts/status/migration_truth_artifact.json",
@@ -2820,7 +988,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 ]
             }))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-INVARIANTS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-INVARIANTS-REPORTS" => {
             let fixture = workspace_root
                 .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
@@ -2942,7 +1110,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             Some(json!({
                 "status":"ok",
-                "script_id":script_id,
+                "contract_id":contract_id,
                 "implementation":"rust",
                 "outputs":[
                     "artifacts/status/dev_cli_invariants_artifact.json",
@@ -2950,7 +1118,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 ]
             }))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF" => {
             let routing_module = workspace_root.join("crates/bijux-cli/src/routing/mod.rs");
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
             let dev_routes = workspace_root.join("crates/bijux-dev-cli/src/routes.rs");
@@ -2997,10 +1165,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_route_registry_ownership_diff.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_route_registry_ownership_diff.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP" => {
             let payload = json!({
                 "generated_at": generated_at_utc(),
                 "generator": "bijux-dev-cli",
@@ -3042,10 +1210,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_diagnostics_source_map.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_diagnostics_source_map.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT" => {
             let query_files = [
                 (
                     "routing_inventory",
@@ -3095,10 +1263,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_interface_bridge_report.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_interface_bridge_report.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-OWNERSHIP-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-OWNERSHIP-REPORT" => {
             let command_rows = vec![
                 json!({"command":"dev cli status","group":"dashboard","visible":true}),
                 json!({"command":"dev cli parity","group":"dashboard","visible":true}),
@@ -3183,10 +1351,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_ownership_report.json","artifacts/status/dev_cli_ownership_report.txt"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_ownership_report.json","artifacts/status/dev_cli_ownership_report.txt"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS" => {
             let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
                 .ok()
                 .map(|raw| raw.trim().to_string())
@@ -3411,14 +1579,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "status": if critical_stale_count == 0 { "clean" } else { "drift" },
                 }),
             )?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/stale_artifact_artifact.json",
                 "artifacts/status/stale_evidence_artifact.json",
                 "artifacts/status/stale_report_artifact.json",
                 "artifacts/status/stale_detection_regression_suite.json"
             ]}))
         }
-        "STATUS-SCRIPT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
+        "STATUS-CONTRACT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
             let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
                 .ok()
                 .map(PathBuf::from)
@@ -3441,7 +1609,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             if critical_stale > 0 && !(injection_mode && allow_injection_drift) {
                 return Some(json!({
                     "status":"failed",
-                    "script_id":script_id,
+                    "contract_id":contract_id,
                     "implementation":"rust",
                     "error":"critical stale artifacts detected",
                     "summary": summary
@@ -3449,13 +1617,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             }
             Some(json!({
                 "status":"ok",
-                "script_id":script_id,
+                "contract_id":contract_id,
                 "implementation":"rust",
                 "warnings": warning_stale,
                 "summary": summary
             }))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-STATE-DIAGNOSTICS-REPORTS" => {
             let read_json = |rel_path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(rel_path))
                     .ok()
@@ -3541,14 +1709,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/state_audit_truth_artifact.json",
                 "artifacts/status/state_doctor_truth_artifact.json",
                 "artifacts/status/corrupted_state_truth_artifact.json",
                 "artifacts/status/state_diagnostics_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-BOUNDARY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-BOUNDARY-REPORTS" => {
             let dev_fixture = workspace_root
                 .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
@@ -3707,14 +1875,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_some_and(|s| s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                 "not_yet_owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_owned_behaviors_inventory.json",
                 "artifacts/status/runtime_owned_behaviors_inventory.json",
                 "artifacts/status/misplaced_dev_behaviors_report.json",
                 "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
             let fixture = workspace_root
                 .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
             let test_file =
@@ -3882,7 +2050,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 txt,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_command_coverage_report.json",
                 "artifacts/status/dev_cli_command_matrix_artifact.json",
                 "artifacts/status/dev_cli_command_surface_domain_contract.json",
@@ -3894,7 +2062,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/cli_dev_command_closure_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS" => {
             let main_rs =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bin/bijux-rs.rs"))
                     .unwrap_or_default();
@@ -3963,12 +2131,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "registry_json_assembly_mentions": registry_rs.matches("serde_json::json!").count()
                 }
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_dispatch_ownership_report.json",
                 "artifacts/status/bin_entrypoint_responsibility_diff.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
             let run_cmd = |args: &[&str], envs: &[(&str, String)]| -> std::process::Output {
                 let mut cmd = Command::new("cargo");
                 cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
@@ -4134,14 +2302,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "scope":"dev cli resilience drift","generator":"bijux-dev-cli","drift_checks":drift_checks,"drift_count":drift_checks.len(),
                 "status": if drift_checks.is_empty() {"clean"} else {"drift"}
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
                 "artifacts/status/dev_cli_determinism_artifact.json",
                 "artifacts/status/dev_cli_side_effect_audit_artifact.json",
                 "artifacts/status/dev_cli_resilience_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT" => {
+        "STATUS-CONTRACT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT" => {
             let read_json = |name: &str| -> Value {
                 fs::read_to_string(workspace_root.join(name))
                     .ok()
@@ -4188,10 +2356,10 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             Some(
-                json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/runtime_responsibility_reassessment.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/runtime_responsibility_reassessment.json"]}),
             )
         }
-        "STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS" => {
             let bridge_duplicate = fs::read_to_string(
                 workspace_root.join("artifacts/status/bridge_duplicate_law_report.json"),
             )
@@ -4303,12 +2471,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 lines.join("\n") + "\n",
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/bridge_wrapper_only_closure_report.json",
                 "artifacts/status/bridge_wrapper_only_closure_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT" => {
             let read_json = |name: &str| -> Value {
                 fs::read_to_string(workspace_root.join(name))
                     .ok()
@@ -4359,12 +2527,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 ),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/compatibility_debt_trend_report.json",
                 "artifacts/status/compatibility_debt_trend_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS" => {
             let test_file = workspace_root
                 .join("crates/bijux-cli/tests/bin_surface/deterministic_hostile_state_matrix.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
@@ -4416,13 +2584,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "artifacts/status/repeated_run_corruption_harness.json"
                 ],
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/deterministic_hostile_state_report.json",
                 "artifacts/status/failure_class_stability_report.json",
                 "artifacts/status/deterministic_failure_quality_bar.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS" => {
             let test_file =
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/precedence_matrix.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
@@ -4477,13 +2645,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/precedence_regression_matrix.json",
                 "artifacts/parity/command_precedence_report.json",
                 "artifacts/status/precedence_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-NAMESPACE-RESERVATION-REPORTS" => {
             let routing_text = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/routing/registry_namespace_policy.rs"),
             )
@@ -4556,12 +2724,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "future_product_namespaces": parse_array("FUTURE_PRODUCT_NAMESPACES"),
                 "registry_entries": product_registry.get("entries").cloned().unwrap_or_else(|| json!([]))
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/namespace_abuse_report.json",
                 "artifacts/status/reserved_namespace_inventory.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS" => {
             let generated_at = generated_at_utc();
             let runtime_identity =
                 run_bijux_json(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
@@ -4667,7 +2835,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/install_source_diagnostics.json",
                 "artifacts/status/ambiguous_runtime_diagnostics.json",
                 "artifacts/status/install_health_report.json",
@@ -4675,7 +2843,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/remaining_install_ambiguities.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-INSTALL-NEUTRALITY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-INSTALL-NEUTRALITY-REPORTS" => {
             let generated_at = generated_at_utc();
             let read_json = |name: &str| -> Value {
                 fs::read_to_string(workspace_root.join(name))
@@ -4729,12 +2897,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/install_neutrality_report.json",
                 "artifacts/status/active_runtime_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs"),
@@ -4845,7 +3013,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/install_runtime_identity_artifact.json",
                 "artifacts/status/install_ambiguity_artifact.json",
                 "artifacts/status/package_health_artifact.json",
@@ -4853,7 +3021,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/install_runtime_identity_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-REPORTS" => {
             let generated_at = generated_at_utc();
             write_status_artifact_json(
                 workspace_root,
@@ -4889,12 +3057,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_corruption_matrix.json",
                 "artifacts/status/config_rollback_proof.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-DOCS-DUPLICATION-REPORT" => {
             let mut by_name: BTreeMap<String, Vec<String>> = BTreeMap::new();
             let mut by_heading: BTreeMap<String, Vec<String>> = BTreeMap::new();
             for doc in collect_files(&workspace_root.join("docs")).into_iter().filter(|path| {
@@ -4934,11 +3102,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/docs_duplication_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-PARSER-ABUSE-REPORT" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/routing/parser_abuse.rs"),
             )
@@ -5045,11 +3213,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/parser_abuse_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-REPL-RECOVERY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-REPL-RECOVERY-REPORTS" => {
             let generated_at = generated_at_utc();
             write_status_artifact_json(
                 workspace_root,
@@ -5098,12 +3266,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repl_hostile_session_report.json",
                 "artifacts/status/repl_recovery_behavior_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS" => {
             let bridge =
                 run_bijux_json(workspace_root, &["dev", "cli", "python", "bridge-status"]).ok()?;
             let surface =
@@ -5168,7 +3336,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/python_bridge_status_report.json",
                 "artifacts/status/python_surface_status_report.json",
                 "artifacts/status/python_sovereignty_audit_report.json",
@@ -5179,7 +3347,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/python_surface_direction_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT" => {
             let runtime_crate_srcs = [
                 ("bijux-cli", "crates/bijux-cli/src"),
                 ("bijux-cli::routing", "crates/bijux-cli/src/routing"),
@@ -5242,11 +3410,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/runtime_dev_leakage_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs"),
@@ -5305,11 +3473,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/flag_normalization_matrix.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs"),
@@ -5368,11 +3536,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_lifecycle_test_matrix.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/plugin_failure_rollback_matrix.rs"),
@@ -5431,11 +3599,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_failure_rollback_test_matrix.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs"),
             )
@@ -5491,11 +3659,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/reserved_namespace_test_matrix.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT" => {
             let source =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli-python/src/bindings.rs"))
                     .unwrap_or_default();
@@ -5555,11 +3723,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/bridge_duplicate_law_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-STATE-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-REPORT" => {
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/plugin_state_report.json",
@@ -5604,11 +3772,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_state_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS" => {
             let pid = std::process::id();
             let temp_root =
                 workspace_root.join(format!("artifacts/status/.runtime-diagnostics-tmp-{pid}"));
@@ -5728,14 +3896,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/runtime_identity_diagnostics_artifact.json",
                 "artifacts/status/package_health_diagnostics_artifact.json",
                 "artifacts/status/install_ambiguity_diagnostics_artifact.json",
                 "artifacts/status/runtime_package_diagnostics_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-READ-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/config_read_matrix.rs"),
             )
@@ -5824,12 +3992,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_read_matrix_artifact.json",
                 "artifacts/status/config_read_domain_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/config_mutation_matrix.rs"),
             )
@@ -5900,12 +4068,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_mutation_matrix_artifact.json",
                 "artifacts/status/config_mutation_domain_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs"),
@@ -6019,13 +4187,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_source_parity_artifact.json",
                 "artifacts/status/config_source_drift_artifact.json",
                 "artifacts/status/config_source_precedence_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_law_extra.rs"),
             )
@@ -6104,13 +4272,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/python_bridge_execution_artifact.json",
                 "artifacts/status/python_bridge_drift_artifact.json",
                 "artifacts/status/python_bridge_execution_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs"),
             )
@@ -6213,7 +4381,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/bridge_conversion_artifact.json",
                 "artifacts/status/bridge_exception_mapping_artifact.json",
                 "artifacts/status/bridge_envelope_integrity_artifact.json",
@@ -6221,7 +4389,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/bridge_conversion_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-REPL-COMPLETION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli-repl/tests/repl_completion_extra.rs"),
             )
@@ -6314,14 +4482,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repl_completion_artifact.json",
                 "artifacts/status/repl_completion_ordering_artifact.json",
                 "artifacts/status/repl_completion_drift_artifact.json",
                 "artifacts/status/repl_completion_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-REPL-BEHAVIOR-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS" => {
             let parity_matrix = workspace_root.join("artifacts/parity/command_parity_matrix.json");
             let rows = fs::read_to_string(parity_matrix)
                 .ok()
@@ -6409,12 +4577,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repl_only_behaviors.json",
                 "artifacts/parity/repl_cli_output_diff.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs"),
@@ -6515,14 +4683,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repl_shared_law_artifact.json",
                 "artifacts/status/repl_cli_diff_artifact.json",
                 "artifacts/status/repl_shared_law_drift_artifact.json",
                 "artifacts/status/repl_shared_law_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
                 "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs",
                 "crates/bijux-cli-repl/tests/repl_hostile_session_extra.rs",
@@ -6647,7 +4815,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/repl_hostile_session_artifact.json",
                 "artifacts/status/repl_recovery_artifact.json",
                 "artifacts/status/repl_startup_resilience_artifact.json",
@@ -6656,7 +4824,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/repl_hostile_session_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-KERNEL-INVARIANTS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-KERNEL-INVARIANTS-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/src/kernel_pipeline_tests.rs"),
             )
@@ -6733,12 +4901,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/kernel_invariants_report.json",
                 "artifacts/status/kernel_invariants_diff.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-HELP-TREE-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs"),
             )
@@ -6835,14 +5003,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/help_law_artifact.json",
                 "artifacts/status/command_tree_help_consistency_artifact.json",
                 "artifacts/status/help_drift_artifact.json",
                 "artifacts/status/help_tree_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS" => {
             let search_roots = [workspace_root.join("crates"), workspace_root.join("scripts")];
             let bucket_patterns = [
                 ("runtime", vec!["runtime-identity", "runtime_unity", "execution_outcome"]),
@@ -6927,12 +5095,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/diagnostics_taxonomy.json",
                 "artifacts/status/diagnostics_usefulness_review.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs"),
@@ -7081,13 +5249,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/cross_surface_equivalence_report.json",
                 "artifacts/status/cross_surface_drift_report.json",
                 "artifacts/status/cross_surface_duality_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-STATE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-STATE-REPORTS" => {
             let sources: Vec<(String, String)> = vec![
                 (
                     "crates/bijux-cli/tests/bin_surface/cross_surface_state_extra.rs".to_string(),
@@ -7183,13 +5351,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/cross_surface_state_consistency_artifact.json",
                 "artifacts/status/cross_surface_state_drift_artifact.json",
                 "artifacts/status/cross_surface_state_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
             let source =
                 fs::read_to_string(workspace_root.join(
                     "crates/bijux-cli/tests/bin_surface/plugin_discovery_determinism_matrix.rs",
@@ -7262,12 +5430,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_discovery_determinism_report.json",
                 "artifacts/status/plugin_ordering_law.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS" => {
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/plugin_lifecycle_failure_injection_report.json",
@@ -7331,12 +5499,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_lifecycle_failure_injection_report.json",
                 "artifacts/status/plugin_rollback_proof_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PACKAGING-AMBIGUITY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PACKAGING-AMBIGUITY-REPORTS" => {
             let generated_at = generated_at_utc();
             let install_source = fs::read_to_string(
                 workspace_root.join("artifacts/status/install_source_diagnostics.json"),
@@ -7419,14 +5587,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 format!("Package Health\n\nassumptions_count: {assumptions_count}\nhelp: {help}\n"),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/packaging_ambiguity_report.json",
                 "artifacts/status/install_state_assumptions_report.json",
                 "artifacts/status/package_health_report.json",
                 "artifacts/status/package_health_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STATE-RESILIENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STATE-RESILIENCE-REPORTS" => {
             let generated_at = generated_at_utc();
             write_status_artifact_json(
                 workspace_root,
@@ -7522,7 +5690,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/history_corruption_matrix.json",
                 "artifacts/status/memory_corruption_matrix.json",
                 "artifacts/status/state_recovery_guidance.json",
@@ -7530,7 +5698,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/state_resilience_summary.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs"),
@@ -7639,13 +5807,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/command_surface_consistency_artifact.json",
                 "artifacts/status/command_surface_consistency_drift_artifact.json",
                 "artifacts/status/command_surface_consistency_summary.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs"),
@@ -7758,14 +5926,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/command_family_consistency_artifact.json",
                 "artifacts/status/cross_family_drift_artifact.json",
                 "artifacts/status/shared_law_proof_artifact.json",
                 "artifacts/status/command_family_consistency_requirement.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs"),
@@ -7876,7 +6044,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "scope": "cross-surface consistency contract",
                     "release_review_rule": "cross-surface consistency artifacts are mandatory release evidence",
                     "freeze_rule": "one command law is frozen only when covered drift remains zero",
-                    "gate": "bijux dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
+                    "gate": "bijux dev cli scripts status run --id STATUS-CONTRACT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
                     "evidence": [
                         "artifacts/status/cross_surface_consistency_artifact.json",
                         "artifacts/status/cross_surface_drift_artifact.json",
@@ -7885,13 +6053,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/cross_surface_consistency_artifact.json",
                 "artifacts/status/cross_surface_drift_artifact.json",
                 "artifacts/status/cross_surface_consistency_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs"),
@@ -7985,13 +6153,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/deterministic_output_report.json",
                 "artifacts/status/determinism_dashboard.json",
                 "artifacts/status/determinism_expectations.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS" => {
             let output_targets = workspace_root
                 .join("crates/bijux-cli-output/tests/output_envelope_fuzz_targets.rs");
             let output_regression = workspace_root
@@ -8161,7 +6329,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/output_crash_triage_artifact.json",
                 "artifacts/status/bridge_conversion_crash_triage_artifact.json",
                 "artifacts/status/output_fuzz_regression_artifact.json",
@@ -8169,7 +6337,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/output_envelope_fuzz_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS" => {
             let routing_test =
                 workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_targets.rs");
             let bin_test = workspace_root
@@ -8332,13 +6500,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/parser_crash_triage_artifact.json",
                 "artifacts/status/parser_fuzz_regression_artifact.json",
                 "artifacts/status/parser_fuzz_campaign_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CLEANUP-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CLEANUP-REPORTS" => {
             let generated_at = "1970-01-01T00:00:00+00:00";
             let deleted_docs = vec![
                 "docs/architecture/newly-ported-command-parity.md",
@@ -8425,14 +6593,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/docs_unreferenced_candidates.json",
                 "artifacts/status/stale_snapshot_candidates.json",
                 "artifacts/status/dead_generated_artifact_candidates.json",
                 "artifacts/status/cleanup_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-MIGRATION-NOTES" => {
+        "STATUS-CONTRACT-GENERATE-MIGRATION-NOTES" => {
             let generated_at = "1970-01-01T00:00:00+00:00";
             let parity_matrix = fs::read_to_string(
                 workspace_root.join("artifacts/parity/command_parity_matrix.json"),
@@ -8625,7 +6793,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "\nPackaging:\n- runtime-identity: verify active binary and PATH shadowing behavior before cutover\n- install-assumptions: review install-state assumptions and shell completion target paths\n\nPlugin lifecycle:\n- plugin-install-write-path: validate rollback and retry behavior before enabling new plugin capabilities\n- plugin-runtime-diagnostics: verify reserved-name and registry diagnostics surface expected errors\n\nState behavior:\n- config: backup and validate config before mutating across runtime upgrades\n- history-memory: run state doctor when corrupted history or memory payloads are detected\n- recovery: follow machine-readable state recovery guidance for rollback paths\n",
             );
             fs::write(workspace_root.join("artifacts/status/migration_notes.txt"), text).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/migration_notes_commands.json",
                 "artifacts/status/migration_notes_packaging.json",
                 "artifacts/status/migration_notes_plugin_lifecycle.json",
@@ -8633,7 +6801,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/migration_notes.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS" => {
             let registry = fs::read_to_string(
                 workspace_root.join("docs/constitution/official_product_namespace_registry.json"),
             )
@@ -8718,14 +6886,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/official_product_mount_registry.json",
                 "artifacts/status/product_mount_readiness_report.json",
                 "artifacts/status/product_mount_support_report.json",
                 "artifacts/status/product_mount_gap_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
             let targets =
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/config_fuzz_targets.rs");
             let regression = workspace_root
@@ -8857,14 +7025,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_parser_crash_triage_artifact.json",
                 "artifacts/status/config_serializer_crash_triage_artifact.json",
                 "artifacts/status/config_fuzz_regression_artifact.json",
                 "artifacts/status/config_fuzz_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS" => {
             let campaign_test = workspace_root
                 .join("crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs");
             let min_cases_dir = workspace_root
@@ -8984,13 +7152,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/adversarial_fs_process_matrix.json",
                 "artifacts/status/adversarial_fs_process_artifact.json",
                 "artifacts/status/adversarial_fs_process_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS" => {
             let harness_test = workspace_root
                 .join("crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs");
             let regression_test = workspace_root.join(
@@ -9121,13 +7289,13 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/state_corruption_campaign_artifact.json",
                 "artifacts/status/state_corruption_reproducer_retention_artifact.json",
                 "artifacts/status/state_corruption_harness_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMMAND-SURFACE-INVENTORY" => {
+        "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-INVENTORY" => {
             let generated_at = generated_at_utc();
             let matrix: Value = fs::read_to_string(
                 workspace_root.join("artifacts/status/command_migration_matrix.json"),
@@ -9272,14 +7440,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/documented_python_commands_not_proven_in_rust.json",
                 "artifacts/status/public_python_paths_still_reachable.json",
                 "artifacts/status/legacy_alias_paths_still_accepted.json",
                 "artifacts/status/compatibility_shims_still_active.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS" => {
             let generated_at = generated_at_utc();
             let read = |path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(path))
@@ -9459,7 +7627,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 format!("{}\n", lines.join("\n")),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_closure_report.json",
                 "artifacts/status/plugins_closure_report.json",
                 "artifacts/status/history_closure_report.json",
@@ -9471,7 +7639,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/command_family_partial_area_acceptance.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMMAND-MIGRATION-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-COMMAND-MIGRATION-MATRIX" => {
             let generated_at = generated_at_utc();
             let read = |path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(path))
@@ -9694,7 +7862,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "commands": surfaces.get("python_bridge").cloned().unwrap_or_else(|| json!([])),
                 "count": surfaces.get("python_bridge").and_then(Value::as_array).map_or(0, Vec::len),
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/command_migration_matrix.json",
                 "artifacts/status/command_migration_rust_partial.json",
                 "artifacts/status/command_migration_python_only.json",
@@ -9704,7 +7872,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/command_migration_python_bridge_entrypoints.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-EVIDENCE-INTEGRITY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-EVIDENCE-INTEGRITY-REPORTS" => {
             let read = |path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(path))
                     .ok()
@@ -9885,7 +8053,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/evidence_coverage_report.json",
                 "artifacts/status/evidence_integrity_artifact.json",
                 "artifacts/status/orphan_evidence_report.json",
@@ -9905,7 +8073,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/config_ownership_truth.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-HISTORY-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-HISTORY-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/history_command_matrix.rs"),
             )
@@ -10010,14 +8178,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/history_command_coverage_report.json",
                 "artifacts/status/history_command_matrix_artifact.json",
                 "artifacts/status/history_corruption_matrix_artifact.json",
                 "artifacts/status/history_read_domain_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs"),
@@ -10120,14 +8288,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/diagnostics_command_coverage_report.json",
                 "artifacts/status/diagnostics_matrix_artifact.json",
                 "artifacts/status/diagnostics_shape_drift_artifact.json",
                 "artifacts/status/diagnostics_operator_truth_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STATE-AUDIT-REPORTS" => {
             let read = |path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(path))
                     .ok()
@@ -10297,7 +8465,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &payload,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/state_migration_status.json",
                 "artifacts/status/unified_state_behavior_report.json",
                 "artifacts/status/unified_state_corruption_report.json",
@@ -10307,7 +8475,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/unified_state_audit_payload.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
             let test_root = workspace_root.join("crates/bijux-cli/tests/bin_surface");
             let mut rows = Vec::<(String, String, i64, i64)>::new();
             for path in collect_files(&test_root) {
@@ -10496,14 +8664,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "new stateful features require at least one corruption or rollback test",
                 ],
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/deep_tests_by_value_report.json",
                 "artifacts/status/deep_missing_behavior_cases_report.json",
                 "artifacts/status/deep_weak_tests_replacement_report.json",
                 "artifacts/status/deep_test_first_domains_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PERFORMANCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PERFORMANCE-REPORTS" => {
             let generated_at = generated_at_utc();
             let startup = vec![
                 "version",
@@ -10593,14 +8761,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 text.push_str(&format!("  - {s}\n"));
             }
             fs::write(workspace_root.join("artifacts/status/performance_report.txt"), text).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/performance_report.json",
                 "artifacts/status/performance_regression_budget.json",
                 "artifacts/status/performance_benchmark_policy.json",
                 "artifacts/status/performance_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MEMORY-SURFACE-REPORTS" => {
             let matrix_source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs"),
             )
@@ -10696,7 +8864,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "artifacts/status/memory_python_parity_artifact.json",
                 ],
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/memory_command_coverage_report.json",
                 "artifacts/status/memory_command_matrix_artifact.json",
                 "artifacts/status/memory_corruption_matrix_artifact.json",
@@ -10704,7 +8872,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/memory_read_domain_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STATE-LAW-REPORTS" => {
             let generated_at = generated_at_utc();
             let rg_lines = |pattern: &str| -> Vec<String> {
                 Command::new("rg")
@@ -10827,7 +8995,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &complexity,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/state_file_inventory.json",
                 "artifacts/status/state_file_readers.json",
                 "artifacts/status/state_file_writers.json",
@@ -10837,7 +9005,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/state_complexity_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs"),
@@ -11057,12 +9225,12 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/stream_discipline_artifact.json",
                 "artifacts/status/stream_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
                 "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
                 "crates/bijux-cli/tests/bin_surface/history_parity.rs",
@@ -11229,7 +9397,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "drift_items": drift,
                 "coverage_rows": coverage_rows,
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/history_semantic_artifact.json",
                 "artifacts/status/history_determinism_artifact.json",
                 "artifacts/status/history_corruption_artifact.json",
@@ -11239,7 +9407,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/history_deep_behavior_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-MEMORY-DEEP-BEHAVIOR-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MEMORY-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
                 "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs",
                 "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
@@ -11402,7 +9570,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "drift_items": drift,
                 "coverage_rows": coverage_rows,
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/memory_semantic_artifact.json",
                 "artifacts/status/memory_determinism_artifact.json",
                 "artifacts/status/memory_corruption_artifact.json",
@@ -11412,7 +9580,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/memory_deep_behavior_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-ROUTE-LAW-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-ROUTE-LAW-REPORTS" => {
             let generated_at = generated_at_utc();
             let registry =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/routing/registry.rs"))
@@ -11559,14 +9727,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/route_command_owner_mapping.json",
                 "artifacts/status/route_command_test_coverage_mapping.json",
                 "artifacts/status/route_command_parity_status_mapping.json",
                 "artifacts/status/route_special_cases.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-ROOT-COMMAND-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-ROOT-COMMAND-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/root_command_matrix.rs"),
             )
@@ -11734,7 +9902,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 text,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/root_command_coverage_report.json",
                 "artifacts/status/root_command_matrix_artifact.json",
                 "artifacts/status/root_command_surface_domain_contract.json",
@@ -11745,7 +9913,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/root_command_completion_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CLI-COMMAND-SURFACE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CLI-COMMAND-SURFACE-REPORTS" => {
             let matrix = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs"),
             )
@@ -11863,7 +10031,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "tracked_commands":rows.iter().filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                 "coverage_checks":coverage,"status":"frozen"
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/cli_command_coverage_report.json",
                 "artifacts/status/cli_command_matrix_artifact.json",
                 "artifacts/status/cli_command_surface_domain_contract.json",
@@ -11873,7 +10041,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/cli_command_closure_set.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-COMPATIBILITY-SHIM-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-COMPATIBILITY-SHIM-REPORTS" => {
             let generated_at = generated_at_utc();
             let baseline: Value = fs::read_to_string(
                 workspace_root.join("configs/status/compatibility_baseline.json"),
@@ -11965,11 +10133,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &json!({"generated_at":generated_at,"items":aliases}),
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/compatibility_shim_inventory.json","artifacts/status/compatibility_alias_inventory.json","artifacts/status/hidden_alias_inventory.json","artifacts/status/old_python_path_tolerance_inventory.json","artifacts/status/compatibility_shim_count_delta.json","artifacts/status/compatibility_alias_count_delta.json","artifacts/status/compatibility_shim_count_report.json","artifacts/status/compatibility_alias_count_report.json","artifacts/status/live_compatibility_shims.json","artifacts/status/live_compatibility_aliases.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-METADATA-CONSISTENCY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-METADATA-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/metadata_inspection_matrix.rs"),
@@ -12095,11 +10263,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &ownership,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/command_metadata_artifact.json","artifacts/status/route_metadata_artifact.json","artifacts/status/metadata_drift_artifact.json","artifacts/status/command_ownership_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-RELEASE-BUILD-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-RELEASE-BUILD-REPORTS" => {
             let generated_at = generated_at_utc();
             let file_info = |path: &Path| -> Value {
                 if !path.exists() {
@@ -12163,11 +10331,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             write_status_artifact_json(workspace_root, "artifacts/status/license_inventory.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","workspace_licenses":licenses})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/reproducible_build_assumptions.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","assumptions":["Cargo.lock is committed and used in CI.","SOURCE_DATE_EPOCH is respected by status generators.","schema snapshots and command-tree snapshots are enforced in CI.","parity matrix generation is required and checked for deterministic output."],"non_promises":["bit-for-bit reproducibility across different host toolchains is not guaranteed"]})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/release_artifact_manifest.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","artifacts":["artifacts/status/release_binary_size_report.json","artifacts/status/debug_binary_size_report.json","artifacts/status/release_binary_size_contributors.json","artifacts/status/release_dependency_inventory.json","artifacts/status/license_inventory.json","artifacts/status/reproducible_build_assumptions.json","artifacts/status/deterministic_generation_report.json","artifacts/status/release_build_consistency_report.json","artifacts/status/release_evidence_bundle.json","artifacts/status/release_status_manifest.json"]})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/release_binary_size_report.json","artifacts/status/debug_binary_size_report.json","artifacts/status/release_binary_size_contributors.json","artifacts/status/release_dependency_inventory.json","artifacts/status/license_inventory.json","artifacts/status/reproducible_build_assumptions.json","artifacts/status/release_artifact_manifest.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-RELEASE-EVIDENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-RELEASE-EVIDENCE-REPORTS" => {
             let generated_at = generated_at_utc();
             let read = |path: &str| -> Value {
                 fs::read_to_string(workspace_root.join(path))
@@ -12253,11 +10421,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             fs::write(workspace_root.join("artifacts/status/release_truth_report.txt"), format!("Release Truth Summary\n\nstatus: {}\nmissing_evidence: {}\nparity_partial: {}\nparity_missing: {}\nweak_tests: {}\n", truth.get("status").and_then(Value::as_str).unwrap_or("blocked"), missing.len(), partial.len(), missing_cmd.len(), weak_tests.len())).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/release_evidence_bundle.json","artifacts/status/release_status_manifest.json","artifacts/status/release_truth_report.json","artifacts/status/release_truth_report.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-SCAFFOLD-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-SCAFFOLD-REPORTS" => {
             let generated_at = generated_at_utc();
             let read_lines = |name: &str| -> Vec<String> {
                 fs::read_to_string(
@@ -12321,7 +10489,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 summary,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_scaffold_python_inventory.json",
                 "artifacts/status/plugin_scaffold_rust_inventory.json",
                 "artifacts/status/plugin_scaffold_diff.json",
@@ -12330,7 +10498,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/plugin_scaffold_minimalism_summary.txt"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-MIGRATION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS" => {
             let generated_at = generated_at_utc();
             let read = |name: &str| -> Value {
                 fs::read_to_string(workspace_root.join("artifacts/status").join(name))
@@ -12400,7 +10568,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "failure_injection":lifecycle_failures,
             })).ok()?;
             let _ = base;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_lifecycle_ownership_report.json",
                 "artifacts/status/plugin_scaffold_efficiency_report.json",
                 "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
@@ -12412,7 +10580,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/plugin_migration_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS" => {
             let now = generated_at_utc();
             let text = |p: &str| fs::read_to_string(workspace_root.join(p)).unwrap_or_default();
             let manifest_targets = "crates/bijux-cli-plugin/tests/plugin_manifest_fuzz_targets.rs";
@@ -12560,7 +10728,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest fuzz regressions","coverage_ids":[76,78],"status":if mr_ok{"clean"}else{"drift"},"minimized_cases":manifest_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin scaffold fuzz regressions","coverage_ids":[77,79],"status":if sr_ok{"clean"}else{"drift"},"minimized_cases":scaffold_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest and scaffold fuzzing","coverage_ids":(61..81).collect::<Vec<_>>(),"status":if missing.is_empty() && mt_ok && mr_ok && st_ok && sr_ok && !manifest_cases.is_empty() && !scaffold_cases.is_empty(){"frozen"}else{"partial"},"coverage_rows":coverage,"missing_coverage_ids":missing,"manifest_minimized_case_count":manifest_cases.len(),"scaffold_minimized_case_count":scaffold_cases.len(),"policy":"plugin manifest and scaffold fuzzing remain maintenance-required hardening checks"})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_manifest_crash_triage_artifact.json",
                 "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
                 "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
@@ -12568,7 +10736,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
             let campaign_test = "crates/bijux-cli/tests/bin_surface/randomized_plugin_state_corruption_campaigns.rs";
             let regression_test = "crates/bijux-cli/tests/bin_surface/plugin_state_corruption_campaign_regressions.rs";
@@ -12643,7 +10811,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption regression replay","coverage_ids":[158],"status":if regression_ok{"clean"}else{"drift"},"minimized_cases":minimized_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_severity_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption severity classification","coverage_ids":[159],"status":"complete","classes":{"critical":["plugin registry write rollback failure","state read panic"],"high":["nondeterministic plugin list under identical corrupted input","memory recovery drift"],"medium":["history malformed entries with degraded but successful read"],"low":["doctor self-repair with stable output"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption hardening contract","coverage_ids":(141..161).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized_cases.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"policy":"plugin/history/memory corruption campaigns are required hardening coverage"})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_state_corruption_campaign_artifact.json",
                 "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
                 "artifacts/status/plugin_state_corruption_triage_artifact.json",
@@ -12652,7 +10820,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/plugin_state_corruption_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/config_deep_behavior_matrix.rs"),
@@ -12793,7 +10961,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "drift_items": drift,
                 "coverage_rows": coverage_rows,
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_semantic_roundtrip_artifact.json",
                 "artifacts/status/config_precedence_artifact.json",
                 "artifacts/status/config_determinism_artifact.json",
@@ -12801,7 +10969,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/config_deep_behavior_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
             let campaign_test = workspace_root.join(
                 "crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs",
@@ -12879,7 +11047,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_recovery_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption recovery classification","coverage_ids":[138],"status":"complete","paths":{"stable_failure":["usage/validation failure with unchanged file content"],"self_recovery":["repair input and rerun command to success"],"rollback_preserved":["failed load keeps previous coherent config"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_determinism_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption determinism","coverage_ids":[139],"status":if campaign_ok{"complete"}else{"partial"},"deterministic_failure_class_required":true,"evidence":"crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set"})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_release_blocking_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption release-blocking contract","coverage_ids":(121..141).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"release_blocking":true,"policy":"config corruption campaign coverage and deterministic rollback behavior are required before release"})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_corruption_campaign_artifact.json",
                 "artifacts/status/config_corruption_invariants_artifact.json",
                 "artifacts/status/config_corruption_corpus_retention_artifact.json",
@@ -12891,7 +11059,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/config_corruption_release_blocking_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
                 "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
                 "crates/bijux-cli/tests/bin_surface/diagnostics_contract_consistency.rs",
@@ -13040,7 +11208,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/diagnostics_deep_behavior_drift_artifact.json", &json!({"generator":"bijux-dev-cli","scope":"diagnostics deep behavior drift","coverage_ids":[160],"status":if drift.is_empty(){"clean"}else{"drift-detected"},"drift_count":drift.len(),"drift_items":drift,"coverage_rows":coverage})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/diagnostics_consistency_artifact.json",
                 "artifacts/status/doctor_determinism_artifact.json",
                 "artifacts/status/diagnostics_schema_drift_artifact.json",
@@ -13050,7 +11218,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/bin_surface/diagnostics_trust_law_extra.rs"),
@@ -13204,7 +11372,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 &contract,
             )
             .ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/diagnostics_trust_artifact.json",
                 "artifacts/status/actionable_diagnostics_artifact.json",
                 "artifacts/status/diagnostics_minimalism_artifact.json",
@@ -13212,7 +11380,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/diagnostics_trust_contract.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-STATUS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-STATUS-REPORTS" => {
             let generated_at = generated_at_utc();
             let read = |p: &str| {
                 fs::read_to_string(workspace_root.join(p))
@@ -13402,11 +11570,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_intentional_differences.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":intentional})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_unowned_scripts.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scripts":current_state.get("scripts_outside_dev_cli").cloned().unwrap_or_else(|| json!([]))})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_scripts.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS" => {
             let generated_at = generated_at_utc();
             let required_commands = vec![
                 "dev cli status",
@@ -13480,14 +11648,14 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_control_plane_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scripts_outside_dev_cli":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_scripts_outside_dev_cli.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"commands":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_control_plane_commands.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"text_report":"artifacts/status/maintainer_control_plane_text_report.txt"})).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/maintainer_scripts_outside_dev_cli.json",
                 "artifacts/status/maintainer_control_plane_commands.json",
                 "artifacts/status/maintainer_control_plane_text_report.txt",
                 "artifacts/status/maintainer_control_plane_report.json"
             ]}))
         }
-        "STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS" => {
+        "STATUS-CONTRACT-GENERATE-CRATE-BOUNDARY-METRICS" => {
             let generated_at = generated_at_utc();
             let metadata = Command::new("cargo")
                 .args(["metadata", "--format-version", "1", "--no-deps"])
@@ -13580,654 +11748,11 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "crate_decisions":crate_decisions,
                 "boundary_decisions":boundary_decisions
             })).ok()?;
-            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/crate_boundary_metrics.json",
                 "artifacts/status/crate_boundary_report.json"
             ]}))
         }
         _ => None,
-    }
-}
-
-fn run_flaky_tests_generator(workspace_root: &Path) -> Value {
-    let report = build_flaky_tests_report(workspace_root);
-    let output_path = workspace_root.join("artifacts/status/flaky_tests.json");
-    match write_json(&output_path, &report) {
-        Ok(()) => json!({
-            "status": "ok",
-            "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/flaky_tests.json"],
-        }),
-        Err(err) => json!({
-            "status": "failed",
-            "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
-            "source_script": Value::Null,
-            "implementation": "rust",
-            "outputs": ["artifacts/status/flaky_tests.json"],
-            "error": err,
-        }),
-    }
-}
-
-fn run_status_generator_entry(workspace_root: &Path, row: &Value) -> Value {
-    let Some(generator_id) = row.get("generator_id").and_then(Value::as_str) else {
-        return json!({"status": "failed", "error": "missing generator_id"});
-    };
-    let outputs: Vec<String> = row
-        .get("outputs")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|item| item.as_str().map(ToString::to_string))
-        .collect();
-    if generator_id == "GEN-STATUS-FLAKY-TEST-LABELS" {
-        return run_flaky_tests_generator(workspace_root);
-    }
-    let Some(source_script) = row.get("source_script").and_then(Value::as_str) else {
-        return json!({
-            "status": "failed",
-            "generator_id": generator_id,
-            "error": "missing source_script for python generator",
-        });
-    };
-    run_python_generator(workspace_root, source_script, &outputs)
-}
-
-/// Builds `dev cli scripts generators` report payload.
-#[must_use]
-pub fn build_generators_report(workspace_root: &Path) -> Value {
-    build_status_generators_report(workspace_root)
-}
-
-/// Runs one status generator by stable id or source path.
-#[must_use]
-pub fn run_generator(
-    workspace_root: &Path,
-    generator_id: Option<&str>,
-    source_script: Option<&str>,
-) -> Value {
-    let rows = build_status_generators_report(workspace_root)
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let selection = if let Some(id) = generator_id {
-        rows.into_iter().find(|row| row.get("generator_id").and_then(Value::as_str) == Some(id))
-    } else if let Some(source) = source_script {
-        rows.into_iter()
-            .find(|row| row.get("source_script").and_then(Value::as_str) == Some(source))
-    } else {
-        None
-    };
-
-    if let Some(row) = selection {
-        return run_status_generator_entry(workspace_root, &row);
-    }
-    json!({
-        "status": "failed",
-        "error": "generator not found; pass --id or --source with a known status generator",
-    })
-}
-
-/// Runs all status generators.
-#[must_use]
-pub fn run_all_generators(workspace_root: &Path) -> Value {
-    let rows = build_status_generators_report(workspace_root)
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let mut results = Vec::<Value>::new();
-    let mut ok = 0usize;
-    let mut failed = 0usize;
-    for row in rows {
-        let result = run_status_generator_entry(workspace_root, &row);
-        if result.get("status").and_then(Value::as_str) == Some("ok") {
-            ok += 1;
-        } else {
-            failed += 1;
-        }
-        results.push(result);
-    }
-    json!({
-        "generated_at_utc": generated_at_utc(),
-        "count": results.len(),
-        "ok": ok,
-        "failed": failed,
-        "results": results,
-    })
-}
-
-/// Builds `dev cli scripts status inventory` report payload.
-#[must_use]
-pub fn build_status_scripts_report(workspace_root: &Path) -> Value {
-    build_status_scripts_inventory_report(workspace_root)
-}
-
-fn find_status_script_row(
-    workspace_root: &Path,
-    script_id: Option<&str>,
-    source_script: Option<&str>,
-) -> Option<Value> {
-    let rows = build_status_scripts_inventory_report(workspace_root)
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    if let Some(id) = script_id {
-        return rows
-            .into_iter()
-            .find(|row| row.get("script_id").and_then(Value::as_str) == Some(id));
-    }
-    if let Some(source) = source_script {
-        return rows
-            .into_iter()
-            .find(|row| row.get("source_script").and_then(Value::as_str) == Some(source));
-    }
-    None
-}
-
-/// Runs one status script by stable id or legacy source alias.
-#[must_use]
-pub fn run_status_script(
-    workspace_root: &Path,
-    script_id: Option<&str>,
-    source_script: Option<&str>,
-    args: &[String],
-) -> Value {
-    if let Some(id) = script_id {
-        if let Some(result) = run_native_status_script(workspace_root, id) {
-            return result;
-        }
-    }
-    let Some(row) = find_status_script_row(workspace_root, script_id, source_script) else {
-        return json!({
-            "status": "failed",
-            "error": "status script not found; pass --id with a known STATUS-SCRIPT-* value",
-        });
-    };
-    let script_id = row.get("script_id").and_then(Value::as_str).unwrap_or("unknown");
-    let source_script = row.get("source_script").and_then(Value::as_str).unwrap_or("");
-    let kind = row.get("kind").and_then(Value::as_str).unwrap_or("unknown");
-    run_python_status_script(workspace_root, source_script, script_id, kind, args)
-}
-
-/// Runs all status scripts, optionally filtered by kind.
-#[must_use]
-pub fn run_all_status_scripts(
-    workspace_root: &Path,
-    kind_filter: Option<&str>,
-    args: &[String],
-) -> Value {
-    let mut rows = build_status_scripts_inventory_report(workspace_root)
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    if let Some(kind) = kind_filter {
-        let kind = kind.to_ascii_lowercase();
-        rows.retain(|row| row.get("kind").and_then(Value::as_str).is_some_and(|item| item == kind));
-    }
-
-    let mut results = Vec::<Value>::new();
-    let mut ok = 0usize;
-    let mut failed = 0usize;
-    for row in rows {
-        let script_id = row.get("script_id").and_then(Value::as_str);
-        let source_script = row.get("source_script").and_then(Value::as_str);
-        let result = run_status_script(workspace_root, script_id, source_script, args);
-        if result.get("status").and_then(Value::as_str) == Some("ok") {
-            ok += 1;
-        } else {
-            failed += 1;
-        }
-        results.push(result);
-    }
-
-    json!({
-        "generated_at_utc": generated_at_utc(),
-        "kind_filter": kind_filter.map(|kind| kind.to_ascii_lowercase()),
-        "count": results.len(),
-        "ok": ok,
-        "failed": failed,
-        "results": results,
-    })
-}
-
-fn build_requirement_catalog(workspace_root: &Path) -> Value {
-    let mut by_script = BTreeMap::<String, Vec<String>>::new();
-    for path in collect_files(&workspace_root.join("scripts").join("status")) {
-        let rel_path = rel(&path, workspace_root);
-        let is_py = is_python_file(&path);
-        if !is_py || !rel_path.contains("/generate_") {
-            continue;
-        }
-        let source = fs::read_to_string(&path).unwrap_or_default();
-        let tests = extract_required_test_names(&source);
-        if tests.is_empty() {
-            continue;
-        }
-        by_script.insert(rel_path, tests);
-    }
-
-    let mut rows = Vec::<Value>::new();
-    for (script_path, tests) in by_script {
-        let slug = status_generator_slug(&script_path);
-        for (idx, test_name) in tests.iter().enumerate() {
-            rows.push(json!({
-                "requirement_id": format!("REQ-{slug}-{:03}", idx + 1),
-                "owner": "bijux-dev-cli",
-                "source_script": script_path,
-                "test_name": test_name,
-            }));
-        }
-    }
-    json!({
-        "id_policy": "REQ-<GENERATOR-SLUG>-<3DIGIT-INDEX>",
-        "generated_at_utc": generated_at_utc(),
-        "rows": rows,
-        "count": rows.len(),
-    })
-}
-
-/// Builds `dev cli scripts requirements` report payload.
-#[must_use]
-pub fn build_requirement_catalog_report(workspace_root: &Path) -> Value {
-    build_requirement_catalog(workspace_root)
-}
-
-/// Builds `dev cli scripts flaky-tests` report payload.
-#[must_use]
-pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
-    let mut tests = Vec::<Value>::new();
-    for path in collect_files(&workspace_root.join("crates")) {
-        if path.extension().is_none_or(|ext| ext != "rs")
-            || !path.components().any(|segment| segment.as_os_str() == "tests")
-            || path.components().any(|segment| segment.as_os_str() == "target")
-        {
-            continue;
-        }
-        let source = fs::read_to_string(&path).unwrap_or_default();
-        for line in source.lines().filter(|line| line.contains("#[ignore")) {
-            let Some(first_quote) = line.find('"') else {
-                continue;
-            };
-            let tail = &line[first_quote + 1..];
-            let Some(second_quote) = tail.find('"') else {
-                continue;
-            };
-            let reason = tail[..second_quote].trim().to_ascii_lowercase();
-            if reason.contains("flaky") {
-                tests.push(json!({
-                    "path": rel(&path, workspace_root),
-                    "label": "flaky",
-                    "reason": if reason.is_empty() { "flaky" } else { &reason },
-                }));
-            }
-        }
-    }
-    json!({
-        "generated_at_utc": generated_at_utc(),
-        "label": "flaky",
-        "count": tests.len(),
-        "tests": tests,
-        "policy": "no flaky test may be silently ignored; each flaky marker requires remediation tracking",
-        "generator": "crates/bijux-dev-cli/src/scripts.rs::build_flaky_tests_report",
-    })
-}
-
-/// Builds `dev cli scripts migrated` report payload.
-#[must_use]
-pub fn build_migrated_report(workspace_root: &Path) -> Value {
-    let rows: Vec<Value> = migrated_rows()
-        .iter()
-        .map(|(from, to, rank)| {
-            json!({
-                "from": from,
-                "to": to,
-                "maintainer_value_rank": rank,
-                "deleted": !workspace_root.join(from).exists(),
-            })
-        })
-        .collect();
-    json!({
-        "migrated": rows,
-        "summary": {
-            "count": rows.len(),
-            "deleted": rows.iter().filter(|r| r.get("deleted") == Some(&Value::Bool(true))).count(),
-        },
-    })
-}
-
-/// Builds `dev cli scripts remaining` report payload.
-#[must_use]
-pub fn build_remaining_report(workspace_root: &Path) -> Value {
-    let migrated: BTreeSet<&str> = migrated_rows().iter().map(|(from, _, _)| *from).collect();
-    let root_scripts: Vec<String> = collect_files(&workspace_root.join("scripts"))
-        .into_iter()
-        .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("scripts")))
-        .map(|p| rel(&p, workspace_root))
-        .collect();
-    let remaining: Vec<String> =
-        root_scripts.into_iter().filter(|path| !migrated.contains(path.as_str())).collect();
-
-    let mut make_targets = Vec::new();
-    for mk in collect_files(&workspace_root.join("makes")) {
-        for target in parse_make_targets(&mk) {
-            make_targets.push(json!({"target": target, "file": rel(&mk, workspace_root)}));
-        }
-    }
-
-    json!({
-        "remaining_root_scripts": remaining,
-        "make_targets": make_targets,
-        "summary": {
-            "remaining_root_script_count": remaining.len(),
-            "make_target_count": make_targets.len(),
-        }
-    })
-}
-
-/// Builds `dev cli scripts diff` report payload.
-#[must_use]
-pub fn build_diff_report(workspace_root: &Path) -> Value {
-    let migrated = build_migrated_report(workspace_root);
-    let remaining = build_remaining_report(workspace_root);
-    let undeleted: Vec<Value> = migrated
-        .get("migrated")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .filter(|row| row.get("deleted") == Some(&Value::Bool(false)))
-        .collect();
-    json!({
-        "undeleted_migrated_scripts": undeleted,
-        "remaining": remaining,
-    })
-}
-
-/// Builds `dev cli scripts audit` report payload.
-#[must_use]
-pub fn build_audit_report(workspace_root: &Path) -> Value {
-    json!({
-        "migrated": build_migrated_report(workspace_root),
-        "remaining": build_remaining_report(workspace_root),
-        "diff": build_diff_report(workspace_root),
-        "status_generators": build_status_generators_report(workspace_root),
-        "status_scripts": build_status_scripts_inventory_report(workspace_root),
-        "requirement_catalog": build_requirement_catalog(workspace_root),
-        "flaky_tests": build_flaky_tests_report(workspace_root),
-    })
-}
-
-/// Builds replacement for `scripts/check-package-metadata.py`.
-#[must_use]
-pub fn build_package_metadata_report(workspace_root: &Path) -> Value {
-    let workspace_toml = workspace_root.join("Cargo.toml");
-    let pyproject_toml = workspace_root.join("pyproject.toml");
-    let workspace = fs::read_to_string(workspace_toml).unwrap_or_default();
-    let pyproject = fs::read_to_string(pyproject_toml).unwrap_or_default();
-
-    let mut failures = Vec::new();
-    if !pyproject.contains("name = \"bijux-cli\"") {
-        failures.push("project.name must be bijux-cli".to_string());
-    }
-    if !workspace.contains("repository") || !pyproject.contains("Homepage") {
-        failures
-            .push("repository metadata must exist in Cargo.toml and pyproject.toml".to_string());
-    }
-    if !workspace.contains("license") || !pyproject.contains("license") {
-        failures.push("license metadata must exist in Cargo.toml and pyproject.toml".to_string());
-    }
-
-    json!({
-        "status": if failures.is_empty() { "pass" } else { "fail" },
-        "failures": failures,
-    })
-}
-
-/// Builds replacement for `scripts/check_e2e_contract.py`.
-#[must_use]
-pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
-    let e2e_dir = workspace_root.join("tests/e2e");
-    let inventory = e2e_dir.join("INVENTORY.md");
-    let files = collect_files(&e2e_dir);
-
-    let mut errors = Vec::new();
-    if !inventory.exists() {
-        errors.push("tests/e2e/INVENTORY.md is missing".to_string());
-    }
-
-    let mut test_count = 0usize;
-    for file in files {
-        if !file.file_name().is_some_and(|name| name.to_string_lossy().starts_with("test_")) {
-            continue;
-        }
-        if file.extension().is_none_or(|ext| ext != "py") {
-            continue;
-        }
-        let text = fs::read_to_string(&file).unwrap_or_default();
-        test_count += text.match_indices("def test_").count();
-        for required in ["@pytest.mark.e2e", "@pytest.mark.slow"] {
-            if !text.contains(required) {
-                errors.push(format!("{} missing {required}", rel(&file, workspace_root)));
-            }
-        }
-        if !(text.contains("assert_no_state_corruption")
-            || text.contains("assert_exit_code_stable")
-            || text.contains("assert_config_consistent")
-            || text.contains("assert_plugins_consistent")
-            || text.contains("assert_no_traceback"))
-        {
-            errors.push(format!("{} missing invariant assertion", rel(&file, workspace_root)));
-        }
-    }
-
-    if test_count < 100 {
-        errors.push(format!("tests/e2e below minimum: {test_count} < 100"));
-    }
-    if test_count > 150 {
-        errors.push(format!("tests/e2e exceeds hard cap: {test_count} > 150"));
-    }
-
-    json!({
-        "status": if errors.is_empty() { "pass" } else { "fail" },
-        "test_count": test_count,
-        "errors": errors,
-    })
-}
-
-/// Builds replacement for `scripts/helper_pip_audit.py`.
-#[must_use]
-pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) -> Value {
-    let path = report_path
-        .map(PathBuf::from)
-        .unwrap_or_else(|| workspace_root.join("artifacts_pages/security/pip-audit.json"));
-    let parsed: Value = fs::read_to_string(&path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!([]));
-
-    let dependencies = parsed
-        .as_array()
-        .cloned()
-        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
-        .unwrap_or_default();
-
-    let mut remaining = Vec::new();
-    for dep in dependencies {
-        let name = dep.get("name").and_then(Value::as_str).unwrap_or("?");
-        let version = dep.get("version").and_then(Value::as_str).unwrap_or("?");
-        for vuln in dep.get("vulns").and_then(Value::as_array).cloned().unwrap_or_default() {
-            let id = vuln.get("id").and_then(Value::as_str).unwrap_or("?");
-            let fix =
-                vuln.get("fix_versions").and_then(Value::as_array).cloned().unwrap_or_default();
-            remaining.push(json!({
-                "package": name,
-                "version": version,
-                "id": id,
-                "fix_versions": fix,
-            }));
-        }
-    }
-
-    json!({
-        "status": if remaining.is_empty() { "pass" } else { "fail" },
-        "report_path": path,
-        "remaining_vulnerabilities": remaining,
-    })
-}
-
-/// Builds replacement for `scripts/capture_python_behavior.py`.
-#[must_use]
-pub fn build_python_capture_report(workspace_root: &Path) -> Value {
-    let lock_path = workspace_root.join("artifacts/current-python-behavior-lock.json");
-    let lock: Value = fs::read_to_string(&lock_path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}));
-    let capture_count =
-        lock.get("captures").and_then(Value::as_object).map_or(0, |captures| captures.len());
-    json!({
-        "status": if capture_count > 0 { "pass" } else { "fail" },
-        "lock_path": lock_path,
-        "capture_count": capture_count,
-    })
-}
-
-/// Builds replacement for `scripts/generate-provenance-statement.sh`.
-#[must_use]
-pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value {
-    let generated_at = std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .unwrap_or_else(|| "1970-01-01T00:00:00Z\n".to_string())
-        .trim()
-        .to_string();
-
-    let _ = fs::create_dir_all(output_dir);
-    let file = output_dir.join(format!("provenance-{tag}.json"));
-    let payload = json!({
-      "tag": tag,
-      "generated_at_utc": generated_at,
-      "generator": "bijux dev cli scripts provenance-statement",
-      "note": "Provenance hook scaffold. Replace with signed attestation workflow when enabled."
-    });
-    let _ = fs::write(
-        &file,
-        serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string()) + "\n",
-    );
-    json!({"status": "ok", "file": file, "payload": payload})
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::BTreeSet;
-    use std::fs;
-    use std::path::Path;
-
-    use super::{
-        build_audit_report, build_diff_report, build_generators_report, build_migrated_report,
-        build_remaining_report, build_requirement_catalog_report, build_status_scripts_report,
-    };
-
-    #[test]
-    fn scripts_reports_are_shaped() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        assert!(build_migrated_report(&root).get("migrated").is_some());
-        assert!(build_remaining_report(&root).get("remaining_root_scripts").is_some());
-        assert!(build_diff_report(&root).get("remaining").is_some());
-        let audit = build_audit_report(&root);
-        assert!(audit.get("diff").is_some());
-        assert!(audit.get("status_generators").is_some());
-        assert!(audit.get("status_scripts").is_some());
-        assert!(audit.get("requirement_catalog").is_some());
-        assert!(audit.get("flaky_tests").is_some());
-    }
-
-    #[test]
-    fn status_generator_ids_are_stable_and_prefixed() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let rows = build_generators_report(&root)
-            .get("rows")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        assert!(!rows.is_empty());
-        for row in rows {
-            let id = row.get("generator_id").and_then(serde_json::Value::as_str).unwrap_or("");
-            assert!(id.starts_with("GEN-STATUS-"));
-        }
-    }
-
-    #[test]
-    fn requirement_ids_use_req_prefix() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let rows = build_requirement_catalog_report(&root)
-            .get("rows")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        for row in rows {
-            let id = row.get("requirement_id").and_then(serde_json::Value::as_str).unwrap_or("");
-            assert!(id.starts_with("REQ-"));
-        }
-    }
-
-    #[test]
-    fn status_script_ids_are_stable_and_prefixed() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let rows = build_status_scripts_report(&root)
-            .get("rows")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        assert!(!rows.is_empty());
-        for row in rows {
-            let id = row.get("script_id").and_then(serde_json::Value::as_str).unwrap_or("");
-            assert!(id.starts_with("STATUS-SCRIPT-"));
-        }
-    }
-
-    #[test]
-    fn ci_status_script_ids_match_status_inventory() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let ci = fs::read_to_string(root.join(".github/workflows/ci.yml")).expect("read ci");
-        let referenced: BTreeSet<String> = ci
-            .split_whitespace()
-            .map(|token| {
-                token.trim_matches(|ch: char| {
-                    !ch.is_ascii_uppercase() && !ch.is_ascii_digit() && ch != '-'
-                })
-            })
-            .filter(|token| token.starts_with("STATUS-SCRIPT-"))
-            .map(ToString::to_string)
-            .collect();
-        assert!(!referenced.is_empty(), "expected STATUS-SCRIPT IDs in CI workflow");
-
-        let valid: BTreeSet<String> = build_status_scripts_report(&root)
-            .get("rows")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|row| {
-                row.get("script_id").and_then(serde_json::Value::as_str).map(ToString::to_string)
-            })
-            .collect();
-        assert!(!valid.is_empty(), "expected status script inventory rows");
-
-        let missing: Vec<String> = referenced.difference(&valid).cloned().collect();
-        assert!(
-            missing.is_empty(),
-            "CI references unknown STATUS-SCRIPT IDs; missing:\n{}",
-            missing.join("\n")
-        );
     }
 }

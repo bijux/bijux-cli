@@ -15,6 +15,7 @@ pub mod catalog;
 pub mod support;
 
 pub use application::dispatch;
+pub use capabilities::automation_contracts as scripts;
 pub use capabilities::cockpit;
 pub use capabilities::config;
 pub use capabilities::control_plane;
@@ -34,7 +35,6 @@ pub use capabilities::runtime_contracts as contracts;
 pub use capabilities::runtime_identity;
 pub use capabilities::rustdoc;
 pub use capabilities::script_audit;
-pub use capabilities::scripts;
 pub use capabilities::state_audit;
 pub use capabilities::status;
 pub use catalog::report_envelope as reporting;

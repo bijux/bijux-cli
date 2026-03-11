@@ -1,3 +1,4 @@
+pub mod automation_contracts;
 pub mod cockpit;
 pub mod config;
 pub mod control_plane;
@@ -17,6 +18,5 @@ pub mod runtime_contracts;
 pub mod runtime_identity;
 pub mod rustdoc;
 pub mod script_audit;
-pub mod scripts;
 pub mod state_audit;
 pub mod status;
