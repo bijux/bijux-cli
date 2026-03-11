@@ -8,14 +8,10 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "bridge-status" => {
             dev_python::build_bridge_status_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "python" && d == "surface-status" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "surface-status" => {
             dev_python::build_surface_status_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "python" && d == "sovereignty-audit" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "sovereignty-audit" => {
             dev_python::build_sovereignty_audit_report(&workspace_root())
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "drift" => {

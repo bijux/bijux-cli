@@ -5,9 +5,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::{
-    collect_files_recursive, parse_make_targets, relative_to_root,
-};
+use crate::infra::artifacts::{collect_files_recursive, parse_make_targets, relative_to_root};
 
 fn classify_maintenance_path(path: &str) -> &'static str {
     if path.starts_with("maintenance/status/") {

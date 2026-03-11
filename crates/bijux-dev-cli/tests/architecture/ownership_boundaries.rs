@@ -32,9 +32,7 @@ fn command_registry_entries_are_canonical_and_unique() {
         assert!(seen.insert(entry.command.as_str()));
     }
     assert_eq!(MAINTAINER_COMMAND_NAMESPACE, "dev cli");
-    assert!(
-        command_registry().iter().any(|entry| matches!(entry.command, DevCliCommand::Status))
-    );
+    assert!(command_registry().iter().any(|entry| matches!(entry.command, DevCliCommand::Status)));
 }
 
 #[test]

@@ -4,9 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::{
-    collect_files_recursive, read_json_if_exists, relative_to_root,
-};
+use crate::infra::artifacts::{collect_files_recursive, read_json_if_exists, relative_to_root};
 
 /// Builds the maintainer documentation audit report payload.
 #[must_use]

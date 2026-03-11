@@ -20,9 +20,7 @@ pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
         [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "shape" => {
             dev_config::build_shape_report(&workspace_root())
         }
-        [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "config" && d == "evidence-map" =>
-        {
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "evidence-map" => {
             dev_config::build_evidence_map_report(&workspace_root())
         }
         _ => return None,

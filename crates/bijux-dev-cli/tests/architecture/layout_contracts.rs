@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 //! Filesystem layout contracts for bijux-dev-cli architecture.
 
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 fn collect_files_recursive(root: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(root) else {

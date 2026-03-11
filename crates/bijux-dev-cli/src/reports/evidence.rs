@@ -6,8 +6,8 @@ use std::path::Path;
 use bijux_cli_evidence::{valid_evidence_id, EvidenceRecord, EvidenceStatus, EvidenceStrength};
 use serde_json::{json, Value};
 
-use crate::schema::command_registry::command_registry;
 use crate::infra::artifacts::{read_json_if_exists, relative_to_root};
+use crate::schema::command_registry::command_registry;
 
 fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
     let release_truth = workspace_root.join("artifacts/status/release_truth_report.json");

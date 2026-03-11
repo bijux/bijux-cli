@@ -186,10 +186,11 @@ fn collect_path_import_offenders(root: &Path, forbidden_paths: &[&str]) -> Vec<S
 fn feature_root_inventory_is_explicit_and_exhaustive() {
     let features_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/features");
     let observed = immediate_directories(&features_root);
-    let expected: BTreeSet<String> = ["config", "diagnostics", "history", "install", "memory", "plugins"]
-        .into_iter()
-        .map(str::to_string)
-        .collect();
+    let expected: BTreeSet<String> =
+        ["config", "diagnostics", "history", "install", "memory", "plugins"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
 
     assert_eq!(
         observed, expected,

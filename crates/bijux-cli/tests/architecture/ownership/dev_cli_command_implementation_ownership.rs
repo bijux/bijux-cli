@@ -58,10 +58,10 @@ fn dev_cli_subcommand_fixture_matches_dispatch_ownership() {
     let fixture_commands = fixture_dev_cli_top_level_commands();
 
     let three_segment_branch_prefix = "[a, b, c] if a == \"dev\" && b == \"cli\" && c == \"";
-    let four_segment_namespace_prefix =
-        "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
+    let four_segment_namespace_prefix = "[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"";
 
-    let root_three_segment_commands = extract_guard_values(&root_source, three_segment_branch_prefix);
+    let root_three_segment_commands =
+        extract_guard_values(&root_source, three_segment_branch_prefix);
     let root_nested_namespaces = extract_guard_values(&root_source, four_segment_namespace_prefix);
     let delegated_namespaces: BTreeSet<String> =
         ["maintenance", "rustdoc", "release", "evidence", "config", "python"]

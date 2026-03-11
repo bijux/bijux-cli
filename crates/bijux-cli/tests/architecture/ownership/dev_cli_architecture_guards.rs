@@ -102,11 +102,7 @@ fn read_dev_cli_source() -> String {
     let mut files = Vec::<PathBuf>::new();
     collect_rs_files(&router_root, &mut files);
     files.sort();
-    assert!(
-        !files.is_empty(),
-        "expected dev-cli source files under {}",
-        router_root.display()
-    );
+    assert!(!files.is_empty(), "expected dev-cli source files under {}", router_root.display());
 
     let mut source = String::new();
     for file in files {
@@ -185,7 +181,10 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
         "release::try_handle",
     ];
     for needle in delegated {
-        assert!(dev_cli_source.contains(needle), "missing dev-cli dispatch delegation for {needle}");
+        assert!(
+            dev_cli_source.contains(needle),
+            "missing dev-cli dispatch delegation for {needle}"
+        );
     }
     assert!(
         dev_cli_source.contains("pub fn owns_path"),
