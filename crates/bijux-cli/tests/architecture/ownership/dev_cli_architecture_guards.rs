@@ -154,6 +154,45 @@ fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
     );
 }
 
+#[test]
+fn workspace_automation_does_not_execute_status_scripts_directly() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let mut offenders = Vec::<String>::new();
+
+    let scan_roots = [".github", "crates", "docs", "makes", "scripts", "tests"];
+    for scan_root in scan_roots {
+        for path in walk_files(&root.join(scan_root)) {
+            let rel =
+                path.strip_prefix(&root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+            if rel.starts_with("scripts/status/")
+                || rel == "crates/bijux-dev-cli/src/scripts.rs"
+                || rel == "crates/bijux-cli/tests/architecture/ownership/dev_cli_architecture_guards.rs"
+            {
+                continue;
+            }
+
+            let Ok(source) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let direct_shell = source.contains("python3 scripts/status/")
+                || source.contains("python scripts/status/")
+                || source.contains("[\"python3\", \"scripts/status/")
+                || source.contains("[\"python\", \"scripts/status/");
+            let direct_process =
+                source.contains("Command::new(\"python3\")") && source.contains("scripts/status/");
+            if direct_shell || direct_process {
+                offenders.push(rel);
+            }
+        }
+    }
+
+    assert!(
+        offenders.is_empty(),
+        "status scripts must run through `bijux dev cli scripts status run --id ...`; direct execution found in:\n{}",
+        offenders.join("\n")
+    );
+}
+
 fn walk_rs_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
     let mut out = Vec::new();
     if !root.exists() {
@@ -169,6 +208,38 @@ fn walk_rs_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
             if path.is_dir() {
                 stack.push(path);
             } else if path.extension().is_some_and(|ext| ext == "rs") {
+                out.push(path);
+            }
+        }
+    }
+    out
+}
+
+fn walk_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    if !root.exists() {
+        return out;
+    }
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+
+            let include = if let Some(name) = path.file_name().and_then(|value| value.to_str()) {
+                name == "Makefile"
+            } else {
+                false
+            } || path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| {
+                matches!(ext, "rs" | "py" | "sh" | "yml" | "yaml" | "md" | "toml" | "txt" | "mk")
+            });
+            if include {
                 out.push(path);
             }
         }

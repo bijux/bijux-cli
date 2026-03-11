@@ -149,23 +149,22 @@ fn runtime_data_consistency_suite_matches_query_truth() {
 
 #[test]
 fn script_replacement_suite_tracks_migrated_workflows() {
-    let script = run(&["dev", "cli", "script-audit", "--format", "json", "--no-pretty"]);
+    let script =
+        run(&["dev", "cli", "scripts", "status", "inventory", "--format", "json", "--no-pretty"]);
     assert!(script.status.success());
     let payload: Value = serde_json::from_slice(&script.stdout).expect("script json");
-    let scripts = payload["scripts"].as_array().expect("scripts rows");
-    assert_eq!(
-        payload["replacement_rule"],
-        "new maintainer automation defaults to bijux dev cli commands"
-    );
+    let scripts = payload["rows"].as_array().expect("scripts rows");
+    assert_eq!(payload["id_policy"], "STATUS-SCRIPT-<KIND>-<SLUG>");
     let required = [
-        "scripts/status/generate_status_reports.py",
-        "scripts/status/generate_state_audit_reports.py",
-        "scripts/status/generate_install_truth_reports.py",
+        "STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
+        "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
+        "STATUS-SCRIPT-GENERATE-INSTALL-TRUTH-REPORTS",
     ];
-    for path in required {
-        let found =
-            scripts.iter().any(|row| row.get("path") == Some(&Value::String(path.to_string())));
-        assert!(found, "missing script inventory row for replacement candidate: {path}");
+    for script_id in required {
+        let found = scripts
+            .iter()
+            .any(|row| row.get("script_id") == Some(&Value::String(script_id.to_string())));
+        assert!(found, "missing script inventory row for replacement candidate: {script_id}");
     }
 }
 
