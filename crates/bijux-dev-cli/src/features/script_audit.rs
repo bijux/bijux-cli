@@ -33,9 +33,6 @@ fn rel_to_root(path: &Path, root: &Path) -> String {
 }
 
 fn classify_script(path: &str) -> &'static str {
-    if path.starts_with("scripts/docs_builder/") {
-        return "keep";
-    }
     if path == "scripts/__init__.py" {
         return "delete";
     }

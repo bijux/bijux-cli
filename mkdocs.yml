@@ -9,7 +9,7 @@ edit_uri: ""
 strict: true
 use_directory_urls: true
 dev_addr: 127.0.0.1:8000
-docs_dir: artifacts/docs/docs
+docs_dir: docs
 site_dir: artifacts/docs/site
 
 theme:
@@ -56,13 +56,6 @@ theme:
     repo: fontawesome/brands/github
 
 plugins:
-  - gen-files:
-      scripts:
-        - scripts/docs_builder/mkdocs_manager.py
-
-  - literate-nav:
-      nav_file: nav.md
-
   - include-markdown:
       recursive: true
       dedent: true
@@ -138,6 +131,5 @@ extra_javascript:
 watch:
   - artifacts
   - src
-  - scripts
   - configs
   - tests

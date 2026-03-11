@@ -7,7 +7,6 @@ MKDOCS_BIN       := $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOC
 MKDOCS_CFG       ?= mkdocs.yml
 
 # Keep build/cache strictly under artifacts/
-DOCS_GEN_DIR     ?= artifacts/docs/docs
 DOCS_SITE_DIR    ?= artifacts/docs/site
 DOCS_CACHE_DIR   ?= artifacts/docs/.cache
 
@@ -15,8 +14,6 @@ ENABLE_SOCIAL_CARDS ?= false
 SITE_URL            ?= http://127.0.0.1:8000/
 DOCS_HOST           ?= 127.0.0.1
 DOCS_PORT           ?= 8000
-
-PY ?= python3
 
 # macOS dynamic loader hints (Homebrew only)
 ifeq ($(shell uname -s),Darwin)
@@ -72,23 +69,17 @@ docs-check:
 	@echo "Documentation passes build checks"
 
 docs-prep:
-	@echo "Preparing docs → $(DOCS_GEN_DIR)"
-	@rm -rf "$(DOCS_GEN_DIR)"
-	@mkdir -p "$(DOCS_GEN_DIR)"
-	@if [ -d docs/assets ]; then rsync -a --delete docs/assets/ "$(DOCS_GEN_DIR)/assets/"; fi
-	@GEN_FILES_DISK_FALLBACK=1 GEN_FILES_DISK_DIR="$(DOCS_GEN_DIR)" \
-	  $(PY) scripts/docs_builder/mkdocs_manager.py
-	@test -f "$(DOCS_GEN_DIR)/nav.md" || (echo "ERROR: nav.md was not generated under $(DOCS_GEN_DIR)"; exit 1)
-	@echo "[docs-prep] nav.md present at $(DOCS_GEN_DIR)/nav.md"
+	@echo "Preparing docs (source: docs/)"
+	@test -d "docs" || (echo "ERROR: docs/ directory is missing"; exit 1)
 
 docs-clean:
 	@echo "Cleaning documentation build artifacts"
-	@rm -rf "$(DOCS_SITE_DIR)" artifacts/docs/.cache "$(DOCS_GEN_DIR)" site .cache
+	@rm -rf "$(DOCS_SITE_DIR)" artifacts/docs/.cache site .cache
 
 docs-hygiene:
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
-	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden; use docs-prep→$(DOCS_GEN_DIR)"; exit 1)
+	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden"; exit 1)
 	@echo "Docs hygiene OK"
 
 ##@ Documentation
@@ -97,5 +88,5 @@ docs-serve:   ## Serve documentation locally (auto-reload; no disk generation)
 docs-deploy:  ## Deploy documentation to GitHub Pages (strict)
 docs-check:   ## Validate documentation builds without errors
 docs-clean:   ## Remove generated documentation artifacts
-docs-prep:    ## Generate markdown to disk under artifacts/docs/generated (optional)
+docs-prep:    ## Validate docs source directory is present
 docs-hygiene: ## Fail if root 'site/' or '.cache/' or generated under docs/

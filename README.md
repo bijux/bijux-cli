@@ -337,7 +337,6 @@ configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
 makes/          Make modules
 templates/      Plugin templates (plugins-py, plugins-rs)
-scripts/        Helper scripts
 src/bijux_cli/  Core implementation
 tests/          All test layers
 ```
