@@ -7,7 +7,6 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -21,7 +20,10 @@ fn run_stdout(args: &[&str]) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "command failed for args: {args:?}");
-    normalize_output(String::from_utf8(output.stdout).expect("utf-8 output"), home.as_path())
+    normalize_output(
+        String::from_utf8(output.stdout).expect("utf-8 output"),
+        home.as_path(),
+    )
 }
 
 fn snapshot_home() -> PathBuf {

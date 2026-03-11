@@ -71,7 +71,9 @@ fn run_generator(root: &Path, force_stale: &[&str], inject_mode: bool) -> Value 
 
 fn run_gate(root: &Path, allow_injection_drift: bool) -> std::process::Output {
     let mut cmd = Command::new("python3");
-    cmd.arg(GATE).current_dir(workspace_root()).env("DEV_CLI_STALE_ARTIFACT_ROOT", root);
+    cmd.arg(GATE)
+        .current_dir(workspace_root())
+        .env("DEV_CLI_STALE_ARTIFACT_ROOT", root);
     if allow_injection_drift {
         cmd.env("DEV_CLI_ALLOW_INJECTION_DRIFT", "1");
     }
@@ -132,7 +134,11 @@ fn deleted_evidence_artifact_is_reported_as_missing() {
 #[test]
 fn mixed_stale_and_fresh_inputs_remain_honest() {
     let root = seeded_artifact_root("bijux-stale-mixed");
-    let payload = run_generator(&root, &["artifacts/status/migration_truth_artifact.json"], false);
+    let payload = run_generator(
+        &root,
+        &["artifacts/status/migration_truth_artifact.json"],
+        false,
+    );
     let summary = &payload["summary"];
     let stale_or_missing = summary["stale_or_missing_count"].as_u64().unwrap_or(0);
     let fresh = summary["fresh_count"].as_u64().unwrap_or(0);
@@ -143,17 +149,34 @@ fn mixed_stale_and_fresh_inputs_remain_honest() {
 #[test]
 fn critical_stale_inputs_fail_gate() {
     let root = seeded_artifact_root("bijux-stale-critical-gate");
-    run_generator(&root, &["artifacts/status/parity_drift_artifact.json"], false);
+    run_generator(
+        &root,
+        &["artifacts/status/parity_drift_artifact.json"],
+        false,
+    );
     let out = run_gate(&root, false);
-    assert!(!out.status.success(), "critical stale input should fail gate");
+    assert!(
+        !out.status.success(),
+        "critical stale input should fail gate"
+    );
 }
 
 #[test]
 fn warning_only_stale_inputs_are_tolerated_with_warning() {
     let root = seeded_artifact_root("bijux-stale-warning-gate");
     let payload = run_generator(&root, &["artifacts/status/dev_cli_next_report.json"], false);
-    assert_eq!(payload["summary"]["critical_stale_count"].as_u64().unwrap_or(99), 0);
-    assert!(payload["summary"]["warning_stale_count"].as_u64().unwrap_or(0) > 0);
+    assert_eq!(
+        payload["summary"]["critical_stale_count"]
+            .as_u64()
+            .unwrap_or(99),
+        0
+    );
+    assert!(
+        payload["summary"]["warning_stale_count"]
+            .as_u64()
+            .unwrap_or(0)
+            > 0
+    );
     let out = run_gate(&root, false);
     assert!(
         out.status.success(),
@@ -167,8 +190,15 @@ fn warning_only_stale_inputs_are_tolerated_with_warning() {
 fn ci_injection_mode_detects_stale_and_is_verifiable() {
     let root = seeded_artifact_root("bijux-stale-injection");
     let payload = run_generator(&root, &[], true);
-    assert!(payload["summary"]["injection_mode"].as_bool().unwrap_or(false));
-    assert!(payload["summary"]["critical_stale_count"].as_u64().unwrap_or(0) > 0);
+    assert!(payload["summary"]["injection_mode"]
+        .as_bool()
+        .unwrap_or(false));
+    assert!(
+        payload["summary"]["critical_stale_count"]
+            .as_u64()
+            .unwrap_or(0)
+            > 0
+    );
     let out = run_gate(&root, true);
     assert!(
         out.status.success(),

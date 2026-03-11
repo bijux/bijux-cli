@@ -6,14 +6,16 @@ use std::collections::BTreeSet;
 use std::process::{Command, Output};
 
 use bijux_cli::interface::cli::dispatch::run_app;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -80,21 +82,48 @@ fn help_snapshots_exist_for_all_dev_cli_subcommands() {
 #[test]
 fn json_and_text_outputs_are_available_for_machine_and_text_heavy_dev_cli_commands() {
     let json_cases: &[(&[&str], &str)] = &[
-        (&["dev", "cli", "routes", "--format", "json", "--no-pretty"], "routes"),
-        (&["dev", "cli", "registry", "--format", "json", "--no-pretty"], "registry"),
-        (&["dev", "cli", "env", "--format", "json", "--no-pretty"], "source_precedence"),
-        (&["dev", "cli", "doctor", "--format", "json", "--no-pretty"], "issues"),
-        (&["dev", "cli", "contracts", "--format", "json", "--no-pretty"], "contracts"),
-        (&["dev", "cli", "status", "--format", "json", "--no-pretty"], "command_migration"),
-        (&["dev", "cli", "parity", "--format", "json", "--no-pretty"], "command_matrix"),
+        (
+            &["dev", "cli", "routes", "--format", "json", "--no-pretty"],
+            "routes",
+        ),
+        (
+            &["dev", "cli", "registry", "--format", "json", "--no-pretty"],
+            "registry",
+        ),
+        (
+            &["dev", "cli", "env", "--format", "json", "--no-pretty"],
+            "source_precedence",
+        ),
+        (
+            &["dev", "cli", "doctor", "--format", "json", "--no-pretty"],
+            "issues",
+        ),
+        (
+            &["dev", "cli", "contracts", "--format", "json", "--no-pretty"],
+            "contracts",
+        ),
+        (
+            &["dev", "cli", "status", "--format", "json", "--no-pretty"],
+            "command_migration",
+        ),
+        (
+            &["dev", "cli", "parity", "--format", "json", "--no-pretty"],
+            "command_matrix",
+        ),
     ];
 
     for (args, key) in json_cases {
         let out = run(args);
         assert!(out.status.success(), "json run failed for {args:?}");
         let payload: Value = serde_json::from_slice(&out.stdout).expect("json parse");
-        assert!(payload.get(*key).is_some(), "missing key {key} for {args:?}");
-        assert!(out.stderr.is_empty(), "stderr should be empty for successful json output");
+        assert!(
+            payload.get(*key).is_some(),
+            "missing key {key} for {args:?}"
+        );
+        assert!(
+            out.stderr.is_empty(),
+            "stderr should be empty for successful json output"
+        );
     }
 
     let text_cases: &[&[&str]] = &[
@@ -124,17 +153,28 @@ fn stderr_stdout_and_exit_code_discipline_for_dev_cli_commands() {
     for args in success_cases {
         let out = run(args);
         assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
-        assert!(!out.stdout.is_empty(), "stdout should not be empty for {args:?}");
+        assert!(
+            !out.stdout.is_empty(),
+            "stdout should not be empty for {args:?}"
+        );
         assert!(out.stderr.is_empty(), "stderr should be empty for {args:?}");
     }
 
-    let fail_cases: &[&[&str]] =
-        &[&["dev", "cli", "does-not-exist"], &["dev", "cli", "state-doctor", "invalid"]];
+    let fail_cases: &[&[&str]] = &[
+        &["dev", "cli", "does-not-exist"],
+        &["dev", "cli", "state-doctor", "invalid"],
+    ];
     for args in fail_cases {
         let out = run(args);
         assert_ne!(out.status.code(), Some(0), "expected failure for {args:?}");
-        assert!(out.stdout.is_empty(), "stdout should be empty for failure {args:?}");
-        assert!(!out.stderr.is_empty(), "stderr should be present for failure {args:?}");
+        assert!(
+            out.stdout.is_empty(),
+            "stdout should be empty for failure {args:?}"
+        );
+        assert!(
+            !out.stderr.is_empty(),
+            "stderr should be present for failure {args:?}"
+        );
     }
 }
 
@@ -147,9 +187,19 @@ fn malformed_input_is_rejected_for_dev_cli_subcommands() {
     ];
     for args in malformed {
         let out = run(args);
-        assert_ne!(out.status.code(), Some(0), "malformed input should fail for {args:?}");
-        assert!(out.stdout.is_empty(), "stdout should be empty for malformed failure {args:?}");
-        assert!(!out.stderr.is_empty(), "stderr should be present for malformed failure {args:?}");
+        assert_ne!(
+            out.status.code(),
+            Some(0),
+            "malformed input should fail for {args:?}"
+        );
+        assert!(
+            out.stdout.is_empty(),
+            "stdout should be empty for malformed failure {args:?}"
+        );
+        assert!(
+            !out.stderr.is_empty(),
+            "stderr should be present for malformed failure {args:?}"
+        );
     }
 }
 
@@ -203,13 +253,18 @@ fn consistency_across_dev_cli_routes_inspect_and_registry_state() {
     assert!(!route_roots.is_empty());
     assert!(!inspect_roots.is_empty());
     assert!(route_roots.iter().all(|root| inspect_roots.contains(root)));
-    assert!(registry.get("registry").is_some(), "dev cli registry payload missing registry field");
+    assert!(
+        registry.get("registry").is_some(),
+        "dev cli registry payload missing registry field"
+    );
 }
 
 #[test]
 fn consistency_across_dev_cli_env_and_config_resolution_paths() {
-    let root =
-        std::env::temp_dir().join(format!("bijux-dev-cli-env-consistency-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-dev-cli-env-consistency-{}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).expect("mkdir");
     let config = root.join("config.env");
@@ -217,7 +272,16 @@ fn consistency_across_dev_cli_env_and_config_resolution_paths() {
 
     let config_text = config.to_string_lossy().to_string();
     let env_report_out = run_with_env(
-        &["dev", "cli", "env", "--format", "json", "--no-pretty", "--config-path", &config_text],
+        &[
+            "dev",
+            "cli",
+            "env",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            &config_text,
+        ],
         &[("BIJUXCLI_CONFIG", &config_text)],
     );
     assert!(env_report_out.status.success());
@@ -255,7 +319,10 @@ fn dev_cli_command_matrix_artifact_smoke_uses_supported_commands() {
     ];
     for args in checks {
         let out = run(args);
-        assert!(out.status.success(), "matrix command should succeed for {args:?}");
+        assert!(
+            out.status.success(),
+            "matrix command should succeed for {args:?}"
+        );
         let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
         assert!(payload.is_object());
     }

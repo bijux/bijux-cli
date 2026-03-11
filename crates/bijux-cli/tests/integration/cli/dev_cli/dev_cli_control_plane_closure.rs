@@ -7,7 +7,10 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn dev_cli_commands() -> Vec<Vec<String>> {
@@ -53,10 +56,18 @@ fn json_shape_suite_is_stable_for_all_dev_cli_commands() {
         assert!(second.status.success(), "second run failed for {:?}", args);
         let first_json: Value = serde_json::from_slice(&first.stdout).expect("json");
         let second_json: Value = serde_json::from_slice(&second.stdout).expect("json");
-        assert!(first_json.is_object(), "payload must be object for {:?}", args);
+        assert!(
+            first_json.is_object(),
+            "payload must be object for {:?}",
+            args
+        );
         assert_eq!(
-            first_json.as_object().map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
-            second_json.as_object().map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
+            first_json
+                .as_object()
+                .map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
+            second_json
+                .as_object()
+                .map(|obj| obj.keys().cloned().collect::<Vec<_>>()),
             "top-level key drift for {:?}",
             args
         );
@@ -93,7 +104,11 @@ fn failure_path_suite_rejects_unknown_flags_for_all_dev_cli_commands() {
         let mut args = command.clone();
         args.push("--unknown-flag".to_string());
         let out = run(&to_refs(&args));
-        assert!(!out.status.success(), "command unexpectedly accepted unknown flag: {:?}", args);
+        assert!(
+            !out.status.success(),
+            "command unexpectedly accepted unknown flag: {:?}",
+            args
+        );
     }
 }
 
@@ -149,7 +164,14 @@ fn runtime_data_consistency_suite_matches_query_truth() {
 
 #[test]
 fn script_replacement_suite_tracks_migrated_workflows() {
-    let script = run(&["dev", "cli", "script-audit", "--format", "json", "--no-pretty"]);
+    let script = run(&[
+        "dev",
+        "cli",
+        "script-audit",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert!(script.status.success());
     let payload: Value = serde_json::from_slice(&script.stdout).expect("script json");
     let scripts = payload["scripts"].as_array().expect("scripts rows");
@@ -164,18 +186,50 @@ fn script_replacement_suite_tracks_migrated_workflows() {
         "scripts/status/generate_install_truth_reports.py",
     ];
     for path in required {
-        let found =
-            scripts.iter().any(|row| row.get("path") == Some(&Value::String(path.to_string())));
-        assert!(found, "missing script inventory row for replacement candidate: {path}");
+        let found = scripts
+            .iter()
+            .any(|row| row.get("path") == Some(&Value::String(path.to_string())));
+        assert!(
+            found,
+            "missing script inventory row for replacement candidate: {path}"
+        );
     }
 }
 
 #[test]
 fn package_runtime_state_parity_suite_has_consistent_truth_commands() {
-    let identity = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]);
-    let package = run(&["dev", "cli", "package-health", "--format", "json", "--no-pretty"]);
-    let state_audit = run(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"]);
-    let state_doctor = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
+    let identity = run(&[
+        "dev",
+        "cli",
+        "runtime-identity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let package = run(&[
+        "dev",
+        "cli",
+        "package-health",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let state_audit = run(&[
+        "dev",
+        "cli",
+        "state-audit",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let state_doctor = run(&[
+        "dev",
+        "cli",
+        "state-doctor",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert!(identity.status.success());
     assert!(package.status.success());
     assert!(state_audit.status.success());
@@ -194,9 +248,30 @@ fn package_runtime_state_parity_suite_has_consistent_truth_commands() {
 
 #[test]
 fn audit_integration_suite_links_script_docs_and_crate_health() {
-    let script = run(&["dev", "cli", "script-audit", "--format", "json", "--no-pretty"]);
-    let docs = run(&["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"]);
-    let crate_health = run(&["dev", "cli", "crate-health", "--format", "json", "--no-pretty"]);
+    let script = run(&[
+        "dev",
+        "cli",
+        "script-audit",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let docs = run(&[
+        "dev",
+        "cli",
+        "docs-audit",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let crate_health = run(&[
+        "dev",
+        "cli",
+        "crate-health",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert!(script.status.success());
     assert!(docs.status.success());
     assert!(crate_health.status.success());
@@ -205,7 +280,9 @@ fn audit_integration_suite_links_script_docs_and_crate_health() {
     let docs_json: Value = serde_json::from_slice(&docs.stdout).expect("docs json");
     let crate_json: Value = serde_json::from_slice(&crate_health.stdout).expect("crate json");
 
-    assert!(script_json["scripts"].as_array().is_some_and(|v| !v.is_empty()));
+    assert!(script_json["scripts"]
+        .as_array()
+        .is_some_and(|v| !v.is_empty()));
     assert!(docs_json["docs_count"].as_u64().is_some_and(|v| v > 0));
     assert!(crate_json.get("crate_metrics").is_some());
 }
@@ -214,9 +291,22 @@ fn audit_integration_suite_links_script_docs_and_crate_health() {
 fn default_dashboard_and_truth_commands_are_explicit_in_payloads() {
     let status = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
     let parity = run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]);
-    let runtime_identity =
-        run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]);
-    let state_audit = run(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"]);
+    let runtime_identity = run(&[
+        "dev",
+        "cli",
+        "runtime-identity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let state_audit = run(&[
+        "dev",
+        "cli",
+        "state-audit",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert!(status.status.success());
     assert!(parity.status.success());
     assert!(runtime_identity.status.success());
@@ -228,8 +318,20 @@ fn default_dashboard_and_truth_commands_are_explicit_in_payloads() {
         serde_json::from_slice(&runtime_identity.stdout).expect("runtime identity json");
     let state_json: Value = serde_json::from_slice(&state_audit.stdout).expect("state audit json");
 
-    assert_eq!(status_json["maintainer_dashboard_default"], "bijux dev cli status");
-    assert_eq!(parity_json["migration_dashboard_default"], "bijux dev cli parity");
-    assert_eq!(runtime_json["runtime_truth_default"], "bijux dev cli runtime-identity");
-    assert_eq!(state_json["state_truth_default"], "bijux dev cli state-audit");
+    assert_eq!(
+        status_json["maintainer_dashboard_default"],
+        "bijux dev cli status"
+    );
+    assert_eq!(
+        parity_json["migration_dashboard_default"],
+        "bijux dev cli parity"
+    );
+    assert_eq!(
+        runtime_json["runtime_truth_default"],
+        "bijux dev cli runtime-identity"
+    );
+    assert_eq!(
+        state_json["state_truth_default"],
+        "bijux dev cli state-audit"
+    );
 }

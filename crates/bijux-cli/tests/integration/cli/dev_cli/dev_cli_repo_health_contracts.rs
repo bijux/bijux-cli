@@ -9,7 +9,10 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -30,16 +33,27 @@ fn repo_health_json_contracts_are_stable() {
         (["dev", "cli", "repo", "health"], "repo_health"),
         (["dev", "cli", "repo", "drift"], "dead_scripts_references"),
         (["dev", "cli", "repo", "inventories"], "stale_inventories"),
-        (["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
+        (
+            ["dev", "cli", "repo", "generated"],
+            "stale_generated_artifacts",
+        ),
         (["dev", "cli", "repo", "stale"], "stale_snapshots"),
     ];
     for (command, key) in commands {
         let first = run_ok_json(&command);
         let second = run_ok_json(&command);
-        assert!(first.get(key).is_some(), "missing key {key} for {:?}", command);
+        assert!(
+            first.get(key).is_some(),
+            "missing key {key} for {:?}",
+            command
+        );
         assert_eq!(
-            first.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
-            second.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            first
+                .as_object()
+                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            second
+                .as_object()
+                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
             "top-level keys changed for {:?}",
             command
         );

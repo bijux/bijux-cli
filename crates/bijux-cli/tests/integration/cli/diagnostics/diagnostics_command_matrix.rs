@@ -9,14 +9,16 @@ use std::process::{Command, Output};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
-use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -33,7 +35,10 @@ fn json(bytes: &[u8]) -> Value {
 }
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-diagnostics-matrix-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -52,17 +57,29 @@ fn inspect_text_json_yaml_quiet_and_trace_modes() {
 
     let yaml = run(&["inspect", "--format", "yaml", "--pretty"]);
     assert_eq!(yaml.status.code(), Some(0));
-    assert!(String::from_utf8(yaml.stdout).expect("utf-8").contains("status: ok"));
+    assert!(String::from_utf8(yaml.stdout)
+        .expect("utf-8")
+        .contains("status: ok"));
 
     let quiet = run(&["inspect", "--quiet"]);
     assert_eq!(quiet.status.code(), Some(0));
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
 
-    let trace = run(&["--log-level", "trace", "inspect", "--format", "json", "--no-pretty"]);
+    let trace = run(&[
+        "--log-level",
+        "trace",
+        "inspect",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(trace.status.code(), Some(0));
     let trace_payload = json(&trace.stdout);
-    assert_eq!(json_payload["route_sources"], trace_payload["route_sources"]);
+    assert_eq!(
+        json_payload["route_sources"],
+        trace_payload["route_sources"]
+    );
 }
 
 #[test]
@@ -90,7 +107,14 @@ fn doctor_text_json_and_corrupted_state_coverage() {
     fs::write(&memory, "{broken").expect("write memory");
 
     let out = run_with_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[
             ("BIJUXCLI_CONFIG", config.display().to_string()),
             ("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string()),
