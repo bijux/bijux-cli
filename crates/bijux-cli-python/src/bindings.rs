@@ -8,6 +8,7 @@ use std::path::Path;
 
 use bijux_cli::api::runtime::{run_app, AppRunResult};
 use bijux_cli::contracts::ContractMarker;
+use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::compatibility::{
@@ -15,6 +16,49 @@ use crate::compatibility::{
     CompatibilityError, PathOverrides,
 };
 use crate::conversions::{classify_core_error, classify_failure, python_exception_tag};
+
+#[derive(Serialize)]
+struct CommandTreePayload {
+    root: &'static str,
+    namespaces: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct BridgeErrorPayload {
+    kind: &'static str,
+    message: String,
+}
+
+#[derive(Serialize)]
+struct BridgeErrorEnvelope {
+    status: &'static str,
+    error: BridgeErrorPayload,
+}
+
+#[derive(Serialize)]
+struct ExecutionOutcomePayload {
+    exit_code: i32,
+    stdout: String,
+    stderr: String,
+    error_kind: &'static str,
+}
+
+#[derive(Serialize)]
+struct CompatibilityPathsPayload {
+    config_file: std::path::PathBuf,
+    history_file: std::path::PathBuf,
+    plugins_dir: std::path::PathBuf,
+}
+
+#[derive(Serialize)]
+struct MissingRegistryPayload {
+    version: &'static str,
+    plugins: std::collections::BTreeMap<String, Value>,
+}
+
+fn json_string<T: Serialize>(value: &T) -> String {
+    serde_json::to_string(value).expect("bridge payload serialization should not fail")
+}
 
 /// Build python-bridge marker.
 #[must_use]
@@ -48,53 +92,58 @@ pub fn command_tree_introspection_api() -> String {
                     .collect::<Vec<_>>();
                 namespaces.sort();
                 namespaces.dedup();
-                return json!({
-                    "root": "bijux",
-                    "namespaces": namespaces,
-                })
-                .to_string();
+                return json_string(&CommandTreePayload { root: "bijux", namespaces });
             }
         }
     }
-    json!({
-        "root": "bijux",
-        "namespaces": ["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"],
+    json_string(&CommandTreePayload {
+        root: "bijux",
+        namespaces: vec![
+            "cli".to_string(),
+            "dev".to_string(),
+            "help".to_string(),
+            "version".to_string(),
+            "doctor".to_string(),
+            "repl".to_string(),
+            "plugins".to_string(),
+            "completion".to_string(),
+            "inspect".to_string(),
+        ],
     })
-    .to_string()
 }
 
 /// Execute the Rust-backed CLI facade through the canonical runtime entrypoint.
 pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityError> {
     match run_app(argv) {
         Ok(result) => Ok(select_primary_stream(&result)),
-        Err(error) => Ok(json!({
-            "status": "error",
-            "error": {
-                "kind": python_exception_tag(classify_core_error(&error)),
-                "message": error.to_string()
-            }
-        })
-        .to_string()),
+        Err(error) => Ok(json_string(&BridgeErrorEnvelope {
+            status: "error",
+            error: BridgeErrorPayload {
+                kind: python_exception_tag(classify_core_error(&error)),
+                message: error.to_string(),
+            },
+        })),
     }
 }
 
 /// Return execution outcome with full stream context.
 pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityError> {
     match run_app(argv) {
-        Ok(result) => Ok(json!({
-            "exit_code": result.exit_code,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "error_kind": python_exception_tag(classify_failure(result.exit_code, &result.stderr)),
-        })
-        .to_string()),
-        Err(error) => Ok(json!({
-            "exit_code": 1,
-            "stdout": "",
-            "stderr": error.to_string(),
-            "error_kind": python_exception_tag(classify_core_error(&error)),
-        })
-        .to_string()),
+        Ok(result) => {
+            let error_kind = python_exception_tag(classify_failure(result.exit_code, &result.stderr));
+            Ok(json_string(&ExecutionOutcomePayload {
+                exit_code: result.exit_code,
+                stdout: result.stdout,
+                stderr: result.stderr,
+                error_kind,
+            }))
+        }
+        Err(error) => Ok(json_string(&ExecutionOutcomePayload {
+            exit_code: 1,
+            stdout: String::new(),
+            stderr: error.to_string(),
+            error_kind: python_exception_tag(classify_core_error(&error)),
+        })),
     }
 }
 
@@ -150,30 +199,31 @@ pub fn config_resolution_api(
     file_config: &CompatibilityConfig,
 ) -> Result<String, CompatibilityError> {
     let resolved = discover_compatibility_paths(home_dir, cli_overrides, env_map, file_config)?;
-    Ok(json!({
-        "config_file": resolved.config_file,
-        "history_file": resolved.history_file,
-        "plugins_dir": resolved.plugins_dir,
-    })
-    .to_string())
+    Ok(json_string(&CompatibilityPathsPayload {
+        config_file: resolved.config_file,
+        history_file: resolved.history_file,
+        plugins_dir: resolved.plugins_dir,
+    }))
 }
 
 /// Return install-path helpers as JSON.
 #[must_use]
 pub fn install_path_helpers_api(home_dir: &Path) -> String {
     let defaults = default_compatibility_paths(home_dir);
-    json!({
-        "config_file": defaults.config_file,
-        "history_file": defaults.history_file,
-        "plugins_dir": defaults.plugins_dir,
+    json_string(&CompatibilityPathsPayload {
+        config_file: defaults.config_file,
+        history_file: defaults.history_file,
+        plugins_dir: defaults.plugins_dir,
     })
-    .to_string()
 }
 
 /// Return plugin registry inspection payload as JSON.
 pub fn plugin_registry_inspection_api(registry_path: &Path) -> Result<String, CompatibilityError> {
     if !registry_path.exists() {
-        return Ok("{\"version\":\"1\",\"plugins\":{}}".to_string());
+        return Ok(json_string(&MissingRegistryPayload {
+            version: "1",
+            plugins: std::collections::BTreeMap::new(),
+        }));
     }
     let text = fs::read_to_string(registry_path)?;
     Ok(text)

@@ -28,8 +28,8 @@ mod python_extension {
     use pyo3::prelude::*;
 
     use crate::{
-        command_tree_introspection_api, execution_facade_api, install_path_helpers_api,
-        plugin_registry_inspection_api,
+        command_tree_introspection_api, execution_facade_api, execution_outcome_api,
+        install_path_helpers_api, plugin_registry_inspection_api,
     };
 
     #[pyfunction]
@@ -48,6 +48,11 @@ mod python_extension {
     }
 
     #[pyfunction]
+    fn execution_outcome(args: Vec<String>) -> PyResult<String> {
+        execution_outcome_api(&args).map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+
+    #[pyfunction]
     fn install_paths(home_dir: String) -> String {
         install_path_helpers_api(std::path::Path::new(&home_dir))
     }
@@ -63,6 +68,7 @@ mod python_extension {
         module.add_function(wrap_pyfunction!(version, module)?)?;
         module.add_function(wrap_pyfunction!(command_tree_introspection, module)?)?;
         module.add_function(wrap_pyfunction!(execution_facade, module)?)?;
+        module.add_function(wrap_pyfunction!(execution_outcome, module)?)?;
         module.add_function(wrap_pyfunction!(install_paths, module)?)?;
         module.add_function(wrap_pyfunction!(plugin_registry_inspection, module)?)?;
         Ok(())
