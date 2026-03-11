@@ -12,12 +12,12 @@ name = "bijux_cli"
 path = "src/lib.rs"
 
 [[bin]]
-name = "bijux-rs"
-path = "src/bin/bijux-rs.rs"
-
-[[bin]]
 name = "bijux"
 path = "src/bin/bijux.rs"
+
+[[bin]]
+name = "bijux-rs"
+path = "src/bin/bijux-rs.rs"
 
 [dependencies]
 anyhow.workspace = true

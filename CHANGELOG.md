@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
 - Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
 
+### Deprecated
+- `bijux-rs` binary alias is deprecated; `bijux` is now canonical across tests, docs, and scripts.
+- The `bijux-rs` alias will be removed in `0.3.0` after one release cycle of compatibility.
+
 ### Removed
 - Removed the `scripts/` directory from the repository.
 - Removed the MkDocs `docs_builder` script pipeline; documentation now builds from the simplified docs layout.

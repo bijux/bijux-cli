@@ -1,5 +1,9 @@
 #![forbid(unsafe_code)]
-//! Binary entrypoint for the Rust foundation.
+//! Compatibility binary alias.
+//!
+//! `bijux` is the canonical binary name.
+//! `bijux-rs` remains available for existing scripts and will be removed
+//! after the next stable release cycle.
 
 use std::process::ExitCode;
 
