@@ -332,7 +332,7 @@ Artifacts:
 api/            OpenAPI schemas
 configs/        Lint/type/security configs
 docs/           Documentation (MkDocs)
-makefiles/      Make modules
+makes/      Make modules
 plugin_template/Plugin scaffold
 scripts/        Helper scripts
 src/bijux_cli/  Core implementation

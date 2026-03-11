@@ -100,8 +100,8 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
-    let mut makefiles = Vec::new();
-    for mk in collect_files(&workspace_root.join("makefiles")) {
+    let mut makes = Vec::new();
+    for mk in collect_files(&workspace_root.join("makes")) {
         let rel = rel_to_root(&mk, workspace_root);
         let targets: Vec<Value> = parse_make_targets(&mk)
             .into_iter()
@@ -112,7 +112,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
                 })
             })
             .collect();
-        makefiles.push(json!({
+        makes.push(json!({
             "file": rel,
             "targets": targets,
         }));
@@ -134,7 +134,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
             item.get("path").and_then(Value::as_str).map(ToString::to_string)
         })
         .collect();
-    let remaining_task_runner_only_behaviors: Vec<String> = makefiles
+    let remaining_task_runner_only_behaviors: Vec<String> = makes
         .iter()
         .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
         .filter_map(|target| {
@@ -148,7 +148,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
 
     json!({
         "scripts": scripts,
-        "makefiles": makefiles,
+        "makes": makes,
         "summary": {
             "script_classification_counts": script_summary,
         },

@@ -15,19 +15,19 @@ RM                    := rm -rf
 .NOTPARALLEL: all clean
 
 # Modular Includes
-include makefiles/macro.mk
-include makefiles/api.mk
-include makefiles/build.mk
-include makefiles/cargo-rs.mk
-include makefiles/dictionary.mk
-include makefiles/docs.mk
-include makefiles/lint.mk
-include makefiles/quality.mk
-include makefiles/sbom.mk
-include makefiles/security.mk
-include makefiles/test.mk
-include makefiles/publish.mk
-include makefiles/hooks.mk
+include makes/macro.mk
+include makes/api.mk
+include makes/build.mk
+include makes/cargo-rs.mk
+include makes/dictionary.mk
+include makes/docs.mk
+include makes/lint.mk
+include makes/quality.mk
+include makes/sbom.mk
+include makes/security.mk
+include makes/test.mk
+include makes/publish.mk
+include makes/hooks.mk
 
 # Environment
 $(VENV):
