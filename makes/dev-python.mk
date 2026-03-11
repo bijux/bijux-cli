@@ -680,6 +680,9 @@ SKIP_EXISTING       ?= 1
 PYTHON_PYPROJECT    ?= crates/bijux-cli-python/pyproject.toml
 PKG_VERSION_RAW     := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(PYTHON_PYPROJECT)" 2>/dev/null)
 PKG_VERSION         := $(if $(strip $(PKG_VERSION_RAW)),$(strip $(PKG_VERSION_RAW)),0.0.0)
+PYTHON_CRATE_MANIFEST ?= crates/bijux-cli-python/Cargo.toml
+RUST_CRATE_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(PYTHON_CRATE_MANIFEST)" 2>/dev/null)
+RUST_CRATE_VERSION := $(if $(strip $(RUST_CRATE_VERSION_RAW)),$(strip $(RUST_CRATE_VERSION_RAW)),0.0.0)
 
 .PHONY: \
 	publish-py publish-test-py twine-py twine-check-py twine-upload-py twine-upload-test-py verify-test-install-py \
@@ -696,7 +699,13 @@ publish-test-py: check-version-py build-py twine-check-py twine-upload-test-py #
 
 check-version-py:
 	@echo "→ Python package version: $(PKG_VERSION)"
+	@echo "→ Rust crate version:    $(RUST_CRATE_VERSION)"
 	@[ "$(PKG_VERSION)" != "0.0.0" ] || { echo "✘ PKG_VERSION resolved to 0.0.0"; exit 1; }
+	@[ "$(RUST_CRATE_VERSION)" != "0.0.0" ] || { echo "✘ RUST_CRATE_VERSION resolved to 0.0.0"; exit 1; }
+	@[ "$(PKG_VERSION)" = "$(RUST_CRATE_VERSION)" ] || { \
+	  echo "✘ Version drift detected: pyproject.toml ($(PKG_VERSION)) != Cargo.toml ($(RUST_CRATE_VERSION))"; \
+	  exit 1; \
+	}
 
 ensure-dists-py:
 	@echo "→ Verifying artifacts for $(PKG_VERSION) in '$(DIST_DIR)'"
