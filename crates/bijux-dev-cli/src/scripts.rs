@@ -675,6 +675,63 @@ fn native_status_script_rows() -> Vec<Value> {
             "outputs": ["artifacts/status/runtime_responsibility_reassessment.json"],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/bridge_wrapper_only_closure_report.json",
+                "artifacts/status/bridge_wrapper_only_closure_report.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/compatibility_debt_trend_report.json",
+                "artifacts/status/compatibility_debt_trend_report.txt"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/deterministic_hostile_state_report.json",
+                "artifacts/status/failure_class_stability_report.json",
+                "artifacts/status/deterministic_failure_quality_bar.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/parity/command_precedence_report.json",
+                "artifacts/status/precedence_contract.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/namespace_abuse_report.json",
+                "artifacts/status/reserved_namespace_inventory.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
+        }),
     ]
 }
 
@@ -2995,6 +3052,347 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
             Some(
                 json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":["artifacts/status/runtime_responsibility_reassessment.json"]}),
             )
+        }
+        "STATUS-SCRIPT-GENERATE-BRIDGE-WRAPPER-ONLY-REPORTS" => {
+            let bridge_duplicate = fs::read_to_string(
+                workspace_root.join("artifacts/status/bridge_duplicate_law_report.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let duplicate_count = bridge_duplicate
+                .get("summary")
+                .and_then(|v| v.get("duplicate_rule_count"))
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
+            let bridge_source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_bindings.rs"),
+            )
+            .unwrap_or_default();
+            let cross_surface_source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs"),
+            )
+            .unwrap_or_default();
+            let proof_tests = vec![
+                (
+                    "same_route_graph",
+                    vec![
+                        "binary_and_bridge_use_same_command_registry_contract",
+                        "route_registry_snapshots_match_across_binary_core_and_bridge",
+                    ],
+                ),
+                (
+                    "same_command_registry",
+                    vec!["binary_and_bridge_use_same_command_registry_contract"],
+                ),
+                (
+                    "same_output_envelope",
+                    vec!["binary_and_bridge_use_same_output_envelope_shape"],
+                ),
+                (
+                    "same_exit_mappings",
+                    vec!["binary_and_bridge_use_same_exit_mapping_for_unknown_route"],
+                ),
+                (
+                    "same_namespace_law",
+                    vec!["binary_and_bridge_use_same_namespace_rejection_logic"],
+                ),
+                (
+                    "same_config_precedence",
+                    vec!["execution_path_keeps_config_precedence_identical_between_binary_and_bridge"],
+                ),
+            ];
+            let mut proof_map = serde_json::Map::new();
+            for (key, names) in proof_tests {
+                let present: Vec<String> = names
+                    .iter()
+                    .filter(|name| {
+                        bridge_source.contains(&format!("fn {name}("))
+                            || cross_surface_source.contains(&format!("fn {name}("))
+                    })
+                    .map(|name| (*name).to_string())
+                    .collect();
+                proof_map.insert(
+                    key.to_string(),
+                    json!({"required": names, "present": present, "ok": present.len()==names.len()}),
+                );
+            }
+            let all_proofs_ok = proof_map
+                .values()
+                .all(|item| item.get("ok").and_then(Value::as_bool) == Some(true));
+            let wrapper_ok = duplicate_count == 0 && all_proofs_ok;
+            let payload = json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "scope": "bridge wrapper-only closure",
+                "duplicate_law": {
+                    "duplicate_rule_count": duplicate_count,
+                    "status": if duplicate_count == 0 { "clean" } else { "duplicates-found" }
+                },
+                "proof_tests": proof_map,
+                "status": if wrapper_ok { "green" } else { "open" },
+                "wrapper_only_frozen": wrapper_ok
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/bridge_wrapper_only_closure_report.json",
+                &payload,
+            )
+            .ok()?;
+            let mut lines = vec![
+                "Bridge Wrapper-Only Closure Report".to_string(),
+                format!("status: {}", payload.get("status").and_then(Value::as_str).unwrap_or("open")),
+                format!("wrapper-only frozen: {}", payload.get("wrapper_only_frozen").and_then(Value::as_bool).unwrap_or(false)),
+                format!("duplicate rule count: {duplicate_count}"),
+            ];
+            if let Some(obj) = payload.get("proof_tests").and_then(Value::as_object) {
+                for (key, item) in obj {
+                    lines.push(format!(
+                        "- {key}: {}",
+                        item.get("ok").and_then(Value::as_bool).unwrap_or(false)
+                    ));
+                }
+            }
+            fs::write(
+                workspace_root.join("artifacts/status/bridge_wrapper_only_closure_report.txt"),
+                lines.join("\n") + "\n",
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/bridge_wrapper_only_closure_report.json",
+                "artifacts/status/bridge_wrapper_only_closure_report.txt"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT" => {
+            let read_json = |name: &str| -> Value {
+                fs::read_to_string(workspace_root.join(name))
+                    .ok()
+                    .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+                    .unwrap_or_else(|| json!({}))
+            };
+            let shim = read_json("artifacts/status/compatibility_shim_count_report.json");
+            let alias = read_json("artifacts/status/compatibility_alias_count_report.json");
+            let shim_delta = read_json("artifacts/status/compatibility_shim_count_delta.json");
+            let alias_delta = read_json("artifacts/status/compatibility_alias_count_delta.json");
+            let payload = json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "scope": "compatibility debt trend",
+                "series": {
+                    "shims": {
+                        "baseline_count": shim.get("baseline_count").and_then(Value::as_i64).unwrap_or(0),
+                        "current_count": shim.get("current_count").and_then(Value::as_i64).unwrap_or(0),
+                        "delta_vs_baseline": shim_delta.get("delta").and_then(Value::as_i64).unwrap_or(0),
+                        "removed_since_baseline": shim.get("removed_since_baseline").and_then(Value::as_i64).unwrap_or(0),
+                    },
+                    "aliases": {
+                        "baseline_count": alias.get("baseline_count").and_then(Value::as_i64).unwrap_or(0),
+                        "current_count": alias.get("current_count").and_then(Value::as_i64).unwrap_or(0),
+                        "delta_vs_baseline": alias_delta.get("delta").and_then(Value::as_i64).unwrap_or(0),
+                        "removed_since_baseline": alias.get("removed_since_baseline").and_then(Value::as_i64).unwrap_or(0),
+                    },
+                },
+                "status": if shim_delta.get("delta").and_then(Value::as_i64).unwrap_or(0) <= 0
+                    && alias_delta.get("delta").and_then(Value::as_i64).unwrap_or(0) <= 0
+                {
+                    "improving"
+                } else {
+                    "regressing"
+                },
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/compatibility_debt_trend_report.json",
+                &payload,
+            )
+            .ok()?;
+            fs::write(
+                workspace_root.join("artifacts/status/compatibility_debt_trend_report.txt"),
+                format!(
+                    "Compatibility Debt Trend Report\nstatus: {}\n",
+                    payload.get("status").and_then(Value::as_str).unwrap_or("regressing")
+                ),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/compatibility_debt_trend_report.json",
+                "artifacts/status/compatibility_debt_trend_report.txt"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-HOSTILE-STATE-REPORTS" => {
+            let test_file = workspace_root
+                .join("crates/bijux-cli/tests/bin_surface/deterministic_hostile_state_matrix.rs");
+            let text = fs::read_to_string(&test_file).unwrap_or_default();
+            let rows = vec![
+                (141, "corrupted_config_failure_class_is_stable_across_runs"),
+                (142, "corrupted_plugin_registry_failure_class_is_stable_across_runs"),
+                (143, "broken_history_file_recovery_is_stable_across_runs"),
+                (144, "malformed_memory_state_recovery_is_stable_across_runs"),
+                (145, "missing_config_file_defaulting_is_stable_across_runs"),
+                (146, "missing_plugin_directory_empty_behavior_is_stable_across_runs"),
+                (147, "broken_plugin_does_not_nondeterministically_affect_healthy_output"),
+                (148, "conflicting_plugin_installs_fail_deterministically"),
+                (149, "path_shadowing_diagnostics_are_stable_across_runs"),
+                (150, "runtime_identity_output_is_stable_under_same_ambiguous_state"),
+                (151, "state_doctor_json_is_stable_under_same_corrupted_state"),
+                (152, "state_doctor_text_is_stable_under_same_corrupted_state"),
+                (153, "plugin_doctor_json_is_stable_under_same_corrupted_state"),
+                (154, "plugin_doctor_text_is_stable_under_same_corrupted_state"),
+                (155, "command_tree_export_is_stable_with_broken_optional_state"),
+            ];
+            write_status_artifact_json(workspace_root, "artifacts/status/deterministic_hostile_state_report.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "scope": "deterministic hostile-state behavior",
+                "rows": rows.iter().map(|(id,name)| json!({
+                    "coverage_id": id,
+                    "test_name": name,
+                    "status": if text.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                    "evidence": "crates/bijux-cli/tests/bin_surface/deterministic_hostile_state_matrix.rs"
+                })).collect::<Vec<_>>(),
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/failure_class_stability_report.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "harness_file": "artifacts/status/repeated_run_corruption_harness.json",
+                "covers_todo": 157
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/deterministic_failure_quality_bar.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "status": "frozen",
+                "quality_bar": "deterministic failure behavior required for hostile-state covered commands",
+                "required_artifacts": [
+                    "artifacts/status/deterministic_hostile_state_report.json",
+                    "artifacts/status/failure_class_stability_report.json",
+                    "artifacts/status/repeated_run_corruption_harness.json"
+                ],
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/deterministic_hostile_state_report.json",
+                "artifacts/status/failure_class_stability_report.json",
+                "artifacts/status/deterministic_failure_quality_bar.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PRECEDENCE-REPORTS" => {
+            let test_file = workspace_root.join("crates/bijux-cli/tests/bin_surface/precedence_matrix.rs");
+            let text = fs::read_to_string(&test_file).unwrap_or_default();
+            let env_payload =
+                run_bijux_json(workspace_root, &["dev", "cli", "env"]).unwrap_or_else(|_| json!({}));
+            let source_precedence = env_payload
+                .get("source_precedence")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
+            let precedence_rows = [
+                "cli_flags_override_env_values",
+                "env_values_override_config_file_values",
+                "config_file_values_override_defaults",
+                "defaults_apply_when_nothing_is_supplied",
+            ]
+            .iter()
+            .map(|name| {
+                json!({
+                    "test_name": name,
+                    "status": if text.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
+                    "evidence":"crates/bijux-cli/tests/bin_surface/precedence_matrix.rs"
+                })
+            })
+            .collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/precedence_regression_matrix.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "scope": "precedence tests",
+                "rows": precedence_rows,
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/parity/command_precedence_report.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "source_precedence": source_precedence,
+                "shared_contract": "flags > env > config > defaults"
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/precedence_contract.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "contract": "precedence is one shared behavioral contract",
+                "status": "frozen",
+                "source_precedence": source_precedence
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/parity/command_precedence_report.json",
+                "artifacts/status/precedence_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-NAMESPACE-RESERVATION-REPORTS" => {
+            let routing_text = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/routing/registry_namespace_policy.rs"),
+            )
+            .unwrap_or_default();
+            let plugin_text = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs"),
+            )
+            .unwrap_or_default();
+            let cli_text = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/bin_surface/plugin_cli_lifecycle.rs"),
+            )
+            .unwrap_or_default();
+            let constants = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli-plugin/src/constants.rs"),
+            )
+            .unwrap_or_default();
+            let product_registry = fs::read_to_string(
+                workspace_root.join("docs/constitution/official_product_namespace_registry.json"),
+            )
+            .ok()
+            .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
+            .unwrap_or_else(|| json!({}));
+            let evidence_text = format!("{routing_text}\n{plugin_text}\n{cli_text}");
+            let parse_array = |name: &str| -> Vec<String> {
+                let marker = format!("pub const {name}: &[&str] =");
+                let Some(idx) = constants.find(&marker) else {
+                    return Vec::new();
+                };
+                let chunk = &constants[idx..];
+                let Some(start) = chunk.find('[') else {
+                    return Vec::new();
+                };
+                let Some(end) = chunk.find("];") else {
+                    return Vec::new();
+                };
+                chunk[start..end]
+                    .split('"')
+                    .enumerate()
+                    .filter_map(|(i, part)| (i % 2 == 1).then_some(part.to_string()))
+                    .collect()
+            };
+            let namespace_rows = [
+                "official_reserved_namespaces_take_precedence",
+                "rejects_future_official_product_namespaces",
+                "normalized_and_case_folded_namespace_collisions_are_rejected",
+            ]
+            .iter()
+            .map(|name| {
+                json!({
+                    "evidence_test": name,
+                    "status": if evidence_text.contains(name) { "complete" } else { "missing" }
+                })
+            })
+            .collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/namespace_abuse_report.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "scope": "421-440 namespace and reservation abuse hardening",
+                "rows": namespace_rows
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/reserved_namespace_inventory.json", &json!({
+                "generated_at": "1970-01-01T00:00:00+00:00",
+                "generator": "bijux-dev-cli",
+                "reserved_namespaces": parse_array("RESERVED_NAMESPACES"),
+                "core_namespaces": parse_array("CORE_NAMESPACES"),
+                "future_product_namespaces": parse_array("FUTURE_PRODUCT_NAMESPACES"),
+                "registry_entries": product_registry.get("entries").cloned().unwrap_or_else(|| json!([]))
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/namespace_abuse_report.json",
+                "artifacts/status/reserved_namespace_inventory.json"
+            ]}))
         }
         _ => None,
     }
