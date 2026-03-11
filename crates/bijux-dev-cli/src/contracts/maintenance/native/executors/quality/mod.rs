@@ -1,9 +1,9 @@
-mod governance_quality;
+mod governance;
 mod release_and_plugin;
 
 use crate::contract_engine::maintenance::{Path, Value};
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
-    governance_quality::run(workspace_root, contract_id)
+    governance::run(workspace_root, contract_id)
         .or_else(|| release_and_plugin::run(workspace_root, contract_id))
 }
