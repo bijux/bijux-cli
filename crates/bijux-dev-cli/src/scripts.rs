@@ -1482,6 +1482,33 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MEMORY-SURFACE-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/state_file_inventory.json",
+                "artifacts/status/state_file_readers.json",
+                "artifacts/status/state_file_writers.json",
+                "artifacts/status/state_file_mutation_paths.json",
+                "artifacts/status/state_write_guarantees.json",
+                "artifacts/status/state_recovery_guarantees.json",
+                "artifacts/status/state_complexity_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/stream_discipline_artifact.json",
+                "artifacts/status/stream_drift_artifact.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS",
+        }),
     ]
 }
 
@@ -10310,6 +10337,364 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/memory_corruption_matrix_artifact.json",
                 "artifacts/status/memory_python_parity_artifact.json",
                 "artifacts/status/memory_read_domain_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-STATE-LAW-REPORTS" => {
+            let generated_at = generated_at_utc();
+            let rg_lines = |pattern: &str| -> Vec<String> {
+                Command::new("rg")
+                    .args(["-n", pattern, "crates", "-S"])
+                    .current_dir(workspace_root)
+                    .output()
+                    .ok()
+                    .and_then(|output| String::from_utf8(output.stdout).ok())
+                    .unwrap_or_default()
+                    .lines()
+                    .map(str::trim)
+                    .filter(|line| !line.is_empty())
+                    .map(ToString::to_string)
+                    .collect()
+            };
+            let inventory = json!({
+                "generated_at": generated_at,
+                "generator": "bijux-dev-cli",
+                "state_files": [
+                    {"id":"config_file","classification":"core","path_source":"discover_compatibility_paths","reader":"FileConfigRepository::load","writer":"FileConfigRepository::save"},
+                    {"id":"history_file","classification":"core","path_source":"discover_compatibility_paths","reader":"read_history_entries","writer":"repl::flush_history"},
+                    {"id":"plugin_registry_file","classification":"core","path_source":"registry_path_from_plugins_dir","reader":"plugin::load_registry","writer":"plugin::save_registry"},
+                    {"id":"memory_file","classification":"optional","path_source":"resolve_state_paths","reader":"read_memory_map","writer":"write_memory_map"},
+                    {"id":"compatibility_config_file","classification":"optional","path_source":"default_compatibility_paths","reader":"load_compatibility_config","writer":"write_compatibility_config"}
+                ],
+            });
+            let readers = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "matches": rg_lines("read_to_string|load_registry|load_history|read_history_entries|read_memory_map"),
+            });
+            let writers = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "matches": rg_lines("atomic_write_text|save_registry|flush_history|write_compatibility_config|FileConfigRepository::save"),
+            });
+            let mutations = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "matches": rg_lines("set_pair|unset_key|clear_all|install_plugin|uninstall_plugin|enable_plugin|disable_plugin"),
+            });
+            let write_guarantees = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "guarantees": [
+                    {"name":"core config writes are atomic","evidence":"crates/bijux-cli/src/config/storage.rs uses atomic_write_text"},
+                    {"name":"compatibility config writes are atomic","evidence":"crates/bijux-cli/src/install/compatibility.rs uses atomic_write_text"},
+                    {"name":"plugin registry writes use temp+rename","evidence":"crates/bijux-cli-plugin/src/registry.rs::save_registry"},
+                    {"name":"repl history writes are atomic","evidence":"crates/bijux-cli-repl/src/history.rs::flush_history uses atomic_write_text"},
+                    {"name":"core history and memory writes are atomic","evidence":"crates/bijux-cli/src/app.rs::write_json_document uses atomic_write_text"},
+                ],
+            });
+            let recovery_guarantees = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "guarantees": [
+                    {"name":"plugin registry rollback on mutation failure","evidence":"crates/bijux-cli-plugin/src/registry.rs::update_registry"},
+                    {"name":"state doctor surfaces degraded state with issues","evidence":"crates/bijux-cli/src/app.rs::state_diagnostics"},
+                    {"name":"history corruption is tolerated with fallback parser","evidence":"crates/bijux-cli/src/app.rs::parse_history_entries"},
+                ],
+            });
+            let complexity = json!({
+                "generated_at": generated_at,
+                "generator":"bijux-dev-cli",
+                "canonical_services":[
+                    "crates/bijux-cli/src/app.rs::resolve_state_paths",
+                    "crates/bijux-cli/src/install/io.rs::atomic_write_text",
+                ],
+                "hotspots":[
+                    "crates/bijux-cli/src/app.rs",
+                    "crates/bijux-cli-plugin/src/registry.rs",
+                    "crates/bijux-cli-repl/src/history.rs",
+                ],
+                "summary":{
+                    "inventory_count": inventory.get("state_files").and_then(Value::as_array).map_or(0, Vec::len),
+                    "reader_matches": readers.get("matches").and_then(Value::as_array).map_or(0, Vec::len),
+                    "writer_matches": writers.get("matches").and_then(Value::as_array).map_or(0, Vec::len),
+                    "mutation_matches": mutations.get("matches").and_then(Value::as_array).map_or(0, Vec::len),
+                }
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_file_inventory.json",
+                &inventory,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_file_readers.json",
+                &readers,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_file_writers.json",
+                &writers,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_file_mutation_paths.json",
+                &mutations,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_write_guarantees.json",
+                &write_guarantees,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_recovery_guarantees.json",
+                &recovery_guarantees,
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_complexity_report.json",
+                &complexity,
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/state_file_inventory.json",
+                "artifacts/status/state_file_readers.json",
+                "artifacts/status/state_file_writers.json",
+                "artifacts/status/state_file_mutation_paths.json",
+                "artifacts/status/state_write_guarantees.json",
+                "artifacts/status/state_recovery_guarantees.json",
+                "artifacts/status/state_complexity_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs"),
+            )
+            .unwrap_or_default();
+            let cases: Vec<(i64, &str, Vec<&str>, i32, bool, bool)> = vec![
+                (
+                    41,
+                    "success_machine_json_stderr_empty",
+                    vec!["status", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    42,
+                    "success_text_no_stderr_noise",
+                    vec!["status", "--format", "text"],
+                    0,
+                    true,
+                    true,
+                ),
+                (43, "usage_error_stderr_only", vec!["config", "get"], 2, false, false),
+                (
+                    44,
+                    "validation_error_stderr_only",
+                    vec!["--format", "not-a-format", "status"],
+                    1,
+                    false,
+                    false,
+                ),
+                (45, "plugin_error_stderr_only", vec!["plugins", "uninstall"], 1, false, false),
+                (46, "internal_like_error_stderr_only", vec!["plugins", "enable"], 1, false, false),
+                (
+                    47,
+                    "quiet_mode_suppresses_stdout",
+                    vec!["--quiet", "status", "--format", "json", "--no-pretty"],
+                    0,
+                    false,
+                    true,
+                ),
+                (
+                    48,
+                    "quiet_mode_suppresses_nonessential_stderr",
+                    vec!["--quiet", "status", "--format", "json", "--no-pretty"],
+                    0,
+                    false,
+                    true,
+                ),
+                (
+                    49,
+                    "trace_mode_stream_contract",
+                    vec!["--log-level", "trace", "status", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    50,
+                    "pretty_json_stream_contract",
+                    vec!["status", "--format", "json", "--pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    51,
+                    "compact_json_stream_contract",
+                    vec!["status", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    52,
+                    "yaml_stream_contract",
+                    vec!["status", "--format", "yaml", "--pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (53, "help_no_unrelated_stderr", vec!["help", "status"], 0, true, true),
+                (54, "version_no_unrelated_stderr", vec!["version"], 0, true, true),
+                (
+                    55,
+                    "plugin_commands_follow_stream_law",
+                    vec!["plugins", "list", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    56,
+                    "state_doctor_follows_stream_law",
+                    vec!["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    57,
+                    "binary_bridge_stream_routing_consistency",
+                    vec!["status", "--format", "json", "--no-pretty"],
+                    0,
+                    true,
+                    true,
+                ),
+            ];
+            let mut rows = Vec::<Value>::new();
+            let mut drift_items = Vec::<Value>::new();
+            for (
+                coverage_id,
+                name,
+                args,
+                expect_code,
+                expect_stdout_nonempty,
+                expect_stderr_empty,
+            ) in cases
+            {
+                let output = Command::new("cargo")
+                    .args(["run", "-q", "-p", "bijux-cli", "--"])
+                    .args(&args)
+                    .current_dir(workspace_root)
+                    .output()
+                    .ok();
+                let (observed_exit_code, observed_stdout_nonempty, observed_stderr_empty) =
+                    if let Some(output) = output {
+                        (
+                            output.status.code().unwrap_or(1),
+                            !output.stdout.is_empty(),
+                            output.stderr.is_empty(),
+                        )
+                    } else {
+                        (1, false, false)
+                    };
+                let covered = observed_exit_code == expect_code
+                    && observed_stdout_nonempty == expect_stdout_nonempty
+                    && observed_stderr_empty == expect_stderr_empty;
+                let row = json!({
+                    "coverage_id": coverage_id,
+                    "name": name,
+                    "command": args.join(" "),
+                    "expected_exit_code": expect_code,
+                    "observed_exit_code": observed_exit_code,
+                    "expected_stdout_nonempty": expect_stdout_nonempty,
+                    "observed_stdout_nonempty": observed_stdout_nonempty,
+                    "expected_stderr_empty": expect_stderr_empty,
+                    "observed_stderr_empty": observed_stderr_empty,
+                    "status": if covered { "covered" } else { "drift" },
+                });
+                if !covered {
+                    drift_items.push(row.clone());
+                }
+                rows.push(row);
+            }
+            let required: BTreeMap<i64, &str> = BTreeMap::from([
+                (41, "successful_machine_readable_commands_keep_stderr_empty"),
+                (42, "text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode"),
+                (43, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
+                (44, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
+                (45, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
+                (46, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
+                (47, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
+                (48, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
+                (49, "trace_mode_preserves_stream_contract_without_corrupting_output_envelope"),
+                (50, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
+                (51, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
+                (52, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
+                (53, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
+                (54, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
+                (55, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
+                (56, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
+                (57, "binary_and_bridge_agree_on_stream_routing_for_success_and_failure"),
+            ]);
+            let coverage_rows = required
+                .iter()
+                .map(|(coverage_id, test_name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": test_name,
+                        "status": if source.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
+                        "evidence": "crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs",
+                    })
+                })
+                .collect::<Vec<_>>();
+            let missing_coverage_ids = coverage_rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
+                .filter_map(|row| row.get("coverage_id").and_then(Value::as_i64))
+                .collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/stream_discipline_artifact.json", &json!({
+                "generator":"bijux-dev-cli",
+                "scope":"stdout-stderr discipline",
+                "status": if drift_items.is_empty() && missing_coverage_ids.is_empty() { "complete" } else { "partial" },
+                "coverage_ids": (41..59).collect::<Vec<_>>(),
+                "release_blocking": true,
+                "rows": rows,
+                "coverage_rows": coverage_rows,
+                "summary": {
+                    "covered_rows": rows.len().saturating_sub(drift_items.len()),
+                    "drift_rows": drift_items.len(),
+                    "covered_requirements": coverage_rows.len().saturating_sub(missing_coverage_ids.len()),
+                    "missing_coverage_ids": missing_coverage_ids.len(),
+                },
+            })).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/stream_drift_artifact.json",
+                &json!({
+                    "generator":"bijux-dev-cli",
+                    "scope":"stdout-stderr discipline drift",
+                    "status": if drift_items.is_empty() { "clean" } else { "drift-detected" },
+                    "coverage_ids":[59,60],
+                    "drift_count": drift_items.len(),
+                    "drift_items": drift_items,
+                    "missing_coverage_ids": missing_coverage_ids,
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/stream_discipline_artifact.json",
+                "artifacts/status/stream_drift_artifact.json"
             ]}))
         }
         _ => None,
