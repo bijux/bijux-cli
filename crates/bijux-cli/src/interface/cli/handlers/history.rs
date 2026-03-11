@@ -31,7 +31,10 @@ fn parse_history_list_options(argv: &[String]) -> HistoryListOptions {
             options.limit = raw.parse::<usize>().unwrap_or(options.limit);
         }
     }
-    if let Some(raw) = positional.first().and_then(|token| token.strip_prefix("--limit=")) {
+    if let Some(raw) = positional
+        .first()
+        .and_then(|token| token.strip_prefix("--limit="))
+    {
         options.limit = raw.parse::<usize>().unwrap_or(options.limit);
     }
     if let Some(idx) = argv.iter().position(|arg| arg == "--filter" || arg == "-F") {

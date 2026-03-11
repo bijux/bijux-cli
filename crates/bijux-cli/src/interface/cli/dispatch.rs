@@ -163,7 +163,11 @@ fn delegate_to_external_binary(
             let message = format!(
                 "failed to run `{command_surface}` via `{binary}`: {error}\ninstall with `cargo install {package_name}` or `pip install {package_name}`\n"
             );
-            AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
+            AppRunResult {
+                exit_code: 1,
+                stdout: String::new(),
+                stderr: message,
+            }
         }
     }
 }
@@ -195,22 +199,33 @@ fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> O
         .and_then(Value::as_str)
         .is_some_and(|status| status == "failed" || status == "error")
     {
-        let exit_code =
-            payload.get("exit_code").and_then(Value::as_i64).filter(|code| *code > 0).unwrap_or(1);
+        let exit_code = payload
+            .get("exit_code")
+            .and_then(Value::as_i64)
+            .filter(|code| *code > 0)
+            .unwrap_or(1);
         return Some(exit_code as i32);
     }
 
-    if payload.get("failed").and_then(Value::as_u64).is_some_and(|count| count > 0) {
+    if payload
+        .get("failed")
+        .and_then(Value::as_u64)
+        .is_some_and(|count| count > 0)
+    {
         return Some(1);
     }
 
-    if payload.get("results").and_then(Value::as_array).is_some_and(|rows| {
-        rows.iter().any(|row| {
-            row.get("status")
-                .and_then(Value::as_str)
-                .is_some_and(|status| status == "failed" || status == "error")
+    if payload
+        .get("results")
+        .and_then(Value::as_array)
+        .is_some_and(|rows| {
+            rows.iter().any(|row| {
+                row.get("status")
+                    .and_then(Value::as_str)
+                    .is_some_and(|status| status == "failed" || status == "error")
+            })
         })
-    }) {
+    {
         return Some(1);
     }
 
@@ -272,7 +287,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = try_render_clap_help(argv) {
-        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: help,
+            stderr: String::new(),
+        });
     }
 
     if let Some(delegated) = try_delegate_known_bijux_tool(argv) {
@@ -334,10 +353,18 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
     let route_exit_code =
@@ -351,5 +378,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: route_exit_code,
+        stdout: content,
+        stderr: String::new(),
+    })
 }
