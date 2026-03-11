@@ -130,7 +130,8 @@ pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityErro
 pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityError> {
     match run_app(argv) {
         Ok(result) => {
-            let error_kind = python_exception_tag(classify_failure(result.exit_code, &result.stderr));
+            let error_kind =
+                python_exception_tag(classify_failure(result.exit_code, &result.stderr));
             Ok(json_string(&ExecutionOutcomePayload {
                 exit_code: result.exit_code,
                 stdout: result.stdout,
