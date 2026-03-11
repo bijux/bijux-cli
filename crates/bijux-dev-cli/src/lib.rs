@@ -16,7 +16,7 @@ pub mod commands;
 /// Contract inventories and execution boundaries.
 #[path = "contracts/mod.rs"]
 pub mod contract_engine;
-/// Maintainer-facing command report modules organized by feature ownership.
+/// Compatibility aliases for feature-oriented module paths.
 pub mod features;
 /// Reusable technical adapters for filesystem/process/clock concerns.
 pub mod infrastructure;
