@@ -7,8 +7,6 @@ use std::process::Command;
 
 use serde_json::{json, Value};
 
-use crate::status_script_ids::{status_script_id, status_script_kind};
-
 fn collect_files(base: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if !base.exists() {
@@ -131,14 +129,6 @@ fn status_generator_id(script_path: &str) -> String {
     format!("GEN-STATUS-{}", status_generator_slug(script_path))
 }
 
-fn status_script_sources(workspace_root: &Path) -> Vec<String> {
-    collect_files(&workspace_root.join("scripts").join("status"))
-        .into_iter()
-        .filter(|path| is_python_file(path))
-        .map(|path| rel(&path, workspace_root))
-        .collect()
-}
-
 fn extract_artifact_paths(source: &str) -> Vec<String> {
     let mut out = BTreeSet::<String>::new();
     for line in source.lines() {
@@ -251,25 +241,6 @@ fn build_status_scripts_inventory_report(workspace_root: &Path) -> Value {
         };
         *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
         rows.push(row);
-    }
-    for source_script in status_script_sources(workspace_root) {
-        let Some(script_id) = status_script_id(&source_script) else {
-            continue;
-        };
-        let Some(kind) = status_script_kind(&source_script) else {
-            continue;
-        };
-        let source = fs::read_to_string(workspace_root.join(&source_script)).unwrap_or_default();
-        let outputs = extract_artifact_paths(&source);
-        *kind_counts.entry(kind.to_string()).or_insert(0) += 1;
-        rows.push(json!({
-            "script_id": script_id,
-            "kind": kind,
-            "source_script": source_script,
-            "implementation": "python-script",
-            "outputs": outputs,
-            "command": format!("bijux dev cli scripts status run --id {script_id}"),
-        }));
     }
     let known_ids = rows
         .iter()
@@ -7905,7 +7876,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                     "scope": "cross-surface consistency contract",
                     "release_review_rule": "cross-surface consistency artifacts are mandatory release evidence",
                     "freeze_rule": "one command law is frozen only when covered drift remains zero",
-                    "gate": "scripts/status/enforce_cross_surface_consistency_law.py --enforce",
+                    "gate": "bijux dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
                     "evidence": [
                         "artifacts/status/cross_surface_consistency_artifact.json",
                         "artifacts/status/cross_surface_drift_artifact.json",
@@ -13468,7 +13439,7 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                         .extension()
                         .and_then(|ext| ext.to_str())
                         .is_some_and(|ext| ext.eq_ignore_ascii_case("pyc"))
-                    || relp.starts_with("scripts/status/")
+                    || relp.starts_with("scripts/obsolete-status/")
                 {
                     continue;
                 }
@@ -13759,7 +13730,7 @@ fn find_status_script_row(
     None
 }
 
-/// Runs one `scripts/status/*.py` script by stable id or source path.
+/// Runs one status script by stable id or legacy source alias.
 #[must_use]
 pub fn run_status_script(
     workspace_root: &Path,
@@ -13775,7 +13746,7 @@ pub fn run_status_script(
     let Some(row) = find_status_script_row(workspace_root, script_id, source_script) else {
         return json!({
             "status": "failed",
-            "error": "status script not found; pass --id or --source with a known scripts/status/*.py path",
+            "error": "status script not found; pass --id with a known STATUS-SCRIPT-* value",
         });
     };
     let script_id = row.get("script_id").and_then(Value::as_str).unwrap_or("unknown");
@@ -13784,7 +13755,7 @@ pub fn run_status_script(
     run_python_status_script(workspace_root, source_script, script_id, kind, args)
 }
 
-/// Runs all `scripts/status/*.py` scripts, optionally filtered by kind.
+/// Runs all status scripts, optionally filtered by kind.
 #[must_use]
 pub fn run_all_status_scripts(
     workspace_root: &Path,

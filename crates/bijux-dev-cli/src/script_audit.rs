@@ -6,8 +6,6 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
-use crate::status_script_ids::status_script_id;
-
 fn collect_files(base: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if !base.exists() {
@@ -35,9 +33,6 @@ fn rel_to_root(path: &Path, root: &Path) -> String {
 }
 
 fn classify_script(path: &str) -> &'static str {
-    if path.starts_with("scripts/status/") {
-        return "replace";
-    }
     if path.starts_with("scripts/docs_builder/") {
         return "keep";
     }
@@ -48,9 +43,6 @@ fn classify_script(path: &str) -> &'static str {
 }
 
 fn replacement_command(path: &str) -> Option<String> {
-    if let Some(id) = status_script_id(path) {
-        return Some(format!("bijux dev cli scripts status run --id {id}"));
-    }
     match path {
         "scripts/check-package-metadata.py" => {
             Some("bijux dev cli scripts package-metadata".to_string())
@@ -208,10 +200,7 @@ pub fn build_report(inventory: Value) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use std::path::Path;
-
-    use crate::scripts::build_status_scripts_report;
 
     use super::{build_inventory_report, build_report};
 
@@ -222,55 +211,5 @@ mod tests {
         let report = build_report(inventory);
         assert!(report.get("scripts").is_some());
         assert!(report.get("summary").is_some());
-    }
-
-    #[test]
-    fn status_script_replacement_commands_match_status_inventory_ids() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let status_rows = build_status_scripts_report(&root)
-            .get("rows")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        let id_by_source: BTreeMap<String, String> = status_rows
-            .iter()
-            .filter_map(|row| {
-                let source = row.get("source_script").and_then(serde_json::Value::as_str)?;
-                let script_id = row.get("script_id").and_then(serde_json::Value::as_str)?;
-                Some((source.to_string(), script_id.to_string()))
-            })
-            .collect();
-        let inventory_rows = build_inventory_report(&root)
-            .get("scripts")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        for row in inventory_rows {
-            let Some(path) = row.get("path").and_then(serde_json::Value::as_str) else {
-                continue;
-            };
-            let is_py = std::path::Path::new(path)
-                .extension()
-                .and_then(|ext| ext.to_str())
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("py"));
-            if !path.starts_with("scripts/status/") || !is_py {
-                continue;
-            }
-            if id_by_source.is_empty() {
-                continue;
-            }
-            let expected_id = id_by_source.get(path).unwrap_or_else(|| {
-                panic!("status script missing from inventory report: {path}");
-            });
-            let replacement = row
-                .get("replacement_command")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
-            assert_eq!(
-                replacement,
-                format!("bijux dev cli scripts status run --id {expected_id}"),
-                "status script replacement command drift for {path}"
-            );
-        }
     }
 }

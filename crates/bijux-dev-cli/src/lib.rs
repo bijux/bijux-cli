@@ -29,7 +29,6 @@ pub mod script_audit;
 pub mod scripts;
 pub mod state_audit;
 pub mod status;
-pub mod status_script_ids;
 mod types;
 
 pub use types::{

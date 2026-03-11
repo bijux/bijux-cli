@@ -164,8 +164,7 @@ fn workspace_automation_does_not_execute_status_scripts_directly() {
         for path in walk_files(&root.join(scan_root)) {
             let rel =
                 path.strip_prefix(&root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
-            if rel.starts_with("scripts/status/")
-                || rel == "crates/bijux-dev-cli/src/scripts.rs"
+            if rel == "crates/bijux-dev-cli/src/scripts.rs"
                 || rel == "crates/bijux-cli/tests/architecture/ownership/dev_cli_architecture_guards.rs"
             {
                 continue;
@@ -174,13 +173,10 @@ fn workspace_automation_does_not_execute_status_scripts_directly() {
             let Ok(source) = std::fs::read_to_string(&path) else {
                 continue;
             };
-            let direct_shell = source.contains("python3 scripts/status/")
-                || source.contains("python scripts/status/")
-                || source.contains("[\"python3\", \"scripts/status/")
-                || source.contains("[\"python\", \"scripts/status/");
-            let direct_process =
-                source.contains("Command::new(\"python3\")") && source.contains("scripts/status/");
-            if direct_shell || direct_process {
+            let direct_source_arg = source.contains("scripts status run --source")
+                || source.contains("scripts\", \"status\", \"run\", \"--source")
+                || source.contains("scripts status run -- source");
+            if direct_source_arg {
                 offenders.push(rel);
             }
         }
