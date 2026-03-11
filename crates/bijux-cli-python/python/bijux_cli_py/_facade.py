@@ -7,22 +7,30 @@ import json
 import shutil
 import subprocess
 import sys
-import warnings
 from pathlib import Path
 from dataclasses import dataclass
+from importlib import metadata
 from typing import Iterable
 
 from ._exceptions import (
     BijuxPythonError,
+    InternalError,
     NativeExtensionUnavailable,
     PlatformWheelUnavailable,
+    UsageError,
+    ValidationError,
 )
 
+
+_STRICT_NATIVE_IMPORT = os.environ.get("BIJUX_PY_STRICT_IMPORT") == "1"
+_NATIVE_IMPORT_ERROR: Exception | None = None
 
 try:
     from . import _native as native
     NATIVE_AVAILABLE = True
-except Exception as exc:  # pragma: no cover
+except (ImportError, ModuleNotFoundError, OSError) as exc:  # pragma: no cover
+    if _STRICT_NATIVE_IMPORT:
+        raise
     native = None
     NATIVE_AVAILABLE = False
     _NATIVE_IMPORT_ERROR = exc
@@ -38,12 +46,7 @@ class ExecutionResult:
     exit_code: int
     stdout: str
     stderr: str
-
-
-@dataclass(frozen=True)
-class PathAmbiguityReport:
-    has_ambiguity: bool
-    message: str
+    error_kind: str | None = None
 
 
 def _resolve_binary() -> RuntimeResolution:
@@ -51,7 +54,7 @@ def _resolve_binary() -> RuntimeResolution:
     if candidate:
         return RuntimeResolution(binary=candidate)
 
-    for name in ("bijux", "bijux-rs"):
+    for name in ("bijux",):
         resolved = shutil.which(name)
         if resolved:
             return RuntimeResolution(binary=resolved)
@@ -64,13 +67,59 @@ def _resolve_binary() -> RuntimeResolution:
 def version() -> str:
     if NATIVE_AVAILABLE:
         return native.version()
-    return "0.1.0"
+    for package_name in ("bijux-cli", "bijux_cli_py"):
+        try:
+            return metadata.version(package_name)
+        except metadata.PackageNotFoundError:
+            continue
+    result = execution_facade_with_status(["version"])
+    if result.exit_code != 0:
+        raise error_to_exception(
+            {"error_kind": result.error_kind, "message": result.stderr or "failed to query version"}
+        )
+    return result.stdout.strip()
 
 
 def command_tree_introspection() -> str:
     if NATIVE_AVAILABLE:
         return native.command_tree_introspection()
-    return '{"root":"bijux"}'
+    result = execution_facade_with_status(["inspect", "--format", "json", "--no-pretty"])
+    if result.exit_code != 0:
+        return json.dumps(
+            {
+                "root": "bijux",
+                "namespaces": [
+                    "cli",
+                    "dev",
+                    "help",
+                    "version",
+                    "doctor",
+                    "repl",
+                    "plugins",
+                    "completion",
+                    "inspect",
+                ],
+            }
+        )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise InternalError(f"invalid inspect payload from runtime: {exc}") from exc
+
+    namespaces: list[str] = []
+    builtins = payload.get("builtins")
+    if isinstance(builtins, list):
+        for entry in builtins:
+            if not isinstance(entry, dict):
+                continue
+            segments = entry.get("segments")
+            if isinstance(segments, list) and segments:
+                head = segments[0]
+                if isinstance(head, str):
+                    namespaces.append(head)
+
+    normalized = sorted(set(namespaces))
+    return json.dumps({"root": "bijux", "namespaces": normalized})
 
 
 def execution_facade(argv: Iterable[str]) -> str:
@@ -81,28 +130,51 @@ def execution_facade(argv: Iterable[str]) -> str:
 def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
     args = list(argv)
     if NATIVE_AVAILABLE:
-        output = native.execution_facade(args)
-        return ExecutionResult(exit_code=0, stdout=output, stderr="")
+        if not hasattr(native, "execution_outcome"):
+            raise NativeExtensionUnavailable(
+                "Rust extension missing `execution_outcome`; reinstall bijux-cli to restore runtime parity."
+            )
+        try:
+            outcome = json.loads(native.execution_outcome(args))
+        except json.JSONDecodeError as exc:
+            raise InternalError(f"invalid native execution outcome payload: {exc}") from exc
+        return ExecutionResult(
+            exit_code=int(outcome.get("exit_code", 1)),
+            stdout=str(outcome.get("stdout", "")),
+            stderr=str(outcome.get("stderr", "")),
+            error_kind=_normalize_error_kind(outcome.get("error_kind")),
+        )
 
     runtime = _resolve_binary()
     result = subprocess.run([runtime.binary, *args], capture_output=True, text=True, check=False)
-    return ExecutionResult(exit_code=result.returncode, stdout=result.stdout, stderr=result.stderr)
-
-
-def output_envelope_model() -> dict[str, object]:
-    return {
-        "status": "ok",
-        "data": {"example": True},
-        "meta": {"version": "v1", "command": {"segments": []}, "timestamp": "1970-01-01T00:00:00Z"},
-    }
+    return ExecutionResult(
+        exit_code=result.returncode,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        error_kind=_classify_process_error_kind(result.returncode, result.stderr),
+    )
 
 
 def error_to_exception(payload: dict[str, object]) -> BijuxPythonError:
-    message = str(payload.get("message", "Unknown bijux-cli error"))
+    message = _extract_error_message(payload)
+    kind = _extract_error_kind(payload)
+    if kind == "UsageError":
+        return UsageError(message)
+    if kind == "ValidationError":
+        return ValidationError(message)
+    if kind == "InternalError":
+        return InternalError(message)
     return BijuxPythonError(message)
 
 
 def config_resolution_helpers(home_dir: str) -> dict[str, str]:
+    if NATIVE_AVAILABLE:
+        payload = json.loads(native.install_paths(home_dir))
+        return {
+            "config_file": str(payload.get("config_file", "")),
+            "history_file": str(payload.get("history_file", "")),
+            "plugins_dir": str(payload.get("plugins_dir", "")),
+        }
     base = Path(home_dir) / ".bijux"
     return {
         "config_file": str(base / ".env"),
@@ -112,6 +184,8 @@ def config_resolution_helpers(home_dir: str) -> dict[str, str]:
 
 
 def plugin_registry_inspection(registry_file: str) -> dict[str, object]:
+    if NATIVE_AVAILABLE:
+        return json.loads(native.plugin_registry_inspection(registry_file))
     path = Path(registry_file)
     if not path.exists():
         return {"version": "1", "plugins": {}}
@@ -159,72 +233,37 @@ def post_install_diagnostics() -> dict[str, object]:
     return diagnostics
 
 
-def check_embedded_binary_compatibility(expected_version: str) -> bool:
-    actual = version()
-    return actual == expected_version
+def _normalize_error_kind(value: object) -> str | None:
+    if isinstance(value, str) and value in {"UsageError", "ValidationError", "InternalError"}:
+        return value
+    return None
 
 
-def deprecated_version_api() -> str:
-    warnings.warn(
-        "deprecated_version_api is deprecated; use version() instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return version()
+def _extract_error_kind(payload: dict[str, object]) -> str | None:
+    normalized = _normalize_error_kind(payload.get("error_kind"))
+    if normalized:
+        return normalized
+    nested = payload.get("error")
+    if isinstance(nested, dict):
+        return _normalize_error_kind(nested.get("kind"))
+    return None
 
 
-def path_ambiguity_detection_message(binaries: Iterable[str]) -> PathAmbiguityReport:
-    resolved = [item for item in binaries if item]
-    unique = sorted(set(resolved))
-    if len(unique) <= 1:
-        return PathAmbiguityReport(has_ambiguity=False, message="No PATH ambiguity detected.")
-
-    return PathAmbiguityReport(
-        has_ambiguity=True,
-        message=(
-            "Multiple bijux binaries detected in PATH order: "
-            + ", ".join(unique)
-            + ". Keep only one canonical entrypoint."
-        ),
-    )
+def _extract_error_message(payload: dict[str, object]) -> str:
+    if isinstance(payload.get("message"), str):
+        return str(payload["message"])
+    nested = payload.get("error")
+    if isinstance(nested, dict) and isinstance(nested.get("message"), str):
+        return str(nested["message"])
+    return "Unknown bijux-cli error"
 
 
-def simulate_pip_uninstall_cleanup(install_root: str) -> dict[str, bool]:
-    root = Path(install_root)
-    removed = {"site_package_removed": False, "entrypoint_removed": False}
-
-    for path in [root / "bijux_cli_py", root / "bin" / "bijux"]:
-        if path.exists():
-            if path.is_dir():
-                for nested in sorted(path.rglob("*"), reverse=True):
-                    if nested.is_file():
-                        nested.unlink(missing_ok=True)
-                    elif nested.is_dir():
-                        nested.rmdir()
-                path.rmdir()
-            else:
-                path.unlink()
-
-        if path.name == "bijux_cli_py":
-            removed["site_package_removed"] = not path.exists()
-        if path.name == "bijux":
-            removed["entrypoint_removed"] = not path.exists()
-
-    return removed
-
-
-def simulate_pip_upgrade_preserves_state(home_dir: str) -> dict[str, bool]:
-    base = Path(home_dir) / ".bijux"
-    expected = [base / ".env", base / ".history", base / ".plugins"]
-    return {
-        "config_preserved": expected[0].exists(),
-        "history_preserved": expected[1].exists(),
-        "plugins_preserved": expected[2].exists(),
-    }
-
-
-def side_by_side_install_report(
-    pip_binary: str | None,
-    cargo_binary: str | None,
-) -> PathAmbiguityReport:
-    return path_ambiguity_detection_message([pip_binary or "", cargo_binary or ""])
+def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
+    if exit_code == 0:
+        return None
+    lower = stderr.lower()
+    if "unknown route" in lower or "unknown namespace" in lower or "usage" in lower:
+        return "UsageError"
+    if "validation" in lower or "invalid" in lower:
+        return "ValidationError"
+    return "InternalError"

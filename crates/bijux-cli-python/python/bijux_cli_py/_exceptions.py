@@ -5,6 +5,18 @@ class BijuxPythonError(RuntimeError):
     """Base error for Python facade failures."""
 
 
+class UsageError(BijuxPythonError):
+    """Raised for command usage failures."""
+
+
+class ValidationError(BijuxPythonError):
+    """Raised for validation failures."""
+
+
+class InternalError(BijuxPythonError):
+    """Raised for runtime/internal failures."""
+
+
 class NativeExtensionUnavailable(BijuxPythonError):
     """Raised when the Rust extension module cannot be imported."""
 
