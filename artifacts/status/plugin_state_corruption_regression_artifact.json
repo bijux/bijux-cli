@@ -1,14 +1,10 @@
 {
-  "generated_at": "2026-03-10T12:48:53.555193+00:00",
-  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
-  "minimized_cases": [
-    "crates/bijux-cli-bin/tests/fuzz/plugin_state_corruption_minimized_cases/history_mixed_entries.json",
-    "crates/bijux-cli-bin/tests/fuzz/plugin_state_corruption_minimized_cases/memory_wrong_type.json",
-    "crates/bijux-cli-bin/tests/fuzz/plugin_state_corruption_minimized_cases/plugin_registry_broken.json"
-  ],
-  "scope": "plugin/history/memory corruption regression replay",
-  "status": "clean",
-  "tasks": [
+  "coverage_ids": [
     158
-  ]
+  ],
+  "generated_at": "2026-03-11T05:19:16Z",
+  "generator": "bijux-dev-cli",
+  "minimized_cases": [],
+  "scope": "plugin/history/memory corruption regression replay",
+  "status": "clean"
 }

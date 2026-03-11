@@ -5,8 +5,8 @@
     "Cargo.toml",
     ".gitignore"
   ],
-  "generated_at": "1970-01-01T00:00:00+00:00",
-  "generator": "scripts/status/generate_plugin_scaffold_reports.py",
+  "generated_at": "2026-03-11T05:18:54Z",
+  "generator": "bijux-dev-cli",
   "present_in_scaffold": {
     "python": [],
     "rust": []

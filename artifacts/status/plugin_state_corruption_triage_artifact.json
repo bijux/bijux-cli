@@ -1,11 +1,11 @@
 {
   "campaign_suite_ok": true,
-  "generated_at": "2026-03-10T12:48:53.555193+00:00",
-  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
+  "coverage_ids": [
+    157
+  ],
+  "generated_at": "2026-03-11T05:19:16Z",
+  "generator": "bijux-dev-cli",
   "regression_suite_ok": true,
   "scope": "plugin/history/memory corruption triage",
-  "status": "clean",
-  "tasks": [
-    157
-  ]
+  "status": "clean"
 }

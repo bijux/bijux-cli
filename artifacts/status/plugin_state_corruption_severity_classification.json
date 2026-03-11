@@ -15,11 +15,11 @@
       "history malformed entries with degraded but successful read"
     ]
   },
-  "generated_at": "2026-03-10T12:48:53.555193+00:00",
-  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
-  "scope": "plugin/history/memory corruption severity classification",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     159
-  ]
+  ],
+  "generated_at": "2026-03-11T05:19:16Z",
+  "generator": "bijux-dev-cli",
+  "scope": "plugin/history/memory corruption severity classification",
+  "status": "complete"
 }
