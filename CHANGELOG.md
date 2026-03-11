@@ -182,7 +182,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added formatting/linting: `ruff` (+format).
     * Added typing: `mypy`.
     * Added docs style/coverage: `pydocstyle`, `interrogate`.
-    * Added code health: `vulture`, `deptry`, `radon`, `codespell`, `reuse`.
+    * Added code health: `vulture`, `deptry`, `radon`, `codespell`.
     * Added security: `bandit`, `pip-audit`.
     * Added mutation testing: `mutmut`.
 
@@ -217,7 +217,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Packaging / PyPI page**
 
     * Built dynamic long description via **hatch-fancy-pypi-readme** from **README.md** and **CHANGELOG.md** for PyPI/TestPyPI.
-    * Packaged with `LICENSE`, `REUSE.toml`, and `py.typed` included in source distributions.
+    * Packaged with `LICENSE` and `py.typed` included in source distributions.
 
 ### Changed
 

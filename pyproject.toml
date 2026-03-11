@@ -87,7 +87,6 @@ dev = [
 
   "vulture>=2.7,<3.0",
   "deptry>=0.10.0,<1.0",
-  "reuse>=4.0.0,<6.0.0",
 
   "build>=1.0.3,<2.0",
   "bandit>=1.7.10,<2.0",
@@ -141,7 +140,6 @@ include = [
   "CHANGELOG.md",
   "LICENSE",
   "LICENSE",
-  "REUSE.toml",
   "src/bijux_cli/py.typed",
 ]
 
