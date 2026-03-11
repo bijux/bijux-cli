@@ -292,7 +292,11 @@ mod tests {
             let Some(path) = row.get("path").and_then(serde_json::Value::as_str) else {
                 continue;
             };
-            if !path.starts_with("scripts/status/") || !path.ends_with(".py") {
+            let is_py = std::path::Path::new(path)
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("py"));
+            if !path.starts_with("scripts/status/") || !is_py {
                 continue;
             }
             let expected_id = id_by_source.get(path).unwrap_or_else(|| {
