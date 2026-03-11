@@ -71,6 +71,7 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
     let workspace_root = crate_root.join("..").join("..");
 
     assert!(!workspace_root.join("scripts").exists());
+    assert!(!workspace_root.join("packages").exists());
 
     let mut rs_files = Vec::<PathBuf>::new();
     collect_rs_files(&crate_root.join("src"), &mut rs_files);
@@ -83,6 +84,11 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
         }
         let text = fs::read_to_string(&file).unwrap_or_default();
         assert!(!text.contains("scripts"), "legacy token found in {}", file.display());
+        assert!(
+            !text.contains("packages/bijux-cli-py"),
+            "legacy token found in {}",
+            file.display()
+        );
     }
 }
 
