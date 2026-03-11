@@ -15,6 +15,6 @@ use thiserror as _;
 fn command_tree_snapshot_matches_expected() {
     let registry = RouteRegistry::default();
     let actual = registry.render_command_tree();
-    let expected = include_str!("snapshots/command_tree.txt");
+    let expected = include_str!("../snapshots/command_tree.txt");
     assert_eq!(actual, expected);
 }

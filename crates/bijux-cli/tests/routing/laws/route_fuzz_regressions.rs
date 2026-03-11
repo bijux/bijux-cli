@@ -38,7 +38,7 @@ fn load_cases(dir: &Path) -> Vec<Vec<String>> {
 
 #[test]
 fn minimized_route_cases_do_not_crash_and_are_deterministic() {
-    let cases = load_cases(Path::new("tests/routing/fuzz/route_minimized_cases"));
+    let cases = load_cases(Path::new("tests/fuzz/routing/route_minimized_cases"));
     assert!(!cases.is_empty(), "minimized route cases must be retained");
 
     for namespaces in cases {
