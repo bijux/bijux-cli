@@ -21,9 +21,7 @@ fn contracts_schema_query_shape_is_stable() {
 #[test]
 fn route_and_registry_queries_are_stable_across_repeated_runs() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("community")
-        .expect("register");
+    registry.register_plugin_namespace("community").expect("register");
 
     let first_routes = bijux_cli::routing::inventory::route_inventory(&registry);
     let second_routes = bijux_cli::routing::inventory::route_inventory(&registry);
