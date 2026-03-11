@@ -52,7 +52,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **End-to-end automation:** GitHub Actions to **publish to PyPI**, **create a GitHub Release** with curated bundles, and **deploy docs**.
 
 ### Changed
-* **Makefiles + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
+* **Make modules + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
 
 [Back to top](#top)
 
@@ -66,7 +66,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
 * **CI Artifact Pages:** The documentation site now automatically generates detailed pages for all CI artifacts, including tests, linting, code quality, security, API tests, SBOMs, and citation files.
 * **Release Evidence:** The `publish` workflow now downloads all artifacts from the `CI` run, packages them as `evidence/*.tar.gz` bundles, and attaches them to the GitHub Release for traceability.
-* **Build Hygiene:** Makefiles now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
+* **Build Hygiene:** Make modules now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
 
 ### Changed
 * **CI/CD Overhaul:**
@@ -111,7 +111,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **MkDocs config (`mkdocs.yml`):** tightened plugin ordering and settings for `include-markdown`, enabled section indexes, and strict mode; added watch paths for configs and scripts.
 * **README / USAGE:** Refined copy; standardized **top anchors** and links to **TESTS.md**/**PROJECT_TREE.md**/**TOOLING.md**.
 * **SECURITY.md:** Rewritten with clearer reporting, SLAs, scope, and safe harbor.
-* **Makefiles:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
+* **Make modules:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
 * **Config:** Expanded lints/dictionary.
 
 ### Fixed
@@ -196,7 +196,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Makefile architecture**
 
-    * Modularized the Makefile into `makefiles/*.mk` for maintainability and clear separation of concerns.
+    * Modularized the Makefile into `makes/*.mk` for maintainability and clear separation of concerns.
     * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
     * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from `scripts/git-hooks` (skips re-installation if already linked).
     * Added `all-parallel` target to run independent checks (`quality`, `security`, `api`, `docs`) concurrently for faster CI/CD.
