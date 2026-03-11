@@ -17,16 +17,10 @@ RM                    := rm -rf
 # Modular Includes
 include makes/macro.mk
 include makes/api.mk
-include makes/build.mk
 include makes/cargo-rs.mk
+include makes/cargo-py.mk
 include makes/dictionary.mk
 include makes/docs.mk
-include makes/lint.mk
-include makes/quality.mk
-include makes/sbom.mk
-include makes/security.mk
-include makes/test.mk
-include makes/publish.mk
 
 # Environment
 $(VENV):
