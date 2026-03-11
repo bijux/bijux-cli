@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::{collect_files_recursive, relative_to_root};
+use crate::infra::artifacts::{collect_files_recursive, relative_to_root};
 
 #[derive(Debug, Default, Deserialize)]
 struct AutomationAllowlists {

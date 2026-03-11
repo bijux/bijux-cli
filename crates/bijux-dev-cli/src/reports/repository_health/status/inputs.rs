@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{Map, Value};
 
-use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
+use crate::infra::artifacts::{read_json_if_exists, read_text_if_exists};
 
 const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
     ("root_commands", "artifacts/status/status_root_commands.json"),

@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::read_json_if_exists;
+use crate::infra::artifacts::read_json_if_exists;
 
 /// Builds the maintainer crate health report payload.
 #[must_use]

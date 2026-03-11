@@ -5,7 +5,7 @@ use serde_json::Value;
 use crate::cli::args::{command_has_flag, command_option_value};
 use crate::cli::dispatch::RuntimeQueryProvider;
 use crate::cli::workspace::workspace_root;
-use crate::infrastructure::artifacts::{
+use crate::infra::artifacts::{
     collect_files_recursive, read_json_if_exists, relative_to_root,
 };
 use crate::reports::{

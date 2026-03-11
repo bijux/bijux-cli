@@ -6,7 +6,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
+use crate::infra::artifacts::{read_json_if_exists, read_text_if_exists};
 
 const PARITY_DIR: &str = "artifacts/parity";
 const STATUS_DIR: &str = "artifacts/status";

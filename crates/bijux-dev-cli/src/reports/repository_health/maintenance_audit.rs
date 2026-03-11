@@ -5,7 +5,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::{
+use crate::infra::artifacts::{
     collect_files_recursive, parse_make_targets, relative_to_root,
 };
 

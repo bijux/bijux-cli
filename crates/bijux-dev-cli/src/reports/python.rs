@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::read_json_if_exists;
+use crate::infra::artifacts::read_json_if_exists;
 
 fn duplication_list(payload: &Value, key: &str) -> Vec<Value> {
     payload.get(key).and_then(Value::as_array).cloned().unwrap_or_default()

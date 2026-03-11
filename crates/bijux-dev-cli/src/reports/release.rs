@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infrastructure::artifacts::{read_json_if_exists, read_text_if_exists};
+use crate::infra::artifacts::{read_json_if_exists, read_text_if_exists};
 
 /// `dev cli release status`
 #[must_use]

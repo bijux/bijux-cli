@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::infrastructure::artifacts::{collect_files_recursive, relative_to_root};
+use crate::infra::artifacts::{collect_files_recursive, relative_to_root};
 use serde_json::{json, Value};
 
 fn read(path: &Path) -> String {

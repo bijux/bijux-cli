@@ -11,16 +11,16 @@ pub mod cli;
 #[path = "contracts/mod.rs"]
 pub mod contract_engine;
 /// Reusable technical adapters for filesystem/process/clock concerns.
-pub mod infrastructure;
+pub mod infra;
 /// Shared platform contracts and schemas used across dev-cli capabilities.
-pub mod platform;
+pub mod schema;
 /// Maintainer-facing report modules.
 pub mod reports;
 /// Status contract inventory and execution services.
 pub mod status_contracts;
 
 pub use contract_engine::maintenance;
-pub use platform::report_envelope as reporting;
+pub use schema::report_envelope as reporting;
 pub use reports::cockpit;
 pub use reports::config;
 pub use reports::control_plane;
@@ -35,7 +35,7 @@ pub use reports::runtime_surface::{
 };
 pub use reports::rustdoc;
 
-pub use platform::command_registry::{
+pub use schema::command_registry::{
     command_registry, DevCliCommand, DevCliCommandGroup, DevCliCommandMetadata, ReportContext,
     MAINTAINER_COMMAND_NAMESPACE,
 };
