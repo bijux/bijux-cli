@@ -1,0 +1,19 @@
+#![forbid(unsafe_code)]
+//! resilience integration suites.
+
+mod adversarial_fs_process_campaign_regressions;
+mod adversarial_fs_process_campaigns;
+mod config_corruption_campaign_regressions;
+mod config_corruption_hardening;
+mod deterministic_hostile_state_matrix;
+mod history_memory_resilience_hardening;
+mod history_write_resilience;
+mod install_ambiguity_hardening;
+mod performance_realism_hardening;
+mod plugin_state_corruption_campaign_regressions;
+mod randomized_config_corruption_campaigns;
+mod randomized_plugin_state_corruption_campaigns;
+mod randomized_state_corruption_harness;
+mod randomized_state_corruption_regressions;
+mod state_race_campaign_regressions;
+mod state_race_campaigns;

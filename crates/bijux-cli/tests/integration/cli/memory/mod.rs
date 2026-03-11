@@ -1,0 +1,6 @@
+#![forbid(unsafe_code)]
+//! memory integration suites.
+
+mod memory_command_matrix;
+mod memory_deep_behavior_extra;
+mod memory_parity;
