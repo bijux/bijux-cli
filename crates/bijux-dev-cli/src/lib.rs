@@ -11,7 +11,9 @@ pub mod app;
 pub mod dispatch;
 /// Shared platform contracts and schemas used across dev-cli capabilities.
 pub mod platform;
-/// Maintainer-facing report modules organized by business domains.
+/// Maintainer-facing report modules.
+pub mod reports;
+/// Backward-compatible alias for report modules.
 pub mod domains;
 /// Contract inventories and execution boundaries.
 #[path = "contracts/mod.rs"]
@@ -22,19 +24,19 @@ pub mod infrastructure;
 pub mod status_contracts;
 
 pub use platform::report_envelope as reporting;
-pub use domains::cockpit;
-pub use domains::config;
-pub use domains::control_plane;
-pub use domains::evidence;
-pub use domains::python;
-pub use domains::release;
-pub use domains::repository_health::{
+pub use reports::cockpit;
+pub use reports::config;
+pub use reports::control_plane;
+pub use reports::evidence;
+pub use reports::python;
+pub use reports::release;
+pub use reports::repository_health::{
     crate_health, docs_audit, maintenance_audit, package_health, repo, state_audit, status,
 };
-pub use domains::runtime_surface::{
+pub use reports::runtime_surface::{
     contracts, env, parity, registry, route_audit, routes, runtime_identity,
 };
-pub use domains::rustdoc;
+pub use reports::rustdoc;
 pub use contract_engine::maintenance as maintenance;
 
 pub use platform::command_registry::{

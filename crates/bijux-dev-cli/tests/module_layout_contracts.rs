@@ -7,7 +7,8 @@ use std::{fs, path::PathBuf};
 #[test]
 fn domain_platform_and_status_contract_namespaces_exist() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert!(crate_root.join("src/domains").is_dir());
+    assert!(crate_root.join("src/reports").is_dir());
+    assert!(crate_root.join("src/domains/mod.rs").is_file());
     assert!(crate_root.join("src/platform").is_dir());
     assert!(crate_root.join("src/status_contracts").is_dir());
 }
@@ -29,7 +30,7 @@ fn legacy_alias_modules_are_removed() {
 #[test]
 fn single_domain_modules_use_intention_named_files() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let domains_root = crate_root.join("src/domains");
+    let domains_root = crate_root.join("src/reports");
     for legacy_dir in [
         "cockpit",
         "config_governance",

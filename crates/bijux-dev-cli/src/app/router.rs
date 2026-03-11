@@ -11,7 +11,7 @@ use crate::app::args::{
 };
 use crate::app::runtime_query::RuntimeQueryProvider;
 use crate::app::workspace::workspace_root;
-use crate::domains::{
+use crate::reports::{
     cockpit as dev_cockpit, config as dev_config, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     evidence as dev_evidence, maintenance_audit as dev_maintenance_audit,
