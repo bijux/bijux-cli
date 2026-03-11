@@ -11,8 +11,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .unwrap_or_else(|| json!({}))
             };
             let module_status_from_matrix = |matrix: &Value, prefixes: &[&str]| -> Value {
-                let rows =
-                    matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+                let rows = matrix
+                    .get("commands")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
                 let matched = rows
                     .into_iter()
                     .filter(|row| {
@@ -138,7 +141,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "dev_cli_state_audit_text.txt",
                 "dev_cli_state_audit_no_color.txt",
             ] {
-                let p = workspace_root.join("crates/bijux-cli/tests/snapshots").join(name);
+                let p = workspace_root
+                    .join("crates/bijux-cli/tests/snapshots")
+                    .join(name);
                 if p.exists() {
                     snapshots.push(format!("crates/bijux-cli/tests/snapshots/{name}"));
                 }
@@ -173,15 +178,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &payload,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_migration_status.json",
-                "artifacts/status/unified_state_behavior_report.json",
-                "artifacts/status/unified_state_corruption_report.json",
-                "artifacts/status/unified_state_rollback_report.json",
-                "artifacts/status/unified_state_path_resolution_report.json",
-                "artifacts/status/unified_state_doctor_snapshots.json",
-                "artifacts/status/unified_state_audit_payload.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_migration_status.json",
+                    "artifacts/status/unified_state_behavior_report.json",
+                    "artifacts/status/unified_state_corruption_report.json",
+                    "artifacts/status/unified_state_rollback_report.json",
+                    "artifacts/status/unified_state_path_resolution_report.json",
+                    "artifacts/status/unified_state_doctor_snapshots.json",
+                    "artifacts/status/unified_state_audit_payload.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
             let test_root = workspace_root.join("crates/bijux-cli/tests/bin_surface");
@@ -196,15 +203,26 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let assert_count =
                     (text.matches("assert!(").count() + text.matches("assert_eq!(").count()) as i64;
                 let score = assert_count
-                    + if ["failure", "error", "malformed", "missing", "invalid", "usage"]
-                        .iter()
-                        .any(|k| lower.contains(k))
+                    + if [
+                        "failure",
+                        "error",
+                        "malformed",
+                        "missing",
+                        "invalid",
+                        "usage",
+                    ]
+                    .iter()
+                    .any(|k| lower.contains(k))
                     {
                         3
                     } else {
                         0
                     }
-                    + if lower.contains("repeat") || lower.contains("determin") { 2 } else { 0 }
+                    + if lower.contains("repeat") || lower.contains("determin") {
+                        2
+                    } else {
+                        0
+                    }
                     + if lower.contains("consisten")
                         || lower.contains("schema")
                         || lower.contains("shape")
@@ -213,20 +231,31 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     } else {
                         0
                     }
-                    + if lower.contains("corrupt") || lower.contains("rollback") { 2 } else { 0 };
+                    + if lower.contains("corrupt") || lower.contains("rollback") {
+                        2
+                    } else {
+                        0
+                    };
                 rows.push((rel_path, text, score, assert_count));
             }
             let domains: [(&str, fn(&str) -> bool); 5] = [
                 ("commands", |rel| {
-                    ["command", "root", "cli_", "ported", "help"].iter().any(|k| rel.contains(k))
+                    ["command", "root", "cli_", "ported", "help"]
+                        .iter()
+                        .any(|k| rel.contains(k))
                 }),
                 ("config", |rel| rel.contains("config")),
                 ("history", |rel| rel.contains("history")),
                 ("memory", |rel| rel.contains("memory")),
                 ("diagnostics", |rel| {
-                    ["diagnostics", "doctor", "inspect", "dev_cli_output_contracts"]
-                        .iter()
-                        .any(|k| rel.contains(k))
+                    [
+                        "diagnostics",
+                        "doctor",
+                        "inspect",
+                        "dev_cli_output_contracts",
+                    ]
+                    .iter()
+                    .any(|k| rel.contains(k))
                 }),
             ];
             let mut by_value = serde_json::Map::<String, Value>::new();
@@ -372,12 +401,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "new stateful features require at least one corruption or rollback test",
                                         ],
                                     })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/deep_tests_by_value_report.json",
-                "artifacts/status/deep_missing_behavior_cases_report.json",
-                "artifacts/status/deep_weak_tests_replacement_report.json",
-                "artifacts/status/deep_test_first_domains_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/deep_tests_by_value_report.json",
+                    "artifacts/status/deep_missing_behavior_cases_report.json",
+                    "artifacts/status/deep_weak_tests_replacement_report.json",
+                    "artifacts/status/deep_test_first_domains_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PERFORMANCE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -399,8 +430,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "plugins list payload-size",
                 "repl startup memory estimate",
             ];
-            let rendering =
-                vec!["output json render (large payload)", "output yaml render (large payload)"];
+            let rendering = vec![
+                "output json render (large payload)",
+                "output yaml render (large payload)",
+            ];
             let thresholds = json!({
                 "mode":"critical-path-only",
                 "why":"guard user-visible regressions first; avoid vanity microbenchmarks",
@@ -468,13 +501,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for s in &rendering {
                 text.push_str(&format!("  - {s}\n"));
             }
-            fs::write(workspace_root.join("artifacts/status/performance_report.txt"), text).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/performance_report.json",
-                "artifacts/status/performance_regression_budget.json",
-                "artifacts/status/performance_benchmark_policy.json",
-                "artifacts/status/performance_report.txt"
-            ]}))
+            fs::write(
+                workspace_root.join("artifacts/status/performance_report.txt"),
+                text,
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/performance_report.json",
+                    "artifacts/status/performance_regression_budget.json",
+                    "artifacts/status/performance_benchmark_policy.json",
+                    "artifacts/status/performance_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-MEMORY-SURFACE-REPORTS" => {
             let matrix_source = fs::read_to_string(
@@ -486,23 +525,62 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (342, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (343, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (344, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (345, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (346, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (347, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (348, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (349, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (350, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (351, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (
+                    342,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    343,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    344,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    345,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    346,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    347,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    348,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    349,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    350,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    351,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
                 (352, "memory_quiet_no_color_and_deterministic_repeated_runs"),
                 (353, "memory_quiet_no_color_and_deterministic_repeated_runs"),
                 (354, "memory_quiet_no_color_and_deterministic_repeated_runs"),
-                (355, "memory_unwritable_storage_conditions_for_read_and_write_paths"),
-                (356, "memory_config_path_override_does_not_change_home_memory_resolution"),
+                (
+                    355,
+                    "memory_unwritable_storage_conditions_for_read_and_write_paths",
+                ),
+                (
+                    356,
+                    "memory_config_path_override_does_not_change_home_memory_resolution",
+                ),
                 (357, "memory_quiet_no_color_and_deterministic_repeated_runs"),
-                (358, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (
+                    358,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
                 (359, "memory_root_parity_with_python_summary_command"),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| {
@@ -572,13 +650,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "artifacts/status/memory_python_parity_artifact.json",
                                         ],
                                     })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/memory_command_coverage_report.json",
-                "artifacts/status/memory_command_matrix_artifact.json",
-                "artifacts/status/memory_corruption_matrix_artifact.json",
-                "artifacts/status/memory_python_parity_artifact.json",
-                "artifacts/status/memory_read_domain_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/memory_command_coverage_report.json",
+                    "artifacts/status/memory_command_matrix_artifact.json",
+                    "artifacts/status/memory_corruption_matrix_artifact.json",
+                    "artifacts/status/memory_python_parity_artifact.json",
+                    "artifacts/status/memory_read_domain_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATE-LAW-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -703,15 +783,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &complexity,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_file_inventory.json",
-                "artifacts/status/state_file_readers.json",
-                "artifacts/status/state_file_writers.json",
-                "artifacts/status/state_file_mutation_paths.json",
-                "artifacts/status/state_write_guarantees.json",
-                "artifacts/status/state_recovery_guarantees.json",
-                "artifacts/status/state_complexity_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_file_inventory.json",
+                    "artifacts/status/state_file_readers.json",
+                    "artifacts/status/state_file_writers.json",
+                    "artifacts/status/state_file_mutation_paths.json",
+                    "artifacts/status/state_write_guarantees.json",
+                    "artifacts/status/state_recovery_guarantees.json",
+                    "artifacts/status/state_complexity_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
             let source = fs::read_to_string(
@@ -736,7 +818,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     true,
                     true,
                 ),
-                (43, "usage_error_stderr_only", vec!["config", "get"], 2, false, false),
+                (
+                    43,
+                    "usage_error_stderr_only",
+                    vec!["config", "get"],
+                    2,
+                    false,
+                    false,
+                ),
                 (
                     44,
                     "validation_error_stderr_only",
@@ -745,8 +834,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     false,
                     false,
                 ),
-                (45, "plugin_error_stderr_only", vec!["plugins", "uninstall"], 1, false, false),
-                (46, "internal_like_error_stderr_only", vec!["plugins", "enable"], 1, false, false),
+                (
+                    45,
+                    "plugin_error_stderr_only",
+                    vec!["plugins", "uninstall"],
+                    1,
+                    false,
+                    false,
+                ),
+                (
+                    46,
+                    "internal_like_error_stderr_only",
+                    vec!["plugins", "enable"],
+                    1,
+                    false,
+                    false,
+                ),
                 (
                     47,
                     "quiet_mode_suppresses_stdout",
@@ -766,7 +869,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     49,
                     "trace_mode_stream_contract",
-                    vec!["--log-level", "trace", "status", "--format", "json", "--no-pretty"],
+                    vec![
+                        "--log-level",
+                        "trace",
+                        "status",
+                        "--format",
+                        "json",
+                        "--no-pretty",
+                    ],
                     0,
                     true,
                     true,
@@ -795,8 +905,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     true,
                     true,
                 ),
-                (53, "help_no_unrelated_stderr", vec!["help", "status"], 0, true, true),
-                (54, "version_no_unrelated_stderr", vec!["version"], 0, true, true),
+                (
+                    53,
+                    "help_no_unrelated_stderr",
+                    vec!["help", "status"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    54,
+                    "version_no_unrelated_stderr",
+                    vec!["version"],
+                    0,
+                    true,
+                    true,
+                ),
                 (
                     55,
                     "plugin_commands_follow_stream_law",
@@ -808,7 +932,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     56,
                     "state_doctor_follows_stream_law",
-                    vec!["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+                    vec![
+                        "dev",
+                        "cli",
+                        "state-doctor",
+                        "--format",
+                        "json",
+                        "--no-pretty",
+                    ],
                     0,
                     true,
                     true,
@@ -871,22 +1002,70 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (41, "successful_machine_readable_commands_keep_stderr_empty"),
-                (42, "text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode"),
-                (43, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (44, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (45, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (46, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (47, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
-                (48, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
-                (49, "trace_mode_preserves_stream_contract_without_corrupting_output_envelope"),
-                (50, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (51, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (52, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (53, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
-                (54, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
-                (55, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
-                (56, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
-                (57, "binary_and_bridge_agree_on_stream_routing_for_success_and_failure"),
+                (
+                    42,
+                    "text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode",
+                ),
+                (
+                    43,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    44,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    45,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    46,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    47,
+                    "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise",
+                ),
+                (
+                    48,
+                    "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise",
+                ),
+                (
+                    49,
+                    "trace_mode_preserves_stream_contract_without_corrupting_output_envelope",
+                ),
+                (
+                    50,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    51,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    52,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    53,
+                    "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr",
+                ),
+                (
+                    54,
+                    "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr",
+                ),
+                (
+                    55,
+                    "plugin_and_state_doctor_commands_obey_builtin_stream_law",
+                ),
+                (
+                    56,
+                    "plugin_and_state_doctor_commands_obey_builtin_stream_law",
+                ),
+                (
+                    57,
+                    "binary_and_bridge_agree_on_stream_routing_for_success_and_failure",
+                ),
             ]);
             let coverage_rows = required
                                         .iter()
@@ -933,10 +1112,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/stream_discipline_artifact.json",
-                "artifacts/status/stream_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/stream_discipline_artifact.json",
+                    "artifacts/status/stream_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
@@ -948,7 +1129,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for path in tests {
                 let full = workspace_root.join(path);
                 if full.exists() {
-                    sources.insert(path.to_string(), fs::read_to_string(full).unwrap_or_default());
+                    sources.insert(
+                        path.to_string(),
+                        fs::read_to_string(full).unwrap_or_default(),
+                    );
                 }
             }
             let find_test = |name: &str| -> Option<String> {
@@ -995,29 +1179,67 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let corruption_sample = run_json(&["history"]);
             let repl_interop_sample = run_json(&["history"]);
             let stream_sample = Command::new("cargo")
-                .args(["run", "-q", "-p", "bijux-cli", "--", "history", "--format", "text"])
+                .args([
+                    "run",
+                    "-q",
+                    "-p",
+                    "bijux-cli",
+                    "--",
+                    "history",
+                    "--format",
+                    "text",
+                ])
                 .current_dir(workspace_root)
                 .output()
                 .ok();
             let failure_sample = Command::new("cargo")
-                .args(["run", "-q", "-p", "bijux-cli", "--", "history", "--unknown-flag"])
+                .args([
+                    "run",
+                    "-q",
+                    "-p",
+                    "bijux-cli",
+                    "--",
+                    "history",
+                    "--unknown-flag",
+                ])
                 .current_dir(workspace_root)
                 .output()
                 .ok();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (101, "history_root_listing_no_file_one_record_many_records_and_ordering"),
-                (102, "history_limit_path_override_and_repeated_run_determinism"),
-                (103, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
-                (104, "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"),
+                (
+                    101,
+                    "history_root_listing_no_file_one_record_many_records_and_ordering",
+                ),
+                (
+                    102,
+                    "history_limit_path_override_and_repeated_run_determinism",
+                ),
+                (
+                    103,
+                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
+                ),
+                (
+                    104,
+                    "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
+                ),
                 (105, "history_json_yaml_text_outputs_are_emitted"),
                 (106, "history_text_json_yaml_quiet_and_no_color_modes"),
                 (107, "history_json_yaml_text_outputs_are_emitted"),
                 (108, "history_reads_repl_line_layout_for_cli_interop"),
-                (109, "history_limit_path_override_and_repeated_run_determinism"),
+                (
+                    109,
+                    "history_limit_path_override_and_repeated_run_determinism",
+                ),
                 (110, "history_missing_and_malformed_behaviors_are_stable"),
                 (111, "history_handles_huge_files_with_stable_tail_limit"),
-                (112, "history_doctor_and_state_doctor_agree_on_history_corruption_findings"),
-                (113, "history_output_is_stable_under_filesystem_metadata_changes"),
+                (
+                    112,
+                    "history_doctor_and_state_doctor_agree_on_history_corruption_findings",
+                ),
+                (
+                    113,
+                    "history_output_is_stable_under_filesystem_metadata_changes",
+                ),
             ]);
             let coverage_rows = required
                                         .iter()
@@ -1037,9 +1259,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 && determinism_b.as_ref().is_some_and(|o| o.status.success())
                 && determinism_a.as_ref().map(|o| (&o.stdout, &o.stderr))
                     == determinism_b.as_ref().map(|o| (&o.stdout, &o.stderr));
-            let stream_ok =
-                stream_sample.as_ref().is_some_and(|o| o.status.success() && o.stderr.is_empty());
-            let failure_code = failure_sample.as_ref().and_then(|o| o.status.code()).unwrap_or(1);
+            let stream_ok = stream_sample
+                .as_ref()
+                .is_some_and(|o| o.status.success() && o.stderr.is_empty());
+            let failure_code = failure_sample
+                .as_ref()
+                .and_then(|o| o.status.code())
+                .unwrap_or(1);
             let history_semantic = json!({"generator":"bijux-dev-cli","scope":"history semantic","coverage_ids":[101,102,103,104,105,108,109,110,111,113,114],"status":if semantic_sample.is_object(){"complete"}else{"partial"},"sample":semantic_sample});
             let history_determinism = json!({"generator":"bijux-dev-cli","scope":"history determinism","coverage_ids":[101,102,107,111,113,115],"status":if det_ok{"complete"}else{"partial"},"byte_stable":det_ok});
             let history_corruption = json!({"generator":"bijux-dev-cli","scope":"history corruption","coverage_ids":[103,104,110,112,116],"status":if corruption_sample.is_object(){"complete"}else{"partial"},"sample":corruption_sample});
@@ -1105,15 +1331,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "drift_items": drift,
                                         "coverage_rows": coverage_rows,
                                     })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/history_semantic_artifact.json",
-                "artifacts/status/history_determinism_artifact.json",
-                "artifacts/status/history_corruption_artifact.json",
-                "artifacts/status/history_repl_interop_artifact.json",
-                "artifacts/status/history_stream_discipline_artifact.json",
-                "artifacts/status/history_failure_class_artifact.json",
-                "artifacts/status/history_deep_behavior_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/history_semantic_artifact.json",
+                    "artifacts/status/history_determinism_artifact.json",
+                    "artifacts/status/history_corruption_artifact.json",
+                    "artifacts/status/history_repl_interop_artifact.json",
+                    "artifacts/status/history_stream_discipline_artifact.json",
+                    "artifacts/status/history_failure_class_artifact.json",
+                    "artifacts/status/history_deep_behavior_drift_artifact.json"
+                ]}),
+            )
         }
         _ => None,
     }

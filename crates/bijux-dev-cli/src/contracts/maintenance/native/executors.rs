@@ -1,10 +1,10 @@
-#[path = "executor_control_plane.rs"]
+#[path = "control_plane_executor.rs"]
 mod control_plane;
-#[path = "executor_quality.rs"]
+#[path = "quality_executor.rs"]
 mod quality;
-#[path = "executor_resilience.rs"]
+#[path = "resilience_executor.rs"]
 mod resilience;
-#[path = "executor_runtime.rs"]
+#[path = "runtime_executor.rs"]
 mod runtime;
 
 #[allow(clippy::wildcard_imports)]

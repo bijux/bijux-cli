@@ -1,8 +1,8 @@
-#[path = "executor_control_plane_diagnostics_ownership.rs"]
+#[path = "control_plane_diagnostics_ownership_executor.rs"]
 mod diagnostics_ownership;
-#[path = "executor_control_plane_orchestration.rs"]
+#[path = "control_plane_orchestration_executor.rs"]
 mod orchestration;
-#[path = "executor_control_plane_scope_bridge.rs"]
+#[path = "control_plane_scope_bridge_executor.rs"]
 mod scope_bridge;
 
 use crate::contract_engine::maintenance::{Path, Value};

@@ -1,6 +1,6 @@
-#[path = "executor_quality_governance.rs"]
+#[path = "quality_governance_executor.rs"]
 mod governance;
-#[path = "executor_quality_release_and_plugin.rs"]
+#[path = "quality_release_and_plugin_executor.rs"]
 mod release_and_plugin;
 
 use crate::contract_engine::maintenance::{Path, Value};

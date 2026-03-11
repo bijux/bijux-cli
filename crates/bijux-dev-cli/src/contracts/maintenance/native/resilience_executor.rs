@@ -1,8 +1,8 @@
-#[path = "executor_resilience_evidence_surfaces.rs"]
+#[path = "resilience_evidence_surfaces_executor.rs"]
 mod evidence_surfaces;
-#[path = "executor_resilience_hardening.rs"]
+#[path = "resilience_hardening_executor.rs"]
 mod hardening;
-#[path = "executor_resilience_stress_campaigns.rs"]
+#[path = "resilience_stress_campaigns_executor.rs"]
 mod stress_campaigns;
 
 use crate::contract_engine::maintenance::{Path, Value};

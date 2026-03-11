@@ -1,6 +1,6 @@
-#[path = "executor_quality_governance_command_surface.rs"]
+#[path = "quality_governance_command_surface_executor.rs"]
 mod command_surface;
-#[path = "executor_quality_governance_state_laws.rs"]
+#[path = "quality_governance_state_laws_executor.rs"]
 mod state_laws;
 
 use crate::contract_engine::maintenance::{Path, Value};

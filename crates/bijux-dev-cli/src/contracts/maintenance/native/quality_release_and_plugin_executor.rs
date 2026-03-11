@@ -28,7 +28,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let release_bin = file_info(&workspace_root.join("target/release/bijux-rs"));
             let debug_bin = file_info(&workspace_root.join("target/debug/bijux-rs"));
             let tree = Command::new("cargo")
-                .args(["tree", "-p", "bijux-cli", "-e", "normal", "--prefix", "none"])
+                .args([
+                    "tree",
+                    "-p",
+                    "bijux-cli",
+                    "-e",
+                    "normal",
+                    "--prefix",
+                    "none",
+                ])
                 .current_dir(workspace_root)
                 .output()
                 .ok()
@@ -42,10 +50,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }
                 *top.entry(name.to_string()).or_insert(0) += 1;
             }
-            let mut top_rows =
-                top.into_iter().map(|(k, v)| json!({"crate":k,"hits":v})).collect::<Vec<_>>();
+            let mut top_rows = top
+                .into_iter()
+                .map(|(k, v)| json!({"crate":k,"hits":v}))
+                .collect::<Vec<_>>();
             top_rows.sort_by(|a, b| {
-                b.get("hits").and_then(Value::as_u64).cmp(&a.get("hits").and_then(Value::as_u64))
+                b.get("hits")
+                    .and_then(Value::as_u64)
+                    .cmp(&a.get("hits").and_then(Value::as_u64))
             });
             top_rows.truncate(20);
             let metadata = Command::new("cargo")
@@ -56,8 +68,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .and_then(|o| String::from_utf8(o.stdout).ok())
                 .and_then(|s| serde_json::from_str::<Value>(&s).ok())
                 .unwrap_or_else(|| json!({}));
-            let packages =
-                metadata.get("packages").and_then(Value::as_array).cloned().unwrap_or_default();
+            let packages = metadata
+                .get("packages")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let deps = packages.iter().map(|pkg| json!({"name":pkg["name"],"version":pkg["version"],"manifest_path":pkg["manifest_path"]})).collect::<Vec<_>>();
             let licenses = packages.iter().map(|pkg| json!({"name":pkg["name"],"version":pkg["version"],"license":pkg.get("license").cloned().unwrap_or_else(|| json!("UNKNOWN"))})).collect::<Vec<_>>();
             write_status_artifact_json(workspace_root, "artifacts/status/release_binary_size_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","binary":release_bin})).ok()?;
@@ -67,9 +82,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/license_inventory.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","workspace_licenses":licenses})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/reproducible_build_assumptions.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","assumptions":["Cargo.lock is committed and used in CI.","SOURCE_DATE_EPOCH is respected by status generators.","schema snapshots and command-tree snapshots are enforced in CI.","parity matrix generation is required and checked for deterministic output."],"non_promises":["bit-for-bit reproducibility across different host toolchains is not guaranteed"]})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/release_artifact_manifest.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","artifacts":["artifacts/status/release_binary_size_report.json","artifacts/status/debug_binary_size_report.json","artifacts/status/release_binary_size_contributors.json","artifacts/status/release_dependency_inventory.json","artifacts/status/license_inventory.json","artifacts/status/reproducible_build_assumptions.json","artifacts/status/deterministic_generation_report.json","artifacts/status/release_build_consistency_report.json","artifacts/status/release_evidence_bundle.json","artifacts/status/release_status_manifest.json"]})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/release_binary_size_report.json","artifacts/status/debug_binary_size_report.json","artifacts/status/release_binary_size_contributors.json","artifacts/status/release_dependency_inventory.json","artifacts/status/license_inventory.json","artifacts/status/reproducible_build_assumptions.json","artifacts/status/release_artifact_manifest.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/release_binary_size_report.json","artifacts/status/debug_binary_size_report.json","artifacts/status/release_binary_size_contributors.json","artifacts/status/release_dependency_inventory.json","artifacts/status/license_inventory.json","artifacts/status/reproducible_build_assumptions.json","artifacts/status/release_artifact_manifest.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-RELEASE-EVIDENCE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -119,17 +136,30 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter_map(|e| e.get("path").and_then(Value::as_str))
                 .collect::<Vec<_>>();
             let parity = read("artifacts/parity/command_parity_matrix.json");
-            let parity_rows =
-                parity.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+            let parity_rows = parity
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let partial = parity_rows
                 .iter()
                 .filter(|r| r.get("status").and_then(Value::as_str) == Some("partial"))
-                .map(|r| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                .map(|r| {
+                    r.get("command")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_string()
+                })
                 .collect::<Vec<_>>();
             let missing_cmd = parity_rows
                 .iter()
                 .filter(|r| r.get("status").and_then(Value::as_str) == Some("missing"))
-                .map(|r| r.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                .map(|r| {
+                    r.get("command")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_string()
+                })
                 .collect::<Vec<_>>();
             let maintenance_audit = read("artifacts/status/maintenance_gap_behaviors.json");
             let docs_audit = read("artifacts/status/docs_audit.json");
@@ -141,7 +171,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default()
                 .into_iter()
                 .filter(|r| r.get("shallow_score").and_then(Value::as_i64).unwrap_or(0) >= 5)
-                .filter_map(|r| r.get("path").and_then(Value::as_str).map(ToString::to_string))
+                .filter_map(|r| {
+                    r.get("path")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
                 .collect::<Vec<_>>();
             write_status_artifact_json(workspace_root, "artifacts/status/release_evidence_bundle.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scope":"release evidence bundle","status":if missing.is_empty(){"complete"}else{"partial"},"coverage_ids":[181,182,183,184,185,186,187,188],"evidence":evidence,"missing":missing,"required_components":{"migration_matrix":"artifacts/status/command_migration_matrix.json","install_neutrality_report":"artifacts/status/install_neutrality_report.json","runtime_identity_report":"artifacts/status/active_runtime_report.json","closure_reports":"artifacts/status/command_family_closure_report.json","compatibility_debt_report":"artifacts/status/compatibility_debt_trend_report.json","cross_surface_consistency_report":"artifacts/status/cross_surface_consistency_artifact.json","known_remaining_gaps_report":"artifacts/status/what_is_left.json"}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/release_status_manifest.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scope":"release status manifest","status":if missing.is_empty(){"ready"}else{"blocked"},"coverage_ids":[189,200],"checks":{"missing_evidence":missing,"parity_partial_count":partial.len(),"parity_missing_count":missing_cmd.len(),"stale_maintenance_outside_dev_cli":maintenance_audit.get("maintenance").and_then(Value::as_array).map_or(0,Vec::len),"docs_markdown_count":docs_audit.get("markdown_count").and_then(Value::as_i64).unwrap_or(0),"weak_tests_count":weak_tests.len()},"review_steps":["review intentionally different behaviors","review unresolved partial commands","review stale maintenance outside dev cli","review stale docs from docs audit","review weak tests from test audit","review release evidence bundle before release candidate decision"],"next_work_input":"Use release_evidence_bundle.json and release_truth_report.json as the first input for next prioritization.","status_discussion_policy":"status claims are invalid unless backed by artifacts in this manifest"})).ok()?;
@@ -157,15 +191,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             fs::write(workspace_root.join("artifacts/status/release_truth_report.txt"), format!("Release Truth Summary\n\nstatus: {}\nmissing_evidence: {}\nparity_partial: {}\nparity_missing: {}\nweak_tests: {}\n", truth.get("status").and_then(Value::as_str).unwrap_or("blocked"), missing.len(), partial.len(), missing_cmd.len(), weak_tests.len())).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/release_evidence_bundle.json","artifacts/status/release_status_manifest.json","artifacts/status/release_truth_report.json","artifacts/status/release_truth_report.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/release_evidence_bundle.json","artifacts/status/release_status_manifest.json","artifacts/status/release_truth_report.json","artifacts/status/release_truth_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-SCAFFOLD-REPORTS" => {
             let generated_at = generated_at_utc();
             let read_lines = |name: &str| -> Vec<String> {
                 fs::read_to_string(
-                    workspace_root.join("crates/bijux-cli/tests/snapshots").join(name),
+                    workspace_root
+                        .join("crates/bijux-cli/tests/snapshots")
+                        .join(name),
                 )
                 .unwrap_or_default()
                 .lines()
@@ -225,14 +263,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 summary,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_scaffold_python_inventory.json",
-                "artifacts/status/plugin_scaffold_rust_inventory.json",
-                "artifacts/status/plugin_scaffold_diff.json",
-                "artifacts/status/plugin_scaffold_non_behavioral_files.json",
-                "artifacts/status/plugin_scaffold_file_justification.json",
-                "artifacts/status/plugin_scaffold_minimalism_summary.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_scaffold_python_inventory.json",
+                    "artifacts/status/plugin_scaffold_rust_inventory.json",
+                    "artifacts/status/plugin_scaffold_diff.json",
+                    "artifacts/status/plugin_scaffold_non_behavioral_files.json",
+                    "artifacts/status/plugin_scaffold_file_justification.json",
+                    "artifacts/status/plugin_scaffold_minimalism_summary.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -304,17 +344,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "failure_injection":lifecycle_failures,
                             })).ok()?;
             let _ = base;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_lifecycle_ownership_report.json",
-                "artifacts/status/plugin_scaffold_efficiency_report.json",
-                "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
-                "artifacts/status/plugin_namespace_abuse_proof_report.json",
-                "artifacts/status/plugin_doctor_clarity_report.json",
-                "artifacts/status/plugin_explain_clarity_report.json",
-                "artifacts/status/plugin_where_ownership_report.json",
-                "artifacts/status/plugin_command_set_status.json",
-                "artifacts/status/plugin_migration_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_lifecycle_ownership_report.json",
+                    "artifacts/status/plugin_scaffold_efficiency_report.json",
+                    "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
+                    "artifacts/status/plugin_namespace_abuse_proof_report.json",
+                    "artifacts/status/plugin_doctor_clarity_report.json",
+                    "artifacts/status/plugin_explain_clarity_report.json",
+                    "artifacts/status/plugin_where_ownership_report.json",
+                    "artifacts/status/plugin_command_set_status.json",
+                    "artifacts/status/plugin_migration_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS" => {
             let now = generated_at_utc();
@@ -330,7 +372,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let stxt = text(scaffold_targets);
             let srtxt = text(scaffold_reg);
             let required: BTreeMap<i64, (&str, &str)> = BTreeMap::from([
-                (61, (manifest_targets, "fuzz_plugin_manifest_parsing_is_stable")),
+                (
+                    61,
+                    (manifest_targets, "fuzz_plugin_manifest_parsing_is_stable"),
+                ),
                 (
                     62,
                     (
@@ -338,8 +383,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_plugin_manifest_validation_covers_required_and_optional_fields",
                     ),
                 ),
-                (63, (manifest_targets, "fuzz_compatibility_range_parsing_is_enforced")),
-                (64, (manifest_targets, "fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced")),
+                (
+                    63,
+                    (
+                        manifest_targets,
+                        "fuzz_compatibility_range_parsing_is_enforced",
+                    ),
+                ),
+                (
+                    64,
+                    (
+                        manifest_targets,
+                        "fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced",
+                    ),
+                ),
                 (
                     65,
                     (
@@ -375,7 +432,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_python_and_rust_scaffold_manifest_generation_are_correct",
                     ),
                 ),
-                (70, (scaffold_targets, "fuzz_scaffold_path_sanitization_rejects_parent_segments")),
+                (
+                    70,
+                    (
+                        scaffold_targets,
+                        "fuzz_scaffold_path_sanitization_rejects_parent_segments",
+                    ),
+                ),
                 (
                     71,
                     (
@@ -390,16 +453,40 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable",
                     ),
                 ),
-                (73, (scaffold_targets, "fuzz_plugin_reserved_name_error_rendering_is_stable")),
-                (76, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (
+                    73,
+                    (
+                        scaffold_targets,
+                        "fuzz_plugin_reserved_name_error_rendering_is_stable",
+                    ),
+                ),
+                (
+                    76,
+                    (
+                        manifest_reg,
+                        "minimized_plugin_manifest_cases_replay_deterministically",
+                    ),
+                ),
                 (
                     77,
-                    (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
+                    (
+                        scaffold_reg,
+                        "minimized_scaffold_cases_replay_with_deterministic_exit_codes",
+                    ),
                 ),
-                (78, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (
+                    78,
+                    (
+                        manifest_reg,
+                        "minimized_plugin_manifest_cases_replay_deterministically",
+                    ),
+                ),
                 (
                     79,
-                    (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
+                    (
+                        scaffold_reg,
+                        "minimized_scaffold_cases_replay_with_deterministic_exit_codes",
+                    ),
                 ),
             ]);
             let coverage = required.iter().map(|(id, (p, t))| {
@@ -429,8 +516,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()
                     .is_some_and(|s| s.success())
             };
-            let mt_ok =
-                run(&["test", "-p", "bijux-cli-plugin", "--test", "plugin_manifest_fuzz_targets"]);
+            let mt_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli-plugin",
+                "--test",
+                "plugin_manifest_fuzz_targets",
+            ]);
             let mr_ok = run(&[
                 "test",
                 "-p",
@@ -464,13 +556,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest fuzz regressions","coverage_ids":[76,78],"status":if mr_ok{"clean"}else{"drift"},"minimized_cases":manifest_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin scaffold fuzz regressions","coverage_ids":[77,79],"status":if sr_ok{"clean"}else{"drift"},"minimized_cases":scaffold_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest and scaffold fuzzing","coverage_ids":(61..81).collect::<Vec<_>>(),"status":if missing.is_empty() && mt_ok && mr_ok && st_ok && sr_ok && !manifest_cases.is_empty() && !scaffold_cases.is_empty(){"frozen"}else{"partial"},"coverage_rows":coverage,"missing_coverage_ids":missing,"manifest_minimized_case_count":manifest_cases.len(),"scaffold_minimized_case_count":scaffold_cases.len(),"policy":"plugin manifest and scaffold fuzzing remain maintenance-required hardening checks"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_manifest_crash_triage_artifact.json",
-                "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
-                "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_manifest_crash_triage_artifact.json",
+                    "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
+                    "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
+                    "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
+                    "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
@@ -547,14 +641,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption regression replay","coverage_ids":[158],"status":if regression_ok{"clean"}else{"drift"},"minimized_cases":minimized_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_severity_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption severity classification","coverage_ids":[159],"status":"complete","classes":{"critical":["plugin registry write rollback failure","state read panic"],"high":["nondeterministic plugin list under identical corrupted input","memory recovery drift"],"medium":["history malformed entries with degraded but successful read"],"low":["doctor self-repair with stable output"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption hardening contract","coverage_ids":(141..161).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized_cases.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"policy":"plugin/history/memory corruption campaigns are required hardening coverage"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_state_corruption_campaign_artifact.json",
-                "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
-                "artifacts/status/plugin_state_corruption_triage_artifact.json",
-                "artifacts/status/plugin_state_corruption_regression_artifact.json",
-                "artifacts/status/plugin_state_corruption_severity_classification.json",
-                "artifacts/status/plugin_state_corruption_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_state_corruption_campaign_artifact.json",
+                    "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
+                    "artifacts/status/plugin_state_corruption_triage_artifact.json",
+                    "artifacts/status/plugin_state_corruption_regression_artifact.json",
+                    "artifacts/status/plugin_state_corruption_severity_classification.json",
+                    "artifacts/status/plugin_state_corruption_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS" => {
             let source = fs::read_to_string(
@@ -611,7 +707,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     81,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
                 ),
-                (82, "config_writer_ordering_and_formatting_rules_are_deterministic"),
+                (
+                    82,
+                    "config_writer_ordering_and_formatting_rules_are_deterministic",
+                ),
                 (
                     83,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
@@ -628,15 +727,42 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     86,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
                 ),
-                (87, "config_writer_ordering_and_formatting_rules_are_deterministic"),
-                (88, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (89, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (90, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (91, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (92, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (93, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (94, "root_and_cli_config_path_override_behavior_is_identical_for_list"),
-                (95, "config_doctor_and_state_doctor_agree_on_corrupted_config_findings"),
+                (
+                    87,
+                    "config_writer_ordering_and_formatting_rules_are_deterministic",
+                ),
+                (
+                    88,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    89,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    90,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    91,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    92,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    93,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    94,
+                    "root_and_cli_config_path_override_behavior_is_identical_for_list",
+                ),
+                (
+                    95,
+                    "config_doctor_and_state_doctor_agree_on_corrupted_config_findings",
+                ),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| json!({
                                 "coverage_id": id, "test_name": name,
@@ -697,13 +823,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "drift_items": drift,
                                 "coverage_rows": coverage_rows,
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_semantic_roundtrip_artifact.json",
-                "artifacts/status/config_precedence_artifact.json",
-                "artifacts/status/config_determinism_artifact.json",
-                "artifacts/status/config_corruption_recovery_artifact.json",
-                "artifacts/status/config_deep_behavior_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_semantic_roundtrip_artifact.json",
+                    "artifacts/status/config_precedence_artifact.json",
+                    "artifacts/status/config_determinism_artifact.json",
+                    "artifacts/status/config_corruption_recovery_artifact.json",
+                    "artifacts/status/config_deep_behavior_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
@@ -783,17 +911,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_recovery_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption recovery classification","coverage_ids":[138],"status":"complete","paths":{"stable_failure":["usage/validation failure with unchanged file content"],"self_recovery":["repair input and rerun command to success"],"rollback_preserved":["failed load keeps previous coherent config"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_determinism_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption determinism","coverage_ids":[139],"status":if campaign_ok{"complete"}else{"partial"},"deterministic_failure_class_required":true,"evidence":"crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set"})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_release_blocking_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption release-blocking contract","coverage_ids":(121..141).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"release_blocking":true,"policy":"config corruption campaign coverage and deterministic rollback behavior are required before release"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_corruption_campaign_artifact.json",
-                "artifacts/status/config_corruption_invariants_artifact.json",
-                "artifacts/status/config_corruption_corpus_retention_artifact.json",
-                "artifacts/status/config_corruption_triage_artifact.json",
-                "artifacts/status/config_corruption_regression_artifact.json",
-                "artifacts/status/config_corruption_severity_classification.json",
-                "artifacts/status/config_corruption_recovery_classification.json",
-                "artifacts/status/config_corruption_determinism_artifact.json",
-                "artifacts/status/config_corruption_release_blocking_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_corruption_campaign_artifact.json",
+                    "artifacts/status/config_corruption_invariants_artifact.json",
+                    "artifacts/status/config_corruption_corpus_retention_artifact.json",
+                    "artifacts/status/config_corruption_triage_artifact.json",
+                    "artifacts/status/config_corruption_regression_artifact.json",
+                    "artifacts/status/config_corruption_severity_classification.json",
+                    "artifacts/status/config_corruption_recovery_classification.json",
+                    "artifacts/status/config_corruption_determinism_artifact.json",
+                    "artifacts/status/config_corruption_release_blocking_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
@@ -805,12 +935,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for path in tests {
                 let full = workspace_root.join(path);
                 if full.exists() {
-                    sources.insert(path.to_string(), fs::read_to_string(full).unwrap_or_default());
+                    sources.insert(
+                        path.to_string(),
+                        fs::read_to_string(full).unwrap_or_default(),
+                    );
                 }
             }
             let find_test = |name: &str| -> Option<String> {
                 let needle = format!("fn {name}(");
-                sources.iter().find(|(_, src)| src.contains(&needle)).map(|(p, _)| p.clone())
+                sources
+                    .iter()
+                    .find(|(_, src)| src.contains(&needle))
+                    .map(|(p, _)| p.clone())
             };
             let run_json =
                 |args: &[&str]| run_bijux_json(workspace_root, args).unwrap_or_else(|_| json!({}));
@@ -893,10 +1029,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let contract = json!({"generator":"bijux-dev-cli","scope":"diagnostics contract","coverage_ids":[143,144,145,152,153,159],"status":if doctor_a.is_object()&&plugin_health.is_object()&&package_health.is_object()&&runtime_identity.is_object(){"complete"}else{"partial"},"contract_keys":{"doctor":doctor_a.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"plugin_health":plugin_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"package_health":package_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"runtime_identity":runtime_identity.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default()}});
             let mut drift = Vec::<Value>::new();
             for (name, payload) in [
-                ("diagnostics_consistency_artifact.json", &diagnostics_consistency),
+                (
+                    "diagnostics_consistency_artifact.json",
+                    &diagnostics_consistency,
+                ),
                 ("doctor_determinism_artifact.json", &doctor_determinism),
                 ("diagnostics_schema_drift_artifact.json", &schema_drift),
-                ("diagnostics_source_of_truth_artifact.json", &source_of_truth),
+                (
+                    "diagnostics_source_of_truth_artifact.json",
+                    &source_of_truth,
+                ),
                 ("findings_order_artifact.json", &findings_order),
                 ("diagnostics_contract_artifact.json", &contract),
             ] {
@@ -944,15 +1086,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/diagnostics_deep_behavior_drift_artifact.json", &json!({"generator":"bijux-dev-cli","scope":"diagnostics deep behavior drift","coverage_ids":[160],"status":if drift.is_empty(){"clean"}else{"drift-detected"},"drift_count":drift.len(),"drift_items":drift,"coverage_rows":coverage})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/diagnostics_consistency_artifact.json",
-                "artifacts/status/doctor_determinism_artifact.json",
-                "artifacts/status/diagnostics_schema_drift_artifact.json",
-                "artifacts/status/diagnostics_source_of_truth_artifact.json",
-                "artifacts/status/findings_order_artifact.json",
-                "artifacts/status/diagnostics_contract_artifact.json",
-                "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/diagnostics_consistency_artifact.json",
+                    "artifacts/status/doctor_determinism_artifact.json",
+                    "artifacts/status/diagnostics_schema_drift_artifact.json",
+                    "artifacts/status/diagnostics_source_of_truth_artifact.json",
+                    "artifacts/status/findings_order_artifact.json",
+                    "artifacts/status/diagnostics_contract_artifact.json",
+                    "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
             let source = fs::read_to_string(
@@ -983,9 +1127,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter_map(|r| r.get("coverage_id").and_then(Value::as_i64))
                 .collect::<Vec<_>>();
             let expected_keys: BTreeMap<&str, Vec<&str>> = BTreeMap::from([
-                ("dev cli contracts", vec!["contracts", "runtime_version", "schema_version"]),
+                (
+                    "dev cli contracts",
+                    vec!["contracts", "runtime_version", "schema_version"],
+                ),
                 ("dev cli routes", vec!["aliases", "routes"]),
-                ("dev cli registry", vec!["ownership", "precedence", "registry"]),
+                (
+                    "dev cli registry",
+                    vec!["ownership", "precedence", "registry"],
+                ),
                 ("dev cli env", vec!["active", "env", "source_precedence"]),
                 (
                     "dev cli parity",
@@ -1029,7 +1179,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "public_api_counts",
                     ],
                 ),
-                ("dev cli docs-audit", vec!["docs", "docs_audit", "docs_count"]),
+                (
+                    "dev cli docs-audit",
+                    vec!["docs", "docs_audit", "docs_count"],
+                ),
                 ("dev cli doctor", vec!["issues", "runtime", "status"]),
                 (
                     "dev cli runtime-identity",
@@ -1108,13 +1261,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &contract,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/diagnostics_trust_artifact.json",
-                "artifacts/status/actionable_diagnostics_artifact.json",
-                "artifacts/status/diagnostics_minimalism_artifact.json",
-                "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
-                "artifacts/status/diagnostics_trust_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/diagnostics_trust_artifact.json",
+                    "artifacts/status/actionable_diagnostics_artifact.json",
+                    "artifacts/status/diagnostics_minimalism_artifact.json",
+                    "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
+                    "artifacts/status/diagnostics_trust_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATUS-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -1306,9 +1461,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_intentional_differences.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":intentional})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_unowned_maintenance.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","maintenance":current_state.get("maintenance_outside_dev_cli").cloned().unwrap_or_else(|| json!([]))})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_maintenance.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_maintenance.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -1339,7 +1496,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 inventory.push(json!({"path":relp,"replacement_command":replacement,"status":if replacement.is_empty(){"remaining"}else{"replaced"}}));
             }
             inventory.sort_by(|a, b| {
-                a.get("path").and_then(Value::as_str).cmp(&b.get("path").and_then(Value::as_str))
+                a.get("path")
+                    .and_then(Value::as_str)
+                    .cmp(&b.get("path").and_then(Value::as_str))
             });
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_maintenance_outside_dev_cli.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","maintenance":inventory,"summary":{"total":inventory.len(),"replaced":inventory.iter().filter(|r| r["status"]=="replaced").count(),"remaining":inventory.iter().filter(|r| r["status"]=="remaining").count()}})).ok()?;
             let commands = required_commands.iter().map(|command| {
@@ -1372,12 +1531,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_control_plane_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","maintenance_outside_dev_cli":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_maintenance_outside_dev_cli.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"commands":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_control_plane_commands.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"text_report":"artifacts/status/maintainer_control_plane_text_report.txt"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/maintainer_maintenance_outside_dev_cli.json",
-                "artifacts/status/maintainer_control_plane_commands.json",
-                "artifacts/status/maintainer_control_plane_text_report.txt",
-                "artifacts/status/maintainer_control_plane_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/maintainer_maintenance_outside_dev_cli.json",
+                    "artifacts/status/maintainer_control_plane_commands.json",
+                    "artifacts/status/maintainer_control_plane_text_report.txt",
+                    "artifacts/status/maintainer_control_plane_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CRATE-BOUNDARY-METRICS" => {
             let generated_at = generated_at_utc();
@@ -1389,11 +1550,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .and_then(|o| String::from_utf8(o.stdout).ok())
                 .and_then(|s| serde_json::from_str::<Value>(&s).ok())
                 .unwrap_or_else(|| json!({}));
-            let pkgs =
-                metadata.get("packages").and_then(Value::as_array).cloned().unwrap_or_default();
+            let pkgs = metadata
+                .get("packages")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let workspace_names = pkgs
                 .iter()
-                .filter_map(|p| p.get("name").and_then(Value::as_str).map(ToString::to_string))
+                .filter_map(|p| {
+                    p.get("name")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
                 .collect::<BTreeSet<_>>();
             let mut per_crate = Vec::<Value>::new();
             for pkg in &pkgs {
@@ -1412,7 +1580,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .status()
                     .ok()
                     .is_some_and(|s| s.success());
-                let manifest = pkg.get("manifest_path").and_then(Value::as_str).unwrap_or("");
+                let manifest = pkg
+                    .get("manifest_path")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
                 let cargo_toml = PathBuf::from(manifest);
                 let rel_manifest = rel(&cargo_toml, workspace_root);
                 let cargo_text = fs::read_to_string(&cargo_toml).unwrap_or_default();
@@ -1472,10 +1643,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "crate_decisions":crate_decisions,
                                 "boundary_decisions":boundary_decisions
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/crate_boundary_metrics.json",
-                "artifacts/status/crate_boundary_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/crate_boundary_metrics.json",
+                    "artifacts/status/crate_boundary_report.json"
+                ]}),
+            )
         }
         _ => None,
     }

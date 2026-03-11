@@ -1,10 +1,10 @@
-#[path = "spec_control_plane.rs"]
+#[path = "control_plane_spec.rs"]
 mod control_plane;
-#[path = "spec_quality.rs"]
+#[path = "quality_spec.rs"]
 mod quality;
-#[path = "spec_resilience.rs"]
+#[path = "resilience_spec.rs"]
 mod resilience;
-#[path = "spec_runtime.rs"]
+#[path = "runtime_spec.rs"]
 mod runtime;
 
 #[allow(clippy::wildcard_imports)]

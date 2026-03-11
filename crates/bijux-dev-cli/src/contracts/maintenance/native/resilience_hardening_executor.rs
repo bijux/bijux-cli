@@ -20,10 +20,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (128, "plugin_list_machine_output_order_is_stable"),
                 (129, "diagnostic_ordering_is_stable_in_machine_output"),
                 (130, "state_doctor_ordering_is_stable_in_machine_output"),
-                (131, "repeated_runs_do_not_introduce_timestamp_noise_when_disallowed"),
+                (
+                    131,
+                    "repeated_runs_do_not_introduce_timestamp_noise_when_disallowed",
+                ),
                 (132, "repeated_runs_do_not_introduce_path_order_noise"),
-                (133, "repeated_runs_do_not_introduce_plugin_discovery_order_noise"),
-                (134, "repeated_runs_do_not_introduce_environment_order_noise"),
+                (
+                    133,
+                    "repeated_runs_do_not_introduce_plugin_discovery_order_noise",
+                ),
+                (
+                    134,
+                    "repeated_runs_do_not_introduce_environment_order_noise",
+                ),
                 (135, "text_output_stability_holds_under_no_color_mode"),
                 (136, "stderr_payloads_are_stable_for_identical_failures"),
                 (137, "exit_codes_are_stable_for_identical_failures"),
@@ -97,11 +106,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/deterministic_output_report.json",
-                "artifacts/status/determinism_dashboard.json",
-                "artifacts/status/determinism_expectations.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/deterministic_output_report.json",
+                    "artifacts/status/determinism_dashboard.json",
+                    "artifacts/status/determinism_expectations.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS" => {
             let output_targets = workspace_root
@@ -117,12 +128,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let bridge_min_dir = workspace_root
                 .join("crates/bijux-cli-python/tests/fuzz/bridge_conversion_minimized_cases");
             let texts = BTreeMap::from([
-                (output_targets.clone(), fs::read_to_string(&output_targets).unwrap_or_default()),
+                (
+                    output_targets.clone(),
+                    fs::read_to_string(&output_targets).unwrap_or_default(),
+                ),
                 (
                     output_regression.clone(),
                     fs::read_to_string(&output_regression).unwrap_or_default(),
                 ),
-                (bridge_targets.clone(), fs::read_to_string(&bridge_targets).unwrap_or_default()),
+                (
+                    bridge_targets.clone(),
+                    fs::read_to_string(&bridge_targets).unwrap_or_default(),
+                ),
                 (
                     bridge_regression.clone(),
                     fs::read_to_string(&bridge_regression).unwrap_or_default(),
@@ -177,10 +194,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()
                     .is_some_and(|s| s.success())
             };
-            let output_targets_ok =
-                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_targets"]);
-            let output_reg_ok =
-                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_regressions"]);
+            let output_targets_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli",
+                "--test",
+                "output_envelope_fuzz_targets",
+            ]);
+            let output_reg_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli",
+                "--test",
+                "output_envelope_fuzz_regressions",
+            ]);
             let bridge_targets_ok = run(&[
                 "test",
                 "-p",
@@ -273,13 +300,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/output_crash_triage_artifact.json",
-                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
-                "artifacts/status/output_fuzz_regression_artifact.json",
-                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
-                "artifacts/status/output_envelope_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/output_crash_triage_artifact.json",
+                    "artifacts/status/bridge_conversion_crash_triage_artifact.json",
+                    "artifacts/status/output_fuzz_regression_artifact.json",
+                    "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
+                    "artifacts/status/output_envelope_fuzz_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS" => {
             let routing_test =
@@ -293,17 +322,59 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let min_dir =
                 workspace_root.join("crates/bijux-cli/tests/routing/fuzz/parser_minimized_cases");
             let texts = BTreeMap::from([
-                (routing_test.clone(), fs::read_to_string(&routing_test).unwrap_or_default()),
-                (bin_test.clone(), fs::read_to_string(&bin_test).unwrap_or_default()),
-                (regression_test.clone(), fs::read_to_string(&regression_test).unwrap_or_default()),
+                (
+                    routing_test.clone(),
+                    fs::read_to_string(&routing_test).unwrap_or_default(),
+                ),
+                (
+                    bin_test.clone(),
+                    fs::read_to_string(&bin_test).unwrap_or_default(),
+                ),
+                (
+                    regression_test.clone(),
+                    fs::read_to_string(&regression_test).unwrap_or_default(),
+                ),
             ]);
             let required: BTreeMap<i64, (PathBuf, &str)> = BTreeMap::from([
-                (1, (routing_test.clone(), "fuzz_root_argv_parsing_does_not_panic")),
-                (2, (routing_test.clone(), "fuzz_cli_argv_parsing_does_not_panic")),
-                (3, (routing_test.clone(), "fuzz_dev_cli_argv_parsing_does_not_panic")),
-                (4, (routing_test.clone(), "fuzz_plugin_command_argv_parsing_does_not_panic")),
-                (5, (routing_test.clone(), "fuzz_config_command_argv_parsing_does_not_panic")),
-                (6, (routing_test.clone(), "fuzz_diagnostics_command_argv_parsing_does_not_panic")),
+                (
+                    1,
+                    (
+                        routing_test.clone(),
+                        "fuzz_root_argv_parsing_does_not_panic",
+                    ),
+                ),
+                (
+                    2,
+                    (routing_test.clone(), "fuzz_cli_argv_parsing_does_not_panic"),
+                ),
+                (
+                    3,
+                    (
+                        routing_test.clone(),
+                        "fuzz_dev_cli_argv_parsing_does_not_panic",
+                    ),
+                ),
+                (
+                    4,
+                    (
+                        routing_test.clone(),
+                        "fuzz_plugin_command_argv_parsing_does_not_panic",
+                    ),
+                ),
+                (
+                    5,
+                    (
+                        routing_test.clone(),
+                        "fuzz_config_command_argv_parsing_does_not_panic",
+                    ),
+                ),
+                (
+                    6,
+                    (
+                        routing_test.clone(),
+                        "fuzz_diagnostics_command_argv_parsing_does_not_panic",
+                    ),
+                ),
                 (
                     7,
                     (
@@ -318,11 +389,41 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_repeated_conflicting_flags_stays_safe_and_deterministic",
                     ),
                 ),
-                (9, (bin_test.clone(), "malformed_utf8_argv_is_rejected_without_panic")),
-                (10, (routing_test.clone(), "fuzz_huge_tokens_and_values_does_not_panic")),
-                (11, (routing_test.clone(), "fuzz_typo_suggestion_paths_are_stable")),
-                (12, (routing_test.clone(), "fuzz_help_path_parsing_and_alias_resolution_is_safe")),
-                (13, (routing_test.clone(), "fuzz_help_path_parsing_and_alias_resolution_is_safe")),
+                (
+                    9,
+                    (
+                        bin_test.clone(),
+                        "malformed_utf8_argv_is_rejected_without_panic",
+                    ),
+                ),
+                (
+                    10,
+                    (
+                        routing_test.clone(),
+                        "fuzz_huge_tokens_and_values_does_not_panic",
+                    ),
+                ),
+                (
+                    11,
+                    (
+                        routing_test.clone(),
+                        "fuzz_typo_suggestion_paths_are_stable",
+                    ),
+                ),
+                (
+                    12,
+                    (
+                        routing_test.clone(),
+                        "fuzz_help_path_parsing_and_alias_resolution_is_safe",
+                    ),
+                ),
+                (
+                    13,
+                    (
+                        routing_test.clone(),
+                        "fuzz_help_path_parsing_and_alias_resolution_is_safe",
+                    ),
+                ),
                 (
                     14,
                     (
@@ -382,7 +483,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .map(|p| rel(&p, workspace_root))
                 .collect();
             let regression_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "routing", "parser_fuzz_regressions::"])
+                .args([
+                    "test",
+                    "-p",
+                    "bijux-cli",
+                    "--test",
+                    "routing",
+                    "parser_fuzz_regressions::",
+                ])
                 .current_dir(workspace_root)
                 .status()
                 .ok()
@@ -444,11 +552,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/parser_crash_triage_artifact.json",
-                "artifacts/status/parser_fuzz_regression_artifact.json",
-                "artifacts/status/parser_fuzz_campaign_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/parser_crash_triage_artifact.json",
+                    "artifacts/status/parser_fuzz_regression_artifact.json",
+                    "artifacts/status/parser_fuzz_campaign_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CLEANUP-REPORTS" => {
             let generated_at = "1970-01-01T00:00:00+00:00";
@@ -537,12 +647,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/docs_unreferenced_candidates.json",
-                "artifacts/status/stale_snapshot_candidates.json",
-                "artifacts/status/dead_generated_artifact_candidates.json",
-                "artifacts/status/cleanup_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/docs_unreferenced_candidates.json",
+                    "artifacts/status/stale_snapshot_candidates.json",
+                    "artifacts/status/dead_generated_artifact_candidates.json",
+                    "artifacts/status/cleanup_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-MIGRATION-NOTES" => {
             let generated_at = "1970-01-01T00:00:00+00:00";
@@ -561,7 +673,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .into_iter()
                 .filter(|row| {
                     row.get("status").and_then(Value::as_str).is_some_and(|s| {
-                        matches!(s, "partial" | "intentionally-different" | "different-by-decision")
+                        matches!(
+                            s,
+                            "partial" | "intentionally-different" | "different-by-decision"
+                        )
                     })
                 })
                 .map(|row| {
@@ -736,14 +851,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             text.push_str(
                                 "\nPackaging:\n- runtime-identity: verify active binary and PATH shadowing behavior before cutover\n- install-assumptions: review install-state assumptions and shell completion target paths\n\nPlugin lifecycle:\n- plugin-install-write-path: validate rollback and retry behavior before enabling new plugin capabilities\n- plugin-runtime-diagnostics: verify reserved-name and registry diagnostics surface expected errors\n\nState behavior:\n- config: backup and validate config before mutating across runtime upgrades\n- history-memory: run state doctor when corrupted history or memory payloads are detected\n- recovery: follow machine-readable state recovery guidance for rollback paths\n",
                             );
-            fs::write(workspace_root.join("artifacts/status/migration_notes.txt"), text).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/migration_notes_commands.json",
-                "artifacts/status/migration_notes_packaging.json",
-                "artifacts/status/migration_notes_plugin_lifecycle.json",
-                "artifacts/status/migration_notes_state_behavior.json",
-                "artifacts/status/migration_notes.txt"
-            ]}))
+            fs::write(
+                workspace_root.join("artifacts/status/migration_notes.txt"),
+                text,
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/migration_notes_commands.json",
+                    "artifacts/status/migration_notes_packaging.json",
+                    "artifacts/status/migration_notes_plugin_lifecycle.json",
+                    "artifacts/status/migration_notes_state_behavior.json",
+                    "artifacts/status/migration_notes.txt"
+                ]}),
+            )
         }
         _ => None,
     }

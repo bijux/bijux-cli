@@ -152,11 +152,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/cross_surface_equivalence_report.json",
-                "artifacts/status/cross_surface_drift_report.json",
-                "artifacts/status/cross_surface_duality_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/cross_surface_equivalence_report.json",
+                    "artifacts/status/cross_surface_drift_report.json",
+                    "artifacts/status/cross_surface_duality_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-STATE-REPORTS" => {
             let sources: Vec<(String, String)> = vec![
@@ -199,7 +201,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .map(|(coverage_id, test_name)| {
                     let evidence = sources.iter().find_map(|(rel, text)| {
-                        text.contains(&format!("fn {test_name}(")).then_some(rel.clone())
+                        text.contains(&format!("fn {test_name}("))
+                            .then_some(rel.clone())
                     });
                     json!({
                         "coverage_id": coverage_id,
@@ -254,11 +257,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/cross_surface_state_consistency_artifact.json",
-                "artifacts/status/cross_surface_state_drift_artifact.json",
-                "artifacts/status/cross_surface_state_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/cross_surface_state_consistency_artifact.json",
+                    "artifacts/status/cross_surface_state_drift_artifact.json",
+                    "artifacts/status/cross_surface_state_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
             let source =
@@ -271,8 +276,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (62, "deterministic_plugin_list_ordering"),
                 (63, "deterministic_plugin_inspect_ordering_multiple_plugins"),
                 (64, "deterministic_help_ordering_with_plugins_installed"),
-                (65, "deterministic_route_registration_with_different_install_orders"),
-                (66, "deterministic_route_registration_after_uninstall_reinstall_cycles"),
+                (
+                    65,
+                    "deterministic_route_registration_with_different_install_orders",
+                ),
+                (
+                    66,
+                    "deterministic_route_registration_after_uninstall_reinstall_cycles",
+                ),
                 (67, "deterministic_namespace_conflict_resolution_messages"),
                 (68, "deterministic_plugins_list_json_output"),
                 (69, "deterministic_plugins_check_json_output"),
@@ -283,7 +294,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (74, "discovery_is_stable_under_broken_symlink_entries"),
                 (75, "broken_plugin_does_not_reorder_healthy_plugins"),
                 (76, "broken_plugin_does_not_hide_healthy_plugins"),
-                (77, "registry_and_discovery_disagreement_diagnostics_are_deterministic"),
+                (
+                    77,
+                    "registry_and_discovery_disagreement_diagnostics_are_deterministic",
+                ),
                 (78, "plugin_metadata_ordering_is_stable_in_machine_output"),
             ];
             let matrix_rows: Vec<Value> = rows
@@ -333,10 +347,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_discovery_determinism_report.json",
-                "artifacts/status/plugin_ordering_law.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_discovery_determinism_report.json",
+                    "artifacts/status/plugin_ordering_law.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS" => {
             write_status_artifact_json(
@@ -402,10 +418,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_lifecycle_failure_injection_report.json",
-                "artifacts/status/plugin_rollback_proof_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_lifecycle_failure_injection_report.json",
+                    "artifacts/status/plugin_rollback_proof_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PACKAGING-AMBIGUITY-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -490,12 +508,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 format!("Package Health\n\nassumptions_count: {assumptions_count}\nhelp: {help}\n"),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/packaging_ambiguity_report.json",
-                "artifacts/status/install_state_assumptions_report.json",
-                "artifacts/status/package_health_report.json",
-                "artifacts/status/package_health_report.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/packaging_ambiguity_report.json",
+                    "artifacts/status/install_state_assumptions_report.json",
+                    "artifacts/status/package_health_report.json",
+                    "artifacts/status/package_health_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATE-RESILIENCE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -593,13 +613,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/history_corruption_matrix.json",
-                "artifacts/status/memory_corruption_matrix.json",
-                "artifacts/status/state_recovery_guidance.json",
-                "artifacts/status/state_recovery_guidance.txt",
-                "artifacts/status/state_resilience_summary.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/history_corruption_matrix.json",
+                    "artifacts/status/memory_corruption_matrix.json",
+                    "artifacts/status/state_recovery_guidance.json",
+                    "artifacts/status/state_recovery_guidance.txt",
+                    "artifacts/status/state_resilience_summary.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
@@ -710,11 +732,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/command_surface_consistency_artifact.json",
-                "artifacts/status/command_surface_consistency_drift_artifact.json",
-                "artifacts/status/command_surface_consistency_summary.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/command_surface_consistency_artifact.json",
+                    "artifacts/status/command_surface_consistency_drift_artifact.json",
+                    "artifacts/status/command_surface_consistency_summary.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
@@ -728,8 +752,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({"commands":[]}));
-            let complete_commands =
-                matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+            let complete_commands = matrix
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (161, "root_status_and_cli_status_agree_where_semantics_overlap"),
                                 (162, "root_config_listing_and_cli_config_views_agree_where_both_exist"),
@@ -829,12 +856,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/command_family_consistency_artifact.json",
-                "artifacts/status/cross_family_drift_artifact.json",
-                "artifacts/status/shared_law_proof_artifact.json",
-                "artifacts/status/command_family_consistency_requirement.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/command_family_consistency_artifact.json",
+                    "artifacts/status/cross_family_drift_artifact.json",
+                    "artifacts/status/shared_law_proof_artifact.json",
+                    "artifacts/status/command_family_consistency_requirement.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS" => {
             let source = fs::read_to_string(
@@ -864,8 +893,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (153, "output_envelopes_do_not_drift_across_surfaces", "output envelopes stable across surfaces", vec!["unknown-command"]),
                                 (154, "exit_code_classes_do_not_drift_across_surfaces", "exit-code classes stable across surfaces", vec!["status", "unknown-command"]),
                             ];
-            let matrix_rows =
-                matrix.get("rows").and_then(Value::as_array).cloned().unwrap_or_default();
+            let matrix_rows = matrix
+                .get("rows")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let migration_status = |command: &str| -> String {
                 matrix_rows
                     .iter()
@@ -956,11 +988,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/cross_surface_consistency_artifact.json",
-                "artifacts/status/cross_surface_drift_artifact.json",
-                "artifacts/status/cross_surface_consistency_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/cross_surface_consistency_artifact.json",
+                    "artifacts/status/cross_surface_drift_artifact.json",
+                    "artifacts/status/cross_surface_consistency_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }

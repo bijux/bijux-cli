@@ -188,7 +188,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let rows = [
                 ("dev_cli_status_report.json", ["dev", "cli", "status"]),
                 ("dev_cli_dashboard_report.json", ["dev", "cli", "dashboard"]),
-                ("dev_cli_quickcheck_report.json", ["dev", "cli", "quickcheck"]),
+                (
+                    "dev_cli_quickcheck_report.json",
+                    ["dev", "cli", "quickcheck"],
+                ),
                 ("dev_cli_truth_report.json", ["dev", "cli", "truth"]),
                 ("dev_cli_blockers_report.json", ["dev", "cli", "blockers"]),
                 ("dev_cli_next_report.json", ["dev", "cli", "next"]),
@@ -221,8 +224,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         )
                     }
                 };
-                text_heads
-                    .insert(cmd.join(" "), text.lines().take(3).collect::<Vec<_>>().join("\n"));
+                text_heads.insert(
+                    cmd.join(" "),
+                    text.lines().take(3).collect::<Vec<_>>().join("\n"),
+                );
                 payloads.insert(artifact.to_string(), payload);
                 outputs.push(artifact_path);
             }
@@ -285,7 +290,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .into_iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("complete"))
                 .filter_map(|row| {
-                    row.get("command").and_then(Value::as_str).map(ToString::to_string)
+                    row.get("command")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
                 })
                 .collect();
             let blocker_commands: Vec<String> = blockers
@@ -297,8 +304,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .or_else(|| row.as_str().map(ToString::to_string))
                 })
                 .collect();
-            let blocker_subset_ok =
-                blocker_commands.iter().all(|command| unresolved.contains(command));
+            let blocker_subset_ok = blocker_commands
+                .iter()
+                .all(|command| unresolved.contains(command));
             let next_policy = payloads
                 .get("dev_cli_next_report.json")
                 .and_then(|v| v.get("next"))
@@ -310,7 +318,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .get("manual_curated_priority_lists_allowed")
                 .and_then(Value::as_bool)
                 == Some(false)
-                && next_policy.get("roadmap_requires_generated_artifacts").and_then(Value::as_bool)
+                && next_policy
+                    .get("roadmap_requires_generated_artifacts")
+                    .and_then(Value::as_bool)
                     == Some(true)
                 && next_policy
                     .get("required_artifacts")
@@ -325,8 +335,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let count_alignment_ok = status_summary.get("complete").and_then(Value::as_i64)
                 == Some(truth_done)
                 && status_summary.get("missing").and_then(Value::as_i64) == Some(truth_missing)
-                && status_summary.get("partial").and_then(Value::as_i64).unwrap_or(0)
-                    + status_summary.get("shim").and_then(Value::as_i64).unwrap_or(0)
+                && status_summary
+                    .get("partial")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0)
+                    + status_summary
+                        .get("shim")
+                        .and_then(Value::as_i64)
+                        .unwrap_or(0)
                     == truth_partial + truth_intentional;
             let summary_checks = json!({
                 "status_truth_count_alignment": count_alignment_ok,
@@ -387,7 +403,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "remaining"]).ok()?;
             let migrated =
                 run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "migrated"]).ok()?;
-            let diff = run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "diff"]).ok()?;
+            let diff =
+                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "diff"]).ok()?;
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/dev_cli_maintenance_remaining_report.json",
@@ -421,8 +438,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 })
                                 .collect();
             ranking.sort_by(|left, right| {
-                let l = left.get("maintainer_value_rank").and_then(Value::as_i64).unwrap_or(0);
-                let r = right.get("maintainer_value_rank").and_then(Value::as_i64).unwrap_or(0);
+                let l = left
+                    .get("maintainer_value_rank")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
+                let r = right
+                    .get("maintainer_value_rank")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
                 r.cmp(&l)
             });
             write_status_artifact_json(
@@ -445,18 +468,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_maintenance_remaining_report.json",
-                "artifacts/status/dev_cli_maintenance_migrated_report.json",
-                "artifacts/status/dev_cli_maintenance_diff_report.json",
-                "artifacts/status/dev_cli_maintenance_value_ranking.json",
-                "artifacts/status/dev_cli_make_target_inventory.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_maintenance_remaining_report.json",
+                    "artifacts/status/dev_cli_maintenance_migrated_report.json",
+                    "artifacts/status/dev_cli_maintenance_diff_report.json",
+                    "artifacts/status/dev_cli_maintenance_value_ranking.json",
+                    "artifacts/status/dev_cli_make_target_inventory.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
             let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
             let docs = run_bijux_json(workspace_root, &["dev", "cli", "docs-audit"]).ok()?;
-            let maintenance = run_bijux_json(workspace_root, &["dev", "cli", "maintenance-audit"]).ok()?;
+            let maintenance =
+                run_bijux_json(workspace_root, &["dev", "cli", "maintenance-audit"]).ok()?;
             let crate_health =
                 run_bijux_json(workspace_root, &["dev", "cli", "crate-health"]).ok()?;
             let checks = json!({
@@ -504,10 +530,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
-                "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
+                    "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
             let routes = run_bijux_json(workspace_root, &["dev", "cli", "routes"]).ok()?;
@@ -585,10 +613,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/route_registry_env_contracts_artifact.json",
-                "artifacts/status/route_registry_env_contracts_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/route_registry_env_contracts_artifact.json",
+                    "artifacts/status/route_registry_env_contracts_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
             let audit = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
@@ -608,13 +638,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &coverage,
             )
             .ok()?;
-            fs::write(workspace_root.join("artifacts/status/rustdoc_audit_report.txt"), audit_text)
-                .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/rustdoc_audit_report.json",
-                "artifacts/status/rustdoc_public_api_coverage_report.json",
-                "artifacts/status/rustdoc_audit_report.txt"
-            ]}))
+            fs::write(
+                workspace_root.join("artifacts/status/rustdoc_audit_report.txt"),
+                audit_text,
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/rustdoc_audit_report.json",
+                    "artifacts/status/rustdoc_public_api_coverage_report.json",
+                    "artifacts/status/rustdoc_audit_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE" => {
             let commands = [
@@ -623,20 +658,36 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ("readiness", ["dev", "cli", "release", "readiness"]),
                 ("diff", ["dev", "cli", "release", "diff"]),
                 ("gaps", ["dev", "cli", "release", "gaps"]),
-                ("behavior_changes", ["dev", "cli", "release", "behavior-changes"]),
-                ("intentional_differences", ["dev", "cli", "release", "intentional-differences"]),
-                ("unresolved_gaps", ["dev", "cli", "release", "unresolved-gaps"]),
-                ("compatibility_leftovers", ["dev", "cli", "release", "compatibility-leftovers"]),
+                (
+                    "behavior_changes",
+                    ["dev", "cli", "release", "behavior-changes"],
+                ),
+                (
+                    "intentional_differences",
+                    ["dev", "cli", "release", "intentional-differences"],
+                ),
+                (
+                    "unresolved_gaps",
+                    ["dev", "cli", "release", "unresolved-gaps"],
+                ),
+                (
+                    "compatibility_leftovers",
+                    ["dev", "cli", "release", "compatibility-leftovers"],
+                ),
             ];
             let mut reports = serde_json::Map::new();
             for (name, cmd) in commands {
                 reports.insert(name.to_string(), run_bijux_json(workspace_root, &cmd).ok()?);
             }
             let gaps = reports.get("gaps").cloned().unwrap_or_else(|| json!({}));
-            let unresolved =
-                gaps.get("unresolved_gaps").and_then(Value::as_array).map_or(0, Vec::len);
-            let missing =
-                gaps.get("missing_evidence").and_then(Value::as_array).map_or(0, Vec::len);
+            let unresolved = gaps
+                .get("unresolved_gaps")
+                .and_then(Value::as_array)
+                .map_or(0, Vec::len);
+            let missing = gaps
+                .get("missing_evidence")
+                .and_then(Value::as_array)
+                .map_or(0, Vec::len);
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/dev_cli_release_truth_bundle.json",
@@ -699,11 +750,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
-            let commands = ["dev cli env", "dev cli contracts", "dev cli parity", "dev cli status"];
+            let commands = [
+                "dev cli env",
+                "dev cli contracts",
+                "dev cli parity",
+                "dev cli status",
+            ];
             let mut input_map = BTreeMap::<&str, Vec<&str>>::new();
             input_map.insert(
                 "dev cli env",
-                vec!["process environment", "resolved config/history/plugins paths"],
+                vec![
+                    "process environment",
+                    "resolved config/history/plugins paths",
+                ],
             );
             input_map.insert(
                 "dev cli contracts",
@@ -788,7 +847,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     if valid_statuses.contains(status) {
                         None
                     } else {
-                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                        Some(
+                            row.get("command")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                        )
                     }
                 })
                 .collect();
@@ -796,8 +860,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("rust-partial"))
                 .filter_map(|row| {
-                    let blocker =
-                        row.get("blocker").and_then(Value::as_str).unwrap_or("").trim().to_string();
+                    let blocker = row
+                        .get("blocker")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
                     let shim_alias = row
                         .get("shim_alias_dependency")
                         .and_then(Value::as_object)
@@ -816,7 +884,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .and_then(Value::as_object)
                         .is_some_and(|obj| obj.values().any(|v| v == &Value::Bool(false)));
                     if blocker.is_empty() && !has_shim_alias && !has_parity_mismatch {
-                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                        Some(
+                            row.get("command")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                        )
                     } else {
                         None
                     }
@@ -828,9 +901,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     row.get("status").and_then(Value::as_str) == Some("intentionally-different")
                 })
                 .filter_map(|row| {
-                    let reason = row.get("reason").and_then(Value::as_str).unwrap_or("").trim();
+                    let reason = row
+                        .get("reason")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .trim();
                     if reason.is_empty() {
-                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                        Some(
+                            row.get("command")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                        )
                     } else {
                         None
                     }
@@ -840,9 +922,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("rust-complete"))
                 .filter_map(|row| {
-                    if row.get("evidence_links").and_then(Value::as_array).is_none_or(Vec::is_empty)
+                    if row
+                        .get("evidence_links")
+                        .and_then(Value::as_array)
+                        .is_none_or(Vec::is_empty)
                     {
-                        Some(row.get("command").and_then(Value::as_str).unwrap_or("").to_string())
+                        Some(
+                            row.get("command")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                        )
                     } else {
                         None
                     }
@@ -868,8 +958,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .map(ToString::to_string)
                 })
                 .collect();
-            let missing_from_migration: Vec<String> =
-                parity_commands.difference(&migration_commands).cloned().collect();
+            let missing_from_migration: Vec<String> = parity_commands
+                .difference(&migration_commands)
+                .cloned()
+                .collect();
             let parity_complete = parity_first
                 .get("command_matrix")
                 .and_then(|v| v.get("summary"))

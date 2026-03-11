@@ -33,19 +33,43 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     266,
                     "root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior",
                 ),
-                (267, "config_get_existing_missing_invalid_with_path_and_env_override"),
-                (268, "config_get_existing_missing_invalid_with_path_and_env_override"),
-                (269, "config_get_existing_missing_invalid_with_path_and_env_override"),
-                (270, "config_get_existing_missing_invalid_with_path_and_env_override"),
-                (271, "config_get_existing_missing_invalid_with_path_and_env_override"),
+                (
+                    267,
+                    "config_get_existing_missing_invalid_with_path_and_env_override",
+                ),
+                (
+                    268,
+                    "config_get_existing_missing_invalid_with_path_and_env_override",
+                ),
+                (
+                    269,
+                    "config_get_existing_missing_invalid_with_path_and_env_override",
+                ),
+                (
+                    270,
+                    "config_get_existing_missing_invalid_with_path_and_env_override",
+                ),
+                (
+                    271,
+                    "config_get_existing_missing_invalid_with_path_and_env_override",
+                ),
                 (272, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (273, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (274, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (275, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
                 (276, "config_get_json_yaml_text_quiet_and_no_color_behavior"),
-                (277, "config_listing_repeated_run_determinism_and_field_order_stability"),
-                (278, "config_listing_repeated_run_determinism_and_field_order_stability"),
-                (279, "config_listing_repeated_run_determinism_and_field_order_stability"),
+                (
+                    277,
+                    "config_listing_repeated_run_determinism_and_field_order_stability",
+                ),
+                (
+                    278,
+                    "config_listing_repeated_run_determinism_and_field_order_stability",
+                ),
+                (
+                    279,
+                    "config_listing_repeated_run_determinism_and_field_order_stability",
+                ),
             ]);
             let coverage_rows: Vec<Value> = required
                                 .iter()
@@ -92,10 +116,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_read_matrix_artifact.json",
-                "artifacts/status/config_read_domain_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_read_matrix_artifact.json",
+                    "artifacts/status/config_read_domain_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -103,17 +129,44 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (281, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
-                (282, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
-                (283, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
-                (284, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
-                (285, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
-                (286, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
+                (
+                    281,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
+                (
+                    282,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
+                (
+                    283,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
+                (
+                    284,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
+                (
+                    285,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
+                (
+                    286,
+                    "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+                ),
                 (287, "config_unset_existing_and_missing_keys"),
                 (288, "config_unset_existing_and_missing_keys"),
-                (289, "config_clear_populated_and_empty_and_reload_after_external_change"),
-                (290, "config_clear_populated_and_empty_and_reload_after_external_change"),
-                (291, "config_clear_populated_and_empty_and_reload_after_external_change"),
+                (
+                    289,
+                    "config_clear_populated_and_empty_and_reload_after_external_change",
+                ),
+                (
+                    290,
+                    "config_clear_populated_and_empty_and_reload_after_external_change",
+                ),
+                (
+                    291,
+                    "config_clear_populated_and_empty_and_reload_after_external_change",
+                ),
                 (292, "config_export_text_json_yaml_and_load_valid_malformed"),
                 (293, "config_export_text_json_yaml_and_load_valid_malformed"),
                 (294, "config_export_text_json_yaml_and_load_valid_malformed"),
@@ -168,10 +221,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_mutation_matrix_artifact.json",
-                "artifacts/status/config_mutation_domain_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_mutation_matrix_artifact.json",
+                    "artifacts/status/config_mutation_domain_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
@@ -181,20 +236,59 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (301, "cli_flags_override_env_backed_values_and_config_path"),
-                (302, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
-                (303, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
+                (
+                    302,
+                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+                ),
+                (
+                    303,
+                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+                ),
                 (304, "cli_flags_override_env_backed_values_and_config_path"),
-                (305, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
-                (306, "malformed_and_duplicate_config_source_behavior_is_stable"),
-                (307, "malformed_and_duplicate_config_source_behavior_is_stable"),
-                (308, "source_metadata_and_dev_cli_env_precedence_are_reported"),
-                (309, "source_metadata_and_dev_cli_env_precedence_are_reported"),
-                (310, "source_metadata_and_dev_cli_env_precedence_are_reported"),
-                (311, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
-                (312, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
-                (313, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
-                (314, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
-                (315, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
+                (
+                    305,
+                    "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+                ),
+                (
+                    306,
+                    "malformed_and_duplicate_config_source_behavior_is_stable",
+                ),
+                (
+                    307,
+                    "malformed_and_duplicate_config_source_behavior_is_stable",
+                ),
+                (
+                    308,
+                    "source_metadata_and_dev_cli_env_precedence_are_reported",
+                ),
+                (
+                    309,
+                    "source_metadata_and_dev_cli_env_precedence_are_reported",
+                ),
+                (
+                    310,
+                    "source_metadata_and_dev_cli_env_precedence_are_reported",
+                ),
+                (
+                    311,
+                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+                ),
+                (
+                    312,
+                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+                ),
+                (
+                    313,
+                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+                ),
+                (
+                    314,
+                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+                ),
+                (
+                    315,
+                    "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+                ),
                 (316, "cross_command_source_precedence_consistency"),
                 (317, "cross_command_source_precedence_consistency"),
                 (318, "cross_command_source_precedence_consistency"),
@@ -220,14 +314,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()?;
             let dev_env_payload =
                 run_bijux_json_env(workspace_root, &["dev", "cli", "env"], &envs).ok()?;
-            let source_path = get_payload.get("source_path").cloned().unwrap_or(Value::Null);
+            let source_path = get_payload
+                .get("source_path")
+                .cloned()
+                .unwrap_or(Value::Null);
             let active_config = dev_env_payload
                 .get("active")
                 .and_then(|v| v.get("config_file"))
                 .cloned()
                 .unwrap_or(Value::Null);
-            let precedence =
-                dev_env_payload.get("source_precedence").cloned().unwrap_or(Value::Null);
+            let precedence = dev_env_payload
+                .get("source_precedence")
+                .cloned()
+                .unwrap_or(Value::Null);
             let mut drift_reasons = Vec::<String>::new();
             if source_path != active_config {
                 drift_reasons.push(
@@ -287,11 +386,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_source_parity_artifact.json",
-                "artifacts/status/config_source_drift_artifact.json",
-                "artifacts/status/config_source_precedence_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_source_parity_artifact.json",
+                    "artifacts/status/config_source_drift_artifact.json",
+                    "artifacts/status/config_source_precedence_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
             let source = fs::read_to_string(
@@ -372,11 +473,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/python_bridge_execution_artifact.json",
-                "artifacts/status/python_bridge_drift_artifact.json",
-                "artifacts/status/python_bridge_execution_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/python_bridge_execution_artifact.json",
+                    "artifacts/status/python_bridge_drift_artifact.json",
+                    "artifacts/status/python_bridge_execution_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
             let source = fs::read_to_string(
@@ -481,13 +584,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/bridge_conversion_artifact.json",
-                "artifacts/status/bridge_exception_mapping_artifact.json",
-                "artifacts/status/bridge_envelope_integrity_artifact.json",
-                "artifacts/status/bridge_conversion_drift_artifact.json",
-                "artifacts/status/bridge_conversion_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/bridge_conversion_artifact.json",
+                    "artifacts/status/bridge_exception_mapping_artifact.json",
+                    "artifacts/status/bridge_envelope_integrity_artifact.json",
+                    "artifacts/status/bridge_conversion_drift_artifact.json",
+                    "artifacts/status/bridge_conversion_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
@@ -582,12 +687,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_completion_artifact.json",
-                "artifacts/status/repl_completion_ordering_artifact.json",
-                "artifacts/status/repl_completion_drift_artifact.json",
-                "artifacts/status/repl_completion_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_completion_artifact.json",
+                    "artifacts/status/repl_completion_ordering_artifact.json",
+                    "artifacts/status/repl_completion_drift_artifact.json",
+                    "artifacts/status/repl_completion_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-BEHAVIOR-REPORTS" => {
             let parity_matrix = workspace_root.join("artifacts/parity/command_parity_matrix.json");
@@ -677,10 +784,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_only_behaviors.json",
-                "artifacts/parity/repl_cli_output_diff.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_only_behaviors.json",
+                    "artifacts/parity/repl_cli_output_diff.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
             let source = fs::read_to_string(
@@ -723,11 +832,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .cloned()
                 .collect();
             let lower = source.to_lowercase();
-            let repl_only_semantics: Vec<&str> =
-                ["repl_only_semantic", "repl-only semantic", "repl specific semantic"]
-                    .into_iter()
-                    .filter(|marker| lower.contains(marker))
-                    .collect();
+            let repl_only_semantics: Vec<&str> = [
+                "repl_only_semantic",
+                "repl-only semantic",
+                "repl specific semantic",
+            ]
+            .into_iter()
+            .filter(|marker| lower.contains(marker))
+            .collect();
             write_status_artifact_json(
                                 workspace_root,
                                 "artifacts/status/repl_shared_law_artifact.json",
@@ -783,12 +895,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_shared_law_artifact.json",
-                "artifacts/status/repl_cli_diff_artifact.json",
-                "artifacts/status/repl_shared_law_drift_artifact.json",
-                "artifacts/status/repl_shared_law_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_shared_law_artifact.json",
+                    "artifacts/status/repl_cli_diff_artifact.json",
+                    "artifacts/status/repl_shared_law_drift_artifact.json",
+                    "artifacts/status/repl_shared_law_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
@@ -825,7 +939,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .map(|(coverage_id, test_name)| {
                     let evidence = sources.iter().find_map(|(path, text)| {
-                        text.contains(&format!("fn {test_name}(")).then_some(path.clone())
+                        text.contains(&format!("fn {test_name}("))
+                            .then_some(path.clone())
                     });
                     json!({
                         "coverage_id": coverage_id,
@@ -915,14 +1030,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repl_hostile_session_artifact.json",
-                "artifacts/status/repl_recovery_artifact.json",
-                "artifacts/status/repl_startup_resilience_artifact.json",
-                "artifacts/status/repl_command_loop_failure_class_artifact.json",
-                "artifacts/status/repl_hostile_session_contract.json",
-                "artifacts/status/repl_hostile_session_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repl_hostile_session_artifact.json",
+                    "artifacts/status/repl_recovery_artifact.json",
+                    "artifacts/status/repl_startup_resilience_artifact.json",
+                    "artifacts/status/repl_command_loop_failure_class_artifact.json",
+                    "artifacts/status/repl_hostile_session_contract.json",
+                    "artifacts/status/repl_hostile_session_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-KERNEL-INVARIANTS-REPORTS" => {
             let source = fs::read_to_string(
@@ -931,22 +1048,64 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (1, "kernel_pipeline_uses_one_canonical_entrypoint"),
-                (2, "fast_path_commands_keep_valid_envelope_metadata_when_emitted"),
+                (
+                    2,
+                    "fast_path_commands_keep_valid_envelope_metadata_when_emitted",
+                ),
                 (3, "cancellation_paths_never_skip_exit_code_mapping"),
                 (4, "cancellation_paths_never_emit_partial_success_envelopes"),
-                (5, "plugin_lifecycle_hooks_run_in_stable_order_around_execution"),
-                (6, "repl_lifecycle_hooks_do_not_mutate_non_repl_command_semantics"),
-                (7, "sync_and_async_handlers_produce_equivalent_normalized_results"),
-                (8, "kernel_usage_validation_plugin_internal_error_mapping_is_stable"),
-                (9, "kernel_usage_validation_plugin_internal_error_mapping_is_stable"),
-                (10, "kernel_usage_validation_plugin_internal_error_mapping_is_stable"),
-                (11, "kernel_usage_validation_plugin_internal_error_mapping_is_stable"),
-                (12, "internal_failure_is_normalized_before_crossing_cli_surface"),
-                (13, "trace_mode_adds_diagnostics_without_changing_payload_shape"),
-                (14, "quiet_mode_suppresses_streams_but_preserves_result_category"),
-                (15, "kernel_resolution_is_deterministic_under_reordered_inputs"),
-                (16, "kernel_resolution_is_deterministic_under_reordered_inputs"),
-                (17, "repeated_run_kernel_invariants_harness_for_representative_commands"),
+                (
+                    5,
+                    "plugin_lifecycle_hooks_run_in_stable_order_around_execution",
+                ),
+                (
+                    6,
+                    "repl_lifecycle_hooks_do_not_mutate_non_repl_command_semantics",
+                ),
+                (
+                    7,
+                    "sync_and_async_handlers_produce_equivalent_normalized_results",
+                ),
+                (
+                    8,
+                    "kernel_usage_validation_plugin_internal_error_mapping_is_stable",
+                ),
+                (
+                    9,
+                    "kernel_usage_validation_plugin_internal_error_mapping_is_stable",
+                ),
+                (
+                    10,
+                    "kernel_usage_validation_plugin_internal_error_mapping_is_stable",
+                ),
+                (
+                    11,
+                    "kernel_usage_validation_plugin_internal_error_mapping_is_stable",
+                ),
+                (
+                    12,
+                    "internal_failure_is_normalized_before_crossing_cli_surface",
+                ),
+                (
+                    13,
+                    "trace_mode_adds_diagnostics_without_changing_payload_shape",
+                ),
+                (
+                    14,
+                    "quiet_mode_suppresses_streams_but_preserves_result_category",
+                ),
+                (
+                    15,
+                    "kernel_resolution_is_deterministic_under_reordered_inputs",
+                ),
+                (
+                    16,
+                    "kernel_resolution_is_deterministic_under_reordered_inputs",
+                ),
+                (
+                    17,
+                    "repeated_run_kernel_invariants_harness_for_representative_commands",
+                ),
             ]);
             let rows: Vec<Value> = required
                 .iter()
@@ -1001,10 +1160,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/kernel_invariants_report.json",
-                "artifacts/status/kernel_invariants_diff.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/kernel_invariants_report.json",
+                    "artifacts/status/kernel_invariants_diff.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS" => {
             let source = fs::read_to_string(
@@ -1018,15 +1179,42 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (344, "plugin_installed_help_keeps_builtin_order_stable"),
                 (345, "no_color_root_help_and_grouped_help_are_stable"),
                 (346, "no_color_root_help_and_grouped_help_are_stable"),
-                (347, "unknown_command_suggestions_are_deterministic_and_namespace_scoped"),
-                (348, "unknown_command_suggestions_are_deterministic_and_namespace_scoped"),
-                (349, "hidden_aliases_do_not_appear_as_canonical_help_entries"),
-                (350, "inspect_metadata_agrees_with_help_names_and_command_tree_export"),
-                (351, "inspect_metadata_agrees_with_help_names_and_command_tree_export"),
-                (352, "binary_and_bridge_help_trees_are_identical_for_covered_commands"),
-                (353, "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful"),
-                (354, "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful"),
-                (355, "command_tree_is_stable_across_repeated_plugin_discovery_runs"),
+                (
+                    347,
+                    "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
+                ),
+                (
+                    348,
+                    "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
+                ),
+                (
+                    349,
+                    "hidden_aliases_do_not_appear_as_canonical_help_entries",
+                ),
+                (
+                    350,
+                    "inspect_metadata_agrees_with_help_names_and_command_tree_export",
+                ),
+                (
+                    351,
+                    "inspect_metadata_agrees_with_help_names_and_command_tree_export",
+                ),
+                (
+                    352,
+                    "binary_and_bridge_help_trees_are_identical_for_covered_commands",
+                ),
+                (
+                    353,
+                    "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
+                ),
+                (
+                    354,
+                    "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
+                ),
+                (
+                    355,
+                    "command_tree_is_stable_across_repeated_plugin_discovery_runs",
+                ),
             ]);
             let coverage_rows: Vec<Value> = required
                 .iter()
@@ -1103,18 +1291,29 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/help_law_artifact.json",
-                "artifacts/status/command_tree_help_consistency_artifact.json",
-                "artifacts/status/help_drift_artifact.json",
-                "artifacts/status/help_tree_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/help_law_artifact.json",
+                    "artifacts/status/command_tree_help_consistency_artifact.json",
+                    "artifacts/status/help_drift_artifact.json",
+                    "artifacts/status/help_tree_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-LAW-REPORTS" => {
-            let search_roots = [workspace_root.join("crates"), workspace_root.join("maintenance")];
+            let search_roots = [
+                workspace_root.join("crates"),
+                workspace_root.join("maintenance"),
+            ];
             let bucket_patterns = [
-                ("runtime", vec!["runtime-identity", "runtime_unity", "execution_outcome"]),
-                ("state", vec!["state-audit", "state-doctor", "history", "memory"]),
+                (
+                    "runtime",
+                    vec!["runtime-identity", "runtime_unity", "execution_outcome"],
+                ),
+                (
+                    "state",
+                    vec!["state-audit", "state-doctor", "history", "memory"],
+                ),
                 (
                     "plugin",
                     vec![
@@ -1124,9 +1323,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "plugin_doctor",
                     ],
                 ),
-                ("package", vec!["package-health", "install_health_report", "packaging"]),
+                (
+                    "package",
+                    vec!["package-health", "install_health_report", "packaging"],
+                ),
                 ("parity", vec!["parity", "binary_vs_python_bridge"]),
-                ("route", vec!["route-audit", "routes_report", "registry_report"]),
+                (
+                    "route",
+                    vec!["route-audit", "routes_report", "registry_report"],
+                ),
                 ("health", vec!["doctor", "diagnostics"]),
             ];
             let mut taxonomy_rows = Vec::<Value>::new();
@@ -1195,10 +1400,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/diagnostics_taxonomy.json",
-                "artifacts/status/diagnostics_usefulness_review.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/diagnostics_taxonomy.json",
+                    "artifacts/status/diagnostics_usefulness_review.json"
+                ]}),
+            )
         }
         _ => None,
     }

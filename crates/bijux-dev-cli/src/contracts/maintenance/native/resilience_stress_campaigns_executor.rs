@@ -23,11 +23,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|entry| {
-                    entry.get("namespace").and_then(Value::as_str).map(ToString::to_string)
+                    entry
+                        .get("namespace")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
                 })
                 .collect::<Vec<_>>();
-            let placeholder_entries =
-                registry.get("placeholder_entries").cloned().unwrap_or_else(|| json!([]));
+            let placeholder_entries = registry
+                .get("placeholder_entries")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/official_product_mount_registry.json",
@@ -88,12 +93,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/official_product_mount_registry.json",
-                "artifacts/status/product_mount_readiness_report.json",
-                "artifacts/status/product_mount_support_report.json",
-                "artifacts/status/product_mount_gap_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/official_product_mount_registry.json",
+                    "artifacts/status/product_mount_readiness_report.json",
+                    "artifacts/status/product_mount_support_report.json",
+                    "artifacts/status/product_mount_gap_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
             let targets =
@@ -110,16 +117,37 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (44, "fuzz_weird_whitespace_handling_is_stable"),
                 (45, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
                 (46, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
-                (47, "fuzz_null_byte_and_control_characters_are_handled_deterministically"),
-                (48, "fuzz_mixed_valid_invalid_content_never_silently_succeeds"),
-                (49, "fuzz_config_export_serialization_roundtrips_for_random_inputs"),
+                (
+                    47,
+                    "fuzz_null_byte_and_control_characters_are_handled_deterministically",
+                ),
+                (
+                    48,
+                    "fuzz_mixed_valid_invalid_content_never_silently_succeeds",
+                ),
+                (
+                    49,
+                    "fuzz_config_export_serialization_roundtrips_for_random_inputs",
+                ),
                 (50, "fuzz_config_load_import_parsing_is_deterministic"),
-                (51, "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable"),
+                (
+                    51,
+                    "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable",
+                ),
                 (52, "fuzz_key_normalization_and_value_validation_are_stable"),
                 (53, "fuzz_key_normalization_and_value_validation_are_stable"),
-                (57, "minimized_config_cases_replay_with_stable_exit_behavior"),
-                (58, "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable"),
-                (59, "fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports"),
+                (
+                    57,
+                    "minimized_config_cases_replay_with_stable_exit_behavior",
+                ),
+                (
+                    58,
+                    "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable",
+                ),
+                (
+                    59,
+                    "fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports",
+                ),
             ]);
             let coverage_rows: Vec<Value> = required
                                 .iter()
@@ -160,7 +188,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .ok()
                 .is_some_and(|s| s.success());
             let targets_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_fuzz_targets::"])
+                .args([
+                    "test",
+                    "-p",
+                    "bijux-cli",
+                    "--test",
+                    "integration",
+                    "config_fuzz_targets::",
+                ])
                 .current_dir(workspace_root)
                 .status()
                 .ok()
@@ -227,12 +262,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_parser_crash_triage_artifact.json",
-                "artifacts/status/config_serializer_crash_triage_artifact.json",
-                "artifacts/status/config_fuzz_regression_artifact.json",
-                "artifacts/status/config_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_parser_crash_triage_artifact.json",
+                    "artifacts/status/config_serializer_crash_triage_artifact.json",
+                    "artifacts/status/config_fuzz_regression_artifact.json",
+                    "artifacts/status/config_fuzz_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS" => {
             let campaign_test = workspace_root
@@ -354,11 +391,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/adversarial_fs_process_matrix.json",
-                "artifacts/status/adversarial_fs_process_artifact.json",
-                "artifacts/status/adversarial_fs_process_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/adversarial_fs_process_matrix.json",
+                    "artifacts/status/adversarial_fs_process_artifact.json",
+                    "artifacts/status/adversarial_fs_process_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS" => {
             let harness_test = workspace_root
@@ -491,11 +530,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_corruption_campaign_artifact.json",
-                "artifacts/status/state_corruption_reproducer_retention_artifact.json",
-                "artifacts/status/state_corruption_harness_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_corruption_campaign_artifact.json",
+                    "artifacts/status/state_corruption_reproducer_retention_artifact.json",
+                    "artifacts/status/state_corruption_harness_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-INVENTORY" => {
             let generated_at = generated_at_utc();
@@ -505,8 +546,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
             .unwrap_or_else(|| json!({}));
-            let matrix_rows =
-                matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+            let matrix_rows = matrix
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let documented = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/routing/fixtures/python_documented_commands.txt"),
@@ -642,12 +686,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/documented_python_commands_not_proven_in_rust.json",
-                "artifacts/status/public_python_paths_still_reachable.json",
-                "artifacts/status/legacy_alias_paths_still_accepted.json",
-                "artifacts/status/compatibility_shims_still_active.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/documented_python_commands_not_proven_in_rust.json",
+                    "artifacts/status/public_python_paths_still_reachable.json",
+                    "artifacts/status/legacy_alias_paths_still_accepted.json",
+                    "artifacts/status/compatibility_shims_still_active.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CLOSURE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -676,9 +722,24 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let repl_parity = read("artifacts/status/status_repl_parity_coverage.json");
             let repl_only = read("artifacts/status/repl_only_behaviors.json");
             let config_statuses = [
-                to_closure(config_read.get("status").and_then(Value::as_str).unwrap_or("")),
-                to_closure(config_mutation.get("status").and_then(Value::as_str).unwrap_or("")),
-                to_closure(config_source.get("status").and_then(Value::as_str).unwrap_or("")),
+                to_closure(
+                    config_read
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or(""),
+                ),
+                to_closure(
+                    config_mutation
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or(""),
+                ),
+                to_closure(
+                    config_source
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or(""),
+                ),
             ];
             let config_closure = if config_statuses.iter().all(|item| *item == "complete") {
                 "complete"
@@ -694,18 +755,34 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .and_then(Value::as_array)
                 .cloned()
                 .unwrap_or_default();
-            let mut plugin_closure = if plugin_partial.is_empty() { "complete" } else { "partial" };
+            let mut plugin_closure = if plugin_partial.is_empty() {
+                "complete"
+            } else {
+                "partial"
+            };
             if plugin_status.get("classification").and_then(Value::as_str) == Some("evolving")
                 && plugin_closure == "complete"
             {
                 plugin_closure = "evolving";
             }
-            let history_closure =
-                to_closure(history_read.get("status").and_then(Value::as_str).unwrap_or(""));
-            let memory_closure =
-                to_closure(memory_read.get("status").and_then(Value::as_str).unwrap_or(""));
-            let diagnostics_closure =
-                to_closure(diagnostics.get("status").and_then(Value::as_str).unwrap_or(""));
+            let history_closure = to_closure(
+                history_read
+                    .get("status")
+                    .and_then(Value::as_str)
+                    .unwrap_or(""),
+            );
+            let memory_closure = to_closure(
+                memory_read
+                    .get("status")
+                    .and_then(Value::as_str)
+                    .unwrap_or(""),
+            );
+            let diagnostics_closure = to_closure(
+                diagnostics
+                    .get("status")
+                    .and_then(Value::as_str)
+                    .unwrap_or(""),
+            );
             let repl_partial_count = repl_parity
                 .get("summary")
                 .and_then(Value::as_object)
@@ -716,8 +793,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         + statuses.get("shim").and_then(Value::as_i64).unwrap_or(0)
                 })
                 .unwrap_or(0);
-            let repl_only_count =
-                repl_only.get("repl_only_behaviors").and_then(Value::as_array).map_or(0, Vec::len);
+            let repl_only_count = repl_only
+                .get("repl_only_behaviors")
+                .and_then(Value::as_array)
+                .map_or(0, Vec::len);
             let repl_closure = if repl_partial_count > 0 {
                 "partial"
             } else if repl_only_count > 0 {
@@ -808,7 +887,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "Command Family Closure Report".to_string(),
                 format!(
                     "status: {}",
-                    combined.get("status").and_then(Value::as_str).unwrap_or("attention-required")
+                    combined
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("attention-required")
                 ),
                 format!("complete: {}", summary["complete"]),
                 format!("partial: {}", summary["partial"]),
@@ -819,7 +901,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for (name, payload) in &reports {
                 lines.push(format!(
                     "- {name}: {}",
-                    payload.get("status").and_then(Value::as_str).unwrap_or("evolving")
+                    payload
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("evolving")
                 ));
             }
             lines.push(String::new());
@@ -829,17 +914,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 format!("{}\n", lines.join("\n")),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_closure_report.json",
-                "artifacts/status/plugins_closure_report.json",
-                "artifacts/status/history_closure_report.json",
-                "artifacts/status/memory_closure_report.json",
-                "artifacts/status/diagnostics_closure_report.json",
-                "artifacts/status/repl_shared_law_closure_report.json",
-                "artifacts/status/command_family_closure_report.json",
-                "artifacts/status/command_family_closure_report.txt",
-                "artifacts/status/command_family_partial_area_acceptance.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_closure_report.json",
+                    "artifacts/status/plugins_closure_report.json",
+                    "artifacts/status/history_closure_report.json",
+                    "artifacts/status/memory_closure_report.json",
+                    "artifacts/status/diagnostics_closure_report.json",
+                    "artifacts/status/repl_shared_law_closure_report.json",
+                    "artifacts/status/command_family_closure_report.json",
+                    "artifacts/status/command_family_closure_report.txt",
+                    "artifacts/status/command_family_partial_area_acceptance.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-MIGRATION-MATRIX" => {
             let generated_at = generated_at_utc();
@@ -881,23 +968,37 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let parity = read("artifacts/parity/command_parity_matrix.json");
             let repl = read("artifacts/parity/repl_parity_matrix.json");
             let bridge = read("artifacts/parity/python_bridge_parity_matrix.json");
-            let source_rows =
-                parity.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
-            let repl_rows = repl.get("rows").and_then(Value::as_array).cloned().unwrap_or_default();
-            let bridge_rows =
-                bridge.get("rows").and_then(Value::as_array).cloned().unwrap_or_default();
+            let source_rows = parity
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let repl_rows = repl
+                .get("rows")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let bridge_rows = bridge
+                .get("rows")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
 
             let mut rows = Vec::<Value>::new();
             for item in source_rows {
                 let Some(command) = item.get("command").and_then(Value::as_str) else {
                     continue;
                 };
-                let status =
-                    normalize(item.get("status").and_then(Value::as_str).unwrap_or("partial"));
-                let links =
-                    item.get("evidence_links").and_then(Value::as_array).cloned().unwrap_or_else(
-                        || vec![json!("artifacts/parity/command_parity_matrix.json")],
-                    );
+                let status = normalize(
+                    item.get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("partial"),
+                );
+                let links = item
+                    .get("evidence_links")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_else(|| vec![json!("artifacts/parity/command_parity_matrix.json")]);
                 rows.push(json!({
                                     "command": command.trim(),
                                     "surface": command_surface(command.trim()),
@@ -913,8 +1014,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let Some(command) = item.get("command").and_then(Value::as_str) else {
                     continue;
                 };
-                let status =
-                    normalize(item.get("status").and_then(Value::as_str).unwrap_or("partial"));
+                let status = normalize(
+                    item.get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("partial"),
+                );
                 let mut links = item
                     .get("evidence_links")
                     .and_then(Value::as_array)
@@ -944,9 +1048,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .and_then(Value::as_str)
                     .map(normalize)
                     .unwrap_or_else(|| {
-                        if item.get("stdout_match").and_then(Value::as_bool).unwrap_or(false)
-                            && item.get("stderr_match").and_then(Value::as_bool).unwrap_or(false)
-                            && item.get("exit_match").and_then(Value::as_bool).unwrap_or(false)
+                        if item
+                            .get("stdout_match")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(false)
+                            && item
+                                .get("stderr_match")
+                                .and_then(Value::as_bool)
+                                .unwrap_or(false)
+                            && item
+                                .get("exit_match")
+                                .and_then(Value::as_bool)
+                                .unwrap_or(false)
                         {
                             "rust-complete"
                         } else {
@@ -1045,8 +1158,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "Command Migration Matrix\ntotal: {}\nrust-complete: {}\nrust-partial: {}\npython-only: {}\nintentionally-different: {}\n",
                                 summary["total"], summary["rust-complete"], summary["rust-partial"], summary["python-only"], summary["intentionally-different"]
                             );
-            fs::write(workspace_root.join("artifacts/status/command_migration_matrix.txt"), text)
-                .ok()?;
+            fs::write(
+                workspace_root.join("artifacts/status/command_migration_matrix.txt"),
+                text,
+            )
+            .ok()?;
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/command_migration_repl_paths.json",
@@ -1064,15 +1180,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "commands": surfaces.get("python_bridge").cloned().unwrap_or_else(|| json!([])),
                                 "count": surfaces.get("python_bridge").and_then(Value::as_array).map_or(0, Vec::len),
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/command_migration_matrix.json",
-                "artifacts/status/command_migration_rust_partial.json",
-                "artifacts/status/command_migration_python_only.json",
-                "artifacts/status/command_migration_intentional_differences.json",
-                "artifacts/status/command_migration_matrix.txt",
-                "artifacts/status/command_migration_repl_paths.json",
-                "artifacts/status/command_migration_python_bridge_entrypoints.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/command_migration_matrix.json",
+                    "artifacts/status/command_migration_rust_partial.json",
+                    "artifacts/status/command_migration_python_only.json",
+                    "artifacts/status/command_migration_intentional_differences.json",
+                    "artifacts/status/command_migration_matrix.txt",
+                    "artifacts/status/command_migration_repl_paths.json",
+                    "artifacts/status/command_migration_python_bridge_entrypoints.json"
+                ]}),
+            )
         }
         _ => None,
     }

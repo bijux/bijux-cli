@@ -1,8 +1,8 @@
-#[path = "spec_runtime_config_repl.rs"]
+#[path = "runtime_config_repl_spec.rs"]
 mod config_repl;
-#[path = "spec_runtime_cross_surface.rs"]
+#[path = "runtime_cross_surface_spec.rs"]
 mod cross_surface;
-#[path = "spec_runtime_namespace_install.rs"]
+#[path = "runtime_namespace_install_spec.rs"]
 mod namespace_install;
 
 use crate::contract_engine::maintenance::Value;

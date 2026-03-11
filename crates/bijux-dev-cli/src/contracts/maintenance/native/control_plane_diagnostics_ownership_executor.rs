@@ -140,7 +140,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let dev_registry = workspace_root.join("crates/bijux-dev-cli/src/registry.rs");
             let inventory = workspace_root.join("crates/bijux-cli/src/routing/inventory.rs");
             let has = |path: &Path, token: &str| -> bool {
-                fs::read_to_string(path).map(|text| text.contains(token)).unwrap_or(false)
+                fs::read_to_string(path)
+                    .map(|text| text.contains(token))
+                    .unwrap_or(false)
             };
             let before = json!({
                 "core_owned_routes_registry_presentation":
@@ -242,7 +244,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "install_runtime_identity_query",
                     workspace_root.join("crates/bijux-cli/src/install/query.rs"),
                 ),
-                ("core_state_parity_query", workspace_root.join("crates/bijux-cli/src/query.rs")),
+                (
+                    "core_state_parity_query",
+                    workspace_root.join("crates/bijux-cli/src/query.rs"),
+                ),
             ];
             let interfaces: Vec<Value> = query_files
                 .into_iter()
@@ -318,7 +323,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .count();
             let groups: BTreeSet<String> = command_rows
                 .iter()
-                .filter_map(|row| row.get("group").and_then(Value::as_str).map(ToString::to_string))
+                .filter_map(|row| {
+                    row.get("group")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
                 .collect();
             let report = json!({
                 "namespace": "dev cli",
@@ -477,39 +486,41 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ];
             let checks: Vec<Value> = specs
                 .iter()
-                .map(|(scenario_id, command, relative_path, severity, description)| {
-                    let path = stale_root.join(relative_path);
-                    let exists = path.exists();
-                    let mut state = "fresh".to_string();
-                    let mut age_seconds = None::<u64>;
-                    if !exists {
-                        state = "missing".to_string();
-                    } else {
-                        let modified = path
-                            .metadata()
-                            .ok()
-                            .and_then(|meta| meta.modified().ok())
-                            .and_then(|ts| ts.duration_since(std::time::UNIX_EPOCH).ok())
-                            .map(|dur| dur.as_secs())
-                            .unwrap_or(now_epoch);
-                        let age = now_epoch.saturating_sub(modified);
-                        age_seconds = Some(age);
-                        if forced.contains(*relative_path) || age > max_age_seconds {
-                            state = "stale".to_string();
+                .map(
+                    |(scenario_id, command, relative_path, severity, description)| {
+                        let path = stale_root.join(relative_path);
+                        let exists = path.exists();
+                        let mut state = "fresh".to_string();
+                        let mut age_seconds = None::<u64>;
+                        if !exists {
+                            state = "missing".to_string();
+                        } else {
+                            let modified = path
+                                .metadata()
+                                .ok()
+                                .and_then(|meta| meta.modified().ok())
+                                .and_then(|ts| ts.duration_since(std::time::UNIX_EPOCH).ok())
+                                .map(|dur| dur.as_secs())
+                                .unwrap_or(now_epoch);
+                            let age = now_epoch.saturating_sub(modified);
+                            age_seconds = Some(age);
+                            if forced.contains(*relative_path) || age > max_age_seconds {
+                                state = "stale".to_string();
+                            }
                         }
-                    }
-                    json!({
-                        "scenario_id": scenario_id,
-                        "command": command,
-                        "path": relative_path,
-                        "severity": severity,
-                        "description": description,
-                        "exists": exists,
-                        "state": state,
-                        "age_seconds": age_seconds,
-                        "max_age_seconds": max_age_seconds,
-                    })
-                })
+                        json!({
+                            "scenario_id": scenario_id,
+                            "command": command,
+                            "path": relative_path,
+                            "severity": severity,
+                            "description": description,
+                            "exists": exists,
+                            "state": state,
+                            "age_seconds": age_seconds,
+                            "max_age_seconds": max_age_seconds,
+                        })
+                    },
+                )
                 .collect();
             let stale_or_missing: Vec<Value> = checks
                 .iter()
@@ -529,7 +540,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|row| row.get("severity").and_then(Value::as_str) == Some("warning"))
                 .count();
-            let status_value = if stale_or_missing.is_empty() { "clean" } else { "drift" };
+            let status_value = if stale_or_missing.is_empty() {
+                "clean"
+            } else {
+                "drift"
+            };
             let summary = json!({
                 "checks_total": checks.len(),
                 "fresh_count": fresh_count,
@@ -594,12 +609,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "status": if critical_stale_count == 0 { "clean" } else { "drift" },
                 }),
             )?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/stale_artifact_artifact.json",
-                "artifacts/status/stale_evidence_artifact.json",
-                "artifacts/status/stale_report_artifact.json",
-                "artifacts/status/stale_detection_regression_suite.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/stale_artifact_artifact.json",
+                    "artifacts/status/stale_evidence_artifact.json",
+                    "artifacts/status/stale_report_artifact.json",
+                    "artifacts/status/stale_detection_regression_suite.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
             let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
@@ -613,14 +630,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .and_then(|text| serde_json::from_str::<Value>(&text).ok())
             .unwrap_or_else(|| json!({}));
             let summary = payload.get("summary").cloned().unwrap_or_else(|| json!({}));
-            let critical_stale =
-                summary.get("critical_stale_count").and_then(Value::as_i64).unwrap_or(0);
-            let warning_stale =
-                summary.get("warning_stale_count").and_then(Value::as_i64).unwrap_or(0);
-            let injection_mode =
-                summary.get("injection_mode").and_then(Value::as_bool).unwrap_or(false);
-            let allow_injection_drift =
-                std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT").ok().as_deref() == Some("1");
+            let critical_stale = summary
+                .get("critical_stale_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
+            let warning_stale = summary
+                .get("warning_stale_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
+            let injection_mode = summary
+                .get("injection_mode")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let allow_injection_drift = std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT")
+                .ok()
+                .as_deref()
+                == Some("1");
             if critical_stale > 0 && !(injection_mode && allow_injection_drift) {
                 return Some(json!({
                     "status":"failed",
@@ -682,13 +707,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "harness_results_stable": all_harness_stable,
                 "unified_corruption_report_present": !unified_corruption.as_object().is_some_and(|obj| obj.is_empty()),
             });
-            let all_checks = [audit_checks.clone(), doctor_checks.clone(), harness_checks.clone()]
-                .into_iter()
-                .filter_map(|v| v.as_object().cloned())
-                .fold(serde_json::Map::new(), |mut acc, map| {
-                    acc.extend(map);
-                    acc
-                });
+            let all_checks = [
+                audit_checks.clone(),
+                doctor_checks.clone(),
+                harness_checks.clone(),
+            ]
+            .into_iter()
+            .filter_map(|v| v.as_object().cloned())
+            .fold(serde_json::Map::new(), |mut acc, map| {
+                acc.extend(map);
+                acc
+            });
             let drift_checks: Vec<String> = all_checks
                 .iter()
                 .filter(|(_, v)| v.as_bool() != Some(true))
@@ -724,12 +753,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_audit_truth_artifact.json",
-                "artifacts/status/state_doctor_truth_artifact.json",
-                "artifacts/status/corrupted_state_truth_artifact.json",
-                "artifacts/status/state_diagnostics_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_audit_truth_artifact.json",
+                    "artifacts/status/state_doctor_truth_artifact.json",
+                    "artifacts/status/corrupted_state_truth_artifact.json",
+                    "artifacts/status/state_diagnostics_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-BOUNDARY-REPORTS" => {
             let dev_fixture = workspace_root
@@ -783,19 +814,37 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let delegated = [
                     ("dev cli routes", "dev_routes::build_report_from_query"),
                     ("dev cli registry", "dev_registry::build_report_from_query"),
-                    ("dev cli route-audit", "dev_route_audit::build_report_from_query"),
+                    (
+                        "dev cli route-audit",
+                        "dev_route_audit::build_report_from_query",
+                    ),
                     ("dev cli env", "dev_env::build_report("),
                     ("dev cli contracts", "dev_contracts::build_report("),
                     ("dev cli parity", "dev_parity::build_report("),
                     ("dev cli status", "dev_status::build_report("),
-                    ("dev cli runtime-identity", "dev_runtime_identity::build_report("),
-                    ("dev cli package-health", "dev_package_health::build_report("),
+                    (
+                        "dev cli runtime-identity",
+                        "dev_runtime_identity::build_report(",
+                    ),
+                    (
+                        "dev cli package-health",
+                        "dev_package_health::build_report(",
+                    ),
                     ("dev cli state-audit", "dev_state_audit::build_report("),
-                    ("dev cli state-doctor", "dev_state_audit::build_doctor_report("),
-                    ("dev cli maintenance-audit", "dev_maintenance_audit::build_report("),
+                    (
+                        "dev cli state-doctor",
+                        "dev_state_audit::build_doctor_report(",
+                    ),
+                    (
+                        "dev cli maintenance-audit",
+                        "dev_maintenance_audit::build_report(",
+                    ),
                     ("dev cli docs-audit", "dev_docs_audit::build_report("),
                     ("dev cli crate-health", "dev_crate_health::build_report("),
-                    ("dev cli inventory", "dev_maintenance_audit::build_inventory_report("),
+                    (
+                        "dev cli inventory",
+                        "dev_maintenance_audit::build_inventory_report(",
+                    ),
                 ];
                 if delegated
                     .iter()
@@ -890,12 +939,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_some_and(|s| s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                                 "not_yet_owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_owned_behaviors_inventory.json",
-                "artifacts/status/runtime_owned_behaviors_inventory.json",
-                "artifacts/status/misplaced_dev_behaviors_report.json",
-                "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_owned_behaviors_inventory.json",
+                    "artifacts/status/runtime_owned_behaviors_inventory.json",
+                    "artifacts/status/misplaced_dev_behaviors_report.json",
+                    "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
             let fixture = workspace_root
@@ -907,7 +958,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let test_sources: BTreeMap<String, String> = collect_files(&test_dir)
                 .into_iter()
                 .filter(|p| p.extension().is_some_and(|ext| ext == "rs"))
-                .map(|p| (rel(&p, workspace_root), fs::read_to_string(p).unwrap_or_default()))
+                .map(|p| {
+                    (
+                        rel(&p, workspace_root),
+                        fs::read_to_string(p).unwrap_or_default(),
+                    )
+                })
                 .collect();
             let commands: Vec<String> = fs::read_to_string(&fixture)
                 .unwrap_or_default()
@@ -931,8 +987,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let mut rows = Vec::<Value>::new();
             for command in commands {
                 let parts = command.split(' ').collect::<Vec<_>>();
-                let quoted =
-                    parts.iter().map(|p| format!("\"{p}\"")).collect::<Vec<_>>().join(", ");
+                let quoted = parts
+                    .iter()
+                    .map(|p| format!("\"{p}\""))
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let evidence_links: Vec<String> = test_sources
                     .iter()
                     .filter(|(_, src)| {
@@ -958,8 +1017,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }));
             }
             rows.sort_by(|l, r| {
-                let lv = l.get("maintainer_value").and_then(Value::as_i64).unwrap_or(0);
-                let rv = r.get("maintainer_value").and_then(Value::as_i64).unwrap_or(0);
+                let lv = l
+                    .get("maintainer_value")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
+                let rv = r
+                    .get("maintainer_value")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
                 rv.cmp(&lv).then_with(|| {
                     l.get("command")
                         .and_then(Value::as_str)
@@ -1034,8 +1099,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()
             .and_then(|t| serde_json::from_str::<Value>(&t).ok())
             .unwrap_or_else(|| json!({}));
-            let cli_remaining =
-                cli_completion.get("remaining_count").and_then(Value::as_i64).unwrap_or(0);
+            let cli_remaining = cli_completion
+                .get("remaining_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
             let cli_green =
                 cli_completion.get("closure_status").and_then(Value::as_str) == Some("green");
             let dev_green = remaining.is_empty() && all_required;
@@ -1065,17 +1132,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 txt,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_command_coverage_report.json",
-                "artifacts/status/dev_cli_command_matrix_artifact.json",
-                "artifacts/status/dev_cli_command_surface_domain_contract.json",
-                "artifacts/status/dev_cli_command_remaining_inventory.json",
-                "artifacts/status/dev_cli_command_value_ranking.json",
-                "artifacts/status/dev_cli_command_completion_report.json",
-                "artifacts/status/dev_cli_command_closure_set.json",
-                "artifacts/status/cli_dev_command_closure_report.json",
-                "artifacts/status/cli_dev_command_closure_report.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_command_coverage_report.json",
+                    "artifacts/status/dev_cli_command_matrix_artifact.json",
+                    "artifacts/status/dev_cli_command_surface_domain_contract.json",
+                    "artifacts/status/dev_cli_command_remaining_inventory.json",
+                    "artifacts/status/dev_cli_command_value_ranking.json",
+                    "artifacts/status/dev_cli_command_completion_report.json",
+                    "artifacts/status/dev_cli_command_closure_set.json",
+                    "artifacts/status/cli_dev_command_closure_report.json",
+                    "artifacts/status/cli_dev_command_closure_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS" => {
             let main_rs =
@@ -1146,10 +1215,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "registry_json_assembly_mentions": registry_rs.matches("serde_json::json!").count()
                                 }
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_dispatch_ownership_report.json",
-                "artifacts/status/bin_entrypoint_responsibility_diff.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_dispatch_ownership_report.json",
+                    "artifacts/status/bin_entrypoint_responsibility_diff.json"
+                ]}),
+            )
         }
         _ => None,
     }

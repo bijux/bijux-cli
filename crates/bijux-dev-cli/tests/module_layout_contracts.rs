@@ -14,8 +14,12 @@ fn command_and_status_contract_namespaces_exist() {
 #[test]
 fn legacy_native_directory_names_are_removed() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert!(!crate_root.join("src/contracts/maintenance/native/catalog").exists());
-    assert!(!crate_root.join("src/contracts/maintenance/native/handlers").exists());
+    assert!(!crate_root
+        .join("src/contracts/maintenance/native/catalog")
+        .exists());
+    assert!(!crate_root
+        .join("src/contracts/maintenance/native/handlers")
+        .exists());
 }
 
 #[test]
@@ -26,10 +30,52 @@ fn legacy_alias_modules_are_removed() {
 }
 
 #[test]
-fn native_contract_modules_use_spec_and_executor_naming() {
+fn native_contract_modules_use_domain_first_filenames() {
     let native_mod = include_str!("../src/contracts/maintenance/native/mod.rs");
     assert!(native_mod.contains("mod executors;"));
     assert!(native_mod.contains("mod specs;"));
+
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let native_dir = crate_root.join("src/contracts/maintenance/native");
+    let mut violations = Vec::new();
+
+    let Ok(entries) = fs::read_dir(&native_dir) else {
+        panic!(
+            "missing native contracts directory at {}",
+            native_dir.display()
+        );
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() || path.extension().map_or(true, |ext| ext != "rs") {
+            continue;
+        }
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if file_name == "mod.rs" || file_name == "executors.rs" || file_name == "specs.rs" {
+            continue;
+        }
+        if file_name.starts_with("executor_") || file_name.starts_with("spec_") {
+            violations.push(format!(
+                "{} uses legacy type-first prefix",
+                path.strip_prefix(crate_root).unwrap_or(&path).display()
+            ));
+        }
+        if !file_name.ends_with("_executor.rs") && !file_name.ends_with("_spec.rs") {
+            violations.push(format!(
+                "{} must end with _executor.rs or _spec.rs",
+                path.strip_prefix(crate_root).unwrap_or(&path).display()
+            ));
+        }
+    }
+
+    violations.sort();
+    assert!(
+        violations.is_empty(),
+        "native contract file naming violations:\n{}",
+        violations.join("\n")
+    );
 }
 
 fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
@@ -135,16 +181,32 @@ fn allowlists_are_centralized_under_config_as_toml() {
     let automation_allowlist = workspace_root.join("config/allowlists/automation.toml");
     let public_api_allowlist = workspace_root.join("config/allowlists/public_api.toml");
 
-    assert!(automation_allowlist.exists(), "missing {}", automation_allowlist.display());
-    assert!(public_api_allowlist.exists(), "missing {}", public_api_allowlist.display());
+    assert!(
+        automation_allowlist.exists(),
+        "missing {}",
+        automation_allowlist.display()
+    );
+    assert!(
+        public_api_allowlist.exists(),
+        "missing {}",
+        public_api_allowlist.display()
+    );
 
     let automation_text = fs::read_to_string(&automation_allowlist).expect("read automation");
     let public_api_text = fs::read_to_string(&public_api_allowlist).expect("read public api");
 
-    toml::from_str::<toml::Value>(&automation_text).expect("automation allowlist must be valid toml");
-    toml::from_str::<toml::Value>(&public_api_text).expect("public api allowlist must be valid toml");
+    toml::from_str::<toml::Value>(&automation_text)
+        .expect("automation allowlist must be valid toml");
+    toml::from_str::<toml::Value>(&public_api_text)
+        .expect("public api allowlist must be valid toml");
 
-    assert!(!workspace_root.join(".github/maintenance_additions_allowlist.txt").exists());
-    assert!(!workspace_root.join(".github/root_maintenance_additions_allowlist.txt").exists());
-    assert!(!workspace_root.join(".github/public_api_allowlist.txt").exists());
+    assert!(!workspace_root
+        .join(".github/maintenance_additions_allowlist.txt")
+        .exists());
+    assert!(!workspace_root
+        .join(".github/root_maintenance_additions_allowlist.txt")
+        .exists());
+    assert!(!workspace_root
+        .join(".github/public_api_allowlist.txt")
+        .exists());
 }
