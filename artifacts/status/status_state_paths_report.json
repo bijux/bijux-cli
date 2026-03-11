@@ -1,6 +1,6 @@
 {
-  "generated_at": "1970-01-01T00:00:00+00:00",
-  "generator": "scripts/status/generate_status_reports.py",
+  "generated_at": "2026-03-11T05:31:38Z",
+  "generator": "bijux-dev-cli",
   "source_precedence": [
     "flags",
     "env",

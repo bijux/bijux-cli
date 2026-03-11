@@ -69,105 +69,74 @@
       "status": "keep"
     }
   ],
-  "generated_at": "2026-03-10T19:24:43.037693+00:00",
-  "generator": "scripts/status/generate_crate_boundary_metrics.py",
+  "generated_at": "2026-03-11T05:31:39Z",
+  "generator": "bijux-dev-cli",
   "metrics": {
-    "cross_crate_change_frequency": [
-      {
-        "left": "bijux-dev-cli",
-        "right": "bijux-cli-python",
-        "shared_commits": 3
-      },
-      {
-        "left": "bijux-cli-evidence",
-        "right": "bijux-dev-cli",
-        "shared_commits": 1
-      },
-      {
-        "left": "bijux-dev-cli",
-        "right": "bijux-cli",
-        "shared_commits": 1
-      },
-      {
-        "left": "bijux-cli",
-        "right": "bijux-cli-python",
-        "shared_commits": 1
-      },
-      {
-        "left": "bijux-cli-evidence",
-        "right": "bijux-cli",
-        "shared_commits": 0
-      },
-      {
-        "left": "bijux-cli-evidence",
-        "right": "bijux-cli-python",
-        "shared_commits": 0
-      }
-    ],
+    "cross_crate_change_frequency": [],
     "per_crate": [
       {
         "churn": {
-          "commit_count": 5,
-          "deletions": 104,
-          "files_changed_entries": 437,
-          "insertions": 43604
+          "commit_count": null,
+          "deletions": null,
+          "files_changed_entries": null,
+          "insertions": null
         },
         "compile_ok": true,
-        "compile_seconds": 0.084,
-        "crate": "bijux-cli",
-        "dependency_fan_in": 1,
-        "dependency_fan_out": 1,
-        "public_api_count": 266,
-        "test_build_ok": true,
-        "test_build_seconds": 0.091
-      },
-      {
-        "churn": {
-          "commit_count": 1,
-          "deletions": 0,
-          "files_changed_entries": 2,
-          "insertions": 103
-        },
-        "compile_ok": true,
-        "compile_seconds": 0.061,
+        "compile_seconds": null,
         "crate": "bijux-cli-evidence",
-        "dependency_fan_in": 1,
-        "dependency_fan_out": 0,
-        "public_api_count": 4,
+        "dependency_fan_in": null,
+        "dependency_fan_out": 1,
+        "public_api_count": 13,
         "test_build_ok": true,
-        "test_build_seconds": 0.063
+        "test_build_seconds": null
       },
       {
         "churn": {
-          "commit_count": 32,
-          "deletions": 567,
-          "files_changed_entries": 103,
-          "insertions": 1921
+          "commit_count": null,
+          "deletions": null,
+          "files_changed_entries": null,
+          "insertions": null
         },
         "compile_ok": true,
-        "compile_seconds": 0.075,
+        "compile_seconds": null,
+        "crate": "bijux-dev-cli",
+        "dependency_fan_in": null,
+        "dependency_fan_out": 2,
+        "public_api_count": 213,
+        "test_build_ok": true,
+        "test_build_seconds": null
+      },
+      {
+        "churn": {
+          "commit_count": null,
+          "deletions": null,
+          "files_changed_entries": null,
+          "insertions": null
+        },
+        "compile_ok": true,
+        "compile_seconds": null,
+        "crate": "bijux-cli",
+        "dependency_fan_in": null,
+        "dependency_fan_out": 1,
+        "public_api_count": 596,
+        "test_build_ok": true,
+        "test_build_seconds": null
+      },
+      {
+        "churn": {
+          "commit_count": null,
+          "deletions": null,
+          "files_changed_entries": null,
+          "insertions": null
+        },
+        "compile_ok": true,
+        "compile_seconds": null,
         "crate": "bijux-cli-python",
-        "dependency_fan_in": 0,
+        "dependency_fan_in": null,
         "dependency_fan_out": 1,
         "public_api_count": 22,
         "test_build_ok": true,
-        "test_build_seconds": 1.983
-      },
-      {
-        "churn": {
-          "commit_count": 28,
-          "deletions": 258,
-          "files_changed_entries": 96,
-          "insertions": 4378
-        },
-        "compile_ok": true,
-        "compile_seconds": 0.065,
-        "crate": "bijux-dev-cli",
-        "dependency_fan_in": 1,
-        "dependency_fan_out": 1,
-        "public_api_count": 128,
-        "test_build_ok": true,
-        "test_build_seconds": 0.067
+        "test_build_seconds": null
       }
     ]
   },

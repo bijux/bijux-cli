@@ -1772,6 +1772,58 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/status.json",
+                "artifacts/status/status_root_commands.json",
+                "artifacts/status/status_cli_subcommands.json",
+                "artifacts/status/status_dev_cli_subcommands.json",
+                "artifacts/status/status_plugin_commands.json",
+                "artifacts/status/status_repl_parity_coverage.json",
+                "artifacts/status/status_python_bridge_parity_coverage.json",
+                "artifacts/status/status_install_packaging_parity_coverage.json",
+                "artifacts/status/status_state_behavior_coverage.json",
+                "artifacts/status/status_state_paths_report.json",
+                "artifacts/status/status_state_corruption_health_report.json",
+                "artifacts/status/status_snapshot_coverage.json",
+                "artifacts/status/status_stream_coverage.json",
+                "artifacts/status/status_exit_code_coverage.json",
+                "artifacts/status/status_failure_path_coverage.json",
+                "artifacts/status/status_compatibility_aliases.json",
+                "artifacts/status/status_known_parity_gaps.json",
+                "artifacts/status/status_intentional_differences.json",
+                "artifacts/status/status_unowned_scripts.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATUS-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/maintainer_scripts_outside_dev_cli.json",
+                "artifacts/status/maintainer_control_plane_commands.json",
+                "artifacts/status/maintainer_control_plane_text_report.txt",
+                "artifacts/status/maintainer_control_plane_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/crate_boundary_metrics.json",
+                "artifacts/status/crate_boundary_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS",
+        }),
     ]
 }
 
@@ -13112,6 +13164,376 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/diagnostics_minimalism_artifact.json",
                 "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
                 "artifacts/status/diagnostics_trust_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-STATUS-REPORTS" => {
+            let generated_at = generated_at_utc();
+            let read = |p: &str| {
+                fs::read_to_string(workspace_root.join(p))
+                    .ok()
+                    .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+                    .unwrap_or_else(|| json!({}))
+            };
+            let current_state = read("artifacts/status/current_rust_state.json");
+            let parity_matrix = read("artifacts/parity/command_parity_matrix.json");
+            let bridge_report = read("artifacts/parity/binary_vs_python_bridge_parity_report.json");
+            let runtime_unity = read("artifacts/status/runtime_unity_report.json");
+            let state_config = read("artifacts/parity/config_parity_report.json");
+            let state_history = read("artifacts/parity/history_parity_report.json");
+            let state_memory = read("artifacts/parity/memory_parity_report.json");
+            let plugin_state = read("artifacts/status/plugin_state_report.json");
+            let intentional = read("docs/architecture/parity/intentional_differences.json");
+            let aliases = current_state
+                .get("rust_routed_commands")
+                .and_then(|r| r.get("aliases"))
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|v| v.as_str().map(ToString::to_string))
+                .collect::<BTreeSet<_>>();
+            let rows = parity_matrix
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let mut command_rows = rows
+                .into_iter()
+                .filter_map(|row| row.as_object().cloned())
+                .filter_map(|row| {
+                    let command = row.get("command")?.as_str()?.trim().to_string();
+                    if command.is_empty() {
+                        return None;
+                    }
+                    let matrix_status = row.get("status").and_then(Value::as_str).unwrap_or("missing");
+                    let status = if aliases.contains(&command) {
+                        "shim"
+                    } else if matrix_status == "missing" {
+                        "missing"
+                    } else if matrix_status == "partial" {
+                        "partial"
+                    } else {
+                        "complete"
+                    };
+                    Some(json!({
+                        "command":command,"group":row.get("group").and_then(Value::as_str).unwrap_or("unknown"),
+                        "status":status,"matrix_status":matrix_status,
+                        "owner":row.get("owner").and_then(Value::as_str).unwrap_or(""),
+                        "reason":row.get("reason").and_then(Value::as_str).unwrap_or(""),
+                        "blocker":row.get("blocker").and_then(Value::as_str).unwrap_or(""),
+                        "confidence":row.get("confidence").cloned().unwrap_or_else(|| json!(0.0))
+                    }))
+                })
+                .collect::<Vec<_>>();
+            command_rows.sort_by(|a, b| {
+                a.get("command")
+                    .and_then(Value::as_str)
+                    .cmp(&b.get("command").and_then(Value::as_str))
+            });
+            let root_commands = command_rows
+                .iter()
+                .filter_map(|r| r.get("command").and_then(Value::as_str))
+                .filter_map(|c| c.split_whitespace().next().map(ToString::to_string))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let cli_commands = command_rows
+                .iter()
+                .filter_map(|r| r.get("command").and_then(Value::as_str))
+                .filter(|c| c.starts_with("cli "))
+                .map(|c| c.split_whitespace().take(3).collect::<Vec<_>>().join(" "))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let dev_cli_commands = command_rows
+                .iter()
+                .filter_map(|r| r.get("command").and_then(Value::as_str))
+                .filter(|c| c.starts_with("dev cli "))
+                .map(|c| c.split_whitespace().take(4).collect::<Vec<_>>().join(" "))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let plugin_commands = command_rows
+                .iter()
+                .filter_map(|r| r.get("command").and_then(Value::as_str))
+                .filter_map(|c| {
+                    if c.starts_with("plugins ") {
+                        Some(c.split_whitespace().take(2).collect::<Vec<_>>().join(" "))
+                    } else if c.starts_with("cli plugins ") {
+                        Some(c.split_whitespace().take(3).collect::<Vec<_>>().join(" "))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let snapshot_covered = current_state
+                .get("snapshot_covered_commands")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
+            let stream_covered = current_state
+                .get("stderr_stdout_covered_commands")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
+            let exit_covered = current_state
+                .get("exit_code_covered_commands")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
+            let fail_covered = collect_files(&workspace_root.join("crates"))
+                .into_iter()
+                .filter(|p| {
+                    p.to_string_lossy().contains("/tests/")
+                        && p.extension().and_then(|e| e.to_str()) == Some("rs")
+                })
+                .filter_map(|p| fs::read_to_string(&p).ok())
+                .flat_map(|txt| txt.lines().map(ToString::to_string).collect::<Vec<_>>())
+                .filter(|line| {
+                    line.contains("[\"")
+                        && [
+                            "error",
+                            "failure",
+                            "invalid",
+                            "malformed",
+                            "missing",
+                            "reject",
+                            "rollback",
+                            "corrupt",
+                            "unsafe",
+                            "duplicate",
+                            "conflict",
+                            "shadow",
+                        ]
+                        .iter()
+                        .any(|k| line.to_lowercase().contains(k))
+                })
+                .filter_map(|line| {
+                    let quoted = line.split('"').collect::<Vec<_>>();
+                    let vals = quoted
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, v)| (i % 2 == 1).then_some((*v).to_string()))
+                        .collect::<Vec<_>>();
+                    (!vals.is_empty()).then_some(vals.join(" "))
+                })
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let known_gaps = command_rows.iter().filter(|row| row.get("status").and_then(Value::as_str).is_some_and(|s| ["missing","partial","shim"].contains(&s))).map(|row| json!({"command":row["command"],"status":row["status"],"blocker":row["blocker"],"owner":row["owner"]})).collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/status.json", &json!({
+                "generated_at":generated_at,"generator":"bijux-dev-cli","commands":command_rows,
+                "summary":{"total":command_rows.len(),"complete":command_rows.iter().filter(|r| r["status"]=="complete").count(),"partial":command_rows.iter().filter(|r| r["status"]=="partial").count(),"shim":command_rows.iter().filter(|r| r["status"]=="shim").count(),"missing":command_rows.iter().filter(|r| r["status"]=="missing").count()}
+            })).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_root_commands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":root_commands})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_cli_subcommands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":cli_commands})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_dev_cli_subcommands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":dev_cli_commands})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_plugin_commands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":plugin_commands})).ok()?;
+            let repl = command_rows
+                .iter()
+                .filter(|r| {
+                    r.get("command")
+                        .and_then(Value::as_str)
+                        .is_some_and(|c| c.split_whitespace().any(|p| p == "repl"))
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/status_repl_parity_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","summary":{"count":repl.len(),"statuses":{"complete":repl.iter().filter(|r| r["status"]=="complete").count(),"partial":repl.iter().filter(|r| r["status"]=="partial").count(),"shim":repl.iter().filter(|r| r["status"]=="shim").count(),"missing":repl.iter().filter(|r| r["status"]=="missing").count()}},"commands":repl,"evidence_files":["crates/bijux-cli-repl/tests/transcript_parity.rs","crates/bijux-cli-repl/tests/transcript_cases.rs"]})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_python_bridge_parity_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","report":bridge_report})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_install_packaging_parity_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","runtime_unity":runtime_unity,"runtime_identity_rules":current_state.get("runtime_identity_rules").cloned().unwrap_or_else(|| json!({})),"package_entrypoints":current_state.get("package_entrypoints").cloned().unwrap_or_else(|| json!([]))})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_state_behavior_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","config":state_config,"history":state_history,"memory":state_memory,"plugin_state":plugin_state})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_state_paths_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","state_paths":{"config":"BIJUXCLI_CONFIG or <HOME>/.bijux/.env","history":"BIJUXCLI_HISTORY_FILE or <HOME>/.bijux/.history","plugins_dir":"BIJUXCLI_PLUGINS_DIR or <HOME>/.bijux/.plugins","plugins_registry":"<plugins_dir>/registry.json","memory":"<HOME>/.bijux/.memory.json"},"source_precedence":["flags","env","config","defaults"]})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_state_corruption_health_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","areas":{"config":{"report":state_config,"focus":["malformed file","duplicate key","partial-write rollback"]},"history":{"report":state_history,"focus":["malformed array entries","line-format compatibility","oversized budget"]},"memory":{"report":state_memory,"focus":["malformed json","wrong-type object rejection"]},"plugin_registry":{"report":plugin_state,"focus":["malformed registry json","partial-write self-repair","stale backup cleanup"]}}})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_snapshot_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":snapshot_covered})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_stream_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":stream_covered})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_exit_code_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":exit_covered})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_failure_path_coverage.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":fail_covered})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_compatibility_aliases.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","aliases":aliases.into_iter().collect::<Vec<_>>()})).ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/status_known_parity_gaps.json",
+                &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","gaps":known_gaps}),
+            )
+            .ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_intentional_differences.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":intentional})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_unowned_scripts.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scripts":current_state.get("scripts_outside_dev_cli").cloned().unwrap_or_else(|| json!([]))})).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_scripts.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS" => {
+            let generated_at = generated_at_utc();
+            let required_commands = vec![
+                "dev cli status",
+                "dev cli parity",
+                "dev cli route-audit",
+                "dev cli state-audit",
+                "dev cli script-audit",
+                "dev cli crate-health",
+                "dev cli package-health",
+                "dev cli docs-audit",
+            ];
+            let replacements = BTreeMap::from([
+                ("scripts/check-package-metadata.py","bijux dev cli scripts package-metadata --format json --no-pretty"),
+                ("scripts/check_e2e_contract.py","bijux dev cli scripts e2e-contract --format json --no-pretty"),
+                ("scripts/helper_pip_audit.py","bijux dev cli scripts pip-audit --format json --no-pretty"),
+                ("scripts/capture_python_behavior.py","bijux dev cli scripts capture-python-behavior --format json --no-pretty"),
+                ("scripts/generate-provenance-statement.sh","bijux dev cli scripts provenance-statement --tag <tag> --output-dir <dir> --format json --no-pretty"),
+            ]);
+            let command_samples = fs::read_to_string(
+                workspace_root.join("artifacts/status/dev_cli_control_plane_samples.json"),
+            )
+            .ok()
+            .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+            .unwrap_or_else(|| json!({}));
+            let mut inventory = Vec::<Value>::new();
+            for path in collect_files(&workspace_root.join("scripts")) {
+                let relp = rel(&path, workspace_root);
+                if relp.contains("/__pycache__/")
+                    || relp.ends_with(".pyc")
+                    || relp.starts_with("scripts/status/")
+                {
+                    continue;
+                }
+                let replacement = replacements.get(relp.as_str()).copied().unwrap_or("");
+                inventory.push(json!({"path":relp,"replacement_command":replacement,"status":if replacement.is_empty(){"remaining"}else{"replaced"}}));
+            }
+            inventory.sort_by(|a, b| {
+                a.get("path").and_then(Value::as_str).cmp(&b.get("path").and_then(Value::as_str))
+            });
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_scripts_outside_dev_cli.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scripts":inventory,"summary":{"total":inventory.len(),"replaced":inventory.iter().filter(|r| r["status"]=="replaced").count(),"remaining":inventory.iter().filter(|r| r["status"]=="remaining").count()}})).ok()?;
+            let commands = required_commands.iter().map(|command| {
+                let sample = command_samples.get(*command).cloned().unwrap_or_else(|| json!({}));
+                json!({"command":command,"json_sample_present":sample.get("json").is_some(),"text_sample_present":sample.get("text").is_some(),"json_top_level_keys":sample.get("json_top_level_keys").cloned().unwrap_or_else(|| json!([]))})
+            }).collect::<Vec<_>>();
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_control_plane_commands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","required_commands":required_commands,"commands":commands})).ok()?;
+            let mut text =
+                format!("Maintainer control plane summary\nGenerated at: {generated_at}\n\n");
+            for row in &commands {
+                let keys = row
+                    .get("json_top_level_keys")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter_map(|v| v.as_str().map(ToString::to_string))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                text.push_str(&format!(
+                    "- {}: json_keys={}\n",
+                    row.get("command").and_then(Value::as_str).unwrap_or(""),
+                    if keys.is_empty() { "(none)" } else { &keys }
+                ));
+            }
+            text.push_str("\nDefault maintainer command: bijux dev cli status\nPolicy: use dev cli command surfaces before creating new ad-hoc scripts.\n");
+            fs::write(
+                workspace_root.join("artifacts/status/maintainer_control_plane_text_report.txt"),
+                text,
+            )
+            .ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_control_plane_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","scripts_outside_dev_cli":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_scripts_outside_dev_cli.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"commands":fs::read_to_string(workspace_root.join("artifacts/status/maintainer_control_plane_commands.json")).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).unwrap_or_else(|| json!({})),"text_report":"artifacts/status/maintainer_control_plane_text_report.txt"})).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/maintainer_scripts_outside_dev_cli.json",
+                "artifacts/status/maintainer_control_plane_commands.json",
+                "artifacts/status/maintainer_control_plane_text_report.txt",
+                "artifacts/status/maintainer_control_plane_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-CRATE-BOUNDARY-METRICS" => {
+            let generated_at = generated_at_utc();
+            let metadata = Command::new("cargo")
+                .args(["metadata", "--format-version", "1", "--no-deps"])
+                .current_dir(workspace_root)
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+                .unwrap_or_else(|| json!({}));
+            let pkgs =
+                metadata.get("packages").and_then(Value::as_array).cloned().unwrap_or_default();
+            let workspace_names = pkgs
+                .iter()
+                .filter_map(|p| p.get("name").and_then(Value::as_str).map(ToString::to_string))
+                .collect::<BTreeSet<_>>();
+            let mut per_crate = Vec::<Value>::new();
+            for pkg in &pkgs {
+                let Some(name) = pkg.get("name").and_then(Value::as_str) else {
+                    continue;
+                };
+                let compile = Command::new("cargo")
+                    .args(["check", "-q", "-p", name])
+                    .current_dir(workspace_root)
+                    .status()
+                    .ok()
+                    .is_some_and(|s| s.success());
+                let test_build = Command::new("cargo")
+                    .args(["test", "-q", "-p", name, "--no-run"])
+                    .current_dir(workspace_root)
+                    .status()
+                    .ok()
+                    .is_some_and(|s| s.success());
+                let manifest = pkg.get("manifest_path").and_then(Value::as_str).unwrap_or("");
+                let cargo_toml = PathBuf::from(manifest);
+                let rel_manifest = rel(&cargo_toml, workspace_root);
+                let cargo_text = fs::read_to_string(&cargo_toml).unwrap_or_default();
+                let fan_out = workspace_names
+                    .iter()
+                    .filter(|dep| dep.as_str() != name && cargo_text.contains(dep.as_str()))
+                    .count();
+                per_crate.push(json!({
+                    "crate":name,
+                    "compile_seconds": Value::Null,
+                    "test_build_seconds": Value::Null,
+                    "dependency_fan_in": Value::Null,
+                    "dependency_fan_out": fan_out,
+                    "public_api_count": collect_files(&workspace_root.join(rel_manifest.replace("Cargo.toml","src")))
+                        .into_iter().filter(|p| p.extension().and_then(|e| e.to_str())==Some("rs"))
+                        .filter_map(|p| fs::read_to_string(p).ok())
+                        .map(|t| t.matches("pub ").count())
+                        .sum::<usize>(),
+                    "churn": {"commit_count": Value::Null,"files_changed_entries": Value::Null,"insertions": Value::Null,"deletions": Value::Null},
+                    "compile_ok": compile,
+                    "test_build_ok": test_build,
+                }));
+            }
+            let boundary_decisions = json!([
+                {"boundary":"core <-> routing","status":"watch","decision":"keep separate for now","reason":"high co-change expected during parity closure; separation still useful for parser test focus"},
+                {"boundary":"core <-> output","status":"watch","decision":"keep separate for now","reason":"output formatting contracts remain reusable and test-scoped"},
+                {"boundary":"core <-> install","status":"watch","decision":"keep separate for now","reason":"install concerns include path and packaging diagnostics outside core execution law"},
+                {"boundary":"core <-> contracts","status":"keep","decision":"must stay separate","reason":"machine contracts must remain independent from execution engine"},
+                {"boundary":"core <-> python","status":"keep","decision":"must stay separate","reason":"bridge packaging/runtime integration is language-boundary specific"},
+                {"boundary":"core <-> plugin","status":"keep","decision":"must stay separate","reason":"plugin lifecycle and registry law should not be merged into base execution core"},
+                {"boundary":"core <-> repl","status":"keep","decision":"must stay separate","reason":"interactive session model and transcript behavior are distinct runtime surfaces"}
+            ]);
+            let crate_decisions = json!([
+                {"crate":"bijux-cli","status":"keep","review":"must stay separate","reason":"runtime command execution and routing law are now co-located in one crate"},
+                {"crate":"bijux-dev-cli","status":"watch","review":"paying rent with dedicated control-plane reports and ownership tests","reason":"should remain independent while delegating from core through query interfaces"},
+                {"crate":"bijux-cli-python","status":"watch","review":"paying rent with bridge parity and conversion law tests","reason":"language boundary remains useful while python bridge is maintained"},
+                {"crate":"bijux-cli-evidence","status":"keep","review":"must stay separate","reason":"evidence IDs and helpers should stay reusable across tooling surfaces"}
+            ]);
+            let report = json!({
+                "generated_at":generated_at,
+                "generator":"bijux-dev-cli",
+                "metrics":{"per_crate":per_crate,"cross_crate_change_frequency":[]},
+                "boundary_decisions":boundary_decisions,
+                "crate_decisions":crate_decisions,
+                "rules":{"no_large_merge_until_parity_stronger":true,"rule_text":"Large crate merges are frozen until parity coverage and mismatch trend show sustained improvement."}
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/crate_boundary_metrics.json",
+                &report,
+            )
+            .ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/crate_boundary_report.json", &json!({
+                "generated_at":generated_at,"generator":"bijux-dev-cli",
+                "evidence":{"metrics_artifact":"artifacts/status/crate_boundary_metrics.json","top_cross_crate_pairs":[]},
+                "crate_decision_summary":{"keep":2,"watch":2,"candidate_to_merge_later":0},
+                "crate_decisions":crate_decisions,
+                "boundary_decisions":boundary_decisions
+            })).ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/crate_boundary_metrics.json",
+                "artifacts/status/crate_boundary_report.json"
             ]}))
         }
         _ => None,
