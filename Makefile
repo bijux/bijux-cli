@@ -81,7 +81,7 @@ endef
 define read_pyproject_version
 $(strip $(shell \
   python3 -c 'import tomllib; \
-  print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])' \
+  print(tomllib.load(open("configs/python/pyproject.toml","rb"))["project"]["version"])' \
   2>/dev/null || echo 0.0.0 \
 ))
 endef

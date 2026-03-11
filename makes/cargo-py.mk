@@ -1,6 +1,8 @@
 # Python quality, packaging, and release lane (single ownership module)
 # Covers lint, test, quality, security, build, sbom, and publish workflows.
 
+PYTHON_CONFIG_DIR ?= configs/python
+
 # -------------------------------
 # Python lint
 # -------------------------------
@@ -43,9 +45,9 @@ lint-artifacts-py: | $(VENV)
 	  echo "→ Ruff format (check)"; \
 	  $(RUFF) format --check --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
 	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
-	@set -euo pipefail; $(RUFF) check --fix --config configs/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff.log"
-	@set -euo pipefail; $(MYPY) --config-file configs/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/mypy.log"
-	@set -euo pipefail; $(CODESPELL) -I configs/bijux.dic $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/codespell.log"
+	@set -euo pipefail; $(RUFF) check --fix --config "$(PYTHON_CONFIG_DIR)/ruff.toml" --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff.log"
+	@set -euo pipefail; $(MYPY) --config-file "$(PYTHON_CONFIG_DIR)/mypy.ini" --strict --cache-dir "$(MYPY_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/mypy.log"
+	@set -euo pipefail; $(CODESPELL) -I "$(PYTHON_CONFIG_DIR)/bijux.dic" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/codespell.log"
 	@set -euo pipefail; $(RADON) cc -s -a $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/radon.log"
 	@set -euo pipefail; $(PYDOCSTYLE) --convention=google $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/pydocstyle.log"
 	@[ -d .mypy_cache ] && echo "→ removing stray .mypy_cache" && rm -rf .mypy_cache || true
@@ -57,9 +59,9 @@ ifndef file
 	$(error Usage: make lint-file-py file=path/to/file.py)
 endif
 	@$(call run_tool,RuffFormat,$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)")
-	@$(call run_tool,Ruff,$(RUFF) check --fix --config configs/ruff.toml --cache-dir "$(RUFF_CACHE_DIR)")
-	@$(call run_tool,Mypy,$(MYPY) --config-file configs/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)")
-	@$(call run_tool,Codespell,$(CODESPELL) -I configs/bijux.dic)
+	@$(call run_tool,Ruff,$(RUFF) check --fix --config "$(PYTHON_CONFIG_DIR)/ruff.toml" --cache-dir "$(RUFF_CACHE_DIR)")
+	@$(call run_tool,Mypy,$(MYPY) --config-file "$(PYTHON_CONFIG_DIR)/mypy.ini" --strict --cache-dir "$(MYPY_CACHE_DIR)")
+	@$(call run_tool,Codespell,$(CODESPELL) -I "$(PYTHON_CONFIG_DIR)/bijux.dic")
 	@$(call run_tool,Radon,$(RADON) cc -s -a)
 	@$(call run_tool,Pydocstyle,$(PYDOCSTYLE) --convention=google)
 
@@ -122,8 +124,8 @@ PYTEST_BIN            := $(shell command -v pytest 2>/dev/null)
 PYTEST                ?= $(if $(PYTEST_BIN),$(PYTEST_BIN),$(PY) -m pytest)
 PYTHON_311            ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
 
-PYTEST_INI_ABS        := $(abspath pytest.ini)
-COVCFG_ABS            := $(abspath configs/coveragerc.ini)
+PYTEST_INI_ABS        := $(abspath $(PYTHON_CONFIG_DIR)/pytest.ini)
+COVCFG_ABS            := $(abspath $(PYTHON_CONFIG_DIR)/coveragerc.ini)
 COV_HTML_ABS          := $(abspath $(TEST_ARTIFACTS_DIR)/htmlcov)
 CACHE_DIR_ABS         := $(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)
 COV_XML_ABS           := $(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml)

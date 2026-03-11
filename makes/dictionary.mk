@@ -1,6 +1,6 @@
 # Dictionary Configuration
 
-DICTIONARY_FILE := configs/bijux.dic
+DICTIONARY_FILE := configs/python/bijux.dic
 DICTIONARY_TMP  := $(DICTIONARY_FILE).tmp
 
 .PHONY: dictionary dictionary-clean dictionary-check

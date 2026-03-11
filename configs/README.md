@@ -1,21 +1,25 @@
-# Project Configuration
+# Configuration Layout
 
-This directory contains all configuration files for **`bijux-cli`** development and quality assurance.
-It is the **single source of truth** for code formatting, linting, type checking, testing, and security rules — ensuring every contributor works in a **predictable, consistent** environment.
-
-Centralizing these configurations ensures:
-
-* **One place** to update standards
-* **Identical behavior** across local and CI builds
+This directory contains repository-wide configuration used by Rust and Python tooling.
+Python-specific tooling configuration is centralized under `configs/python`.
 
 ---
 
-## Quick Reference
+## Python
 
 | File                              | Tool / Purpose                                                     |
 |-----------------------------------|--------------------------------------------------------------------|
-| **`bijux.dic`**                   | PyCharm / Codespell — custom dictionary for project-specific terms |
-| **`coveragerc.ini`**              | Coverage.py — coverage measurement rules                           |
-| **`mypy.ini`**                    | Mypy — strict static type checking                                 |
-| **`ruff.toml`**                   | Ruff — linting, formatting, and isort rules                        |
+| **`python/pyproject.toml`**       | Python workspace package metadata and tooling settings             |
+| **`python/tox.ini`**              | Tox environments used by CI and local validation                   |
+| **`python/pytest.ini`**           | Pytest collection and coverage behavior                            |
+| **`python/coveragerc.ini`**       | Coverage.py configuration                                          |
+| **`python/mypy.ini`**             | Mypy strict static type checking                                   |
+| **`python/ruff.toml`**            | Ruff linting, formatting, and import sorting rules                |
+
+## Shared
+
+| File                              | Tool / Purpose                                                     |
+|-----------------------------------|--------------------------------------------------------------------|
 | **`allowlists/*.toml`**           | Centralized policy allowlists consumed by maintainer automation    |
+| **`rust/*.toml`**                 | Rust formatting, linting, dependency audit, and test profiles      |
+| **`status/*.json`**               | Baseline status inputs for maintainer checks                       |
