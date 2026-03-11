@@ -27,6 +27,16 @@ NEXTEST_PROFILE ?= default
 NEXTEST_STATUS_LEVEL ?= all
 NEXTEST_FINAL_STATUS_LEVEL ?= all
 NEXTEST_SHOW_PROGRESS ?= counter
+# Default fast-lane exclusions: known tests that consistently exceed 10 seconds.
+# Override with NEXTEST_FILTER_EXPR to run a custom selection.
+NEXTEST_SLOW_EXCLUDE_EXPR ?= not ( \
+	test(/repo_health_exposes_stale_generated_artifact_detection/) or \
+	test(/repo_docs_maintenance_crate_health_json_and_text_contracts/) or \
+	test(/repo_health_json_contracts_are_stable/) or \
+	test(/repo_text_heads_match_snapshots/) or \
+	test(/executes_dev_cli_namespace_commands/) or \
+	test(/all_command_groups_build_expected_top_level_keys/) \
+)
 
 define rs_require_tool
 	@command -v $(1) >/dev/null 2>&1 || { \
@@ -67,6 +77,7 @@ test-rs:
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)"
 	@status=0; \
+	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
@@ -82,7 +93,7 @@ test-rs:
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
 		--show-progress "$(NEXTEST_SHOW_PROGRESS)" \
-		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
+		$${filter_expr:+-E "$${filter_expr}"} \
 		2>&1 | tee "$(RS_TEST_REPORT)" || status=$$?; \
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
 	test $$status -eq 0
@@ -156,7 +167,7 @@ audit-rs:
 ##@ Rust
 fmt-rs: ## Run Rust format checks (artifact-scoped)
 lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
-test-rs: ## Run Rust nextest fast suite (artifact-scoped)
+test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 test-all-rs: ## Run Rust nextest all-features + ignored suite (artifact-scoped)
 coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-scoped)
 audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
