@@ -1426,6 +1426,22 @@ fn native_status_script_rows() -> Vec<Value> {
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS",
         }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/state_migration_status.json",
+                "artifacts/status/unified_state_behavior_report.json",
+                "artifacts/status/unified_state_corruption_report.json",
+                "artifacts/status/unified_state_rollback_report.json",
+                "artifacts/status/unified_state_path_resolution_report.json",
+                "artifacts/status/unified_state_doctor_snapshots.json",
+                "artifacts/status/unified_state_audit_payload.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS",
+        }),
     ]
 }
 
@@ -9677,6 +9693,186 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/diagnostics_matrix_artifact.json",
                 "artifacts/status/diagnostics_shape_drift_artifact.json",
                 "artifacts/status/diagnostics_operator_truth_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-STATE-AUDIT-REPORTS" => {
+            let read = |path: &str| -> Value {
+                fs::read_to_string(workspace_root.join(path))
+                    .ok()
+                    .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+                    .unwrap_or_else(|| json!({}))
+            };
+            let module_status_from_matrix = |matrix: &Value, prefixes: &[&str]| -> Value {
+                let rows =
+                    matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+                let matched = rows
+                    .into_iter()
+                    .filter(|row| {
+                        let cmd = row.get("command").and_then(Value::as_str).unwrap_or("");
+                        prefixes.iter().any(|prefix| cmd.starts_with(prefix))
+                    })
+                    .collect::<Vec<_>>();
+                if matched.is_empty() {
+                    return json!({"status":"still-changing","reason":"no command rows found","counts":{}});
+                }
+                let mut counts = BTreeMap::from([
+                    ("rust-complete".to_string(), 0usize),
+                    ("rust-partial".to_string(), 0usize),
+                    ("python-only".to_string(), 0usize),
+                    ("intentionally-different".to_string(), 0usize),
+                ]);
+                for row in &matched {
+                    if let Some(status) = row.get("status").and_then(Value::as_str) {
+                        if let Some(slot) = counts.get_mut(status) {
+                            *slot += 1;
+                        }
+                    }
+                }
+                let status = if counts["python-only"] > 0 {
+                    "still-changing"
+                } else if counts["rust-partial"] > 0 {
+                    "partial"
+                } else {
+                    "complete"
+                };
+                let reason = if status == "still-changing" {
+                    "python-only commands remain"
+                } else if status == "partial" {
+                    "rust-partial commands remain"
+                } else {
+                    "all command rows are rust-complete or intentionally-different"
+                };
+                json!({"status":status,"reason":reason,"counts":counts,"total":matched.len()})
+            };
+            let migration = read("artifacts/status/command_migration_matrix.json");
+            let state_behavior = read("artifacts/status/status_state_behavior_coverage.json");
+            let state_paths = read("artifacts/status/status_state_paths_report.json");
+            let state_corruption =
+                read("artifacts/status/status_state_corruption_health_report.json");
+            let state_audit = read("artifacts/status/state_audit_report.json");
+            let state_doctor = read("artifacts/status/state_doctor_report.json");
+            let state_write_guarantees = read("artifacts/status/state_write_guarantees.json");
+            let state_recovery_guarantees = read("artifacts/status/state_recovery_guarantees.json");
+            let state_inventory = read("artifacts/status/state_file_inventory.json");
+            let parity_matrix = read("artifacts/parity/state_behavior_parity_matrix.json");
+            let module_status = json!({
+                "config": module_status_from_matrix(&migration, &["config", "cli config"]),
+                "history": module_status_from_matrix(&migration, &["history", "cli history"]),
+                "memory": module_status_from_matrix(&migration, &["memory", "cli memory"]),
+                "plugin_registry_behavior": module_status_from_matrix(&migration, &["plugins", "cli plugins"]),
+            });
+            let base = json!({
+                "generated_at": generated_at_utc(),
+                "generator": "bijux-dev-cli",
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/state_migration_status.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "modules": module_status,
+                    "source_matrix": "artifacts/status/command_migration_matrix.json",
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_behavior_report.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "module_status": module_status,
+                    "state_behavior_coverage": state_behavior,
+                    "state_behavior_parity_matrix": parity_matrix,
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_corruption_report.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "status_corruption_health": state_corruption,
+                    "runtime_state_audit": state_audit.get("corruption_health").cloned().unwrap_or_else(|| json!({})),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_rollback_report.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "recovery_guarantees": state_recovery_guarantees,
+                    "write_guarantees": state_write_guarantees,
+                    "doctor_repairs": state_doctor.get("doctor").and_then(Value::as_object).and_then(|d| d.get("repairs")).cloned().unwrap_or_else(|| json!([])),
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_path_resolution_report.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "path_resolution": state_paths,
+                    "runtime_paths": state_audit.get("paths").cloned().unwrap_or_else(|| json!({})),
+                    "inventory": state_inventory.get("state_files").cloned().unwrap_or_else(|| json!([])),
+                }),
+            )
+            .ok()?;
+            let mut snapshots = Vec::<String>::new();
+            for name in [
+                "dev_cli_state_doctor_text.txt",
+                "dev_cli_state_doctor_no_color.txt",
+                "dev_cli_state_audit_text.txt",
+                "dev_cli_state_audit_no_color.txt",
+            ] {
+                let p = workspace_root.join("crates/bijux-cli/tests/snapshots").join(name);
+                if p.exists() {
+                    snapshots.push(format!("crates/bijux-cli/tests/snapshots/{name}"));
+                }
+            }
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_doctor_snapshots.json",
+                &json!({
+                    "generated_at": base["generated_at"],
+                    "generator": base["generator"],
+                    "snapshots": snapshots,
+                    "runtime_reports": [
+                        "artifacts/status/state_audit_report.json",
+                        "artifacts/status/state_doctor_report.json",
+                        "artifacts/status/state_doctor_report.txt",
+                    ],
+                }),
+            )
+            .ok()?;
+            let payload = json!({
+                "generated_at": base["generated_at"],
+                "generator": base["generator"],
+                "behavior_report": read("artifacts/status/unified_state_behavior_report.json"),
+                "corruption_report": read("artifacts/status/unified_state_corruption_report.json"),
+                "rollback_report": read("artifacts/status/unified_state_rollback_report.json"),
+                "path_resolution_report": read("artifacts/status/unified_state_path_resolution_report.json"),
+                "doctor_snapshots": read("artifacts/status/unified_state_doctor_snapshots.json"),
+            });
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/unified_state_audit_payload.json",
+                &payload,
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/state_migration_status.json",
+                "artifacts/status/unified_state_behavior_report.json",
+                "artifacts/status/unified_state_corruption_report.json",
+                "artifacts/status/unified_state_rollback_report.json",
+                "artifacts/status/unified_state_path_resolution_report.json",
+                "artifacts/status/unified_state_doctor_snapshots.json",
+                "artifacts/status/unified_state_audit_payload.json"
             ]}))
         }
         _ => None,
