@@ -23,24 +23,6 @@ impl KnownBijuxTool {
     pub fn control_binary(&self) -> String {
         format!("bijux-dev-{}", self.namespace)
     }
-
-    /// Runtime package name used for install workflows.
-    #[must_use]
-    pub fn runtime_package(&self) -> String {
-        self.runtime_binary()
-    }
-
-    /// Control-plane package name used for install workflows.
-    #[must_use]
-    pub fn control_package(&self) -> String {
-        self.control_binary()
-    }
-
-    /// Canonical source repository slug under the Bijux GitHub organization.
-    #[must_use]
-    pub fn repository(&self) -> String {
-        self.runtime_package()
-    }
 }
 
 /// Canonical known Bijux tools and their binary/package ownership contracts.
@@ -65,7 +47,9 @@ pub const OFFICIAL_PRODUCT_NAMESPACES: &[&str] = KNOWN_BIJUX_TOOL_NAMESPACES;
 /// Resolve known tool metadata by namespace.
 #[must_use]
 pub fn known_bijux_tool(namespace: &str) -> Option<&'static KnownBijuxTool> {
-    KNOWN_BIJUX_TOOLS.iter().find(|tool| tool.namespace == namespace)
+    KNOWN_BIJUX_TOOLS
+        .iter()
+        .find(|tool| tool.namespace == namespace)
 }
 
 /// Smallest metadata contract required for reserved product mounts.

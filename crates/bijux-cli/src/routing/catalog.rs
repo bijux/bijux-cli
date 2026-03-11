@@ -55,6 +55,7 @@ pub fn is_known_route(path: &[String]) -> bool {
 
 /// Returns true when a `dev` top-level argument is a legacy alias of `dev cli`.
 #[must_use]
+#[allow(dead_code)]
 pub fn is_dev_legacy_alias(value: &str) -> bool {
     super::model::is_dev_legacy_alias(value)
 }
