@@ -44,11 +44,7 @@ fn assert_text_non_empty(command: &[&str]) {
         String::from_utf8_lossy(&out.stderr)
     );
     let text = String::from_utf8(out.stdout).expect("utf8");
-    assert!(
-        !text.trim().is_empty(),
-        "text output must be non-empty for {:?}",
-        command
-    );
+    assert!(!text.trim().is_empty(), "text output must be non-empty for {:?}", command);
 }
 
 #[test]
@@ -61,11 +57,7 @@ fn status_dashboard_truth_blockers_next_json_contracts() {
         ["dev", "cli", "next"],
     ] {
         let payload = run_ok_json(&command);
-        assert!(
-            payload.is_object(),
-            "payload must be an object for {:?}",
-            command
-        );
+        assert!(payload.is_object(), "payload must be an object for {:?}", command);
     }
 }
 
@@ -88,15 +80,11 @@ fn status_and_truth_counts_are_consistent() {
     let truth = run_ok_json(&["dev", "cli", "truth"]);
 
     let status_summary = &status["status_report"]["summary"];
-    let truth_done = truth["truth"]["done"]["summary"]["count"]
-        .as_u64()
-        .expect("truth done count");
-    let truth_missing = truth["truth"]["missing"]["summary"]["count"]
-        .as_u64()
-        .expect("truth missing count");
-    let truth_partial = truth["truth"]["partial"]["summary"]["count"]
-        .as_u64()
-        .expect("truth partial count");
+    let truth_done = truth["truth"]["done"]["summary"]["count"].as_u64().expect("truth done count");
+    let truth_missing =
+        truth["truth"]["missing"]["summary"]["count"].as_u64().expect("truth missing count");
+    let truth_partial =
+        truth["truth"]["partial"]["summary"]["count"].as_u64().expect("truth partial count");
     let truth_intentional = truth["truth"]["intentional_differences"]["summary"]["count"]
         .as_u64()
         .expect("truth intentional count");
@@ -146,18 +134,10 @@ fn blockers_is_subset_of_unresolved_status_data() {
 fn next_is_generated_from_evidence_and_status_inputs() {
     let next = run_ok_json(&["dev", "cli", "next"]);
     let policy = &next["next"]["minimalism"]["evidence_first_policy"];
-    assert_eq!(
-        policy["manual_curated_priority_lists_allowed"],
-        Value::Bool(false)
-    );
-    assert_eq!(
-        policy["next_roadmap_requires_generated_artifacts"],
-        Value::Bool(true)
-    );
+    assert_eq!(policy["manual_curated_priority_lists_allowed"], Value::Bool(false));
+    assert_eq!(policy["next_roadmap_requires_generated_artifacts"], Value::Bool(true));
     assert!(
-        policy["next_wave_requires_artifacts"]
-            .as_array()
-            .is_some_and(|rows| !rows.is_empty()),
+        policy["next_wave_requires_artifacts"].as_array().is_some_and(|rows| !rows.is_empty()),
         "next command must declare generated artifact inputs"
     );
 }
@@ -166,10 +146,7 @@ fn next_is_generated_from_evidence_and_status_inputs() {
 fn dashboard_reflects_same_status_summary_as_standalone_status() {
     let status = run_ok_json(&["dev", "cli", "status"]);
     let dashboard = run_ok_json(&["dev", "cli", "dashboard"]);
-    assert_eq!(
-        dashboard["dashboard"]["status"]["summary"],
-        status["status_report"]["summary"]
-    );
+    assert_eq!(dashboard["dashboard"]["status"]["summary"], status["status_report"]["summary"]);
 }
 
 #[test]
@@ -177,24 +154,9 @@ fn summary_commands_work_with_missing_optional_state_paths() {
     let root = std::env::temp_dir().join(format!("bijux-summary-missing-{}", std::process::id()));
     fs::create_dir_all(&root).expect("mkdir");
     let envs = [
-        (
-            "BIJUX_CONFIG_PATH",
-            root.join("missing-config.env")
-                .to_string_lossy()
-                .to_string(),
-        ),
-        (
-            "BIJUX_HISTORY_PATH",
-            root.join("missing-history.json")
-                .to_string_lossy()
-                .to_string(),
-        ),
-        (
-            "BIJUX_MEMORY_PATH",
-            root.join("missing-memory.json")
-                .to_string_lossy()
-                .to_string(),
-        ),
+        ("BIJUX_CONFIG_PATH", root.join("missing-config.env").to_string_lossy().to_string()),
+        ("BIJUX_HISTORY_PATH", root.join("missing-history.json").to_string_lossy().to_string()),
+        ("BIJUX_MEMORY_PATH", root.join("missing-memory.json").to_string_lossy().to_string()),
     ];
     for command in [
         ["dev", "cli", "status"],
@@ -204,11 +166,7 @@ fn summary_commands_work_with_missing_optional_state_paths() {
         ["dev", "cli", "next"],
     ] {
         let out = run(&command, &envs);
-        assert!(
-            out.status.success(),
-            "command failed with missing optional state: {:?}",
-            command
-        );
+        assert!(out.status.success(), "command failed with missing optional state: {:?}", command);
     }
 }
 
@@ -247,10 +205,7 @@ fn summary_commands_work_with_corrupted_optional_state() {
 fn summary_commands_tolerate_old_artifact_timestamps() {
     let stale = std::env::temp_dir().join(format!("bijux-stale-marker-{}", std::process::id()));
     fs::write(&stale, "stale-marker").expect("write stale marker");
-    let envs = [(
-        "BIJUX_STALE_MARKER_PATH",
-        stale.to_string_lossy().to_string(),
-    )];
+    let envs = [("BIJUX_STALE_MARKER_PATH", stale.to_string_lossy().to_string())];
     for command in [
         ["dev", "cli", "status"],
         ["dev", "cli", "dashboard"],
@@ -259,10 +214,6 @@ fn summary_commands_tolerate_old_artifact_timestamps() {
         ["dev", "cli", "next"],
     ] {
         let out = run(&command, &envs);
-        assert!(
-            out.status.success(),
-            "command failed under stale artifact marker: {:?}",
-            command
-        );
+        assert!(out.status.success(), "command failed under stale artifact marker: {:?}", command);
     }
 }

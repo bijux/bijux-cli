@@ -13,10 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -29,10 +26,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "bijux-config-source-precedence-{name}-{}",
-        std::process::id()
-    ));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-config-source-precedence-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -197,10 +192,7 @@ fn source_metadata_and_dev_cli_env_precedence_are_reported() {
         env_payload["source_precedence"],
         serde_json::json!(["flags", "env", "config", "defaults"])
     );
-    assert_eq!(
-        env_payload["active"]["config_file"],
-        file.to_str().expect("utf-8")
-    );
+    assert_eq!(env_payload["active"]["config_file"], file.to_str().expect("utf-8"));
 }
 
 #[test]
@@ -257,15 +249,7 @@ fn cross_command_source_precedence_consistency() {
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("seed");
 
     let get = run_with_env(
-        &[
-            "cli",
-            "config",
-            "get",
-            "alpha",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["cli", "config", "get", "alpha", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_CONFIG", file.to_str().expect("utf-8"))],
     );
     let env = run_with_env(
@@ -279,8 +263,5 @@ fn cross_command_source_precedence_consistency() {
     let get_payload: Value = serde_json::from_slice(&get.stdout).expect("json");
     let env_payload: Value = serde_json::from_slice(&env.stdout).expect("json");
 
-    assert_eq!(
-        get_payload["source_path"],
-        env_payload["active"]["config_file"]
-    );
+    assert_eq!(get_payload["source_path"], env_payload["active"]["config_file"]);
 }

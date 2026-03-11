@@ -6,10 +6,7 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(command: &[&str]) -> Value {
@@ -61,10 +58,7 @@ fn repo_docs_script_crate_health_json_and_text_contracts() {
 fn docs_audit_exposes_duplicate_and_stale_reference_signals() {
     let docs = run_ok_json(&["dev", "cli", "docs-audit"]);
     assert!(docs["docs"].is_array(), "docs rows must exist");
-    assert!(
-        docs["docs_audit"].is_object(),
-        "docs_audit summary must exist"
-    );
+    assert!(docs["docs_audit"].is_object(), "docs_audit summary must exist");
     assert!(
         docs["docs_audit"].as_object().is_some(),
         "docs audit should expose machine-readable stale/duplicate summary fields"
@@ -76,9 +70,7 @@ fn script_audit_exposes_remaining_and_migrated_views() {
     let scripts = run_ok_json(&["dev", "cli", "script-audit"]);
     assert!(scripts["scripts"].is_array());
     assert!(scripts.get("remaining_script_only_behaviors").is_some());
-    assert!(scripts
-        .get("remaining_task_runner_only_behaviors")
-        .is_some());
+    assert!(scripts.get("remaining_task_runner_only_behaviors").is_some());
     assert!(scripts["replacement_rule"].is_string());
 }
 
@@ -103,12 +95,8 @@ fn repo_health_exposes_stale_generated_artifact_detection() {
         .cloned()
         .unwrap_or_default();
     assert!(
-        repo["repo_health"]["generated"]
-            .get("stale_generated_artifacts")
-            .is_some()
-            || repo["repo_health"]["stale"]
-                .get("stale_generated_artifacts")
-                .is_some()
+        repo["repo_health"]["generated"].get("stale_generated_artifacts").is_some()
+            || repo["repo_health"]["stale"].get("stale_generated_artifacts").is_some()
             || !stale_generated.is_empty()
             || !stale_generated_legacy.is_empty(),
         "repo health must include stale generated artifact signal"

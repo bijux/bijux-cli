@@ -46,10 +46,7 @@ impl Lcg {
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -150,9 +147,8 @@ fn apply_mutator(path: &Path, mutator: Mutator, rng: &mut Lcg, seed: &[u8]) -> i
         }
         Mutator::MissingFieldDeletion => {
             let text = String::from_utf8_lossy(seed);
-            let mutated = text
-                .replace("\"path\":\"/tmp/sample\",", "")
-                .replace("BIJUXCLI_BETA=two\n", "");
+            let mutated =
+                text.replace("\"path\":\"/tmp/sample\",", "").replace("BIJUXCLI_BETA=two\n", "");
             fs::write(path, mutated)
         }
         Mutator::ExtraFieldInsertion => {
@@ -229,33 +225,17 @@ fn exercise_domain(root: &Path, domain: Domain, target: &Path) -> Output {
             ],
             &envs,
         ),
-        Domain::PluginRegistry => run_with_env(
-            &[
-                "cli",
-                "plugins",
-                "doctor",
-                "--format",
-                "json",
-                "--no-pretty",
-            ],
-            &envs,
-        ),
+        Domain::PluginRegistry => {
+            run_with_env(&["cli", "plugins", "doctor", "--format", "json", "--no-pretty"], &envs)
+        }
         Domain::History => run_with_env(&["history", "--format", "json", "--no-pretty"], &envs),
-        Domain::Memory => run_with_env(
-            &["memory", "list", "--format", "json", "--no-pretty"],
-            &envs,
-        ),
+        Domain::Memory => {
+            run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs)
+        }
         Domain::InstallMetadata => {
             envs.push(("BIJUXCLI_INSTALL_STATE_FILE", target.display().to_string()));
             run_with_env(
-                &[
-                    "dev",
-                    "cli",
-                    "runtime-identity",
-                    "--format",
-                    "json",
-                    "--no-pretty",
-                ],
+                &["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"],
                 &envs,
             )
         }

@@ -38,14 +38,8 @@ fn state_audit_and_state_doctor_json_and_text_contracts() {
     assert!(audit_json.get("paths").is_some());
     assert!(doctor_json.get("doctor").is_some());
 
-    for command in [
-        ["dev", "cli", "state-audit"],
-        ["dev", "cli", "state-doctor"],
-    ] {
-        let out = run(
-            &[command[0], command[1], command[2], "--format", "text"],
-            &[],
-        );
+    for command in [["dev", "cli", "state-audit"], ["dev", "cli", "state-doctor"]] {
+        let out = run(&[command[0], command[1], command[2], "--format", "text"], &[]);
         assert!(out.status.success(), "text command failed: {:?}", command);
         assert!(!String::from_utf8_lossy(&out.stdout).trim().is_empty());
     }
@@ -64,28 +58,16 @@ fn state_audit_reports_truthful_paths() {
     fs::write(&memory, "{}").expect("write memory");
     fs::write(&plugins, "{\"plugins\":{}}").expect("write plugins");
     let audit = run_ok_json(
-        &[
-            "dev",
-            "cli",
-            "state-audit",
-            "--config-path",
-            config.to_string_lossy().as_ref(),
-        ],
+        &["dev", "cli", "state-audit", "--config-path", config.to_string_lossy().as_ref()],
         &[],
     );
     assert_eq!(
         audit["paths"]["config"]["path"],
         Value::String(config.to_string_lossy().to_string())
     );
-    assert!(audit["paths"]["history"]["path"]
-        .as_str()
-        .is_some_and(|s| !s.is_empty()));
-    assert!(audit["paths"]["memory"]["path"]
-        .as_str()
-        .is_some_and(|s| !s.is_empty()));
-    assert!(audit["paths"]["plugins_registry"]["path"]
-        .as_str()
-        .is_some_and(|s| !s.is_empty()));
+    assert!(audit["paths"]["history"]["path"].as_str().is_some_and(|s| !s.is_empty()));
+    assert!(audit["paths"]["memory"]["path"].as_str().is_some_and(|s| !s.is_empty()));
+    assert!(audit["paths"]["plugins_registry"]["path"].as_str().is_some_and(|s| !s.is_empty()));
 }
 
 #[test]
@@ -101,19 +83,10 @@ fn state_doctor_detects_corrupted_config_registry_history_and_memory() {
     fs::write(&memory, "{not-json").expect("write bad memory");
     fs::write(&plugins, "{not-json").expect("write bad plugin registry");
     let doctor = run_ok_json(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--config-path",
-            config.to_string_lossy().as_ref(),
-        ],
+        &["dev", "cli", "state-doctor", "--config-path", config.to_string_lossy().as_ref()],
         &[],
     );
-    let issues = doctor["doctor"]["issues"]
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    let issues = doctor["doctor"]["issues"].as_array().cloned().unwrap_or_default();
     let areas: std::collections::BTreeSet<String> = issues
         .iter()
         .filter_map(|row| row.get("area").and_then(Value::as_str))
@@ -125,16 +98,10 @@ fn state_doctor_detects_corrupted_config_registry_history_and_memory() {
 #[test]
 fn state_doctor_reports_actionable_or_explicitly_empty_repairs() {
     let doctor = run_ok_json(&["dev", "cli", "state-doctor"], &[]);
-    let repairs = doctor["doctor"]["repairs"]
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    let repairs = doctor["doctor"]["repairs"].as_array().cloned().unwrap_or_default();
     for repair in repairs {
         assert!(
-            repair
-                .get("action")
-                .and_then(Value::as_str)
-                .is_some_and(|s| !s.trim().is_empty()),
+            repair.get("action").and_then(Value::as_str).is_some_and(|s| !s.trim().is_empty()),
             "repair entries must include actionable text"
         );
     }
@@ -151,8 +118,5 @@ fn state_doctor_json_findings_have_stable_ordering_and_text_is_deterministic() {
     let text_second = run(&text_args, &[]);
     assert!(text_first.status.success());
     assert!(text_second.status.success());
-    assert_eq!(
-        text_first.stdout, text_second.stdout,
-        "state-doctor text drift"
-    );
+    assert_eq!(text_first.stdout, text_second.stdout, "state-doctor text drift");
 }
