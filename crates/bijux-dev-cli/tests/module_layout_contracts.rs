@@ -27,6 +27,42 @@ fn legacy_alias_modules_are_removed() {
 }
 
 #[test]
+fn single_domain_modules_use_intention_named_files() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let domains_root = crate_root.join("src/domains");
+    for legacy_dir in [
+        "cockpit",
+        "config_governance",
+        "control_plane",
+        "evidence",
+        "python_surface",
+        "release",
+        "rustdoc",
+    ] {
+        assert!(
+            !domains_root.join(legacy_dir).is_dir(),
+            "legacy single-file domain directory must be removed: {}",
+            domains_root.join(legacy_dir).display()
+        );
+    }
+    for domain_file in [
+        "cockpit.rs",
+        "config.rs",
+        "control_plane.rs",
+        "evidence.rs",
+        "python.rs",
+        "release.rs",
+        "rustdoc.rs",
+    ] {
+        assert!(
+            domains_root.join(domain_file).is_file(),
+            "missing domain module file {}",
+            domains_root.join(domain_file).display()
+        );
+    }
+}
+
+#[test]
 fn native_contract_modules_use_suite_layout() {
     let native_mod = include_str!("../src/contracts/native/mod.rs");
     assert!(native_mod.contains("mod control_plane;"));

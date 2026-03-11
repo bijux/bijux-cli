@@ -1,17 +1,17 @@
 //! Domain-oriented maintainer report modules.
 
 pub mod cockpit;
-pub mod config_governance;
+pub mod config;
 pub mod control_plane;
 pub mod evidence;
-pub mod python_surface;
+pub mod python;
 pub mod release;
 pub mod repository_health;
 pub mod runtime_surface;
 pub mod rustdoc;
 
-pub use config_governance as config;
-pub use python_surface as python;
+pub use config as config_governance;
+pub use python as python_surface;
 pub use repository_health::{
     crate_health, docs_audit, maintenance_audit, package_health, repo, state_audit, status,
 };

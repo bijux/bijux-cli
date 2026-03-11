@@ -23,10 +23,10 @@ pub mod status_contracts;
 
 pub use platform::report_envelope as reporting;
 pub use domains::cockpit;
-pub use domains::config_governance as config;
+pub use domains::config;
 pub use domains::control_plane;
 pub use domains::evidence;
-pub use domains::python_surface as python;
+pub use domains::python;
 pub use domains::release;
 pub use domains::repository_health::{
     crate_health, docs_audit, maintenance_audit, package_health, repo, state_audit, status,
