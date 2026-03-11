@@ -32,7 +32,7 @@ class Context(ExecutionContext):
     """Provides thread-safe, request-scoped storage for CLI commands.
 
     This class uses `contextvars` to manage a dictionary of data that is
-    isolated to the current task or thread. It is intended to be used as
+    isolated to the current execution context or thread. It is intended to be used as
     both a synchronous and asynchronous context manager.
 
     Attributes:

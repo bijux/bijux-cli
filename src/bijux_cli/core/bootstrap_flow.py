@@ -239,7 +239,7 @@ def _handle_help_request(args: list[str], intent: CLIIntent) -> int | None:
 
 def run_runtime(intent: CLIIntent) -> int:
     """Run the DI/runtime execution path."""
-    # Phase: runtime init (logging config + DI graph).
+    # Step: runtime init (logging config + DI graph).
     if intent.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
@@ -277,7 +277,7 @@ def run_runtime(intent: CLIIntent) -> int:
     serializer = resolve_serializer()
     emitter = resolve_emitter()
 
-    # Phase: execution + emission.
+    # Step: execution + emission.
     command_line = list(intent.args)
     start = time.time()
 
@@ -318,7 +318,7 @@ def run_runtime(intent: CLIIntent) -> int:
     except Exception as exc:
         exit_code = emit_error(ErrorType.INTERNAL, f"Unexpected error: {exc}")
 
-    # Phase: history recording.
+    # Step: history recording.
     if should_record_command_history(command_line):
         try:
             history_service = container.resolve(History)
@@ -349,7 +349,7 @@ def main() -> int:
             * `2`: A usage error or invalid option was provided.
             * `130`: The process was interrupted by the user (Ctrl+C).
     """
-    # Phase: intent building (no side effects).
+    # Step: intent building (no side effects).
     args = sys.argv[1:]
     intent = build_cli_intent(args, env=os.environ, tty=sys.stdout.isatty())
     if intent.errors:
@@ -362,7 +362,7 @@ def main() -> int:
             log_policy=intent.log_policy,
         )
 
-    # Phase: explicit fast paths.
+    # Step: explicit fast paths.
     fast_exit = _handle_version_request(args, intent)
     if fast_exit is not None:
         return fast_exit
@@ -370,7 +370,7 @@ def main() -> int:
     if fast_exit is not None:
         return fast_exit
 
-    # Phase: policy resolution + runtime init.
+    # Step: policy resolution + runtime init.
     try:
         DIContainer.set_log_policy(intent.log_policy)
         setup_structlog(intent.log_level)
@@ -384,7 +384,7 @@ def main() -> int:
             log_policy=intent.log_policy,
         )
 
-    # Phase: execution + emission + exit.
+    # Step: execution + emission + exit.
     return run_runtime(intent)
 
 

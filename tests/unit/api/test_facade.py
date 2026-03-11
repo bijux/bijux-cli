@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bijux_cli.api import facade as fac
-from bijux_cli.api.facade import BijuxAPI, _consume_task
+from bijux_cli.api.facade import BijuxAPI, _consume_future
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.engine import Engine
 from bijux_cli.core.enums import LogLevel
@@ -730,7 +730,7 @@ def test_await_maybe_non_awaitable_passthrough() -> None:
 
 @pytest.mark.asyncio
 async def test_await_maybe_with_running_loop_create_task() -> None:
-    """When a loop is running and has create_task, result is None and task completes."""
+    """When a loop is running and has create_task, result is None and future completes."""
 
     async def _done() -> None:
         return None
@@ -776,11 +776,11 @@ def test_await_maybe_ensure_future_fallback_and_close(
 
 
 @pytest.mark.asyncio
-async def test_consume_task_swallows_task_exceptions() -> None:
+async def test_consume_future_swallows_future_exceptions() -> None:
     async def _bad() -> None:
         raise RuntimeError("oops")
 
     loop = asyncio.get_running_loop()
     t = loop.create_task(_bad())
-    _consume_task(t)
+    _consume_future(t)
     await asyncio.sleep(0)

@@ -65,15 +65,15 @@ def _api_io_guard() -> Iterator[None]:
         )
 
 
-def _consume_task(task: asyncio.Future[Any]) -> None:
-    """Consumes an asyncio task to suppress unhandled exceptions."""
+def _consume_future(future: asyncio.Future[Any]) -> None:
+    """Consumes an asyncio future to suppress unhandled exceptions."""
 
     def _eat_exc(t: asyncio.Future[Any]) -> None:
         """Retrieves and suppresses exceptions from a future."""
         with suppress(Exception):
             _ = t.exception()
 
-    task.add_done_callback(_eat_exc)
+    future.add_done_callback(_eat_exc)
 
 
 class BijuxAPI:
@@ -385,7 +385,7 @@ class BijuxAPI:
 
         Args:
           value: A value that may or may not be awaitable (e.g., a coroutine,
-            Future, Task, or a plain value).
+            Future, or a plain value).
           want_result: When `True`, and the coroutine is *scheduled* (not awaited),
             return `False` instead of `None` so callers can reliably detect that
             no immediate result is available.

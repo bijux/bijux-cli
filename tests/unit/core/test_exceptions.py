@@ -66,9 +66,9 @@ def test_derived_exception_initialization(
     assert err_msg_only.http_status == default_status
 
     with pytest.raises(error_class) as excinfo_with_cmd:
-        raise error_class("Error in command", command="run-task")
+        raise error_class("Error in command", command="run-operation")
     err_with_cmd = excinfo_with_cmd.value
-    assert err_with_cmd.command == "run-task"
+    assert err_with_cmd.command == "run-operation"
     assert err_with_cmd.http_status == default_status
 
     with pytest.raises(error_class) as excinfo_with_status:

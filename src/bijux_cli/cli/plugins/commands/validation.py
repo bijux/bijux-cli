@@ -4,7 +4,7 @@
 """Provides shared utilities for the `bijux plugins` command group.
 
 This module centralizes common logic for managing CLI plugins. It offers
-helper functions for tasks such as:
+helper functions for operations such as:
 
 * Safely traversing plugin directories for copy operations.
 * Parsing metadata from `plugin.py` files without code execution by
