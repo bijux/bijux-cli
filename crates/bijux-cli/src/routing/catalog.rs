@@ -2,9 +2,8 @@
 //! Canonical command catalog for normalization and route recognition.
 
 const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "inspect", "completion", "repl"];
-const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "get", "set", "unset", "clear", "reload", "export", "load", "list",
-];
+const CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -97,21 +96,10 @@ const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "command-map",
     "parity-map",
 ];
-const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "rust-owner",
-    "python-owner",
-    "ownership",
-    "drift",
-    "shape",
-    "evidence-map",
-];
-const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] = &[
-    "bridge-status",
-    "surface-status",
-    "sovereignty-audit",
-    "drift",
-    "packaging",
-];
+const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
+const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
+    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
 const DEV_CLI_REPO_SUBCOMMANDS: &[&str] = &["health", "drift", "inventories", "generated", "stale"];
 const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "remaining",

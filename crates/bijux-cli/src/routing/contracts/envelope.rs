@@ -26,11 +26,7 @@ impl OutputEnvelopeMetaV1 {
         if timestamp.trim().is_empty() {
             return Err("meta.timestamp cannot be empty".to_string());
         }
-        Ok(Self {
-            version: version.to_string(),
-            command,
-            timestamp: timestamp.to_string(),
-        })
+        Ok(Self { version: version.to_string(), command, timestamp: timestamp.to_string() })
     }
 }
 
@@ -49,11 +45,7 @@ impl OutputEnvelopeV1 {
     /// Build a success envelope using fixed status.
     #[must_use]
     pub fn success(data: Value, meta: OutputEnvelopeMetaV1) -> Self {
-        Self {
-            status: "ok".to_string(),
-            data,
-            meta,
-        }
+        Self { status: "ok".to_string(), data, meta }
     }
 }
 
@@ -117,10 +109,6 @@ impl ErrorEnvelopeV1 {
     /// Build an error envelope using fixed status.
     #[must_use]
     pub fn failure(error: ErrorPayloadV1, meta: OutputEnvelopeMetaV1) -> Self {
-        Self {
-            status: "error".to_string(),
-            error,
-            meta,
-        }
+        Self { status: "error".to_string(), error, meta }
     }
 }

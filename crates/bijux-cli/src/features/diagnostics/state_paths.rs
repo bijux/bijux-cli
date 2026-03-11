@@ -98,19 +98,15 @@ pub(crate) fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     }
     if let Ok(text) = fs::read_to_string(&paths.config_file) {
         let mut seen = std::collections::BTreeMap::<String, usize>::new();
-        for line in text
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        for line in
+            text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#'))
         {
             if let Some((left, _)) = line.split_once('=') {
                 *seen.entry(left.trim().to_string()).or_insert(0) += 1;
             }
         }
-        let duplicates: Vec<String> = seen
-            .into_iter()
-            .filter_map(|(key, count)| (count > 1).then_some(key))
-            .collect();
+        let duplicates: Vec<String> =
+            seen.into_iter().filter_map(|(key, count)| (count > 1).then_some(key)).collect();
         if !duplicates.is_empty() {
             issues.push(json!({
                 "area": "config",

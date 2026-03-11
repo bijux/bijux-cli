@@ -156,84 +156,30 @@ impl Default for RouteRegistry {
             ("config list".to_string(), "config".to_string()),
             ("plugins list".to_string(), "cli plugins list".to_string()),
             ("plugins info".to_string(), "plugins".to_string()),
-            (
-                "plugins inspect".to_string(),
-                "cli plugins inspect".to_string(),
-            ),
+            ("plugins inspect".to_string(), "cli plugins inspect".to_string()),
             ("plugins check".to_string(), "cli plugins check".to_string()),
-            (
-                "plugins install".to_string(),
-                "cli plugins install".to_string(),
-            ),
-            (
-                "plugins uninstall".to_string(),
-                "cli plugins uninstall".to_string(),
-            ),
-            (
-                "plugins enable".to_string(),
-                "cli plugins enable".to_string(),
-            ),
-            (
-                "plugins disable".to_string(),
-                "cli plugins disable".to_string(),
-            ),
-            (
-                "plugins scaffold".to_string(),
-                "cli plugins scaffold".to_string(),
-            ),
-            (
-                "plugins doctor".to_string(),
-                "cli plugins doctor".to_string(),
-            ),
-            (
-                "plugins reserved-names".to_string(),
-                "cli plugins reserved-names".to_string(),
-            ),
+            ("plugins install".to_string(), "cli plugins install".to_string()),
+            ("plugins uninstall".to_string(), "cli plugins uninstall".to_string()),
+            ("plugins enable".to_string(), "cli plugins enable".to_string()),
+            ("plugins disable".to_string(), "cli plugins disable".to_string()),
+            ("plugins scaffold".to_string(), "cli plugins scaffold".to_string()),
+            ("plugins doctor".to_string(), "cli plugins doctor".to_string()),
+            ("plugins reserved-names".to_string(), "cli plugins reserved-names".to_string()),
             ("plugins where".to_string(), "cli plugins where".to_string()),
-            (
-                "plugins explain".to_string(),
-                "cli plugins explain".to_string(),
-            ),
-            (
-                "plugins schema".to_string(),
-                "cli plugins schema".to_string(),
-            ),
+            ("plugins explain".to_string(), "cli plugins explain".to_string()),
+            ("plugins schema".to_string(), "cli plugins schema".to_string()),
             ("dev inventory".to_string(), "dev cli inventory".to_string()),
-            (
-                "dev route-audit".to_string(),
-                "dev cli route-audit".to_string(),
-            ),
+            ("dev route-audit".to_string(), "dev cli route-audit".to_string()),
             ("dev parity".to_string(), "dev cli parity".to_string()),
-            (
-                "dev docs-audit".to_string(),
-                "dev cli docs-audit".to_string(),
-            ),
-            (
-                "dev plugin-health".to_string(),
-                "dev cli plugin-health".to_string(),
-            ),
+            ("dev docs-audit".to_string(), "dev cli docs-audit".to_string()),
+            ("dev plugin-health".to_string(), "dev cli plugin-health".to_string()),
             ("dev status".to_string(), "dev cli status".to_string()),
-            (
-                "dev package-health".to_string(),
-                "dev cli package-health".to_string(),
-            ),
+            ("dev package-health".to_string(), "dev cli package-health".to_string()),
             ("dev doctor".to_string(), "dev cli doctor".to_string()),
-            (
-                "dev runtime-identity".to_string(),
-                "dev cli runtime-identity".to_string(),
-            ),
-            (
-                "dev state-audit".to_string(),
-                "dev cli state-audit".to_string(),
-            ),
-            (
-                "dev state-doctor".to_string(),
-                "dev cli state-doctor".to_string(),
-            ),
-            (
-                "dev list-plugins".to_string(),
-                "dev cli list-plugins".to_string(),
-            ),
+            ("dev runtime-identity".to_string(), "dev cli runtime-identity".to_string()),
+            ("dev state-audit".to_string(), "dev cli state-audit".to_string()),
+            ("dev state-doctor".to_string(), "dev cli state-doctor".to_string()),
+            ("dev list-plugins".to_string(), "dev cli list-plugins".to_string()),
         ]);
 
         let mut reserved = BTreeSet::from([
@@ -247,18 +193,9 @@ impl Default for RouteRegistry {
             "completion".to_string(),
             "inspect".to_string(),
         ]);
-        reserved.extend(
-            OFFICIAL_PRODUCT_NAMESPACES
-                .iter()
-                .map(std::string::ToString::to_string),
-        );
+        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(std::string::ToString::to_string));
 
-        Self {
-            built_ins,
-            plugin_namespaces: BTreeSet::new(),
-            aliases,
-            reserved,
-        }
+        Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
     }
 }
 
@@ -312,11 +249,7 @@ impl RouteRegistry {
 
         let root = rewritten.split(' ').next().unwrap_or_default();
         if self.plugin_namespaces.contains(root) {
-            if self
-                .built_ins
-                .iter()
-                .any(|x| x.split(' ').next() == Some(root))
-            {
+            if self.built_ins.iter().any(|x| x.split(' ').next() == Some(root)) {
                 return Err(RouteError::Ambiguous(root.to_string()));
             }
             return Ok(RouteTarget::Plugin(root.to_string()));
@@ -343,9 +276,7 @@ impl RouteRegistry {
             universe.insert(reserved.clone());
         }
 
-        universe
-            .into_iter()
-            .max_by_key(|candidate| similarity_score(&query, candidate))
+        universe.into_iter().max_by_key(|candidate| similarity_score(&query, candidate))
     }
 
     /// Build route-tree introspection payload.
@@ -399,10 +330,7 @@ impl RouteRegistry {
         self.built_ins
             .iter()
             .map(|raw| CommandPath {
-                segments: raw
-                    .split(' ')
-                    .map(|segment| Namespace(segment.to_string()))
-                    .collect(),
+                segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect(),
             })
             .collect()
     }
@@ -434,10 +362,7 @@ fn similarity_score(left: &str, right: &str) -> usize {
 }
 
 fn common_prefix_len(left: &str, right: &str) -> usize {
-    left.chars()
-        .zip(right.chars())
-        .take_while(|(a, b)| a == b)
-        .count()
+    left.chars().zip(right.chars()).take_while(|(a, b)| a == b).count()
 }
 
 fn levenshtein_distance(left: &str, right: &str) -> usize {

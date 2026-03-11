@@ -28,11 +28,7 @@ fn parse_history_entries(text: &str) -> Result<Vec<Value>> {
 
     if let Ok(value) = serde_json::from_str::<Value>(trimmed) {
         if let Some(items) = value.as_array() {
-            return Ok(items
-                .iter()
-                .filter(|item| item.is_object())
-                .cloned()
-                .collect());
+            return Ok(items.iter().filter(|item| item.is_object()).cloned().collect());
         }
         anyhow::bail!("Unexpected history file format (not JSON array)");
     }

@@ -30,11 +30,7 @@ pub(crate) fn decode_quoted_value(raw: &str) -> String {
 pub(crate) fn render_env(values: &BTreeMap<String, String>) -> String {
     let mut rendered = String::new();
     for (key, value) in values {
-        rendered.push_str(&format!(
-            "BIJUXCLI_{}={}\n",
-            key.to_ascii_uppercase(),
-            value
-        ));
+        rendered.push_str(&format!("BIJUXCLI_{}={}\n", key.to_ascii_uppercase(), value));
     }
     rendered
 }
