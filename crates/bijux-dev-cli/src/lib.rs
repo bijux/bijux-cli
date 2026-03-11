@@ -20,6 +20,8 @@ pub mod contract_engine;
 pub mod features;
 /// Reusable technical adapters for filesystem/process/clock concerns.
 pub mod infrastructure;
+/// Status contract inventory and execution services.
+pub mod status_contracts;
 
 pub use application::dispatch;
 pub use catalog::report_envelope as reporting;
