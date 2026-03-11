@@ -24,7 +24,10 @@ pub fn session_diagnostics_dump(session: &ReplSession) -> String {
         "plugin_completion_hooks": session.plugin_completion_hooks.keys().collect::<Vec<_>>(),
         "last_error": session.last_error,
     });
-    format!("{}\n", serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string()))
+    format!(
+        "{}\n",
+        serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string())
+    )
 }
 
 /// Approximate REPL session memory use in bytes.
