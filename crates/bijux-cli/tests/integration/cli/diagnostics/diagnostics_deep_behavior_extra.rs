@@ -14,10 +14,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
@@ -34,10 +31,7 @@ fn parse_json(bytes: &[u8]) -> Value {
 }
 
 fn temp_dir(label: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-diagnostics-deep-{label}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -45,22 +39,8 @@ fn temp_dir(label: &str) -> PathBuf {
 
 #[test]
 fn doctor_findings_are_stable_and_do_not_reorder_nondeterministically() {
-    let first = run(&[
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
-    let second = run(&[
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    let first = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
+    let second = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
 
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
@@ -68,10 +48,7 @@ fn doctor_findings_are_stable_and_do_not_reorder_nondeterministically() {
     let first_json = parse_json(&first.stdout);
     let second_json = parse_json(&second.stdout);
 
-    assert_eq!(
-        first_json["doctor"]["issues"],
-        second_json["doctor"]["issues"]
-    );
+    assert_eq!(first_json["doctor"]["issues"], second_json["doctor"]["issues"]);
 }
 
 #[test]
@@ -103,9 +80,7 @@ fn inspect_and_doctor_agree_on_route_state_overlap_signals() {
     let doctor = parse_json(&run(&["doctor", "--format", "json", "--no-pretty"]).stdout);
 
     assert_eq!(inspect["status"], "ok");
-    assert!(inspect["route_sources"]
-        .as_array()
-        .is_some_and(|rows| !rows.is_empty()));
+    assert!(inspect["route_sources"].as_array().is_some_and(|rows| !rows.is_empty()));
 
     let checks = doctor["checks"].as_array().expect("doctor checks array");
     assert!(checks.iter().any(|v| v.as_str() == Some("routing")));
@@ -123,10 +98,7 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
     );
     assert_eq!(env_output.status.code(), Some(0));
     let env_json = parse_json(&env_output.stdout);
-    assert_eq!(
-        env_json["active"]["config_file"],
-        cfg.to_string_lossy().to_string()
-    );
+    assert_eq!(env_json["active"]["config_file"], cfg.to_string_lossy().to_string());
     assert_eq!(
         env_json["source_precedence"],
         serde_json::json!(["flags", "env", "config", "defaults"])
@@ -134,22 +106,17 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
 
     let contracts =
         parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);
-    let contracts_snapshot: Value = serde_json::from_str(include_str!(
-        "../../../data/golden/ported/dev_cli_contracts.json"
-    ))
-    .expect("contracts snapshot json");
-    assert_eq!(
-        contracts["schema_version"],
-        contracts_snapshot["schema_version"]
-    );
+    let contracts_snapshot: Value =
+        serde_json::from_str(include_str!("../../../data/golden/ported/dev_cli_contracts.json"))
+            .expect("contracts snapshot json");
+    assert_eq!(contracts["schema_version"], contracts_snapshot["schema_version"]);
     assert_eq!(contracts["contracts"], contracts_snapshot["contracts"]);
 
     let routes =
         parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
-    let routes_snapshot: Value = serde_json::from_str(include_str!(
-        "../../../data/golden/ported/dev_cli_routes.json"
-    ))
-    .expect("routes snapshot json");
+    let routes_snapshot: Value =
+        serde_json::from_str(include_str!("../../../data/golden/ported/dev_cli_routes.json"))
+            .expect("routes snapshot json");
     let snapshot_routes: BTreeSet<String> = routes_snapshot["routes"]
         .as_array()
         .expect("snapshot routes")
@@ -210,14 +177,7 @@ fn state_doctor_and_plugin_health_match_corruption_harness_findings() {
     fs::write(plugins_dir.join("registry.json"), "{\"version\":\"v1\",").expect("partial registry");
 
     let state_doctor = run_env(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_PLUGINS_DIR", &plugins_dir)],
     );
     assert_eq!(state_doctor.status.code(), Some(0));
@@ -227,21 +187,13 @@ fn state_doctor_and_plugin_health_match_corruption_harness_findings() {
     assert!(!issues.is_empty());
 
     let mut plugin_health_cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
-    plugin_health_cmd.args([
-        "dev",
-        "cli",
-        "plugin-health",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    plugin_health_cmd.args(["dev", "cli", "plugin-health", "--format", "json", "--no-pretty"]);
     plugin_health_cmd.env("BIJUXCLI_PLUGINS_DIR", &plugins_dir);
     let plugin_health = plugin_health_cmd.output().expect("plugin health");
     assert_eq!(plugin_health.status.code(), Some(0));
     let plugin_health_json = parse_json(&plugin_health.stdout);
-    let text_report = plugin_health_json["machine_report"]["text_report"]
-        .as_str()
-        .unwrap_or_default();
+    let text_report =
+        plugin_health_json["machine_report"]["text_report"].as_str().unwrap_or_default();
     assert!(text_report.contains("status: degraded"));
     assert_eq!(state_json["doctor"]["status"], "degraded");
 }
@@ -249,32 +201,14 @@ fn state_doctor_and_plugin_health_match_corruption_harness_findings() {
 #[test]
 fn package_health_and_runtime_identity_are_consistent_with_active_binary_conditions() {
     let package_health = parse_json(
-        &run(&[
-            "dev",
-            "cli",
-            "package-health",
-            "--format",
-            "json",
-            "--no-pretty",
-        ])
-        .stdout,
+        &run(&["dev", "cli", "package-health", "--format", "json", "--no-pretty"]).stdout,
     );
     let runtime_identity = parse_json(
-        &run(&[
-            "dev",
-            "cli",
-            "runtime-identity",
-            "--format",
-            "json",
-            "--no-pretty",
-        ])
-        .stdout,
+        &run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]).stdout,
     );
 
     assert_eq!(runtime_identity["canonical_user_binary"], "bijux");
-    let path_binaries = runtime_identity["path_binaries"]
-        .as_array()
-        .expect("path binaries");
+    let path_binaries = runtime_identity["path_binaries"].as_array().expect("path binaries");
     assert!(!path_binaries.is_empty());
     assert_eq!(runtime_identity["active_binary"], path_binaries[0]);
 

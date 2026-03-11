@@ -42,18 +42,12 @@ fn memory_state_parsing_is_stable_under_field_reordering_and_unknown_fields() {
 
     fs::write(&memory, r#"{"beta":{"v":2,"extra":"x"},"alpha":{"v":1}}"#).expect("write one");
     let envs = [("HOME", home.display().to_string())];
-    let first = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let first = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), Some(0));
     let first_json = parse_json(&first.stdout);
 
     fs::write(&memory, r#"{"alpha":{"v":1},"beta":{"extra":"x","v":2}}"#).expect("write two");
-    let second = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let second = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(second.status.code(), Some(0));
     let second_json = parse_json(&second.stdout);
 
@@ -70,19 +64,13 @@ fn missing_and_empty_memory_states_are_intentionally_consistent() {
     fs::create_dir_all(home.join(".bijux")).expect("mkdir");
     let envs = [("HOME", home.display().to_string())];
 
-    let missing = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let missing = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(missing.status.code(), Some(0));
     let missing_json = parse_json(&missing.stdout);
 
     let memory = home.join(".bijux").join(".memory.json");
     fs::write(&memory, "{}").expect("write empty");
-    let empty = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let empty = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(empty.status.code(), Some(0));
     let empty_json = parse_json(&empty.stdout);
 
@@ -101,20 +89,11 @@ fn memory_json_and_yaml_outputs_keep_stable_field_ordering_and_byte_stability() 
     fs::write(&memory, r#"{"beta":{"v":2},"alpha":{"v":1}}"#).expect("write");
     let envs = [("HOME", home.display().to_string())];
 
-    let json_a = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
-    let json_b = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let json_a = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
+    let json_b = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(json_a.status.code(), Some(0));
     assert_eq!(json_b.status.code(), Some(0));
-    assert_eq!(
-        json_a.stdout, json_b.stdout,
-        "json output should be byte stable"
-    );
+    assert_eq!(json_a.stdout, json_b.stdout, "json output should be byte stable");
 
     let yaml_a = run_with_env(&["memory", "list", "--format", "yaml", "--pretty"], &envs);
     let yaml_b = run_with_env(&["memory", "list", "--format", "yaml", "--pretty"], &envs);
@@ -132,26 +111,17 @@ fn memory_wrong_type_and_missing_required_shape_failures_are_stable() {
     let envs = [("HOME", home.display().to_string())];
 
     fs::write(&memory, "[]").expect("write non-object");
-    let wrong_type = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let wrong_type = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(wrong_type.status.code(), Some(1));
     let wrong_type_err = parse_json(&wrong_type.stderr);
     assert_eq!(wrong_type_err["status"], "error");
 
     fs::write(&memory, "{\"only\":\"string\"}").expect("write missing-required-shape");
-    let missing_required = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let missing_required =
+        run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(missing_required.status.code(), Some(0));
     let payload = parse_json(&missing_required.stdout);
-    assert!(payload["keys"]
-        .as_array()
-        .expect("keys")
-        .iter()
-        .any(|v| v == "only"));
+    assert!(payload["keys"].as_array().expect("keys").iter().any(|v| v == "only"));
 }
 
 #[test]
@@ -163,28 +133,10 @@ fn memory_state_audit_and_state_doctor_agree_on_malformed_state_findings() {
     fs::write(&memory, "{\"bad\":1}").expect("write wrong-type memory");
     let envs = [("HOME", home.display().to_string())];
 
-    let audit = run_with_env(
-        &[
-            "dev",
-            "cli",
-            "state-audit",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
-    let doctor = run_with_env(
-        &[
-            "dev",
-            "cli",
-            "state-doctor",
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
-        &envs,
-    );
+    let audit =
+        run_with_env(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"], &envs);
+    let doctor =
+        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(audit.status.code(), Some(0));
     assert_eq!(doctor.status.code(), Some(0));
 
@@ -231,13 +183,7 @@ fn memory_path_override_and_quiet_mode_keep_functional_semantics() {
     let normal_json = parse_json(&normal.stdout);
 
     let quiet = run_with_env(
-        &[
-            "memory",
-            "list",
-            "--quiet",
-            "--config-path",
-            fake_config.to_str().expect("utf-8"),
-        ],
+        &["memory", "list", "--quiet", "--config-path", fake_config.to_str().expect("utf-8")],
         &envs,
     );
     assert_eq!(quiet.status.code(), Some(0));
@@ -258,8 +204,5 @@ fn memory_path_override_and_quiet_mode_keep_functional_semantics() {
     );
     assert_eq!(repeat.status.code(), Some(0));
     let repeat_json = parse_json(&repeat.stdout);
-    assert_eq!(
-        normal_json, repeat_json,
-        "path override should keep memory semantics stable"
-    );
+    assert_eq!(normal_json, repeat_json, "path override should keep memory semantics stable");
 }
