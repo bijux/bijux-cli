@@ -1,7 +1,12 @@
 # bijux-cli-python
 
-Compatibility bridge to Python behavior and migration surfaces.
+Canonical Python bridge crate for `bijux-cli`.
+
+## Responsibilities
+- Own the Python extension module (`PyO3`) and wrapper package (`bijux_cli_py`).
+- Delegate command execution to the Rust runtime surface.
+- Expose compatibility helpers needed by the Python install path.
 
 ## Boundary
-- Depends on contracts only.
-- Must not own routing or output rendering logic.
+- Must not own command routing or output shaping laws.
+- Must not reimplement runtime behavior that belongs to `bijux-cli`.
