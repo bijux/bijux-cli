@@ -27,16 +27,14 @@ fn canonical_distribution_is_owned_by_python_bridge_crate() {
 }
 
 #[test]
-fn workspace_root_pyproject_is_not_runtime_distribution() {
+fn workspace_root_has_no_python_distribution_pyproject() {
     let root = workspace_root();
-    let root_pyproject =
-        fs::read_to_string(root.join("pyproject.toml")).expect("read workspace pyproject");
     assert!(
-        root_pyproject.contains("name = \"bijux-cli-workspace-tools\""),
-        "root pyproject must stay tooling-only and avoid canonical distribution name",
+        !root.join("pyproject.toml").exists(),
+        "workspace root must not own a Python distribution pyproject",
     );
     assert!(
-        !root_pyproject.contains("bijux = \"bijux_cli.core.bootstrap:main\""),
-        "root pyproject must not define legacy bijux runtime console script",
+        !root.join("configs/python/pyproject.toml").exists(),
+        "configs/python must not own package metadata after crate-local consolidation",
     );
 }

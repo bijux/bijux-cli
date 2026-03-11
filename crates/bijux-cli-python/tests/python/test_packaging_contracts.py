@@ -13,7 +13,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python < 3.11
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _load_pyproject() -> dict[str, object]:
