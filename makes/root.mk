@@ -1,6 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
-# Copyright © 2025 Bijan Mousavi
-
 ROOT_MK_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Core config
@@ -18,9 +15,11 @@ RM                    := rm -rf
 
 # Modular includes
 include $(ROOT_MK_DIR)/macro.mk
-include $(ROOT_MK_DIR)/cargo-rs.mk
-include $(ROOT_MK_DIR)/cargo-py.mk
+include $(ROOT_MK_DIR)/dev-rust.mk
+include $(ROOT_MK_DIR)/dev-python.mk
 include $(ROOT_MK_DIR)/docs.mk
+
+BIJUX_RUNTIME_BIN ?= bijux
 
 ##@ Core
 $(VENV):
@@ -57,13 +56,13 @@ lint quality security docs: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status: ## Show maintainer status report via bijux dev cli
-	@cargo run -q -p bijux-cli -- dev cli status --text
+	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli status --text
 
 dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
-	@cargo run -q -p bijux-cli -- dev cli crate-health --text
+	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli crate-health --text
 
 dev-cli-parity: ## Show parity summary via bijux dev cli
-	@cargo run -q -p bijux-cli -- dev cli parity --text
+	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
 
 # Utilities
 define run_tool
