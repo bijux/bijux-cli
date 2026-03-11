@@ -19,6 +19,7 @@ RS_COVERAGE_DIR ?= $(RS_ARTIFACT_ROOT)/coverage/$(RS_RUN_ID)
 RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
 RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
 RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
+RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
 RUST_PUBLISH_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
 RUST_PUBLISH_DRY_RUN ?= 1
 RUST_PUBLISH_ALLOW_DIRTY ?= 0
@@ -85,8 +86,11 @@ lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
 test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
 	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
+	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
@@ -110,7 +114,10 @@ test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 test-all-rs: ## Run Rust nextest full ignored-inclusive suite (artifact-scoped)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
+	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
@@ -137,7 +144,10 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
+	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
