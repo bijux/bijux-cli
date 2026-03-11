@@ -29,34 +29,15 @@ fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn migrated_rows() -> &'static [(&'static str, &'static str, usize)] {
     &[
-        (
-            "scripts/check-package-metadata.py",
-            "bijux dev cli scripts package-metadata",
-            100,
-        ),
-        (
-            "scripts/check_e2e_contract.py",
-            "bijux dev cli scripts e2e-contract",
-            95,
-        ),
-        (
-            "scripts/helper_pip_audit.py",
-            "bijux dev cli scripts pip-audit",
-            90,
-        ),
-        (
-            "scripts/capture_python_behavior.py",
-            "bijux dev cli scripts capture-python-behavior",
-            85,
-        ),
+        ("scripts/check-package-metadata.py", "bijux dev cli scripts package-metadata", 100),
+        ("scripts/check_e2e_contract.py", "bijux dev cli scripts e2e-contract", 95),
+        ("scripts/helper_pip_audit.py", "bijux dev cli scripts pip-audit", 90),
+        ("scripts/capture_python_behavior.py", "bijux dev cli scripts capture-python-behavior", 85),
         (
             "scripts/generate-provenance-statement.sh",
             "bijux dev cli scripts provenance-statement",
@@ -123,10 +104,8 @@ pub fn build_remaining_report(workspace_root: &Path) -> Value {
         .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("scripts")))
         .map(|p| rel(&p, workspace_root))
         .collect();
-    let remaining: Vec<String> = root_scripts
-        .into_iter()
-        .filter(|path| !migrated.contains(path.as_str()))
-        .collect();
+    let remaining: Vec<String> =
+        root_scripts.into_iter().filter(|path| !migrated.contains(path.as_str())).collect();
 
     let mut make_targets = Vec::new();
     for mk in collect_files(&workspace_root.join("makes")) {
@@ -214,10 +193,7 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
 
     let mut test_count = 0usize;
     for file in files {
-        if !file
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().starts_with("test_"))
-        {
+        if !file.file_name().is_some_and(|name| name.to_string_lossy().starts_with("test_")) {
             continue;
         }
         if file.extension().is_none_or(|ext| ext != "py") {
@@ -236,10 +212,7 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
             || text.contains("assert_plugins_consistent")
             || text.contains("assert_no_traceback"))
         {
-            errors.push(format!(
-                "{} missing invariant assertion",
-                rel(&file, workspace_root)
-            ));
+            errors.push(format!("{} missing invariant assertion", rel(&file, workspace_root)));
         }
     }
 
@@ -271,30 +244,17 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let dependencies = parsed
         .as_array()
         .cloned()
-        .or_else(|| {
-            parsed
-                .get("dependencies")
-                .and_then(Value::as_array)
-                .cloned()
-        })
+        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
         .unwrap_or_default();
 
     let mut remaining = Vec::new();
     for dep in dependencies {
         let name = dep.get("name").and_then(Value::as_str).unwrap_or("?");
         let version = dep.get("version").and_then(Value::as_str).unwrap_or("?");
-        for vuln in dep
-            .get("vulns")
-            .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default()
-        {
+        for vuln in dep.get("vulns").and_then(Value::as_array).cloned().unwrap_or_default() {
             let id = vuln.get("id").and_then(Value::as_str).unwrap_or("?");
-            let fix = vuln
-                .get("fix_versions")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
+            let fix =
+                vuln.get("fix_versions").and_then(Value::as_array).cloned().unwrap_or_default();
             remaining.push(json!({
                 "package": name,
                 "version": version,
@@ -319,10 +279,8 @@ pub fn build_python_capture_report(workspace_root: &Path) -> Value {
         .ok()
         .and_then(|text| serde_json::from_str(&text).ok())
         .unwrap_or_else(|| json!({}));
-    let capture_count = lock
-        .get("captures")
-        .and_then(Value::as_object)
-        .map_or(0, |captures| captures.len());
+    let capture_count =
+        lock.get("captures").and_then(Value::as_object).map_or(0, |captures| captures.len());
     json!({
         "status": if capture_count > 0 { "pass" } else { "fail" },
         "lock_path": lock_path,
@@ -369,9 +327,7 @@ mod tests {
     fn scripts_reports_are_shaped() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         assert!(build_migrated_report(&root).get("migrated").is_some());
-        assert!(build_remaining_report(&root)
-            .get("remaining_root_scripts")
-            .is_some());
+        assert!(build_remaining_report(&root).get("remaining_root_scripts").is_some());
         assert!(build_diff_report(&root).get("remaining").is_some());
         assert!(build_audit_report(&root).get("diff").is_some());
     }
