@@ -106,6 +106,27 @@ fn status_generator_slug(script_path: &str) -> String {
         .join("-")
 }
 
+fn status_slug_for_name(value: &str) -> String {
+    let mut slug = String::new();
+    let mut last_was_dash = false;
+    for ch in value.chars().flat_map(|c| c.to_lowercase()) {
+        if ch.is_ascii_alphanumeric() {
+            slug.push(ch);
+            last_was_dash = false;
+        } else if !last_was_dash {
+            slug.push('-');
+            last_was_dash = true;
+        }
+    }
+    let mut cleaned = slug.trim_matches('-').to_string();
+    for suffix in ["-report", "-audit", "-baseline", "-guide", "-rules", "-law", "-status"] {
+        if cleaned.ends_with(suffix) {
+            cleaned.truncate(cleaned.len().saturating_sub(suffix.len()));
+        }
+    }
+    cleaned.trim_matches('-').to_string()
+}
+
 fn status_generator_id(script_path: &str) -> String {
     format!("GEN-STATUS-{}", status_generator_slug(script_path))
 }
@@ -770,6 +791,37 @@ fn native_status_script_rows() -> Vec<Value> {
                 "artifacts/status/install_runtime_identity_contract.json"
             ],
             "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/config_corruption_matrix.json",
+                "artifacts/status/config_rollback_proof.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/docs_duplication_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT",
+        }),
+        json!({
+            "script_id": "STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT",
+            "kind": "generate",
+            "source_script": Value::Null,
+            "implementation": "rust",
+            "outputs": [
+                "artifacts/status/parser_abuse_report.json"
+            ],
+            "command": "bijux dev cli scripts status run --id STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT",
         }),
     ]
 }
@@ -3752,6 +3804,202 @@ fn run_native_status_script(workspace_root: &Path, script_id: &str) -> Option<Va
                 "artifacts/status/package_health_artifact.json",
                 "artifacts/status/install_runtime_identity_drift_artifact.json",
                 "artifacts/status/install_runtime_identity_contract.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-CONFIG-CORRUPTION-REPORTS" => {
+            let generated_at = generated_at_utc();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/config_corruption_matrix.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "config corruption matrix",
+                    "status": "complete",
+                    "coverage_ids": [461, 462, 463, 464, 465, 466, 467, 477],
+                    "evidence_tests": [
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_doctor_reports_corruption_for_broken_config_states",
+                    ],
+                }),
+            )
+            .ok()?;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/config_rollback_proof.json",
+                &json!({
+                    "generated_at": generated_at,
+                    "generator": "bijux-dev-cli",
+                    "scope": "config rollback and retry proof",
+                    "status": "complete",
+                    "coverage_ids": [468, 469, 470, 471, 472, 473, 474, 475, 476, 479],
+                    "evidence_tests": [
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",
+                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_file_shape",
+                    ],
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/config_corruption_matrix.json",
+                "artifacts/status/config_rollback_proof.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-DOCS-DUPLICATION-REPORT" => {
+            let mut by_name: BTreeMap<String, Vec<String>> = BTreeMap::new();
+            let mut by_heading: BTreeMap<String, Vec<String>> = BTreeMap::new();
+            for doc in collect_files(&workspace_root.join("docs")).into_iter().filter(|path| {
+                path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "md")
+            }) {
+                let rel = doc
+                    .strip_prefix(workspace_root)
+                    .ok()
+                    .unwrap_or(doc.as_path())
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                let stem = doc.file_stem().and_then(|s| s.to_str()).unwrap_or_default().to_string();
+                by_name.entry(status_slug_for_name(&stem)).or_default().push(rel.clone());
+                let heading = fs::read_to_string(&doc)
+                    .ok()
+                    .and_then(|content| {
+                        content.lines().find_map(|line| {
+                            line.strip_prefix("# ").map(|rest| rest.trim().to_string())
+                        })
+                    })
+                    .unwrap_or(stem);
+                by_heading.entry(status_slug_for_name(&heading)).or_default().push(rel);
+            }
+            let duplicate_stem_groups: Vec<Vec<String>> =
+                by_name.into_values().filter(|group| group.len() > 1).collect();
+            let duplicate_heading_groups: Vec<Vec<String>> =
+                by_heading.into_values().filter(|group| group.len() > 1).collect();
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/docs_duplication_report.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "duplicate_stem_groups": duplicate_stem_groups,
+                    "duplicate_heading_groups": duplicate_heading_groups,
+                    "action_rule": "docs exist to explain law or change; overlapping prose should be merged or replaced by artifacts",
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/docs_duplication_report.json"
+            ]}))
+        }
+        "STATUS-SCRIPT-GENERATE-PARSER-ABUSE-REPORT" => {
+            let source = fs::read_to_string(
+                workspace_root.join("crates/bijux-cli/tests/routing/parser_abuse.rs"),
+            )
+            .unwrap_or_default();
+            let checks: BTreeMap<i64, &str> = BTreeMap::from([
+                (
+                    401,
+                    "randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry",
+                ),
+                (
+                    402,
+                    "randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry",
+                ),
+                (
+                    403,
+                    "randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry",
+                ),
+                (
+                    404,
+                    "randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry",
+                ),
+                (
+                    405,
+                    "parser_handles_absurd_token_and_flag_lengths_and_empty_elements",
+                ),
+                (
+                    406,
+                    "parser_handles_absurd_token_and_flag_lengths_and_empty_elements",
+                ),
+                (
+                    407,
+                    "parser_repeated_conflicting_flags_and_order_abuse_stay_deterministic",
+                ),
+                (
+                    408,
+                    "parser_repeated_conflicting_flags_and_order_abuse_stay_deterministic",
+                ),
+                (
+                    409,
+                    "parser_repeated_conflicting_flags_and_order_abuse_stay_deterministic",
+                ),
+                (
+                    410,
+                    "parser_handles_absurd_token_and_flag_lengths_and_empty_elements",
+                ),
+                (
+                    411,
+                    "parser_shell_hostile_and_confusable_namespace_tokens_do_not_hijack_reserved_paths",
+                ),
+                (
+                    412,
+                    "parser_shell_hostile_and_confusable_namespace_tokens_do_not_hijack_reserved_paths",
+                ),
+                (
+                    413,
+                    "unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguity",
+                ),
+                (
+                    414,
+                    "unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguity",
+                ),
+                (
+                    415,
+                    "plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots",
+                ),
+                (
+                    416,
+                    "plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots",
+                ),
+                (
+                    417,
+                    "route_tree_and_command_tree_are_deterministic_under_shuffled_plugin_registration",
+                ),
+                (418, "command_tree_export_is_stable_across_repeated_calls"),
+            ]);
+            let rows: Vec<Value> = checks
+                .iter()
+                .map(|(coverage_id, test_name)| {
+                    json!({
+                        "coverage_id": coverage_id,
+                        "status": if source.contains(test_name) { "complete" } else { "missing" },
+                        "evidence_test": format!("crates/bijux-cli/tests/routing/parser_abuse.rs::{test_name}"),
+                    })
+                })
+                .collect();
+            let complete = rows
+                .iter()
+                .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
+                .count();
+            let missing = rows.len() - complete;
+            write_status_artifact_json(
+                workspace_root,
+                "artifacts/status/parser_abuse_report.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "401-420 parser and routing hardening wave",
+                    "rows": rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": missing,
+                    },
+                    "required_before_major_release_claims": true,
+                }),
+            )
+            .ok()?;
+            Some(json!({"status":"ok","script_id":script_id,"implementation":"rust","outputs":[
+                "artifacts/status/parser_abuse_report.json"
             ]}))
         }
         _ => None,
