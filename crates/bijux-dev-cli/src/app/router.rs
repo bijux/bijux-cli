@@ -6,17 +6,20 @@ use std::path::Path;
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::app::args::{command_option_value, command_passthrough_args, command_positionals};
+use crate::app::args::{
+    command_has_flag, command_option_value, command_passthrough_args, command_positionals,
+};
 use crate::app::runtime_query::RuntimeQueryProvider;
 use crate::app::workspace::workspace_root;
 use crate::commands::{
     cockpit as dev_cockpit, config as dev_config, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
-    evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
-    python as dev_python, registry as dev_registry, release as dev_release, repo as dev_repo,
+    evidence as dev_evidence, maintenance_audit as dev_maintenance_audit,
+    package_health as dev_package_health, parity as dev_parity, python as dev_python,
+    registry as dev_registry, release as dev_release, repo as dev_repo,
     route_audit as dev_route_audit, routes as dev_routes, runtime_contracts as dev_contracts,
     runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
-    maintenance_audit as dev_maintenance_audit, state_audit as dev_state_audit, status as dev_status,
+    state_audit as dev_state_audit, status as dev_status,
 };
 use crate::infrastructure::artifacts::{
     collect_files_recursive, read_json_if_exists, relative_to_root,
@@ -33,7 +36,13 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
                 && b == "cli"
                 && matches!(
                     c.as_str(),
-                    "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+                    "maintenance"
+                        | "rustdoc"
+                        | "release"
+                        | "evidence"
+                        | "config"
+                        | "python"
+                        | "repo"
                 ) =>
         {
             true
@@ -200,7 +209,11 @@ pub fn try_handle(
             dev_maintenance::build_flaky_tests_report(&workspace_root())
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "inventory" =>
+            if a == "dev"
+                && b == "cli"
+                && c == "maintenance"
+                && d == "status"
+                && e == "inventory" =>
         {
             dev_maintenance::build_status_maintenance_report(&workspace_root())
         }
@@ -218,7 +231,11 @@ pub fn try_handle(
             )
         }
         [a, b, c, d, e]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run-all" =>
+            if a == "dev"
+                && b == "cli"
+                && c == "maintenance"
+                && d == "status"
+                && e == "run-all" =>
         {
             let passthrough = command_passthrough_args(argv);
             dev_maintenance::run_all_status_maintenance(
@@ -227,7 +244,9 @@ pub fn try_handle(
                 &passthrough,
             )
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "package-metadata" => {
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "maintenance" && d == "package-metadata" =>
+        {
             dev_maintenance::build_package_metadata_report(&workspace_root())
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "e2e-contract" => {
@@ -436,12 +455,21 @@ pub fn try_handle(
             dev_control_plane::build_plugin_health_report(machine, text)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
-            let contracts_query = runtime.contracts_schema_input();
-            dev_contracts::build_report_from_query(
-                env!("CARGO_PKG_VERSION"),
-                &contracts_query.schema_ids,
-                &contracts_query.schema_version,
-            )
+            if command_has_flag(argv, "--all") {
+                let kind_filter = command_option_value(argv, "--kind");
+                dev_contracts::build_all_report(
+                    &workspace_root(),
+                    env!("CARGO_PKG_VERSION"),
+                    kind_filter.as_deref(),
+                )
+            } else {
+                let contracts_query = runtime.contracts_schema_input();
+                dev_contracts::build_report_from_query(
+                    env!("CARGO_PKG_VERSION"),
+                    &contracts_query.schema_ids,
+                    &contracts_query.schema_version,
+                )
+            }
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "runtime-identity" => {
             dev_runtime_identity::build_report(runtime.runtime_identity_input())

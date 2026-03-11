@@ -1,7 +1,9 @@
 Usage: bijux-rs dev cli contracts [OPTIONS]
 
 Options:
+      --all                 
   -f, --format <FORMAT>     
+      --kind <kind>         [possible values: generate, check, enforce, warn, run, status]
   -q, --quiet               
       --log-level <LEVEL>   
       --color <MODE>        

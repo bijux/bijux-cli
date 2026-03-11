@@ -113,16 +113,30 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn root_command() -> Command {
-    let format_arg =
-        Arg::new("format").long("format").short('f').num_args(1).global(true).value_name("FORMAT");
+    let format_arg = Arg::new("format")
+        .long("format")
+        .short('f')
+        .num_args(1)
+        .global(true)
+        .value_name("FORMAT");
 
-    let quiet_arg =
-        Arg::new("quiet").long("quiet").short('q').action(ArgAction::SetTrue).global(true);
+    let quiet_arg = Arg::new("quiet")
+        .long("quiet")
+        .short('q')
+        .action(ArgAction::SetTrue)
+        .global(true);
 
-    let log_level_arg =
-        Arg::new("log-level").long("log-level").num_args(1).global(true).value_name("LEVEL");
+    let log_level_arg = Arg::new("log-level")
+        .long("log-level")
+        .num_args(1)
+        .global(true)
+        .value_name("LEVEL");
 
-    let color_arg = Arg::new("color").long("color").num_args(1).global(true).value_name("MODE");
+    let color_arg = Arg::new("color")
+        .long("color")
+        .num_args(1)
+        .global(true)
+        .value_name("MODE");
 
     let pretty_arg = Arg::new("pretty")
         .long("pretty")
@@ -135,8 +149,11 @@ pub fn root_command() -> Command {
         .action(ArgAction::SetTrue)
         .overrides_with("pretty")
         .global(true);
-    let config_path_arg =
-        Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
+    let config_path_arg = Arg::new("config-path")
+        .long("config-path")
+        .num_args(1)
+        .global(true)
+        .value_name("PATH");
     let json_arg = Arg::new("json")
         .long("json")
         .action(ArgAction::SetTrue)
@@ -194,7 +211,9 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
-            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
+            Command::new("hold")
+                .hide(true)
+                .subcommand(Command::new("interruptible").hide(true)),
         )
         .subcommand(plugins_group.clone());
 
@@ -249,7 +268,12 @@ pub fn root_command() -> Command {
                 .subcommand(
                     Command::new("provenance-statement")
                         .arg(Arg::new("tag").long("tag").num_args(1).required(true))
-                        .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
+                        .arg(
+                            Arg::new("output-dir")
+                                .long("output-dir")
+                                .num_args(1)
+                                .required(true),
+                        ),
                 ),
         )
         .subcommand(
@@ -338,7 +362,16 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("package-health"))
         .subcommand(Command::new("env"))
         .subcommand(Command::new("doctor"))
-        .subcommand(Command::new("contracts"))
+        .subcommand(
+            Command::new("contracts")
+                .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
+                .arg(
+                    Arg::new("kind")
+                        .long("kind")
+                        .num_args(1)
+                        .value_parser(["generate", "check", "enforce", "warn", "run", "status"]),
+                ),
+        )
         .subcommand(Command::new("runtime-identity"))
         .subcommand(Command::new("docs-prune-plan"))
         .subcommand(Command::new("state-audit"))
@@ -450,5 +483,9 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalized_path = normalize_command_path(&command_path);
     let global_flags = global_flags_from_matches(&matches)?;
 
-    Ok(ParsedIntent { command_path, normalized_path, global_flags })
+    Ok(ParsedIntent {
+        command_path,
+        normalized_path,
+        global_flags,
+    })
 }

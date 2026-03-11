@@ -22,6 +22,12 @@ pub fn command_passthrough_args(argv: &[String]) -> Vec<String> {
         .map_or_else(Vec::new, |tail| tail.to_vec())
 }
 
+/// Return true when `name` exists as a standalone flag.
+#[must_use]
+pub fn command_has_flag(argv: &[String], name: &str) -> bool {
+    argv.iter().any(|arg| arg == name)
+}
+
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
     let mut extra_start = 1 + command_tokens.len();
     if argv.len() < extra_start {
