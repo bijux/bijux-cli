@@ -108,7 +108,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bijux-cli",
- "bijux-cli-evidence",
  "clap",
  "serde",
  "serde_json",
