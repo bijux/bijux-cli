@@ -17,6 +17,10 @@ RS_TEST_ALL_REPORT ?= $(RS_ARTIFACT_ROOT)/test/$(RS_RUN_ID)/nextest-all.log
 RS_AUDIT_REPORT ?= $(RS_ARTIFACT_ROOT)/audit/$(RS_RUN_ID)/report.txt
 RS_COVERAGE_DIR ?= $(RS_ARTIFACT_ROOT)/coverage/$(RS_RUN_ID)
 RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
+RUST_PUBLISH_PACKAGES ?= bijux-cli bijux-cli-evidence bijux-cli-python bijux-dev-cli
+RUST_PUBLISH_DRY_RUN ?= 1
+RUST_PUBLISH_ALLOW_DIRTY ?= 0
+RUST_PUBLISH_REGISTRY ?= crates-io
 
 CARGO_TERM_PROGRESS_WHEN ?= always
 CARGO_TERM_PROGRESS_WIDTH ?= 120
@@ -50,7 +54,7 @@ define rs_nextest_summary
 	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
 endef
 
-.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage-rs audit-rs
+.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage-rs audit-rs publish-rs
 
 fmt-rs:
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
@@ -166,6 +170,31 @@ audit-rs:
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit; \
 	} 2>&1 | tee "$(RS_AUDIT_REPORT)"
 
+publish-rs:
+	@set -euo pipefail; \
+	if [ -z "$(RUST_PUBLISH_PACKAGES)" ]; then \
+		echo "RUST_PUBLISH_PACKAGES is empty; nothing to publish"; \
+		exit 1; \
+	fi; \
+	dry_run_flag=""; \
+	if [ "$(RUST_PUBLISH_DRY_RUN)" = "1" ]; then \
+		dry_run_flag="--dry-run"; \
+	fi; \
+	allow_dirty_flag=""; \
+	if [ "$(RUST_PUBLISH_ALLOW_DIRTY)" = "1" ]; then \
+		allow_dirty_flag="--allow-dirty"; \
+	fi; \
+	for pkg in $(RUST_PUBLISH_PACKAGES); do \
+		echo "→ cargo publish -p $$pkg --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+		cargo publish \
+			--locked \
+			--registry "$(RUST_PUBLISH_REGISTRY)" \
+			-p "$$pkg" \
+			$$allow_dirty_flag \
+			$$dry_run_flag; \
+	done
+
 ##@ Rust
 fmt-rs: ## Run Rust format checks (artifact-scoped)
 lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
@@ -173,3 +202,4 @@ test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 test-all-rs: ## Run Rust nextest all-features + ignored suite (artifact-scoped)
 coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-scoped)
 audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
+publish-rs: ## Publish Rust crates (dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to release)
