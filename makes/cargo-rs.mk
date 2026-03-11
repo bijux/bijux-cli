@@ -17,6 +17,8 @@ RS_TEST_ALL_REPORT ?= $(RS_ARTIFACT_ROOT)/test/$(RS_RUN_ID)/nextest-all.log
 RS_AUDIT_REPORT ?= $(RS_ARTIFACT_ROOT)/audit/$(RS_RUN_ID)/report.txt
 RS_COVERAGE_DIR ?= $(RS_ARTIFACT_ROOT)/coverage/$(RS_RUN_ID)
 RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
+RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
+RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
 RUST_PUBLISH_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
 RUST_PUBLISH_DRY_RUN ?= 1
 RUST_PUBLISH_ALLOW_DIRTY ?= 0
@@ -105,7 +107,7 @@ test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
 	test $$status -eq 0
 
-test-all-rs: ## Run Rust nextest all-features + ignored suite (artifact-scoped)
+test-all-rs: ## Run Rust nextest full ignored-inclusive suite (artifact-scoped)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)"
 	@status=0; \
@@ -135,7 +137,8 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
-	@LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
+	@status=0; \
+	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
@@ -145,7 +148,6 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo llvm-cov nextest \
 		--workspace \
-		--all-features \
 		--run-ignored all \
 		--retries 0 \
 		--config-file configs/rust/nextest.toml \
@@ -154,10 +156,19 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
 		--show-progress "$(NEXTEST_SHOW_PROGRESS)" \
-		--lcov --output-path "$(RS_LCOV_FILE)"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
+		--lcov --output-path "$(RS_LCOV_FILE)" \
+		2>&1 | tee "$(RS_COVERAGE_TEST_REPORT)" || status=$$?; \
+	$(call rs_nextest_summary,$(RS_COVERAGE_TEST_REPORT)); \
+	test $$status -eq 0
+	@set -o pipefail; \
+	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
-	cargo llvm-cov report
+	cargo llvm-cov report --summary-only 2>&1 | tee "$(RS_COVERAGE_SUMMARY_REPORT)"
+	@total_line=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$(RS_COVERAGE_SUMMARY_REPORT)" | grep '^TOTAL' | tail -n 1 || true); \
+	printf '\033[1;36m%s\033[0m %s\n' "coverage-summary:" "$${total_line:-unavailable}"; \
+	printf '\033[1;36m%s\033[0m %s\n' "coverage-lcov:" "$(RS_LCOV_FILE)"; \
+	printf '\033[1;36m%s\033[0m %s\n' "coverage-report:" "$(RS_COVERAGE_SUMMARY_REPORT)"
 
 audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
 	$(call rs_require_tool,cargo-deny)
