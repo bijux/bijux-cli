@@ -37,7 +37,7 @@ The canonical inventory is generated in:
 
 ## Policy Gate
 
-`scripts/status/enforce_state_law_policy.py` fails CI when:
+`bijux dev cli scripts status run --id STATUS-SCRIPT-ENFORCE-STATE-LAW-POLICY` fails CI when:
 
 - required state artifacts are missing
 - canonical atomic write paths are bypassed
