@@ -179,6 +179,7 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("config export", "cli config export"),
     ("config load", "cli config load"),
     ("config list", "config"),
+    ("cli config", "config"),
     ("plugins list", "cli plugins list"),
     ("plugins info", "plugins"),
     ("plugins inspect", "cli plugins inspect"),
@@ -232,7 +233,6 @@ fn build_built_in_route_paths() -> Vec<String> {
         "plugins doctor".to_string(),
         "cli status".to_string(),
         "cli paths".to_string(),
-        "cli config".to_string(),
         "cli self-test".to_string(),
     ];
 

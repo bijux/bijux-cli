@@ -2,12 +2,41 @@
 //! Shared argv helpers for command argument extraction.
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
-    let extra_start = 1 + command_tokens.len();
+    let mut command_start = 1;
+    while command_start < argv.len() {
+        let token = argv[command_start].as_str();
+        if token == "--quiet" || token == "-q" || token == "--pretty" || token == "--no-pretty" {
+            command_start += 1;
+            continue;
+        }
+        if token == "--format"
+            || token == "-f"
+            || token == "--log-level"
+            || token == "--color"
+            || token == "--config-path"
+        {
+            command_start += 2;
+            continue;
+        }
+        if token.starts_with("--format=")
+            || token.starts_with("--log-level=")
+            || token.starts_with("--color=")
+            || token.starts_with("--config-path=")
+            || token == "--json"
+            || token == "--text"
+        {
+            command_start += 1;
+            continue;
+        }
+        break;
+    }
+
+    let extra_start = command_start + command_tokens.len();
     if argv.len() < extra_start {
         return &[];
     }
     for (idx, token) in command_tokens.iter().enumerate() {
-        if argv.get(idx + 1).map(String::as_str) != Some(*token) {
+        if argv.get(command_start + idx).map(String::as_str) != Some(*token) {
             return &[];
         }
     }

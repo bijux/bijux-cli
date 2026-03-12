@@ -87,7 +87,7 @@ pub(crate) fn execute_config_command(
 }
 
 fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a str] {
-    if argv.get(1).is_some_and(|segment| segment == "config") {
+    if command_starts_with_root_config(argv) {
         match suffix {
             ["list"] => &["config", "list"],
             ["get"] => &["config", "get"],
@@ -112,6 +112,38 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             _ => &["cli", "config"],
         }
     }
+}
+
+fn command_starts_with_root_config(argv: &[String]) -> bool {
+    let mut command_start = 1;
+    while command_start < argv.len() {
+        let token = argv[command_start].as_str();
+        if token == "--quiet" || token == "-q" || token == "--pretty" || token == "--no-pretty" {
+            command_start += 1;
+            continue;
+        }
+        if token == "--format"
+            || token == "-f"
+            || token == "--log-level"
+            || token == "--color"
+            || token == "--config-path"
+        {
+            command_start += 2;
+            continue;
+        }
+        if token.starts_with("--format=")
+            || token.starts_with("--log-level=")
+            || token.starts_with("--color=")
+            || token.starts_with("--config-path=")
+            || token == "--json"
+            || token == "--text"
+        {
+            command_start += 1;
+            continue;
+        }
+        break;
+    }
+    argv.get(command_start).is_some_and(|segment| segment == "config")
 }
 
 fn read_pair_from_stdin_fallback() -> Option<String> {
