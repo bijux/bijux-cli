@@ -1,19 +1,13 @@
-{
-  "doctor": {
-    "issues": [
-      {
-        "area": "memory",
-        "keys": [
-          "int_test_key"
-        ],
-        "message": "memory entries with wrong-type values detected",
-        "path": "<HOME>/.bijux/.memory.json",
-        "severity": "warning"
-      }
-    ],
-    "repairs": [],
-    "status": "degraded"
-  },
-  "runtime": "dev-cli",
-  "state_truth_default": "bijux dev cli state-audit"
-}
+doctor:
+  issues:
+    -
+      area: memory
+      keys:
+        - int_test_key
+      message: memory entries with wrong-type values detected
+      path: <HOME>/.bijux/.memory.json
+      severity: warning
+  repairs: []
+  status: degraded
+runtime: dev-cli
+state_truth_default: bijux dev cli state-audit

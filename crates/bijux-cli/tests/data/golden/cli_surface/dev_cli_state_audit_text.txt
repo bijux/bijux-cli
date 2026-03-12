@@ -1,62 +1,50 @@
-{
-  "corruption_health": {
-    "issues": [
-      {
-        "area": "memory",
-        "keys": [
-          "int_test_key"
-        ],
-        "message": "memory entries with wrong-type values detected",
-        "path": "<HOME>/.bijux/.memory.json",
-        "severity": "warning"
-      }
-    ],
-    "repairs": [],
-    "status": "degraded"
-  },
-  "evidence_ids": [
-    "EVIDENCE-1104-CONFIG-CORRUPTION",
-    "EVIDENCE-1105-HISTORY-RESILIENCE",
-    "EVIDENCE-1106-MEMORY-RESILIENCE"
-  ],
-  "paths": {
-    "config": {
-      "exists": true,
-      "is_dir": false,
-      "is_file": true,
-      "path": "<HOME>/.bijux/.env",
-      "readable": true,
-      "size_bytes": 17,
-      "writable": true
-    },
-    "history": {
-      "exists": true,
-      "is_dir": false,
-      "is_file": true,
-      "path": "<HOME>/.bijux/.history",
-      "readable": true,
-      "size_bytes": 3,
-      "writable": true
-    },
-    "memory": {
-      "exists": true,
-      "is_dir": false,
-      "is_file": true,
-      "path": "<HOME>/.bijux/.memory.json",
-      "readable": true,
-      "size_bytes": 20,
-      "writable": true
-    },
-    "plugins_registry": {
-      "exists": false,
-      "is_dir": false,
-      "is_file": false,
-      "path": "<HOME>/.bijux/.plugins/registry.json",
-      "readable": false,
-      "size_bytes": 0,
-      "writable": true
-    }
-  },
-  "runtime": "dev-cli",
-  "state_truth_default": "bijux dev cli state-audit"
-}
+corruption_health:
+  issues:
+    -
+      area: memory
+      keys:
+        - int_test_key
+      message: memory entries with wrong-type values detected
+      path: <HOME>/.bijux/.memory.json
+      severity: warning
+  repairs: []
+  status: degraded
+evidence_ids:
+  - EVIDENCE-1104-CONFIG-CORRUPTION
+  - EVIDENCE-1105-HISTORY-RESILIENCE
+  - EVIDENCE-1106-MEMORY-RESILIENCE
+paths:
+  config:
+    exists: true
+    is_dir: false
+    is_file: true
+    path: <HOME>/.bijux/.env
+    readable: true
+    size_bytes: 17
+    writable: true
+  history:
+    exists: true
+    is_dir: false
+    is_file: true
+    path: <HOME>/.bijux/.history
+    readable: true
+    size_bytes: 3
+    writable: true
+  memory:
+    exists: true
+    is_dir: false
+    is_file: true
+    path: <HOME>/.bijux/.memory.json
+    readable: true
+    size_bytes: 20
+    writable: true
+  plugins_registry:
+    exists: false
+    is_dir: false
+    is_file: false
+    path: <HOME>/.bijux/.plugins/registry.json
+    readable: false
+    size_bytes: 0
+    writable: true
+runtime: dev-cli
+state_truth_default: bijux dev cli state-audit

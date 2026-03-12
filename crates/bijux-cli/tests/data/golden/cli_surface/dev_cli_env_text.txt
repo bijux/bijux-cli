@@ -1,14 +1,10 @@
-{
-  "active": {
-    "config_file": "<HOME>/.bijux/.env",
-    "history_file": "<HOME>/.bijux/.history",
-    "plugins_dir": "<HOME>/.bijux/.plugins"
-  },
-  "env": {},
-  "source_precedence": [
-    "flags",
-    "env",
-    "config",
-    "defaults"
-  ]
-}
+active:
+  config_file: <HOME>/.bijux/.env
+  history_file: <HOME>/.bijux/.history
+  plugins_dir: <HOME>/.bijux/.plugins
+env: {}
+source_precedence:
+  - flags
+  - env
+  - config
+  - defaults

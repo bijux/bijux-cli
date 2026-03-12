@@ -1,21 +1,15 @@
-{
-  "contracts": [
-    {
-      "name": "output-envelope",
-      "schema": "output-envelope-v1",
-      "version": "1.0.0"
-    },
-    {
-      "name": "error-envelope",
-      "schema": "error-envelope-v1",
-      "version": "1.0.0"
-    },
-    {
-      "name": "plugin-manifest",
-      "schema": "plugin-manifest-v1",
-      "version": "1.0.0"
-    }
-  ],
-  "runtime_version": "0.3.0",
-  "schema_version": "v1"
-}
+contracts:
+  -
+    name: output-envelope
+    schema: output-envelope-v1
+    version: 1.0.0
+  -
+    name: error-envelope
+    schema: error-envelope-v1
+    version: 1.0.0
+  -
+    name: plugin-manifest
+    schema: plugin-manifest-v1
+    version: 1.0.0
+runtime_version: 0.3.0
+schema_version: v1
