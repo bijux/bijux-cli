@@ -15,3 +15,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux cli plugins scaffold
+  bijux cli plugins scaffold --format json
+  bijux help cli plugins scaffold

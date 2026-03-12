@@ -18,8 +18,15 @@ Options:
       --config-path <PATH>  
   -h, --help                Print help
 
+Subcommand guide:
+status     Runtime status summary
+paths      Runtime state and filesystem paths
+config     Runtime configuration operations
+self-test  Deterministic runtime self-checks
+plugins    Canonical plugin lifecycle namespace
+
 Examples:
-bijux cli status
-bijux cli paths
-bijux cli config list
-bijux cli plugins list
+  bijux cli status
+  bijux cli paths
+  bijux cli config list
+  bijux cli plugins list

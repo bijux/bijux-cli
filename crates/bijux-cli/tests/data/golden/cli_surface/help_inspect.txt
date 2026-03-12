@@ -10,4 +10,9 @@ Options:
       --config-path <PATH>  
   -h, --help                Print help
 
+Examples:
+  bijux inspect
+  bijux inspect --format json
+  bijux inspect --format yaml
+
 Compatibility note: inspect output includes plugin compatibility warnings when present.

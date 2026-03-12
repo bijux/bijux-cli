@@ -13,3 +13,13 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Subcommand guide:
+cli    Maintainer command namespace
+
+Use `bijux dev cli --help` for maintainer command families and examples.
+
+Examples:
+  bijux dev cli status
+  bijux dev cli routes --text
+  bijux dev cli doctor --text

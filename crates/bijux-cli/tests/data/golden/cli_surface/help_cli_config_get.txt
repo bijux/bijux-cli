@@ -12,3 +12,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux cli config get
+  bijux cli config get --format json
+  bijux help cli config get

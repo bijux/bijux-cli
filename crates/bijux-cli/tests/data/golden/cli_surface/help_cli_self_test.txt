@@ -9,3 +9,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux cli self-test
+  bijux cli self-test --format json
+  bijux help cli self-test

@@ -9,3 +9,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux plugins reserved-names
+  bijux plugins reserved-names --format json
+  bijux help plugins reserved-names

@@ -17,3 +17,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux memory list
+  bijux memory set session.id=abc123
+  bijux memory get session.id

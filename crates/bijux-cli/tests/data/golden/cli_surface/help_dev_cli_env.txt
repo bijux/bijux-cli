@@ -9,3 +9,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux dev cli env
+  bijux dev cli env --format json
+  bijux help dev cli env

@@ -44,7 +44,7 @@ explain         Explain plugin resolution outcome
 schema          Show plugin manifest schema
 
 Examples:
-bijux plugins list
-bijux plugins inspect
-bijux plugins check sample
-bijux plugins install ./plugin.toml --source local
+  bijux plugins list
+  bijux plugins inspect
+  bijux plugins check sample
+  bijux plugins install ./plugin.toml --source local

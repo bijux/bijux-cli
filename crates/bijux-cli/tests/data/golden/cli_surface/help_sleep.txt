@@ -12,3 +12,7 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux sleep 1
+  bijux sleep 250ms

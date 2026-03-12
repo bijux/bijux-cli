@@ -16,3 +16,7 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux history
+  bijux history clear

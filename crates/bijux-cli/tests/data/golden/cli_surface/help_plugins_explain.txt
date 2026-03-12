@@ -12,3 +12,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux plugins explain
+  bijux plugins explain --format json
+  bijux help plugins explain

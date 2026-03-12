@@ -9,3 +9,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux dev cli state-doctor
+  bijux dev cli state-doctor --format json
+  bijux help dev cli state-doctor

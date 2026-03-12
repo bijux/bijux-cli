@@ -9,3 +9,8 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+  bijux cli plugins list
+  bijux cli plugins list --format json
+  bijux help cli plugins list
