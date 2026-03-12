@@ -99,7 +99,11 @@ fn read_dev_cli_source() -> String {
     let mut files = Vec::<PathBuf>::new();
     collect_rs_files(&router_root, &mut files);
     files.sort();
-    assert!(!files.is_empty(), "expected dev-cli source files under {}", router_root.display());
+    assert!(
+        !files.is_empty(),
+        "expected dev-cli source files under {}",
+        router_root.display()
+    );
 
     let mut source = String::new();
     for file in files {
@@ -163,7 +167,7 @@ fn core_runtime_delegates_dev_cli_at_process_boundary() {
         "runtime dispatch must normalize canonical `dev cli` delegation arguments"
     );
     assert!(
-        source.contains("else { &argv[2..] }"),
+        source.contains("&argv[2..]"),
         "runtime dispatch must normalize `dev <subcommand>` delegation arguments"
     );
     assert!(
@@ -209,7 +213,10 @@ fn dev_cli_dispatch_owns_report_assembly_and_command_branches() {
     ];
 
     for needle in delegated {
-        assert!(source.contains(needle), "dispatch must delegate report assembly for {needle}");
+        assert!(
+            source.contains(needle),
+            "dispatch must delegate report assembly for {needle}"
+        );
     }
     assert!(
         !source.contains("render_value("),
