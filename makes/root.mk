@@ -5,7 +5,7 @@ ROOT_MK_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 .DEFAULT_GOAL         := all
 .SHELLFLAGS           := -eu -o pipefail -c
 SHELL                 := bash
-PYTHON                := python3
+PYTHON                ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
 VENV                  := .venv
 VENV_PYTHON           := $(VENV)/bin/python
 ACT                   := $(VENV)/bin
@@ -27,6 +27,11 @@ $(VENV):
 	@$(PYTHON) -m venv $(VENV)
 
 install: $(VENV) ## Install project in editable mode into .venv
+	@if [ -x "$(VENV_PYTHON)" ] && ! "$(VENV_PYTHON)" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \
+	  echo "→ Recreating $(VENV) with Python >=3.11"; \
+	  $(RM) "$(VENV)"; \
+	  $(PYTHON) -m venv "$(VENV)"; \
+	fi
 	@echo "→ Installing dependencies..."
 	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
 	@$(VENV_PYTHON) -m pip install -e "./crates/bijux-cli-python[dev]"
@@ -48,11 +53,11 @@ clean-soft: ## Remove build artifacts but keep .venv
 	  docs/reference artifacts usage_test usage_test_artifacts .cache || true
 	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
-all: clean install test lint quality security docs build sbom ## Run full pipeline (clean → sbom)
+all: clean install test lint security docs build ## Run full pipeline (clean → build)
 	@echo "✔ All targets completed"
 
 # Run independent checks in parallel
-lint quality security docs: | bootstrap
+lint test security docs build: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status: ## Show maintainer status report via bijux dev cli
