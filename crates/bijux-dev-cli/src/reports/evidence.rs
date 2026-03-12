@@ -11,6 +11,16 @@ use crate::schema::evidence::{
     valid_evidence_id, EvidenceRecord, EvidenceStatus, EvidenceStrength,
 };
 
+fn evidence_ids_for_command(command: &str) -> Vec<&'static str> {
+    match command {
+        "dev cli release" => vec!["EVIDENCE-1001-RELEASE-TRUTH"],
+        "dev cli parity" => vec!["EVIDENCE-1002-PARITY-COVERAGE"],
+        "dev cli package-health" => vec!["EVIDENCE-1003-INSTALL-NEUTRALITY"],
+        "dev cli runtime-identity" => vec!["EVIDENCE-1004-RUNTIME-IDENTITY"],
+        _ => Vec::new(),
+    }
+}
+
 fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
     let release_truth = workspace_root.join("artifacts/status/release_truth_report.json");
     let parity = workspace_root.join("artifacts/parity/command_parity_matrix.json");
@@ -129,10 +139,23 @@ pub fn build_list_report(workspace_root: &Path) -> Value {
 /// `dev cli evidence show --id <id>`
 #[must_use]
 pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
+    if !valid_evidence_id(id) {
+        return json!({
+            "record": Value::Null,
+            "found": false,
+            "id_format_valid": false,
+            "error": "invalid evidence id format; expected EVIDENCE-<NUMBER>-<UPPERCASE-SLUG>",
+        });
+    }
+
     let records = records_json(workspace_root);
     let record =
         records.into_iter().find(|item| item.get("id").and_then(Value::as_str) == Some(id));
-    json!({"record": record, "found": record.is_some()})
+    json!({
+        "record": record,
+        "found": record.is_some(),
+        "id_format_valid": true,
+    })
 }
 
 /// `dev cli evidence audit`
@@ -223,21 +246,27 @@ pub fn build_release_export_report(workspace_root: &Path) -> Value {
 /// `dev cli evidence command-map`
 #[must_use]
 pub fn build_command_map_report(workspace_root: &Path) -> Value {
-    let records = records_json(workspace_root);
-    let ids: Vec<String> = records
+    let available_ids: std::collections::BTreeSet<String> = records_json(workspace_root)
         .iter()
         .filter_map(|row| row.get("id").and_then(Value::as_str).map(ToString::to_string))
         .collect();
     let mapping: Vec<Value> = command_registry()
         .iter()
         .map(|entry| {
+            let evidence_ids: Vec<&str> = evidence_ids_for_command(entry.command.as_str())
+                .into_iter()
+                .filter(|id| available_ids.contains(*id))
+                .collect();
             json!({
                 "command": entry.command.as_str(),
-                "evidence_ids": ids,
+                "evidence_ids": evidence_ids,
             })
         })
         .collect();
-    json!({"command_map": mapping})
+    json!({
+        "command_map": mapping,
+        "mapping_basis": "explicit command-to-evidence ownership",
+    })
 }
 
 /// `dev cli evidence parity-map`
@@ -246,24 +275,44 @@ pub fn build_parity_map_report(workspace_root: &Path) -> Value {
     let matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
     let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+    let available_ids: std::collections::BTreeSet<String> = records_json(workspace_root)
+        .iter()
+        .filter_map(|row| row.get("id").and_then(Value::as_str).map(ToString::to_string))
+        .collect();
     let mapped: Vec<Value> = rows
         .into_iter()
         .map(|row| {
             let command = row.get("command").cloned().unwrap_or_else(|| json!("unknown"));
+            let command_key = command.as_str().unwrap_or_default().trim();
+            let evidence_ids: Vec<&str> = evidence_ids_for_command(command_key)
+                .into_iter()
+                .filter(|id| available_ids.contains(*id))
+                .collect();
             json!({
                 "command": command,
-                "evidence_ids": ["EVIDENCE-1002-PARITY-COVERAGE"],
+                "evidence_ids": evidence_ids,
+                "mapping_status": if evidence_ids.is_empty() { "unmapped" } else { "mapped" },
             })
         })
         .collect();
-    json!({"parity_map": mapped})
+    json!({
+        "parity_map": mapped,
+        "mapping_basis": "explicit command-to-evidence ownership",
+    })
 }
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
     use std::path::Path;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{build_audit_report, build_stale_report, build_website_export_report};
+    use serde_json::Value;
+
+    use super::{
+        build_audit_report, build_command_map_report, build_parity_map_report, build_show_report,
+        build_stale_report, build_website_export_report,
+    };
 
     #[test]
     fn evidence_audit_reports_integrity_views() {
@@ -289,5 +338,59 @@ mod tests {
             export.get("filter").and_then(serde_json::Value::as_str),
             Some("backed-claims-only")
         );
+    }
+
+    #[test]
+    fn show_report_distinguishes_invalid_id_format() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let invalid = build_show_report(&root, "invalid-id");
+        assert_eq!(invalid["found"], false);
+        assert_eq!(invalid["id_format_valid"], false);
+
+        let unknown = build_show_report(&root, "EVIDENCE-9999-UNKNOWN");
+        assert_eq!(unknown["found"], false);
+        assert_eq!(unknown["id_format_valid"], true);
+    }
+
+    #[test]
+    fn command_map_uses_explicit_mappings() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let map = build_command_map_report(&root);
+        let rows = map["command_map"].as_array().expect("command map rows");
+        let package_health = rows
+            .iter()
+            .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli package-health"))
+            .expect("package health row");
+        assert_eq!(
+            package_health["evidence_ids"].as_array().map(|rows| rows.len()),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn parity_map_does_not_assign_blanket_evidence() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-evidence-parity-map-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
+        fs::write(
+            root.join("artifacts/status/command_migration_matrix.json"),
+            r#"{"commands":[{"command":"dev cli unknown"},{"command":"dev cli parity"}]}"#,
+        )
+        .expect("write matrix");
+
+        let parity_map = build_parity_map_report(&root);
+        let rows = parity_map["parity_map"].as_array().expect("parity map rows");
+        let unknown = rows
+            .iter()
+            .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli unknown"))
+            .expect("unknown row");
+        let parity = rows
+            .iter()
+            .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli parity"))
+            .expect("parity row");
+        assert_eq!(unknown["evidence_ids"].as_array().map(|rows| rows.len()), Some(0));
+        assert_eq!(parity["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
     }
 }
