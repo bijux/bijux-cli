@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +11,7 @@ from bijux_cli_py._exceptions import NativeExtensionUnavailable, PlatformWheelUn
 from bijux_cli_py._facade import (
     ensure_native_extension,
     error_to_exception,
+    execution_facade,
     execution_facade_with_status,
 )
 from bijux_cli_py._exceptions import InternalError, UsageError, ValidationError
@@ -22,7 +24,10 @@ def test_legacy_runtime_warning_is_opt_in() -> None:
 
 
 def test_platform_wheel_unavailable_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import bijux_cli_py._facade as facade
+
     monkeypatch.delenv("BIJUX_BIN", raising=False)
+    monkeypatch.setattr(facade, "_workspace_runtime_binaries", lambda: [])
     monkeypatch.setenv("PATH", "")
     with pytest.raises(PlatformWheelUnavailable):
         _ = execution_facade_with_status(["version"])
@@ -71,3 +76,27 @@ def test_error_to_exception_maps_typed_python_exceptions() -> None:
         ValidationError,
     )
     assert isinstance(error_to_exception({"error_kind": "InternalError", "message": "x"}), InternalError)
+
+
+def test_workspace_runtime_resolution_wins_over_path_binary(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    workspace_bin = tmp_path / "workspace-bijux"
+    workspace_bin.write_text('#!/bin/sh\necho \'{"version":"0.3.0"}\'\n', encoding="utf-8")
+    workspace_bin.chmod(0o755)
+
+    path_dir = tmp_path / "path-bin"
+    path_dir.mkdir()
+    path_bin = path_dir / "bijux"
+    path_bin.write_text('#!/bin/sh\necho \'{"version":"0.1.3"}\'\n', encoding="utf-8")
+    path_bin.chmod(0o755)
+
+    monkeypatch.delenv("BIJUX_BIN", raising=False)
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setattr(facade, "_workspace_runtime_binaries", lambda: [str(workspace_bin)])
+    monkeypatch.setenv("PATH", str(path_dir))
+
+    result = execution_facade(["version"])
+    assert '"0.3.0"' in result
