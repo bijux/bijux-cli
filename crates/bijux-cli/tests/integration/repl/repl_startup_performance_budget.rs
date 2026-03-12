@@ -24,7 +24,10 @@ fn repl_startup_latency_stays_within_budget() {
 fn repl_startup_memory_estimate_stays_within_budget() {
     let (session, _) = startup_repl("benchmark", None);
     let estimated = estimated_session_memory_bytes(&session);
-    assert!(estimated <= 512 * 1024, "repl startup memory estimate exceeded: {estimated} bytes");
+    assert!(
+        estimated <= 512 * 1024,
+        "repl startup memory estimate exceeded: {estimated} bytes"
+    );
 }
 
 #[test]
@@ -34,7 +37,7 @@ fn repl_startup_latency_with_plugin_completion_hooks_stays_within_budget() {
         let (_session, _startup, diagnostics) = bijux_cli::api::repl::startup_repl_with_diagnostics(
             "benchmark",
             None,
-            &["community", "atlas", "plugins"],
+            &["community", "memory", "plugins"],
         );
         assert!(diagnostics.is_empty() || diagnostics.len() <= 3);
     }

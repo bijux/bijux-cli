@@ -18,25 +18,29 @@ fn temp_history_path(name: &str) -> std::path::PathBuf {
 }
 
 #[test]
-fn completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported() {
+fn completion_empty_prompt_and_partial_root_cli_tokens_are_supported() {
     let (mut session, _) = startup_repl("default", None);
     register_completion_registry(
         &mut session,
-        "bijux-dev-cli",
-        vec!["dev".to_string(), "dev cli".to_string(), "dev cli status".to_string()],
+        "runtime-catalog",
+        vec![
+            "history".to_string(),
+            "history clear".to_string(),
+            "memory".to_string(),
+        ],
     );
 
     let root = completion_candidates(&session, "");
     let root_partial = completion_candidates(&session, "sta");
     let cli_partial = completion_candidates(&session, "cli st");
-    let dev_partial = completion_candidates(&session, "dev cli st");
+    let history_partial = completion_candidates(&session, "hist");
 
     assert!(root.iter().any(|c| c == "status"));
     assert!(root.iter().any(|c| c == "cli"));
-    assert!(root.iter().any(|c| c == "dev"));
+    assert!(root.iter().any(|c| c == "history"));
     assert!(root_partial.iter().any(|c| c == "status"));
     assert!(cli_partial.iter().any(|c| c == "cli status"));
-    assert!(dev_partial.iter().any(|c| c == "dev cli status"));
+    assert!(history_partial.iter().any(|c| c == "history"));
 }
 
 #[test]
@@ -66,26 +70,30 @@ fn completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported(
 }
 
 #[test]
-fn completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions() {
+fn completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten() {
     let (mut session, _) = startup_repl("default", None);
     register_completion_registry(
         &mut session,
-        "bijux-dev-cli",
-        vec!["dev".to_string(), "dev cli".to_string(), "dev cli status".to_string()],
+        "runtime-catalog",
+        vec![
+            "history".to_string(),
+            "history clear".to_string(),
+            "memory".to_string(),
+        ],
     );
     let reserved = completion_candidates(&session, "cli");
-    let dev = completion_candidates(&session, "dev ");
+    let history = completion_candidates(&session, "hist");
 
     assert!(reserved.iter().any(|c| c == "cli"));
     assert!(reserved.iter().any(|c| c == "cli status"));
-    assert!(dev.iter().any(|c| c == "dev cli status"));
-    assert!(!dev.iter().any(|c| c == "dev status"));
+    assert!(history.iter().any(|c| c == "history"));
+    assert!(!history.iter().any(|c| c == "history status"));
 }
 
 #[test]
 fn completion_recovers_with_broken_registry_corrupted_state_and_no_plugins() {
     let (mut session, _, diagnostics) =
-        startup_repl_with_diagnostics("default", None, &["community", "atlas"]);
+        startup_repl_with_diagnostics("default", None, &["community", "memory"]);
     assert_eq!(diagnostics.len(), 2);
 
     let path = temp_history_path("corrupted");

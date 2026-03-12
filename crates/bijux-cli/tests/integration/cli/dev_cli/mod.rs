@@ -1,24 +1,5 @@
 #![forbid(unsafe_code)]
 //! dev_cli integration suites.
 
-mod dev_cli_audit_command_contracts;
-mod dev_cli_cockpit_contracts;
-mod dev_cli_command_matrix;
-mod dev_cli_config_ownership_contracts;
-mod dev_cli_control_plane_closure;
+mod dev_cli_delegation_contracts;
 mod dev_cli_dispatch_boundaries;
-mod dev_cli_evidence_contracts;
-mod dev_cli_invariants;
-mod dev_cli_output_contracts;
-mod dev_cli_parity_closure_contracts;
-mod dev_cli_python_sovereignty_contracts;
-mod dev_cli_query_interface_parity;
-mod dev_cli_repo_docs_scripts_crate_health_contracts;
-mod dev_cli_repo_health_contracts;
-mod dev_cli_resilience_determinism_contracts;
-mod dev_cli_route_registry_env_contracts;
-mod dev_cli_runtime_package_contracts;
-mod dev_cli_stale_artifact_hardening;
-mod dev_cli_state_diagnostics_contracts;
-mod dev_cli_summary_surface_contracts;
-mod maintainer_control_plane;

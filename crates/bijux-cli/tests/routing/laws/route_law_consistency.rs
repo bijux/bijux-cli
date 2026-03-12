@@ -32,12 +32,18 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
         let normalized = normalize_command_path(&input);
         assert_eq!(normalized, expected);
         if matches!(normalized.as_slice(), [a, b, ..] if a == "dev" && b == "cli") {
-            assert!(is_known_route(&normalized), "delegated dev cli routes must stay known");
-            let resolved =
-                registry.resolve(&normalized).expect_err("runtime registry must delegate dev cli");
+            assert!(
+                is_known_route(&normalized),
+                "delegated dev cli routes must stay known"
+            );
+            let resolved = registry
+                .resolve(&normalized)
+                .expect_err("runtime registry must delegate dev cli");
             assert!(matches!(resolved, RouteError::Unknown(_)));
         } else {
-            let resolved = registry.resolve(&normalized).expect("normalized route should resolve");
+            let resolved = registry
+                .resolve(&normalized)
+                .expect("normalized route should resolve");
             assert!(matches!(resolved, RouteTarget::BuiltIn));
         }
     }
@@ -46,7 +52,9 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
 #[test]
 fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("community").expect("plugin register");
+    registry
+        .register_plugin_namespace("community")
+        .expect("plugin register");
 
     let plugin = registry
         .resolve(&["community".to_string(), "status".to_string()])
@@ -82,7 +90,7 @@ fn official_product_namespace_registry_drives_routing_rejections() {
 }
 
 #[test]
-fn removed_legacy_special_cases_are_unknown_while_canonical_paths_still_resolve() {
+fn delegated_dev_routes_are_known_but_resolve_outside_runtime_registry() {
     let registry = RouteRegistry::default();
 
     let legacy_routes = registry.resolve(&["dev".to_string(), "routes".to_string()]);
@@ -91,6 +99,16 @@ fn removed_legacy_special_cases_are_unknown_while_canonical_paths_still_resolve(
     let legacy_registry = registry.resolve(&["dev".to_string(), "registry".to_string()]);
     assert!(legacy_registry.is_err());
 
-    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "routes".to_string()]));
-    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "registry".to_string()]));
+    assert!(is_known_route(&["dev".to_string(), "routes".to_string()]));
+    assert!(is_known_route(&["dev".to_string(), "registry".to_string()]));
+    assert!(is_known_route(&[
+        "dev".to_string(),
+        "cli".to_string(),
+        "routes".to_string()
+    ]));
+    assert!(is_known_route(&[
+        "dev".to_string(),
+        "cli".to_string(),
+        "registry".to_string()
+    ]));
 }
