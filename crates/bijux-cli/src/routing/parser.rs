@@ -122,13 +122,9 @@ fn with_hidden_leaf_subcommands(mut command: Command, names: &[&'static str]) ->
     command
 }
 
-fn passthrough_args(command: Command) -> Command {
-    command.arg(Arg::new("args").num_args(0..).trailing_var_arg(true).allow_hyphen_values(true))
-}
-
 fn with_leaf_subcommands(mut command: Command, names: &[&'static str]) -> Command {
     for name in names {
-        command = command.subcommand(passthrough_args(Command::new(*name)));
+        command = command.subcommand(Command::new(*name));
     }
     command
 }
@@ -150,11 +146,29 @@ fn with_dev_cli_surface_subcommands(mut command: Command) -> Command {
         }
 
         let item = if matches!(*subcommand, "atlas" | "di" | "list-products" | "list-plugins") {
-            passthrough_args(Command::new(*subcommand).hide(true))
+            Command::new(*subcommand).hide(true)
         } else {
-            passthrough_args(Command::new(*subcommand))
+            Command::new(*subcommand)
         };
         command = command.subcommand(item);
+    }
+
+    command
+}
+
+fn evidence_command() -> Command {
+    let mut command = Command::new("evidence");
+
+    for name in DEV_CLI_EVIDENCE_SUBCOMMANDS {
+        command = if *name == "show" {
+            command.subcommand(
+                Command::new("show")
+                    .arg(Arg::new("id").long("id").num_args(1))
+                    .arg(Arg::new("evidence-id").num_args(1)),
+            )
+        } else {
+            command.subcommand(Command::new(*name))
+        };
     }
 
     command
@@ -302,10 +316,7 @@ pub fn root_command() -> Command {
             .subcommand(maintenance_command())
             .subcommand(with_leaf_subcommands(Command::new("rustdoc"), DEV_CLI_RUSTDOC_SUBCOMMANDS))
             .subcommand(with_leaf_subcommands(Command::new("release"), DEV_CLI_RELEASE_SUBCOMMANDS))
-            .subcommand(with_leaf_subcommands(
-                Command::new("evidence"),
-                DEV_CLI_EVIDENCE_SUBCOMMANDS,
-            ))
+            .subcommand(evidence_command())
             .subcommand(with_leaf_subcommands(Command::new("config"), DEV_CLI_CONFIG_SUBCOMMANDS))
             .subcommand(with_leaf_subcommands(Command::new("python"), DEV_CLI_PYTHON_SUBCOMMANDS))
             .subcommand(with_leaf_subcommands(Command::new("repo"), DEV_CLI_REPO_SUBCOMMANDS))
