@@ -7,7 +7,10 @@ use std::{collections::BTreeMap, fs, path::Path};
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -36,10 +39,18 @@ fn config_ownership_json_contracts_are_stable() {
     for (command, key) in commands {
         let first = run_ok_json(&command);
         let second = run_ok_json(&command);
-        assert!(first.get(key).is_some(), "missing key {key} for {:?}", command);
+        assert!(
+            first.get(key).is_some(),
+            "missing key {key} for {:?}",
+            command
+        );
         assert_eq!(
-            first.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
-            second.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            first
+                .as_object()
+                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            second
+                .as_object()
+                .map(|o| o.keys().cloned().collect::<Vec<_>>()),
             "top-level keys changed for {:?}",
             command
         );

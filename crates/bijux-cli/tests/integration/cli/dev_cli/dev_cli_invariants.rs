@@ -7,7 +7,10 @@ use std::process::Command;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn dev_cli_commands() -> Vec<Vec<String>> {
@@ -43,7 +46,11 @@ fn dev_cli_json_outputs_are_parseable_for_all_commands() {
         let out = run(&to_refs(&args));
         assert!(out.status.success(), "json command failed for {:?}", args);
         let parsed: Value = serde_json::from_slice(&out.stdout).expect("valid json");
-        assert!(parsed.is_object(), "dev cli output must be object for {:?}", args);
+        assert!(
+            parsed.is_object(),
+            "dev cli output must be object for {:?}",
+            args
+        );
     }
 }
 
@@ -67,15 +74,39 @@ fn dev_cli_help_output_is_stable_across_repeated_runs() {
         args.push("--help".to_string());
         let first = run(&to_refs(&args));
         let second = run(&to_refs(&args));
-        assert!(first.status.success(), "first help run failed for {:?}", args);
-        assert!(second.status.success(), "second help run failed for {:?}", args);
-        assert_eq!(first.stdout, second.stdout, "help output drift for {:?}", args);
+        assert!(
+            first.status.success(),
+            "first help run failed for {:?}",
+            args
+        );
+        assert!(
+            second.status.success(),
+            "second help run failed for {:?}",
+            args
+        );
+        assert_eq!(
+            first.stdout, second.stdout,
+            "help output drift for {:?}",
+            args
+        );
     }
 }
 
 #[test]
 fn dev_cli_quiet_mode_keeps_exit_semantics_stable() {
     let base = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
-    let quiet = run(&["dev", "cli", "status", "--format", "json", "--no-pretty", "--quiet"]);
-    assert_eq!(base.status.code(), quiet.status.code(), "quiet mode changed exit semantics");
+    let quiet = run(&[
+        "dev",
+        "cli",
+        "status",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--quiet",
+    ]);
+    assert_eq!(
+        base.status.code(),
+        quiet.status.code(),
+        "quiet mode changed exit semantics"
+    );
 }

@@ -10,7 +10,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -34,7 +37,10 @@ fn required_maintainer_commands_have_stable_json_shapes() {
         (["dev", "cli", "state-audit"], "paths"),
         (["dev", "cli", "maintenance-audit"], "maintenance"),
         (["dev", "cli", "crate-health"], "crate_metrics"),
-        (["dev", "cli", "package-health"], "install_state_assumptions"),
+        (
+            ["dev", "cli", "package-health"],
+            "install_state_assumptions",
+        ),
         (["dev", "cli", "docs-audit"], "docs_count"),
     ];
 
@@ -55,7 +61,11 @@ fn required_maintainer_commands_have_stable_json_shapes() {
             .as_object()
             .map(|obj| obj.keys().cloned().collect::<Vec<_>>())
             .unwrap_or_default();
-        assert_eq!(first_keys, second_keys, "top-level key drift for {:?}", command);
+        assert_eq!(
+            first_keys, second_keys,
+            "top-level key drift for {:?}",
+            command
+        );
     }
 }
 
@@ -83,7 +93,10 @@ fn required_maintainer_commands_emit_skimmable_text() {
         );
         let text = String::from_utf8(out.stdout).expect("utf8");
         assert!(!text.trim().is_empty(), "text output empty for {command}");
-        assert!(text.len() <= 2_000_000, "text output unexpectedly huge for {command}");
+        assert!(
+            text.len() <= 2_000_000,
+            "text output unexpectedly huge for {command}"
+        );
         assert!(
             text.contains('{') || text.contains('['),
             "text output should be structured for {command}"
