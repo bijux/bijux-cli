@@ -1,24 +1,24 @@
-{
-  "docs": [
-    "docs/CODE_OF_CONDUCT.md",
-    "docs/CONTRIBUTOR_ENGINEERING_RULES.md",
-    "docs/HONEST_STATUS.md",
-    "docs/KNOWN_GAPS.md",
-    "docs/MAINTAINER_EVIDENCE_CHECKLIST.md",
-    "docs/MIGRATING_FROM_PYTHON_CORE.md",
-    "docs/PLUGIN_RUNTIME_LAW.md",
-    "docs/STABILITY_AND_BREAKAGE.md",
-    "docs/WHAT_WE_WONT_CLAIM.md",
-    "docs/architecture/STATE_MODEL.md",
-    "docs/architecture/adr-cli-binary-ownership.md",
-    "docs/architecture/artifact-retention-policy.md",
-    "docs/architecture/bin-main-branch-audit.md",
-    "docs/architecture/compatibility-shim-policy-law.md",
-    "docs/architecture/config-crate-ownership.md",
-    "docs/architecture/config-domain-invariants.md",
-    "docs/architecture/config-export-load-parity-report.md",
-    "docs/architecture/config-file-path-behavior.md",
-    "docs/architecture/config-get-parity-report.md",
-    "docs/architecture/config-get-post-parity-improvements.md",
-    "docs/architecture/config-key-value-parity.md",
-    "docs/architecture/config-mutation-hardening-law.md",
+docs:
+  - docs/CODE_OF_CONDUCT.md
+  - docs/CONTRIBUTOR_ENGINEERING_RULES.md
+  - docs/HONEST_STATUS.md
+  - docs/KNOWN_GAPS.md
+  - docs/MAINTAINER_EVIDENCE_CHECKLIST.md
+  - docs/MIGRATING_FROM_PYTHON_CORE.md
+  - docs/PLUGIN_RUNTIME_LAW.md
+  - docs/STABILITY_AND_BREAKAGE.md
+  - docs/WHAT_WE_WONT_CLAIM.md
+  - docs/architecture/STATE_MODEL.md
+  - docs/architecture/adr-cli-binary-ownership.md
+  - docs/architecture/artifact-retention-policy.md
+  - docs/architecture/bin-main-branch-audit.md
+  - docs/architecture/compatibility-shim-policy-law.md
+  - docs/architecture/config-crate-ownership.md
+  - docs/architecture/config-domain-invariants.md
+  - docs/architecture/config-export-load-parity-report.md
+  - docs/architecture/config-file-path-behavior.md
+  - docs/architecture/config-get-parity-report.md
+  - docs/architecture/config-get-post-parity-improvements.md
+  - docs/architecture/config-key-value-parity.md
+  - docs/architecture/config-mutation-hardening-law.md
+  - docs/architecture/config-parity-matrix.md

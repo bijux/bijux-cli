@@ -1,5 +1,5 @@
 {
-  "dev cli parity": "{\n  \"automation_gates\": {\n    \"binary_bridge\": {",
-  "dev cli state-audit": "{\n  \"corruption_health\": {\n    \"issues\": [",
-  "dev cli status": "{\n  \"command_migration\": {\n    \"bridge_duplicate_law_report\": {"
+  "dev cli parity": "automation_gates:\n  binary_bridge:\n    failures: []",
+  "dev cli state-audit": "corruption_health:\n  issues:\n    -",
+  "dev cli status": "command_migration:\n  bridge_duplicate_law_report:\n    source: artifacts/status/bridge_duplicate_law_report.json"
 }

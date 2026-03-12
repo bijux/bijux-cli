@@ -1,16 +1,12 @@
-{
-  "maintenance": [],
-  "remaining_legacy_only_behaviors": [],
-  "remaining_task_runner_only_behaviors": [
-    "publish",
-    "publish-py",
-    "security",
-    "security-py",
-    "publish-rs",
-    "security"
-  ],
-  "replacement_rule": "new maintainer automation defaults to bijux dev cli commands",
-  "summary": {
-    "maintenance_classification_counts": {}
-  }
-}
+maintenance: []
+remaining_legacy_only_behaviors: []
+remaining_task_runner_only_behaviors:
+  - publish
+  - publish-py
+  - security
+  - security-py
+  - publish-rs
+  - security
+replacement_rule: new maintainer automation defaults to bijux dev cli commands
+summary:
+  maintenance_classification_counts: {}

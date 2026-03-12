@@ -1,24 +1,24 @@
-{
-  "crate_metrics": {
-    "boundary_decisions": [
-      {
-        "boundary": "core <-> routing",
-        "decision": "keep separate for now",
-        "reason": "high co-change expected during parity closure; separation still useful for parser test focus",
-        "status": "watch"
-      },
-      {
-        "boundary": "core <-> output",
-        "decision": "keep separate for now",
-        "reason": "output formatting contracts remain reusable and test-scoped",
-        "status": "watch"
-      },
-      {
-        "boundary": "core <-> install",
-        "decision": "keep separate for now",
-        "reason": "install concerns include path and packaging diagnostics outside core execution law",
-        "status": "watch"
-      },
-      {
-        "boundary": "core <-> contracts",
-        "decision": "must stay separate",
+crate_metrics:
+  boundary_decisions:
+    -
+      boundary: core <-> routing
+      decision: keep separate for now
+      reason: high co-change expected during parity closure; separation still useful for parser test focus
+      status: watch
+    -
+      boundary: core <-> output
+      decision: keep separate for now
+      reason: output formatting contracts remain reusable and test-scoped
+      status: watch
+    -
+      boundary: core <-> install
+      decision: keep separate for now
+      reason: install concerns include path and packaging diagnostics outside core execution law
+      status: watch
+    -
+      boundary: core <-> contracts
+      decision: must stay separate
+      reason: machine contracts must remain independent from execution engine
+      status: keep
+    -
+      boundary: core <-> python
