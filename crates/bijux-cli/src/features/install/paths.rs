@@ -36,6 +36,28 @@ fn is_executable_like(path: &Path) -> bool {
     }
 }
 
+fn is_wrapper_script(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    if is_executable_like(path) {
+        return true;
+    }
+
+    #[cfg(windows)]
+    {
+        return path
+            .extension()
+            .and_then(|value| value.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("ps1"));
+    }
+
+    #[cfg(not(windows))]
+    {
+        false
+    }
+}
+
 fn path_entries(path_value: &str) -> impl Iterator<Item = PathBuf> + '_ {
     std::env::split_paths(path_value)
 }
@@ -113,10 +135,17 @@ pub fn resolve_active_binary(path_value: &str, bin_override: Option<&str>) -> Op
 /// Detect stale wrapper scripts in PATH.
 #[must_use]
 pub fn detect_stale_wrapper_scripts(path_value: &str) -> Vec<String> {
+    const WRAPPER_CANDIDATES: &[&str] = &[
+        "bijux.sh",
+        "bijux.cmd",
+        "bijux.bat",
+        "bijux.ps1",
+        "bijux-cli.sh",
+    ];
     let canonical = canonical_executable_name();
     path_entries(path_value)
-        .map(|entry| entry.join(format!("{CANONICAL_EXECUTABLE}.sh")))
-        .filter(|wrapper| is_executable_like(wrapper))
+        .flat_map(|entry| WRAPPER_CANDIDATES.iter().map(move |name| entry.join(name)))
+        .filter(|wrapper| is_wrapper_script(wrapper))
         .filter(|wrapper| !wrapper.with_file_name(&canonical).exists())
         .map(|wrapper| wrapper.display().to_string())
         .collect()
@@ -128,7 +157,7 @@ pub fn legacy_installer_conflicts(path_value: &str) -> Vec<String> {
     const LEGACY_CANDIDATES: &[&str] = &["bijux.py", "bijux-legacy", "bijux_old", "bijux-cli.sh"];
     path_entries(path_value)
         .flat_map(|entry| LEGACY_CANDIDATES.iter().map(move |name| entry.join(name)))
-        .filter(|candidate| candidate.exists())
+        .filter(|candidate| is_executable_like(candidate))
         .map(|candidate| candidate.display().to_string())
         .collect()
 }

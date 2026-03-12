@@ -212,6 +212,27 @@ mod tests {
     }
 
     #[test]
+    fn stale_wrapper_cmd_scripts_are_detected_in_install_health() {
+        let temp = TempDir::new().expect("tempdir");
+        let wrappers = temp.path().join("wrappers");
+        std::fs::create_dir_all(&wrappers).expect("wrapper dir");
+        write_executable(&wrappers.join("bijux.cmd"), b"@echo off\r\n");
+        let path_value = std::env::join_paths([&wrappers]).expect("join path");
+
+        let report = install_health_report(
+            path_value.to_str().expect("utf-8 path"),
+            None,
+            None,
+            "1.0.0",
+        );
+
+        assert!(report
+            .stale_wrapper_scripts
+            .iter()
+            .any(|entry| entry.ends_with("bijux.cmd")));
+    }
+
+    #[test]
     fn wheel_runtime_version_mismatch_is_reported() {
         let report = install_health_report("", None, Some("1.0.0"), "2.0.0");
         assert!(report.has_mismatched_wheel_binary_versions);
@@ -282,11 +303,23 @@ mod tests {
         let temp = TempDir::new().expect("tempdir");
         let dir = temp.path().join("bin");
         std::fs::create_dir_all(&dir).expect("mkdir");
-        std::fs::write(dir.join("bijux.py"), b"#!/usr/bin/env python\n").expect("write legacy");
+        write_executable(&dir.join("bijux.py"), b"#!/usr/bin/env python\n");
         let path_value = std::env::join_paths([&dir]).expect("join");
         let conflicts = legacy_installer_conflicts(path_value.to_str().expect("utf-8 path"));
         assert_eq!(conflicts.len(), 1);
         assert!(conflicts[0].contains("bijux.py"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_executable_legacy_artifacts_are_not_counted_as_conflicts() {
+        let temp = TempDir::new().expect("tempdir");
+        let dir = temp.path().join("bin");
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        std::fs::write(dir.join("bijux.py"), b"#!/usr/bin/env python\n").expect("write legacy");
+        let path_value = std::env::join_paths([&dir]).expect("join");
+        let conflicts = legacy_installer_conflicts(path_value.to_str().expect("utf-8 path"));
+        assert!(conflicts.is_empty());
     }
 
     #[test]

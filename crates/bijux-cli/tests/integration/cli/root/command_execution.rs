@@ -166,7 +166,7 @@ fn cli_doctor_legacy_conflicts_flag_tracks_detected_conflicts() {
     let root = env::temp_dir().join(format!("bijux-doctor-legacy-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
-    fs::write(root.join("bijux.py"), "#!/usr/bin/env python\n").expect("write legacy wrapper");
+    write_executable(&root.join("bijux.py"));
     let path = env::join_paths([&root])
         .expect("join path")
         .to_string_lossy()
