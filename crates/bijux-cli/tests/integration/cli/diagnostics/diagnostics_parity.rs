@@ -272,8 +272,8 @@ fn state_doctor_json_and_text_contracts_are_stable() {
     let text_out = run(&["dev", "cli", "state-doctor", "--format", "text"]);
     assert!(text_out.status.success());
     let text = String::from_utf8(text_out.stdout).expect("text utf-8");
-    assert!(text.contains("\"runtime\": \"dev-cli\""));
-    assert!(text.contains("\"doctor\""));
+    assert!(text.contains("runtime: dev-cli"));
+    assert!(text.contains("doctor:"));
 }
 
 #[test]

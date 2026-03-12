@@ -42,7 +42,9 @@ fn make_temp_dir(name: &str) -> PathBuf {
 fn inspect_text_json_yaml_quiet_and_trace_modes() {
     let text = run(&["inspect", "--format", "text"]);
     assert_eq!(text.status.code(), Some(0));
-    assert!(String::from_utf8(text.stdout).expect("utf-8").contains('"'));
+    let text_body = String::from_utf8(text.stdout).expect("utf-8");
+    assert!(text_body.contains("route_sources:"));
+    assert!(text_body.contains("contracts:"));
 
     let json_out = run(&["inspect", "--format", "json", "--no-pretty"]);
     assert_eq!(json_out.status.code(), Some(0));
