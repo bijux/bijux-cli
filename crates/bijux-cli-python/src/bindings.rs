@@ -21,6 +21,9 @@ use crate::conversions::{classify_core_error, classify_failure, python_exception
 struct CommandTreePayload {
     root: &'static str,
     namespaces: Vec<String>,
+    source: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    warning: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -74,7 +77,9 @@ fn normalized_argv(argv: &[String]) -> Vec<String> {
 /// Build python-bridge marker.
 #[must_use]
 pub fn python_bridge_marker() -> ContractMarker {
-    ContractMarker { namespace: "python-bridge".to_string() }
+    ContractMarker {
+        namespace: "python-bridge".to_string(),
+    }
 }
 
 /// Return command tree introspection payload as JSON.
@@ -103,23 +108,39 @@ pub fn command_tree_introspection_api() -> String {
                     .collect::<Vec<_>>();
                 namespaces.sort();
                 namespaces.dedup();
-                return json_string(&CommandTreePayload { root: "bijux", namespaces });
+                return json_string(&CommandTreePayload {
+                    root: "bijux",
+                    namespaces,
+                    source: "runtime-inspect",
+                    warning: None,
+                });
             }
+            return json_string(&CommandTreePayload {
+                root: "bijux",
+                namespaces: Vec::new(),
+                source: "fallback-empty",
+                warning: Some("inspect output was not valid json".to_string()),
+            });
         }
+        return json_string(&CommandTreePayload {
+            root: "bijux",
+            namespaces: Vec::new(),
+            source: "fallback-empty",
+            warning: Some(format!(
+                "inspect command failed: {}",
+                if result.stderr.trim().is_empty() {
+                    format!("exit {}", result.exit_code)
+                } else {
+                    result.stderr.trim().to_string()
+                }
+            )),
+        });
     }
     json_string(&CommandTreePayload {
         root: "bijux",
-        namespaces: vec![
-            "cli".to_string(),
-            "dev".to_string(),
-            "help".to_string(),
-            "version".to_string(),
-            "doctor".to_string(),
-            "repl".to_string(),
-            "plugins".to_string(),
-            "completion".to_string(),
-            "inspect".to_string(),
-        ],
+        namespaces: Vec::new(),
+        source: "fallback-empty",
+        warning: Some("inspect command failed to execute".to_string()),
     })
 }
 
@@ -146,7 +167,10 @@ pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityErr
             let error_kind = if result.exit_code == 0 {
                 None
             } else {
-                Some(python_exception_tag(classify_failure(result.exit_code, &result.stderr)))
+                Some(python_exception_tag(classify_failure(
+                    result.exit_code,
+                    &result.stderr,
+                )))
             };
             Ok(json_string(&ExecutionOutcomePayload {
                 exit_code: result.exit_code,
@@ -196,7 +220,11 @@ pub fn plugins_list_binding_api() -> Result<String, CompatibilityError> {
 
 /// Execute `repl --help` through the bridge.
 pub fn repl_bootstrap_binding_api() -> Result<String, CompatibilityError> {
-    execution_facade_api(&["bijux".to_string(), "repl".to_string(), "--help".to_string()])
+    execution_facade_api(&[
+        "bijux".to_string(),
+        "repl".to_string(),
+        "--help".to_string(),
+    ])
 }
 
 /// Export known schema helpers for Python wrappers.
