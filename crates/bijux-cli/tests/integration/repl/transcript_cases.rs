@@ -258,7 +258,7 @@ fn transcript_case_switching_output_formats_in_session() {
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set format text".to_string()))
         .expect("text mode");
     let text_frame = execute_repl_line(&mut session, "status").expect("text status");
-    assert!(text_frame.expect("text frame").content.contains("\"status\""));
+    assert!(text_frame.expect("text frame").content.contains("status: ok"));
 }
 
 #[test]

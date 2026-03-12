@@ -90,7 +90,7 @@ fn plugin_failure_config_readback_and_output_mode_switching_work_in_one_session(
     execute_repl_input(&mut session, ReplInput::Line(":set format text".to_string()))
         .expect("set text");
     let text = execute_repl_line(&mut session, "status").expect("status text").expect("frame");
-    assert!(text.content.contains("\"status\""));
+    assert!(text.content.contains("status: ok"));
 
     let _ = fs::remove_file(config_path);
 }

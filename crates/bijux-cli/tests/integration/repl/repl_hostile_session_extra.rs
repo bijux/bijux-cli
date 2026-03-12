@@ -106,7 +106,7 @@ fn ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session() {
         .expect("text mode");
     let text_frame =
         execute_repl_line(&mut session, "status").expect("text status").expect("frame");
-    assert!(text_frame.content.contains("\"status\""));
+    assert!(text_frame.content.contains("status: ok"));
 
     let no_color =
         execute_repl_line(&mut session, "help status --color never").expect("help").expect("frame");
