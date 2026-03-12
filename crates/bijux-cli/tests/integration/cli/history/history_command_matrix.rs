@@ -182,6 +182,54 @@ fn history_limit_path_override_and_repeated_run_determinism() {
 }
 
 #[test]
+fn history_equals_form_options_apply_filter_sort_and_limit() {
+    let root = temp_dir("equals-options");
+    let path = root.join("history.json");
+    fs::write(
+        &path,
+        serde_json::to_string(&vec![
+            entry("match_new", 30.0),
+            entry("other", 10.0),
+            entry("match_old", 20.0),
+        ])
+        .expect("json"),
+    )
+    .expect("write");
+
+    let out = run_with_env(
+        &[
+            "history",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--filter=match",
+            "--sort=timestamp",
+            "--limit=3",
+        ],
+        &[("BIJUXCLI_HISTORY_FILE", path.to_str().expect("utf-8"))],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    let rows = payload["entries"].as_array().expect("array");
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0]["command"], "match_old");
+    assert_eq!(rows[1]["command"], "match_new");
+}
+
+#[test]
+fn history_invalid_limit_and_sort_values_fail_with_usage_exit() {
+    let invalid_limit = run(&["history", "--limit", "not-a-number"]);
+    assert_eq!(invalid_limit.status.code(), Some(2));
+    assert!(invalid_limit.stdout.is_empty());
+    assert!(!invalid_limit.stderr.is_empty());
+
+    let invalid_sort = run(&["history", "--sort", "lexical"]);
+    assert_eq!(invalid_sort.status.code(), Some(2));
+    assert!(invalid_sort.stdout.is_empty());
+    assert!(!invalid_sort.stderr.is_empty());
+}
+
+#[test]
 #[cfg(unix)]
 fn history_clear_with_unwritable_parent_fails_stably() {
     use std::os::unix::fs::PermissionsExt;

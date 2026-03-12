@@ -393,9 +393,15 @@ pub fn root_command() -> Command {
         .subcommand(
             Command::new("history")
                 .subcommand(Command::new("clear"))
-                .arg(Arg::new("limit").long("limit").short('l').num_args(1))
+                .arg(
+                    Arg::new("limit")
+                        .long("limit")
+                        .short('l')
+                        .num_args(1)
+                        .value_parser(clap::value_parser!(usize)),
+                )
                 .arg(Arg::new("filter").long("filter").short('F').num_args(1))
-                .arg(Arg::new("sort").long("sort").num_args(1)),
+                .arg(Arg::new("sort").long("sort").num_args(1).value_parser(["timestamp"])),
         )
         .subcommand(
             Command::new("memory")

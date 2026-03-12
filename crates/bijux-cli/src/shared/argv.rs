@@ -2,14 +2,13 @@
 //! Shared argv helpers for command argument extraction.
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
-    let mut extra_start = 1 + command_tokens.len();
+    let extra_start = 1 + command_tokens.len();
     if argv.len() < extra_start {
         return &[];
     }
     for (idx, token) in command_tokens.iter().enumerate() {
         if argv.get(idx + 1).map(String::as_str) != Some(*token) {
-            extra_start = idx + 1;
-            break;
+            return &[];
         }
     }
     &argv[extra_start..]
@@ -66,7 +65,11 @@ pub fn command_option_value(
     while i < extras.len() {
         let token = &extras[i];
         if token == option {
-            return extras.get(i + 1).cloned();
+            let next = extras.get(i + 1)?;
+            if next.starts_with('-') {
+                return None;
+            }
+            return Some(next.clone());
         }
         if token.starts_with(&(option.to_string() + "=")) {
             return token.split_once('=').map(|(_, value)| value.to_string());
@@ -81,4 +84,58 @@ pub fn command_option_value(
 #[must_use]
 pub fn command_has_flag(argv: &[String], flag: &str) -> bool {
     argv.iter().any(|arg| arg == flag)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::command_option_value;
+
+    #[test]
+    fn command_option_value_supports_space_and_equals_forms() {
+        let spaced = vec![
+            "bijux".to_string(),
+            "history".to_string(),
+            "--limit".to_string(),
+            "5".to_string(),
+        ];
+        let equals =
+            vec!["bijux".to_string(), "history".to_string(), "--limit=7".to_string()];
+
+        assert_eq!(
+            command_option_value(&spaced, &["history"], "--limit").as_deref(),
+            Some("5")
+        );
+        assert_eq!(
+            command_option_value(&equals, &["history"], "--limit").as_deref(),
+            Some("7")
+        );
+    }
+
+    #[test]
+    fn command_option_value_treats_flag_followups_as_missing_value() {
+        let argv = vec![
+            "bijux".to_string(),
+            "history".to_string(),
+            "--filter".to_string(),
+            "--sort".to_string(),
+            "timestamp".to_string(),
+        ];
+        assert_eq!(command_option_value(&argv, &["history"], "--filter"), None);
+    }
+
+    #[test]
+    fn command_option_value_respects_command_window() {
+        let argv = vec![
+            "bijux".to_string(),
+            "history".to_string(),
+            "--limit".to_string(),
+            "9".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ];
+        assert_eq!(
+            command_option_value(&argv, &["cli", "config", "get"], "--limit"),
+            None
+        );
+    }
 }

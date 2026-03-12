@@ -1,11 +1,11 @@
 //! History command handlers.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde_json::Value;
 
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::history::operations::{clear_history, list_history, HistoryListOptions};
-use crate::shared::argv::command_positionals;
+use crate::shared::argv::command_option_value;
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
@@ -14,7 +14,7 @@ pub(crate) fn try_handle(
 ) -> Result<Option<Value>> {
     match normalized_path {
         [a] if a == "history" => {
-            let list_options = parse_history_list_options(argv);
+            let list_options = parse_history_list_options(argv)?;
             Ok(Some(list_history(&paths.history_file, &list_options)?))
         }
         [a, b] if a == "history" && b == "clear" => Ok(Some(clear_history(&paths.history_file)?)),
@@ -22,31 +22,27 @@ pub(crate) fn try_handle(
     }
 }
 
-fn parse_history_list_options(argv: &[String]) -> HistoryListOptions {
-    let positional = command_positionals(argv, &["history"]);
+fn parse_history_list_options(argv: &[String]) -> Result<HistoryListOptions> {
     let mut options = HistoryListOptions::default();
 
-    if let Some(idx) = argv.iter().position(|arg| arg == "--limit" || arg == "-l") {
-        if let Some(raw) = argv.get(idx + 1) {
-            options.limit = raw.parse::<usize>().unwrap_or(options.limit);
-        }
-    }
-    if let Some(raw) = positional.first().and_then(|token| token.strip_prefix("--limit=")) {
-        options.limit = raw.parse::<usize>().unwrap_or(options.limit);
-    }
-    if let Some(idx) = argv.iter().position(|arg| arg == "--filter" || arg == "-F") {
-        options.filter_contains = argv.get(idx + 1).cloned();
-    }
-    if argv.iter().any(|arg| arg == "--sort")
-        && argv
-            .iter()
-            .position(|arg| arg == "--sort")
-            .and_then(|idx| argv.get(idx + 1))
-            .map(|value| value == "timestamp")
-            .unwrap_or(false)
+    if let Some(raw) = command_option_value(argv, &["history"], "--limit")
+        .or_else(|| command_option_value(argv, &["history"], "-l"))
     {
+        options.limit = raw
+            .parse::<usize>()
+            .map_err(|_| anyhow!("Invalid argument: --limit must be a non-negative integer"))?;
+    }
+    if let Some(raw) = command_option_value(argv, &["history"], "--filter")
+        .or_else(|| command_option_value(argv, &["history"], "-F"))
+    {
+        options.filter_contains = Some(raw);
+    }
+    if let Some(sort) = command_option_value(argv, &["history"], "--sort") {
+        if sort != "timestamp" {
+            return Err(anyhow!("Invalid argument: --sort only supports `timestamp`"));
+        }
         options.sort_by_timestamp = true;
     }
 
-    options
+    Ok(options)
 }
