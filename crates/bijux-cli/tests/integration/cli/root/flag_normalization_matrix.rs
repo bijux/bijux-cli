@@ -118,14 +118,16 @@ fn invalid_color_value_is_rejected() {
 fn missing_value_after_config_flag_is_rejected() {
     let out = run(&["--config-path"]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("Usage: bijux"));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("a value is required for '--config-path <PATH>'"));
 }
 
 #[test]
 fn missing_value_after_format_flag_is_rejected() {
     let out = run(&["--format"]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("Usage: bijux"));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("a value is required for '--format <FORMAT>'"));
 }
 
 #[test]

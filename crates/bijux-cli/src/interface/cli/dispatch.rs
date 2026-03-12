@@ -90,6 +90,18 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(delegated);
     }
 
+    if let Some(usage_error) = help::try_render_clap_usage_error(argv) {
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: if usage_error.ends_with('\n') {
+                usage_error
+            } else {
+                format!("{usage_error}\n")
+            },
+        });
+    }
+
     let intent = parse_intent(argv)?;
     if intent.normalized_path.is_empty() {
         return Ok(AppRunResult {

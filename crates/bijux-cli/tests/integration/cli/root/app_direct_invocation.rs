@@ -379,8 +379,8 @@ fn direct_core_invocation_inspect_failure_normalizes_usage_error() {
     .expect("run_app should return normalized failure");
     assert_eq!(out.exit_code, 2);
     assert!(out.stdout.is_empty());
-    assert!(out.stderr.contains("Usage: bijux"));
-    assert!(out.stderr.contains("Command groups:"));
+    assert!(out.stderr.contains("unexpected argument 'unexpected'"));
+    assert!(out.stderr.contains("Usage: bijux inspect"));
 }
 
 #[test]

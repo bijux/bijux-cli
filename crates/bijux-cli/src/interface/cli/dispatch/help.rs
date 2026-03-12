@@ -60,6 +60,22 @@ pub(super) fn try_render_clap_help(argv: &[String]) -> Option<String> {
     }
 }
 
+pub(super) fn try_render_clap_usage_error(argv: &[String]) -> Option<String> {
+    match root_command().try_get_matches_from(argv) {
+        Ok(_) => None,
+        Err(error) if matches!(error.kind(), clap::error::ErrorKind::InvalidSubcommand) => None,
+        Err(error)
+            if !matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            ) =>
+        {
+            Some(normalize_help_whitespace(&error.to_string()))
+        }
+        Err(_) => None,
+    }
+}
+
 fn parse_help_path(argv: &[String]) -> Option<Vec<String>> {
     if !argv.iter().any(|token| matches!(token.as_str(), "--help" | "-h")) {
         return None;
