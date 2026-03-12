@@ -2,6 +2,16 @@
   "alias_rewrites": [
     {
       "alias": [
+        "cli",
+        "config"
+      ],
+      "canonical": [
+        "config"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
         "completion"
       ],
       "canonical": [

@@ -11,7 +11,7 @@ Options:
   -F, --filter <filter>
       --log-level <LEVEL>   Log verbosity level
       --color <MODE>        ANSI color policy
-      --sort <sort>
+      --sort <sort>         [possible values: timestamp]
       --pretty              Pretty-print structured output
       --no-pretty           Emit compact structured output
       --config-path <PATH>  Use explicit config file path
