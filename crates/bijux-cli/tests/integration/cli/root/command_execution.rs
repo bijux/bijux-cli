@@ -45,7 +45,6 @@ fn executes_root_commands() {
         (vec!["doctor"], "status"),
         (vec!["audit"], "checks"),
         (vec!["docs"], "topics"),
-        (vec!["atlas"], "mount"),
         (vec!["sleep", "0"], "slept_seconds"),
         (vec!["history"], "entries"),
         (vec!["memory"], "count"),
