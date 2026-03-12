@@ -9,6 +9,7 @@ RS_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/target)
 RS_NEXTEST_CACHE_DIR ?= $(RS_TARGET_DIR)/nextest
 RS_PROFRAW_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/profraw)
 RS_LLVM_PROFILE_FILE ?= $(RS_PROFRAW_DIR)/default_%m_%p.profraw
+RS_COVERAGE_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/target)
 
 RS_FMT_REPORT ?= $(RS_ARTIFACT_ROOT)/fmt/$(RS_RUN_ID)/report.txt
 RS_LINT_REPORT ?= $(RS_ARTIFACT_ROOT)/lint/$(RS_RUN_ID)/report.txt
@@ -145,12 +146,12 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
+	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
-	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
+	BIJUX_DEV_CLI_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dev-cli" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
+	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
+	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -172,8 +173,8 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	$(call rs_nextest_summary,$(RS_COVERAGE_TEST_REPORT)); \
 	test $$status -eq 0
 	@set -o pipefail; \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	CARGO_LLVM_COV_TARGET_DIR="$(RS_TARGET_DIR)" \
+	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
+	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	cargo llvm-cov report --summary-only 2>&1 | tee "$(RS_COVERAGE_SUMMARY_REPORT)"
 	@total_line=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$(RS_COVERAGE_SUMMARY_REPORT)" | grep '^TOTAL' | tail -n 1 || true); \
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-summary:" "$${total_line:-unavailable}"; \

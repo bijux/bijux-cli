@@ -6,10 +6,12 @@ ROOT_MK_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 .SHELLFLAGS           := -eu -o pipefail -c
 SHELL                 := bash
 PYTHON                ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
-VENV                  := .venv
+VENV                  := artifacts/python/.venv
 VENV_PYTHON           := $(VENV)/bin/python
 ACT                   := $(VENV)/bin
 RM                    := rm -rf
+PROFRAW_DIR           := artifacts/rust/coverage/profraw
+LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 
 .NOTPARALLEL: all clean
 
@@ -23,10 +25,22 @@ BIJUX_RUNTIME_BIN ?= bijux
 
 ##@ Core
 $(VENV):
-	@echo "→ Creating virtualenv with '$$(which $(PYTHON))' ..."
-	@$(PYTHON) -m venv $(VENV)
+	@mkdir -p "$(dir $(VENV))"
+	@if [ -d ".venv" ] && [ "$(VENV)" != ".venv" ]; then \
+	  if [ -d "$(VENV)" ]; then \
+	    echo "→ Removing legacy root .venv (using $(VENV))"; \
+	    rm -rf ".venv"; \
+	  else \
+	    echo "→ Migrating legacy .venv to $(VENV)"; \
+	    mv ".venv" "$(VENV)"; \
+	  fi; \
+	fi
+	@if [ ! -x "$(VENV_PYTHON)" ]; then \
+	  echo "→ Creating virtualenv with '$$(which $(PYTHON))' ..."; \
+	  $(PYTHON) -m venv $(VENV); \
+	fi
 
-install: $(VENV) ## Install project in editable mode into .venv
+install: $(VENV) ## Install project in editable mode into artifact-scoped virtualenv
 	@if [ -x "$(VENV_PYTHON)" ] && ! "$(VENV_PYTHON)" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \
 	  echo "→ Recreating $(VENV) with Python >=3.11"; \
 	  $(RM) "$(VENV)"; \
@@ -41,16 +55,23 @@ bootstrap: $(VENV) ## Setup environment
 
 clean: ## Remove virtualenv, caches, build, and artifacts
 	@$(MAKE) clean-soft
-	@echo "→ Cleaning (.venv) ..."
+	@echo "→ Cleaning ($(VENV)) ..."
 	@$(RM) $(VENV)
+	@$(RM) .venv .venv*/
 
-clean-soft: ## Remove build artifacts but keep .venv
-	@echo "→ Cleaning (no .venv) ..."
+clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
+	@echo "→ Cleaning (keeping $(VENV)) ..."
 	@$(RM) \
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
 	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
-	  docs/reference artifacts usage_test usage_test_artifacts .cache || true
+	  docs/reference usage_test usage_test_artifacts .cache default_*.profraw || true
+	@if [ -d artifacts ]; then \
+	  find artifacts -mindepth 1 -maxdepth 1 ! -name python -exec rm -rf {} +; \
+	  if [ -d artifacts/python ]; then \
+	    find artifacts/python -mindepth 1 -maxdepth 1 ! -name '.venv' -exec rm -rf {} +; \
+	  fi; \
+	fi
 	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
 all: clean install test lint security docs build ## Run full pipeline (clean → build)
@@ -61,13 +82,16 @@ lint test security docs build: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status: ## Show maintainer status report via bijux dev cli
-	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli status --text
+	@mkdir -p "$(PROFRAW_DIR)"
+	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli status --text
 
 dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
-	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli crate-health --text
+	@mkdir -p "$(PROFRAW_DIR)"
+	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli crate-health --text
 
 dev-cli-parity: ## Show parity summary via bijux dev cli
-	@cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
+	@mkdir -p "$(PROFRAW_DIR)"
+	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
 
 # Utilities
 define run_tool
