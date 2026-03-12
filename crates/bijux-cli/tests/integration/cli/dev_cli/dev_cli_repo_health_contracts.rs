@@ -64,6 +64,10 @@ fn repo_text_heads_match_snapshots() {
         let out = run(&args);
         assert!(out.status.success(), "text command failed for {command}");
         let text = String::from_utf8(out.stdout).expect("utf8");
-        assert!(text.starts_with(&prefix), "snapshot drift for {command}");
+        let head = text.lines().take(6).collect::<Vec<_>>().join("\n");
+        assert!(
+            text.starts_with(&prefix),
+            "snapshot drift for {command}\nexpected prefix:\n{prefix}\nactual head:\n{head}"
+        );
     }
 }

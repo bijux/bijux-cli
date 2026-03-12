@@ -58,7 +58,11 @@ fn python_desovereignization_text_head_matches_snapshot() {
     let out = run(&["dev", "cli", "python", "sovereignty-audit", "--format", "text"]);
     assert!(out.status.success(), "python sovereignty text command failed");
     let text = String::from_utf8(out.stdout).expect("utf8");
-    assert!(text.starts_with(&expected_head), "python sovereignty text snapshot drift");
+    let head = text.lines().take(6).collect::<Vec<_>>().join("\n");
+    assert!(
+        text.starts_with(&expected_head),
+        "python sovereignty text snapshot drift\nexpected prefix:\n{expected_head}\nactual head:\n{head}"
+    );
 }
 
 #[test]
@@ -80,6 +84,10 @@ fn python_text_heads_match_snapshots() {
         let out = run(&args);
         assert!(out.status.success(), "text command failed for {command}");
         let text = String::from_utf8(out.stdout).expect("utf8");
-        assert!(text.starts_with(&prefix), "snapshot drift for {command}");
+        let head = text.lines().take(6).collect::<Vec<_>>().join("\n");
+        assert!(
+            text.starts_with(&prefix),
+            "snapshot drift for {command}\nexpected prefix:\n{prefix}\nactual head:\n{head}"
+        );
     }
 }
