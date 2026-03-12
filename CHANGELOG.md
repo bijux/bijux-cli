@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Aligned Rust and Python distribution versions to `0.3.0` and regenerated lock metadata accordingly.
 - Normalized `--version` behavior so Rust binary and Python facade return the same payload as `version`.
 - Reworked runtime boundaries: maintainer/control-plane routes are delegated through `bijux-dev-cli` with expanded contract tests.
+- Reduced the runtime-owned root surface to foundation commands; `dev`/official product namespaces are delegated to external owner binaries.
+- Kept `inspect` as hidden runtime compatibility routing while removing it from the public root command list.
 - Consolidated Python tooling configuration under `configs/python` and `crates/bijux-cli-python`.
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
 - Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
@@ -30,6 +32,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Restored released-history text for sections [0.1.2] and [0.1.0] to match the exact wording shipped in tag `v0.2.0` (`2026-01-26`).
 - Documented this correction explicitly to preserve an auditable changelog record after accidental edits made on `2026-03-11` and `2026-03-12`.
 - Corrected changelog comparison links so `[Unreleased]` and `[0.2.0]` resolve to valid ranges.
+- Hardened `make clean` so transient virtualenv removal races do not fail the target.
+- Corrected README command examples for plugin scaffold/install and shell completion to match the actual CLI surface.
 
 ---
 
