@@ -126,11 +126,7 @@ fn suggest_tail(
 
     let best = nearest(second, candidates)?;
     if root == "cli" {
-        Some(vec![
-            "cli".to_string(),
-            namespace.to_string(),
-            best.to_string(),
-        ])
+        Some(vec!["cli".to_string(), namespace.to_string(), best.to_string()])
     } else {
         Some(vec![namespace.to_string(), best.to_string()])
     }
@@ -152,10 +148,7 @@ fn similarity_score(left: &str, right: &str) -> usize {
 }
 
 fn common_prefix_len(left: &str, right: &str) -> usize {
-    left.chars()
-        .zip(right.chars())
-        .take_while(|(a, b)| a == b)
-        .count()
+    left.chars().zip(right.chars()).take_while(|(a, b)| a == b).count()
 }
 
 fn levenshtein_distance(left: &str, right: &str) -> usize {

@@ -119,10 +119,7 @@ mod tests {
         let path_value = std::env::join_paths([&bin]).expect("join path");
 
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
-        assert!(
-            discovered.is_empty(),
-            "non-executable file should not be discovered"
-        );
+        assert!(discovered.is_empty(), "non-executable file should not be discovered");
     }
 
     #[cfg(windows)]
@@ -175,12 +172,8 @@ mod tests {
         write_executable(&cargo_bin.join(&executable), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&pip_bin, &cargo_bin]).expect("join");
 
-        let report = install_health_report(
-            path_value.to_str().expect("utf-8 path"),
-            None,
-            None,
-            "1.0.0",
-        );
+        let report =
+            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
 
         assert!(report.has_path_shadowing);
         assert!(report.has_duplicate_installs);
@@ -195,18 +188,11 @@ mod tests {
         let temp = TempDir::new().expect("tempdir");
         let wrappers = temp.path().join("wrappers");
         std::fs::create_dir_all(&wrappers).expect("wrapper dir");
-        write_executable(
-            &wrappers.join("bijux.sh"),
-            b"#!/bin/sh\nexec /missing/bijux\n",
-        );
+        write_executable(&wrappers.join("bijux.sh"), b"#!/bin/sh\nexec /missing/bijux\n");
         let path_value = std::env::join_paths([&wrappers]).expect("join path");
 
-        let report = install_health_report(
-            path_value.to_str().expect("utf-8 path"),
-            None,
-            None,
-            "1.0.0",
-        );
+        let report =
+            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
 
         assert!(!report.stale_wrapper_scripts.is_empty());
     }
@@ -219,17 +205,10 @@ mod tests {
         write_executable(&wrappers.join("bijux.cmd"), b"@echo off\r\n");
         let path_value = std::env::join_paths([&wrappers]).expect("join path");
 
-        let report = install_health_report(
-            path_value.to_str().expect("utf-8 path"),
-            None,
-            None,
-            "1.0.0",
-        );
+        let report =
+            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
 
-        assert!(report
-            .stale_wrapper_scripts
-            .iter()
-            .any(|entry| entry.ends_with("bijux.cmd")));
+        assert!(report.stale_wrapper_scripts.iter().any(|entry| entry.ends_with("bijux.cmd")));
     }
 
     #[test]
@@ -252,10 +231,7 @@ mod tests {
             None,
             "1.0.0",
         );
-        assert!(report
-            .active_binary
-            .as_deref()
-            .is_some_and(|value| value.ends_with(&executable)));
+        assert!(report.active_binary.as_deref().is_some_and(|value| value.ends_with(&executable)));
     }
 
     #[test]
@@ -352,16 +328,9 @@ mod tests {
 
     #[test]
     fn windows_path_override_preserves_whitespace_without_truncation() {
-        let report = install_health_report(
-            "",
-            Some(r"  C:\Program Files\Bijux\bijux.exe  "),
-            None,
-            "1.0.0",
-        );
-        assert_eq!(
-            report.active_binary.as_deref(),
-            Some(r"  C:\Program Files\Bijux\bijux.exe  ")
-        );
+        let report =
+            install_health_report("", Some(r"  C:\Program Files\Bijux\bijux.exe  "), None, "1.0.0");
+        assert_eq!(report.active_binary.as_deref(), Some(r"  C:\Program Files\Bijux\bijux.exe  "));
     }
 
     #[test]
@@ -416,10 +385,7 @@ mod tests {
     fn windows_path_resolution_is_supported() {
         let home = std::path::PathBuf::from(r"C:\Users\bijan");
         let mut env_map = std::collections::HashMap::new();
-        env_map.insert(
-            ENV_PLUGINS_PATH.to_string(),
-            r"C:\Users\bijan\.bijux\.plugins".to_string(),
-        );
+        env_map.insert(ENV_PLUGINS_PATH.to_string(), r"C:\Users\bijan\.bijux\.plugins".to_string());
         let resolved = discover_compatibility_paths(
             Some(&home),
             &PathOverrides::default(),
@@ -427,10 +393,7 @@ mod tests {
             &CompatibilityConfig::default(),
         )
         .expect("resolve");
-        assert!(resolved
-            .plugins_dir
-            .to_string_lossy()
-            .contains(r"C:\Users\bijan\.bijux\.plugins"));
+        assert!(resolved.plugins_dir.to_string_lossy().contains(r"C:\Users\bijan\.bijux\.plugins"));
     }
 
     #[test]
@@ -474,23 +437,15 @@ mod tests {
         assert!(zsh.to_string_lossy().ends_with("/_bijux"));
         assert!(fish.to_string_lossy().contains(".config/fish/completions"));
         assert!(fish.to_string_lossy().ends_with("/bijux.fish"));
-        assert!(powershell
-            .to_string_lossy()
-            .contains("Microsoft.PowerShell_profile.ps1"));
+        assert!(powershell.to_string_lossy().contains("Microsoft.PowerShell_profile.ps1"));
     }
 
     #[test]
     fn shell_detection_rejects_unknown_shell_values() {
         assert_eq!(detect_shell(Some("/bin/bash")), Some(CompletionShell::Bash));
         assert_eq!(detect_shell(Some("/bin/zsh")), Some(CompletionShell::Zsh));
-        assert_eq!(
-            detect_shell(Some("/usr/bin/fish")),
-            Some(CompletionShell::Fish)
-        );
-        assert_eq!(
-            detect_shell(Some("powershell.exe")),
-            Some(CompletionShell::PowerShell)
-        );
+        assert_eq!(detect_shell(Some("/usr/bin/fish")), Some(CompletionShell::Fish));
+        assert_eq!(detect_shell(Some("powershell.exe")), Some(CompletionShell::PowerShell));
         assert_eq!(detect_shell(Some("/usr/bin/unknown")), None);
     }
 
@@ -516,10 +471,7 @@ mod tests {
         let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
         assert_eq!(cargo_canonical.package_name, pip_canonical.package_name);
         assert_eq!(cargo_compat.package_name, pip_compat.package_name);
-        assert_eq!(
-            cargo_canonical.executable_name,
-            pip_canonical.executable_name
-        );
+        assert_eq!(cargo_canonical.executable_name, pip_canonical.executable_name);
         assert_eq!(cargo_compat.executable_name, pip_compat.executable_name);
     }
 

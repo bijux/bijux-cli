@@ -182,23 +182,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli config list".to_string(),
             "bijux cli plugins list".to_string(),
         ],
-        ["status"] => vec![
-            "bijux status".to_string(),
-            "bijux status --format json".to_string(),
-        ],
-        ["audit"] => vec![
-            "bijux audit".to_string(),
-            "bijux audit --format json".to_string(),
-        ],
-        ["docs"] => vec![
-            "bijux docs".to_string(),
-            "bijux docs --format json".to_string(),
-        ],
+        ["status"] => vec!["bijux status".to_string(), "bijux status --format json".to_string()],
+        ["audit"] => vec!["bijux audit".to_string(), "bijux audit --format json".to_string()],
+        ["docs"] => vec!["bijux docs".to_string(), "bijux docs --format json".to_string()],
         ["sleep"] => vec!["bijux sleep 1".to_string(), "bijux sleep 250ms".to_string()],
-        ["doctor"] => vec![
-            "bijux doctor".to_string(),
-            "bijux doctor --format json".to_string(),
-        ],
+        ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],
         ["config"] => vec![
             "bijux config list".to_string(),
@@ -217,20 +205,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli plugins inspect --format json".to_string(),
             "bijux help cli plugins inspect".to_string(),
         ],
-        ["repl"] => vec![
-            "bijux repl".to_string(),
-            "bijux repl --format text".to_string(),
-        ],
+        ["repl"] => vec!["bijux repl".to_string(), "bijux repl --format text".to_string()],
         ["completion"] => {
-            vec![
-                "bijux completion".to_string(),
-                "bijux completion --format json".to_string(),
-            ]
+            vec!["bijux completion".to_string(), "bijux completion --format json".to_string()]
         }
-        ["history"] => vec![
-            "bijux history".to_string(),
-            "bijux history clear".to_string(),
-        ],
+        ["history"] => vec!["bijux history".to_string(), "bijux history clear".to_string()],
         ["memory"] => vec![
             "bijux memory list".to_string(),
             "bijux memory set session.id=abc123".to_string(),

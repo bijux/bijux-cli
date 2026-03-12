@@ -141,20 +141,10 @@ mod tests {
             "--limit".to_string(),
             "5".to_string(),
         ];
-        let equals = vec![
-            "bijux".to_string(),
-            "history".to_string(),
-            "--limit=7".to_string(),
-        ];
+        let equals = vec!["bijux".to_string(), "history".to_string(), "--limit=7".to_string()];
 
-        assert_eq!(
-            command_option_value(&spaced, &["history"], "--limit").as_deref(),
-            Some("5")
-        );
-        assert_eq!(
-            command_option_value(&equals, &["history"], "--limit").as_deref(),
-            Some("7")
-        );
+        assert_eq!(command_option_value(&spaced, &["history"], "--limit").as_deref(), Some("5"));
+        assert_eq!(command_option_value(&equals, &["history"], "--limit").as_deref(), Some("7"));
     }
 
     #[test]
@@ -179,10 +169,7 @@ mod tests {
             "--format".to_string(),
             "json".to_string(),
         ];
-        assert_eq!(
-            command_option_value(&argv, &["cli", "config", "get"], "--limit"),
-            None
-        );
+        assert_eq!(command_option_value(&argv, &["cli", "config", "get"], "--limit"), None);
     }
 
     #[test]

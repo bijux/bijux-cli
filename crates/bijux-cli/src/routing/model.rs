@@ -5,9 +5,8 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "get", "set", "unset", "clear", "reload", "export", "load", "list",
-];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -142,7 +141,5 @@ pub fn is_known_route(path: &[String]) -> bool {
         .map(|(_, canonical)| *canonical)
         .unwrap_or(key.as_str());
 
-    KNOWN_ROUTE_PATHS
-        .get_or_init(build_known_route_paths)
-        .contains(canonical)
+    KNOWN_ROUTE_PATHS.get_or_init(build_known_route_paths).contains(canonical)
 }

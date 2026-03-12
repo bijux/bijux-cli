@@ -32,18 +32,12 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
         let normalized = normalize_command_path(&input);
         assert_eq!(normalized, expected);
         if matches!(normalized.as_slice(), [a, b, ..] if a == "dev" && b == "cli") {
-            assert!(
-                is_known_route(&normalized),
-                "delegated dev cli routes must stay known"
-            );
-            let resolved = registry
-                .resolve(&normalized)
-                .expect_err("runtime registry must delegate dev cli");
+            assert!(is_known_route(&normalized), "delegated dev cli routes must stay known");
+            let resolved =
+                registry.resolve(&normalized).expect_err("runtime registry must delegate dev cli");
             assert!(matches!(resolved, RouteError::Unknown(_)));
         } else {
-            let resolved = registry
-                .resolve(&normalized)
-                .expect("normalized route should resolve");
+            let resolved = registry.resolve(&normalized).expect("normalized route should resolve");
             assert!(matches!(resolved, RouteTarget::BuiltIn));
         }
     }
@@ -52,9 +46,7 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
 #[test]
 fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("community")
-        .expect("plugin register");
+    registry.register_plugin_namespace("community").expect("plugin register");
 
     let plugin = registry
         .resolve(&["community".to_string(), "status".to_string()])
@@ -101,14 +93,6 @@ fn delegated_dev_routes_are_known_but_resolve_outside_runtime_registry() {
 
     assert!(is_known_route(&["dev".to_string(), "routes".to_string()]));
     assert!(is_known_route(&["dev".to_string(), "registry".to_string()]));
-    assert!(is_known_route(&[
-        "dev".to_string(),
-        "cli".to_string(),
-        "routes".to_string()
-    ]));
-    assert!(is_known_route(&[
-        "dev".to_string(),
-        "cli".to_string(),
-        "registry".to_string()
-    ]));
+    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "routes".to_string()]));
+    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "registry".to_string()]));
 }

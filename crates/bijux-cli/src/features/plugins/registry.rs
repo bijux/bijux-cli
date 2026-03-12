@@ -186,9 +186,7 @@ fn set_plugin_state(
         if state == crate::contracts::PluginLifecycleState::Enabled
             && plugin.state == crate::contracts::PluginLifecycleState::Broken
         {
-            return Err(PluginError::InvalidField(
-                "cannot enable broken plugin".to_string(),
-            ));
+            return Err(PluginError::InvalidField("cannot enable broken plugin".to_string()));
         }
         plugin.state = state;
         updated = Some(plugin.clone());
@@ -200,20 +198,12 @@ fn set_plugin_state(
 
 /// Enable installed plugin.
 pub fn enable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(
-        registry_path,
-        namespace,
-        crate::contracts::PluginLifecycleState::Enabled,
-    )
+    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Enabled)
 }
 
 /// Disable installed plugin.
 pub fn disable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(
-        registry_path,
-        namespace,
-        crate::contracts::PluginLifecycleState::Disabled,
-    )
+    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Disabled)
 }
 
 /// Inspect plugin by namespace.
@@ -264,11 +254,7 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
         }
     }
 
-    Ok(PluginDoctorReport {
-        installed: registry.plugins.len(),
-        broken,
-        incompatible,
-    })
+    Ok(PluginDoctorReport { installed: registry.plugins.len(), broken, incompatible })
 }
 
 /// Check plugin compatibility against host version without mutating registry.
@@ -298,9 +284,7 @@ pub fn plugin_load_order(registry_path: &Path) -> Result<Vec<PluginLoadEntry>, P
     items.sort_by(|left, right| {
         let left_rank = state_rank(left.state);
         let right_rank = state_rank(right.state);
-        left_rank
-            .cmp(&right_rank)
-            .then_with(|| left.namespace.cmp(&right.namespace))
+        left_rank.cmp(&right_rank).then_with(|| left.namespace.cmp(&right.namespace))
     });
 
     Ok(items)

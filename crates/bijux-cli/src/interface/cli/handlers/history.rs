@@ -39,9 +39,7 @@ fn parse_history_list_options(argv: &[String]) -> Result<HistoryListOptions> {
     }
     if let Some(sort) = command_option_value(argv, &["history"], "--sort") {
         if sort != "timestamp" {
-            return Err(anyhow!(
-                "Invalid argument: --sort only supports `timestamp`"
-            ));
+            return Err(anyhow!("Invalid argument: --sort only supports `timestamp`"));
         }
         options.sort_by_timestamp = true;
     }

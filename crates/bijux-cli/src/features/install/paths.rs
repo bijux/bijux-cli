@@ -25,9 +25,7 @@ fn is_executable_like(path: &Path) -> bool {
             return false;
         };
         let ext = format!(".{}", ext.to_ascii_uppercase());
-        return executable_extensions()
-            .iter()
-            .any(|allowed| allowed == &ext);
+        return executable_extensions().iter().any(|allowed| allowed == &ext);
     }
 
     #[cfg(not(any(unix, windows)))]
@@ -80,11 +78,8 @@ fn executable_extensions() -> Vec<String> {
             .map(str::trim)
             .filter(|part| !part.is_empty())
             .map(|part| {
-                let normalized = if part.starts_with('.') {
-                    part.to_string()
-                } else {
-                    format!(".{part}")
-                };
+                let normalized =
+                    if part.starts_with('.') { part.to_string() } else { format!(".{part}") };
                 normalized.to_ascii_uppercase()
             })
             .collect();
@@ -92,12 +87,7 @@ fn executable_extensions() -> Vec<String> {
             return parsed;
         }
     }
-    vec![
-        ".COM".to_string(),
-        ".EXE".to_string(),
-        ".BAT".to_string(),
-        ".CMD".to_string(),
-    ]
+    vec![".COM".to_string(), ".EXE".to_string(), ".BAT".to_string(), ".CMD".to_string()]
 }
 
 #[cfg(windows)]
@@ -135,13 +125,8 @@ pub fn resolve_active_binary(path_value: &str, bin_override: Option<&str>) -> Op
 /// Detect stale wrapper scripts in PATH.
 #[must_use]
 pub fn detect_stale_wrapper_scripts(path_value: &str) -> Vec<String> {
-    const WRAPPER_CANDIDATES: &[&str] = &[
-        "bijux.sh",
-        "bijux.cmd",
-        "bijux.bat",
-        "bijux.ps1",
-        "bijux-cli.sh",
-    ];
+    const WRAPPER_CANDIDATES: &[&str] =
+        &["bijux.sh", "bijux.cmd", "bijux.bat", "bijux.ps1", "bijux-cli.sh"];
     let canonical = canonical_executable_name();
     path_entries(path_value)
         .flat_map(|entry| WRAPPER_CANDIDATES.iter().map(move |name| entry.join(name)))

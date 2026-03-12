@@ -14,20 +14,14 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-root-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -42,10 +36,7 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 fn assert_success_output(out: &Output, context: &str) {
     assert_eq!(out.status.code(), Some(0), "{context} should succeed");
     assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
-    assert!(
-        !out.stdout.is_empty(),
-        "{context} should emit stdout payload"
-    );
+    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
 }
 
 fn python_cli() -> String {
@@ -56,10 +47,7 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .expect("workspace root");
+    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -73,9 +61,7 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
     let mut cmd = Command::new(&cli);
     let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
     let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
-        && normalized_args
-            .get(1)
-            .is_some_and(|arg| !arg.starts_with('-'));
+        && normalized_args.get(1).is_some_and(|arg| !arg.starts_with('-'));
     if cli == env!("CARGO_BIN_EXE_bijux") && needs_cli_prefix {
         normalized_args.insert(0, "cli".to_string());
         if !normalized_args.iter().any(|arg| arg == "--config-path") {
@@ -98,13 +84,8 @@ fn root_config_output_snapshots_text_json_yaml() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write config");
 
-    let text = run(&[
-        "config",
-        "--format",
-        "text",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let text =
+        run(&["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")]);
     assert_success_output(&text, "root config text snapshot");
     assert_eq!(
         String::from_utf8(text.stdout).expect("utf-8"),
@@ -160,24 +141,13 @@ fn root_config_quiet_and_no_color_modes() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
 
-    let quiet = run(&[
-        "config",
-        "--quiet",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let quiet = run(&["config", "--quiet", "--config-path", config_path.to_str().expect("utf-8")]);
     assert!(quiet.status.success());
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
 
     let no_color = run_with_env(
-        &[
-            "config",
-            "--format",
-            "text",
-            "--config-path",
-            config_path.to_str().expect("utf-8"),
-        ],
+        &["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")],
         &[("NO_COLOR", "1".to_string())],
     );
     assert_success_output(&no_color, "root config no-color output");
@@ -211,10 +181,7 @@ fn root_config_python_parity_output_and_exit() {
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write config");
 
     let mut envs = HashMap::new();
-    envs.insert(
-        "BIJUXCLI_CONFIG".to_string(),
-        config_path.display().to_string(),
-    );
+    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
@@ -264,11 +231,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     let empty_json: Value = serde_json::from_slice(&out_empty.stdout).expect("json");
     assert_eq!(empty_json, serde_json::json!({}));
 
-    let out_malformed = run(&[
-        "config",
-        "--config-path",
-        malformed.to_str().expect("utf-8"),
-    ]);
+    let out_malformed = run(&["config", "--config-path", malformed.to_str().expect("utf-8")]);
     assert_eq!(out_malformed.status.code(), Some(1));
     assert!(out_malformed.stdout.is_empty());
     assert!(!out_malformed.stderr.is_empty());
@@ -286,11 +249,7 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     assert_eq!(duplicate_json["alpha"], "new");
 
     let out_override = run_with_env(
-        &[
-            "config",
-            "--config-path",
-            flag_path.to_str().expect("utf-8"),
-        ],
+        &["config", "--config-path", flag_path.to_str().expect("utf-8")],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
     assert_success_output(&out_override, "root config flag path override");
@@ -341,16 +300,8 @@ fn root_config_subcommands_match_cli_config_subcommands() {
     let root_set_json: Value = assert_success_json(&root_set, "root config set");
     assert_eq!(root_set_json["status"], "updated");
 
-    let root_get = run(&[
-        "config",
-        "get",
-        "alpha",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        path,
-    ]);
+    let root_get =
+        run(&["config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", path]);
     let root_get_json: Value = assert_success_json(&root_get, "root config get");
     assert_eq!(root_get_json["value"], "1");
 
@@ -381,10 +332,7 @@ fn root_config_subcommands_match_cli_config_subcommands() {
     ]);
     let root_export_json: Value = assert_success_json(&root_export, "root config export");
     assert_eq!(root_export_json["status"], "exported");
-    assert!(
-        root_export_path.exists(),
-        "root export should write target file"
-    );
+    assert!(root_export_path.exists(), "root export should write target file");
 }
 
 #[test]
@@ -394,23 +342,8 @@ fn cli_config_namespace_without_leaf_defaults_to_listing() {
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("seed config");
     let path = config_path.to_str().expect("utf-8");
 
-    let root = run(&[
-        "config",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        path,
-    ]);
-    let cli = run(&[
-        "cli",
-        "config",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        path,
-    ]);
+    let root = run(&["config", "--format", "json", "--no-pretty", "--config-path", path]);
+    let cli = run(&["cli", "config", "--format", "json", "--no-pretty", "--config-path", path]);
 
     let root_json: Value = assert_success_json(&root, "root config listing");
     let cli_json: Value = assert_success_json(&cli, "cli config listing");
@@ -420,9 +353,6 @@ fn cli_config_namespace_without_leaf_defaults_to_listing() {
 fn assert_success_json(out: &Output, context: &str) -> Value {
     assert_eq!(out.status.code(), Some(0), "{context} should succeed");
     assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
-    assert!(
-        !out.stdout.is_empty(),
-        "{context} should emit stdout payload"
-    );
+    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
     serde_json::from_slice(&out.stdout).expect("json payload")
 }

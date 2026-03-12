@@ -23,11 +23,7 @@ fn completion_empty_prompt_and_partial_root_cli_tokens_are_supported() {
     register_completion_registry(
         &mut session,
         "runtime-catalog",
-        vec![
-            "history".to_string(),
-            "history clear".to_string(),
-            "memory".to_string(),
-        ],
+        vec!["history".to_string(), "history clear".to_string(), "memory".to_string()],
     );
 
     let root = completion_candidates(&session, "");
@@ -75,11 +71,7 @@ fn completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten() {
     register_completion_registry(
         &mut session,
         "runtime-catalog",
-        vec![
-            "history".to_string(),
-            "history clear".to_string(),
-            "memory".to_string(),
-        ],
+        vec!["history".to_string(), "history clear".to_string(), "memory".to_string()],
     );
     let reserved = completion_candidates(&session, "cli");
     let history = completion_candidates(&session, "hist");

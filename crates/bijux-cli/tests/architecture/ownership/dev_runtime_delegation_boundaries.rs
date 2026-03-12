@@ -9,14 +9,9 @@ fn read(path: &str) -> String {
 
 #[test]
 fn runtime_dispatch_keeps_dev_and_product_execution_at_process_boundary() {
-    let dispatch = read(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/interface/cli/dispatch.rs"
-    ));
-    let delegation = read(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/interface/cli/dispatch/delegation.rs"
-    ));
+    let dispatch = read(concat!(env!("CARGO_MANIFEST_DIR"), "/src/interface/cli/dispatch.rs"));
+    let delegation =
+        read(concat!(env!("CARGO_MANIFEST_DIR"), "/src/interface/cli/dispatch/delegation.rs"));
 
     assert!(
         dispatch.contains("try_delegate_known_bijux_tool"),
@@ -40,11 +35,8 @@ fn runtime_dispatch_keeps_dev_and_product_execution_at_process_boundary() {
 fn bijux_cli_tests_do_not_require_bijux_dev_cli_source_layout() {
     let tests_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut stack = vec![tests_root];
-    let forbidden = format!(
-        "..{}bijux-dev-cli{}src",
-        std::path::MAIN_SEPARATOR,
-        std::path::MAIN_SEPARATOR
-    );
+    let forbidden =
+        format!("..{}bijux-dev-cli{}src", std::path::MAIN_SEPARATOR, std::path::MAIN_SEPARATOR);
 
     while let Some(dir) = stack.pop() {
         let entries = std::fs::read_dir(&dir)

@@ -13,10 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -29,10 +26,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "bijux-history-matrix-{name}-{}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("bijux-history-matrix-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -65,11 +60,8 @@ fn history_root_listing_no_file_one_record_many_records_and_ordering() {
     let missing_json: Value = serde_json::from_slice(&out_missing.stdout).expect("json");
     assert_eq!(missing_json["entries"], serde_json::json!([]));
 
-    fs::write(
-        &one,
-        serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"),
-    )
-    .expect("write one");
+    fs::write(&one, serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"))
+        .expect("write one");
     let out_one = run_with_env(
         &["history", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_HISTORY_FILE", one.to_str().expect("utf-8"))],
@@ -78,11 +70,8 @@ fn history_root_listing_no_file_one_record_many_records_and_ordering() {
     let one_json: Value = serde_json::from_slice(&out_one.stdout).expect("json");
     assert_eq!(one_json["entries"].as_array().expect("array").len(), 1);
 
-    let many_entries = vec![
-        entry("version", 1.0),
-        entry("status", 2.0),
-        entry("plugins list", 3.0),
-    ];
+    let many_entries =
+        vec![entry("version", 1.0), entry("status", 2.0), entry("plugins list", 3.0)];
     fs::write(&many, serde_json::to_string(&many_entries).expect("json")).expect("write many");
     let out_many = run_with_env(
         &["history", "--format", "json", "--no-pretty"],
@@ -101,21 +90,13 @@ fn history_root_listing_no_file_one_record_many_records_and_ordering() {
 fn history_text_json_yaml_quiet_and_no_color_modes() {
     let root = temp_dir("formats");
     let path = root.join("history.json");
-    fs::write(
-        &path,
-        serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"),
-    )
-    .expect("write");
+    fs::write(&path, serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"))
+        .expect("write");
     let h = path.to_str().expect("utf-8");
 
-    let text = run_with_env(
-        &["history", "--format", "text"],
-        &[("BIJUXCLI_HISTORY_FILE", h)],
-    );
+    let text = run_with_env(&["history", "--format", "text"], &[("BIJUXCLI_HISTORY_FILE", h)]);
     assert_eq!(text.status.code(), Some(0));
-    assert!(String::from_utf8(text.stdout)
-        .expect("utf-8")
-        .contains("status"));
+    assert!(String::from_utf8(text.stdout).expect("utf-8").contains("status"));
 
     let json = run_with_env(
         &["history", "--format", "json", "--no-pretty"],
@@ -124,14 +105,10 @@ fn history_text_json_yaml_quiet_and_no_color_modes() {
     assert_eq!(json.status.code(), Some(0));
     let _: Value = serde_json::from_slice(&json.stdout).expect("json");
 
-    let yaml = run_with_env(
-        &["history", "--format", "yaml", "--pretty"],
-        &[("BIJUXCLI_HISTORY_FILE", h)],
-    );
+    let yaml =
+        run_with_env(&["history", "--format", "yaml", "--pretty"], &[("BIJUXCLI_HISTORY_FILE", h)]);
     assert_eq!(yaml.status.code(), Some(0));
-    assert!(String::from_utf8(yaml.stdout)
-        .expect("utf-8")
-        .contains("entries:"));
+    assert!(String::from_utf8(yaml.stdout).expect("utf-8").contains("entries:"));
 
     let quiet = run_with_env(&["history", "--quiet"], &[("BIJUXCLI_HISTORY_FILE", h)]);
     assert_eq!(quiet.status.code(), Some(0));
@@ -182,12 +159,8 @@ fn history_limit_path_override_and_repeated_run_determinism() {
     let path = root.join("history.json");
     fs::write(
         &path,
-        serde_json::to_string(&vec![
-            entry("one", 1.0),
-            entry("two", 2.0),
-            entry("three", 3.0),
-        ])
-        .expect("json"),
+        serde_json::to_string(&vec![entry("one", 1.0), entry("two", 2.0), entry("three", 3.0)])
+            .expect("json"),
     )
     .expect("write");
 
@@ -265,11 +238,8 @@ fn history_clear_with_unwritable_parent_fails_stably() {
     let dir = root.join("readonly");
     fs::create_dir_all(&dir).expect("mkdir readonly");
     let path = dir.join("history.json");
-    fs::write(
-        &path,
-        serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"),
-    )
-    .expect("seed history");
+    fs::write(&path, serde_json::to_string(&vec![entry("status", 1.0)]).expect("json"))
+        .expect("seed history");
 
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).expect("chmod");
 
@@ -289,9 +259,7 @@ fn history_clear_with_unwritable_parent_fails_stably() {
 fn history_help_and_exit_discipline_for_root_and_clear() {
     let root_help = run(&["history", "--help"]);
     assert_eq!(root_help.status.code(), Some(0));
-    assert!(String::from_utf8(root_help.stdout)
-        .expect("utf-8")
-        .contains("Usage: bijux history"));
+    assert!(String::from_utf8(root_help.stdout).expect("utf-8").contains("Usage: bijux history"));
     assert!(root_help.stderr.is_empty());
 
     let clear_help = run(&["history", "clear", "--help"]);

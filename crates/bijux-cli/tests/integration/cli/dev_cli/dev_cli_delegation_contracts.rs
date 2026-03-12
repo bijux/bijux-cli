@@ -7,10 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!(
-        "bijux-dev-delegation-{name}-{}",
-        std::process::id()
-    ));
+    let dir = env::temp_dir().join(format!("bijux-dev-delegation-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -54,11 +51,7 @@ fn stdout_lines(output: &std::process::Output) -> Vec<String> {
 #[test]
 fn canonical_dev_cli_route_forwards_only_dev_cli_tail_arguments() {
     let root = tmp_dir("canonical");
-    let delegate = root.join(if cfg!(windows) {
-        "mock-dev-cli.cmd"
-    } else {
-        "mock-dev-cli"
-    });
+    let delegate = root.join(if cfg!(windows) { "mock-dev-cli.cmd" } else { "mock-dev-cli" });
     write_mock_delegate(&delegate);
 
     let output = run(
@@ -81,26 +74,15 @@ fn canonical_dev_cli_route_forwards_only_dev_cli_tail_arguments() {
 #[test]
 fn legacy_dev_entry_route_forwards_namespace_as_first_argument() {
     let root = tmp_dir("legacy-entry");
-    let delegate = root.join(if cfg!(windows) {
-        "mock-dev-cli.cmd"
-    } else {
-        "mock-dev-cli"
-    });
+    let delegate = root.join(if cfg!(windows) { "mock-dev-cli.cmd" } else { "mock-dev-cli" });
     write_mock_delegate(&delegate);
 
-    let output = run(
-        &["dev", "registry", "--format", "text"],
-        &[("BIJUX_DEV_CLI_BIN", &delegate)],
-    );
+    let output = run(&["dev", "registry", "--format", "text"], &[("BIJUX_DEV_CLI_BIN", &delegate)]);
 
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
         stdout_lines(&output),
-        vec![
-            "registry".to_string(),
-            "--format".to_string(),
-            "text".to_string()
-        ]
+        vec!["registry".to_string(), "--format".to_string(), "text".to_string()]
     );
 }
 
@@ -109,10 +91,7 @@ fn missing_delegate_binary_returns_actionable_error() {
     let root = tmp_dir("missing");
     let missing = root.join("does-not-exist");
 
-    let output = run(
-        &["dev", "cli", "routes"],
-        &[("BIJUX_DEV_CLI_BIN", &missing)],
-    );
+    let output = run(&["dev", "cli", "routes"], &[("BIJUX_DEV_CLI_BIN", &missing)]);
 
     assert_eq!(output.status.code(), Some(1));
     let stderr = String::from_utf8(output.stderr).expect("utf-8 stderr");

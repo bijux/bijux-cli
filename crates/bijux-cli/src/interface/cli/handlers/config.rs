@@ -36,26 +36,21 @@ pub(crate) fn execute_config_command(
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             let positional = command_positionals(argv, get_tokens);
-            let raw_key = positional
-                .first()
-                .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
+            let raw_key =
+                positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::get_value(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             let positional = command_positionals(argv, set_tokens);
-            let raw_pair = positional
-                .first()
-                .cloned()
-                .or_else(read_pair_from_stdin_fallback);
+            let raw_pair = positional.first().cloned().or_else(read_pair_from_stdin_fallback);
             let raw_pair =
                 raw_pair.ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
             Some(config_operations::set_pair(config_file, &raw_pair)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "unset" => {
             let positional = command_positionals(argv, unset_tokens);
-            let raw_key = positional
-                .first()
-                .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
+            let raw_key =
+                positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::unset_key(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "clear" => {
@@ -68,17 +63,13 @@ pub(crate) fn execute_config_command(
         }
         [a, b, c] if a == "cli" && b == "config" && c == "export" => {
             let positional = command_positionals(argv, export_tokens);
-            let raw_path = positional
-                .first()
-                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
+            let raw_path = positional.first().ok_or_else(|| anyhow!("Missing parameter: path"))?;
             let target_path = PathBuf::from(raw_path);
             Some(config_operations::export_to(config_file, &target_path)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "load" => {
             let positional = command_positionals(argv, load_tokens);
-            let raw_path = positional
-                .first()
-                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
+            let raw_path = positional.first().ok_or_else(|| anyhow!("Missing parameter: path"))?;
             let source_path = PathBuf::from(raw_path);
             Some(config_operations::load_from(config_file, &source_path)?)
         }
@@ -145,8 +136,7 @@ fn command_starts_with_root_config(argv: &[String]) -> bool {
         }
         break;
     }
-    argv.get(command_start)
-        .is_some_and(|segment| segment == "config")
+    argv.get(command_start).is_some_and(|segment| segment == "config")
 }
 
 fn read_pair_from_stdin_fallback() -> Option<String> {

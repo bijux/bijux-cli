@@ -26,9 +26,8 @@ pub(crate) fn get_memory_value(memory_file: &Path, key: &str) -> Result<Value> {
 }
 
 pub(crate) fn set_memory_pair(memory_file: &Path, pair: &str) -> Result<Value> {
-    let (key, value) = pair
-        .split_once('=')
-        .ok_or_else(|| anyhow!("Invalid argument: expected KEY=VALUE"))?;
+    let (key, value) =
+        pair.split_once('=').ok_or_else(|| anyhow!("Invalid argument: expected KEY=VALUE"))?;
 
     let normalized_key = key.trim();
     let normalized_value = value.trim();
@@ -36,10 +35,7 @@ pub(crate) fn set_memory_pair(memory_file: &Path, pair: &str) -> Result<Value> {
         return Err(anyhow!("Invalid argument: KEY cannot be empty"));
     }
     let mut memory = read_memory_map(memory_file)?;
-    memory.insert(
-        normalized_key.to_string(),
-        Value::String(normalized_value.to_string()),
-    );
+    memory.insert(normalized_key.to_string(), Value::String(normalized_value.to_string()));
     write_memory_map(memory_file, &memory)?;
 
     Ok(json!({

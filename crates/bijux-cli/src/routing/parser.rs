@@ -83,17 +83,11 @@ fn parse_log_level(raw: Option<&String>) -> Result<Option<LogLevel>, ParseError>
 }
 
 fn is_global_flag_without_value(token: &str) -> bool {
-    matches!(
-        token,
-        "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text"
-    )
+    matches!(token, "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text")
 }
 
 fn is_global_flag_with_value(token: &str) -> bool {
-    matches!(
-        token,
-        "--format" | "-f" | "--log-level" | "--color" | "--config-path"
-    )
+    matches!(token, "--format" | "-f" | "--log-level" | "--color" | "--config-path")
 }
 
 fn is_global_flag_with_equals(token: &str) -> bool {
@@ -175,9 +169,7 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
 }
 
 fn delegated_command(name: &'static str, hidden: bool) -> Command {
-    Command::new(name)
-        .hide(hidden)
-        .allow_external_subcommands(true)
+    Command::new(name).hide(hidden).allow_external_subcommands(true)
 }
 
 fn build_dev_group() -> Command {
@@ -303,9 +295,7 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
-            Command::new("hold")
-                .hide(true)
-                .subcommand(Command::new("interruptible").hide(true)),
+            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
         )
         .subcommand(plugins_group.clone());
 
@@ -348,12 +338,7 @@ pub fn root_command() -> Command {
                         .value_parser(clap::value_parser!(usize)),
                 )
                 .arg(Arg::new("filter").long("filter").short('F').num_args(1))
-                .arg(
-                    Arg::new("sort")
-                        .long("sort")
-                        .num_args(1)
-                        .value_parser(["timestamp"]),
-                ),
+                .arg(Arg::new("sort").long("sort").num_args(1).value_parser(["timestamp"])),
         )
         .subcommand(
             Command::new("memory")
@@ -427,9 +412,5 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
 
     let normalized_path = normalize_command_path(&command_path);
 
-    Ok(ParsedIntent {
-        command_path,
-        normalized_path,
-        global_flags,
-    })
+    Ok(ParsedIntent { command_path, normalized_path, global_flags })
 }

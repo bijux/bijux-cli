@@ -25,11 +25,7 @@ fn read_lines(path: &str) -> Vec<Vec<String>> {
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
-        .map(|line| {
-            line.split_whitespace()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-        })
+        .map(|line| line.split_whitespace().map(ToString::to_string).collect::<Vec<_>>())
         .collect()
 }
 
@@ -45,14 +41,10 @@ fn all_cli_subcommand_fixtures_resolve() {
 #[test]
 fn plugin_namespace_fixture_commands_resolve_after_registration() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("community")
-        .expect("plugin namespace should register");
+    registry.register_plugin_namespace("community").expect("plugin namespace should register");
 
     for path in read_lines("tests/data/fixtures/routing/plugin_namespace_commands.txt") {
-        let resolved = registry
-            .resolve(&path)
-            .expect("plugin fixture should resolve");
+        let resolved = registry.resolve(&path).expect("plugin fixture should resolve");
         assert!(matches!(resolved, RouteTarget::Plugin(ns) if ns == "community"));
     }
 }
@@ -65,9 +57,7 @@ fn invalid_command_suggestions_match_fixtures() {
 
     let registry = RouteRegistry::default();
     for case in cases {
-        let actual = registry
-            .suggest_namespace(&case.input)
-            .expect("suggestion should exist");
+        let actual = registry.suggest_namespace(&case.input).expect("suggestion should exist");
         assert_eq!(actual, case.expected);
     }
 }

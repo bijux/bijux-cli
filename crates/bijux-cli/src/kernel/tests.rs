@@ -193,10 +193,7 @@ struct CapturingDiag {
 }
 impl DiagnosticsHook for CapturingDiag {
     fn record(&self, record: DiagnosticRecord) {
-        self.events
-            .lock()
-            .expect("diag lock poisoned")
-            .push(record.id);
+        self.events.lock().expect("diag lock poisoned").push(record.id);
     }
 }
 
@@ -211,24 +208,15 @@ struct OrderedLifecycle {
 }
 impl LifecycleHook for OrderedLifecycle {
     fn on_plugin_load(&self) {
-        self.order
-            .lock()
-            .expect("order lock poisoned")
-            .push("plugin_load".to_string());
+        self.order.lock().expect("order lock poisoned").push("plugin_load".to_string());
     }
 
     fn on_repl_start(&self) {
-        self.order
-            .lock()
-            .expect("order lock poisoned")
-            .push("repl_start".to_string());
+        self.order.lock().expect("order lock poisoned").push("repl_start".to_string());
     }
 
     fn on_repl_shutdown(&self) {
-        self.order
-            .lock()
-            .expect("order lock poisoned")
-            .push("repl_shutdown".to_string());
+        self.order.lock().expect("order lock poisoned").push("repl_shutdown".to_string());
     }
 }
 
@@ -237,10 +225,7 @@ struct OrderedSync {
 }
 impl SyncHandler for OrderedSync {
     fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
-        self.order
-            .lock()
-            .expect("order lock poisoned")
-            .push("execute".to_string());
+        self.order.lock().expect("order lock poisoned").push("execute".to_string());
         Ok(json!({"ok": true}))
     }
 }
@@ -341,35 +326,21 @@ fn pipeline_runs_sync_and_async_handlers() {
         include_runtime: false,
     };
     let cancelled = Arc::new(AtomicBool::new(false));
-    let ctx = assemble_context(
-        intent,
-        policy,
-        Some(Duration::from_secs(5)),
-        cancelled,
-        true,
-    );
+    let ctx = assemble_context(intent, policy, Some(Duration::from_secs(5)), cancelled, true);
 
     let diagnostics: Vec<Arc<dyn DiagnosticsHook>> = vec![Arc::new(NoopDiag)];
     let lifecycle: Vec<Arc<dyn LifecycleHook>> = Vec::new();
 
-    let sync_result = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(SyncOk)),
-        &diagnostics,
-        &lifecycle,
-    )
-    .expect("sync should execute");
+    let sync_result =
+        execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncOk)), &diagnostics, &lifecycle)
+            .expect("sync should execute");
     assert_eq!(sync_result.exit_code, ExitCode::Success);
     assert!(sync_result.emission.is_some());
     assert!(sync_result.trace.is_some());
 
-    let async_result = execute_pipeline(
-        &ctx,
-        &Handler::Async(Box::new(AsyncOk)),
-        &diagnostics,
-        &lifecycle,
-    )
-    .expect("async should execute");
+    let async_result =
+        execute_pipeline(&ctx, &Handler::Async(Box::new(AsyncOk)), &diagnostics, &lifecycle)
+            .expect("async should execute");
     assert_eq!(async_result.exit_code, ExitCode::Success);
     assert!(async_result.emission.is_some());
     assert!(async_result.trace.is_some());
@@ -405,10 +376,7 @@ fn kernel_pipeline_uses_one_canonical_entrypoint() {
     let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
         .expect("pipeline should execute");
     assert_eq!(result.exit_code, ExitCode::Success);
-    assert!(
-        result.trace.is_some(),
-        "canonical kernel execution should expose trace"
-    );
+    assert!(result.trace.is_some(), "canonical kernel execution should expose trace");
 }
 
 #[test]
@@ -438,13 +406,8 @@ fn sync_and_async_handlers_produce_equivalent_normalized_results() {
 
     let sync = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
         .expect("sync should execute");
-    let async_out = execute_pipeline(
-        &ctx,
-        &Handler::Async(Box::new(AsyncDeterministic)),
-        &[],
-        &[],
-    )
-    .expect("async should execute");
+    let async_out = execute_pipeline(&ctx, &Handler::Async(Box::new(AsyncDeterministic)), &[], &[])
+        .expect("async should execute");
 
     assert_eq!(sync.exit_code, async_out.exit_code);
     assert_eq!(sync.emission, async_out.emission);
@@ -452,11 +415,8 @@ fn sync_and_async_handlers_produce_equivalent_normalized_results() {
 
 #[test]
 fn sync_and_async_error_handlers_produce_equivalent_normalized_results() {
-    let intent = build_intent_from_argv(&[
-        "bijux".to_string(),
-        "plugins".to_string(),
-        "check".to_string(),
-    ]);
+    let intent =
+        build_intent_from_argv(&["bijux".to_string(), "plugins".to_string(), "check".to_string()]);
     let policy = ExecutionPolicy {
         output_format: OutputFormat::Json,
         pretty_mode: PrettyMode::Pretty,
@@ -473,20 +433,11 @@ fn sync_and_async_error_handlers_produce_equivalent_normalized_results() {
         false,
     );
 
-    let sync = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(SyncErrorDeterministic)),
-        &[],
-        &[],
-    )
-    .expect("sync error should normalize");
-    let async_out = execute_pipeline(
-        &ctx,
-        &Handler::Async(Box::new(AsyncErrorDeterministic)),
-        &[],
-        &[],
-    )
-    .expect("async error should normalize");
+    let sync = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncErrorDeterministic)), &[], &[])
+        .expect("sync error should normalize");
+    let async_out =
+        execute_pipeline(&ctx, &Handler::Async(Box::new(AsyncErrorDeterministic)), &[], &[])
+            .expect("async error should normalize");
 
     assert_eq!(sync.exit_code, ExitCode::Error);
     assert_eq!(sync.exit_code, async_out.exit_code);
@@ -509,13 +460,8 @@ fn pipeline_handles_fast_paths_and_cancellation() {
     };
 
     let cancelled = Arc::new(AtomicBool::new(false));
-    let ctx = assemble_context(
-        intent,
-        policy,
-        Some(Duration::from_secs(5)),
-        cancelled.clone(),
-        true,
-    );
+    let ctx =
+        assemble_context(intent, policy, Some(Duration::from_secs(5)), cancelled.clone(), true);
 
     let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncOk)), &[], &[])
         .expect("fast-path should succeed");
@@ -548,9 +494,7 @@ fn async_handlers_honor_cancellation_short_circuit_before_execution() {
 
     let result = execute_pipeline(
         &ctx,
-        &Handler::Async(Box::new(AsyncCallProbe {
-            called: called.clone(),
-        })),
+        &Handler::Async(Box::new(AsyncCallProbe { called: called.clone() })),
         &[],
         &[],
     )
@@ -588,10 +532,7 @@ fn fast_path_commands_keep_valid_envelope_metadata_when_emitted() {
     let emission = result.emission.expect("fast-path should emit");
     assert_eq!(emission.stream, super::OutputStream::Stdout);
     assert_eq!(emission.payload["meta"]["version"], "v1");
-    assert_eq!(
-        emission.payload["meta"]["command"]["segments"][0],
-        "version"
-    );
+    assert_eq!(emission.payload["meta"]["command"]["segments"][0], "version");
 }
 
 #[test]
@@ -607,13 +548,7 @@ fn cancellation_paths_never_emit_partial_success_envelopes() {
         include_runtime: false,
     };
     let cancelled = Arc::new(AtomicBool::new(true));
-    let ctx = assemble_context(
-        intent,
-        policy,
-        Some(Duration::from_secs(5)),
-        cancelled,
-        false,
-    );
+    let ctx = assemble_context(intent, policy, Some(Duration::from_secs(5)), cancelled, false);
 
     let cancelled_result = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncOk)), &[], &[])
         .expect_err("cancelled run should fail");
@@ -632,9 +567,8 @@ fn cancellation_paths_never_skip_exit_code_mapping() {
 #[test]
 fn plugin_lifecycle_hooks_run_in_stable_order_around_execution() {
     let order = Arc::new(Mutex::new(Vec::<String>::new()));
-    let lifecycle: Vec<Arc<dyn LifecycleHook>> = vec![Arc::new(OrderedLifecycle {
-        order: order.clone(),
-    })];
+    let lifecycle: Vec<Arc<dyn LifecycleHook>> =
+        vec![Arc::new(OrderedLifecycle { order: order.clone() })];
 
     let policy = ExecutionPolicy {
         output_format: OutputFormat::Json,
@@ -645,11 +579,7 @@ fn plugin_lifecycle_hooks_run_in_stable_order_around_execution() {
         include_runtime: false,
     };
     let ctx = assemble_context(
-        build_intent_from_argv(&[
-            "bijux".to_string(),
-            "plugins".to_string(),
-            "list".to_string(),
-        ]),
+        build_intent_from_argv(&["bijux".to_string(), "plugins".to_string(), "list".to_string()]),
         policy,
         Some(Duration::from_secs(5)),
         Arc::new(AtomicBool::new(false)),
@@ -658,26 +588,20 @@ fn plugin_lifecycle_hooks_run_in_stable_order_around_execution() {
 
     let _ = execute_pipeline(
         &ctx,
-        &Handler::Sync(Box::new(OrderedSync {
-            order: order.clone(),
-        })),
+        &Handler::Sync(Box::new(OrderedSync { order: order.clone() })),
         &[],
         &lifecycle,
     )
     .expect("plugin pipeline should run");
     let observed = order.lock().expect("order lock").clone();
-    assert_eq!(
-        observed,
-        vec!["plugin_load".to_string(), "execute".to_string()]
-    );
+    assert_eq!(observed, vec!["plugin_load".to_string(), "execute".to_string()]);
 }
 
 #[test]
 fn repl_lifecycle_hooks_do_not_mutate_non_repl_command_semantics() {
     let order = Arc::new(Mutex::new(Vec::<String>::new()));
-    let lifecycle: Vec<Arc<dyn LifecycleHook>> = vec![Arc::new(OrderedLifecycle {
-        order: order.clone(),
-    })];
+    let lifecycle: Vec<Arc<dyn LifecycleHook>> =
+        vec![Arc::new(OrderedLifecycle { order: order.clone() })];
     let policy = ExecutionPolicy {
         output_format: OutputFormat::Json,
         pretty_mode: PrettyMode::Pretty,
@@ -695,13 +619,9 @@ fn repl_lifecycle_hooks_do_not_mutate_non_repl_command_semantics() {
     );
     let baseline = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
         .expect("baseline should run");
-    let with_hooks = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(SyncDeterministic)),
-        &[],
-        &lifecycle,
-    )
-    .expect("with hooks should run");
+    let with_hooks =
+        execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &lifecycle)
+            .expect("with hooks should run");
 
     assert_eq!(baseline.exit_code, with_hooks.exit_code);
     assert_eq!(baseline.emission, with_hooks.emission);
@@ -732,23 +652,14 @@ fn pipeline_invokes_plugin_and_repl_lifecycle_hooks() {
     };
 
     let plugin_ctx = assemble_context(
-        build_intent_from_argv(&[
-            "bijux".to_string(),
-            "plugins".to_string(),
-            "list".to_string(),
-        ]),
+        build_intent_from_argv(&["bijux".to_string(), "plugins".to_string(), "list".to_string()]),
         policy.clone(),
         Some(Duration::from_secs(5)),
         Arc::new(AtomicBool::new(false)),
         false,
     );
-    let _ = execute_pipeline(
-        &plugin_ctx,
-        &Handler::Sync(Box::new(SyncOk)),
-        &[],
-        &lifecycle,
-    )
-    .expect("plugin path should execute");
+    let _ = execute_pipeline(&plugin_ctx, &Handler::Sync(Box::new(SyncOk)), &[], &lifecycle)
+        .expect("plugin path should execute");
     assert!(plugin_flag.load(Ordering::SeqCst));
 
     let repl_ctx = assemble_context(
@@ -782,10 +693,7 @@ fn handler_panics_are_normalized_to_internal_error_for_sync_and_async_paths() {
         false,
     );
 
-    for handler in [
-        Handler::Sync(Box::new(SyncPanic)),
-        Handler::Async(Box::new(AsyncPanic)),
-    ] {
+    for handler in [Handler::Sync(Box::new(SyncPanic)), Handler::Async(Box::new(AsyncPanic))] {
         let result = execute_pipeline(&ctx, &handler, &[], &[]).expect("panic should normalize");
         assert_eq!(result.exit_code, ExitCode::Error);
         let emission = result.emission.expect("panic should emit stderr envelope");
@@ -823,19 +731,14 @@ fn repl_shutdown_hook_runs_even_when_timeout_is_detected_after_dispatch() {
 
     let result = execute_pipeline(
         &ctx,
-        &Handler::Sync(Box::new(SlowSync {
-            delay: Duration::from_millis(5),
-        })),
+        &Handler::Sync(Box::new(SlowSync { delay: Duration::from_millis(5) })),
         &[],
         &lifecycle,
     )
     .expect_err("slow handler should hit timeout");
     assert_eq!(result, KernelError::Timeout);
     assert!(repl_start.load(Ordering::SeqCst));
-    assert!(
-        repl_shutdown.load(Ordering::SeqCst),
-        "repl shutdown hook must run even on timeout"
-    );
+    assert!(repl_shutdown.load(Ordering::SeqCst), "repl shutdown hook must run even on timeout");
 }
 
 #[test]
@@ -864,13 +767,8 @@ fn repl_shutdown_hook_runs_even_when_post_dispatch_cancellation_is_detected() {
         false,
     );
 
-    let result = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(CancelFlipSync)),
-        &[],
-        &lifecycle,
-    )
-    .expect_err("post-dispatch cancellation should surface");
+    let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(CancelFlipSync)), &[], &lifecycle)
+        .expect_err("post-dispatch cancellation should surface");
     assert_eq!(result, KernelError::Cancelled);
     assert!(repl_start.load(Ordering::SeqCst));
     assert!(
@@ -905,11 +803,7 @@ fn kernel_usage_validation_plugin_internal_error_mapping_is_stable() {
     ] {
         let observed = map_error_category_to_exit(category);
         assert_eq!(observed, expected, "unexpected mapping for {category}");
-        assert_ne!(
-            observed,
-            ExitCode::Success,
-            "errors must never map to success"
-        );
+        assert_ne!(observed, ExitCode::Success, "errors must never map to success");
     }
 }
 
@@ -931,13 +825,8 @@ fn internal_failure_is_normalized_before_crossing_cli_surface() {
         false,
     );
 
-    let result = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(InternalErrorHandler)),
-        &[],
-        &[],
-    )
-    .expect("internal error should normalize");
+    let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(InternalErrorHandler)), &[], &[])
+        .expect("internal error should normalize");
     assert_eq!(result.exit_code, ExitCode::Error);
     let emission = result.emission.expect("error should emit");
     assert_eq!(emission.stream, super::OutputStream::Stderr);
@@ -970,9 +859,8 @@ fn trace_mode_adds_diagnostics_without_changing_payload_shape() {
     );
 
     let events = Arc::new(Mutex::new(Vec::<String>::new()));
-    let diagnostics: Vec<Arc<dyn DiagnosticsHook>> = vec![Arc::new(CapturingDiag {
-        events: events.clone(),
-    })];
+    let diagnostics: Vec<Arc<dyn DiagnosticsHook>> =
+        vec![Arc::new(CapturingDiag { events: events.clone() })];
     let plain = execute_pipeline(
         &plain_ctx,
         &Handler::Sync(Box::new(SyncDeterministic)),
@@ -1005,10 +893,7 @@ fn quiet_mode_suppresses_streams_but_preserves_result_category() {
         quiet: false,
         include_runtime: false,
     };
-    let quiet_policy = ExecutionPolicy {
-        quiet: true,
-        ..noisy_policy.clone()
-    };
+    let quiet_policy = ExecutionPolicy { quiet: true, ..noisy_policy.clone() };
     let noisy_ctx = assemble_context(
         build_intent_from_argv(&["bijux".to_string(), "cli".to_string(), "status".to_string()]),
         noisy_policy,
@@ -1024,20 +909,10 @@ fn quiet_mode_suppresses_streams_but_preserves_result_category() {
         false,
     );
 
-    let noisy = execute_pipeline(
-        &noisy_ctx,
-        &Handler::Sync(Box::new(SyncDeterministic)),
-        &[],
-        &[],
-    )
-    .expect("noisy");
-    let quiet = execute_pipeline(
-        &quiet_ctx,
-        &Handler::Sync(Box::new(SyncDeterministic)),
-        &[],
-        &[],
-    )
-    .expect("quiet");
+    let noisy = execute_pipeline(&noisy_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+        .expect("noisy");
+    let quiet = execute_pipeline(&quiet_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+        .expect("quiet");
     assert_eq!(noisy.exit_code, quiet.exit_code);
     assert!(noisy.emission.is_some());
     assert!(quiet.emission.is_none());
@@ -1077,19 +952,11 @@ fn kernel_resolution_is_deterministic_under_reordered_inputs() {
 
     let policy_a = resolve_policy(
         &intent_a,
-        &PolicyInputs {
-            env: env_a,
-            config: config_a,
-            defaults: defaults(),
-        },
+        &PolicyInputs { env: env_a, config: config_a, defaults: defaults() },
     );
     let policy_b = resolve_policy(
         &intent_b,
-        &PolicyInputs {
-            env: env_b,
-            config: config_b,
-            defaults: defaults(),
-        },
+        &PolicyInputs { env: env_b, config: config_b, defaults: defaults() },
     );
     assert_eq!(policy_a, policy_b);
 }
@@ -1098,11 +965,7 @@ fn kernel_resolution_is_deterministic_under_reordered_inputs() {
 fn repeated_run_kernel_invariants_harness_for_representative_commands() {
     let commands = vec![
         vec!["bijux".to_string(), "cli".to_string(), "status".to_string()],
-        vec![
-            "bijux".to_string(),
-            "plugins".to_string(),
-            "list".to_string(),
-        ],
+        vec!["bijux".to_string(), "plugins".to_string(), "list".to_string()],
         vec!["bijux".to_string(), "help".to_string()],
     ];
 
@@ -1126,13 +989,7 @@ fn repeated_run_kernel_invariants_harness_for_representative_commands() {
             .expect("first");
         let second = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
             .expect("second");
-        assert_eq!(
-            first.exit_code, second.exit_code,
-            "exit mismatch for {argv:?}"
-        );
-        assert_eq!(
-            first.emission, second.emission,
-            "emission mismatch for {argv:?}"
-        );
+        assert_eq!(first.exit_code, second.exit_code, "exit mismatch for {argv:?}");
+        assert_eq!(first.emission, second.emission, "emission mismatch for {argv:?}");
     }
 }

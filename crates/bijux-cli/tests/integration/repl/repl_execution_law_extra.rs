@@ -13,10 +13,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn parse_json(bytes: &[u8]) -> Value {
@@ -53,10 +50,7 @@ fn repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli(
 
     assert_eq!(bin.status.code().unwrap_or(-1), core.exit_code);
     assert_eq!(repl.last_exit_code, bin.status.code().unwrap_or(-1));
-    assert_eq!(
-        parse_json(repl_frame.content.as_bytes()),
-        parse_json(&bin.stdout)
-    );
+    assert_eq!(parse_json(repl_frame.content.as_bytes()), parse_json(&bin.stdout));
 }
 
 #[test]
@@ -67,19 +61,13 @@ fn repl_machine_and_text_modes_use_same_underlying_payload_law() {
         .expect("repl json")
         .expect("json frame");
     let bin_json = run_bin(&["status", "--format", "json", "--no-pretty"]);
-    assert_eq!(
-        parse_json(repl_json.content.as_bytes()),
-        parse_json(&bin_json.stdout)
-    );
+    assert_eq!(parse_json(repl_json.content.as_bytes()), parse_json(&bin_json.stdout));
 
     let repl_text = execute_repl_line(&mut repl, "status --format text")
         .expect("repl text")
         .expect("text frame");
     let bin_text = run_bin(&["status", "--format", "text"]);
-    assert_eq!(
-        repl_text.content,
-        String::from_utf8(bin_text.stdout).expect("utf-8")
-    );
+    assert_eq!(repl_text.content, String::from_utf8(bin_text.stdout).expect("utf-8"));
 }
 
 #[test]
@@ -92,10 +80,7 @@ fn repl_usage_validation_and_plugin_failures_map_to_same_failure_classes() {
 
     let repl_validation = execute_repl_line(&mut repl, "status --format not-a-format");
     let bin_validation = run_bin(&["status", "--format", "not-a-format"]);
-    assert!(
-        repl_validation.is_err(),
-        "repl should reject invalid format"
-    );
+    assert!(repl_validation.is_err(), "repl should reject invalid format");
     assert_eq!(bin_validation.status.code(), Some(1));
 
     let _ = execute_repl_line(&mut repl, "plugins uninstall").expect("repl plugin failure");
@@ -135,27 +120,14 @@ fn repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli() 
     let traced = execute_repl_line(&mut repl, "status --format json --no-pretty")
         .expect("trace status")
         .expect("trace frame");
-    let bin = run_bin(&[
-        "--log-level",
-        "trace",
-        "status",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
-    assert_eq!(
-        parse_json(traced.content.as_bytes()),
-        parse_json(&bin.stdout)
-    );
+    let bin = run_bin(&["--log-level", "trace", "status", "--format", "json", "--no-pretty"]);
+    assert_eq!(parse_json(traced.content.as_bytes()), parse_json(&bin.stdout));
 
     let repl_yaml = execute_repl_line(&mut repl, "status --format yaml --pretty")
         .expect("repl yaml")
         .expect("yaml frame");
     let bin_yaml = run_bin(&["status", "--format", "yaml", "--pretty"]);
-    assert_eq!(
-        repl_yaml.content,
-        String::from_utf8(bin_yaml.stdout).expect("utf-8")
-    );
+    assert_eq!(repl_yaml.content, String::from_utf8(bin_yaml.stdout).expect("utf-8"));
 
     let before = execute_repl_line(&mut repl, "status --format json --no-pretty")
         .expect("before history")
@@ -164,19 +136,15 @@ fn repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli() 
     let after = execute_repl_line(&mut repl, "status --format json --no-pretty")
         .expect("after history")
         .expect("after frame");
-    assert_eq!(
-        parse_json(before.content.as_bytes()),
-        parse_json(after.content.as_bytes())
-    );
+    assert_eq!(parse_json(before.content.as_bytes()), parse_json(after.content.as_bytes()));
 }
 
 #[test]
 fn repl_help_for_builtin_and_plugin_commands_matches_non_interactive_help() {
     let (mut repl, _) = startup_repl("", None);
 
-    let repl_help = execute_repl_line(&mut repl, "help status")
-        .expect("repl help")
-        .expect("help frame");
+    let repl_help =
+        execute_repl_line(&mut repl, "help status").expect("repl help").expect("help frame");
     let bin_help = run_bin(&["help", "status"]);
     let bin_help_text = String::from_utf8(bin_help.stdout).expect("utf-8");
     assert!(repl_help.content.contains("Usage:"));
