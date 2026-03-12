@@ -44,8 +44,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .collect::<Vec<_>>();
             alias_pairs.sort();
             alias_pairs.dedup();
-            let rows =
-                status.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+            let rows = status
+                .get("commands")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let shims = rows
                                         .iter()
                                         .filter(|row| row.get("status").and_then(Value::as_str) == Some("shim"))
@@ -85,10 +88,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         .filter(|item| item.get("alias").and_then(Value::as_str).is_some_and(|a| a.starts_with("config ") || a.starts_with("plugins ") || ["doctor","version","repl","completion","inspect"].iter().any(|k| a.starts_with(k))))
                                         .map(|item| json!({"legacy_path":item["alias"],"canonical":item["canonical"],"justification":item["justification"],"removal_condition":item["removal_condition"],"evidence_links":item["evidence_links"]}))
                                         .collect::<Vec<_>>();
-            let before_shim =
-                baseline.get("baseline_shim_count").and_then(Value::as_i64).unwrap_or(0);
-            let before_alias =
-                baseline.get("baseline_alias_count").and_then(Value::as_i64).unwrap_or(0);
+            let before_shim = baseline
+                .get("baseline_shim_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
+            let before_alias = baseline
+                .get("baseline_alias_count")
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
             write_status_artifact_json(workspace_root, "artifacts/status/compatibility_shim_inventory.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","rule":"remaining shims require justification and removal plan","items":shims,"summary":{"count":shims.len(),"baseline_count":before_shim,"removed_since_baseline":before_shim - shims.len() as i64}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/compatibility_alias_inventory.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","rule":"remaining aliases require justification and removal plan","items":aliases,"summary":{"count":aliases.len(),"baseline_count":before_alias,"removed_since_baseline":before_alias - aliases.len() as i64}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/hidden_alias_inventory.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","items":hidden_aliases,"summary":{"count":hidden_aliases.len()}})).ok()?;
@@ -109,9 +116,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &json!({"generated_at":generated_at,"items":aliases}),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/compatibility_shim_inventory.json","artifacts/status/compatibility_alias_inventory.json","artifacts/status/hidden_alias_inventory.json","artifacts/status/old_python_path_tolerance_inventory.json","artifacts/status/compatibility_shim_count_delta.json","artifacts/status/compatibility_alias_count_delta.json","artifacts/status/compatibility_shim_count_report.json","artifacts/status/compatibility_alias_count_report.json","artifacts/status/live_compatibility_shims.json","artifacts/status/live_compatibility_aliases.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/compatibility_shim_inventory.json","artifacts/status/compatibility_alias_inventory.json","artifacts/status/hidden_alias_inventory.json","artifacts/status/old_python_path_tolerance_inventory.json","artifacts/status/compatibility_shim_count_delta.json","artifacts/status/compatibility_alias_count_delta.json","artifacts/status/compatibility_shim_count_report.json","artifacts/status/compatibility_alias_count_report.json","artifacts/status/live_compatibility_shims.json","artifacts/status/live_compatibility_aliases.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-METADATA-CONSISTENCY-REPORTS" => {
             let source = fs::read_to_string(
@@ -128,7 +137,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let route_key = |row: &Value| -> String {
                 row.get("segments")
                     .and_then(Value::as_array)
-                    .map(|seg| seg.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(" "))
+                    .map(|seg| {
+                        seg.iter()
+                            .filter_map(Value::as_str)
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    })
                     .unwrap_or_default()
             };
             let inspect_route_set = inspect
@@ -239,9 +253,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &ownership,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/command_metadata_artifact.json","artifacts/status/route_metadata_artifact.json","artifacts/status/metadata_drift_artifact.json","artifacts/status/command_ownership_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/command_metadata_artifact.json","artifacts/status/route_metadata_artifact.json","artifacts/status/metadata_drift_artifact.json","artifacts/status/command_ownership_artifact.json"
+                ]}),
+            )
         }
         _ => None,
     }

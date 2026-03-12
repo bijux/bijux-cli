@@ -23,11 +23,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|entry| {
-                    entry.get("namespace").and_then(Value::as_str).map(ToString::to_string)
+                    entry
+                        .get("namespace")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
                 })
                 .collect::<Vec<_>>();
-            let placeholder_entries =
-                registry.get("placeholder_entries").cloned().unwrap_or_else(|| json!([]));
+            let placeholder_entries = registry
+                .get("placeholder_entries")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/official_product_mount_registry.json",
@@ -88,12 +93,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/official_product_mount_registry.json",
-                "artifacts/status/product_mount_readiness_report.json",
-                "artifacts/status/product_mount_support_report.json",
-                "artifacts/status/product_mount_gap_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/official_product_mount_registry.json",
+                    "artifacts/status/product_mount_readiness_report.json",
+                    "artifacts/status/product_mount_support_report.json",
+                    "artifacts/status/product_mount_gap_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
             let targets =
@@ -110,16 +117,37 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (44, "fuzz_weird_whitespace_handling_is_stable"),
                 (45, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
                 (46, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
-                (47, "fuzz_null_byte_and_control_characters_are_handled_deterministically"),
-                (48, "fuzz_mixed_valid_invalid_content_never_silently_succeeds"),
-                (49, "fuzz_config_export_serialization_roundtrips_for_random_inputs"),
+                (
+                    47,
+                    "fuzz_null_byte_and_control_characters_are_handled_deterministically",
+                ),
+                (
+                    48,
+                    "fuzz_mixed_valid_invalid_content_never_silently_succeeds",
+                ),
+                (
+                    49,
+                    "fuzz_config_export_serialization_roundtrips_for_random_inputs",
+                ),
                 (50, "fuzz_config_load_import_parsing_is_deterministic"),
-                (51, "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable"),
+                (
+                    51,
+                    "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable",
+                ),
                 (52, "fuzz_key_normalization_and_value_validation_are_stable"),
                 (53, "fuzz_key_normalization_and_value_validation_are_stable"),
-                (57, "minimized_config_cases_replay_with_stable_exit_behavior"),
-                (58, "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable"),
-                (59, "fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports"),
+                (
+                    57,
+                    "minimized_config_cases_replay_with_stable_exit_behavior",
+                ),
+                (
+                    58,
+                    "fuzz_roundtrip_parse_serialize_parse_is_semantically_stable",
+                ),
+                (
+                    59,
+                    "fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports",
+                ),
             ]);
             let coverage_rows: Vec<Value> = required
                                 .iter()
@@ -160,7 +188,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .ok()
                 .is_some_and(|s| s.success());
             let targets_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_fuzz_targets::"])
+                .args([
+                    "test",
+                    "-p",
+                    "bijux-cli",
+                    "--test",
+                    "integration",
+                    "config_fuzz_targets::",
+                ])
                 .current_dir(workspace_root)
                 .status()
                 .ok()
@@ -227,12 +262,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_parser_crash_triage_artifact.json",
-                "artifacts/status/config_serializer_crash_triage_artifact.json",
-                "artifacts/status/config_fuzz_regression_artifact.json",
-                "artifacts/status/config_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_parser_crash_triage_artifact.json",
+                    "artifacts/status/config_serializer_crash_triage_artifact.json",
+                    "artifacts/status/config_fuzz_regression_artifact.json",
+                    "artifacts/status/config_fuzz_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS" => {
             let campaign_test = workspace_root
@@ -354,11 +391,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/adversarial_fs_process_matrix.json",
-                "artifacts/status/adversarial_fs_process_artifact.json",
-                "artifacts/status/adversarial_fs_process_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/adversarial_fs_process_matrix.json",
+                    "artifacts/status/adversarial_fs_process_artifact.json",
+                    "artifacts/status/adversarial_fs_process_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS" => {
             let harness_test = workspace_root
@@ -491,11 +530,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_corruption_campaign_artifact.json",
-                "artifacts/status/state_corruption_reproducer_retention_artifact.json",
-                "artifacts/status/state_corruption_harness_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_corruption_campaign_artifact.json",
+                    "artifacts/status/state_corruption_reproducer_retention_artifact.json",
+                    "artifacts/status/state_corruption_harness_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }

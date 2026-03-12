@@ -1,8 +1,8 @@
 //! Status contract inventory registry.
 
+use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::Path;
-use serde_json::{json, Value};
 
 use crate::contracts::maintenance::{generated_at_utc, native_status_contract_rows};
 
@@ -26,7 +26,9 @@ pub fn build_inventory_report(_workspace_root: &Path) -> Value {
     let specs = status_contract_specs();
     let mut kind_counts = BTreeMap::<String, usize>::new();
     for spec in &specs {
-        *kind_counts.entry(spec.kind.as_str().to_string()).or_insert(0) += 1;
+        *kind_counts
+            .entry(spec.kind.as_str().to_string())
+            .or_insert(0) += 1;
     }
 
     json!({

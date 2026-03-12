@@ -94,7 +94,14 @@ mod tests {
 
     #[test]
     fn command_option_value_reads_equals_form() {
-        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id=EVIDENCE-1001-TEST"]);
+        let args = argv(&[
+            "bijux",
+            "dev",
+            "cli",
+            "evidence",
+            "show",
+            "--id=EVIDENCE-1001-TEST",
+        ]);
         assert_eq!(
             command_option_value(&args, "--id").as_deref(),
             Some("EVIDENCE-1001-TEST")
@@ -103,7 +110,15 @@ mod tests {
 
     #[test]
     fn command_option_value_reads_separate_token_form() {
-        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-TEST"]);
+        let args = argv(&[
+            "bijux",
+            "dev",
+            "cli",
+            "evidence",
+            "show",
+            "--id",
+            "EVIDENCE-1001-TEST",
+        ]);
         assert_eq!(
             command_option_value(&args, "--id").as_deref(),
             Some("EVIDENCE-1001-TEST")
@@ -113,14 +128,7 @@ mod tests {
     #[test]
     fn command_option_value_rejects_next_flag_as_value() {
         let args = argv(&[
-            "bijux",
-            "dev",
-            "cli",
-            "evidence",
-            "show",
-            "--id",
-            "--kind",
-            "runtime",
+            "bijux", "dev", "cli", "evidence", "show", "--id", "--kind", "runtime",
         ]);
         assert_eq!(command_option_value(&args, "--id"), None);
     }

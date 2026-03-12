@@ -34,7 +34,9 @@ fn ensure_evidence_first_policy(
         return payload;
     };
 
-    let mut policy = payload_obj.remove("evidence_first_policy").unwrap_or_else(|| json!({}));
+    let mut policy = payload_obj
+        .remove("evidence_first_policy")
+        .unwrap_or_else(|| json!({}));
     if !policy.is_object() {
         policy = json!({});
     }
@@ -65,7 +67,11 @@ fn ensure_evidence_first_policy(
 
 fn truth_rows_from_status(workspace_root: &Path) -> Vec<Value> {
     let status = read_json_if_exists(&workspace_root.join("artifacts/status/status.json"));
-    let rows = status.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
+    let rows = status
+        .get("commands")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     if !rows.is_empty() {
         return rows;
     }
@@ -135,7 +141,9 @@ fn status_summary_counts(workspace_root: &Path, rows: &[Value]) -> (u64, u64, u6
         .and_then(|value| value.get("complete"))
         .and_then(Value::as_u64)
         .unwrap_or_else(|| {
-            synthesize_truth_bucket(rows, "done")["summary"]["count"].as_u64().unwrap_or_default()
+            synthesize_truth_bucket(rows, "done")["summary"]["count"]
+                .as_u64()
+                .unwrap_or_default()
         });
     let missing = summary
         .and_then(|value| value.get("missing"))
@@ -153,7 +161,10 @@ fn status_summary_counts(workspace_root: &Path, rows: &[Value]) -> (u64, u64, u6
                 .as_u64()
                 .unwrap_or_default()
         });
-    let shim = summary.and_then(|value| value.get("shim")).and_then(Value::as_u64).unwrap_or(0);
+    let shim = summary
+        .and_then(|value| value.get("shim"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
     (complete, missing, partial, shim)
 }
 
@@ -161,13 +172,17 @@ fn status_summary_counts(workspace_root: &Path, rows: &[Value]) -> (u64, u64, u6
 #[must_use]
 pub fn build_dashboard_report(workspace_root: &Path) -> Value {
     let status = read_json_if_exists(&workspace_root.join("artifacts/status/status.json"));
-    let parity = read_json_if_exists(&workspace_root.join("artifacts/parity/parity_dashboard.json"));
-    let evidence =
-        read_json_if_exists(&workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json"));
-    let runtime_identity =
-        read_json_if_exists(&workspace_root.join("artifacts/status/install_runtime_identity_report.json"));
-    let package_health =
-        read_json_if_exists(&workspace_root.join("artifacts/status/install_neutrality_report.json"));
+    let parity =
+        read_json_if_exists(&workspace_root.join("artifacts/parity/parity_dashboard.json"));
+    let evidence = read_json_if_exists(
+        &workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json"),
+    );
+    let runtime_identity = read_json_if_exists(
+        &workspace_root.join("artifacts/status/install_runtime_identity_report.json"),
+    );
+    let package_health = read_json_if_exists(
+        &workspace_root.join("artifacts/status/install_neutrality_report.json"),
+    );
     let state_health =
         read_json_if_exists(&workspace_root.join("artifacts/status/state_audit_report.json"));
     let status_state = json_artifact_state(&status).to_string();
@@ -282,7 +297,10 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
     let release = read_json_if_exists(
         &workspace_root.join("artifacts/status/dev_cli_release_gaps_report.json"),
     );
-    let unresolved = release.get("unresolved_gaps").cloned().unwrap_or_else(|| json!([]));
+    let unresolved = release
+        .get("unresolved_gaps")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
     json!({
         "blockers": unresolved,
         "status": release.get("status").cloned().unwrap_or_else(|| json!("blocked")),
@@ -300,7 +318,10 @@ pub fn build_next_report(workspace_root: &Path) -> Value {
             &workspace_root.join("artifacts/status/priority_plan_priorities.json"),
             &workspace_root.join("artifacts/status/priority_plan.json"),
         ]),
-        &["artifacts/status/priority_plan.json", "artifacts/status/priority_plan.txt"],
+        &[
+            "artifacts/status/priority_plan.json",
+            "artifacts/status/priority_plan.txt",
+        ],
         false,
     );
     let minimalism = ensure_evidence_first_policy(
@@ -350,10 +371,18 @@ mod tests {
 
         let report = build_next_report(&root);
         let policy = &report["next"]["minimalism"]["evidence_first_policy"];
-        assert_eq!(policy["manual_curated_priority_lists_allowed"], Value::Bool(false));
-        assert_eq!(policy["roadmap_requires_generated_artifacts"], Value::Bool(true));
+        assert_eq!(
+            policy["manual_curated_priority_lists_allowed"],
+            Value::Bool(false)
+        );
+        assert_eq!(
+            policy["roadmap_requires_generated_artifacts"],
+            Value::Bool(true)
+        );
         assert!(
-            policy["required_artifacts"].as_array().is_some_and(|rows| !rows.is_empty()),
+            policy["required_artifacts"]
+                .as_array()
+                .is_some_and(|rows| !rows.is_empty()),
             "minimalism evidence policy must declare required artifacts"
         );
     }

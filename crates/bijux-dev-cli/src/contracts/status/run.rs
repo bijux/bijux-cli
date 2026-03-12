@@ -17,7 +17,9 @@ fn find_spec(
         return rows.into_iter().find(|spec| spec.contract_id == id);
     }
     if let Some(source) = source_ref {
-        return rows.into_iter().find(|spec| spec.source_ref.as_deref() == Some(source));
+        return rows
+            .into_iter()
+            .find(|spec| spec.source_ref.as_deref() == Some(source));
     }
     None
 }
@@ -137,11 +139,9 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let payload = run_contract(&root, None, None, &["--unexpected".to_string()]);
         assert_eq!(payload["status"], "failed");
-        assert!(
-            payload["error"]
-                .as_str()
-                .is_some_and(|value| value.contains("passthrough arguments"))
-        );
+        assert!(payload["error"]
+            .as_str()
+            .is_some_and(|value| value.contains("passthrough arguments")));
     }
 
     #[test]
@@ -149,10 +149,8 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let payload = run_all_contracts(&root, None, &["--unexpected".to_string()]);
         assert_eq!(payload["failed"], 1);
-        assert!(
-            payload["error"]
-                .as_str()
-                .is_some_and(|value| value.contains("passthrough arguments"))
-        );
+        assert!(payload["error"]
+            .as_str()
+            .is_some_and(|value| value.contains("passthrough arguments")));
     }
 }

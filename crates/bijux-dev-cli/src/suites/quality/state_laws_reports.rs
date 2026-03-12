@@ -13,23 +13,62 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                (342, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (343, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (344, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (345, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (346, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (347, "memory_root_and_list_missing_empty_valid_text_json_yaml"),
-                (348, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (349, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (350, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
-                (351, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (
+                    342,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    343,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    344,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    345,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    346,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    347,
+                    "memory_root_and_list_missing_empty_valid_text_json_yaml",
+                ),
+                (
+                    348,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    349,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    350,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
+                (
+                    351,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
                 (352, "memory_quiet_no_color_and_deterministic_repeated_runs"),
                 (353, "memory_quiet_no_color_and_deterministic_repeated_runs"),
                 (354, "memory_quiet_no_color_and_deterministic_repeated_runs"),
-                (355, "memory_unwritable_storage_conditions_for_read_and_write_paths"),
-                (356, "memory_config_path_override_does_not_change_home_memory_resolution"),
+                (
+                    355,
+                    "memory_unwritable_storage_conditions_for_read_and_write_paths",
+                ),
+                (
+                    356,
+                    "memory_config_path_override_does_not_change_home_memory_resolution",
+                ),
                 (357, "memory_quiet_no_color_and_deterministic_repeated_runs"),
-                (358, "memory_malformed_wrong_type_missing_required_and_extra_fields"),
+                (
+                    358,
+                    "memory_malformed_wrong_type_missing_required_and_extra_fields",
+                ),
                 (359, "memory_root_parity_with_python_summary_command"),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| {
@@ -99,13 +138,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "artifacts/status/memory_python_parity_artifact.json",
                                         ],
                                     })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/memory_command_coverage_report.json",
-                "artifacts/status/memory_command_matrix_artifact.json",
-                "artifacts/status/memory_corruption_matrix_artifact.json",
-                "artifacts/status/memory_python_parity_artifact.json",
-                "artifacts/status/memory_read_domain_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/memory_command_coverage_report.json",
+                    "artifacts/status/memory_command_matrix_artifact.json",
+                    "artifacts/status/memory_corruption_matrix_artifact.json",
+                    "artifacts/status/memory_python_parity_artifact.json",
+                    "artifacts/status/memory_read_domain_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STATE-LAW-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -230,15 +271,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &complexity,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/state_file_inventory.json",
-                "artifacts/status/state_file_readers.json",
-                "artifacts/status/state_file_writers.json",
-                "artifacts/status/state_file_mutation_paths.json",
-                "artifacts/status/state_write_guarantees.json",
-                "artifacts/status/state_recovery_guarantees.json",
-                "artifacts/status/state_complexity_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/state_file_inventory.json",
+                    "artifacts/status/state_file_readers.json",
+                    "artifacts/status/state_file_writers.json",
+                    "artifacts/status/state_file_mutation_paths.json",
+                    "artifacts/status/state_write_guarantees.json",
+                    "artifacts/status/state_recovery_guarantees.json",
+                    "artifacts/status/state_complexity_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
             let source = fs::read_to_string(
@@ -263,7 +306,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     true,
                     true,
                 ),
-                (43, "usage_error_stderr_only", vec!["config", "get"], 2, false, false),
+                (
+                    43,
+                    "usage_error_stderr_only",
+                    vec!["config", "get"],
+                    2,
+                    false,
+                    false,
+                ),
                 (
                     44,
                     "validation_error_stderr_only",
@@ -272,8 +322,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     false,
                     false,
                 ),
-                (45, "plugin_error_stderr_only", vec!["plugins", "uninstall"], 1, false, false),
-                (46, "internal_like_error_stderr_only", vec!["plugins", "enable"], 1, false, false),
+                (
+                    45,
+                    "plugin_error_stderr_only",
+                    vec!["plugins", "uninstall"],
+                    1,
+                    false,
+                    false,
+                ),
+                (
+                    46,
+                    "internal_like_error_stderr_only",
+                    vec!["plugins", "enable"],
+                    1,
+                    false,
+                    false,
+                ),
                 (
                     47,
                     "quiet_mode_suppresses_stdout",
@@ -293,7 +357,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     49,
                     "trace_mode_stream_contract",
-                    vec!["--log-level", "trace", "status", "--format", "json", "--no-pretty"],
+                    vec![
+                        "--log-level",
+                        "trace",
+                        "status",
+                        "--format",
+                        "json",
+                        "--no-pretty",
+                    ],
                     0,
                     true,
                     true,
@@ -322,8 +393,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     true,
                     true,
                 ),
-                (53, "help_no_unrelated_stderr", vec!["help", "status"], 0, true, true),
-                (54, "version_no_unrelated_stderr", vec!["version"], 0, true, true),
+                (
+                    53,
+                    "help_no_unrelated_stderr",
+                    vec!["help", "status"],
+                    0,
+                    true,
+                    true,
+                ),
+                (
+                    54,
+                    "version_no_unrelated_stderr",
+                    vec!["version"],
+                    0,
+                    true,
+                    true,
+                ),
                 (
                     55,
                     "plugin_commands_follow_stream_law",
@@ -335,7 +420,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     56,
                     "state_doctor_follows_stream_law",
-                    vec!["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+                    vec![
+                        "dev",
+                        "cli",
+                        "state-doctor",
+                        "--format",
+                        "json",
+                        "--no-pretty",
+                    ],
                     0,
                     true,
                     true,
@@ -398,22 +490,70 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (41, "successful_machine_readable_commands_keep_stderr_empty"),
-                (42, "text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode"),
-                (43, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (44, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (45, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (46, "usage_validation_plugin_and_internal_failures_route_to_stderr_only"),
-                (47, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
-                (48, "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise"),
-                (49, "trace_mode_preserves_stream_contract_without_corrupting_output_envelope"),
-                (50, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (51, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (52, "pretty_compact_json_and_yaml_all_respect_stream_discipline"),
-                (53, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
-                (54, "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr"),
-                (55, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
-                (56, "plugin_and_state_doctor_commands_obey_builtin_stream_law"),
-                (57, "binary_and_bridge_agree_on_stream_routing_for_success_and_failure"),
+                (
+                    42,
+                    "text_success_commands_do_not_leak_diagnostics_to_stderr_in_normal_mode",
+                ),
+                (
+                    43,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    44,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    45,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    46,
+                    "usage_validation_plugin_and_internal_failures_route_to_stderr_only",
+                ),
+                (
+                    47,
+                    "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise",
+                ),
+                (
+                    48,
+                    "quiet_mode_suppresses_success_stdout_and_nonessential_stderr_noise",
+                ),
+                (
+                    49,
+                    "trace_mode_preserves_stream_contract_without_corrupting_output_envelope",
+                ),
+                (
+                    50,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    51,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    52,
+                    "pretty_compact_json_and_yaml_all_respect_stream_discipline",
+                ),
+                (
+                    53,
+                    "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr",
+                ),
+                (
+                    54,
+                    "help_and_version_fast_paths_do_not_leak_unrelated_diagnostics_to_stderr",
+                ),
+                (
+                    55,
+                    "plugin_and_state_doctor_commands_obey_builtin_stream_law",
+                ),
+                (
+                    56,
+                    "plugin_and_state_doctor_commands_obey_builtin_stream_law",
+                ),
+                (
+                    57,
+                    "binary_and_bridge_agree_on_stream_routing_for_success_and_failure",
+                ),
             ]);
             let coverage_rows = required
                                         .iter()
@@ -460,10 +600,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/stream_discipline_artifact.json",
-                "artifacts/status/stream_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/stream_discipline_artifact.json",
+                    "artifacts/status/stream_drift_artifact.json"
+                ]}),
+            )
         }
         _ => None,
     }

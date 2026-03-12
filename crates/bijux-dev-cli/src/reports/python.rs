@@ -20,7 +20,11 @@ fn fallback_report(payload: Value, source: &str) -> Value {
 }
 
 fn duplication_list(payload: &Value, key: &str) -> Vec<Value> {
-    payload.get(key).and_then(Value::as_array).cloned().unwrap_or_default()
+    payload
+        .get(key)
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn bridge_duplicate_area(payload: &Value, area: &str) -> Vec<Value> {
@@ -44,19 +48,30 @@ fn bridge_duplicate_area(payload: &Value, area: &str) -> Vec<Value> {
 /// `dev cli python bridge-status`
 #[must_use]
 pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
-    let execution_payload =
-        read_json_if_exists(&workspace_root.join("artifacts/status/python_bridge_execution_artifact.json"));
-    let conversion_payload =
-        read_json_if_exists(&workspace_root.join("artifacts/status/bridge_conversion_artifact.json"));
-    let drift_payload =
-        read_json_if_exists(&workspace_root.join("artifacts/status/python_bridge_drift_artifact.json"));
+    let execution_payload = read_json_if_exists(
+        &workspace_root.join("artifacts/status/python_bridge_execution_artifact.json"),
+    );
+    let conversion_payload = read_json_if_exists(
+        &workspace_root.join("artifacts/status/bridge_conversion_artifact.json"),
+    );
+    let drift_payload = read_json_if_exists(
+        &workspace_root.join("artifacts/status/python_bridge_drift_artifact.json"),
+    );
     let execution_state = json_artifact_state(&execution_payload).to_string();
     let conversion_state = json_artifact_state(&conversion_payload).to_string();
     let drift_state = json_artifact_state(&drift_payload).to_string();
-    let execution =
-        fallback_report(execution_payload, "artifacts/status/python_bridge_execution_artifact.json");
-    let conversion = fallback_report(conversion_payload, "artifacts/status/bridge_conversion_artifact.json");
-    let drift = fallback_report(drift_payload, "artifacts/status/python_bridge_drift_artifact.json");
+    let execution = fallback_report(
+        execution_payload,
+        "artifacts/status/python_bridge_execution_artifact.json",
+    );
+    let conversion = fallback_report(
+        conversion_payload,
+        "artifacts/status/bridge_conversion_artifact.json",
+    );
+    let drift = fallback_report(
+        drift_payload,
+        "artifacts/status/python_bridge_drift_artifact.json",
+    );
     json!({
         "bridge_status": {
             "execution": execution,
@@ -75,11 +90,14 @@ pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
 /// `dev cli python surface-status`
 #[must_use]
 pub fn build_surface_status_report(workspace_root: &Path) -> Value {
-    let command_surface_payload =
-        read_json_if_exists(&workspace_root.join("artifacts/status/python_path_command_inventory.json"));
+    let command_surface_payload = read_json_if_exists(
+        &workspace_root.join("artifacts/status/python_path_command_inventory.json"),
+    );
     let command_surface_state = json_artifact_state(&command_surface_payload).to_string();
-    let command_surface =
-        fallback_report(command_surface_payload, "artifacts/status/python_path_command_inventory.json");
+    let command_surface = fallback_report(
+        command_surface_payload,
+        "artifacts/status/python_path_command_inventory.json",
+    );
     json!({
         "surface_status": command_surface,
         "artifact_integrity": {
@@ -164,8 +182,9 @@ pub fn build_sovereignty_audit_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
     let sovereignty = build_sovereignty_audit_report(workspace_root);
-    let duplication_total =
-        sovereignty["python_sovereignty_audit"]["duplication_total"].as_u64().unwrap_or(0);
+    let duplication_total = sovereignty["python_sovereignty_audit"]["duplication_total"]
+        .as_u64()
+        .unwrap_or(0);
     json!({
         "drift": {
             "duplication_total": duplication_total,
@@ -206,7 +225,10 @@ mod tests {
     fn sovereignty_audit_reaches_zero_when_duplication_is_zero() {
         let root = std::env::temp_dir().join(format!(
             "bijux-python-sovereignty-{}",
-            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         fs::write(

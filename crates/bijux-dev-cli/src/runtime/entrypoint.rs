@@ -54,6 +54,68 @@ fn synthetic_dev_cli_argv(argv: &[String]) -> Vec<String> {
     synthetic
 }
 
+fn is_global_flag_without_value(token: &str) -> bool {
+    matches!(
+        token,
+        "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text"
+    )
+}
+
+fn is_global_flag_with_value(token: &str) -> bool {
+    matches!(
+        token,
+        "--format" | "-f" | "--log-level" | "--color" | "--config-path"
+    )
+}
+
+fn is_global_flag_with_equals(token: &str) -> bool {
+    token.starts_with("--format=")
+        || token.starts_with("--log-level=")
+        || token.starts_with("--color=")
+        || token.starts_with("--config-path=")
+}
+
+fn synthetic_dev_cli_parse_argv(argv: &[String]) -> Vec<String> {
+    let mut globals = Vec::new();
+    let mut command_tail = Vec::new();
+
+    let mut idx = 1;
+    while idx < argv.len() {
+        let token = argv[idx].as_str();
+        if token == "--" {
+            command_tail.extend(argv.iter().skip(idx).cloned());
+            break;
+        }
+        if is_global_flag_without_value(token) || is_global_flag_with_equals(token) {
+            globals.push(argv[idx].clone());
+            idx += 1;
+            continue;
+        }
+        if is_global_flag_with_value(token) {
+            globals.push(argv[idx].clone());
+            if let Some(value) = argv.get(idx + 1) {
+                globals.push(value.clone());
+                idx += 2;
+            } else {
+                idx += 1;
+            }
+            continue;
+        }
+
+        command_tail.push(argv[idx].clone());
+        idx += 1;
+    }
+
+    let mut synthetic =
+        Vec::with_capacity(1 + globals.len() + 2 + command_tail.len());
+    synthetic.push("bijux".to_string());
+    synthetic.extend(globals);
+    synthetic.push("dev".to_string());
+    synthetic.push("cli".to_string());
+    synthetic.extend(command_tail);
+    synthetic
+}
+
 fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
     EmitterConfig {
         format: flags.output_format.unwrap_or(OutputFormat::Json),
@@ -94,13 +156,25 @@ fn try_render_clap_result(argv: &[String]) -> Option<AppRunResult> {
                 clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
             ) =>
         {
-            Some(AppRunResult { exit_code: 0, stdout: error.to_string(), stderr: String::new() })
+            Some(AppRunResult {
+                exit_code: 0,
+                stdout: error.to_string(),
+                stderr: String::new(),
+            })
         }
         Err(error) => {
             let _ = error;
             let message = root_help_text();
-            let stderr = if message.ends_with('\n') { message } else { format!("{message}\n") };
-            Some(AppRunResult { exit_code: 2, stdout: String::new(), stderr })
+            let stderr = if message.ends_with('\n') {
+                message
+            } else {
+                format!("{message}\n")
+            };
+            Some(AppRunResult {
+                exit_code: 2,
+                stdout: String::new(),
+                stderr,
+            })
         }
     }
 }
@@ -148,22 +222,33 @@ fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> O
         .and_then(Value::as_str)
         .is_some_and(|status| status == "failed" || status == "error")
     {
-        let exit_code =
-            payload.get("exit_code").and_then(Value::as_i64).filter(|code| *code > 0).unwrap_or(1);
+        let exit_code = payload
+            .get("exit_code")
+            .and_then(Value::as_i64)
+            .filter(|code| *code > 0)
+            .unwrap_or(1);
         return Some(exit_code as i32);
     }
 
-    if payload.get("failed").and_then(Value::as_u64).is_some_and(|count| count > 0) {
+    if payload
+        .get("failed")
+        .and_then(Value::as_u64)
+        .is_some_and(|count| count > 0)
+    {
         return Some(1);
     }
 
-    if payload.get("results").and_then(Value::as_array).is_some_and(|rows| {
-        rows.iter().any(|row| {
-            row.get("status")
-                .and_then(Value::as_str)
-                .is_some_and(|status| status == "failed" || status == "error")
+    if payload
+        .get("results")
+        .and_then(Value::as_array)
+        .is_some_and(|rows| {
+            rows.iter().any(|row| {
+                row.get("status")
+                    .and_then(Value::as_str)
+                    .is_some_and(|status| status == "failed" || status == "error")
+            })
         })
-    }) {
+    {
         return Some(1);
     }
 
@@ -173,12 +258,17 @@ fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> O
 /// Execute `bijux-dev-cli` and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let synthetic_argv = synthetic_dev_cli_argv(argv);
+    let synthetic_parse_argv = synthetic_dev_cli_parse_argv(argv);
 
     if argv.len() == 1 {
         let mut help_argv = synthetic_argv.clone();
         help_argv.push("--help".to_string());
         if let Some(help) = try_render_clap_help(&help_argv) {
-            return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+            return Ok(AppRunResult {
+                exit_code: 0,
+                stdout: help,
+                stderr: String::new(),
+            });
         }
     }
 
@@ -186,14 +276,22 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(result);
     }
 
-    let intent = parse_intent(&synthetic_argv)?;
+    let intent = parse_intent(&synthetic_parse_argv)?;
     if intent.normalized_path.is_empty() {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: root_help_text() });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: root_help_text(),
+        });
     }
 
     let is_unknown = !dev_dispatch::owns_path(&intent.normalized_path);
 
-    let response = route_response(&intent.normalized_path, &synthetic_argv, &intent.global_flags);
+    let response = route_response(
+        &intent.normalized_path,
+        &synthetic_argv,
+        &intent.global_flags,
+    );
     let payload = match response {
         Ok(value) => value,
         Err(error) => {
@@ -238,10 +336,18 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
     let route_exit_code =
@@ -255,7 +361,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: route_exit_code,
+        stdout: content,
+        stderr: String::new(),
+    })
 }
 
 /// Run `bijux-dev-cli` with current process argv.
@@ -279,4 +389,71 @@ pub fn run_cli_from_env() -> ExitCode {
 
     emit_run_result(&result);
     ExitCode::from(result.exit_code as u8)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::synthetic_dev_cli_parse_argv;
+
+    fn argv(items: &[&str]) -> Vec<String> {
+        items.iter().map(|item| (*item).to_string()).collect()
+    }
+
+    #[test]
+    fn parse_argv_lifts_global_flags_before_dev_cli_path() {
+        let input = argv(&[
+            "bijux-dev-cli",
+            "state-audit",
+            "--format",
+            "text",
+            "--config-path",
+            "/tmp/config.env",
+            "--no-pretty",
+        ]);
+        let synthetic = synthetic_dev_cli_parse_argv(&input);
+        assert_eq!(
+            synthetic,
+            argv(&[
+                "bijux",
+                "--format",
+                "text",
+                "--config-path",
+                "/tmp/config.env",
+                "--no-pretty",
+                "dev",
+                "cli",
+                "state-audit",
+            ])
+        );
+    }
+
+    #[test]
+    fn parse_argv_keeps_command_options_in_tail() {
+        let input = argv(&[
+            "bijux-dev-cli",
+            "maintenance",
+            "status",
+            "run",
+            "--id",
+            "STATUS-001",
+            "--",
+            "--native-flag",
+        ]);
+        let synthetic = synthetic_dev_cli_parse_argv(&input);
+        assert_eq!(
+            synthetic,
+            argv(&[
+                "bijux",
+                "dev",
+                "cli",
+                "maintenance",
+                "status",
+                "run",
+                "--id",
+                "STATUS-001",
+                "--",
+                "--native-flag",
+            ])
+        );
+    }
 }

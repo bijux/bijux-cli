@@ -193,9 +193,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_intentional_differences.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":intentional})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_unowned_maintenance.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","maintenance":current_state.get("maintenance_outside_dev_cli").cloned().unwrap_or_else(|| json!([]))})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_maintenance.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/status.json","artifacts/status/status_root_commands.json","artifacts/status/status_cli_subcommands.json","artifacts/status/status_dev_cli_subcommands.json","artifacts/status/status_plugin_commands.json","artifacts/status/status_repl_parity_coverage.json","artifacts/status/status_python_bridge_parity_coverage.json","artifacts/status/status_install_packaging_parity_coverage.json","artifacts/status/status_state_behavior_coverage.json","artifacts/status/status_state_paths_report.json","artifacts/status/status_state_corruption_health_report.json","artifacts/status/status_snapshot_coverage.json","artifacts/status/status_stream_coverage.json","artifacts/status/status_exit_code_coverage.json","artifacts/status/status_failure_path_coverage.json","artifacts/status/status_compatibility_aliases.json","artifacts/status/status_known_parity_gaps.json","artifacts/status/status_intentional_differences.json","artifacts/status/status_unowned_maintenance.json"
+                ]}),
+            )
         }
         _ => None,
     }

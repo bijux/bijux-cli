@@ -4,19 +4,19 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
-            let run_cmd = |args: &[&str],
-                           envs: &[(&str, String)]|
-             -> Result<std::process::Output, String> {
-                let mut cmd = Command::new("cargo");
-                cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-                    .args(args)
-                    .current_dir(workspace_root);
-                for (k, v) in envs {
-                    cmd.env(k, v);
-                }
-                cmd.output()
-                    .map_err(|error| format!("failed to execute cargo run for resilience report: {error}"))
-            };
+            let run_cmd =
+                |args: &[&str], envs: &[(&str, String)]| -> Result<std::process::Output, String> {
+                    let mut cmd = Command::new("cargo");
+                    cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
+                        .args(args)
+                        .current_dir(workspace_root);
+                    for (k, v) in envs {
+                        cmd.env(k, v);
+                    }
+                    cmd.output().map_err(|error| {
+                        format!("failed to execute cargo run for resilience report: {error}")
+                    })
+                };
             let summary_commands: Vec<Vec<&str>> = vec![
                 vec!["dev", "cli", "status"],
                 vec!["dev", "cli", "dashboard"],
@@ -97,7 +97,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     "status_unreadable_input",
                     vec!["dev", "cli", "status"],
-                    vec![("BIJUX_HISTORY_PATH", "/root/forbidden/history.json".to_string())],
+                    vec![(
+                        "BIJUX_HISTORY_PATH",
+                        "/root/forbidden/history.json".to_string(),
+                    )],
                 ),
                 (
                     "parity_corrupted_input",
@@ -135,8 +138,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 args.extend(["--format", "json", "--no-pretty"]);
                 match run_cmd(&args, env) {
                     Ok(out) => {
-                        let payload =
-                            serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| json!({}));
+                        let payload = serde_json::from_slice::<Value>(&out.stdout)
+                            .unwrap_or_else(|_| json!({}));
                         failure_rows.push(json!({
                             "case_id": case_id,
                             "command": command.join(" "),
@@ -192,12 +195,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "scope":"dev cli resilience drift","generator":"bijux-dev-cli","drift_checks":drift_checks,"drift_count":drift_checks.len(),
                                 "status": if drift_checks.is_empty() {"clean"} else {"drift"}
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
-                "artifacts/status/dev_cli_determinism_artifact.json",
-                "artifacts/status/dev_cli_side_effect_audit_artifact.json",
-                "artifacts/status/dev_cli_resilience_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
+                    "artifacts/status/dev_cli_determinism_artifact.json",
+                    "artifacts/status/dev_cli_side_effect_audit_artifact.json",
+                    "artifacts/status/dev_cli_resilience_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT" => {
             let read_json = |name: &str| -> Value {
@@ -214,11 +219,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             if runtime_leakage.get("status").and_then(Value::as_str) != Some("ok") {
                 violations.push("runtime leakage report is not green".to_string());
             }
-            if interface_bridge.get("interfaces").and_then(Value::as_array).is_some_and(|rows| {
-                rows.iter().any(|row| {
-                    row.get("contains_json_assembly").and_then(Value::as_bool) == Some(true)
+            if interface_bridge
+                .get("interfaces")
+                .and_then(Value::as_array)
+                .is_some_and(|rows| {
+                    rows.iter().any(|row| {
+                        row.get("contains_json_assembly").and_then(Value::as_bool) == Some(true)
+                    })
                 })
-            }) {
+            {
                 violations.push("query bridge still assembles presentation json".to_string());
             }
             if dispatch
@@ -340,11 +349,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "Bridge Wrapper-Only Closure Report".to_string(),
                 format!(
                     "status: {}",
-                    payload.get("status").and_then(Value::as_str).unwrap_or("open")
+                    payload
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("open")
                 ),
                 format!(
                     "wrapper-only frozen: {}",
-                    payload.get("wrapper_only_frozen").and_then(Value::as_bool).unwrap_or(false)
+                    payload
+                        .get("wrapper_only_frozen")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false)
                 ),
                 format!("duplicate rule count: {duplicate_count}"),
             ];
@@ -361,10 +376,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 lines.join("\n") + "\n",
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/bridge_wrapper_only_closure_report.json",
-                "artifacts/status/bridge_wrapper_only_closure_report.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/bridge_wrapper_only_closure_report.json",
+                    "artifacts/status/bridge_wrapper_only_closure_report.txt"
+                ]}),
+            )
         }
         _ => None,
     }

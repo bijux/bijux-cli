@@ -58,7 +58,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     81,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
                 ),
-                (82, "config_writer_ordering_and_formatting_rules_are_deterministic"),
+                (
+                    82,
+                    "config_writer_ordering_and_formatting_rules_are_deterministic",
+                ),
                 (
                     83,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
@@ -75,15 +78,42 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     86,
                     "config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs",
                 ),
-                (87, "config_writer_ordering_and_formatting_rules_are_deterministic"),
-                (88, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (89, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (90, "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values"),
-                (91, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (92, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (93, "config_unset_clear_and_repeated_mutations_follow_expected_semantics"),
-                (94, "root_and_cli_config_path_override_behavior_is_identical_for_list"),
-                (95, "config_doctor_and_state_doctor_agree_on_corrupted_config_findings"),
+                (
+                    87,
+                    "config_writer_ordering_and_formatting_rules_are_deterministic",
+                ),
+                (
+                    88,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    89,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    90,
+                    "config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values",
+                ),
+                (
+                    91,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    92,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    93,
+                    "config_unset_clear_and_repeated_mutations_follow_expected_semantics",
+                ),
+                (
+                    94,
+                    "root_and_cli_config_path_override_behavior_is_identical_for_list",
+                ),
+                (
+                    95,
+                    "config_doctor_and_state_doctor_agree_on_corrupted_config_findings",
+                ),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| json!({
                                 "coverage_id": id, "test_name": name,
@@ -144,13 +174,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "drift_items": drift,
                                 "coverage_rows": coverage_rows,
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_semantic_roundtrip_artifact.json",
-                "artifacts/status/config_precedence_artifact.json",
-                "artifacts/status/config_determinism_artifact.json",
-                "artifacts/status/config_corruption_recovery_artifact.json",
-                "artifacts/status/config_deep_behavior_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_semantic_roundtrip_artifact.json",
+                    "artifacts/status/config_precedence_artifact.json",
+                    "artifacts/status/config_determinism_artifact.json",
+                    "artifacts/status/config_corruption_recovery_artifact.json",
+                    "artifacts/status/config_deep_behavior_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
@@ -230,17 +262,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_recovery_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption recovery classification","coverage_ids":[138],"status":"complete","paths":{"stable_failure":["usage/validation failure with unchanged file content"],"self_recovery":["repair input and rerun command to success"],"rollback_preserved":["failed load keeps previous coherent config"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_determinism_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption determinism","coverage_ids":[139],"status":if campaign_ok{"complete"}else{"partial"},"deterministic_failure_class_required":true,"evidence":"crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set"})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_release_blocking_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption release-blocking contract","coverage_ids":(121..141).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"release_blocking":true,"policy":"config corruption campaign coverage and deterministic rollback behavior are required before release"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_corruption_campaign_artifact.json",
-                "artifacts/status/config_corruption_invariants_artifact.json",
-                "artifacts/status/config_corruption_corpus_retention_artifact.json",
-                "artifacts/status/config_corruption_triage_artifact.json",
-                "artifacts/status/config_corruption_regression_artifact.json",
-                "artifacts/status/config_corruption_severity_classification.json",
-                "artifacts/status/config_corruption_recovery_classification.json",
-                "artifacts/status/config_corruption_determinism_artifact.json",
-                "artifacts/status/config_corruption_release_blocking_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/config_corruption_campaign_artifact.json",
+                    "artifacts/status/config_corruption_invariants_artifact.json",
+                    "artifacts/status/config_corruption_corpus_retention_artifact.json",
+                    "artifacts/status/config_corruption_triage_artifact.json",
+                    "artifacts/status/config_corruption_regression_artifact.json",
+                    "artifacts/status/config_corruption_severity_classification.json",
+                    "artifacts/status/config_corruption_recovery_classification.json",
+                    "artifacts/status/config_corruption_determinism_artifact.json",
+                    "artifacts/status/config_corruption_release_blocking_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }
