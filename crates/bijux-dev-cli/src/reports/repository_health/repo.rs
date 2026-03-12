@@ -3,22 +3,9 @@
 use std::fs;
 use std::path::Path;
 
-use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::infra::artifacts::{collect_files_recursive, relative_to_root};
-
-#[derive(Debug, Default, Deserialize)]
-struct AutomationAllowlists {
-    #[serde(default)]
-    maintenance_additions: PathAllowlist,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct PathAllowlist {
-    #[serde(default)]
-    paths: Vec<String>,
-}
 
 fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     let status = root.join("artifacts/status");
@@ -28,14 +15,19 @@ fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     collect_files_recursive(&status)
         .into_iter()
         .filter(|path| {
-            path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "tmp")
-                || path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
-                    name.contains("stale")
-                        || Path::new(name)
-                            .extension()
-                            .and_then(|ext| ext.to_str())
-                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                })
+            path.extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| ext == "tmp")
+                || path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| {
+                        name.contains("stale")
+                            || Path::new(name)
+                                .extension()
+                                .and_then(|ext| ext.to_str())
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                    })
         })
         .map(|path| relative_to_root(&path, root))
         .collect()
@@ -47,13 +39,16 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
         .filter(|path| {
             let rel_path = relative_to_root(path, root);
             rel_path.contains("/tests/data/golden/cli_surface/")
-                && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
-                    name.contains(".old.")
-                        || Path::new(name)
-                            .extension()
-                            .and_then(|ext| ext.to_str())
-                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                })
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| {
+                        name.contains(".old.")
+                            || Path::new(name)
+                                .extension()
+                                .and_then(|ext| ext.to_str())
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                    })
         })
         .map(|path| relative_to_root(&path, root))
         .collect()
@@ -75,18 +70,19 @@ fn stale_inventories(root: &Path) -> Vec<String> {
         .collect()
 }
 
-fn maintenance_allowlist_paths(root: &Path) -> Vec<String> {
-    let allowlist = root.join("configs/allowlists/automation.toml");
-    let content = fs::read_to_string(&allowlist).unwrap_or_default();
-    toml::from_str::<AutomationAllowlists>(&content).unwrap_or_default().maintenance_additions.paths
-}
-
 fn dead_maintenance_references(root: &Path) -> Vec<String> {
-    maintenance_allowlist_paths(root)
-        .into_iter()
-        .filter(|line| line.starts_with("maintenance/") && !line.is_empty())
-        .filter(|entry| !root.join(entry).exists())
-        .collect()
+    [
+        "configs/allowlists",
+        "configs/allowlists/automation.toml",
+        "configs/allowlists/public_api.toml",
+        ".github/maintenance_additions_allowlist.txt",
+        ".github/root_maintenance_additions_allowlist.txt",
+        ".github/public_api_allowlist.txt",
+    ]
+    .into_iter()
+    .filter(|entry| root.join(entry).exists())
+    .map(ToString::to_string)
+    .collect()
 }
 
 fn dead_docs_references(root: &Path) -> Vec<String> {
@@ -101,7 +97,9 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
             let text = fs::read_to_string(&path).ok()?;
             for token in text.split_whitespace() {
                 if token.starts_with("docs/")
-                    && !root.join(token.trim_matches(|c| c == ')' || c == '(')).exists()
+                    && !root
+                        .join(token.trim_matches(|c| c == ')' || c == '('))
+                        .exists()
                 {
                     return Some(format!("{} -> {}", relative_to_root(&path, root), token));
                 }
@@ -149,7 +147,10 @@ pub fn build_generated_report(workspace_root: &Path) -> Value {
             .into_iter()
             .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
             .filter(|path| {
-                let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
+                let name = path
+                    .file_name()
+                    .and_then(|v| v.to_str())
+                    .unwrap_or_default();
                 name.starts_with("orphan_")
             })
             .map(|path| relative_to_root(&path, workspace_root))
@@ -206,12 +207,14 @@ pub fn build_health_report(workspace_root: &Path) -> Value {
     let inventories = build_inventories_report(workspace_root);
     let stale = build_stale_report(workspace_root);
     let drift = build_drift_report(workspace_root);
-    let stale_crate_api_docs =
-        if workspace_root.join("artifacts/status/stale_crate_api_docs.json").exists() {
-            json!(["artifacts/status/stale_crate_api_docs.json"])
-        } else {
-            json!([])
-        };
+    let stale_crate_api_docs = if workspace_root
+        .join("artifacts/status/stale_crate_api_docs.json")
+        .exists()
+    {
+        json!(["artifacts/status/stale_crate_api_docs.json"])
+    } else {
+        json!([])
+    };
     json!({
         "repo_health": {
             "generated": generated,
@@ -234,7 +237,10 @@ mod tests {
     fn temp_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
             "bijux-repo-health-{name}-{}",
-            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         root
@@ -254,25 +260,34 @@ mod tests {
     #[test]
     fn repo_health_detects_orphan_generated_outputs() {
         let root = temp_root("orphan");
-        fs::write(root.join("artifacts/status/orphan_generated_output.json"), "{}").expect("write");
+        fs::write(
+            root.join("artifacts/status/orphan_generated_output.json"),
+            "{}",
+        )
+        .expect("write");
         let generated = build_generated_report(&root);
-        let orphan = generated["orphan_generated_outputs"].as_array().expect("orphan");
+        let orphan = generated["orphan_generated_outputs"]
+            .as_array()
+            .expect("orphan");
         assert!(!orphan.is_empty());
     }
 
     #[test]
-    fn repo_drift_reads_maintenance_allowlist_from_configs_toml() {
-        let root = temp_root("allowlist");
+    fn repo_drift_flags_forbidden_legacy_exception_paths() {
+        let root = temp_root("forbidden-legacy-files");
         fs::create_dir_all(root.join("configs/allowlists")).expect("mkdir allowlists");
         fs::write(
             root.join("configs/allowlists/automation.toml"),
-            "version = 1\n[maintenance_additions]\npaths = [\"maintenance/missing_target\"]\n",
+            "version = 1\n",
         )
         .expect("write allowlist");
 
         let drift = build_drift_report(&root);
-        let dead = drift["dead_maintenance_references"].as_array().expect("dead refs");
-        assert_eq!(dead.len(), 1);
-        assert_eq!(dead[0], "maintenance/missing_target");
+        let dead = drift["dead_maintenance_references"]
+            .as_array()
+            .expect("dead refs");
+        assert_eq!(dead.len(), 2);
+        assert_eq!(dead[0], "configs/allowlists");
+        assert_eq!(dead[1], "configs/allowlists/automation.toml");
     }
 }

@@ -39,7 +39,10 @@ fn crate_src_path_depth_is_bounded() {
     let crates_root = workspace_root.join("crates");
 
     let mut violations = Vec::<String>::new();
-    for crate_entry in fs::read_dir(&crates_root).expect("missing crates directory").flatten() {
+    for crate_entry in fs::read_dir(&crates_root)
+        .expect("missing crates directory")
+        .flatten()
+    {
         let crate_path = crate_entry.path();
         if !crate_path.is_dir() {
             continue;
@@ -62,7 +65,11 @@ fn crate_src_path_depth_is_bounded() {
     }
 
     violations.sort();
-    assert!(violations.is_empty(), "src depth violations:\n{}", violations.join("\n"));
+    assert!(
+        violations.is_empty(),
+        "src depth violations:\n{}",
+        violations.join("\n")
+    );
 }
 
 #[test]
@@ -85,7 +92,11 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
             continue;
         }
         let text = fs::read_to_string(&file).unwrap_or_default();
-        assert!(!text.contains("scripts"), "legacy token found in {}", file.display());
+        assert!(
+            !text.contains("scripts"),
+            "legacy token found in {}",
+            file.display()
+        );
         assert!(
             !text.contains("packages/bijux-cli-py"),
             "legacy token found in {}",
@@ -95,23 +106,24 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
 }
 
 #[test]
-fn allowlists_are_centralized_under_configs_as_toml() {
+fn legacy_exception_artifacts_are_absent() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = crate_root.join("..").join("..");
 
-    let automation_allowlist = workspace_root.join("configs/allowlists/automation.toml");
-    let public_api_allowlist = workspace_root.join("configs/allowlists/public_api.toml");
-
-    assert!(automation_allowlist.exists());
-    assert!(public_api_allowlist.exists());
-
-    let automation_text = fs::read_to_string(&automation_allowlist).expect("read automation");
-    let public_api_text = fs::read_to_string(&public_api_allowlist).expect("read public api");
-
-    toml::from_str::<toml::Value>(&automation_text).expect("automation allowlist must be toml");
-    toml::from_str::<toml::Value>(&public_api_text).expect("public api allowlist must be toml");
-
-    assert!(!workspace_root.join(".github/maintenance_additions_allowlist.txt").exists());
-    assert!(!workspace_root.join(".github/root_maintenance_additions_allowlist.txt").exists());
-    assert!(!workspace_root.join(".github/public_api_allowlist.txt").exists());
+    assert!(!workspace_root.join("configs/allowlists").exists());
+    assert!(!workspace_root
+        .join("configs/allowlists/automation.toml")
+        .exists());
+    assert!(!workspace_root
+        .join("configs/allowlists/public_api.toml")
+        .exists());
+    assert!(!workspace_root
+        .join(".github/maintenance_additions_allowlist.txt")
+        .exists());
+    assert!(!workspace_root
+        .join(".github/root_maintenance_additions_allowlist.txt")
+        .exists());
+    assert!(!workspace_root
+        .join(".github/public_api_allowlist.txt")
+        .exists());
 }
