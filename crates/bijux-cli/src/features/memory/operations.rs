@@ -31,6 +31,9 @@ pub(crate) fn set_memory_pair(memory_file: &Path, pair: &str) -> Result<Value> {
 
     let normalized_key = key.trim();
     let normalized_value = value.trim();
+    if normalized_key.is_empty() {
+        return Err(anyhow!("Invalid argument: KEY cannot be empty"));
+    }
     let mut memory = read_memory_map(memory_file)?;
     memory.insert(normalized_key.to_string(), Value::String(normalized_value.to_string()));
     write_memory_map(memory_file, &memory)?;

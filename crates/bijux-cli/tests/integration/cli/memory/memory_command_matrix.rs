@@ -132,6 +132,30 @@ fn memory_malformed_wrong_type_missing_required_and_extra_fields() {
 }
 
 #[test]
+fn memory_set_rejects_empty_keys() {
+    let root = temp_dir("empty-key");
+    let home = root.join("home");
+    fs::create_dir_all(home.join(".bijux")).expect("mkdir");
+
+    let out = run_with_env(
+        &["memory", "set", "=abc", "--format", "json", "--no-pretty"],
+        &[("HOME", home.to_str().expect("utf-8"))],
+    );
+    assert_eq!(out.status.code(), Some(2));
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+
+    let memory_file = home.join(".bijux").join(".memory.json");
+    if memory_file.exists() {
+        let payload = fs::read_to_string(&memory_file).expect("read memory file");
+        assert!(
+            !payload.contains("\"\""),
+            "empty key must never be persisted in memory state"
+        );
+    }
+}
+
+#[test]
 fn memory_quiet_no_color_and_deterministic_repeated_runs() {
     let root = temp_dir("rendering-determinism");
     let home = root.join("home");
