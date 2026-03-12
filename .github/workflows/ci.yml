@@ -1899,7 +1899,7 @@ jobs:
           set -euo pipefail
           mkdir -p _smoke/cargo
           cargo install --path crates/bijux-cli-bin --root _smoke/cargo --force
-          _smoke/cargo/bin/bijux-rs version
+          _smoke/cargo/bin/bijux version
 
       - name: Pip install smoke
         if: ${{ matrix.channel == 'pip' }}

@@ -17,11 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
 - Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
 
-### Deprecated
-- `bijux-rs` binary alias is deprecated; `bijux` is now canonical across tests, docs, and scripts.
-- The `bijux-rs` alias will be removed in `0.3.0` after one release cycle of compatibility.
-
 ### Removed
+- Removed the legacy compatibility binary alias; `bijux` is now the only runtime executable name.
 - Removed legacy tox-based execution paths from Python automation and CI.
 - Removed root OpenAPI surface and Node manifest files from the repository root.
 - Removed legacy duplicate Python distribution/test roots; canonical packaging now lives under `crates/bijux-cli-python`.

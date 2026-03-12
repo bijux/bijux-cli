@@ -18,7 +18,6 @@ for the Rust runtime.
 
 - Maintainer control-plane report assembly and maintainer workflow orchestration.
   Those live in `bijux-dev-cli` and are invoked through external binary delegation.
-- A temporary compatibility alias. `bijux-rs` remains a thin process entrypoint during deprecation.
 
 ## Module Map
 
