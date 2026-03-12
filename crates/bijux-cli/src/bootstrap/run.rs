@@ -8,6 +8,16 @@ use crate::bootstrap::wiring::{decode_os_argv, emit_run_result};
 use crate::interface::cli::dispatch::run_app;
 use crate::kernel::map_error_category_to_exit;
 
+fn normalize_process_exit_code(code: i32) -> u8 {
+    if code <= 0 {
+        return if code == 0 { 0 } else { 1 };
+    }
+    if code > i32::from(u8::MAX) {
+        return u8::MAX;
+    }
+    code as u8
+}
+
 /// Execute the CLI process using current OS argv.
 #[must_use]
 pub fn run_cli_from_env() -> ExitCode {
@@ -28,5 +38,18 @@ pub fn run_cli_from_env() -> ExitCode {
     };
 
     emit_run_result(&result);
-    ExitCode::from(result.exit_code as u8)
+    ExitCode::from(normalize_process_exit_code(result.exit_code))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_process_exit_code;
+
+    #[test]
+    fn normalize_exit_code_clamps_negative_and_large_values() {
+        assert_eq!(normalize_process_exit_code(0), 0);
+        assert_eq!(normalize_process_exit_code(2), 2);
+        assert_eq!(normalize_process_exit_code(-1), 1);
+        assert_eq!(normalize_process_exit_code(300), u8::MAX);
+    }
 }
