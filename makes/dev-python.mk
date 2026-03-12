@@ -53,7 +53,7 @@ RUST_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:spac
 PY_VERSION := $(if $(strip $(PY_VERSION_RAW)),$(strip $(PY_VERSION_RAW)),0.0.0)
 RUST_VERSION := $(if $(strip $(RUST_VERSION_RAW)),$(strip $(RUST_VERSION_RAW)),0.0.0)
 
-.PHONY: python-env-py lint-py test-py security-py build-py publish-py lint test security build publish
+.PHONY: python-env-py fmt-py lint-py test-py security-py build-py publish-py lint test security build publish
 
 python-env-py:
 	@set -euo pipefail; \
@@ -98,11 +98,14 @@ python-env-py:
 	fi
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
 
-lint-py: python-env-py
+fmt-py: python-env-py
 	@echo "→ Ruff format"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
+	@rm -rf .ruff_cache .benchmark .benchmarks || true
+
+lint-py: fmt-py
 	@echo "→ Ruff lint"
 	@$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"

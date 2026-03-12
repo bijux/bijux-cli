@@ -56,7 +56,13 @@ bootstrap: $(VENV) ## Setup environment
 clean: ## Remove virtualenv, caches, build, and artifacts
 	@$(MAKE) clean-soft
 	@echo "→ Cleaning ($(VENV)) ..."
-	@$(RM) $(VENV)
+	@if [ -d "$(VENV)" ]; then \
+	  $(RM) "$(VENV)" || { \
+	    echo "→ Retrying venv cleanup ($(VENV)) ..."; \
+	    sleep 1; \
+	    $(RM) "$(VENV)"; \
+	  }; \
+	fi
 	@$(RM) .venv .venv*/
 
 clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
@@ -77,8 +83,15 @@ clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
 all: clean install test lint security docs build ## Run full pipeline (clean → build)
 	@echo "✔ All targets completed"
 
+fmt: fmt-rs fmt-py ## Run Rust and Python formatters
+lint: lint-rs lint-py ## Run Rust and Python lint checks
+test: test-rs test-py ## Run Rust and Python test suites
+security: audit-rs security-py ## Run Rust and Python security checks
+build: build-py ## Build Python distribution artifacts
+.PHONY: fmt
+
 # Run independent checks in parallel
-lint test security docs build: | bootstrap
+fmt lint test security docs build: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status: ## Show maintainer status report via bijux dev cli

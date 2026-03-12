@@ -48,8 +48,11 @@ Rust:
 
 Other:
 
-- `make all` runs: `clean -> install -> test -> lint -> security -> docs -> build`
-- `make test`, `make lint`, `make security`, and `make build` map to Python targets
+- `make fmt` runs `fmt-rs` and `fmt-py`
+- `make lint` runs `lint-rs` and `lint-py`
+- `make test` runs `test-rs` and `test-py`
+- `make security` runs `audit-rs` and `security-py`
+- `make build` runs `build-py`
 
 Direct pytest invocation (without Make):
 
@@ -92,4 +95,3 @@ Examples:
 
 - `fix(cli): normalize --version behavior`
 - `docs(changelog): clarify unreleased notes`
-
