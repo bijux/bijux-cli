@@ -113,7 +113,7 @@ fn root_help_lists_commands_in_stable_order() {
     assert_eq!(b.status.code(), Some(0));
     assert_eq!(a.stdout, b.stdout);
     let commands = parse_help_commands(&String::from_utf8(a.stdout).expect("utf-8"));
-    assert!(commands.starts_with(&["cli".into(), "dev".into(), "status".into()]));
+    assert!(commands.starts_with(&["cli".into(), "status".into(), "audit".into()]));
 }
 
 #[test]
@@ -217,12 +217,12 @@ fn hidden_aliases_do_not_appear_as_canonical_help_entries() {
 
     let dev_help = run(&["dev", "--help"]);
     assert_eq!(dev_help.status.code(), Some(0));
-    let dev_commands = parse_help_commands(&String::from_utf8(dev_help.stdout).expect("utf-8"));
+    let dev_help_text = String::from_utf8(dev_help.stdout).expect("utf-8");
 
-    assert!(root_commands.contains(&"dev".to_string()));
-    assert!(dev_commands.contains(&"cli".to_string()));
-    assert!(!dev_commands.contains(&"doctor".to_string()));
-    assert!(!dev_commands.contains(&"routes".to_string()));
+    assert!(!root_commands.contains(&"dev".to_string()));
+    assert!(!root_commands.contains(&"inspect".to_string()));
+    assert!(dev_help_text.contains("Usage:"));
+    assert!(dev_help_text.contains("dev cli"));
 }
 
 #[test]
@@ -257,7 +257,7 @@ fn inspect_metadata_agrees_with_help_names_and_command_tree_export() {
         .collect();
 
     assert_eq!(inspect_roots, route_roots);
-    for name in ["cli", "dev", "status", "config", "plugins", "history", "memory"] {
+    for name in ["cli", "status", "config", "plugins", "history", "memory"] {
         assert!(help_commands.contains(name));
         assert!(inspect_roots.contains(name));
     }
