@@ -106,150 +106,6 @@
     },
     {
       "alias": [
-        "dev",
-        "docs-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "docs-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "doctor"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "doctor"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "inventory"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "inventory"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "list-plugins"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "list-plugins"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "package-health"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "package-health"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "parity"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "parity"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "plugin-health"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "plugin-health"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "route-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "route-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "runtime-identity"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "runtime-identity"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "state-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "state-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "state-doctor"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "state-doctor"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "status"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "status"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
         "doctor"
       ],
       "canonical": [
@@ -456,11 +312,6 @@
     }
   ],
   "builtins": [
-    {
-      "segments": [
-        "atlas"
-      ]
-    },
     {
       "segments": [
         "audit"
@@ -677,11 +528,6 @@
       "segments": [
         "config",
         "list"
-      ]
-    },
-    {
-      "segments": [
-        "dev"
       ]
     },
     {
@@ -917,13 +763,6 @@
     {
       "owner": "bijux-cli",
       "segments": [
-        "atlas"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
         "audit"
       ],
       "source": "built-in"
@@ -1202,13 +1041,6 @@
       "segments": [
         "config",
         "list"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
-        "dev"
       ],
       "source": "built-in"
     },
