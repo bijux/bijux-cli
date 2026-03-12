@@ -280,3 +280,95 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     assert!(traced.stderr.is_empty());
     assert_eq!(base.stdout, traced.stdout);
 }
+
+#[test]
+fn root_config_subcommands_match_cli_config_subcommands() {
+    let temp = make_temp_dir("root-cli-subcommand-aliases");
+    let config_path = temp.join("config.env");
+    let path = config_path.to_str().expect("utf-8");
+
+    let root_set = run(&[
+        "config",
+        "set",
+        "alpha=1",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
+    let root_set_json: Value = assert_success_json(&root_set, "root config set");
+    assert_eq!(root_set_json["status"], "updated");
+
+    let root_get = run(&[
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
+    let root_get_json: Value = assert_success_json(&root_get, "root config get");
+    assert_eq!(root_get_json["value"], "1");
+
+    let cli_get = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
+    let cli_get_json: Value = assert_success_json(&cli_get, "cli config get");
+    assert_eq!(root_get_json, cli_get_json);
+
+    let root_export_path = temp.join("root-export.env");
+    let root_export = run(&[
+        "config",
+        "export",
+        root_export_path.to_str().expect("utf-8"),
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
+    let root_export_json: Value = assert_success_json(&root_export, "root config export");
+    assert_eq!(root_export_json["status"], "exported");
+    assert!(root_export_path.exists(), "root export should write target file");
+}
+
+#[test]
+fn cli_config_namespace_without_leaf_defaults_to_listing() {
+    let temp = make_temp_dir("cli-config-listing");
+    let config_path = temp.join("config.env");
+    fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("seed config");
+    let path = config_path.to_str().expect("utf-8");
+
+    let root = run(&["config", "--format", "json", "--no-pretty", "--config-path", path]);
+    let cli = run(&[
+        "cli",
+        "config",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
+
+    let root_json: Value = assert_success_json(&root, "root config listing");
+    let cli_json: Value = assert_success_json(&cli, "cli config listing");
+    assert_eq!(root_json, cli_json);
+}
+
+fn assert_success_json(out: &Output, context: &str) -> Value {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
+    serde_json::from_slice(&out.stdout).expect("json payload")
+}

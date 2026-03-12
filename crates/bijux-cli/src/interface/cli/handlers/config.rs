@@ -15,23 +15,32 @@ pub(crate) fn execute_config_command(
     argv: &[String],
     config_file: &Path,
 ) -> Result<Option<Value>> {
+    let get_tokens = config_command_tokens(argv, &["get"]);
+    let set_tokens = config_command_tokens(argv, &["set"]);
+    let unset_tokens = config_command_tokens(argv, &["unset"]);
+    let clear_tokens = config_command_tokens(argv, &["clear"]);
+    let reload_tokens = config_command_tokens(argv, &["reload"]);
+    let export_tokens = config_command_tokens(argv, &["export"]);
+    let load_tokens = config_command_tokens(argv, &["load"]);
+
     let result = match normalized_path {
         [a] if a == "config" => Some(config_operations::list_entries(config_file)?),
         [a, b] if a == "config" && b == "list" => {
             Some(config_operations::list_entries(config_file)?)
         }
+        [a, b] if a == "cli" && b == "config" => Some(config_operations::list_entries(config_file)?),
         [a, b, c] if a == "cli" && b == "config" && c == "list" => {
             Some(config_operations::list_entries(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
-            let positional = command_positionals(argv, &["cli", "config", "get"]);
+            let positional = command_positionals(argv, get_tokens);
             let raw_key = positional
                 .first()
                 .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::get_value(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
-            let positional = command_positionals(argv, &["cli", "config", "set"]);
+            let positional = command_positionals(argv, set_tokens);
             let raw_pair = positional
                 .first()
                 .cloned()
@@ -41,22 +50,22 @@ pub(crate) fn execute_config_command(
             Some(config_operations::set_pair(config_file, &raw_pair)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "unset" => {
-            let positional = command_positionals(argv, &["cli", "config", "unset"]);
+            let positional = command_positionals(argv, unset_tokens);
             let raw_key = positional
                 .first()
                 .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::unset_key(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "clear" => {
-            let _ = command_positionals(argv, &["cli", "config", "clear"]);
+            let _ = command_positionals(argv, clear_tokens);
             Some(config_operations::clear_all(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "reload" => {
-            let _ = command_positionals(argv, &["cli", "config", "reload"]);
+            let _ = command_positionals(argv, reload_tokens);
             Some(config_operations::reload(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "export" => {
-            let positional = command_positionals(argv, &["cli", "config", "export"]);
+            let positional = command_positionals(argv, export_tokens);
             let raw_path = positional
                 .first()
                 .ok_or_else(|| anyhow!("Missing parameter: path"))?;
@@ -64,7 +73,7 @@ pub(crate) fn execute_config_command(
             Some(config_operations::export_to(config_file, &target_path)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "load" => {
-            let positional = command_positionals(argv, &["cli", "config", "load"]);
+            let positional = command_positionals(argv, load_tokens);
             let raw_path = positional
                 .first()
                 .ok_or_else(|| anyhow!("Missing parameter: path"))?;
@@ -75,6 +84,34 @@ pub(crate) fn execute_config_command(
     };
 
     Ok(result)
+}
+
+fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a str] {
+    if argv.get(1).is_some_and(|segment| segment == "config") {
+        match suffix {
+            ["list"] => &["config", "list"],
+            ["get"] => &["config", "get"],
+            ["set"] => &["config", "set"],
+            ["unset"] => &["config", "unset"],
+            ["clear"] => &["config", "clear"],
+            ["reload"] => &["config", "reload"],
+            ["export"] => &["config", "export"],
+            ["load"] => &["config", "load"],
+            _ => &["config"],
+        }
+    } else {
+        match suffix {
+            ["list"] => &["cli", "config", "list"],
+            ["get"] => &["cli", "config", "get"],
+            ["set"] => &["cli", "config", "set"],
+            ["unset"] => &["cli", "config", "unset"],
+            ["clear"] => &["cli", "config", "clear"],
+            ["reload"] => &["cli", "config", "reload"],
+            ["export"] => &["cli", "config", "export"],
+            ["load"] => &["cli", "config", "load"],
+            _ => &["cli", "config"],
+        }
+    }
 }
 
 fn read_pair_from_stdin_fallback() -> Option<String> {
