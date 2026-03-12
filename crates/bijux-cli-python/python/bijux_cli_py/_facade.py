@@ -20,9 +20,30 @@ from ._exceptions import (
     ValidationError,
 )
 
-_STRICT_NATIVE_IMPORT = os.environ.get("BIJUX_PY_STRICT_IMPORT") == "1"
+
+def _strict_native_import_enabled() -> bool:
+    configured = os.environ.get("BIJUX_PY_STRICT_IMPORT")
+    if configured is not None:
+        return configured.strip().lower() not in {
+            "",
+            "0",
+            "false",
+            "no",
+            "off",
+        }
+    if os.environ.get("CI"):
+        return True
+    return os.environ.get("BIJUX_ENV", "").strip().lower() in {"dev", "test", "ci"}
+
+
+_STRICT_NATIVE_IMPORT = _strict_native_import_enabled()
 _NATIVE_IMPORT_ERROR: Exception | None = None
 _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS = 60
+_COMPAT_CONFIG_ENV_KEYS = {
+    "BIJUXCLI_CONFIG",
+    "BIJUXCLI_HISTORY_FILE",
+    "BIJUXCLI_PLUGINS_DIR",
+}
 
 try:
     from . import _native as native
@@ -234,27 +255,54 @@ def error_to_exception(payload: dict[str, object]) -> BijuxPythonError:
 
 def config_resolution_helpers(home_dir: str) -> dict[str, str]:
     if NATIVE_AVAILABLE:
-        payload = json.loads(native.install_paths(home_dir))
+        if not hasattr(native, "config_resolution"):
+            raise NativeExtensionUnavailable(
+                "Rust extension missing `config_resolution`; reinstall bijux-cli to restore runtime parity."
+            )
+        try:
+            payload = json.loads(native.config_resolution(home_dir))
+        except json.JSONDecodeError as exc:
+            raise InternalError(
+                f"invalid native config resolution payload: {exc}"
+            ) from exc
+        except RuntimeError as exc:
+            raise InternalError(f"native config resolution failed: {exc}") from exc
         return {
             "config_file": str(payload.get("config_file", "")),
             "history_file": str(payload.get("history_file", "")),
             "plugins_dir": str(payload.get("plugins_dir", "")),
         }
-    base = Path(home_dir) / ".bijux"
-    return {
-        "config_file": str(base / ".env"),
-        "history_file": str(base / ".history"),
-        "plugins_dir": str(base / ".plugins"),
-    }
+    try:
+        return _resolve_config_paths_without_native(home_dir)
+    except OSError as exc:
+        raise InternalError(f"failed to resolve config paths: {exc}") from exc
 
 
 def plugin_registry_inspection(registry_file: str) -> dict[str, object]:
     if NATIVE_AVAILABLE:
-        return json.loads(native.plugin_registry_inspection(registry_file))
+        try:
+            payload = json.loads(native.plugin_registry_inspection(registry_file))
+        except json.JSONDecodeError as exc:
+            raise InternalError(
+                f"invalid plugin registry payload from native bridge: {exc}"
+            ) from exc
+        except RuntimeError as exc:
+            raise InternalError(f"native plugin registry inspection failed: {exc}") from exc
+        if not isinstance(payload, dict):
+            raise InternalError("plugin registry payload must be a JSON object")
+        return payload
     path = Path(registry_file)
     if not path.exists():
         return {"version": "1", "plugins": {}}
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise InternalError(f"failed to read plugin registry: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise InternalError(f"invalid plugin registry json: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise InternalError("plugin registry payload must be a JSON object")
+    return payload
 
 
 def install_path_helpers(home_dir: str) -> dict[str, str]:
@@ -368,3 +416,73 @@ def _validate_binary_candidate(candidate: str, source: str) -> str:
             f"{source} binary is not executable: {candidate_path}"
         )
     return str(candidate_path)
+
+
+def _resolve_config_paths_without_native(home_dir: str) -> dict[str, str]:
+    home = Path(home_dir).expanduser()
+    base = home / ".bijux"
+    defaults = {
+        "config_file": base / ".env",
+        "history_file": base / ".history",
+        "plugins_dir": base / ".plugins",
+    }
+    config_overrides = _load_compatibility_overrides(defaults["config_file"])
+
+    return {
+        "config_file": str(
+            _select_compatibility_path(
+                "BIJUXCLI_CONFIG",
+                config_overrides.get("BIJUXCLI_CONFIG"),
+                defaults["config_file"],
+                home,
+            )
+        ),
+        "history_file": str(
+            _select_compatibility_path(
+                "BIJUXCLI_HISTORY_FILE",
+                config_overrides.get("BIJUXCLI_HISTORY_FILE"),
+                defaults["history_file"],
+                home,
+            )
+        ),
+        "plugins_dir": str(
+            _select_compatibility_path(
+                "BIJUXCLI_PLUGINS_DIR",
+                config_overrides.get("BIJUXCLI_PLUGINS_DIR"),
+                defaults["plugins_dir"],
+                home,
+            )
+        ),
+    }
+
+
+def _load_compatibility_overrides(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    parsed: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            return {}
+        key, value = line.split("=", 1)
+        normalized_key = key.strip()
+        if normalized_key not in _COMPAT_CONFIG_ENV_KEYS:
+            return {}
+        parsed[normalized_key] = value.strip()
+    return parsed
+
+
+def _select_compatibility_path(
+    env_key: str, config_value: str | None, default_value: Path, home_dir: Path
+) -> Path:
+    candidate = os.environ.get(env_key) or config_value or str(default_value)
+    return _normalize_compatibility_path(Path(candidate).expanduser(), home_dir)
+
+
+def _normalize_compatibility_path(path: Path, home_dir: Path) -> Path:
+    if path.is_absolute():
+        return path
+    return home_dir / path

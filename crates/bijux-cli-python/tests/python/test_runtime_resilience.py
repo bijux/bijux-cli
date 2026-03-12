@@ -7,7 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from bijux_cli_py import migration_warnings, post_install_diagnostics
+from bijux_cli_py import (
+    config_resolution_helpers,
+    migration_warnings,
+    plugin_registry_inspection,
+    post_install_diagnostics,
+)
 from bijux_cli_py._exceptions import NativeExtensionUnavailable, PlatformWheelUnavailable
 from bijux_cli_py._facade import (
     ensure_native_extension,
@@ -116,6 +121,53 @@ def test_bijux_bin_override_must_point_to_executable(
         _ = execution_facade_with_status(["version"])
 
 
+def test_plugin_registry_invalid_json_maps_to_internal_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    class _NativeStub:
+        @staticmethod
+        def plugin_registry_inspection(_registry_file: str) -> str:
+            return "{broken-json"
+
+    monkeypatch.setattr(facade, "native", _NativeStub)
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", True)
+
+    with pytest.raises(InternalError):
+        _ = plugin_registry_inspection("/tmp/registry.json")
+
+
+def test_plugin_registry_invalid_json_maps_to_internal_error_without_native(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    registry = tmp_path / "registry.json"
+    registry.write_text("{broken-json", encoding="utf-8")
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+
+    with pytest.raises(InternalError):
+        _ = plugin_registry_inspection(str(registry))
+
+
+def test_config_resolution_helpers_apply_env_overrides_without_native(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    home = tmp_path / "home"
+    state = home / ".bijux"
+    state.mkdir(parents=True)
+    (state / ".env").write_text("BIJUXCLI_HISTORY_FILE=config/history.log\n", encoding="utf-8")
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setenv("BIJUXCLI_HISTORY_FILE", str(home / "env-history.log"))
+
+    paths = config_resolution_helpers(str(home))
+    assert paths["history_file"] == str(home / "env-history.log")
+
+
 def test_version_api_delegates_to_runtime_outcome(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -206,3 +258,13 @@ def test_command_tree_fallback_includes_warning_instead_of_stale_namespaces(
     assert payload["namespaces"] == []
     assert payload["source"] == "fallback-empty"
     assert "warning" in payload
+
+
+def test_strict_native_import_defaults_to_enabled_in_ci(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.delenv("BIJUX_PY_STRICT_IMPORT", raising=False)
+    monkeypatch.setenv("CI", "1")
+    assert facade._strict_native_import_enabled()

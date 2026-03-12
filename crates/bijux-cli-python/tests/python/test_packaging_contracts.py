@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from bijux_cli_py import check_python_runtime_supported
+
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - Python < 3.11
@@ -81,3 +83,10 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert project["name"] == "bijux-cli"
     assert project["version"] == "0.3.0"
     assert project["requires-python"] == ">=3.11"
+
+
+def test_runtime_support_helper_matches_python_requirement_floor() -> None:
+    pyproject = _load_pyproject()
+    assert pyproject["project"]["requires-python"] == ">=3.11"
+    assert check_python_runtime_supported((3, 11))
+    assert not check_python_runtime_supported((3, 10))
