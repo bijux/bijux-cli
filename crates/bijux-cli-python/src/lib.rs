@@ -7,9 +7,10 @@ mod conversions;
 
 pub use bindings::{
     cli_status_binding_api, command_tree_introspection_api, config_resolution_api,
-    doctor_binding_api, execution_facade_api, execution_outcome_api, install_path_helpers_api,
-    plugin_registry_inspection_api, plugins_list_binding_api, python_bridge_marker,
-    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_binding_api,
+    config_resolution_helpers_api, doctor_binding_api, execution_facade_api, execution_outcome_api,
+    install_path_helpers_api, plugin_registry_inspection_api, plugins_list_binding_api,
+    python_bridge_marker, repl_bootstrap_binding_api, schema_export_helpers_api,
+    status_binding_api, version_binding_api,
 };
 pub use compatibility::{
     acquire_state_lock, default_compatibility_paths, discover_compatibility_paths,
@@ -28,8 +29,9 @@ mod python_extension {
     use pyo3::prelude::*;
 
     use crate::{
-        command_tree_introspection_api, execution_facade_api, execution_outcome_api,
-        install_path_helpers_api, plugin_registry_inspection_api, version_binding_api,
+        command_tree_introspection_api, config_resolution_helpers_api, execution_facade_api,
+        execution_outcome_api, install_path_helpers_api, plugin_registry_inspection_api,
+        version_binding_api,
     };
 
     #[pyfunction]
@@ -54,7 +56,14 @@ mod python_extension {
 
     #[pyfunction]
     fn install_paths(home_dir: String) -> String {
-        install_path_helpers_api(std::path::Path::new(&home_dir))
+        config_resolution_helpers_api(std::path::Path::new(&home_dir))
+            .unwrap_or_else(|_| install_path_helpers_api(std::path::Path::new(&home_dir)))
+    }
+
+    #[pyfunction]
+    fn config_resolution(home_dir: String) -> PyResult<String> {
+        config_resolution_helpers_api(std::path::Path::new(&home_dir))
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
     }
 
     #[pyfunction]
@@ -70,6 +79,7 @@ mod python_extension {
         module.add_function(wrap_pyfunction!(execution_facade, module)?)?;
         module.add_function(wrap_pyfunction!(execution_outcome, module)?)?;
         module.add_function(wrap_pyfunction!(install_paths, module)?)?;
+        module.add_function(wrap_pyfunction!(config_resolution, module)?)?;
         module.add_function(wrap_pyfunction!(plugin_registry_inspection, module)?)?;
         Ok(())
     }

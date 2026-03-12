@@ -144,6 +144,23 @@ fn conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly
 }
 
 #[test]
+fn malformed_plugin_registry_is_rejected_at_bridge_boundary() {
+    let root = std::env::temp_dir().join(format!(
+        "bijux-bridge-malformed-registry-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).expect("create temp root");
+    let registry = root.join("registry.json");
+    std::fs::write(&registry, "{broken-json").expect("write malformed registry");
+
+    let error = plugin_registry_inspection_api(&registry).expect_err("must reject malformed json");
+    assert!(error.to_string().contains("invalid plugin registry json"));
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
 fn bridge_import_failure_paths_are_distinct_from_command_failures() {
     let command_failure = parse_json(
         &execution_outcome_api(&["bijux".to_string(), "ghost".to_string()]).expect("usage failure"),

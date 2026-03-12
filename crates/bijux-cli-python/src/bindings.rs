@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::hash::BuildHasher;
+use std::io;
 use std::path::Path;
 
 use bijux_cli::api::runtime::{run_app, AppRunResult};
@@ -12,8 +13,8 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::compatibility::{
-    default_compatibility_paths, discover_compatibility_paths, CompatibilityConfig,
-    CompatibilityError, PathOverrides,
+    default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
+    CompatibilityConfig, CompatibilityError, PathOverrides,
 };
 use crate::conversions::{classify_core_error, classify_failure, python_exception_tag};
 
@@ -24,18 +25,6 @@ struct CommandTreePayload {
     source: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     warning: Option<String>,
-}
-
-#[derive(Serialize)]
-struct BridgeErrorPayload {
-    kind: &'static str,
-    message: String,
-}
-
-#[derive(Serialize)]
-struct BridgeErrorEnvelope {
-    status: &'static str,
-    error: BridgeErrorPayload,
 }
 
 #[derive(Serialize)]
@@ -147,16 +136,14 @@ pub fn command_tree_introspection_api() -> String {
 /// Execute the Rust-backed CLI facade through the canonical runtime entrypoint.
 pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityError> {
     let argv = normalized_argv(argv);
-    match run_app(&argv) {
-        Ok(result) => Ok(select_primary_stream(&result)),
-        Err(error) => Ok(json_string(&BridgeErrorEnvelope {
-            status: "error",
-            error: BridgeErrorPayload {
-                kind: python_exception_tag(classify_core_error(&error)),
-                message: error.to_string(),
-            },
-        })),
-    }
+    let result = run_app(&argv).map_err(|error| {
+        CompatibilityError::Io(io::Error::other(format!(
+            "{}: {}",
+            python_exception_tag(classify_core_error(&error)),
+            error
+        )))
+    })?;
+    Ok(select_primary_stream(&result))
 }
 
 /// Return execution outcome with full stream context.
@@ -262,6 +249,29 @@ pub fn install_path_helpers_api(home_dir: &Path) -> String {
     })
 }
 
+/// Resolve config/history/plugins using runtime precedence without CLI overrides.
+pub fn config_resolution_helpers_api(home_dir: &Path) -> Result<String, CompatibilityError> {
+    let defaults = default_compatibility_paths(home_dir);
+    let file_config = match load_compatibility_config(&defaults.config_file) {
+        Ok(config) => config,
+        Err(CompatibilityError::UnsupportedConfigKey(_))
+        | Err(CompatibilityError::MalformedConfigLine { .. }) => CompatibilityConfig::default(),
+        Err(error) => return Err(error),
+    };
+    let env_map: HashMap<String, String> = std::env::vars().collect();
+    let resolved = discover_compatibility_paths(
+        Some(home_dir),
+        &PathOverrides::default(),
+        &env_map,
+        &file_config,
+    )?;
+    Ok(json_string(&CompatibilityPathsPayload {
+        config_file: resolved.config_file,
+        history_file: resolved.history_file,
+        plugins_dir: resolved.plugins_dir,
+    }))
+}
+
 /// Return plugin registry inspection payload as JSON.
 pub fn plugin_registry_inspection_api(registry_path: &Path) -> Result<String, CompatibilityError> {
     if !registry_path.exists() {
@@ -271,7 +281,16 @@ pub fn plugin_registry_inspection_api(registry_path: &Path) -> Result<String, Co
         }));
     }
     let text = fs::read_to_string(registry_path)?;
-    Ok(text)
+    let parsed: Value = serde_json::from_str(&text).map_err(|error| {
+        CompatibilityError::Io(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "invalid plugin registry json at {}: {error}",
+                registry_path.display()
+            ),
+        ))
+    })?;
+    Ok(json_string(&parsed))
 }
 
 fn select_primary_stream(result: &AppRunResult) -> String {
