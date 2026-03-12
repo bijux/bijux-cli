@@ -77,7 +77,9 @@ def _workspace_runtime_binaries() -> list[str]:
     module_path = Path(__file__).resolve()
     workspace_root = None
     for parent in module_path.parents:
-        if (parent / "Cargo.toml").is_file() and (parent / "crates" / "bijux-cli").is_dir():
+        if (parent / "Cargo.toml").is_file() and (
+            parent / "crates" / "bijux-cli"
+        ).is_dir():
             workspace_root = parent
             break
     if workspace_root is None:
