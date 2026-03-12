@@ -57,11 +57,15 @@ clean: ## Remove virtualenv, caches, build, and artifacts
 	@$(MAKE) clean-soft
 	@echo "→ Cleaning ($(VENV)) ..."
 	@if [ -d "$(VENV)" ]; then \
-	  $(RM) "$(VENV)" || { \
+	  $(RM) "$(VENV)" || true; \
+	  if [ -d "$(VENV)" ]; then \
 	    echo "→ Retrying venv cleanup ($(VENV)) ..."; \
 	    sleep 1; \
-	    $(RM) "$(VENV)"; \
-	  }; \
+	    $(RM) "$(VENV)" || true; \
+	  fi; \
+	  if [ -d "$(VENV)" ]; then \
+	    echo "→ Warning: could not fully remove $(VENV); continuing."; \
+	  fi; \
 	fi
 	@$(RM) .venv .venv*/
 
