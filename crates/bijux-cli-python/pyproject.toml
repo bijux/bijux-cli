@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "bijux-cli"
-version = "0.1.0"
+version = "0.3.0"
 description = "Rust-backed Bijux CLI Python distribution"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
@@ -95,13 +95,8 @@ features = ["python-extension"]
 
 # --8<-- [start:bijux]
 [tool.bijux]
-api_version = "0.1.0"
+api_version = "0.3.0"
 # --8<-- [end:bijux]
-
-# --8<-- [start:deptry]
-[tool.deptry]
-ignore = ["DEP002", "DEP003"]
-# --8<-- [end:deptry]
 
 # --8<-- [start:security]
 [tool.security]

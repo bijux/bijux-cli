@@ -68,5 +68,5 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     pyproject = _load_pyproject()
     project = pyproject["project"]
     assert project["name"] == "bijux-cli"
-    assert project["version"] == "0.1.0"
+    assert project["version"] == "0.3.0"
     assert project["requires-python"] == ">=3.11"
