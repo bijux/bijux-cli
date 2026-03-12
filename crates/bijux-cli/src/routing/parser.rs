@@ -3,13 +3,9 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
-use super::model::{
-    DEV_CLI_CONFIG_SUBCOMMANDS, DEV_CLI_EVIDENCE_SUBCOMMANDS,
-    DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS, DEV_CLI_MAINTENANCE_SUBCOMMANDS,
-    DEV_CLI_PYTHON_SUBCOMMANDS, DEV_CLI_RELEASE_SUBCOMMANDS, DEV_CLI_REPO_SUBCOMMANDS,
-    DEV_CLI_RUSTDOC_SUBCOMMANDS, DEV_CLI_SUBCOMMANDS, DEV_LEGACY_ALIASES,
+use crate::contracts::{
+    ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES,
 };
-use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -115,111 +111,23 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
     })
 }
 
-fn with_hidden_leaf_subcommands(mut command: Command, names: &[&'static str]) -> Command {
-    for name in names {
-        command = command.subcommand(Command::new(*name).hide(true));
-    }
-    command
+fn delegated_command(name: &'static str, hidden: bool) -> Command {
+    Command::new(name)
+        .hide(hidden)
+        .allow_external_subcommands(true)
 }
 
-fn with_leaf_subcommands(mut command: Command, names: &[&'static str]) -> Command {
-    for name in names {
-        command = command.subcommand(Command::new(*name));
-    }
-    command
-}
+fn build_dev_group() -> Command {
+    let mut command = Command::new("dev")
+        .hide(true)
+        .allow_external_subcommands(true)
+        .subcommand(delegated_command("cli", false));
 
-fn with_dev_cli_surface_subcommands(mut command: Command) -> Command {
-    for subcommand in DEV_CLI_SUBCOMMANDS {
-        if matches!(
-            *subcommand,
-            "maintenance"
-                | "rustdoc"
-                | "release"
-                | "evidence"
-                | "config"
-                | "python"
-                | "repo"
-                | "contracts"
-        ) {
-            continue;
-        }
-
-        let item = if matches!(*subcommand, "atlas" | "di" | "list-products" | "list-plugins") {
-            Command::new(*subcommand).hide(true)
-        } else {
-            Command::new(*subcommand)
-        };
-        command = command.subcommand(item);
+    for namespace in KNOWN_BIJUX_TOOL_NAMESPACES {
+        command = command.subcommand(delegated_command(namespace, true));
     }
 
     command
-}
-
-fn evidence_command() -> Command {
-    let mut command = Command::new("evidence");
-
-    for name in DEV_CLI_EVIDENCE_SUBCOMMANDS {
-        command = if *name == "show" {
-            command.subcommand(
-                Command::new("show")
-                    .arg(Arg::new("id").long("id").num_args(1))
-                    .arg(Arg::new("evidence-id").num_args(1)),
-            )
-        } else {
-            command.subcommand(Command::new(*name))
-        };
-    }
-
-    command
-}
-
-fn maintenance_command() -> Command {
-    let mut command = Command::new("maintenance");
-    for name in DEV_CLI_MAINTENANCE_SUBCOMMANDS {
-        command = match *name {
-            "generate" => command.subcommand(
-                Command::new("generate")
-                    .arg(Arg::new("id").long("id").num_args(1))
-                    .arg(Arg::new("source").long("source").num_args(1)),
-            ),
-            "pip-audit" => command.subcommand(
-                Command::new("pip-audit")
-                    .arg(Arg::new("report-path").long("report-path").num_args(1)),
-            ),
-            "provenance-statement" => command.subcommand(
-                Command::new("provenance-statement")
-                    .arg(Arg::new("tag").long("tag").num_args(1).required(true))
-                    .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
-            ),
-            other => command.subcommand(Command::new(other)),
-        };
-    }
-
-    let mut status = Command::new("status");
-    for name in DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS {
-        status = match *name {
-            "run" => status.subcommand(
-                Command::new("run")
-                    .arg(Arg::new("id").long("id").num_args(1))
-                    .arg(Arg::new("source").long("source").num_args(1))
-                    .arg(
-                        Arg::new("args")
-                            .num_args(0..)
-                            .trailing_var_arg(true)
-                            .allow_hyphen_values(true),
-                    ),
-            ),
-            "run-all" => status.subcommand(
-                Command::new("run-all").arg(Arg::new("kind").long("kind").num_args(1)).arg(
-                    Arg::new("args").num_args(0..).trailing_var_arg(true).allow_hyphen_values(true),
-                ),
-            ),
-            other => status.subcommand(Command::new(other)),
-        };
-    }
-
-    command.subcommand(status)
 }
 
 /// Build the root clap command for `bijux`.
@@ -332,35 +240,11 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
-            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
+            Command::new("hold")
+                .hide(true)
+                .subcommand(Command::new("interruptible").hide(true)),
         )
         .subcommand(plugins_group.clone());
-
-    let dev_cli_group = with_dev_cli_surface_subcommands(
-        Command::new("cli")
-            .subcommand(maintenance_command())
-            .subcommand(with_leaf_subcommands(Command::new("rustdoc"), DEV_CLI_RUSTDOC_SUBCOMMANDS))
-            .subcommand(with_leaf_subcommands(Command::new("release"), DEV_CLI_RELEASE_SUBCOMMANDS))
-            .subcommand(evidence_command())
-            .subcommand(with_leaf_subcommands(Command::new("config"), DEV_CLI_CONFIG_SUBCOMMANDS))
-            .subcommand(with_leaf_subcommands(Command::new("python"), DEV_CLI_PYTHON_SUBCOMMANDS))
-            .subcommand(with_leaf_subcommands(Command::new("repo"), DEV_CLI_REPO_SUBCOMMANDS))
-            .subcommand(
-                Command::new("contracts")
-                    .arg(Arg::new("all").long("all").action(ArgAction::SetTrue))
-                    .arg(
-                        Arg::new("kind").long("kind").num_args(1).value_parser([
-                            "generate", "check", "enforce", "warn", "run", "status",
-                        ]),
-                    ),
-            ),
-    );
-
-    // Keep parser-level `dev` compatibility hidden for delegated ownership.
-    let dev_group = with_hidden_leaf_subcommands(
-        Command::new("dev").hide(true).subcommand(dev_cli_group.clone()),
-        DEV_LEGACY_ALIASES,
-    );
 
     Command::new("bijux")
         .args([
@@ -377,7 +261,7 @@ pub fn root_command() -> Command {
         .subcommand_required(false)
         .allow_external_subcommands(true)
         .subcommand(cli_group)
-        .subcommand(dev_group)
+        .subcommand(build_dev_group())
         // Legacy roots kept for alias normalization.
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
@@ -401,7 +285,12 @@ pub fn root_command() -> Command {
                         .value_parser(clap::value_parser!(usize)),
                 )
                 .arg(Arg::new("filter").long("filter").short('F').num_args(1))
-                .arg(Arg::new("sort").long("sort").num_args(1).value_parser(["timestamp"])),
+                .arg(
+                    Arg::new("sort")
+                        .long("sort")
+                        .num_args(1)
+                        .value_parser(["timestamp"]),
+                ),
         )
         .subcommand(
             Command::new("memory")
@@ -447,5 +336,9 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalized_path = normalize_command_path(&command_path);
     let global_flags = global_flags_from_matches(&matches)?;
 
-    Ok(ParsedIntent { command_path, normalized_path, global_flags })
+    Ok(ParsedIntent {
+        command_path,
+        normalized_path,
+        global_flags,
+    })
 }

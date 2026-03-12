@@ -2,9 +2,8 @@
 
 use std::cmp::max;
 
-use crate::routing::model::{
-    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, CLI_ROOT_ALIASES, DEV_CLI_SUBCOMMANDS,
-};
+use crate::contracts::KNOWN_BIJUX_TOOL_NAMESPACES;
+use crate::routing::model::{CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, CLI_ROOT_ALIASES};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct RouteCorrection {
@@ -26,34 +25,12 @@ const ROOT_COMMANDS: &[&str] = &[
     "plugins",
     "repl",
     "completion",
-    "atlas",
     "history",
     "memory",
     "help",
 ];
 
 const CLI_COMMANDS: &[&str] = &["status", "paths", "config", "self-test", "plugins"];
-
-const DEV_ENTRY_COMMANDS: &[&str] = &[
-    "cli",
-    "inventory",
-    "parity",
-    "docs-audit",
-    "plugin-health",
-    "status",
-    "maintenance-audit",
-    "crate-health",
-    "package-health",
-    "route-audit",
-    "doctor",
-    "runtime-identity",
-    "state-audit",
-    "state-doctor",
-    "atlas",
-    "di",
-    "list-products",
-    "list-plugins",
-];
 
 pub(super) fn correction_for_unknown_route(path: &[String]) -> Option<RouteCorrection> {
     let suggested = suggest_path(path)?;
@@ -114,22 +91,23 @@ fn suggest_dev(rest: &[String]) -> Option<Vec<String>> {
         let [third, _] = tail else {
             return Some(vec!["dev".to_string(), "cli".to_string()]);
         };
-        let best = nearest(third, DEV_CLI_SUBCOMMANDS)?;
-        return Some(vec!["dev".to_string(), "cli".to_string(), best.to_string()]);
+
+        return Some(vec!["dev".to_string(), "cli".to_string(), third.clone()]);
     }
 
-    if DEV_ENTRY_COMMANDS.contains(&second.as_str()) {
-        if second == "cli" {
-            return Some(vec!["dev".to_string(), "cli".to_string()]);
-        }
-        return Some(vec!["dev".to_string(), "cli".to_string(), second.clone()]);
+    if KNOWN_BIJUX_TOOL_NAMESPACES.contains(&second.as_str()) {
+        let mut out = vec!["dev".to_string(), second.clone()];
+        out.extend(tail.iter().cloned());
+        return Some(out);
     }
 
-    let best = nearest(second, DEV_ENTRY_COMMANDS)?;
+    let mut candidates = vec!["cli"];
+    candidates.extend_from_slice(KNOWN_BIJUX_TOOL_NAMESPACES);
+    let best = nearest(second, &candidates)?;
     if best == "cli" {
         Some(vec!["dev".to_string(), "cli".to_string()])
     } else {
-        Some(vec!["dev".to_string(), "cli".to_string(), best.to_string()])
+        Some(vec!["dev".to_string(), best.to_string()])
     }
 }
 
@@ -148,7 +126,11 @@ fn suggest_tail(
 
     let best = nearest(second, candidates)?;
     if root == "cli" {
-        Some(vec!["cli".to_string(), namespace.to_string(), best.to_string()])
+        Some(vec![
+            "cli".to_string(),
+            namespace.to_string(),
+            best.to_string(),
+        ])
     } else {
         Some(vec![namespace.to_string(), best.to_string()])
     }
@@ -170,7 +152,10 @@ fn similarity_score(left: &str, right: &str) -> usize {
 }
 
 fn common_prefix_len(left: &str, right: &str) -> usize {
-    left.chars().zip(right.chars()).take_while(|(a, b)| a == b).count()
+    left.chars()
+        .zip(right.chars())
+        .take_while(|(a, b)| a == b)
+        .count()
 }
 
 fn levenshtein_distance(left: &str, right: &str) -> usize {

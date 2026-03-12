@@ -5,8 +5,9 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
+    "get", "set", "unset", "clear", "reload", "export", "load", "list",
+];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -22,133 +23,6 @@ pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "where",
     "explain",
     "schema",
-];
-pub const DEV_CLI_SUBCOMMANDS: &[&str] = &[
-    "maintenance",
-    "rustdoc",
-    "release",
-    "evidence",
-    "config",
-    "python",
-    "repo",
-    "dashboard",
-    "quickcheck",
-    "truth",
-    "blockers",
-    "next",
-    "inventory",
-    "routes",
-    "registry",
-    "parity",
-    "docs",
-    "docs-audit",
-    "plugin-health",
-    "status",
-    "maintenance-audit",
-    "snapshots-audit",
-    "fixture-audit",
-    "crate-health",
-    "package-health",
-    "route-audit",
-    "env",
-    "doctor",
-    "contracts",
-    "runtime-identity",
-    "docs-prune-plan",
-    "state-audit",
-    "state-doctor",
-    "atlas",
-    "di",
-    "list-products",
-    "list-plugins",
-];
-#[allow(dead_code)]
-pub const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
-    "audit",
-    "coverage",
-    "broken-links",
-    "public-api",
-    "examples",
-    "migrate-website-api-docs",
-    "build-proof",
-    "workspace-coverage-proof",
-    "python-link-proof",
-];
-#[allow(dead_code)]
-pub const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
-    "status",
-    "evidence",
-    "readiness",
-    "diff",
-    "gaps",
-    "summary",
-    "manifest",
-    "notes",
-    "behavior-changes",
-    "intentional-differences",
-    "unresolved-gaps",
-    "compatibility-leftovers",
-];
-#[allow(dead_code)]
-pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
-    "list",
-    "show",
-    "audit",
-    "stale",
-    "matrix",
-    "website-export",
-    "ci-export",
-    "release-export",
-    "command-map",
-    "parity-map",
-];
-#[allow(dead_code)]
-pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
-#[allow(dead_code)]
-pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
-    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
-#[allow(dead_code)]
-pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
-    &["health", "drift", "inventories", "generated", "stale"];
-#[allow(dead_code)]
-pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
-    "remaining",
-    "migrated",
-    "diff",
-    "audit",
-    "generators",
-    "generate",
-    "generate-all",
-    "requirements",
-    "flaky-tests",
-    "package-metadata",
-    "e2e-contract",
-    "pip-audit",
-    "capture-python-behavior",
-    "provenance-statement",
-];
-#[allow(dead_code)]
-pub const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
-pub const DEV_LEGACY_ALIASES: &[&str] = &[
-    "inventory",
-    "parity",
-    "docs-audit",
-    "plugin-health",
-    "status",
-    "maintenance-audit",
-    "crate-health",
-    "package-health",
-    "route-audit",
-    "doctor",
-    "runtime-identity",
-    "docs-prune-plan",
-    "state-audit",
-    "state-doctor",
-    "atlas",
-    "di",
-    "list-products",
-    "list-plugins",
 ];
 
 pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
@@ -195,10 +69,6 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("plugins explain", "cli plugins explain"),
     ("plugins schema", "cli plugins schema"),
 ];
-
-fn contains(values: &[&str], value: &str) -> bool {
-    values.contains(&value)
-}
 
 fn push_prefixed_routes(routes: &mut Vec<String>, prefix: &str, leaves: &[&str]) {
     routes.extend(leaves.iter().map(|leaf| format!("{prefix} {leaf}")));
@@ -256,19 +126,13 @@ pub fn alias_rewrites() -> &'static [(&'static str, &'static str)] {
     ALIAS_REWRITES
 }
 
-pub fn is_dev_legacy_alias(value: &str) -> bool {
-    contains(DEV_LEGACY_ALIASES, value)
-}
-
 pub fn is_known_route(path: &[String]) -> bool {
     if path.is_empty() {
         return false;
     }
 
-    if let [a, b, c, ..] = path {
-        if a == "dev" && b == "cli" && contains(DEV_CLI_SUBCOMMANDS, c) {
-            return true;
-        }
+    if path.first().is_some_and(|segment| segment == "dev") {
+        return path.len() >= 2;
     }
 
     let key = path.join(" ");
@@ -278,5 +142,7 @@ pub fn is_known_route(path: &[String]) -> bool {
         .map(|(_, canonical)| *canonical)
         .unwrap_or(key.as_str());
 
-    KNOWN_ROUTE_PATHS.get_or_init(build_known_route_paths).contains(canonical)
+    KNOWN_ROUTE_PATHS
+        .get_or_init(build_known_route_paths)
+        .contains(canonical)
 }

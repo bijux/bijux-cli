@@ -3,6 +3,8 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::routing::registry::RouteRegistry;
+
 /// Shell targets for completion generation during installation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompletionShell {
@@ -19,18 +21,21 @@ pub enum CompletionShell {
 /// Generate deterministic completion content for an install hook.
 #[must_use]
 #[allow(dead_code)]
-pub(crate) fn completion_script(shell: CompletionShell) -> &'static str {
+pub(crate) fn completion_script(shell: CompletionShell) -> String {
+    let commands = RouteRegistry::default()
+        .render_command_tree()
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+
     match shell {
-        CompletionShell::Bash => {
-            "complete -W \"cli dev doctor version repl completion inspect\" bijux"
-        }
-        CompletionShell::Zsh => "#compdef bijux\n_arguments '*::command:->commands'",
-        CompletionShell::Fish => {
-            "complete -c bijux -f -a \"cli dev doctor version repl completion inspect\""
-        }
-        CompletionShell::PowerShell => {
-            "Register-ArgumentCompleter -CommandName bijux -ScriptBlock { param($wordToComplete) }"
-        }
+        CompletionShell::Bash => format!("complete -W \"{commands}\" bijux"),
+        CompletionShell::Zsh => format!("#compdef bijux\n_arguments '*::command:({commands})'"),
+        CompletionShell::Fish => format!("complete -c bijux -f -a \"{commands}\""),
+        CompletionShell::PowerShell => format!(
+            "Register-ArgumentCompleter -CommandName bijux -ScriptBlock {{ param($wordToComplete) \"{commands}\".Split(' ') | Where-Object {{ $_ -like \"$wordToComplete*\" }} }}"
+        ),
     }
 }
 
@@ -49,12 +54,15 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
     match shell {
         CompletionShell::Bash => home_dir.join(".bash_completion.d").join("bijux"),
         CompletionShell::Zsh => home_dir.join(".zsh").join("completions").join("_bijux"),
-        CompletionShell::Fish => {
-            home_dir.join(".config").join("fish").join("completions").join("bijux.fish")
-        }
-        CompletionShell::PowerShell => {
-            home_dir.join("Documents").join("PowerShell").join("Microsoft.PowerShell_profile.ps1")
-        }
+        CompletionShell::Fish => home_dir
+            .join(".config")
+            .join("fish")
+            .join("completions")
+            .join("bijux.fish"),
+        CompletionShell::PowerShell => home_dir
+            .join("Documents")
+            .join("PowerShell")
+            .join("Microsoft.PowerShell_profile.ps1"),
     }
 }
 
@@ -62,7 +70,9 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
 #[must_use]
 #[allow(dead_code)]
 pub(crate) fn detect_shell(shell_env: Option<&str>) -> Option<CompletionShell> {
-    let raw = shell_env.map(ToOwned::to_owned).or_else(|| std::env::var("SHELL").ok())?;
+    let raw = shell_env
+        .map(ToOwned::to_owned)
+        .or_else(|| std::env::var("SHELL").ok())?;
     let raw = raw.as_str();
     if raw.contains("bash") {
         return Some(CompletionShell::Bash);
