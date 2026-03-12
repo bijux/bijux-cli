@@ -60,8 +60,19 @@ python-env-py:
 	  echo "✘ Python 3.11+ is required but no Python interpreter was found"; \
 	  exit 1; \
 	fi; \
+	if [ -d ".venv" ] && [ "$(VENV)" != ".venv" ]; then \
+	  if [ -d "$(VENV)" ]; then \
+	    echo "→ Removing legacy root .venv (using $(VENV))"; \
+	    rm -rf ".venv"; \
+	  else \
+	    echo "→ Migrating legacy .venv to $(VENV)"; \
+	    mkdir -p "$(dir $(VENV))"; \
+	    mv ".venv" "$(VENV)"; \
+	  fi; \
+	fi; \
 	if [ ! -x "$(VENV)/bin/python" ]; then \
 	  echo "→ Creating virtualenv with '$$bootstrap' ..."; \
+	  mkdir -p "$(dir $(VENV))"; \
 	  "$$bootstrap" -m venv "$(VENV)"; \
 	fi; \
 	if ! "$(VENV)/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \

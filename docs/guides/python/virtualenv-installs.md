@@ -1,8 +1,8 @@
 # virtualenv Installs
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv artifacts/python/.venv
+source artifacts/python/.venv/bin/activate
 pip install bijux-cli
 ```
 
