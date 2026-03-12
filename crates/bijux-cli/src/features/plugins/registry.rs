@@ -1,8 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::collections::BTreeSet;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
@@ -14,6 +13,7 @@ use super::models::{
     InstallPluginRequest, PluginDoctorReport, PluginLoadEntry, PluginOriginMetadata, PluginRecord,
     PluginRegistry,
 };
+use crate::infrastructure::fs_store::atomic_write_text;
 
 fn checksum_sha256(input: &str) -> String {
     let digest = Sha256::digest(input.as_bytes());
@@ -41,18 +41,9 @@ pub fn save_registry(path: &Path, registry: &PluginRegistry) -> Result<(), Plugi
         fs::create_dir_all(parent)?;
     }
 
-    let data = serde_json::to_vec_pretty(registry)?;
-    let temporary = path.with_extension("tmp");
-
-    {
-        let mut file =
-            OpenOptions::new().create(true).truncate(true).write(true).open(&temporary)?;
-        file.write_all(&data)?;
-        file.write_all(b"\n")?;
-        file.sync_all()?;
-    }
-
-    fs::rename(temporary, path)?;
+    let mut rendered = serde_json::to_string_pretty(registry)?;
+    rendered.push('\n');
+    atomic_write_text(path, &rendered)?;
     Ok(())
 }
 
@@ -67,7 +58,7 @@ fn backup_registry(path: &Path) -> Result<Option<PathBuf>, PluginError> {
 
 fn restore_registry(path: &Path, backup: Option<PathBuf>) -> Result<(), PluginError> {
     if let Some(backup_path) = backup {
-        fs::rename(backup_path, path)?;
+        replace_file(&backup_path, path)?;
     }
     Ok(())
 }
@@ -76,6 +67,21 @@ fn cleanup_backup(backup: Option<PathBuf>) {
     if let Some(path) = backup {
         let _ = fs::remove_file(path);
     }
+}
+
+fn replace_file(source: &Path, destination: &Path) -> Result<(), std::io::Error> {
+    #[cfg(windows)]
+    {
+        if destination.exists() {
+            match fs::remove_file(destination) {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error),
+            }
+        }
+    }
+
+    fs::rename(source, destination)
 }
 
 /// Update plugin registry atomically with rollback support.
@@ -180,7 +186,9 @@ fn set_plugin_state(
         if state == crate::contracts::PluginLifecycleState::Enabled
             && plugin.state == crate::contracts::PluginLifecycleState::Broken
         {
-            return Err(PluginError::InvalidField("cannot enable broken plugin".to_string()));
+            return Err(PluginError::InvalidField(
+                "cannot enable broken plugin".to_string(),
+            ));
         }
         plugin.state = state;
         updated = Some(plugin.clone());
@@ -192,12 +200,20 @@ fn set_plugin_state(
 
 /// Enable installed plugin.
 pub fn enable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Enabled)
+    set_plugin_state(
+        registry_path,
+        namespace,
+        crate::contracts::PluginLifecycleState::Enabled,
+    )
 }
 
 /// Disable installed plugin.
 pub fn disable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, crate::contracts::PluginLifecycleState::Disabled)
+    set_plugin_state(
+        registry_path,
+        namespace,
+        crate::contracts::PluginLifecycleState::Disabled,
+    )
 }
 
 /// Inspect plugin by namespace.
@@ -248,7 +264,11 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
         }
     }
 
-    Ok(PluginDoctorReport { installed: registry.plugins.len(), broken, incompatible })
+    Ok(PluginDoctorReport {
+        installed: registry.plugins.len(),
+        broken,
+        incompatible,
+    })
 }
 
 /// Check plugin compatibility against host version without mutating registry.
@@ -278,7 +298,9 @@ pub fn plugin_load_order(registry_path: &Path) -> Result<Vec<PluginLoadEntry>, P
     items.sort_by(|left, right| {
         let left_rank = state_rank(left.state);
         let right_rank = state_rank(right.state);
-        left_rank.cmp(&right_rank).then_with(|| left.namespace.cmp(&right.namespace))
+        left_rank
+            .cmp(&right_rank)
+            .then_with(|| left.namespace.cmp(&right.namespace))
     });
 
     Ok(items)
@@ -294,5 +316,39 @@ fn state_rank(state: crate::contracts::PluginLifecycleState) -> u8 {
         crate::contracts::PluginLifecycleState::Discovered => 3,
         crate::contracts::PluginLifecycleState::Incompatible => 4,
         crate::contracts::PluginLifecycleState::Broken => 5,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+    use std::thread;
+
+    use tempfile::TempDir;
+
+    use super::{load_registry, save_registry, PluginRegistry};
+
+    #[test]
+    fn concurrent_registry_writes_keep_registry_parseable() {
+        let temp = TempDir::new().expect("tempdir");
+        let path = Arc::new(temp.path().join("registry.json"));
+
+        let mut writers = Vec::new();
+        for _ in 0..8 {
+            let path = Arc::clone(&path);
+            writers.push(thread::spawn(move || {
+                for _ in 0..40 {
+                    save_registry(path.as_path(), &PluginRegistry::default())
+                        .expect("save registry");
+                }
+            }));
+        }
+
+        for writer in writers {
+            writer.join().expect("join writer");
+        }
+
+        let loaded = load_registry(path.as_path()).expect("load registry");
+        assert_eq!(loaded, PluginRegistry::default());
     }
 }
