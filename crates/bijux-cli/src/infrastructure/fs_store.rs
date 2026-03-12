@@ -25,6 +25,7 @@ pub fn atomic_write_text(path: &Path, content: &str) -> std::io::Result<()> {
         file.write_all(content.as_bytes())?;
         file.sync_all()?;
         fs::rename(&temporary, path)?;
+        sync_parent_directory(path)?;
         return Ok(());
     }
 
@@ -32,6 +33,20 @@ pub fn atomic_write_text(path: &Path, content: &str) -> std::io::Result<()> {
         std::io::ErrorKind::AlreadyExists,
         format!("unable to allocate unique temp file for {}", path.display()),
     ))
+}
+
+#[cfg(unix)]
+fn sync_parent_directory(path: &Path) -> std::io::Result<()> {
+    use std::fs::File;
+
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    let directory = File::open(parent)?;
+    directory.sync_all()
+}
+
+#[cfg(not(unix))]
+fn sync_parent_directory(_path: &Path) -> std::io::Result<()> {
+    Ok(())
 }
 
 fn unique_temp_path(path: &Path, attempt: u32) -> std::path::PathBuf {
