@@ -16,6 +16,7 @@ use crate::features::install::{
 };
 use crate::features::plugins::{
     plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir, self_repair_registry,
+    PluginError,
 };
 use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
 use crate::routing::parser::ParsedGlobalFlags;
@@ -154,7 +155,9 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         Ok(memory) => {
             let wrong_type_keys: Vec<String> = memory
                 .iter()
-                .filter_map(|(key, value)| (!value.is_object()).then_some(key.clone()))
+                .filter_map(|(key, value)| {
+                    (!(value.is_string() || value.is_object())).then_some(key.clone())
+                })
                 .collect();
             if !wrong_type_keys.is_empty() {
                 issues.push(json!({
@@ -176,7 +179,25 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         }
     }
 
+    let mut repaired_corrupted_registry = false;
+    if let Err(err) = plugin_doctor(&paths.plugin_registry_file) {
+        repaired_corrupted_registry = matches!(err, PluginError::RegistryCorrupted);
+        issues.push(json!({
+            "area": "plugins",
+            "severity": "error",
+            "message": err.to_string(),
+            "path": paths.plugin_registry_file,
+        }));
+    }
+
     if self_repair_registry(&paths.plugin_registry_file).is_ok() {
+        if repaired_corrupted_registry {
+            repairs.push(json!({
+                "area": "plugins",
+                "action": "repaired-corrupted-registry",
+                "path": paths.plugin_registry_file,
+            }));
+        }
         if let Ok(true) = prune_registry_backup(&paths.plugin_registry_file) {
             repairs.push(json!({
                 "area": "plugins",
@@ -184,15 +205,6 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
                 "path": paths.plugin_registry_file.with_extension("bak"),
             }));
         }
-    }
-
-    if let Err(err) = plugin_doctor(&paths.plugin_registry_file) {
-        issues.push(json!({
-            "area": "plugins",
-            "severity": "error",
-            "message": err.to_string(),
-            "path": paths.plugin_registry_file,
-        }));
     }
 
     json!({
