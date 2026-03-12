@@ -226,30 +226,54 @@ fn maintenance_command() -> Command {
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn root_command() -> Command {
-    let format_arg =
-        Arg::new("format").long("format").short('f').num_args(1).global(true).value_name("FORMAT");
+    let format_arg = Arg::new("format")
+        .long("format")
+        .short('f')
+        .num_args(1)
+        .global(true)
+        .value_name("FORMAT")
+        .help("Output format: text, json, or yaml");
 
-    let quiet_arg =
-        Arg::new("quiet").long("quiet").short('q').action(ArgAction::SetTrue).global(true);
+    let quiet_arg = Arg::new("quiet")
+        .long("quiet")
+        .short('q')
+        .action(ArgAction::SetTrue)
+        .global(true)
+        .help("Suppress command output");
 
-    let log_level_arg =
-        Arg::new("log-level").long("log-level").num_args(1).global(true).value_name("LEVEL");
+    let log_level_arg = Arg::new("log-level")
+        .long("log-level")
+        .num_args(1)
+        .global(true)
+        .value_name("LEVEL")
+        .help("Log verbosity level");
 
-    let color_arg = Arg::new("color").long("color").num_args(1).global(true).value_name("MODE");
+    let color_arg = Arg::new("color")
+        .long("color")
+        .num_args(1)
+        .global(true)
+        .value_name("MODE")
+        .help("ANSI color policy");
 
     let pretty_arg = Arg::new("pretty")
         .long("pretty")
         .action(ArgAction::SetTrue)
         .overrides_with("no-pretty")
-        .global(true);
+        .global(true)
+        .help("Pretty-print structured output");
 
     let no_pretty_arg = Arg::new("no-pretty")
         .long("no-pretty")
         .action(ArgAction::SetTrue)
         .overrides_with("pretty")
-        .global(true);
-    let config_path_arg =
-        Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
+        .global(true)
+        .help("Emit compact structured output");
+    let config_path_arg = Arg::new("config-path")
+        .long("config-path")
+        .num_args(1)
+        .global(true)
+        .value_name("PATH")
+        .help("Use explicit config file path");
     let json_arg = Arg::new("json")
         .long("json")
         .action(ArgAction::SetTrue)

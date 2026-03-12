@@ -4,13 +4,49 @@ use anyhow::Result;
 
 use crate::routing::parser::root_command;
 
+fn normalize_help_whitespace(raw: &str) -> String {
+    let mut normalized = String::new();
+    let mut previous_blank = false;
+    let mut in_options_section = false;
+
+    for line in raw.lines() {
+        let trimmed = line.trim_end();
+        let blank_line = trimmed.trim().is_empty();
+        let section_header = !trimmed.starts_with(' ') && trimmed.ends_with(':');
+        if trimmed == "Options:" {
+            in_options_section = true;
+        } else if in_options_section && section_header {
+            in_options_section = false;
+        }
+
+        if blank_line {
+            if in_options_section {
+                continue;
+            }
+            if previous_blank {
+                continue;
+            }
+            previous_blank = true;
+            normalized.push('\n');
+            continue;
+        }
+
+        previous_blank = false;
+        normalized.push_str(trimmed);
+        normalized.push('\n');
+    }
+
+    normalized
+}
+
 pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
     let mut cmd = root_command();
     let target =
         find_command_mut(&mut cmd, path).ok_or_else(|| anyhow::anyhow!("unknown help path"))?;
     let mut out = Vec::new();
     target.write_long_help(&mut out)?;
-    Ok(decorate_help_text(String::from_utf8(out)?, path))
+    let normalized = normalize_help_whitespace(&String::from_utf8(out)?);
+    Ok(decorate_help_text(normalized, path))
 }
 
 pub(crate) fn decorate_help_text(mut rendered: String, path: &[&str]) -> String {
