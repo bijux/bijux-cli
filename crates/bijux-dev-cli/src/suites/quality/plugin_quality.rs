@@ -7,7 +7,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let generated_at = generated_at_utc();
             let read_lines = |name: &str| -> Vec<String> {
                 fs::read_to_string(
-                    workspace_root.join("crates/bijux-cli/tests/snapshots").join(name),
+                    workspace_root
+                        .join("crates/bijux-cli/tests/snapshots")
+                        .join(name),
                 )
                 .unwrap_or_default()
                 .lines()
@@ -67,14 +69,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 summary,
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_scaffold_python_inventory.json",
-                "artifacts/status/plugin_scaffold_rust_inventory.json",
-                "artifacts/status/plugin_scaffold_diff.json",
-                "artifacts/status/plugin_scaffold_non_behavioral_files.json",
-                "artifacts/status/plugin_scaffold_file_justification.json",
-                "artifacts/status/plugin_scaffold_minimalism_summary.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_scaffold_python_inventory.json",
+                    "artifacts/status/plugin_scaffold_rust_inventory.json",
+                    "artifacts/status/plugin_scaffold_diff.json",
+                    "artifacts/status/plugin_scaffold_non_behavioral_files.json",
+                    "artifacts/status/plugin_scaffold_file_justification.json",
+                    "artifacts/status/plugin_scaffold_minimalism_summary.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -146,17 +150,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "failure_injection":lifecycle_failures,
                             })).ok()?;
             let _ = base;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_lifecycle_ownership_report.json",
-                "artifacts/status/plugin_scaffold_efficiency_report.json",
-                "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
-                "artifacts/status/plugin_namespace_abuse_proof_report.json",
-                "artifacts/status/plugin_doctor_clarity_report.json",
-                "artifacts/status/plugin_explain_clarity_report.json",
-                "artifacts/status/plugin_where_ownership_report.json",
-                "artifacts/status/plugin_command_set_status.json",
-                "artifacts/status/plugin_migration_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_lifecycle_ownership_report.json",
+                    "artifacts/status/plugin_scaffold_efficiency_report.json",
+                    "artifacts/status/plugin_scaffold_lifecycle_proof_report.json",
+                    "artifacts/status/plugin_namespace_abuse_proof_report.json",
+                    "artifacts/status/plugin_doctor_clarity_report.json",
+                    "artifacts/status/plugin_explain_clarity_report.json",
+                    "artifacts/status/plugin_where_ownership_report.json",
+                    "artifacts/status/plugin_command_set_status.json",
+                    "artifacts/status/plugin_migration_report.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS" => {
             let now = generated_at_utc();
@@ -172,7 +178,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let stxt = text(scaffold_targets);
             let srtxt = text(scaffold_reg);
             let required: BTreeMap<i64, (&str, &str)> = BTreeMap::from([
-                (61, (manifest_targets, "fuzz_plugin_manifest_parsing_is_stable")),
+                (
+                    61,
+                    (manifest_targets, "fuzz_plugin_manifest_parsing_is_stable"),
+                ),
                 (
                     62,
                     (
@@ -180,8 +189,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_plugin_manifest_validation_covers_required_and_optional_fields",
                     ),
                 ),
-                (63, (manifest_targets, "fuzz_compatibility_range_parsing_is_enforced")),
-                (64, (manifest_targets, "fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced")),
+                (
+                    63,
+                    (
+                        manifest_targets,
+                        "fuzz_compatibility_range_parsing_is_enforced",
+                    ),
+                ),
+                (
+                    64,
+                    (
+                        manifest_targets,
+                        "fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced",
+                    ),
+                ),
                 (
                     65,
                     (
@@ -217,7 +238,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_python_and_rust_scaffold_manifest_generation_are_correct",
                     ),
                 ),
-                (70, (scaffold_targets, "fuzz_scaffold_path_sanitization_rejects_parent_segments")),
+                (
+                    70,
+                    (
+                        scaffold_targets,
+                        "fuzz_scaffold_path_sanitization_rejects_parent_segments",
+                    ),
+                ),
                 (
                     71,
                     (
@@ -232,16 +259,40 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable",
                     ),
                 ),
-                (73, (scaffold_targets, "fuzz_plugin_reserved_name_error_rendering_is_stable")),
-                (76, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (
+                    73,
+                    (
+                        scaffold_targets,
+                        "fuzz_plugin_reserved_name_error_rendering_is_stable",
+                    ),
+                ),
+                (
+                    76,
+                    (
+                        manifest_reg,
+                        "minimized_plugin_manifest_cases_replay_deterministically",
+                    ),
+                ),
                 (
                     77,
-                    (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
+                    (
+                        scaffold_reg,
+                        "minimized_scaffold_cases_replay_with_deterministic_exit_codes",
+                    ),
                 ),
-                (78, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (
+                    78,
+                    (
+                        manifest_reg,
+                        "minimized_plugin_manifest_cases_replay_deterministically",
+                    ),
+                ),
                 (
                     79,
-                    (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
+                    (
+                        scaffold_reg,
+                        "minimized_scaffold_cases_replay_with_deterministic_exit_codes",
+                    ),
                 ),
             ]);
             let coverage = required.iter().map(|(id, (p, t))| {
@@ -271,8 +322,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()
                     .is_some_and(|s| s.success())
             };
-            let mt_ok =
-                run(&["test", "-p", "bijux-cli-plugin", "--test", "plugin_manifest_fuzz_targets"]);
+            let mt_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli-plugin",
+                "--test",
+                "plugin_manifest_fuzz_targets",
+            ]);
             let mr_ok = run(&[
                 "test",
                 "-p",
@@ -306,13 +362,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest fuzz regressions","coverage_ids":[76,78],"status":if mr_ok{"clean"}else{"drift"},"minimized_cases":manifest_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin scaffold fuzz regressions","coverage_ids":[77,79],"status":if sr_ok{"clean"}else{"drift"},"minimized_cases":scaffold_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin manifest and scaffold fuzzing","coverage_ids":(61..81).collect::<Vec<_>>(),"status":if missing.is_empty() && mt_ok && mr_ok && st_ok && sr_ok && !manifest_cases.is_empty() && !scaffold_cases.is_empty(){"frozen"}else{"partial"},"coverage_rows":coverage,"missing_coverage_ids":missing,"manifest_minimized_case_count":manifest_cases.len(),"scaffold_minimized_case_count":scaffold_cases.len(),"policy":"plugin manifest and scaffold fuzzing remain maintenance-required hardening checks"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_manifest_crash_triage_artifact.json",
-                "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
-                "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
-                "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_manifest_crash_triage_artifact.json",
+                    "artifacts/status/plugin_scaffold_crash_triage_artifact.json",
+                    "artifacts/status/plugin_manifest_fuzz_regression_artifact.json",
+                    "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
+                    "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
@@ -389,14 +447,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption regression replay","coverage_ids":[158],"status":if regression_ok{"clean"}else{"drift"},"minimized_cases":minimized_cases})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_severity_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption severity classification","coverage_ids":[159],"status":"complete","classes":{"critical":["plugin registry write rollback failure","state read panic"],"high":["nondeterministic plugin list under identical corrupted input","memory recovery drift"],"medium":["history malformed entries with degraded but successful read"],"low":["doctor self-repair with stable output"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_state_corruption_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"plugin/history/memory corruption hardening contract","coverage_ids":(141..161).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized_cases.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"policy":"plugin/history/memory corruption campaigns are required hardening coverage"})).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_state_corruption_campaign_artifact.json",
-                "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
-                "artifacts/status/plugin_state_corruption_triage_artifact.json",
-                "artifacts/status/plugin_state_corruption_regression_artifact.json",
-                "artifacts/status/plugin_state_corruption_severity_classification.json",
-                "artifacts/status/plugin_state_corruption_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/plugin_state_corruption_campaign_artifact.json",
+                    "artifacts/status/plugin_state_corruption_corpus_retention_artifact.json",
+                    "artifacts/status/plugin_state_corruption_triage_artifact.json",
+                    "artifacts/status/plugin_state_corruption_regression_artifact.json",
+                    "artifacts/status/plugin_state_corruption_severity_classification.json",
+                    "artifacts/status/plugin_state_corruption_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }

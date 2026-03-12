@@ -13,11 +13,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .and_then(|o| String::from_utf8(o.stdout).ok())
                 .and_then(|s| serde_json::from_str::<Value>(&s).ok())
                 .unwrap_or_else(|| json!({}));
-            let pkgs =
-                metadata.get("packages").and_then(Value::as_array).cloned().unwrap_or_default();
+            let pkgs = metadata
+                .get("packages")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             let workspace_names = pkgs
                 .iter()
-                .filter_map(|p| p.get("name").and_then(Value::as_str).map(ToString::to_string))
+                .filter_map(|p| {
+                    p.get("name")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
+                })
                 .collect::<BTreeSet<_>>();
             let mut per_crate = Vec::<Value>::new();
             for pkg in &pkgs {
@@ -36,7 +43,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .status()
                     .ok()
                     .is_some_and(|s| s.success());
-                let manifest = pkg.get("manifest_path").and_then(Value::as_str).unwrap_or("");
+                let manifest = pkg
+                    .get("manifest_path")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
                 let cargo_toml = PathBuf::from(manifest);
                 let rel_manifest = rel(&cargo_toml, workspace_root);
                 let cargo_text = fs::read_to_string(&cargo_toml).unwrap_or_default();
@@ -95,10 +105,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "crate_decisions":crate_decisions,
                                 "boundary_decisions":boundary_decisions
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/crate_boundary_metrics.json",
-                "artifacts/status/crate_boundary_report.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/crate_boundary_metrics.json",
+                    "artifacts/status/crate_boundary_report.json"
+                ]}),
+            )
         }
         _ => None,
     }

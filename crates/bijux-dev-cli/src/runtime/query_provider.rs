@@ -49,7 +49,11 @@ impl RuntimeQueryContext {
         let paths = resolve_state_paths(flags)?;
         let plugin_registry_path = paths.plugin_registry_file.clone();
 
-        Ok(Self { registry, paths, plugin_registry_path })
+        Ok(Self {
+            registry,
+            paths,
+            plugin_registry_path,
+        })
     }
 
     /// View this context as a dispatch runtime query provider.
@@ -73,7 +77,10 @@ pub struct RuntimeQueryAdapter<'a> {
 impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     fn route_inventory(&self) -> RouteInventoryQuery {
         let inventory = route_inventory(self.registry);
-        RouteInventoryQuery { routes: inventory.routes, aliases: inventory.aliases }
+        RouteInventoryQuery {
+            routes: inventory.routes,
+            aliases: inventory.aliases,
+        }
     }
 
     fn registry_inventory(&self) -> Vec<dev_registry::NamespaceInventoryRow> {
@@ -139,8 +146,9 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             load_time_diagnostics(self.plugin_registry_path, env!("CARGO_PKG_VERSION"))
                 .unwrap_or_default();
 
-        let config_issues =
-            validate_config_file(&self.paths.config_file).err().map_or_else(Vec::new, |message| {
+        let config_issues = validate_config_file(&self.paths.config_file)
+            .err()
+            .map_or_else(Vec::new, |message| {
                 vec![json!({
                     "category": "config",
                     "message": message,
@@ -176,7 +184,11 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             })
             .collect();
 
-        DoctorReportInput { config_issues, path_issues, plugin_issues }
+        DoctorReportInput {
+            config_issues,
+            path_issues,
+            plugin_issues,
+        }
     }
 
     fn state_audit_input(&self) -> StateAuditInput {
@@ -204,7 +216,10 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
 
     fn contracts_schema_input(&self) -> ContractsSchemaInput {
         let query = contracts_schema_query();
-        ContractsSchemaInput { schema_ids: query.schema_ids, schema_version: query.schema_version }
+        ContractsSchemaInput {
+            schema_ids: query.schema_ids,
+            schema_version: query.schema_version,
+        }
     }
 
     fn runtime_identity_input(&self) -> dev_runtime_identity::RuntimeIdentityInput {

@@ -183,7 +183,10 @@ pub(super) fn try_handle(
 }
 
 fn routing_context() -> ReportContext {
-    ReportContext { generated_at: String::new(), data_source: "bijux-cli::routing".to_string() }
+    ReportContext {
+        generated_at: String::new(),
+        data_source: "bijux-cli::routing".to_string(),
+    }
 }
 
 fn markdown_docs() -> Vec<String> {
@@ -199,7 +202,10 @@ fn snapshot_fixtures() -> Vec<String> {
     let root = workspace_root();
     collect_files_recursive(&root.join("crates"))
         .into_iter()
-        .filter(|p| p.to_string_lossy().contains("tests/data/golden/cli_surface/"))
+        .filter(|p| {
+            p.to_string_lossy()
+                .contains("tests/data/golden/cli_surface/")
+        })
         .map(|p| relative_to_root(&p, &root))
         .collect()
 }

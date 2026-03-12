@@ -188,7 +188,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let rows = [
                 ("dev_cli_status_report.json", ["dev", "cli", "status"]),
                 ("dev_cli_dashboard_report.json", ["dev", "cli", "dashboard"]),
-                ("dev_cli_quickcheck_report.json", ["dev", "cli", "quickcheck"]),
+                (
+                    "dev_cli_quickcheck_report.json",
+                    ["dev", "cli", "quickcheck"],
+                ),
                 ("dev_cli_truth_report.json", ["dev", "cli", "truth"]),
                 ("dev_cli_blockers_report.json", ["dev", "cli", "blockers"]),
                 ("dev_cli_next_report.json", ["dev", "cli", "next"]),
@@ -221,8 +224,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         )
                     }
                 };
-                text_heads
-                    .insert(cmd.join(" "), text.lines().take(3).collect::<Vec<_>>().join("\n"));
+                text_heads.insert(
+                    cmd.join(" "),
+                    text.lines().take(3).collect::<Vec<_>>().join("\n"),
+                );
                 payloads.insert(artifact.to_string(), payload);
                 outputs.push(artifact_path);
             }
@@ -285,7 +290,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .into_iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("complete"))
                 .filter_map(|row| {
-                    row.get("command").and_then(Value::as_str).map(ToString::to_string)
+                    row.get("command")
+                        .and_then(Value::as_str)
+                        .map(ToString::to_string)
                 })
                 .collect();
             let blocker_commands: Vec<String> = blockers
@@ -297,8 +304,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .or_else(|| row.as_str().map(ToString::to_string))
                 })
                 .collect();
-            let blocker_subset_ok =
-                blocker_commands.iter().all(|command| unresolved.contains(command));
+            let blocker_subset_ok = blocker_commands
+                .iter()
+                .all(|command| unresolved.contains(command));
             let next_policy = payloads
                 .get("dev_cli_next_report.json")
                 .and_then(|v| v.get("next"))
@@ -310,7 +318,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .get("manual_curated_priority_lists_allowed")
                 .and_then(Value::as_bool)
                 == Some(false)
-                && next_policy.get("roadmap_requires_generated_artifacts").and_then(Value::as_bool)
+                && next_policy
+                    .get("roadmap_requires_generated_artifacts")
+                    .and_then(Value::as_bool)
                     == Some(true)
                 && next_policy
                     .get("required_artifacts")
@@ -325,8 +335,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let count_alignment_ok = status_summary.get("complete").and_then(Value::as_i64)
                 == Some(truth_done)
                 && status_summary.get("missing").and_then(Value::as_i64) == Some(truth_missing)
-                && status_summary.get("partial").and_then(Value::as_i64).unwrap_or(0)
-                    + status_summary.get("shim").and_then(Value::as_i64).unwrap_or(0)
+                && status_summary
+                    .get("partial")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0)
+                    + status_summary
+                        .get("shim")
+                        .and_then(Value::as_i64)
+                        .unwrap_or(0)
                     == truth_partial + truth_intentional;
             let summary_checks = json!({
                 "status_truth_count_alignment": count_alignment_ok,
@@ -422,8 +438,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 })
                                 .collect();
             ranking.sort_by(|left, right| {
-                let l = left.get("maintainer_value_rank").and_then(Value::as_i64).unwrap_or(0);
-                let r = right.get("maintainer_value_rank").and_then(Value::as_i64).unwrap_or(0);
+                let l = left
+                    .get("maintainer_value_rank")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
+                let r = right
+                    .get("maintainer_value_rank")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
                 r.cmp(&l)
             });
             write_status_artifact_json(
@@ -446,13 +468,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_maintenance_remaining_report.json",
-                "artifacts/status/dev_cli_maintenance_migrated_report.json",
-                "artifacts/status/dev_cli_maintenance_diff_report.json",
-                "artifacts/status/dev_cli_maintenance_value_ranking.json",
-                "artifacts/status/dev_cli_make_target_inventory.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/dev_cli_maintenance_remaining_report.json",
+                    "artifacts/status/dev_cli_maintenance_migrated_report.json",
+                    "artifacts/status/dev_cli_maintenance_diff_report.json",
+                    "artifacts/status/dev_cli_maintenance_value_ranking.json",
+                    "artifacts/status/dev_cli_make_target_inventory.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
             let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
@@ -506,10 +530,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
-                "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/repo_docs_maintenance_crate_health_artifact.json",
+                    "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
             let routes = run_bijux_json(workspace_root, &["dev", "cli", "routes"]).ok()?;
@@ -587,10 +613,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/route_registry_env_contracts_artifact.json",
-                "artifacts/status/route_registry_env_contracts_drift_artifact.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/route_registry_env_contracts_artifact.json",
+                    "artifacts/status/route_registry_env_contracts_drift_artifact.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
             let audit = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
@@ -610,13 +638,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &coverage,
             )
             .ok()?;
-            fs::write(workspace_root.join("artifacts/status/rustdoc_audit_report.txt"), audit_text)
-                .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/rustdoc_audit_report.json",
-                "artifacts/status/rustdoc_public_api_coverage_report.json",
-                "artifacts/status/rustdoc_audit_report.txt"
-            ]}))
+            fs::write(
+                workspace_root.join("artifacts/status/rustdoc_audit_report.txt"),
+                audit_text,
+            )
+            .ok()?;
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/rustdoc_audit_report.json",
+                    "artifacts/status/rustdoc_public_api_coverage_report.json",
+                    "artifacts/status/rustdoc_audit_report.txt"
+                ]}),
+            )
         }
         _ => None,
     }

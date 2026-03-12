@@ -20,10 +20,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (128, "plugin_list_machine_output_order_is_stable"),
                 (129, "diagnostic_ordering_is_stable_in_machine_output"),
                 (130, "state_doctor_ordering_is_stable_in_machine_output"),
-                (131, "repeated_runs_do_not_introduce_timestamp_noise_when_disallowed"),
+                (
+                    131,
+                    "repeated_runs_do_not_introduce_timestamp_noise_when_disallowed",
+                ),
                 (132, "repeated_runs_do_not_introduce_path_order_noise"),
-                (133, "repeated_runs_do_not_introduce_plugin_discovery_order_noise"),
-                (134, "repeated_runs_do_not_introduce_environment_order_noise"),
+                (
+                    133,
+                    "repeated_runs_do_not_introduce_plugin_discovery_order_noise",
+                ),
+                (
+                    134,
+                    "repeated_runs_do_not_introduce_environment_order_noise",
+                ),
                 (135, "text_output_stability_holds_under_no_color_mode"),
                 (136, "stderr_payloads_are_stable_for_identical_failures"),
                 (137, "exit_codes_are_stable_for_identical_failures"),
@@ -97,11 +106,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/deterministic_output_report.json",
-                "artifacts/status/determinism_dashboard.json",
-                "artifacts/status/determinism_expectations.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/deterministic_output_report.json",
+                    "artifacts/status/determinism_dashboard.json",
+                    "artifacts/status/determinism_expectations.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-OUTPUT-BRIDGE-FUZZ-REPORTS" => {
             let output_targets = workspace_root
@@ -117,12 +128,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let bridge_min_dir = workspace_root
                 .join("crates/bijux-cli-python/tests/fuzz/bridge_conversion_minimized_cases");
             let texts = BTreeMap::from([
-                (output_targets.clone(), fs::read_to_string(&output_targets).unwrap_or_default()),
+                (
+                    output_targets.clone(),
+                    fs::read_to_string(&output_targets).unwrap_or_default(),
+                ),
                 (
                     output_regression.clone(),
                     fs::read_to_string(&output_regression).unwrap_or_default(),
                 ),
-                (bridge_targets.clone(), fs::read_to_string(&bridge_targets).unwrap_or_default()),
+                (
+                    bridge_targets.clone(),
+                    fs::read_to_string(&bridge_targets).unwrap_or_default(),
+                ),
                 (
                     bridge_regression.clone(),
                     fs::read_to_string(&bridge_regression).unwrap_or_default(),
@@ -177,10 +194,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()
                     .is_some_and(|s| s.success())
             };
-            let output_targets_ok =
-                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_targets"]);
-            let output_reg_ok =
-                run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_regressions"]);
+            let output_targets_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli",
+                "--test",
+                "output_envelope_fuzz_targets",
+            ]);
+            let output_reg_ok = run(&[
+                "test",
+                "-p",
+                "bijux-cli",
+                "--test",
+                "output_envelope_fuzz_regressions",
+            ]);
             let bridge_targets_ok = run(&[
                 "test",
                 "-p",
@@ -273,13 +300,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/output_crash_triage_artifact.json",
-                "artifacts/status/bridge_conversion_crash_triage_artifact.json",
-                "artifacts/status/output_fuzz_regression_artifact.json",
-                "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
-                "artifacts/status/output_envelope_fuzz_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/output_crash_triage_artifact.json",
+                    "artifacts/status/bridge_conversion_crash_triage_artifact.json",
+                    "artifacts/status/output_fuzz_regression_artifact.json",
+                    "artifacts/status/bridge_conversion_fuzz_regression_artifact.json",
+                    "artifacts/status/output_envelope_fuzz_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }

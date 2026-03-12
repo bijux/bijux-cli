@@ -50,14 +50,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("artifacts/status/compatibility_debt_trend_report.txt"),
                 format!(
                     "Compatibility Debt Trend Report\nstatus: {}\n",
-                    payload.get("status").and_then(Value::as_str).unwrap_or("regressing")
+                    payload
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .unwrap_or("regressing")
                 ),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/compatibility_debt_trend_report.json",
-                "artifacts/status/compatibility_debt_trend_report.txt"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/compatibility_debt_trend_report.json",
+                    "artifacts/status/compatibility_debt_trend_report.txt"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS" => {
             let test_file = workspace_root
@@ -65,20 +70,47 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let text = fs::read_to_string(&test_file).unwrap_or_default();
             let rows = vec![
                 (141, "corrupted_config_failure_class_is_stable_across_runs"),
-                (142, "corrupted_plugin_registry_failure_class_is_stable_across_runs"),
+                (
+                    142,
+                    "corrupted_plugin_registry_failure_class_is_stable_across_runs",
+                ),
                 (143, "broken_history_file_recovery_is_stable_across_runs"),
                 (144, "malformed_memory_state_recovery_is_stable_across_runs"),
                 (145, "missing_config_file_defaulting_is_stable_across_runs"),
-                (146, "missing_plugin_directory_empty_behavior_is_stable_across_runs"),
-                (147, "broken_plugin_does_not_nondeterministically_affect_healthy_output"),
+                (
+                    146,
+                    "missing_plugin_directory_empty_behavior_is_stable_across_runs",
+                ),
+                (
+                    147,
+                    "broken_plugin_does_not_nondeterministically_affect_healthy_output",
+                ),
                 (148, "conflicting_plugin_installs_fail_deterministically"),
                 (149, "path_shadowing_diagnostics_are_stable_across_runs"),
-                (150, "runtime_identity_output_is_stable_under_same_ambiguous_state"),
-                (151, "state_doctor_json_is_stable_under_same_corrupted_state"),
-                (152, "state_doctor_text_is_stable_under_same_corrupted_state"),
-                (153, "plugin_doctor_json_is_stable_under_same_corrupted_state"),
-                (154, "plugin_doctor_text_is_stable_under_same_corrupted_state"),
-                (155, "command_tree_export_is_stable_with_broken_optional_state"),
+                (
+                    150,
+                    "runtime_identity_output_is_stable_under_same_ambiguous_state",
+                ),
+                (
+                    151,
+                    "state_doctor_json_is_stable_under_same_corrupted_state",
+                ),
+                (
+                    152,
+                    "state_doctor_text_is_stable_under_same_corrupted_state",
+                ),
+                (
+                    153,
+                    "plugin_doctor_json_is_stable_under_same_corrupted_state",
+                ),
+                (
+                    154,
+                    "plugin_doctor_text_is_stable_under_same_corrupted_state",
+                ),
+                (
+                    155,
+                    "command_tree_export_is_stable_with_broken_optional_state",
+                ),
             ];
             write_status_artifact_json(workspace_root, "artifacts/status/deterministic_hostile_state_report.json", &json!({
                                 "generated_at": generated_at_utc(),
@@ -111,11 +143,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "artifacts/status/repeated_run_corruption_harness.json"
                                 ],
                             })).ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/deterministic_hostile_state_report.json",
-                "artifacts/status/failure_class_stability_report.json",
-                "artifacts/status/deterministic_failure_quality_bar.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/deterministic_hostile_state_report.json",
+                    "artifacts/status/failure_class_stability_report.json",
+                    "artifacts/status/deterministic_failure_quality_bar.json"
+                ]}),
+            )
         }
         "STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS" => {
             let test_file =
@@ -123,8 +157,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let text = fs::read_to_string(&test_file).unwrap_or_default();
             let env_payload = run_bijux_json(workspace_root, &["dev", "cli", "env"])
                 .unwrap_or_else(|_| json!({}));
-            let source_precedence =
-                env_payload.get("source_precedence").cloned().unwrap_or_else(|| json!([]));
+            let source_precedence = env_payload
+                .get("source_precedence")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
             let precedence_rows = [
                                 "cli_flags_override_env_values",
                                 "env_values_override_config_file_values",
@@ -172,11 +208,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/precedence_regression_matrix.json",
-                "artifacts/parity/command_precedence_report.json",
-                "artifacts/status/precedence_contract.json"
-            ]}))
+            Some(
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                    "artifacts/status/precedence_regression_matrix.json",
+                    "artifacts/parity/command_precedence_report.json",
+                    "artifacts/status/precedence_contract.json"
+                ]}),
+            )
         }
         _ => None,
     }
