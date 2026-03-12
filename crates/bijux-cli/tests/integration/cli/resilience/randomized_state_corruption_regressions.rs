@@ -93,10 +93,7 @@ fn minimized_corrupted_state_reproducers_replay_without_crashing() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(
-        !files.is_empty(),
-        "at least one minimized reproducer must be retained"
-    );
+    assert!(!files.is_empty(), "at least one minimized reproducer must be retained");
 
     for file in files {
         run_case(&file);
