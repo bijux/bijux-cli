@@ -28,7 +28,11 @@ pub fn resolve_policy(intent: &ExecutionIntent, inputs: &PolicyInputs) -> Execut
     let output_format = choose_opt(
         intent.global_flags.output_format,
         inputs.env.output_format,
-        choose_opt(inputs.config.output_format, inputs.defaults.output_format, None),
+        choose_opt(
+            inputs.config.output_format,
+            inputs.defaults.output_format,
+            None,
+        ),
     )
     .unwrap_or(OutputFormat::Json);
 

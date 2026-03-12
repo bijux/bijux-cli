@@ -12,7 +12,10 @@ use crate::interface::cli::handlers::{
 use crate::interface::cli::parser::ParsedGlobalFlags;
 use crate::routing::registry::{RouteError, RouteRegistry, RouteTarget};
 
-fn populate_plugin_namespaces(registry: &mut RouteRegistry, plugin_registry_path: &std::path::Path) {
+fn populate_plugin_namespaces(
+    registry: &mut RouteRegistry,
+    plugin_registry_path: &std::path::Path,
+) {
     let _ = registry.register_plugin_namespace("community");
     if let Ok(installed_plugins) = list_plugins(plugin_registry_path) {
         for plugin in installed_plugins {

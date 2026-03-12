@@ -43,7 +43,10 @@ fn is_known_help_global_flag(token: &str) -> bool {
 }
 
 fn help_global_flag_takes_value(token: &str) -> bool {
-    matches!(token, "--format" | "-f" | "--log-level" | "--color" | "--config-path")
+    matches!(
+        token,
+        "--format" | "-f" | "--log-level" | "--color" | "--config-path"
+    )
 }
 
 fn is_known_help_global_flag_with_equals(token: &str) -> bool {
@@ -105,7 +108,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
                 let mut stderr = message;
                 stderr.push('\n');
                 stderr.push_str("Run `bijux --help` for available runtime commands.\n");
-                return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr });
+                return Ok(AppRunResult {
+                    exit_code: 2,
+                    stdout: String::new(),
+                    stderr,
+                });
             }
         };
         let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
@@ -126,8 +133,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
                 return Ok(AppRunResult {
                     exit_code: 2,
                     stdout: String::new(),
-                    stderr: "Unknown help topic. Run `bijux --help` for available runtime commands.\n"
-                        .to_string(),
+                    stderr:
+                        "Unknown help topic. Run `bijux --help` for available runtime commands.\n"
+                            .to_string(),
                 });
             }
         };
@@ -138,9 +146,13 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    let has_help_flag = argv.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h"));
+    let has_help_flag = argv
+        .iter()
+        .any(|arg| matches!(arg.as_str(), "--help" | "-h"));
     if has_help_flag
-        && argv.get(1).is_some_and(|first| first == "dev" || known_bijux_tool(first).is_some())
+        && argv
+            .get(1)
+            .is_some_and(|first| first == "dev" || known_bijux_tool(first).is_some())
     {
         if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
             return Ok(delegated);
@@ -148,7 +160,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
-        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: help,
+            stderr: String::new(),
+        });
     }
 
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
@@ -220,10 +236,18 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, policy::emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
     let route_exit_code = 0;
@@ -236,5 +260,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: route_exit_code,
+        stdout: content,
+        stderr: String::new(),
+    })
 }

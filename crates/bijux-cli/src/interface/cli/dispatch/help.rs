@@ -77,7 +77,10 @@ pub(super) fn try_render_clap_usage_error(argv: &[String]) -> Option<String> {
 }
 
 fn parse_help_path(argv: &[String]) -> Option<Vec<String>> {
-    if !argv.iter().any(|token| matches!(token.as_str(), "--help" | "-h")) {
+    if !argv
+        .iter()
+        .any(|token| matches!(token.as_str(), "--help" | "-h"))
+    {
         return None;
     }
 

@@ -33,7 +33,9 @@ fn output_format_name(format: OutputFormat) -> &'static str {
 #[must_use]
 pub fn repl_argv_from_line(line: &str) -> Vec<String> {
     let tokenized = parse_shell_tokens(line);
-    std::iter::once("bijux".to_string()).chain(tokenized).collect()
+    std::iter::once("bijux".to_string())
+        .chain(tokenized)
+        .collect()
 }
 
 fn needs_multiline_continuation(line: &str) -> bool {
@@ -72,7 +74,11 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
             let body = render_meta_help(&tokens[1..]);
             Ok(ReplEvent::Continue(Some(ReplFrame {
                 stream: ReplStream::Stdout,
-                content: if body.ends_with('\n') { body } else { format!("{body}\n") },
+                content: if body.ends_with('\n') {
+                    body
+                } else {
+                    format!("{body}\n")
+                },
             })))
         }
         "set" if tokens.len() >= 3 => {
@@ -206,10 +212,16 @@ pub fn execute_repl_input(
             session.last_exit_code = result.exit_code;
 
             let frame = if !result.stdout.is_empty() {
-                Some(ReplFrame { stream: ReplStream::Stdout, content: result.stdout })
+                Some(ReplFrame {
+                    stream: ReplStream::Stdout,
+                    content: result.stdout,
+                })
             } else if !result.stderr.is_empty() {
                 session.last_error = Some(result.stderr.clone());
-                Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
+                Some(ReplFrame {
+                    stream: ReplStream::Stderr,
+                    content: result.stderr,
+                })
             } else {
                 None
             };

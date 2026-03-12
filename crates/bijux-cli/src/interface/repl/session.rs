@@ -19,7 +19,11 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
 
     let policy = resolve_policy(
         &build_intent_from_argv(&["bijux".to_string(), "repl".to_string()]),
-        &PolicyInputs { env: defaults.clone(), config: defaults.clone(), defaults },
+        &PolicyInputs {
+            env: defaults.clone(),
+            config: defaults.clone(),
+            defaults,
+        },
     );
 
     let prompt = prompt.unwrap_or("bijux> ").to_string();
@@ -41,8 +45,11 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         completion_registries: BTreeMap::new(),
     };
 
-    let startup =
-        ReplStartupContract { prompt, include_profile_context: !profile.is_empty(), policy };
+    let startup = ReplStartupContract {
+        prompt,
+        include_profile_context: !profile.is_empty(),
+        policy,
+    };
 
     (session, startup)
 }

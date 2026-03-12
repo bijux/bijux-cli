@@ -46,7 +46,10 @@ pub struct PluginRegistry {
 
 impl Default for PluginRegistry {
     fn default() -> Self {
-        Self { version: super::constants::REGISTRY_VERSION.to_string(), plugins: BTreeMap::new() }
+        Self {
+            version: super::constants::REGISTRY_VERSION.to_string(),
+            plugins: BTreeMap::new(),
+        }
     }
 }
 

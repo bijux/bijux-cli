@@ -141,8 +141,11 @@ mod tests {
             "--limit".to_string(),
             "5".to_string(),
         ];
-        let equals =
-            vec!["bijux".to_string(), "history".to_string(), "--limit=7".to_string()];
+        let equals = vec![
+            "bijux".to_string(),
+            "history".to_string(),
+            "--limit=7".to_string(),
+        ];
 
         assert_eq!(
             command_option_value(&spaced, &["history"], "--limit").as_deref(),

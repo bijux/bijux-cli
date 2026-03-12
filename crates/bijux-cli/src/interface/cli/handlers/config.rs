@@ -28,7 +28,9 @@ pub(crate) fn execute_config_command(
         [a, b] if a == "config" && b == "list" => {
             Some(config_operations::list_entries(config_file)?)
         }
-        [a, b] if a == "cli" && b == "config" => Some(config_operations::list_entries(config_file)?),
+        [a, b] if a == "cli" && b == "config" => {
+            Some(config_operations::list_entries(config_file)?)
+        }
         [a, b, c] if a == "cli" && b == "config" && c == "list" => {
             Some(config_operations::list_entries(config_file)?)
         }
@@ -143,7 +145,8 @@ fn command_starts_with_root_config(argv: &[String]) -> bool {
         }
         break;
     }
-    argv.get(command_start).is_some_and(|segment| segment == "config")
+    argv.get(command_start)
+        .is_some_and(|segment| segment == "config")
 }
 
 fn read_pair_from_stdin_fallback() -> Option<String> {

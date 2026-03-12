@@ -13,11 +13,17 @@ pub fn acquire_state_lock(lock_path: &Path) -> Result<StateLockGuard, Compatibil
         fs::create_dir_all(parent)?;
     }
 
-    match fs::OpenOptions::new().create_new(true).write(true).open(lock_path) {
+    match fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(lock_path)
+    {
         Ok(mut file) => {
             file.write_all(b"bijux-cli lock\n")?;
             file.sync_all()?;
-            Ok(StateLockGuard { path: lock_path.to_path_buf() })
+            Ok(StateLockGuard {
+                path: lock_path.to_path_buf(),
+            })
         }
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
             Err(CompatibilityError::LockHeld(lock_path.to_path_buf()))
@@ -45,7 +51,10 @@ pub fn ensure_history_file(path: &Path) -> Result<(), CompatibilityError> {
     }
 
     if !path.exists() {
-        let mut file = fs::OpenOptions::new().create_new(true).write(true).open(path)?;
+        let mut file = fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(path)?;
         file.write_all(b"[]\n")?;
         file.sync_all()?;
     }
@@ -77,7 +86,10 @@ mod tests {
     use super::acquire_state_lock;
 
     fn make_temp_dir(name: &str) -> PathBuf {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
         let path = std::env::temp_dir().join(format!("bijux-install-state-{name}-{nanos}"));
         fs::create_dir_all(&path).expect("mkdir");
         path

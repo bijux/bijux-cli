@@ -13,11 +13,19 @@ pub(crate) fn normalize_key(raw: &str) -> Result<String, ConfigError> {
         ));
     }
     if key.contains('.') {
-        return Err(ConfigError::validation(format!("Unknown config section in key: {key}")));
+        return Err(ConfigError::validation(format!(
+            "Unknown config section in key: {key}"
+        )));
     }
 
-    let normalized = key.strip_prefix("BIJUXCLI_").unwrap_or(key).to_ascii_lowercase();
-    if !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
+    let normalized = key
+        .strip_prefix("BIJUXCLI_")
+        .unwrap_or(key)
+        .to_ascii_lowercase();
+    if !normalized
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    {
         return Err(ConfigError::validation(
             "Invalid key: only alphanumerics and underscore allowed.",
         ));
@@ -32,7 +40,10 @@ pub(crate) fn validate_value(value: &str) -> Result<(), ConfigError> {
             "Non-ASCII characters are not allowed in keys or values.",
         ));
     }
-    if value.chars().any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}')) {
+    if value
+        .chars()
+        .any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}'))
+    {
         return Err(ConfigError::validation(
             "Control characters are not allowed in config values.",
         ));
@@ -85,6 +96,9 @@ mod tests {
         assert!(validate_value("line\nbreak").is_err());
         assert!(validate_value("tab\tvalue").is_err());
         assert!(validate_value("vert\u{000B}tab").is_err());
-        assert!(validate_value("accent-é").is_err(), "non-ascii values should be rejected");
+        assert!(
+            validate_value("accent-é").is_err(),
+            "non-ascii values should be rejected"
+        );
     }
 }

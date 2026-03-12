@@ -82,6 +82,69 @@ fn parse_log_level(raw: Option<&String>) -> Result<Option<LogLevel>, ParseError>
     .transpose()
 }
 
+fn is_global_flag_without_value(token: &str) -> bool {
+    matches!(
+        token,
+        "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text"
+    )
+}
+
+fn is_global_flag_with_value(token: &str) -> bool {
+    matches!(
+        token,
+        "--format" | "-f" | "--log-level" | "--color" | "--config-path"
+    )
+}
+
+fn is_global_flag_with_equals(token: &str) -> bool {
+    token.starts_with("--format=")
+        || token.starts_with("--log-level=")
+        || token.starts_with("--color=")
+        || token.starts_with("--config-path=")
+}
+
+fn parse_argv_with_global_flags_front(argv: &[String]) -> Vec<String> {
+    if argv.is_empty() {
+        return Vec::new();
+    }
+
+    let mut globals = Vec::new();
+    let mut command_tail = Vec::new();
+    let mut idx = 1;
+
+    while idx < argv.len() {
+        let token = argv[idx].as_str();
+        if token == "--" {
+            command_tail.extend(argv.iter().skip(idx).cloned());
+            break;
+        }
+        if is_global_flag_without_value(token) || is_global_flag_with_equals(token) {
+            globals.push(argv[idx].clone());
+            idx += 1;
+            continue;
+        }
+        if is_global_flag_with_value(token) {
+            globals.push(argv[idx].clone());
+            if let Some(value) = argv.get(idx + 1) {
+                globals.push(value.clone());
+                idx += 2;
+            } else {
+                idx += 1;
+            }
+            continue;
+        }
+
+        command_tail.push(argv[idx].clone());
+        idx += 1;
+    }
+
+    let mut normalized = Vec::with_capacity(1 + globals.len() + command_tail.len());
+    normalized.push(argv[0].clone());
+    normalized.extend(globals);
+    normalized.extend(command_tail);
+    normalized
+}
+
 fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, ParseError> {
     let output_format = if matches.get_flag("json") {
         Some(OutputFormat::Json)
@@ -316,7 +379,7 @@ fn extract_path(matches: &ArgMatches) -> Vec<String> {
 
 /// Parse argv and normalize global flags + command path.
 pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
-    let Ok(matches) = root_command().try_get_matches_from(argv) else {
+    let Ok(raw_matches) = root_command().try_get_matches_from(argv) else {
         // Keep parser deterministic for routing tests by returning empty intent on clap usage failures.
         return Ok(ParsedIntent {
             command_path: Vec::new(),
@@ -332,9 +395,37 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
         });
     };
 
-    let command_path = extract_path(&matches);
+    let command_path = extract_path(&raw_matches);
+    let normalize_external_globals = matches!(
+        command_path.as_slice(),
+        [a, b, ..] if a == "dev" && (b == "cli" || KNOWN_BIJUX_TOOL_NAMESPACES.contains(&b.as_str()))
+    ) || matches!(
+        command_path.as_slice(),
+        [a, ..] if KNOWN_BIJUX_TOOL_NAMESPACES.contains(&a.as_str())
+    );
+
+    let global_flags = if normalize_external_globals {
+        let parse_argv = parse_argv_with_global_flags_front(argv);
+        let Ok(reparsed) = root_command().try_get_matches_from(&parse_argv) else {
+            return Ok(ParsedIntent {
+                command_path: Vec::new(),
+                normalized_path: Vec::new(),
+                global_flags: ParsedGlobalFlags {
+                    output_format: None,
+                    pretty_mode: None,
+                    color_mode: None,
+                    log_level: None,
+                    quiet: false,
+                    config_path: None,
+                },
+            });
+        };
+        global_flags_from_matches(&reparsed)?
+    } else {
+        global_flags_from_matches(&raw_matches)?
+    };
+
     let normalized_path = normalize_command_path(&command_path);
-    let global_flags = global_flags_from_matches(&matches)?;
 
     Ok(ParsedIntent {
         command_path,
