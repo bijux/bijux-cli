@@ -1,12 +1,7 @@
-{
-  "entries": [
-    {
-      "command": "status",
-      "timestamp": 1.0
-    },
-    {
-      "command": "doctor",
-      "timestamp": 2.0
-    }
-  ]
-}
+entries:
+  -
+    command: status
+    timestamp: 1.0
+  -
+    command: doctor
+    timestamp: 2.0

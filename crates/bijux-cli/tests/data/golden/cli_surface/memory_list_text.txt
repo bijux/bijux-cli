@@ -1,8 +1,5 @@
-{
-  "count": 2,
-  "keys": [
-    "alpha",
-    "beta"
-  ],
-  "status": "ok"
-}
+count: 2
+keys:
+  - alpha
+  - beta
+status: ok
