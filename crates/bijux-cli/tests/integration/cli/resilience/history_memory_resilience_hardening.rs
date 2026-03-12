@@ -99,9 +99,10 @@ fn memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safel
         &["memory", "list", "--format", "json", "--no-pretty"],
         &[("HOME", home.display().to_string())],
     );
-    assert_eq!(truncated.status.code(), Some(0));
-    let truncated_payload = parse_json(&truncated.stdout);
-    assert_eq!(truncated_payload["count"], 0);
+    assert_eq!(truncated.status.code(), Some(1));
+    assert!(truncated.stdout.is_empty());
+    let truncated_error = String::from_utf8(truncated.stderr).expect("utf-8");
+    assert!(truncated_error.contains("Malformed memory state"));
 
     fs::write(&memory_file, r#"{"alpha":1,"beta":{},"gamma":{"unexpected":true}}"#)
         .expect("write mixed memory");

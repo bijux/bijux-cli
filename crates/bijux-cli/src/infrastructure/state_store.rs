@@ -72,10 +72,8 @@ pub(crate) fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Val
         return Ok(serde_json::Map::new());
     }
     let text = fs::read_to_string(path)?;
-    let parsed: Value = match serde_json::from_str(&text) {
-        Ok(value) => value,
-        Err(_) => return Ok(serde_json::Map::new()),
-    };
+    let parsed: Value = serde_json::from_str(&text)
+        .map_err(|err| anyhow::anyhow!("Malformed memory state: {err}"))?;
     let Some(object) = parsed.as_object() else {
         anyhow::bail!("Malformed memory state: expected JSON object");
     };

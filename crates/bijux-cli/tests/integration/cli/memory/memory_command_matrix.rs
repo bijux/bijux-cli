@@ -101,9 +101,10 @@ fn memory_malformed_wrong_type_missing_required_and_extra_fields() {
         &["memory", "list", "--format", "json", "--no-pretty"],
         &[("HOME", home.to_str().expect("utf-8"))],
     );
-    assert_eq!(malformed.status.code(), Some(0));
-    let malformed_json: Value = serde_json::from_slice(&malformed.stdout).expect("json");
-    assert_eq!(malformed_json["count"], 0);
+    assert_eq!(malformed.status.code(), Some(1));
+    assert!(malformed.stdout.is_empty());
+    let malformed_error = String::from_utf8(malformed.stderr).expect("utf-8");
+    assert!(malformed_error.contains("Malformed memory state"));
 
     fs::write(
         &mem_file,
