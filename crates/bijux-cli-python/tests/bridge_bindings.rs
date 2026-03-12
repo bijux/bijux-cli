@@ -224,8 +224,8 @@ fn binary_and_bridge_use_same_command_registry_contract() {
     assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
     assert!(
-        surface.iter().any(|item| item == "dev" || item.starts_with("dev cli ")),
-        "command registry should retain the `dev` namespace boundary"
+        !surface.iter().any(|item| item == "dev" || item.starts_with("dev cli ")),
+        "command registry must keep the `dev` namespace outside runtime ownership"
     );
 }
 
