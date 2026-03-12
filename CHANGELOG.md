@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## [Unreleased]
 
 ### Changed
+- Aligned Rust and Python distribution versions to `0.3.0` and regenerated lock metadata accordingly.
+- Normalized `--version` behavior so Rust binary and Python facade return the same payload as `version`.
+- Reworked runtime boundaries: maintainer/control-plane routes are delegated through `bijux-dev-cli` with expanded contract tests.
+- Consolidated Python tooling configuration under `configs/python` and `crates/bijux-cli-python`.
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
 - Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
 
@@ -18,8 +22,17 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - The `bijux-rs` alias will be removed in `0.3.0` after one release cycle of compatibility.
 
 ### Removed
+- Removed legacy tox-based execution paths from Python automation and CI.
+- Removed root OpenAPI surface and Node manifest files from the repository root.
+- Removed legacy duplicate Python distribution/test roots; canonical packaging now lives under `crates/bijux-cli-python`.
+- Removed citation workflow files and REUSE/`LICENSES` root metadata that were no longer part of active release tooling.
 - Removed the `scripts/` directory from the repository.
 - Removed the MkDocs `docs_builder` script pipeline; documentation now builds from the simplified docs layout.
+
+### Fixed
+- Restored released-history text for sections [0.1.2] and [0.1.0] to match the exact wording shipped in tag `v0.2.0` (`2026-01-26`).
+- Documented this correction explicitly to preserve an auditable changelog record after accidental edits made on `2026-03-11` and `2026-03-12`.
+- Corrected changelog comparison links so `[Unreleased]` and `[0.2.0]` resolve to valid ranges.
 
 ---
 
@@ -90,7 +103,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Documentation Content:** All top-level Markdown documents (`README.md`, `USAGE.md`, `TESTS.md`, `TOOLING.md`, `CONTRIBUTING.md`, etc.) have been significantly rewritten and expanded with tables of contents, `back-to-top` links, and cross-references to the new artifact pages.
 * **Build System:**
     * All `Makefile` modules have been refactored to use the new hygienic `artifacts/` directory structure for outputs and caches.
-    * CI command mapping was updated to align with Makefile targets and run a comprehensive `py311` validation flow.
+    * `tox.ini` has been updated to align with the new Makefile targets and to run a comprehensive suite of checks for the `py311` environment, mirroring the full CI validation process.
 * **API Schema:** The OpenAPI `schema.yaml` has been improved with stricter validation (`additionalProperties: false`), better descriptions, response links, and more detailed examples.
 * **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules with clearer casts.
 
@@ -217,15 +230,15 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
 
-* **Python matrix orchestration**
+* **tox orchestration**
 
-    * Configured multi-Python test matrix (`py311`, `py312`, `py313`).
-    * Mapped Makefile workflows (`lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `changelog`, `citation`) to CI runners for reproducibility.
-    * Passed `MAKEFLAGS` to execute Makefile targets inside CI-managed virtual environments.
+    * Configured multi-Python test envs (`py311`, `py312`, `py313`).
+    * Mapped Makefile workflows into tox envs (`lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `changelog`, `citation`) to ensure reproducibility.
+    * Passed `MAKEFLAGS` to execute Makefile targets inside tox-managed virtualenvs.
 
 * **Continuous Integration**
 
-    * Added **GitHub Actions** workflow running matrix checks across Python versions with Node.js 20 and Java 17 for API checks.
+    * Added **GitHub Actions** workflow running tox across Python versions with Node.js 20 and Java 17 for API checks.
     * CI/CD pipelines directly leverage the modularized Makefile for consistent local/CI behavior.
 
 * **Packaging / PyPI page**
@@ -243,8 +256,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.2.1...HEAD
-[0.2.0]: https://github.com/bijux/bijux-cli/compare/v0.2.0...v0.2.0
+[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bijux/bijux-cli/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/bijux/bijux-cli/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
