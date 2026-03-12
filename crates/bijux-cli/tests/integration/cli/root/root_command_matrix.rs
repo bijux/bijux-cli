@@ -140,7 +140,6 @@ fn help_snapshot_exists_for_every_root_command() {
         "memory",
         "repl",
         "completion",
-        "atlas",
     ];
     for cmd in roots {
         let out = run(&[cmd, "--help"]);

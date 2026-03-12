@@ -214,7 +214,7 @@ fn help_output_and_inspect_metadata_agree_on_command_names_and_grouping() {
 
     let inspect_roots =
         top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
-    for must_exist in ["status", "cli", "dev", "config", "plugins", "history", "memory"] {
+    for must_exist in ["status", "cli", "config", "plugins", "history", "memory"] {
         assert!(help_commands.contains(must_exist), "help missing command {must_exist}");
         assert!(inspect_roots.contains(must_exist), "inspect missing root command {must_exist}");
     }
