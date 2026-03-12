@@ -4,13 +4,15 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::read_json_if_exists;
+use crate::infra::artifacts::{json_artifact_state, read_json_if_exists};
 
 fn ownership_report(workspace_root: &Path) -> Value {
     let path = workspace_root.join("artifacts/status/config_ownership_truth.json");
     let payload = read_json_if_exists(&path);
-    if payload == json!({}) {
+    let state = json_artifact_state(&payload);
+    if state != "valid" {
         json!({
+            "artifact_state": state,
             "owners": {
                 "rust": ["crates/bijux-cli"],
                 "python": ["crates/bijux-cli-python"]

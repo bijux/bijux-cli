@@ -4,16 +4,19 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::read_json_if_exists;
+use crate::infra::artifacts::{json_artifact_state, read_json_if_exists};
 
 fn read_first_json(paths: &[&Path]) -> Value {
     for path in paths {
         let payload = read_json_if_exists(path);
-        if payload != json!({}) {
+        if json_artifact_state(&payload) == "valid" {
             return payload;
         }
     }
-    json!({})
+    json!({
+        "_artifact_state": "missing",
+        "_artifact_paths": paths.iter().map(|path| path.display().to_string()).collect::<Vec<_>>(),
+    })
 }
 
 fn ensure_evidence_first_policy(
@@ -154,14 +157,38 @@ fn status_summary_counts(workspace_root: &Path, rows: &[Value]) -> (u64, u64, u6
 /// `dev cli dashboard`
 #[must_use]
 pub fn build_dashboard_report(workspace_root: &Path) -> Value {
+    let status = read_json_if_exists(&workspace_root.join("artifacts/status/status.json"));
+    let parity = read_json_if_exists(&workspace_root.join("artifacts/parity/parity_dashboard.json"));
+    let evidence =
+        read_json_if_exists(&workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json"));
+    let runtime_identity =
+        read_json_if_exists(&workspace_root.join("artifacts/status/install_runtime_identity_report.json"));
+    let package_health =
+        read_json_if_exists(&workspace_root.join("artifacts/status/install_neutrality_report.json"));
+    let state_health =
+        read_json_if_exists(&workspace_root.join("artifacts/status/state_audit_report.json"));
+    let status_state = json_artifact_state(&status).to_string();
+    let parity_state = json_artifact_state(&parity).to_string();
+    let evidence_state = json_artifact_state(&evidence).to_string();
+    let runtime_identity_state = json_artifact_state(&runtime_identity).to_string();
+    let package_health_state = json_artifact_state(&package_health).to_string();
+    let state_health_state = json_artifact_state(&state_health).to_string();
     json!({
         "dashboard": {
-            "status": read_json_if_exists(&workspace_root.join("artifacts/status/status.json")),
-            "parity": read_json_if_exists(&workspace_root.join("artifacts/parity/parity_dashboard.json")),
-            "evidence": read_json_if_exists(&workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json")),
-            "runtime_identity": read_json_if_exists(&workspace_root.join("artifacts/status/install_runtime_identity_report.json")),
-            "package_health": read_json_if_exists(&workspace_root.join("artifacts/status/install_neutrality_report.json")),
-            "state_health": read_json_if_exists(&workspace_root.join("artifacts/status/state_audit_report.json")),
+            "status": status,
+            "parity": parity,
+            "evidence": evidence,
+            "runtime_identity": runtime_identity,
+            "package_health": package_health,
+            "state_health": state_health,
+        },
+        "artifact_integrity": {
+            "status": status_state,
+            "parity": parity_state,
+            "evidence": evidence_state,
+            "runtime_identity": runtime_identity_state,
+            "package_health": package_health_state,
+            "state_health": state_health_state,
         },
         "command_center": "bijux dev cli",
     })
@@ -183,6 +210,11 @@ pub fn build_quickcheck_report(workspace_root: &Path) -> Value {
             "release_status": release.get("status").cloned().unwrap_or_else(|| json!("blocked")),
             "evidence_status": evidence.get("status").cloned().unwrap_or_else(|| json!("fail")),
             "python_sovereignty_status": python.get("status").cloned().unwrap_or_else(|| json!("needs-work")),
+        },
+        "artifact_integrity": {
+            "release_status_manifest": json_artifact_state(&release),
+            "evidence_audit": json_artifact_state(&evidence),
+            "python_sovereignty_audit": json_artifact_state(&python),
         },
         "bundle": ["status", "parity", "evidence", "runtime-identity", "state-audit"],
     })
@@ -251,6 +283,9 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
     json!({
         "blockers": unresolved,
         "status": release.get("status").cloned().unwrap_or_else(|| json!("blocked")),
+        "artifact_integrity": {
+            "release_gaps": json_artifact_state(&release),
+        },
     })
 }
 

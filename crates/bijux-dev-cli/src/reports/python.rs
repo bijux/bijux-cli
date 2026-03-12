@@ -4,13 +4,15 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::read_json_if_exists;
+use crate::infra::artifacts::{json_artifact_state, read_json_if_exists};
 
 fn fallback_report(payload: Value, source: &str) -> Value {
-    if matches!(&payload, Value::Object(map) if map.is_empty()) {
+    let state = json_artifact_state(&payload);
+    if state != "valid" {
         json!({
             "status": "unavailable",
-            "source": source
+            "source": source,
+            "artifact_state": state,
         })
     } else {
         payload
@@ -42,29 +44,29 @@ fn bridge_duplicate_area(payload: &Value, area: &str) -> Vec<Value> {
 /// `dev cli python bridge-status`
 #[must_use]
 pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
-    let execution = fallback_report(
-        read_json_if_exists(
-            &workspace_root.join("artifacts/status/python_bridge_execution_artifact.json"),
-        ),
-        "artifacts/status/python_bridge_execution_artifact.json",
-    );
-    let conversion = fallback_report(
-        read_json_if_exists(
-            &workspace_root.join("artifacts/status/bridge_conversion_artifact.json"),
-        ),
-        "artifacts/status/bridge_conversion_artifact.json",
-    );
-    let drift = fallback_report(
-        read_json_if_exists(
-            &workspace_root.join("artifacts/status/python_bridge_drift_artifact.json"),
-        ),
-        "artifacts/status/python_bridge_drift_artifact.json",
-    );
+    let execution_payload =
+        read_json_if_exists(&workspace_root.join("artifacts/status/python_bridge_execution_artifact.json"));
+    let conversion_payload =
+        read_json_if_exists(&workspace_root.join("artifacts/status/bridge_conversion_artifact.json"));
+    let drift_payload =
+        read_json_if_exists(&workspace_root.join("artifacts/status/python_bridge_drift_artifact.json"));
+    let execution_state = json_artifact_state(&execution_payload).to_string();
+    let conversion_state = json_artifact_state(&conversion_payload).to_string();
+    let drift_state = json_artifact_state(&drift_payload).to_string();
+    let execution =
+        fallback_report(execution_payload, "artifacts/status/python_bridge_execution_artifact.json");
+    let conversion = fallback_report(conversion_payload, "artifacts/status/bridge_conversion_artifact.json");
+    let drift = fallback_report(drift_payload, "artifacts/status/python_bridge_drift_artifact.json");
     json!({
         "bridge_status": {
             "execution": execution,
             "conversion": conversion,
             "drift": drift,
+        },
+        "artifact_integrity": {
+            "execution": execution_state,
+            "conversion": conversion_state,
+            "drift": drift_state,
         },
         "runtime_direction": "python-surface-over-rust-core",
     })
@@ -73,14 +75,16 @@ pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
 /// `dev cli python surface-status`
 #[must_use]
 pub fn build_surface_status_report(workspace_root: &Path) -> Value {
-    let command_surface = fallback_report(
-        read_json_if_exists(
-            &workspace_root.join("artifacts/status/python_path_command_inventory.json"),
-        ),
-        "artifacts/status/python_path_command_inventory.json",
-    );
+    let command_surface_payload =
+        read_json_if_exists(&workspace_root.join("artifacts/status/python_path_command_inventory.json"));
+    let command_surface_state = json_artifact_state(&command_surface_payload).to_string();
+    let command_surface =
+        fallback_report(command_surface_payload, "artifacts/status/python_path_command_inventory.json");
     json!({
         "surface_status": command_surface,
+        "artifact_integrity": {
+            "surface_status": command_surface_state,
+        },
         "python_role": "surface-and-bridge",
     })
 }
@@ -148,6 +152,10 @@ pub fn build_sovereignty_audit_report(workspace_root: &Path) -> Value {
             "duplication_total": total_duplication,
         },
         "evidence_ids": ["EVIDENCE-1501-PYTHON-SURFACE-ONLY"],
+        "artifact_integrity": {
+            "python_duplicate_law_report": json_artifact_state(&duplication),
+            "bridge_duplicate_law_report": json_artifact_state(&bridge_duplication),
+        },
         "direction_contract": "python-surface-over-rust-core",
     })
 }
@@ -172,12 +180,16 @@ pub fn build_packaging_report(workspace_root: &Path) -> Value {
     let runtime_identity = read_json_if_exists(
         &workspace_root.join("artifacts/status/install_runtime_identity_report.json"),
     );
+    let runtime_identity_state = json_artifact_state(&runtime_identity).to_string();
     json!({
         "packaging": {
             "linkage_model": "polars-like-thin-python-surface",
             "python_package_role": "bridge-only",
             "rust_core_role": "source-of-truth",
             "runtime_identity": runtime_identity,
+        },
+        "artifact_integrity": {
+            "runtime_identity": runtime_identity_state,
         },
         "packaging_evidence_ids": ["EVIDENCE-1502-PYTHON-PACKAGING-DIRECTION"],
     })
