@@ -137,14 +137,8 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
 #[test]
 fn dev_cli_dispatch_uses_shared_envelope_and_exit_mapping() {
     let source = strip_comments_and_strings(&read_runtime_dispatch_source());
-    assert!(
-        source.contains("render_value("),
-        "core app must use shared report envelope renderer"
-    );
-    assert!(
-        source.contains("AppRunResult"),
-        "core app must return a normalized run envelope"
-    );
+    assert!(source.contains("render_value("), "core app must use shared report envelope renderer");
+    assert!(source.contains("AppRunResult"), "core app must return a normalized run envelope");
     assert!(
         source.contains("try_delegate_known_bijux_tool"),
         "core dispatch must route known external tool delegation before local handling"
@@ -172,12 +166,6 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
         "core dispatch must not route dev cli through interface handler facades"
     );
     assert!(!core_source.contains("runtime_query_adapter::try_handle"));
-    assert!(
-        !bin_source.contains("dev cli"),
-        "bin must not own dev cli dispatch"
-    );
-    assert!(
-        !bin_source.contains("bijux_dev_cli"),
-        "bin must not import bijux-dev-cli crate"
-    );
+    assert!(!bin_source.contains("dev cli"), "bin must not own dev cli dispatch");
+    assert!(!bin_source.contains("bijux_dev_cli"), "bin must not import bijux-dev-cli crate");
 }

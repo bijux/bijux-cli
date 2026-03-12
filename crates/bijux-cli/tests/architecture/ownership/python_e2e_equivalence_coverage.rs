@@ -23,11 +23,8 @@ fn every_python_e2e_test_file_is_mapped() {
     let root = repo_root();
     let inventory = load_inventory(&root);
 
-    let mapped: BTreeSet<String> = inventory
-        .entries
-        .iter()
-        .map(|entry| entry.python_test_file.clone())
-        .collect();
+    let mapped: BTreeSet<String> =
+        inventory.entries.iter().map(|entry| entry.python_test_file.clone()).collect();
     let discovered = discover_python_e2e_tests(&root);
 
     assert_eq!(
@@ -69,10 +66,7 @@ fn mapped_rust_test_files_exist_and_match_coverage_policy() {
                 "rust coverage file must live under crates/bijux-cli/tests or crates/bijux-cli-python/tests: {rust_file}"
             );
             let rust_path = root.join(rust_file);
-            assert!(
-                rust_path.is_file(),
-                "mapped rust test file does not exist: {rust_file}"
-            );
+            assert!(rust_path.is_file(), "mapped rust test file does not exist: {rust_file}");
             assert!(
                 rust_path.extension().is_some_and(|ext| ext == "rs"),
                 "mapped rust test path must be a Rust test file: {rust_file}"
@@ -82,10 +76,7 @@ fn mapped_rust_test_files_exist_and_match_coverage_policy() {
         let minimum = match entry.coverage_level.as_str() {
             "same" => 1,
             "better" => 2,
-            other => panic!(
-                "unsupported coverage level `{other}` for {}",
-                entry.python_test_file
-            ),
+            other => panic!("unsupported coverage level `{other}` for {}", entry.python_test_file),
         };
         assert!(
             entry.rust_test_files.len() >= minimum,
