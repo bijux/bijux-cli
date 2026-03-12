@@ -22,7 +22,7 @@ pub(super) fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
         color: flags.color_mode.unwrap_or(ColorMode::Auto),
         log_level: flags.log_level.unwrap_or(LogLevel::Info),
         quiet: flags.quiet,
-        no_color: env::var("NO_COLOR").ok().as_deref() == Some("1"),
+        no_color: env::var_os("NO_COLOR").is_some(),
     }
 }
 
