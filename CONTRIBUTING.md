@@ -103,7 +103,7 @@ make docs-serve    # local docs server
 ## Tests & Coverage
 
 * Run all tests: `make test`
-* Focused run: `pytest -k "<expr>" -q`
+* Focused run: `pytest -c configs/python/pytest.ini -k "<expr>" -q`
 * Coverage report: HTML in `htmlcov/`
 * **Project bar:** \~**2,600+ tests** with **≥98%** coverage across unit/integration/functional/E2E. Keep it green.
 
