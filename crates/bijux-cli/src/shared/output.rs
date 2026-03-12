@@ -3,6 +3,7 @@
 
 use crate::contracts::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
 use serde_json::Value;
+use std::io::IsTerminal;
 
 /// Output stream target for emitters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,7 +43,7 @@ pub struct EmitterConfig {
 impl Default for EmitterConfig {
     fn default() -> Self {
         Self {
-            format: OutputFormat::Json,
+            format: OutputFormat::Text,
             pretty: true,
             color: ColorMode::Auto,
             log_level: LogLevel::Info,
@@ -68,7 +69,11 @@ fn should_emit_color(cfg: EmitterConfig) -> bool {
         return false;
     }
 
-    !matches!(cfg.color, ColorMode::Never)
+    match cfg.color {
+        ColorMode::Always => true,
+        ColorMode::Never => false,
+        ColorMode::Auto => std::io::stdout().is_terminal() || std::io::stderr().is_terminal(),
+    }
 }
 
 fn colorize_error(s: &str, cfg: EmitterConfig) -> String {
@@ -94,19 +99,92 @@ fn render_json(value: &Value, pretty: bool) -> Result<String, EmitError> {
     }
 }
 
+fn scalar_text(value: &Value) -> Option<String> {
+    match value {
+        Value::Null => Some("null".to_string()),
+        Value::Bool(boolean) => Some(boolean.to_string()),
+        Value::Number(number) => Some(number.to_string()),
+        Value::String(text) => Some(text.clone()),
+        _ => None,
+    }
+}
+
+fn render_text_lines(value: &Value, indent: usize, lines: &mut Vec<String>) {
+    let pad = " ".repeat(indent);
+    match value {
+        Value::Object(map) => {
+            if map.is_empty() {
+                lines.push(format!("{pad}{{}}"));
+                return;
+            }
+            for (key, item) in map {
+                if let Some(scalar) = scalar_text(item) {
+                    lines.push(format!("{pad}{key}: {scalar}"));
+                    continue;
+                }
+                if let Some(array) = item.as_array() {
+                    if array.is_empty() {
+                        lines.push(format!("{pad}{key}: []"));
+                        continue;
+                    }
+                }
+                if let Some(object) = item.as_object() {
+                    if object.is_empty() {
+                        lines.push(format!("{pad}{key}: {{}}"));
+                        continue;
+                    }
+                }
+
+                lines.push(format!("{pad}{key}:"));
+                render_text_lines(item, indent + 2, lines);
+            }
+        }
+        Value::Array(items) => {
+            if items.is_empty() {
+                lines.push(format!("{pad}[]"));
+                return;
+            }
+            for item in items {
+                if let Some(scalar) = scalar_text(item) {
+                    lines.push(format!("{pad}- {scalar}"));
+                    continue;
+                }
+                if let Some(array) = item.as_array() {
+                    if array.is_empty() {
+                        lines.push(format!("{pad}- []"));
+                        continue;
+                    }
+                }
+                if let Some(object) = item.as_object() {
+                    if object.is_empty() {
+                        lines.push(format!("{pad}- {{}}"));
+                        continue;
+                    }
+                }
+
+                lines.push(format!("{pad}-"));
+                render_text_lines(item, indent + 2, lines);
+            }
+        }
+        _ => lines.push(format!("{pad}{}", scalar_text(value).unwrap_or_default())),
+    }
+}
+
+fn render_text(value: &Value) -> String {
+    if let Some(scalar) = scalar_text(value) {
+        return scalar;
+    }
+
+    let mut lines = Vec::new();
+    render_text_lines(value, 0, &mut lines);
+    lines.join("\n")
+}
+
 /// Render arbitrary value in configured format.
 pub fn render_value(value: &Value, cfg: EmitterConfig) -> Result<String, EmitError> {
     match cfg.format {
         OutputFormat::Yaml => serde_yaml::to_string(value).map_err(EmitError::from),
-        OutputFormat::Text => {
-            if let Some(text) = value.as_str() {
-                Ok(text.to_string())
-            } else if cfg.pretty {
-                render_json(value, true)
-            } else {
-                render_json(value, false)
-            }
-        }
+        OutputFormat::Text => Ok(render_text(value)),
         _ => render_json(value, cfg.pretty),
     }
 }

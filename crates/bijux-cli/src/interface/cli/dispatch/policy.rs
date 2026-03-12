@@ -1,16 +1,25 @@
 //! Exit and rendering policy helpers for command execution.
 
 use std::env;
+use std::io::IsTerminal;
 
 use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use crate::interface::cli::parser::ParsedGlobalFlags;
 use crate::shared::output::EmitterConfig;
 
+fn default_output_format() -> OutputFormat {
+    if std::io::stdout().is_terminal() {
+        OutputFormat::Text
+    } else {
+        OutputFormat::Json
+    }
+}
+
 pub(super) fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
     EmitterConfig {
-        format: flags.output_format.unwrap_or(OutputFormat::Json),
+        format: flags.output_format.unwrap_or_else(default_output_format),
         pretty: !matches!(flags.pretty_mode, Some(PrettyMode::Compact)),
-        color: flags.color_mode.unwrap_or(ColorMode::Never),
+        color: flags.color_mode.unwrap_or(ColorMode::Auto),
         log_level: flags.log_level.unwrap_or(LogLevel::Info),
         quiet: flags.quiet,
         no_color: env::var("NO_COLOR").ok().as_deref() == Some("1"),
