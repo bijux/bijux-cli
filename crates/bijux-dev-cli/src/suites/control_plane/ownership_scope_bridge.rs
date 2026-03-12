@@ -4,7 +4,9 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
-            let run_cmd = |args: &[&str], envs: &[(&str, String)]| -> std::process::Output {
+            let run_cmd = |args: &[&str],
+                           envs: &[(&str, String)]|
+             -> Result<std::process::Output, String> {
                 let mut cmd = Command::new("cargo");
                 cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
                     .args(args)
@@ -12,7 +14,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 for (k, v) in envs {
                     cmd.env(k, v);
                 }
-                cmd.output().expect("failed to execute cargo run for resilience report")
+                cmd.output()
+                    .map_err(|error| format!("failed to execute cargo run for resilience report: {error}"))
             };
             let summary_commands: Vec<Vec<&str>> = vec![
                 vec!["dev", "cli", "status"],
@@ -41,11 +44,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 second.extend(["--format", "json", "--no-pretty"]);
                 let a = run_cmd(&first, &[]);
                 let b = run_cmd(&second, &[]);
+                let stable = matches!((&a, &b), (Ok(left), Ok(right))
+                    if left.status.code() == right.status.code() && left.stdout == right.stdout);
                 determinism_rows.push(json!({
                     "command": command.join(" "),
-                    "stable": a.status.code() == b.status.code() && a.stdout == b.stdout,
-                    "first_exit": a.status.code().unwrap_or(1),
-                    "second_exit": b.status.code().unwrap_or(1),
+                    "stable": stable,
+                    "first_exit": a.as_ref().ok().and_then(|out| out.status.code()),
+                    "second_exit": b.as_ref().ok().and_then(|out| out.status.code()),
+                    "first_error": a.as_ref().err(),
+                    "second_error": b.as_ref().err(),
                 }));
             }
             let tmp = std::env::temp_dir()
@@ -78,8 +85,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ("BIJUX_MEMORY_PATH", memory.display().to_string()),
                 ("BIJUX_PLUGINS_DIR", plugins.display().to_string()),
             ];
+            let mut side_effect_run_errors = Vec::<String>::new();
             for command in summary_commands.iter().chain(machine_commands.iter()) {
-                let _ = run_cmd(command, &envs);
+                if let Err(error) = run_cmd(command, &envs) {
+                    side_effect_run_errors.push(format!("{}: {error}", command.join(" ")));
+                }
             }
             let after = json!({"config":digest(&config),"history":digest(&history),"memory":digest(&memory)});
             let _ = fs::remove_dir_all(&tmp);
@@ -123,15 +133,27 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for (case_id, command, env) in &failure_cases {
                 let mut args = command.clone();
                 args.extend(["--format", "json", "--no-pretty"]);
-                let out = run_cmd(&args, env);
-                let payload =
-                    serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| json!({}));
-                failure_rows.push(json!({
-                    "case_id": case_id,
-                    "command": command.join(" "),
-                    "exit_code": out.status.code().unwrap_or(1),
-                    "json_object": payload.is_object(),
-                }));
+                match run_cmd(&args, env) {
+                    Ok(out) => {
+                        let payload =
+                            serde_json::from_slice::<Value>(&out.stdout).unwrap_or_else(|_| json!({}));
+                        failure_rows.push(json!({
+                            "case_id": case_id,
+                            "command": command.join(" "),
+                            "exit_code": out.status.code().unwrap_or(1),
+                            "json_object": payload.is_object(),
+                        }));
+                    }
+                    Err(error) => {
+                        failure_rows.push(json!({
+                            "case_id": case_id,
+                            "command": command.join(" "),
+                            "exit_code": Value::Null,
+                            "json_object": false,
+                            "spawn_error": error,
+                        }));
+                    }
+                }
             }
             let summary_set: BTreeSet<String> =
                 summary_commands.iter().map(|c| c.join(" ")).collect();
@@ -143,6 +165,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "summary_commands_deterministic": determinism_rows.iter().filter(|r| summary_set.contains(r.get("command").and_then(Value::as_str).unwrap_or(""))).all(|r| r.get("stable").and_then(Value::as_bool)==Some(true)),
                 "machine_commands_deterministic": determinism_rows.iter().filter(|r| machine_set.contains(r.get("command").and_then(Value::as_str).unwrap_or(""))).all(|r| r.get("stable").and_then(Value::as_bool)==Some(true)),
                 "read_only_commands_did_not_mutate_state": before == after,
+                "side_effect_runs_executed": side_effect_run_errors.is_empty(),
             });
             let drift_checks: Vec<String> = checks
                 .as_object()
@@ -154,7 +177,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 })
                 .unwrap_or_default();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_control_plane_resilience_artifact.json", &json!({
-                                "scope":"dev cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,
+                                "scope":"dev cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,"side_effect_run_errors":side_effect_run_errors,
                                 "status": if drift_checks.is_empty() {"complete"} else {"partial"}
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_determinism_artifact.json", &json!({
