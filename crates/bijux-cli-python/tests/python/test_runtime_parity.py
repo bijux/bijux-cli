@@ -49,6 +49,12 @@ def test_python_entrypoint_parity_with_runtime_for_version() -> None:
     assert wrapper.strip() == direct.stdout.strip()
 
 
+def test_python_facade_normalizes_version_flag_to_version_command() -> None:
+    from_flag = execution_facade(["--version"])
+    from_command = execution_facade(["version"])
+    assert from_flag.strip() == from_command.strip()
+
+
 def test_python_module_main_parity_with_runtime_for_version() -> None:
     runtime = _runtime_binary()
     direct = subprocess.run([runtime, "version"], capture_output=True, text=True, check=False)

@@ -134,6 +134,9 @@ def execution_facade(argv: Iterable[str]) -> str:
 
 def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
     args = list(argv)
+    if args in (["--version"], ["-V"]):
+        args = ["version"]
+
     if NATIVE_AVAILABLE:
         if not hasattr(native, "execution_outcome"):
             raise NativeExtensionUnavailable(

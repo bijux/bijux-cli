@@ -10,7 +10,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -30,6 +33,19 @@ fn parity_version_against_current_expected_behavior() {
     assert_eq!(out.status.code(), Some(core.exit_code));
     assert_eq!(String::from_utf8_lossy(&out.stdout), core.stdout);
     assert_eq!(String::from_utf8_lossy(&out.stderr), core.stderr);
+}
+
+#[test]
+fn parity_version_flag_matches_version_command() {
+    let flag = run(&["--version"]);
+    assert!(flag.status.success());
+    let flagged_payload: Value = serde_json::from_slice(&flag.stdout).expect("json");
+    assert!(flagged_payload.get("version").is_some());
+
+    let command = run(&["version"]);
+    assert_eq!(flag.status.code(), command.status.code());
+    assert_eq!(flag.stdout, command.stdout);
+    assert_eq!(flag.stderr, command.stderr);
 }
 
 #[test]
@@ -131,9 +147,15 @@ fn help_snapshot_exists_for_every_root_command() {
     ];
     for cmd in roots {
         let out = run(&[cmd, "--help"]);
-        assert!(out.status.success(), "help must succeed for root command {cmd}");
+        assert!(
+            out.status.success(),
+            "help must succeed for root command {cmd}"
+        );
         let stdout = String::from_utf8(out.stdout).expect("utf-8");
-        assert!(stdout.contains("Usage:"), "help for {cmd} should include Usage");
+        assert!(
+            stdout.contains("Usage:"),
+            "help for {cmd} should include Usage"
+        );
     }
 }
 
@@ -151,7 +173,10 @@ fn exit_code_and_stream_discipline_for_root_commands() {
     for args in success_cases {
         let out = run(args);
         assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
-        assert!(!out.stdout.is_empty(), "stdout should contain payload for {args:?}");
+        assert!(
+            !out.stdout.is_empty(),
+            "stdout should contain payload for {args:?}"
+        );
         assert!(out.stderr.is_empty(), "stderr should be empty for {args:?}");
     }
 
@@ -187,27 +212,46 @@ fn machine_readable_root_commands_support_json_and_yaml() {
         let yaml_out = run(&yaml_args);
         assert!(yaml_out.status.success(), "yaml mode failed for {base:?}");
         let yaml = String::from_utf8(yaml_out.stdout).expect("utf-8");
-        assert!(!yaml.trim().is_empty(), "yaml output should not be empty for {base:?}");
+        assert!(
+            !yaml.trim().is_empty(),
+            "yaml output should not be empty for {base:?}"
+        );
     }
 }
 
 #[test]
 fn quiet_mode_is_supported_for_relevant_root_commands() {
-    let relevant: &[&[&str]] =
-        &[&["status"], &["doctor"], &["inspect"], &["docs"], &["audit"], &["sleep", "0"]];
+    let relevant: &[&[&str]] = &[
+        &["status"],
+        &["doctor"],
+        &["inspect"],
+        &["docs"],
+        &["audit"],
+        &["sleep", "0"],
+    ];
     for args in relevant {
         let mut quiet_args = args.to_vec();
         quiet_args.insert(0, "--quiet");
         let out = run(&quiet_args);
         assert!(out.status.success(), "quiet mode failed for {args:?}");
-        assert!(out.stdout.is_empty(), "quiet should suppress stdout for {args:?}");
-        assert!(out.stderr.is_empty(), "quiet should suppress stderr for {args:?}");
+        assert!(
+            out.stdout.is_empty(),
+            "quiet should suppress stdout for {args:?}"
+        );
+        assert!(
+            out.stderr.is_empty(),
+            "quiet should suppress stderr for {args:?}"
+        );
     }
 }
 
 #[test]
 fn no_color_is_supported_for_text_root_commands() {
-    for args in [vec!["help"], vec!["help", "status"], vec!["help", "plugins"]] {
+    for args in [
+        vec!["help"],
+        vec!["help", "status"],
+        vec!["help", "plugins"],
+    ] {
         let mut argv = vec!["--color", "never"];
         argv.extend(args);
         let out = run(&argv);
@@ -228,9 +272,19 @@ fn malformed_input_is_rejected_for_argument_taking_root_commands() {
     ];
     for args in malformed {
         let out = run(args);
-        assert_ne!(out.status.code(), Some(0), "malformed input should fail for {args:?}");
-        assert!(out.stdout.is_empty(), "malformed input should not print stdout for {args:?}");
-        assert!(!out.stderr.is_empty(), "malformed input should print stderr for {args:?}");
+        assert_ne!(
+            out.status.code(),
+            Some(0),
+            "malformed input should fail for {args:?}"
+        );
+        assert!(
+            out.stdout.is_empty(),
+            "malformed input should not print stdout for {args:?}"
+        );
+        assert!(
+            !out.stderr.is_empty(),
+            "malformed input should print stderr for {args:?}"
+        );
     }
 }
 
@@ -269,6 +323,9 @@ fn root_command_matrix_artifact_smoke_uses_supported_commands() {
     ];
     for args in matrix {
         let payload = run_ok_json(args);
-        assert!(payload.is_object(), "matrix command should return object payload: {args:?}");
+        assert!(
+            payload.is_object(),
+            "matrix command should return object payload: {args:?}"
+        );
     }
 }

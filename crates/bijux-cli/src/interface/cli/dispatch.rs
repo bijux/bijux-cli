@@ -56,6 +56,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
+    if argv.len() == 2 && matches!(argv[1].as_str(), "--version" | "-V") {
+        let normalized = vec![argv[0].clone(), "version".to_string()];
+        return run_app(&normalized);
+    }
+
     if argv.len() >= 2 && argv[1] == "help" {
         let path: Vec<&str> = argv[2..].iter().map(String::as_str).collect();
         return Ok(AppRunResult {
@@ -66,7 +71,11 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
-        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+        return Ok(AppRunResult {
+            exit_code: 0,
+            stdout: help,
+            stderr: String::new(),
+        });
     }
 
     let mut prevalidated_intent = None;
@@ -126,10 +135,18 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, policy::emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
+    let content = if rendered.ends_with('\n') {
+        rendered
+    } else {
+        format!("{rendered}\n")
+    };
 
     if is_unknown {
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
+        return Ok(AppRunResult {
+            exit_code: 2,
+            stdout: String::new(),
+            stderr: content,
+        });
     }
 
     let route_exit_code = 0;
@@ -142,5 +159,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
+    Ok(AppRunResult {
+        exit_code: route_exit_code,
+        stdout: content,
+        stderr: String::new(),
+    })
 }
