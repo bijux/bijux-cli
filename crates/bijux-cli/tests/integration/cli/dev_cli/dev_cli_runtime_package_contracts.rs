@@ -3,13 +3,17 @@
 
 use std::env;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
 use serde_json::Value;
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("bijux-runtime-package-{name}-{}", std::process::id()));
+    let dir = env::temp_dir().join(format!(
+        "bijux-runtime-package-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -25,7 +29,17 @@ fn run(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
 }
 
 fn run_runtime_identity_json(envs: &[(&str, String)]) -> Value {
-    let out = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
+    let out = run(
+        &[
+            "dev",
+            "cli",
+            "runtime-identity",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        envs,
+    );
     assert!(
         out.status.success(),
         "runtime-identity failed: {}",
@@ -35,13 +49,43 @@ fn run_runtime_identity_json(envs: &[(&str, String)]) -> Value {
 }
 
 fn run_package_health_json(envs: &[(&str, String)]) -> Value {
-    let out = run(&["dev", "cli", "package-health", "--format", "json", "--no-pretty"], envs);
+    let out = run(
+        &[
+            "dev",
+            "cli",
+            "package-health",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        envs,
+    );
     assert!(
         out.status.success(),
         "package-health failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
     serde_json::from_slice(&out.stdout).expect("package-health json")
+}
+
+fn executable_name() -> String {
+    let extension = std::env::consts::EXE_EXTENSION;
+    if extension.is_empty() {
+        "bijux".to_string()
+    } else {
+        format!("bijux.{extension}")
+    }
+}
+
+fn write_executable(path: &Path, body: &str) {
+    fs::write(path, body).expect("write executable");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(path).expect("metadata").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(path, permissions).expect("chmod +x");
+    }
 }
 
 #[test]
@@ -55,8 +99,12 @@ fn runtime_identity_and_package_health_json_and_text_contracts() {
     let package_text = run(&["dev", "cli", "package-health", "--format", "text"], &[]);
     assert!(runtime_text.status.success());
     assert!(package_text.status.success());
-    assert!(!String::from_utf8_lossy(&runtime_text.stdout).trim().is_empty());
-    assert!(!String::from_utf8_lossy(&package_text.stdout).trim().is_empty());
+    assert!(!String::from_utf8_lossy(&runtime_text.stdout)
+        .trim()
+        .is_empty());
+    assert!(!String::from_utf8_lossy(&package_text.stdout)
+        .trim()
+        .is_empty());
 }
 
 #[test]
@@ -66,11 +114,18 @@ fn runtime_identity_detects_pure_cargo_and_pure_pip_paths() {
     let pip = root.join("site-packages").join("bin");
     fs::create_dir_all(&cargo).expect("mkdir cargo");
     fs::create_dir_all(&pip).expect("mkdir pip");
-    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
-    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
+    let executable = executable_name();
+    write_executable(&cargo.join(&executable), "#!/bin/sh\n");
+    write_executable(&pip.join(&executable), "#!/bin/sh\n");
 
-    let cargo_path = env::join_paths([&cargo]).expect("join").to_string_lossy().to_string();
-    let pip_path = env::join_paths([&pip]).expect("join").to_string_lossy().to_string();
+    let cargo_path = env::join_paths([&cargo])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
+    let pip_path = env::join_paths([&pip])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
 
     let cargo_payload = run_runtime_identity_json(&[("PATH", cargo_path)]);
     let pip_payload = run_runtime_identity_json(&[("PATH", pip_path)]);
@@ -85,14 +140,21 @@ fn runtime_identity_detects_mixed_install_ambiguity_and_path_shadowing() {
     let second = root.join(".cargo").join("bin");
     fs::create_dir_all(&first).expect("mkdir first");
     fs::create_dir_all(&second).expect("mkdir second");
-    fs::write(first.join("bijux"), "#!/bin/sh\n").expect("write first");
-    fs::write(second.join("bijux"), "#!/bin/sh\n").expect("write second");
-    let path = env::join_paths([&first, &second]).expect("join").to_string_lossy().to_string();
+    let executable = executable_name();
+    write_executable(&first.join(&executable), "#!/bin/sh\n");
+    write_executable(&second.join(&executable), "#!/bin/sh\n");
+    let path = env::join_paths([&first, &second])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
 
     let payload = run_runtime_identity_json(&[("PATH", path)]);
     assert_eq!(payload["active_binary_selection_is_ambiguous"], true);
     assert_eq!(payload["diagnostics"]["path_shadowing_detected"], true);
-    assert_eq!(payload["diagnostics"]["mixed_pip_cargo_install_detected"], true);
+    assert_eq!(
+        payload["diagnostics"]["mixed_pip_cargo_install_detected"],
+        true
+    );
 }
 
 #[test]
@@ -100,17 +162,28 @@ fn runtime_identity_detects_stale_wrapper_and_binary_version_mismatch() {
     let root = tmp_dir("wrapper-mismatch");
     let wrappers = root.join("wrappers");
     fs::create_dir_all(&wrappers).expect("mkdir wrappers");
-    fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n")
-        .expect("write wrapper");
-    let path = env::join_paths([&wrappers]).expect("join path").to_string_lossy().to_string();
+    write_executable(
+        &wrappers.join("bijux.sh"),
+        "#!/bin/sh\nexec /missing/bijux\n",
+    );
+    let path = env::join_paths([&wrappers])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
 
     let payload = run_runtime_identity_json(&[
         ("PATH", path),
-        ("BIJUX_BIN", root.join("missing-bijux").to_string_lossy().to_string()),
+        (
+            "BIJUX_BIN",
+            root.join("missing-bijux").to_string_lossy().to_string(),
+        ),
         ("BIJUX_WHEEL_VERSION", "0.0.1".to_string()),
     ]);
     assert_eq!(payload["diagnostics"]["stale_wrapper_detected"], true);
-    assert_eq!(payload["diagnostics"]["mismatched_wheel_binary_versions"], true);
+    assert_eq!(
+        payload["diagnostics"]["mismatched_wheel_binary_versions"],
+        true
+    );
 }
 
 #[test]
@@ -133,7 +206,9 @@ fn package_health_reports_python_runtime_relevance_and_assumptions() {
         "runtime identity rules shape should be present"
     );
     assert!(
-        payload["install_state_assumptions"].as_array().is_some_and(|rows| !rows.is_empty()),
+        payload["install_state_assumptions"]
+            .as_array()
+            .is_some_and(|rows| !rows.is_empty()),
         "install assumptions should be present"
     );
 }
@@ -145,9 +220,13 @@ fn runtime_identity_and_package_health_are_deterministic_under_ambiguity() {
     let second = root.join("second-site-packages");
     fs::create_dir_all(&first).expect("mkdir first");
     fs::create_dir_all(&second).expect("mkdir second");
-    fs::write(first.join("bijux"), "#!/bin/sh\n").expect("write first");
-    fs::write(second.join("bijux"), "#!/bin/sh\n").expect("write second");
-    let path = env::join_paths([&first, &second]).expect("join").to_string_lossy().to_string();
+    let executable = executable_name();
+    write_executable(&first.join(&executable), "#!/bin/sh\n");
+    write_executable(&second.join(&executable), "#!/bin/sh\n");
+    let path = env::join_paths([&first, &second])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
     let envs = [("PATH", path)];
 
     let runtime_first = run_runtime_identity_json(&envs);
@@ -155,6 +234,9 @@ fn runtime_identity_and_package_health_are_deterministic_under_ambiguity() {
     let package_first = run_package_health_json(&envs);
     let package_second = run_package_health_json(&envs);
 
-    assert_eq!(runtime_first, runtime_second, "runtime identity output drift");
+    assert_eq!(
+        runtime_first, runtime_second,
+        "runtime identity output drift"
+    );
     assert_eq!(package_first, package_second, "package health output drift");
 }

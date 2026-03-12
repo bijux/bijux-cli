@@ -41,9 +41,31 @@ pub use state::{
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::completion::{completion_file_path, completion_script, detect_shell};
     use super::*;
     use tempfile::TempDir;
+
+    fn test_executable_name() -> String {
+        let extension = std::env::consts::EXE_EXTENSION;
+        if extension.is_empty() {
+            CANONICAL_EXECUTABLE.to_string()
+        } else {
+            format!("{CANONICAL_EXECUTABLE}.{extension}")
+        }
+    }
+
+    fn write_executable(path: &Path, content: &[u8]) {
+        std::fs::write(path, content).expect("write executable");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(path).expect("metadata").permissions();
+            perms.set_mode(0o755);
+            std::fs::set_permissions(path, perms).expect("chmod +x");
+        }
+    }
 
     #[test]
     fn cargo_channels_resolve_to_same_canonical_executable() {
@@ -76,13 +98,45 @@ mod tests {
         let second = temp.path().join("second");
         std::fs::create_dir_all(&first).expect("first");
         std::fs::create_dir_all(&second).expect("second");
-        std::fs::write(first.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write first");
-        std::fs::write(second.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write second");
+        let executable = test_executable_name();
+        write_executable(&first.join(&executable), b"#!/bin/sh\n");
+        write_executable(&second.join(&executable), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&first, &second]).expect("join");
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 2);
         assert!(discovered[0].contains("first"));
         assert!(discovered[1].contains("second"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn path_binary_discovery_ignores_non_executable_files() {
+        let temp = TempDir::new().expect("tempdir");
+        let bin = temp.path().join("bin");
+        std::fs::create_dir_all(&bin).expect("mkdir bin");
+        let executable = test_executable_name();
+        std::fs::write(bin.join(&executable), b"#!/bin/sh\n").expect("write file");
+        let path_value = std::env::join_paths([&bin]).expect("join path");
+
+        let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
+        assert!(
+            discovered.is_empty(),
+            "non-executable file should not be discovered"
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn path_binary_discovery_finds_windows_executable_suffix() {
+        let temp = TempDir::new().expect("tempdir");
+        let bin = temp.path().join("bin");
+        std::fs::create_dir_all(&bin).expect("mkdir bin");
+        std::fs::write(bin.join("bijux.exe"), b"stub").expect("write exe");
+        let path_value = std::env::join_paths([&bin]).expect("join path");
+
+        let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
+        assert_eq!(discovered.len(), 1);
+        assert!(discovered[0].ends_with("bijux.exe"));
     }
 
     #[test]
@@ -92,8 +146,9 @@ mod tests {
         let cargo_like = temp.path().join(".cargo-bin");
         std::fs::create_dir_all(&pip_like).expect("pip dir");
         std::fs::create_dir_all(&cargo_like).expect("cargo dir");
-        std::fs::write(pip_like.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write pip");
-        std::fs::write(cargo_like.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write cargo");
+        let executable = test_executable_name();
+        write_executable(&pip_like.join(&executable), b"#!/bin/sh\n");
+        write_executable(&cargo_like.join(&executable), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&pip_like, &cargo_like]).expect("join");
 
         let report = install_health_report(
@@ -115,12 +170,17 @@ mod tests {
         let cargo_bin = temp.path().join(".cargo/bin");
         std::fs::create_dir_all(&pip_bin).expect("pip dir");
         std::fs::create_dir_all(&cargo_bin).expect("cargo dir");
-        std::fs::write(pip_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write pip");
-        std::fs::write(cargo_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write cargo");
+        let executable = test_executable_name();
+        write_executable(&pip_bin.join(&executable), b"#!/bin/sh\n");
+        write_executable(&cargo_bin.join(&executable), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&pip_bin, &cargo_bin]).expect("join");
 
-        let report =
-            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
+        let report = install_health_report(
+            path_value.to_str().expect("utf-8 path"),
+            None,
+            None,
+            "1.0.0",
+        );
 
         assert!(report.has_path_shadowing);
         assert!(report.has_duplicate_installs);
@@ -135,12 +195,18 @@ mod tests {
         let temp = TempDir::new().expect("tempdir");
         let wrappers = temp.path().join("wrappers");
         std::fs::create_dir_all(&wrappers).expect("wrapper dir");
-        std::fs::write(wrappers.join("bijux.sh"), b"#!/bin/sh\nexec /missing/bijux\n")
-            .expect("write wrapper");
+        write_executable(
+            &wrappers.join("bijux.sh"),
+            b"#!/bin/sh\nexec /missing/bijux\n",
+        );
         let path_value = std::env::join_paths([&wrappers]).expect("join path");
 
-        let report =
-            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
+        let report = install_health_report(
+            path_value.to_str().expect("utf-8 path"),
+            None,
+            None,
+            "1.0.0",
+        );
 
         assert!(!report.stale_wrapper_scripts.is_empty());
     }
@@ -156,7 +222,8 @@ mod tests {
         let temp = TempDir::new().expect("tempdir");
         let dir = temp.path().join("bin");
         std::fs::create_dir_all(&dir).expect("mkdir");
-        std::fs::write(dir.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write binary");
+        let executable = test_executable_name();
+        write_executable(&dir.join(&executable), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&dir]).expect("join path");
         let report = install_health_report(
             path_value.to_str().expect("utf-8 path"),
@@ -164,7 +231,10 @@ mod tests {
             None,
             "1.0.0",
         );
-        assert!(report.active_binary.as_deref().is_some_and(|value| value.contains("/bin/bijux")));
+        assert!(report
+            .active_binary
+            .as_deref()
+            .is_some_and(|value| value.ends_with(&executable)));
     }
 
     #[test]
@@ -235,13 +305,13 @@ mod tests {
         let link_dir = temp.path().join("link-bin");
         std::fs::create_dir_all(&target_dir).expect("mkdir target");
         std::fs::create_dir_all(&link_dir).expect("mkdir link");
-        let binary = target_dir.join(CANONICAL_EXECUTABLE);
-        std::fs::write(&binary, b"#!/bin/sh\n").expect("write binary");
+        let executable = test_executable_name();
+        let binary = target_dir.join(&executable);
+        write_executable(&binary, b"#!/bin/sh\n");
         #[cfg(unix)]
-        std::os::unix::fs::symlink(&binary, link_dir.join(CANONICAL_EXECUTABLE)).expect("symlink");
+        std::os::unix::fs::symlink(&binary, link_dir.join(&executable)).expect("symlink");
         #[cfg(windows)]
-        std::os::windows::fs::symlink_file(&binary, link_dir.join(CANONICAL_EXECUTABLE))
-            .expect("symlink");
+        std::os::windows::fs::symlink_file(&binary, link_dir.join(&executable)).expect("symlink");
         let path_value = std::env::join_paths([&link_dir]).expect("join");
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 1);
@@ -249,9 +319,16 @@ mod tests {
 
     #[test]
     fn windows_path_override_preserves_whitespace_without_truncation() {
-        let report =
-            install_health_report("", Some(r"  C:\Program Files\Bijux\bijux.exe  "), None, "1.0.0");
-        assert_eq!(report.active_binary.as_deref(), Some(r"  C:\Program Files\Bijux\bijux.exe  "));
+        let report = install_health_report(
+            "",
+            Some(r"  C:\Program Files\Bijux\bijux.exe  "),
+            None,
+            "1.0.0",
+        );
+        assert_eq!(
+            report.active_binary.as_deref(),
+            Some(r"  C:\Program Files\Bijux\bijux.exe  ")
+        );
     }
 
     #[test]
@@ -306,7 +383,10 @@ mod tests {
     fn windows_path_resolution_is_supported() {
         let home = std::path::PathBuf::from(r"C:\Users\bijan");
         let mut env_map = std::collections::HashMap::new();
-        env_map.insert(ENV_PLUGINS_PATH.to_string(), r"C:\Users\bijan\.bijux\.plugins".to_string());
+        env_map.insert(
+            ENV_PLUGINS_PATH.to_string(),
+            r"C:\Users\bijan\.bijux\.plugins".to_string(),
+        );
         let resolved = discover_compatibility_paths(
             Some(&home),
             &PathOverrides::default(),
@@ -314,7 +394,10 @@ mod tests {
             &CompatibilityConfig::default(),
         )
         .expect("resolve");
-        assert!(resolved.plugins_dir.to_string_lossy().contains(r"C:\Users\bijan\.bijux\.plugins"));
+        assert!(resolved
+            .plugins_dir
+            .to_string_lossy()
+            .contains(r"C:\Users\bijan\.bijux\.plugins"));
     }
 
     #[test]
@@ -358,15 +441,23 @@ mod tests {
         assert!(zsh.to_string_lossy().ends_with("/_bijux"));
         assert!(fish.to_string_lossy().contains(".config/fish/completions"));
         assert!(fish.to_string_lossy().ends_with("/bijux.fish"));
-        assert!(powershell.to_string_lossy().contains("Microsoft.PowerShell_profile.ps1"));
+        assert!(powershell
+            .to_string_lossy()
+            .contains("Microsoft.PowerShell_profile.ps1"));
     }
 
     #[test]
     fn shell_detection_rejects_unknown_shell_values() {
         assert_eq!(detect_shell(Some("/bin/bash")), Some(CompletionShell::Bash));
         assert_eq!(detect_shell(Some("/bin/zsh")), Some(CompletionShell::Zsh));
-        assert_eq!(detect_shell(Some("/usr/bin/fish")), Some(CompletionShell::Fish));
-        assert_eq!(detect_shell(Some("powershell.exe")), Some(CompletionShell::PowerShell));
+        assert_eq!(
+            detect_shell(Some("/usr/bin/fish")),
+            Some(CompletionShell::Fish)
+        );
+        assert_eq!(
+            detect_shell(Some("powershell.exe")),
+            Some(CompletionShell::PowerShell)
+        );
         assert_eq!(detect_shell(Some("/usr/bin/unknown")), None);
     }
 
@@ -392,7 +483,10 @@ mod tests {
         let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
         assert_eq!(cargo_canonical.package_name, pip_canonical.package_name);
         assert_eq!(cargo_compat.package_name, pip_compat.package_name);
-        assert_eq!(cargo_canonical.executable_name, pip_canonical.executable_name);
+        assert_eq!(
+            cargo_canonical.executable_name,
+            pip_canonical.executable_name
+        );
         assert_eq!(cargo_compat.executable_name, pip_compat.executable_name);
     }
 

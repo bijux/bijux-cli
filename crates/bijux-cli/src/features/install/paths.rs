@@ -7,18 +7,95 @@ use std::{fs, io};
 use super::metadata::CANONICAL_EXECUTABLE;
 
 fn is_executable_like(path: &Path) -> bool {
-    path.is_file()
+    if !path.is_file() {
+        return false;
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        return fs::metadata(path)
+            .map(|meta| meta.permissions().mode() & 0o111 != 0)
+            .unwrap_or(false);
+    }
+
+    #[cfg(windows)]
+    {
+        let Some(ext) = path.extension().and_then(|value| value.to_str()) else {
+            return false;
+        };
+        let ext = format!(".{}", ext.to_ascii_uppercase());
+        return executable_extensions()
+            .iter()
+            .any(|allowed| allowed == &ext);
+    }
+
+    #[cfg(not(any(unix, windows)))]
+    {
+        true
+    }
 }
 
 fn path_entries(path_value: &str) -> impl Iterator<Item = PathBuf> + '_ {
     std::env::split_paths(path_value)
 }
 
+fn canonical_executable_name() -> String {
+    let extension = std::env::consts::EXE_EXTENSION;
+    if extension.is_empty() {
+        CANONICAL_EXECUTABLE.to_string()
+    } else {
+        format!("{CANONICAL_EXECUTABLE}.{extension}")
+    }
+}
+
+#[cfg(windows)]
+fn executable_extensions() -> Vec<String> {
+    if let Some(raw) = std::env::var_os("PATHEXT") {
+        let parsed: Vec<String> = raw
+            .to_string_lossy()
+            .split(';')
+            .map(str::trim)
+            .filter(|part| !part.is_empty())
+            .map(|part| {
+                let normalized = if part.starts_with('.') {
+                    part.to_string()
+                } else {
+                    format!(".{part}")
+                };
+                normalized.to_ascii_uppercase()
+            })
+            .collect();
+        if !parsed.is_empty() {
+            return parsed;
+        }
+    }
+    vec![
+        ".COM".to_string(),
+        ".EXE".to_string(),
+        ".BAT".to_string(),
+        ".CMD".to_string(),
+    ]
+}
+
+#[cfg(windows)]
+fn executable_candidates(entry: PathBuf) -> Vec<PathBuf> {
+    executable_extensions()
+        .into_iter()
+        .map(|ext| entry.join(format!("{CANONICAL_EXECUTABLE}{ext}")))
+        .collect()
+}
+
+#[cfg(not(windows))]
+fn executable_candidates(entry: PathBuf) -> Vec<PathBuf> {
+    vec![entry.join(canonical_executable_name())]
+}
+
 /// Collect discovered `bijux` binaries in PATH order.
 #[must_use]
 pub fn discover_path_binaries(path_value: &str) -> Vec<String> {
     path_entries(path_value)
-        .map(|entry| entry.join(CANONICAL_EXECUTABLE))
+        .flat_map(executable_candidates)
         .filter(|candidate| is_executable_like(candidate))
         .map(|candidate| candidate.display().to_string())
         .collect()
@@ -36,10 +113,11 @@ pub fn resolve_active_binary(path_value: &str, bin_override: Option<&str>) -> Op
 /// Detect stale wrapper scripts in PATH.
 #[must_use]
 pub fn detect_stale_wrapper_scripts(path_value: &str) -> Vec<String> {
+    let canonical = canonical_executable_name();
     path_entries(path_value)
         .map(|entry| entry.join(format!("{CANONICAL_EXECUTABLE}.sh")))
         .filter(|wrapper| is_executable_like(wrapper))
-        .filter(|wrapper| !wrapper.with_file_name(CANONICAL_EXECUTABLE).exists())
+        .filter(|wrapper| !wrapper.with_file_name(&canonical).exists())
         .map(|wrapper| wrapper.display().to_string())
         .collect()
 }

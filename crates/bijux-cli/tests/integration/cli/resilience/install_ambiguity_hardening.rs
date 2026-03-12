@@ -3,6 +3,7 @@
 
 use std::env;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -13,8 +14,11 @@ use shlex as _;
 use thiserror as _;
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let dir =
-        env::temp_dir().join(format!("bijux-install-ambiguity-{}-{}", name, std::process::id()));
+    let dir = env::temp_dir().join(format!(
+        "bijux-install-ambiguity-{}-{}",
+        name,
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -30,8 +34,17 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output 
 }
 
 fn run_identity(envs: &[(&str, String)]) -> Value {
-    let out =
-        run_with_env(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
+    let out = run_with_env(
+        &[
+            "dev",
+            "cli",
+            "runtime-identity",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        envs,
+    );
     assert_eq!(out.status.code(), Some(0));
     serde_json::from_slice(&out.stdout).expect("json")
 }
@@ -44,16 +57,39 @@ fn install_channel_path(root: &PathBuf, marker: &str) -> PathBuf {
     }
 }
 
+fn executable_name() -> String {
+    let extension = std::env::consts::EXE_EXTENSION;
+    if extension.is_empty() {
+        "bijux".to_string()
+    } else {
+        format!("bijux.{extension}")
+    }
+}
+
+fn write_executable(path: &Path, body: &str) {
+    fs::write(path, body).expect("write executable");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(path).expect("metadata").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(path, permissions).expect("chmod +x");
+    }
+}
+
 fn write_channel_binary(dir: &PathBuf) {
     fs::create_dir_all(dir).expect("mkdir channel dir");
-    fs::write(dir.join("bijux"), "#!/bin/sh\n").expect("write channel binary");
+    write_executable(&dir.join(executable_name()), "#!/bin/sh\n");
 }
 
 fn assert_command_runs_in_channel(marker: &str, args: &[&str], envs: &[(&str, String)]) {
     let root = tmp_dir(&format!("{marker}-{:?}", args).replace([' ', '"', ',', '[', ']'], "-"));
     let dir = install_channel_path(&root, marker);
     write_channel_binary(&dir);
-    let path = env::join_paths([&dir]).expect("join path").to_string_lossy().to_string();
+    let path = env::join_paths([&dir])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
 
     let mut with_path = vec![("PATH", path)];
     with_path.extend_from_slice(envs);
@@ -75,15 +111,25 @@ fn pip_binary_shadowed_by_cargo_binary_is_reported() {
     let cargo = root.join(".cargo/bin");
     fs::create_dir_all(&pip).expect("mkdir pip");
     fs::create_dir_all(&cargo).expect("mkdir cargo");
-    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
-    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
+    let executable = executable_name();
+    write_executable(&pip.join(&executable), "#!/bin/sh\n");
+    write_executable(&cargo.join(&executable), "#!/bin/sh\n");
 
-    let path = env::join_paths([&pip, &cargo]).expect("join path").to_string_lossy().to_string();
+    let path = env::join_paths([&pip, &cargo])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
     let payload = run_identity(&[("PATH", path)]);
     assert_eq!(payload["active_path_is_shadowed"], true);
     assert_eq!(payload["diagnostics"]["path_shadowing_detected"], true);
-    assert_eq!(payload["diagnostics"]["mixed_pip_cargo_install_detected"], true);
-    assert!(payload["active_binary"].as_str().expect("active").contains("site-packages-bin"));
+    assert_eq!(
+        payload["diagnostics"]["mixed_pip_cargo_install_detected"],
+        true
+    );
+    assert!(payload["active_binary"]
+        .as_str()
+        .expect("active")
+        .contains("site-packages-bin"));
 }
 
 #[test]
@@ -93,15 +139,25 @@ fn cargo_binary_shadowed_by_pip_binary_is_reported() {
     let pip = root.join("site-packages-bin");
     fs::create_dir_all(&cargo).expect("mkdir cargo");
     fs::create_dir_all(&pip).expect("mkdir pip");
-    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
-    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
+    let executable = executable_name();
+    write_executable(&cargo.join(&executable), "#!/bin/sh\n");
+    write_executable(&pip.join(&executable), "#!/bin/sh\n");
 
-    let path = env::join_paths([&cargo, &pip]).expect("join path").to_string_lossy().to_string();
+    let path = env::join_paths([&cargo, &pip])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
     let payload = run_identity(&[("PATH", path)]);
     assert_eq!(payload["active_path_is_shadowed"], true);
     assert_eq!(payload["diagnostics"]["path_shadowing_detected"], true);
-    assert_eq!(payload["diagnostics"]["mixed_pip_cargo_install_detected"], true);
-    assert!(payload["active_binary"].as_str().expect("active").contains(".cargo/bin"));
+    assert_eq!(
+        payload["diagnostics"]["mixed_pip_cargo_install_detected"],
+        true
+    );
+    assert!(payload["active_binary"]
+        .as_str()
+        .expect("active")
+        .contains(".cargo/bin"));
 }
 
 #[test]
@@ -109,13 +165,20 @@ fn stale_wrapper_and_deleted_cached_runtime_are_detected() {
     let root = tmp_dir("stale-wrapper");
     let wrappers = root.join("wrappers");
     fs::create_dir_all(&wrappers).expect("mkdir wrappers");
-    fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n")
-        .expect("write wrapper");
+    write_executable(
+        &wrappers.join("bijux.sh"),
+        "#!/bin/sh\nexec /missing/bijux\n",
+    );
 
     let deleted_runtime = root.join("deleted-bijux");
-    let path = env::join_paths([&wrappers]).expect("join path").to_string_lossy().to_string();
-    let payload =
-        run_identity(&[("PATH", path), ("BIJUX_BIN", deleted_runtime.display().to_string())]);
+    let path = env::join_paths([&wrappers])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
+    let payload = run_identity(&[
+        ("PATH", path),
+        ("BIJUX_BIN", deleted_runtime.display().to_string()),
+    ]);
 
     assert_eq!(payload["diagnostics"]["stale_wrapper_detected"], true);
     assert_eq!(payload["diagnostics"]["active_binary_missing"], true);
@@ -124,8 +187,14 @@ fn stale_wrapper_and_deleted_cached_runtime_are_detected() {
 #[test]
 fn mismatched_wheel_and_binary_versions_are_reported() {
     let payload = run_identity(&[("BIJUX_WHEEL_VERSION", "0.0.1".to_string())]);
-    assert_eq!(payload["diagnostics"]["mismatched_wheel_binary_versions"], true);
-    assert_eq!(payload["diagnostics"]["active_binary_mismatch_detected"], true);
+    assert_eq!(
+        payload["diagnostics"]["mismatched_wheel_binary_versions"],
+        true
+    );
+    assert_eq!(
+        payload["diagnostics"]["active_binary_mismatch_detected"],
+        true
+    );
 }
 
 #[test]
@@ -133,13 +202,25 @@ fn missing_python_runtime_support_is_reported_while_rust_binary_is_active() {
     let root = tmp_dir("missing-python-runtime");
     let bin = root.join("bin");
     fs::create_dir_all(&bin).expect("mkdir bin");
-    fs::write(bin.join("bijux"), "#!/bin/sh\n").expect("write binary");
-    let path = env::join_paths([&bin]).expect("join").to_string_lossy().to_string();
+    let executable = executable_name();
+    write_executable(&bin.join(&executable), "#!/bin/sh\n");
+    let path = env::join_paths([&bin])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
 
-    let payload =
-        run_identity(&[("PATH", path), ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())]);
+    let payload = run_identity(&[
+        ("PATH", path),
+        ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
+    ]);
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
-    assert!(payload["active_binary"].as_str().expect("active").contains("/bin/bijux"));
+    assert!(
+        payload["active_binary"]
+            .as_str()
+            .expect("active")
+            .ends_with(&executable_name()),
+        "active binary should resolve to the executable in PATH"
+    );
 }
 
 #[test]
@@ -188,16 +269,27 @@ fn package_health_and_runtime_identity_cover_ambiguous_install_state() {
     let second = root.join("second-site-packages");
     fs::create_dir_all(&first).expect("mkdir first");
     fs::create_dir_all(&second).expect("mkdir second");
-    fs::write(first.join("bijux"), "#!/bin/sh\n").expect("write first");
-    fs::write(second.join("bijux"), "#!/bin/sh\n").expect("write second");
+    let executable = executable_name();
+    write_executable(&first.join(&executable), "#!/bin/sh\n");
+    write_executable(&second.join(&executable), "#!/bin/sh\n");
 
-    let path = env::join_paths([&first, &second]).expect("join").to_string_lossy().to_string();
+    let path = env::join_paths([&first, &second])
+        .expect("join")
+        .to_string_lossy()
+        .to_string();
 
     let runtime = run_identity(&[("PATH", path.clone())]);
     assert_eq!(runtime["active_binary_selection_is_ambiguous"], true);
 
     let package = run_with_env(
-        &["dev", "cli", "package-health", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "package-health",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[("PATH", path)],
     );
     assert_eq!(package.status.code(), Some(0));
@@ -211,8 +303,11 @@ fn runtime_identity_reports_pipx_install_source_when_path_contains_pipx_marker()
     let root = tmp_dir("pipx-source");
     let pipx = root.join("pipx").join("venvs").join("bijux").join("bin");
     fs::create_dir_all(&pipx).expect("mkdir pipx");
-    fs::write(pipx.join("bijux"), "#!/bin/sh\n").expect("write pipx binary");
-    let path = env::join_paths([&pipx]).expect("join path").to_string_lossy().to_string();
+    write_executable(&pipx.join(executable_name()), "#!/bin/sh\n");
+    let path = env::join_paths([&pipx])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
     let payload = run_identity(&[("PATH", path)]);
     assert_eq!(payload["install_source"], "pipx");
 }
@@ -222,8 +317,11 @@ fn runtime_identity_reports_cargo_install_source_when_path_contains_cargo_marker
     let root = tmp_dir("cargo-source");
     let cargo = root.join(".cargo").join("bin");
     fs::create_dir_all(&cargo).expect("mkdir cargo");
-    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
-    let path = env::join_paths([&cargo]).expect("join path").to_string_lossy().to_string();
+    write_executable(&cargo.join(executable_name()), "#!/bin/sh\n");
+    let path = env::join_paths([&cargo])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
     let payload = run_identity(&[("PATH", path)]);
     assert_eq!(payload["install_source"], "cargo");
 }
@@ -233,8 +331,11 @@ fn runtime_identity_reports_pip_install_source_when_path_contains_site_packages_
     let root = tmp_dir("pip-source");
     let pip = root.join("site-packages").join("bin");
     fs::create_dir_all(&pip).expect("mkdir pip");
-    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
-    let path = env::join_paths([&pip]).expect("join path").to_string_lossy().to_string();
+    write_executable(&pip.join(executable_name()), "#!/bin/sh\n");
+    let path = env::join_paths([&pip])
+        .expect("join path")
+        .to_string_lossy()
+        .to_string();
     let payload = run_identity(&[("PATH", path)]);
     assert_eq!(payload["install_source"], "pip");
 }
@@ -398,7 +499,14 @@ fn state_audit_reports_unwritable_config_plugin_and_history_locations() {
     fs::set_permissions(&registry, fs::Permissions::from_mode(0o444)).expect("readonly registry");
 
     let out = run_with_env(
-        &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-audit",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[
             ("BIJUXCLI_CONFIG", config.display().to_string()),
             ("BIJUXCLI_HISTORY_FILE", history.display().to_string()),
