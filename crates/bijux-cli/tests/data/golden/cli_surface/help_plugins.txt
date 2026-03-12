@@ -26,3 +26,25 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Subcommand guide:
+list            List discovered plugins
+info            Show plugin inventory details
+inspect         Inspect plugin contracts and compatibility
+check           Validate a plugin namespace
+enable          Enable a plugin namespace
+disable         Disable a plugin namespace
+install         Install plugin from manifest/source
+uninstall       Remove a plugin namespace
+scaffold        Generate a plugin template
+doctor          Plugin health diagnostics
+reserved-names  Show reserved plugin namespace rules
+where           Show plugin state and install paths
+explain         Explain plugin resolution outcome
+schema          Show plugin manifest schema
+
+Examples:
+bijux plugins list
+bijux plugins inspect
+bijux plugins check sample
+bijux plugins install ./plugin.toml --source local

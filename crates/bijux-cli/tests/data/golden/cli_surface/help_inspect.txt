@@ -9,3 +9,5 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Compatibility note: inspect output includes plugin compatibility warnings when present.

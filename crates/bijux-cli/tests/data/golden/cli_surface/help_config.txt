@@ -20,3 +20,19 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Subcommand guide:
+list    Print all key/value pairs
+get     Read one key
+set     Write one key=value pair
+unset   Remove one key
+clear   Remove all keys
+reload  Validate and reload current file
+export  Write config to a target path
+load    Load config from a source path
+
+Examples:
+bijux config list
+bijux config get foo
+bijux config set foo=bar
+bijux config export ./bijux.env

@@ -28,3 +28,28 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Command guide:
+cli         Runtime command family for status, paths, config, and plugins
+dev         Maintainer-only engineering and repository diagnostics commands
+status      Runtime status summary
+audit       Runtime audit report
+docs        Documentation audit and links
+sleep       Controlled sleep helper for diagnostics
+doctor      Runtime health diagnostics
+version     Runtime version report
+config      Configuration management commands
+plugins     Plugin lifecycle and diagnostics commands
+repl        Interactive shell
+completion  Shell completion generation
+inspect     Route and schema inspection
+atlas       Product and namespace registry report
+history     History state management
+memory      Memory state management
+
+Examples:
+bijux status
+bijux config get foo
+bijux config set foo=bar
+bijux plugins list
+bijux help plugins

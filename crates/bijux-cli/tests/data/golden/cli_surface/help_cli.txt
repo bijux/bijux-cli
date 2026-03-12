@@ -17,3 +17,9 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
+
+Examples:
+bijux cli status
+bijux cli paths
+bijux cli config list
+bijux cli plugins list
