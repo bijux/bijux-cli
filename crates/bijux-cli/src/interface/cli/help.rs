@@ -11,7 +11,10 @@ pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
     let mut out = Vec::new();
     target.write_long_help(&mut out)?;
     let mut rendered = String::from_utf8(out)?;
-    if matches!(path, ["inspect"] | ["cli", "inspect"] | ["cli", "plugins", "inspect"]) {
+    if matches!(
+        path,
+        ["inspect"] | ["cli", "inspect"] | ["cli", "plugins", "inspect"]
+    ) {
         rendered.push_str(
             "\nCompatibility note: inspect output includes plugin compatibility warnings when present.\n",
         );
