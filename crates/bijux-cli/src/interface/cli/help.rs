@@ -15,10 +15,7 @@ pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
 
 pub(crate) fn decorate_help_text(mut rendered: String, path: &[&str]) -> String {
     append_help_sections(&mut rendered, path);
-    if matches!(
-        path,
-        ["inspect"] | ["cli", "inspect"] | ["plugins", "inspect"] | ["cli", "plugins", "inspect"]
-    ) {
+    if matches!(path, ["plugins", "inspect"] | ["cli", "plugins", "inspect"]) {
         rendered.push_str(
             "\nCompatibility note: inspect output includes plugin compatibility warnings when present.\n",
         );
@@ -72,11 +69,6 @@ Configuration & Plugins:\n\
   config      Configuration management commands\n\
   plugins     Plugin lifecycle and diagnostics commands\n\
 \n\
-Developer Surface:\n\
-  dev         Maintainer engineering and repository diagnostics commands\n\
-  inspect     Route and schema inspection\n\
-  atlas       Product and namespace registry report\n\
-\n\
 State & Interaction:\n\
   history     History state management\n\
   memory      Memory state management\n\
@@ -97,12 +89,6 @@ fn help_subcommand_guide(path: &[&str]) -> Option<&'static str> {
   config     Runtime configuration operations\n\
   self-test  Deterministic runtime self-checks\n\
   plugins    Canonical plugin lifecycle namespace",
-        ),
-        ["dev"] => Some(
-            "Subcommand guide:\n\
-  cli    Maintainer command namespace\n\
-\n\
-Use `bijux dev cli --help` for maintainer command families and examples.",
         ),
         ["config"] | ["cli", "config"] => Some(
             "Subcommand guide:\n\
@@ -160,16 +146,6 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli config list".to_string(),
             "bijux cli plugins list".to_string(),
         ],
-        ["dev"] => vec![
-            "bijux dev cli status".to_string(),
-            "bijux dev cli routes --text".to_string(),
-            "bijux dev cli doctor --text".to_string(),
-        ],
-        ["dev", "doctor"] | ["dev", "cli", "doctor"] => vec![
-            "bijux dev cli doctor".to_string(),
-            "bijux dev cli doctor --format json".to_string(),
-            "bijux help dev cli doctor".to_string(),
-        ],
         ["status"] => vec!["bijux status".to_string(), "bijux status --format json".to_string()],
         ["audit"] => vec!["bijux audit".to_string(), "bijux audit --format json".to_string()],
         ["docs"] => vec!["bijux docs".to_string(), "bijux docs --format json".to_string()],
@@ -197,12 +173,6 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ["completion"] => {
             vec!["bijux completion".to_string(), "bijux completion --format json".to_string()]
         }
-        ["inspect"] => vec![
-            "bijux inspect".to_string(),
-            "bijux inspect --format json".to_string(),
-            "bijux inspect --format yaml".to_string(),
-        ],
-        ["atlas"] => vec!["bijux atlas".to_string(), "bijux atlas --format json".to_string()],
         ["history"] => vec!["bijux history".to_string(), "bijux history clear".to_string()],
         ["memory"] => vec![
             "bijux memory list".to_string(),
