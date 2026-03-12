@@ -107,10 +107,7 @@ mod tests {
             discover_compatibility_paths(Some(&home), &overrides, &env_map, &config).expect("ok");
 
         assert_eq!(resolved.config_file, PathBuf::from("/custom/config.env"));
-        assert_eq!(
-            resolved.history_file,
-            PathBuf::from("/tmp/home/history.log")
-        );
+        assert_eq!(resolved.history_file, PathBuf::from("/tmp/home/history.log"));
         assert_eq!(resolved.plugins_dir, PathBuf::from("/tmp/home/plugins"));
     }
 
@@ -124,9 +121,6 @@ mod tests {
         assert_eq!(parsed.history_file, Some(PathBuf::from("~/h.log")));
 
         let unknown = parse_compatibility_config("RANDOM_KEY=1\n").expect_err("must fail");
-        assert!(matches!(
-            unknown,
-            CompatibilityError::UnsupportedConfigKey(_)
-        ));
+        assert!(matches!(unknown, CompatibilityError::UnsupportedConfigKey(_)));
     }
 }
