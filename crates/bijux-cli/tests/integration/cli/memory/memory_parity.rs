@@ -13,7 +13,10 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-memory-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -36,7 +39,10 @@ fn python_cli() -> String {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
+    let root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("workspace root");
     let legacy = root.join("bin").join("bijux");
     if legacy.exists() {
         return legacy.display().to_string();
@@ -64,7 +70,10 @@ fn memory_root_and_list_support_json_yaml_and_text() {
     assert_eq!(root_payload["status"], "ok");
     assert_eq!(root_payload["count"], 2);
 
-    let list_json = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
+    let list_json = run_with_env(
+        &["memory", "list", "--format", "json", "--no-pretty"],
+        &envs,
+    );
     assert!(list_json.status.success());
     let list_payload = parse_json(&list_json.stdout);
     assert_eq!(list_payload["status"], "ok");
@@ -74,12 +83,18 @@ fn memory_root_and_list_support_json_yaml_and_text() {
     let list_yaml = run_with_env(&["memory", "list", "--format", "yaml", "--pretty"], &envs);
     assert!(list_yaml.status.success());
     let yaml = String::from_utf8(list_yaml.stdout).expect("yaml utf-8");
-    assert_eq!(yaml, include_str!("../../../data/golden/cli_surface/memory_list_yaml.txt"));
+    assert_eq!(
+        yaml,
+        include_str!("../../../data/golden/cli_surface/memory_list_yaml.txt")
+    );
 
     let list_text = run_with_env(&["memory", "list", "--format", "text"], &envs);
     assert!(list_text.status.success());
     let text = String::from_utf8(list_text.stdout).expect("text utf-8");
-    assert_eq!(text, include_str!("../../../data/golden/cli_surface/memory_list_text.txt"));
+    assert_eq!(
+        text,
+        include_str!("../../../data/golden/cli_surface/memory_list_text.txt")
+    );
 }
 
 #[test]
@@ -96,8 +111,10 @@ fn memory_missing_state_is_empty_and_quiet_mode_suppresses_output() {
     let payload = parse_json(&out.stdout);
     assert_eq!(payload["count"], 0);
 
-    let quiet =
-        run_with_env(&["memory", "list", "--quiet"], &[("HOME", home.display().to_string())]);
+    let quiet = run_with_env(
+        &["memory", "list", "--quiet"],
+        &[("HOME", home.display().to_string())],
+    );
     assert!(quiet.status.success());
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
@@ -113,13 +130,22 @@ fn memory_wrong_type_state_and_missing_state_file_behaviors_are_stable() {
         .expect("write wrong-type memory");
 
     let out_wrong_type = run_with_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[("HOME", home.display().to_string())],
     );
     assert_eq!(out_wrong_type.status.code(), Some(0));
     let doctor_payload = parse_json(&out_wrong_type.stdout);
     assert_eq!(doctor_payload["doctor"]["status"], "degraded");
-    assert!(doctor_payload["doctor"]["issues"].as_array().is_some_and(|rows| !rows.is_empty()));
+    assert!(doctor_payload["doctor"]["issues"]
+        .as_array()
+        .is_some_and(|rows| !rows.is_empty()));
 
     fs::remove_file(&memory_file).expect("remove memory");
     let out_missing = run_with_env(
