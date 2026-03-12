@@ -1,275 +1,95 @@
 # Contributing to Bijux CLI
-<a id="top"></a>
 
-This guide is the single source of truth for local setup, workflows, and PR rules. Follow it to ensure your changes pass CI seamlessly.
+This document is intentionally short. It only lists commands and rules that exist in this repository today.
 
----
+## Prerequisites
 
-## Table of Contents
+- Python 3.11 or newer
+- Rust toolchain (stable)
+- GNU Make
 
-- [Quick Start](#quick-start)
-- [Daily Workflow](#daily-workflow)
-- [Docs](#docs)
-- [Tests & Coverage](#tests-coverage)
-- [Style, Types, Hygiene](#style-types-hygiene)
-- [Security & Supply Chain](#security-supply-chain)
-- [Commits & PRs](#commits-prs)
-- [Rust Workspace Rules](#rust-workspace-rules)
-- [Troubleshooting](#troubleshooting)
-- [Community & Conduct](#community-conduct)
+Optional tools for some Rust targets:
 
-[Back to top](#top)
+- `cargo-nextest` for `make test-rs` and `make test-all-rs`
+- `cargo-deny` and `cargo-audit` for `make audit-rs`
+- `cargo-llvm-cov` for `make coverage-rs`
 
----
-
-<a id="quick-start"></a>
-
-## Quick Start
-
-**Prereqs**
-
-- Python **3.11 / 3.12 / 3.13** (`pyenv` recommended)
-- **GNU Make**
-
-**Setup**
+## Setup
 
 ```bash
 git clone https://github.com/bijux/bijux-cli.git
 cd bijux-cli
-make PYTHON=python3.11 install
-source artifacts/python/.venv/bin/activate
+make install
 ```
 
-**Sanity check**
+`make install` creates `artifacts/python/.venv` and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
+
+## Commands
+
+Use `make help` to see current targets.
+
+Python and docs:
+
+- `make test-py`
+- `make lint-py`
+- `make security-py`
+- `make build-py`
+- `make docs`
+- `make docs-serve`
+
+Rust:
+
+- `make fmt-rs`
+- `make lint-rs`
+- `make test-rs`
+- `make test-all-rs`
+- `make audit-rs`
+- `make coverage-rs`
+
+Other:
+
+- `make all` runs: `clean -> install -> test -> lint -> security -> docs -> build`
+- `make test`, `make lint`, `make security`, and `make build` map to Python targets
+
+Direct pytest invocation (without Make):
 
 ```bash
-make lint test docs
+pytest -c configs/python/pytest.ini crates/bijux-cli-python/tests/python -q
 ```
 
-* ✔ Pass → your env matches CI
-* ✘ Fail → jump to [Troubleshooting](#troubleshooting)
+## Pull Requests
 
-[Back to top](#top)
+Before opening a PR, run the checks relevant to your change.
 
----
-
-<a id="daily-workflow"></a>
-
-## Daily Workflow
-
-* Everything runs inside **artifacts/python/.venv/**
-* No global installs after `make install`
-* Make targets mirror CI jobs 1:1
-
-**Core targets**
-
-| Target          | What it does                                                                |
-| --------------- | --------------------------------------------------------------------------- |
-| `make test`     | `pytest` + coverage (HTML in `htmlcov/`)                                    |
-| `make lint`     | Format (ruff), lint (ruff), type-check (mypy), complexity (radon)           |
-| `make quality`  | Dead code (vulture), deps hygiene (deptry), REUSE, docstrings (interrogate) |
-| `make security` | Bandit + pip-audit                                                          |
-| `make docs`     | Build MkDocs (strict)                                                       |
-| `make build`    | Build sdist + wheel                                                         |
-| `make sbom`     | CycloneDX SBOM → `artifacts/sbom.json`                                      |
-
-**Handy helpers**
+Typical baseline:
 
 ```bash
-make lint-file file=path/to/file.py
-make docs-serve    # local docs server
-# make docs-deploy # if you have perms
+make test-py
+make lint-py
+make docs
+make fmt-rs
+make lint-rs
+make test-rs
 ```
 
-[Back to top](#top)
+Keep PRs focused and small enough to review.
 
----
+## Changelog Rules
 
-<a id="docs"></a>
+- Add new notes only under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
+- Do not rewrite notes for released versions (`0.2.0`, `0.1.3`, etc.).
+- If a released section was edited by mistake, restore it and document the correction in `Unreleased`.
 
-## Docs
+## Commit Messages
 
-* Config: `mkdocs.yml` (Material, **strict**)
-* Build: `make docs`
-* Serve: `make docs-serve`
-* Deploy: `make docs-deploy` (if authorized)
+Conventional commit style is preferred:
 
-[Back to top](#top)
-
----
-
-<a id="tests-coverage"></a>
-
-## Tests & Coverage
-
-* Run all tests: `make test`
-* Focused run: `pytest -c configs/python/pytest.ini -k "<expr>" -q`
-* Coverage report: HTML in `htmlcov/`
-* **Project bar:** \~**2,600+ tests** with **≥98%** coverage across unit/integration/functional/E2E. Keep it green.
-
-[Back to top](#top)
-
----
-
-<a id="style-types-hygiene"></a>
-
-## Style, Types, Hygiene
-
-* **Formatting:** `ruff format` (enforced in `make lint`)
-* **Linting:** `ruff`
-* **Types:** `mypy` (strict)
-* **Complexity:** `radon`
-* **Docstrings:** `interrogate` (meet configured thresholds)
-
-Run them all:
-
-```bash
-make lint
+```text
+<type>(<scope>): <summary>
 ```
 
-[Back to top](#top)
+Examples:
 
----
+- `fix(cli): normalize --version behavior`
+- `docs(changelog): clarify unreleased notes`
 
-<a id="security-supply-chain"></a>
-
-## Security & Supply Chain
-
-```bash
-make security  # bandit + pip-audit
-make sbom      # CycloneDX, saved to artifacts_pages/
-```
-
-* No secrets in code or tests
-* Keep dependency pins sane; document any suppressions
-
-[Back to top](#top)
-
----
-
-<a id="commits-prs"></a>
-
-## Commits & PRs
-
-### Conventional Commits (required)
-
-```
-<type>(<scope>): <description>
-```
-
-**Types:** `feat` `fix` `docs` `style` `refactor` `test` `chore`
-
-**Example**
-
-```
-feat(plugins): add plugin scaffolding command
-```
-
-**Breaking changes** must include:
-
-```
-BREAKING CHANGE: <explanation>
-```
-
-> Commit messages are validated (Commitizen).
-
-### PR Checklist
-
-1. Branch from `main`
-2. Run:
-
-   ```bash
-   make lint test docs
-   ```
-3. Ensure Conventional Commits
-4. Open PR with clear summary & rationale
-
-### Status Update Rule
-
-- Describe current observed state, not aspiration.
-- Reference generated evidence artifacts for status claims:
-  - `artifacts/status/what_is_done.json`
-  - `artifacts/status/what_is_left.json`
-  - `artifacts/status/what_is_partial.json`
-  - `artifacts/parity/command_parity_matrix.json`
-  - `artifacts/status/docs_audit.json`
-  - `artifacts/status/test_quality_audit.json`
-
-[Back to top](#top)
-
----
-
-<a id="rust-workspace-rules"></a>
-
-## Rust Workspace Rules
-
-### Purpose
-This section defines engineering standards for the Rust workspace in `bijux-cli`.
-
-### Workspace layout
-- `crates/bijux-cli-contracts`: shared durable contracts
-- `crates/bijux-cli`: execution kernel primitives
-- `crates/bijux-cli/src/routing`: command graph and resolution
-- `crates/bijux-cli-output`: output encoders and envelopes
-- `crates/bijux-cli-repl`: interactive shell orchestration
-- `crates/bijux-cli-plugin`: plugin lifecycle boundaries
-- `crates/bijux-cli-python`: Python compatibility bridge
-- `crates/bijux-cli::install`: install/update flow boundaries
-- `crates/bijux-cli/src/bin`: binary entrypoint and core runtime
-
-### Non-negotiable rules
-- `unsafe` is forbidden workspace-wide.
-- Crate dependency boundaries must pass `architecture_boundaries` tests.
-- New public contract types belong in `bijux-cli-contracts`.
-- Command behavior changes must preserve documented compatibility contracts.
-- New maintainer automation defaults to `bijux dev cli` command entrypoints.
-- Direct script usage is allowed only as implementation detail behind routed dev-cli commands.
-
-### Local validation commands
-- `cargo fmt --all`
-- `cargo fmt-check`
-- `cargo check-workspace`
-- `cargo lint`
-- `cargo test --workspace`
-- `cargo test -p bijux-cli --test architecture_boundaries`
-
-### Dependency policy
-- Keep dependencies minimal and justified.
-- Use crates from `crates.io` only unless a security exception is documented.
-- Run policy checks with `cargo deny check` when `cargo-deny` is installed.
-
-### Design review checklist
-- Does the change preserve root grammar and namespace contracts?
-- Does the change preserve exit-code compatibility?
-- Does the change preserve stdout/stderr routing rules?
-- Does the change preserve plugin namespace and lifecycle contracts?
-- Does the change include tests for new behavior?
-- Does the change avoid large crate merges while parity/runtime identity reports remain partial?
-
-[Back to top](#top)
-
----
-
-<a id="troubleshooting"></a>
-
-## Troubleshooting
-
-* **Missing Node.js** → required for API validation tools
-* **Docs fail** → MkDocs is strict; fix broken links/includes
-* **Port in use for API tests** → kill old `uvicorn` or use a different port
-
-[Back to top](#top)
-
----
-
-<a id="community-conduct"></a>
-
-## Community & Conduct
-
-Be kind and constructive. See the **Code of Conduct** in the docs site. If you see something off, let us know.
-
-[Back to top](#top)
-
----
-
-**Build well. Break nothing.**
