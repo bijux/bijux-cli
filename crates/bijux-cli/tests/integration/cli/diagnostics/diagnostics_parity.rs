@@ -86,7 +86,7 @@ fn inspect_failure_normalization_routes_to_stderr() {
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
     assert!(stderr.contains("Usage: bijux"));
-    assert!(stderr.contains("inspect"));
+    assert!(stderr.contains("Command groups:"));
 }
 
 #[test]
