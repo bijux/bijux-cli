@@ -160,7 +160,7 @@ Quick verification:
 ```bash
 bijux --version
 bijux doctor
-bijux dev cli runtime-identity --json --no-pretty
+bijux status --format json --no-pretty
 ```
 
 ---
@@ -178,19 +178,19 @@ Bijux relies on POSIX filesystem and process semantics.
 
 ```bash
 # Scaffold a Python plugin from repository templates
-bijux plugins scaffold my_plugin --template ./templates/plugins-py --force
+bijux plugins scaffold python my-plugin --path ./my-plugin --force
 
 # Scaffold a Rust-backed plugin from repository templates
-bijux plugins scaffold my_rust_plugin --template ./templates/plugins-rs --force
+bijux plugins scaffold delegated my-rust-plugin --path ./my-rust-plugin --force
 
 # Install and explore
-bijux plugins install ./my_plugin --force
+bijux plugins install ./my-plugin/plugin.manifest.json --source local
 bijux plugins list
-bijux my_plugin --help
+bijux my-plugin --help
 
 # Validate and remove
-bijux plugins check my_plugin
-bijux plugins uninstall my_plugin
+bijux plugins check my-plugin
+bijux plugins uninstall my-plugin
 ```
 
 Plugins dynamically add **top-level commands** without modifying the core.
@@ -227,9 +227,15 @@ bijux status -f yaml --pretty
 
 ## Developer Introspection
 
+Requires the maintainer control-plane package:
+
 ```bash
-bijux dev cli status --json --no-pretty
-bijux dev cli parity --json --no-pretty
+pipx install bijux-dev-cli
+```
+
+```bash
+bijux dev cli status --format json --no-pretty
+bijux dev cli parity --format json --no-pretty
 bijux dev cli state-doctor --text
 ```
 
@@ -265,7 +271,6 @@ See the full rationale in the [Precedence docs](https://bijux.github.io/bijux-cl
 | `history` | REPL history            |
 | `audit`   | Security checks         |
 | `docs`    | Generate specs/docs     |
-| `dev`     | Introspection tools     |
 | `sleep`   | Pause execution         |
 | `version` | Version info            |
 
@@ -292,8 +297,8 @@ See the full rationale in the [Precedence docs](https://bijux.github.io/bijux-cl
 ## Shell Completion
 
 ```bash
-bijux --install-completion
-bijux --show-completion
+bijux completion
+bijux completion --format json
 ```
 
 Supports Bash, Zsh, Fish, and PowerShell.
