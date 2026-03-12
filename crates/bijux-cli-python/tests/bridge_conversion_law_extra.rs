@@ -34,7 +34,7 @@ fn error_and_success_envelope_fields_survive_python_conversion_intact() {
     for key in ["exit_code", "stdout", "stderr", "error_kind"] {
         assert!(success.get(key).is_some(), "missing success field: {key}");
     }
-    assert_eq!(success["error_kind"], "InternalError");
+    assert_eq!(success["error_kind"], Value::Null);
 
     let usage_failure = parse_json(
         &execution_outcome_api(&["bijux".to_string(), "ghost".to_string(), "status".to_string()])

@@ -40,7 +40,7 @@ struct ExecutionOutcomePayload {
     exit_code: i32,
     stdout: String,
     stderr: String,
-    error_kind: &'static str,
+    error_kind: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -143,8 +143,11 @@ pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityErr
     let argv = normalized_argv(argv);
     match run_app(&argv) {
         Ok(result) => {
-            let error_kind =
-                python_exception_tag(classify_failure(result.exit_code, &result.stderr));
+            let error_kind = if result.exit_code == 0 {
+                None
+            } else {
+                Some(python_exception_tag(classify_failure(result.exit_code, &result.stderr)))
+            };
             Ok(json_string(&ExecutionOutcomePayload {
                 exit_code: result.exit_code,
                 stdout: result.stdout,
@@ -156,7 +159,7 @@ pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityErr
             exit_code: 1,
             stdout: String::new(),
             stderr: error.to_string(),
-            error_kind: python_exception_tag(classify_core_error(&error)),
+            error_kind: Some(python_exception_tag(classify_core_error(&error))),
         })),
     }
 }
