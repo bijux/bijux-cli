@@ -7,6 +7,8 @@ import sys
 import json
 from pathlib import Path
 
+import pytest
+
 from bijux_cli_py import (
     check_python_runtime_supported,
     command_tree_introspection,
@@ -144,9 +146,12 @@ def test_plugin_and_repl_startup_parity_smoke() -> None:
 def test_config_precedence_helpers_and_alias_apis() -> None:
     paths = config_resolution_helpers(str(Path.home()))
     assert paths["config_file"].endswith(".env")
-    assert get_version() == version()
-    assert "root" in get_command_tree()
-    assert isinstance(run_cli(["version"]), str)
+    with pytest.deprecated_call(match=r"get_version\(\) is deprecated"):
+        assert get_version() == version()
+    with pytest.deprecated_call(match=r"get_command_tree\(\) is deprecated"):
+        assert "root" in get_command_tree()
+    with pytest.deprecated_call(match=r"run_cli\(\) is deprecated"):
+        assert isinstance(run_cli(["version"]), str)
 
 
 def test_runtime_support_and_migration_warnings() -> None:

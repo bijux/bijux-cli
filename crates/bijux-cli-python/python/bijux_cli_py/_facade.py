@@ -73,7 +73,9 @@ class ExecutionResult:
 def _resolve_binary() -> RuntimeResolution:
     candidate = os.environ.get("BIJUX_BIN")
     if candidate:
-        return RuntimeResolution(binary=_validate_binary_candidate(candidate, "BIJUX_BIN"))
+        return RuntimeResolution(
+            binary=_validate_binary_candidate(candidate, "BIJUX_BIN")
+        )
 
     for resolved in _workspace_runtime_binaries():
         try:
@@ -287,7 +289,9 @@ def plugin_registry_inspection(registry_file: str) -> dict[str, object]:
                 f"invalid plugin registry payload from native bridge: {exc}"
             ) from exc
         except RuntimeError as exc:
-            raise InternalError(f"native plugin registry inspection failed: {exc}") from exc
+            raise InternalError(
+                f"native plugin registry inspection failed: {exc}"
+            ) from exc
         if not isinstance(payload, dict):
             raise InternalError("plugin registry payload must be a JSON object")
         return payload
@@ -381,11 +385,7 @@ def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
     if exit_code == 3:
         return "ValidationError"
     lower = stderr.lower()
-    if (
-        "unknown route" in lower
-        or "unknown namespace" in lower
-        or "usage" in lower
-    ):
+    if "unknown route" in lower or "unknown namespace" in lower or "usage" in lower:
         return "UsageError"
     if "validation" in lower or "invalid" in lower:
         return "ValidationError"

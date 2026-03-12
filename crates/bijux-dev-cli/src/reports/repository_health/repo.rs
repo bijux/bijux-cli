@@ -201,10 +201,8 @@ fn docs_refs_in_token(token: &str) -> Vec<String> {
     let mut out = Vec::new();
     for (idx, _) in token.match_indices("docs/") {
         let slice = &token[idx..];
-        let stop = slice
-            .find(|ch: char| matches!(ch, ')' | ']' | '>' | '"' | '\'' | ',' | ';' | '`'))
-            .unwrap_or(slice.len());
-        let candidate = slice[..stop].trim_matches(|ch: char| matches!(ch, '(' | '[' | '<'));
+        let stop = slice.find([')', ']', '>', '"', '\'', ',', ';', '`']).unwrap_or(slice.len());
+        let candidate = slice[..stop].trim_matches(['(', '[', '<']);
         let canonical =
             candidate.split(['#', '?']).next().map(str::trim).unwrap_or_default().to_string();
         if canonical.starts_with("docs/") && !canonical.is_empty() {

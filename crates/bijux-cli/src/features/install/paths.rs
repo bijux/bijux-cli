@@ -14,9 +14,7 @@ fn is_executable_like(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        return fs::metadata(path)
-            .map(|meta| meta.permissions().mode() & 0o111 != 0)
-            .unwrap_or(false);
+        fs::metadata(path).map(|meta| meta.permissions().mode() & 0o111 != 0).unwrap_or(false)
     }
 
     #[cfg(windows)]
@@ -25,7 +23,7 @@ fn is_executable_like(path: &Path) -> bool {
             return false;
         };
         let ext = format!(".{}", ext.to_ascii_uppercase());
-        return executable_extensions().iter().any(|allowed| allowed == &ext);
+        executable_extensions().iter().any(|allowed| allowed == &ext)
     }
 
     #[cfg(not(any(unix, windows)))]

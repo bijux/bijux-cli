@@ -11,12 +11,11 @@ fn has_workspace_markers(root: &Path) -> bool {
 pub fn workspace_root() -> PathBuf {
     let manifest_anchored = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let resolved = manifest_anchored.canonicalize().unwrap_or(manifest_anchored);
-    if !has_workspace_markers(&resolved) {
-        panic!(
-            "Failed to resolve workspace root from {}: expected Cargo.toml and crates/ markers",
-            resolved.display()
-        );
-    }
+    assert!(
+        has_workspace_markers(&resolved),
+        "Failed to resolve workspace root from {}: expected Cargo.toml and crates/ markers",
+        resolved.display()
+    );
     resolved
 }
 

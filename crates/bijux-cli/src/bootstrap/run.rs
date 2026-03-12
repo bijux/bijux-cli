@@ -10,7 +10,7 @@ use crate::kernel::map_error_category_to_exit;
 
 fn normalize_process_exit_code(code: i32) -> u8 {
     if code <= 0 {
-        return if code == 0 { 0 } else { 1 };
+        return u8::from(code != 0);
     }
     if code > i32::from(u8::MAX) {
         return u8::MAX;

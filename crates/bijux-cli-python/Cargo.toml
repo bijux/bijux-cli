@@ -1,6 +1,7 @@
 [package]
 name = "bijux-cli-python"
 version = "0.3.0"
+description = "Python bridge bindings for the Bijux command-line runtime."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
