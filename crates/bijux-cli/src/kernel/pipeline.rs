@@ -3,13 +3,15 @@
 use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::contracts::diagnostics::{DiagnosticRecord, InvocationEvent, InvocationTrace};
 use crate::contracts::{
-    CommandPath, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags, Namespace,
+    CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use serde_json::{json, Value};
@@ -234,6 +236,41 @@ fn map_outcome_to_exit(outcome: &HandlerOutcome) -> ExitCode {
     }
 }
 
+#[allow(dead_code)]
+fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(message) = payload.downcast_ref::<&str>() {
+        return (*message).to_string();
+    }
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+    "unknown panic payload".to_string()
+}
+
+#[allow(dead_code)]
+fn internal_kernel_error(ctx: &ExecutionContext, message: String) -> HandlerOutcome {
+    HandlerOutcome::Error(ErrorEnvelopeV1::failure(
+        ErrorPayloadV1 {
+            code: "KERNEL_HANDLER_PANIC".to_string(),
+            message: format!("kernel handler panicked: {message}"),
+            category: "internal".to_string(),
+            details: None,
+        },
+        success_meta(ctx),
+    ))
+}
+
+#[allow(dead_code)]
+fn catch_unwind_silent<T>(f: impl FnOnce() -> T) -> std::thread::Result<T> {
+    static PANIC_HOOK_LOCK: Mutex<()> = Mutex::new(());
+    let _guard = PANIC_HOOK_LOCK.lock().expect("panic hook lock poisoned");
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|_| {}));
+    let result = catch_unwind(AssertUnwindSafe(f));
+    std::panic::set_hook(previous_hook);
+    result
+}
+
 /// Map stable error category to stable exit code contract.
 #[must_use]
 pub fn map_error_category_to_exit(category: &str) -> ExitCode {
@@ -322,25 +359,35 @@ pub(crate) fn execute_pipeline(
             hook.on_plugin_load();
         }
     }
-    if ctx.intent.command_path.first().is_some_and(|v| v == "repl") {
+    let is_repl_command = ctx.intent.command_path.first().is_some_and(|v| v == "repl");
+    if is_repl_command {
         for hook in lifecycle {
             hook.on_repl_start();
         }
     }
 
     let outcome = match handler {
-        Handler::Sync(sync_handler) => match sync_handler.execute(ctx) {
-            Ok(payload) => HandlerOutcome::Success(payload),
-            Err(err) => HandlerOutcome::Error(err),
+        Handler::Sync(sync_handler) => match catch_unwind_silent(|| sync_handler.execute(ctx)) {
+            Ok(Ok(payload)) => HandlerOutcome::Success(payload),
+            Ok(Err(err)) => HandlerOutcome::Error(err),
+            Err(payload) => internal_kernel_error(ctx, panic_message(payload)),
         },
         Handler::Async(async_handler) => {
-            let result = futures::executor::block_on(async_handler.execute_async(ctx));
-            match result {
-                Ok(payload) => HandlerOutcome::Success(payload),
-                Err(err) => HandlerOutcome::Error(err),
+            match catch_unwind_silent(|| {
+                futures::executor::block_on(async_handler.execute_async(ctx))
+            }) {
+                Ok(Ok(payload)) => HandlerOutcome::Success(payload),
+                Ok(Err(err)) => HandlerOutcome::Error(err),
+                Err(payload) => internal_kernel_error(ctx, panic_message(payload)),
             }
         }
     };
+
+    if is_repl_command {
+        for hook in lifecycle {
+            hook.on_repl_shutdown();
+        }
+    }
 
     if let Some(limit) = ctx.timeout {
         if started_at.elapsed() > limit {
@@ -350,12 +397,6 @@ pub(crate) fn execute_pipeline(
 
     if ctx.cancelled.load(Ordering::SeqCst) {
         return Err(KernelError::Cancelled);
-    }
-
-    if ctx.intent.command_path.first().is_some_and(|v| v == "repl") {
-        for hook in lifecycle {
-            hook.on_repl_shutdown();
-        }
     }
 
     trace_events.push(InvocationEvent {

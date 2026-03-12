@@ -140,6 +140,49 @@ impl AsyncHandler for AsyncCallProbe {
     }
 }
 
+struct SyncPanic;
+impl SyncHandler for SyncPanic {
+    fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
+        panic!("sync handler panic");
+    }
+}
+
+struct AsyncPanic;
+impl AsyncHandler for AsyncPanic {
+    fn execute_async(
+        &self,
+        _ctx: &ExecutionContext,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<serde_json::Value, ErrorEnvelopeV1>>
+                + Send
+                + '_,
+        >,
+    > {
+        Box::pin(async move {
+            panic!("async handler panic");
+        })
+    }
+}
+
+struct SlowSync {
+    delay: Duration,
+}
+impl SyncHandler for SlowSync {
+    fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
+        std::thread::sleep(self.delay);
+        Ok(json!({"slow": true}))
+    }
+}
+
+struct CancelFlipSync;
+impl SyncHandler for CancelFlipSync {
+    fn execute(&self, ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
+        ctx.cancelled.store(true, Ordering::SeqCst);
+        Ok(json!({"cancelled": true}))
+    }
+}
+
 struct NoopDiag;
 impl DiagnosticsHook for NoopDiag {
     fn record(&self, _record: DiagnosticRecord) {}
@@ -630,6 +673,114 @@ fn pipeline_invokes_plugin_and_repl_lifecycle_hooks() {
         .expect("repl path should execute");
     assert!(repl_start_flag.load(Ordering::SeqCst));
     assert!(repl_shutdown_flag.load(Ordering::SeqCst));
+}
+
+#[test]
+fn handler_panics_are_normalized_to_internal_error_for_sync_and_async_paths() {
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Pretty,
+        color_mode: ColorMode::Auto,
+        log_level: LogLevel::Info,
+        quiet: false,
+        include_runtime: false,
+    };
+    let ctx = assemble_context(
+        build_intent_from_argv(&["bijux".to_string(), "cli".to_string(), "status".to_string()]),
+        policy,
+        Some(Duration::from_secs(5)),
+        Arc::new(AtomicBool::new(false)),
+        false,
+    );
+
+    for handler in [
+        Handler::Sync(Box::new(SyncPanic)),
+        Handler::Async(Box::new(AsyncPanic)),
+    ] {
+        let result = execute_pipeline(&ctx, &handler, &[], &[]).expect("panic should normalize");
+        assert_eq!(result.exit_code, ExitCode::Error);
+        let emission = result.emission.expect("panic should emit stderr envelope");
+        assert_eq!(emission.stream, super::OutputStream::Stderr);
+        assert_eq!(emission.payload["error"]["category"], "internal");
+        assert_eq!(emission.payload["error"]["code"], "KERNEL_HANDLER_PANIC");
+    }
+}
+
+#[test]
+fn repl_shutdown_hook_runs_even_when_timeout_is_detected_after_dispatch() {
+    let repl_start = Arc::new(AtomicBool::new(false));
+    let repl_shutdown = Arc::new(AtomicBool::new(false));
+    let lifecycle: Vec<Arc<dyn LifecycleHook>> = vec![Arc::new(LifecycleCounter {
+        plugins: Arc::new(AtomicBool::new(false)),
+        repl_start: repl_start.clone(),
+        repl_shutdown: repl_shutdown.clone(),
+    })];
+
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Pretty,
+        color_mode: ColorMode::Auto,
+        log_level: LogLevel::Info,
+        quiet: false,
+        include_runtime: false,
+    };
+    let ctx = assemble_context(
+        build_intent_from_argv(&["bijux".to_string(), "repl".to_string()]),
+        policy,
+        Some(Duration::from_millis(1)),
+        Arc::new(AtomicBool::new(false)),
+        false,
+    );
+
+    let result = execute_pipeline(
+        &ctx,
+        &Handler::Sync(Box::new(SlowSync { delay: Duration::from_millis(5) })),
+        &[],
+        &lifecycle,
+    )
+    .expect_err("slow handler should hit timeout");
+    assert_eq!(result, KernelError::Timeout);
+    assert!(repl_start.load(Ordering::SeqCst));
+    assert!(
+        repl_shutdown.load(Ordering::SeqCst),
+        "repl shutdown hook must run even on timeout"
+    );
+}
+
+#[test]
+fn repl_shutdown_hook_runs_even_when_post_dispatch_cancellation_is_detected() {
+    let repl_start = Arc::new(AtomicBool::new(false));
+    let repl_shutdown = Arc::new(AtomicBool::new(false));
+    let lifecycle: Vec<Arc<dyn LifecycleHook>> = vec![Arc::new(LifecycleCounter {
+        plugins: Arc::new(AtomicBool::new(false)),
+        repl_start: repl_start.clone(),
+        repl_shutdown: repl_shutdown.clone(),
+    })];
+
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Pretty,
+        color_mode: ColorMode::Auto,
+        log_level: LogLevel::Info,
+        quiet: false,
+        include_runtime: false,
+    };
+    let ctx = assemble_context(
+        build_intent_from_argv(&["bijux".to_string(), "repl".to_string()]),
+        policy,
+        Some(Duration::from_secs(5)),
+        Arc::new(AtomicBool::new(false)),
+        false,
+    );
+
+    let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(CancelFlipSync)), &[], &lifecycle)
+        .expect_err("post-dispatch cancellation should surface");
+    assert_eq!(result, KernelError::Cancelled);
+    assert!(repl_start.load(Ordering::SeqCst));
+    assert!(
+        repl_shutdown.load(Ordering::SeqCst),
+        "repl shutdown hook must run even on cancellation"
+    );
 }
 
 #[test]
