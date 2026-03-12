@@ -36,7 +36,7 @@ pub(crate) fn try_handle(
                     "has_path_shadowing": install_report.has_path_shadowing,
                     "has_duplicate_installs": install_report.has_duplicate_installs,
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
-                    "legacy_installer_conflicts": false,
+                    "legacy_installer_conflicts": !install_report.legacy_installer_conflicts.is_empty(),
                     "has_mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
                 }
             }))
@@ -92,13 +92,14 @@ pub(crate) fn try_handle(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
-            let hint =
-                install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
-                    || {
-                        "Run `bijux version` and `bijux cli doctor` to verify your environment."
-                            .to_string()
-                    },
-                );
+            let hint = install_report
+                .active_binary
+                .as_deref()
+                .map(post_install_hint)
+                .unwrap_or_else(|| {
+                    "Run `bijux version` and `bijux cli doctor` to verify your environment."
+                        .to_string()
+                });
             Some(json!({
                 "config": paths.config_file,
                 "history": paths.history_file,
