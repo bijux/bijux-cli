@@ -12,7 +12,8 @@ use super::StatePathStatus;
 use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use crate::features::install::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
-    CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+    CompatibilityConfig, CompatibilityError, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
+    ENV_PLUGINS_PATH,
 };
 use crate::features::plugins::{
     plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir, self_repair_registry,
@@ -47,24 +48,44 @@ pub struct ResolvedStatePaths {
     pub plugin_registry_file: PathBuf,
     /// Resolved memory file path.
     pub memory_file: PathBuf,
+    /// Compatibility config file path used during discovery.
+    pub compatibility_config_file: PathBuf,
+    /// Compatibility override parse warning (if fallback defaults were used).
+    pub compatibility_config_warning: Option<String>,
 }
 
 /// Resolve runtime state file paths from defaults, compatibility config, env, and flags.
 pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> {
-    let home = home_dir();
-    let defaults = home
-        .as_deref()
-        .map(default_compatibility_paths)
-        .unwrap_or_else(|| default_compatibility_paths(Path::new(".")));
+    let effective_home = home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let defaults = default_compatibility_paths(&effective_home);
 
-    let config = load_compatibility_config(&defaults.config_file)
-        .unwrap_or_else(|_| CompatibilityConfig::default());
+    let compatibility_config_file = defaults.config_file.clone();
+    let (config, compatibility_config_warning) =
+        match load_compatibility_config(&compatibility_config_file) {
+            Ok(config) => (config, None),
+            Err(CompatibilityError::UnsupportedConfigKey(_)) => {
+                (CompatibilityConfig::default(), None)
+            }
+            Err(error @ CompatibilityError::MalformedConfigLine { .. }) => (
+                CompatibilityConfig::default(),
+                Some(format!(
+                    "compatibility override parsing failed for {}: {error}",
+                    compatibility_config_file.display()
+                )),
+            ),
+            Err(error) => return Err(error.into()),
+        };
     let mut overrides = PathOverrides::default();
     if let Some(path) = &flags.config_path {
         overrides.config_file = Some(path.into());
     }
 
-    let resolved = discover_compatibility_paths(home.as_deref(), &overrides, &env_map(), &config)?;
+    let resolved = discover_compatibility_paths(
+        Some(effective_home.as_path()),
+        &overrides,
+        &env_map(),
+        &config,
+    )?;
     let plugin_registry_file = registry_path_from_plugins_dir(&resolved.plugins_dir);
     let memory_file = resolved
         .config_file
@@ -78,6 +99,8 @@ pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePat
         plugins_dir: resolved.plugins_dir,
         plugin_registry_file,
         memory_file,
+        compatibility_config_file,
+        compatibility_config_warning,
     })
 }
 
@@ -101,6 +124,15 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     let mut issues = Vec::<Value>::new();
     let mut repairs = Vec::<Value>::new();
 
+    if let Some(message) = &paths.compatibility_config_warning {
+        issues.push(json!({
+            "area": "paths",
+            "severity": "warning",
+            "message": message,
+            "path": paths.compatibility_config_file,
+        }));
+    }
+
     let repository = FileConfigRepository;
     if let Err(err) = repository.load(&paths.config_file) {
         issues.push(json!({
@@ -112,15 +144,19 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     }
     if let Ok(text) = fs::read_to_string(&paths.config_file) {
         let mut seen = std::collections::BTreeMap::<String, usize>::new();
-        for line in
-            text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#'))
+        for line in text
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
         {
             if let Some((left, _)) = line.split_once('=') {
                 *seen.entry(left.trim().to_string()).or_insert(0) += 1;
             }
         }
-        let duplicates: Vec<String> =
-            seen.into_iter().filter_map(|(key, count)| (count > 1).then_some(key)).collect();
+        let duplicates: Vec<String> = seen
+            .into_iter()
+            .filter_map(|(key, count)| (count > 1).then_some(key))
+            .collect();
         if !duplicates.is_empty() {
             issues.push(json!({
                 "area": "config",
