@@ -13,19 +13,27 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn assert_success_json(out: &Output, context: &str) -> Value {
     assert_eq!(out.status.code(), Some(0), "{context} should succeed");
     assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
-    assert!(!out.stdout.is_empty(), "{context} should emit stdout payload");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
     serde_json::from_slice(&out.stdout).expect("json payload")
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir()
-        .join(format!("bijux-config-mutation-matrix-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-config-mutation-matrix-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -46,11 +54,25 @@ fn config_set_create_replace_preserve_quoted_spaces_and_invalid_key() {
     assert_eq!(replace.status.code(), Some(0));
     assert!(replace.stderr.is_empty());
 
-    let quoted = run(&["cli", "config", "set", "quoted=\"hello\"", "--config-path", path]);
+    let quoted = run(&[
+        "cli",
+        "config",
+        "set",
+        "quoted=\"hello\"",
+        "--config-path",
+        path,
+    ]);
     assert_eq!(quoted.status.code(), Some(0));
     assert!(quoted.stderr.is_empty());
 
-    let spaces = run(&["cli", "config", "set", "message=hello world", "--config-path", path]);
+    let spaces = run(&[
+        "cli",
+        "config",
+        "set",
+        "message=hello world",
+        "--config-path",
+        path,
+    ]);
     assert_eq!(spaces.status.code(), Some(0));
     assert!(spaces.stderr.is_empty());
 
@@ -109,19 +131,43 @@ fn config_clear_populated_and_empty_and_reload_after_external_change() {
     fs::write(&file, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("seed");
     let path = file.to_str().expect("utf-8");
 
-    let clear_populated =
-        run(&["cli", "config", "clear", "--format", "json", "--no-pretty", "--config-path", path]);
+    let clear_populated = run(&[
+        "cli",
+        "config",
+        "clear",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
     let clear_json = assert_success_json(&clear_populated, "config clear populated");
     assert_eq!(clear_json["removed_keys"], 2);
 
-    let clear_empty =
-        run(&["cli", "config", "clear", "--format", "json", "--no-pretty", "--config-path", path]);
+    let clear_empty = run(&[
+        "cli",
+        "config",
+        "clear",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
     let clear_empty_json = assert_success_json(&clear_empty, "config clear empty");
     assert_eq!(clear_empty_json["removed_keys"], 0);
 
     fs::write(&file, "BIJUXCLI_GAMMA=3\n").expect("external update");
-    let reload =
-        run(&["cli", "config", "reload", "--format", "json", "--no-pretty", "--config-path", path]);
+    let reload = run(&[
+        "cli",
+        "config",
+        "reload",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ]);
     let reload_json = assert_success_json(&reload, "config reload after external update");
     assert_eq!(reload_json["entry_count"], 1);
 }
@@ -146,9 +192,9 @@ fn config_export_text_json_yaml_and_load_valid_malformed() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_eq!(text.status.code(), Some(2));
-    assert!(text.stdout.is_empty());
-    assert!(!text.stderr.is_empty());
+    assert_eq!(text.status.code(), Some(0));
+    assert!(text.stderr.is_empty());
+    assert!(!text.stdout.is_empty());
 
     let json = run(&[
         "cli",
@@ -217,8 +263,14 @@ fn config_mutation_rollback_and_retry_idempotency_proof() {
     let malformed = root.join("malformed.env");
     fs::write(&malformed, "BROKEN\n").expect("seed malformed");
 
-    let failed =
-        run(&["cli", "config", "load", malformed.to_str().expect("utf-8"), "--config-path", path]);
+    let failed = run(&[
+        "cli",
+        "config",
+        "load",
+        malformed.to_str().expect("utf-8"),
+        "--config-path",
+        path,
+    ]);
     assert_eq!(failed.status.code(), Some(2));
 
     let after_failed = fs::read_to_string(&file).expect("read after failed load");
@@ -227,13 +279,25 @@ fn config_mutation_rollback_and_retry_idempotency_proof() {
     let valid = root.join("valid.env");
     fs::write(&valid, "BIJUXCLI_ALPHA=2\n").expect("seed valid");
 
-    let retry_one =
-        run(&["cli", "config", "load", valid.to_str().expect("utf-8"), "--config-path", path]);
+    let retry_one = run(&[
+        "cli",
+        "config",
+        "load",
+        valid.to_str().expect("utf-8"),
+        "--config-path",
+        path,
+    ]);
     assert_eq!(retry_one.status.code(), Some(0));
     assert!(retry_one.stderr.is_empty());
 
-    let retry_two =
-        run(&["cli", "config", "load", valid.to_str().expect("utf-8"), "--config-path", path]);
+    let retry_two = run(&[
+        "cli",
+        "config",
+        "load",
+        valid.to_str().expect("utf-8"),
+        "--config-path",
+        path,
+    ]);
     assert_eq!(retry_two.status.code(), Some(0));
     assert!(retry_two.stderr.is_empty());
 

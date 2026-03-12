@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 
 use crate::features::config::operations as config_operations;
-use crate::shared::argv::{command_option_value, command_positionals};
+use crate::shared::argv::command_positionals;
 
 pub(crate) fn execute_config_command(
     normalized_path: &[String],
@@ -25,21 +25,26 @@ pub(crate) fn execute_config_command(
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             let positional = command_positionals(argv, &["cli", "config", "get"]);
-            let raw_key =
-                positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
+            let raw_key = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::get_value(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             let positional = command_positionals(argv, &["cli", "config", "set"]);
-            let raw_pair = positional.first().cloned().or_else(read_pair_from_stdin_fallback);
+            let raw_pair = positional
+                .first()
+                .cloned()
+                .or_else(read_pair_from_stdin_fallback);
             let raw_pair =
                 raw_pair.ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
             Some(config_operations::set_pair(config_file, &raw_pair)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "unset" => {
             let positional = command_positionals(argv, &["cli", "config", "unset"]);
-            let raw_key =
-                positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
+            let raw_key = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             Some(config_operations::unset_key(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "clear" => {
@@ -52,18 +57,17 @@ pub(crate) fn execute_config_command(
         }
         [a, b, c] if a == "cli" && b == "config" && c == "export" => {
             let positional = command_positionals(argv, &["cli", "config", "export"]);
-            let raw_path = positional.first().ok_or_else(|| anyhow!("Missing parameter: path"))?;
-            let format = command_option_value(argv, &["cli", "config", "export"], "--format")
-                .unwrap_or_else(|| "json".to_string());
-            if format == "text" {
-                return Err(anyhow!("Unsupported format: text"));
-            }
+            let raw_path = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
             let target_path = PathBuf::from(raw_path);
             Some(config_operations::export_to(config_file, &target_path)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "load" => {
             let positional = command_positionals(argv, &["cli", "config", "load"]);
-            let raw_path = positional.first().ok_or_else(|| anyhow!("Missing parameter: path"))?;
+            let raw_path = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
             let source_path = PathBuf::from(raw_path);
             Some(config_operations::load_from(config_file, &source_path)?)
         }
