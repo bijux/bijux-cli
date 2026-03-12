@@ -26,18 +26,6 @@ pub struct AppRunResult {
     pub stderr: String,
 }
 
-fn should_prevalidate_dev_cli_argv(argv: &[String]) -> bool {
-    if argv.get(1).map(String::as_str) != Some("dev") {
-        return false;
-    }
-
-    match argv.get(2).map(String::as_str) {
-        Some("cli") => true,
-        Some(namespace) => known_bijux_tool(namespace).is_none(),
-        None => false,
-    }
-}
-
 fn root_usage_help_text() -> Result<String> {
     let help_argv = vec!["bijux".to_string(), "--help".to_string()];
     if let Some(help) = help::try_render_clap_help(&help_argv) {
@@ -64,35 +52,45 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 
     if argv.len() >= 2 && argv[1] == "help" {
         let path: Vec<&str> = argv[2..].iter().map(String::as_str).collect();
+        if let Some(first) = path.first().copied() {
+            if first == "dev" || known_bijux_tool(first).is_some() {
+                let mut delegated_argv = vec!["bijux".to_string()];
+                delegated_argv.extend(path.iter().map(|segment| (*segment).to_string()));
+                delegated_argv.push("--help".to_string());
+                if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
+                {
+                    return Ok(delegated);
+                }
+            }
+        }
+        let rendered = render_command_help(&path).unwrap_or_else(|_| {
+            "Unknown help topic. Run `bijux --help` for available runtime commands.".to_string()
+        });
         return Ok(AppRunResult {
             exit_code: 0,
-            stdout: format!("{}\n", render_command_help(&path)?.trim_end()),
+            stdout: format!("{}\n", rendered.trim_end()),
             stderr: String::new(),
         });
+    }
+
+    let has_help_flag = argv.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h"));
+    if has_help_flag
+        && argv.get(1).is_some_and(|first| first == "dev" || known_bijux_tool(first).is_some())
+    {
+        if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
+            return Ok(delegated);
+        }
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
         return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
     }
 
-    let mut prevalidated_intent = None;
-    if should_prevalidate_dev_cli_argv(argv) {
-        let intent = parse_intent(argv)?;
-        if intent.normalized_path.is_empty() {
-            return Ok(AppRunResult {
-                exit_code: 2,
-                stdout: String::new(),
-                stderr: root_usage_help_text()?,
-            });
-        }
-        prevalidated_intent = Some(intent);
-    }
-
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
         return Ok(delegated);
     }
 
-    let intent = prevalidated_intent.unwrap_or(parse_intent(argv)?);
+    let intent = parse_intent(argv)?;
     if intent.normalized_path.is_empty() {
         return Ok(AppRunResult {
             exit_code: 2,
