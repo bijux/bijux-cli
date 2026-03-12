@@ -35,6 +35,54 @@ fn root_usage_help_text() -> Result<String> {
     Ok(format!("{}\n", render_command_help(&[])?.trim_end()))
 }
 
+fn is_known_help_global_flag(token: &str) -> bool {
+    matches!(
+        token,
+        "--help" | "-h" | "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text"
+    )
+}
+
+fn help_global_flag_takes_value(token: &str) -> bool {
+    matches!(token, "--format" | "-f" | "--log-level" | "--color" | "--config-path")
+}
+
+fn is_known_help_global_flag_with_equals(token: &str) -> bool {
+    token.starts_with("--format=")
+        || token.starts_with("--log-level=")
+        || token.starts_with("--color=")
+        || token.starts_with("--config-path=")
+}
+
+fn parse_help_command_path(argv: &[String]) -> std::result::Result<Vec<String>, String> {
+    let mut path = Vec::new();
+    let mut consume_next = false;
+
+    for token in argv.iter().skip(2) {
+        if consume_next {
+            consume_next = false;
+            continue;
+        }
+
+        if token == "--" {
+            continue;
+        }
+        if is_known_help_global_flag(token) || is_known_help_global_flag_with_equals(token) {
+            continue;
+        }
+        if help_global_flag_takes_value(token) {
+            consume_next = true;
+            continue;
+        }
+        if token.starts_with('-') {
+            return Err(format!("Unknown help flag: {token}"));
+        }
+
+        path.push(token.clone());
+    }
+
+    Ok(path)
+}
+
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     if argv.len() == 1 {
@@ -51,11 +99,20 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if argv.len() >= 2 && argv[1] == "help" {
-        let path: Vec<&str> = argv[2..].iter().map(String::as_str).collect();
-        if let Some(first) = path.first().copied() {
+        let path = match parse_help_command_path(argv) {
+            Ok(path) => path,
+            Err(message) => {
+                let mut stderr = message;
+                stderr.push('\n');
+                stderr.push_str("Run `bijux --help` for available runtime commands.\n");
+                return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr });
+            }
+        };
+        let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+        if let Some(first) = path.first().map(String::as_str) {
             if first == "dev" || known_bijux_tool(first).is_some() {
                 let mut delegated_argv = vec!["bijux".to_string()];
-                delegated_argv.extend(path.iter().map(|segment| (*segment).to_string()));
+                delegated_argv.extend(path.iter().cloned());
                 delegated_argv.push("--help".to_string());
                 if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
                 {
@@ -63,9 +120,17 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
                 }
             }
         }
-        let rendered = render_command_help(&path).unwrap_or_else(|_| {
-            "Unknown help topic. Run `bijux --help` for available runtime commands.".to_string()
-        });
+        let rendered = match render_command_help(&path_refs) {
+            Ok(rendered) => rendered,
+            Err(_) => {
+                return Ok(AppRunResult {
+                    exit_code: 2,
+                    stdout: String::new(),
+                    stderr: "Unknown help topic. Run `bijux --help` for available runtime commands.\n"
+                        .to_string(),
+                });
+            }
+        };
         return Ok(AppRunResult {
             exit_code: 0,
             stdout: format!("{}\n", rendered.trim_end()),

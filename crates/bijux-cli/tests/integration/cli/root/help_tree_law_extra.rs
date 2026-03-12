@@ -193,6 +193,37 @@ fn no_color_root_help_and_grouped_help_are_stable() {
 }
 
 #[test]
+fn help_topic_accepts_global_flags_without_losing_topic_resolution() {
+    let with_format = run(&["help", "status", "--format", "json", "--no-pretty"]);
+    assert_eq!(with_format.status.code(), Some(0));
+    assert!(with_format.stderr.is_empty());
+    let with_format_text = String::from_utf8(with_format.stdout).expect("utf-8");
+    assert!(with_format_text.contains("Usage: status"));
+
+    let with_quiet = run(&["help", "status", "--quiet"]);
+    assert_eq!(with_quiet.status.code(), Some(0));
+    assert!(with_quiet.stderr.is_empty());
+    let with_quiet_text = String::from_utf8(with_quiet.stdout).expect("utf-8");
+    assert!(with_quiet_text.contains("Usage: status"));
+
+    let root_help = run(&["help", "--format", "json", "--no-pretty"]);
+    assert_eq!(root_help.status.code(), Some(0));
+    assert!(root_help.stderr.is_empty());
+    let root_help_text = String::from_utf8(root_help.stdout).expect("utf-8");
+    assert!(root_help_text.contains("Usage: bijux"));
+}
+
+#[test]
+fn unknown_help_topic_returns_usage_exit_and_stderr_message() {
+    let out = run(&["help", "not-a-real-command"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("utf-8");
+    assert!(stderr.contains("Unknown help topic."));
+    assert!(stderr.contains("bijux --help"));
+}
+
+#[test]
 fn unknown_command_suggestions_are_deterministic_and_namespace_scoped() {
     let first = run(&["sttaus", "--format", "json", "--no-pretty"]);
     let second = run(&["sttaus", "--format", "json", "--no-pretty"]);
