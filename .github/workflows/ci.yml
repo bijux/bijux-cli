@@ -21,7 +21,7 @@ env:
 jobs:
   # 1) Test matrix (3.11, 3.12, 3.13) — parallel
   tests:
-    name: tests (${{ matrix.toxenv }})
+    name: tests (${{ matrix.python_label }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -29,11 +29,11 @@ jobs:
       matrix:
         include:
           - python-version: "3.11"
-            toxenv: "py311"
+            python_label: "py311"
           - python-version: "3.12"
-            toxenv: "py312"
+            python_label: "py312"
           - python-version: "3.13"
-            toxenv: "py313"
+            python_label: "py313"
 
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +46,8 @@ jobs:
             crates/bijux-cli-python/pyproject.toml
             requirements/**/*.txt
 
-      - run: python -m pip install -U pip tox
-      - run: tox -vv -e ${{ matrix.toxenv }}
+      - run: make install
+      - run: make test-py
 
       # Evidence collection (per-Python)
       - name: Stage test artifacts
@@ -68,17 +68,11 @@ jobs:
             fi
           fi
 
-          if [ -d .tox ]; then
-            find .tox -type f \
-              \( -name 'junit*.xml' -o -name 'pytest*.xml' -o -name 'report.xml' -o -name 'coverage.xml' \) \
-              -print -exec cp --parents -t artifacts/test_upload {} + || true
-          fi
-
       - name: Upload test artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: test-${{ matrix.toxenv }}
+          name: test-${{ matrix.python_label }}
           path: artifacts/test_upload/**
           if-no-files-found: ignore
           retention-days: 14
@@ -87,20 +81,26 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.toxenv }}
+          name: coverage-${{ matrix.python_label }}
           path: artifacts/test/coverage.xml
           if-no-files-found: warn
           retention-days: 14
 
   # 2) Non-lint checks — parallel; pinned to 3.11
   checks:
-    name: ${{ matrix.env }}
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        env: [quality, security, docs, build, sbom]
+        include:
+          - name: security
+            make_target: security-py
+          - name: docs
+            make_target: docs
+          - name: build
+            make_target: build-py
 
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
             crates/bijux-cli-python/pyproject.toml
             requirements/**/*.txt
 
-      - run: python -m pip install -U pip tox
+      - run: make install
       - name: Validate cross-ecosystem package metadata
         run: |
           cargo run -q -p bijux-cli-bin -- dev cli scripts package-metadata --format json --no-pretty > /tmp/package-metadata.json
@@ -123,21 +123,11 @@ jobs:
           payload = json.loads(Path("/tmp/package-metadata.json").read_text(encoding="utf-8"))
           raise SystemExit(0 if payload.get("status") == "pass" else 1)
           PY
-      - run: tox -vv -e ${{ matrix.env }}
-
-      # --- QUALITY ---
-      - name: Upload quality artifacts
-        if: ${{ always() && matrix.env == 'quality' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: quality
-          path: artifacts/quality/**
-          if-no-files-found: warn
-          retention-days: 14
+      - run: make ${{ matrix.make_target }}
 
       # --- SECURITY ---
       - name: Upload security artifacts
-        if: ${{ always() && matrix.env == 'security' }}
+        if: ${{ always() && matrix.name == 'security' }}
         uses: actions/upload-artifact@v4
         with:
           name: security
@@ -147,7 +137,7 @@ jobs:
 
       # --- DOCS (source + site produced by make docs) ---
       - name: Upload docs artifacts
-        if: ${{ always() && matrix.env == 'docs' }}
+        if: ${{ always() && matrix.name == 'docs' }}
         uses: actions/upload-artifact@v4
         with:
           name: docs
@@ -157,14 +147,14 @@ jobs:
 
       # --- DIST from the 'build' env (artifacts/build) ---
       - name: Validate artifacts/build on tag
-        if: ${{ startsWith(github.ref, 'refs/tags/v') && matrix.env == 'build' }}
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && matrix.name == 'build' }}
         shell: bash
         run: |
           test -d artifacts/build && compgen -G "artifacts/build/*" >/dev/null \
             || { echo "::error::artifacts/build is missing or empty"; exit 1; }
 
       - name: Upload dist artifacts
-        if: ${{ matrix.env == 'build' && hashFiles('artifacts/build/**') != '' }}
+        if: ${{ matrix.name == 'build' && hashFiles('artifacts/build/**') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -174,21 +164,11 @@ jobs:
 
       # --- Evidence (optional, for releases) ---
       - name: Upload evidence
-        if: ${{ matrix.env == 'build' && hashFiles('artifacts/evidence/**') != '' }}
+        if: ${{ matrix.name == 'build' && hashFiles('artifacts/evidence/**') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: evidence
           path: artifacts/evidence/**
-          if-no-files-found: ignore
-          retention-days: 30
-
-      # --- SBOM ---
-      - name: Upload SBOM
-        if: ${{ matrix.env == 'sbom' && hashFiles('artifacts/sbom/**') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom
-          path: artifacts/sbom/**
           if-no-files-found: ignore
           retention-days: 30
 
@@ -1879,8 +1859,8 @@ jobs:
             crates/bijux-cli-python/pyproject.toml
             requirements/**/*.txt
 
-      - run: python -m pip install -U pip tox
-      - run: tox -vv -e lint
+      - run: make install
+      - run: make lint-py
 
       - name: Upload lint artifacts
         if: ${{ always() }}
