@@ -2,6 +2,19 @@
 //! Shared argv helpers for command argument extraction.
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
+    fn match_tokens(argv: &[String], start: usize, tokens: &[&str]) -> Option<usize> {
+        let end = start + tokens.len();
+        if argv.len() < end {
+            return None;
+        }
+        for (offset, token) in tokens.iter().enumerate() {
+            if argv.get(start + offset).map(String::as_str) != Some(*token) {
+                return None;
+            }
+        }
+        Some(end)
+    }
+
     let mut command_start = 1;
     while command_start < argv.len() {
         let token = argv[command_start].as_str();
@@ -31,16 +44,17 @@ fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String
         break;
     }
 
-    let extra_start = command_start + command_tokens.len();
-    if argv.len() < extra_start {
-        return &[];
+    if let Some(extra_start) = match_tokens(argv, command_start, command_tokens) {
+        return &argv[extra_start..];
     }
-    for (idx, token) in command_tokens.iter().enumerate() {
-        if argv.get(command_start + idx).map(String::as_str) != Some(*token) {
-            return &[];
+
+    if command_tokens.first().copied() == Some("cli") {
+        if let Some(extra_start) = match_tokens(argv, command_start, &command_tokens[1..]) {
+            return &argv[extra_start..];
         }
     }
-    &argv[extra_start..]
+
+    &[]
 }
 
 /// Return positional args for a command path while ignoring known global flags.
@@ -117,7 +131,7 @@ pub fn command_has_flag(argv: &[String], flag: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::command_option_value;
+    use super::{command_option_value, command_positionals};
 
     #[test]
     fn command_option_value_supports_space_and_equals_forms() {
@@ -165,6 +179,22 @@ mod tests {
         assert_eq!(
             command_option_value(&argv, &["cli", "config", "get"], "--limit"),
             None
+        );
+    }
+
+    #[test]
+    fn command_window_accepts_root_alias_for_canonical_cli_tokens() {
+        let argv = vec![
+            "bijux".to_string(),
+            "plugins".to_string(),
+            "inspect".to_string(),
+            "community".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ];
+        assert_eq!(
+            command_positionals(&argv, &["cli", "plugins", "inspect"]),
+            vec!["community".to_string()]
         );
     }
 }
