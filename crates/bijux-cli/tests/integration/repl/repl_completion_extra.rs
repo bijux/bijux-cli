@@ -127,3 +127,31 @@ fn completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs() {
     assert!(once.iter().any(|c| c == "alpha"));
     assert!(once.iter().any(|c| c == "zeta"));
 }
+
+#[test]
+fn completion_includes_full_config_history_and_memory_command_sets() {
+    let (session, _) = startup_repl("default", None);
+    let all = completion_candidates(&session, "");
+
+    for required in [
+        "config list",
+        "config get",
+        "config set",
+        "config unset",
+        "config clear",
+        "config reload",
+        "config export",
+        "config load",
+        "history clear",
+        "memory list",
+        "memory get",
+        "memory set",
+        "memory delete",
+        "memory clear",
+    ] {
+        assert!(
+            all.iter().any(|candidate| candidate == required),
+            "missing completion candidate: {required}"
+        );
+    }
+}

@@ -9,11 +9,14 @@ const CORE_BUILTIN_COMPLETIONS: &[&str] = &[
     "inspect",
     "status",
     "config",
+    "config list",
     "config get",
     "config set",
     "config unset",
     "config clear",
+    "config reload",
     "config export",
+    "config load",
     "plugins",
     "plugins list",
     "plugins inspect",
@@ -23,7 +26,13 @@ const CORE_BUILTIN_COMPLETIONS: &[&str] = &[
     "cli status",
     "cli paths",
     "history",
+    "history clear",
     "memory",
+    "memory list",
+    "memory get",
+    "memory set",
+    "memory delete",
+    "memory clear",
 ];
 
 /// Provide command completion candidates for built-ins and plugin hooks.
