@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from importlib import metadata
 import json
 import os
 from pathlib import Path
@@ -23,6 +22,7 @@ from ._exceptions import (
 
 _STRICT_NATIVE_IMPORT = os.environ.get("BIJUX_PY_STRICT_IMPORT") == "1"
 _NATIVE_IMPORT_ERROR: Exception | None = None
+_DEFAULT_SUBPROCESS_TIMEOUT_SECONDS = 60
 
 try:
     from . import _native as native
@@ -52,11 +52,15 @@ class ExecutionResult:
 def _resolve_binary() -> RuntimeResolution:
     candidate = os.environ.get("BIJUX_BIN")
     if candidate:
-        return RuntimeResolution(binary=candidate)
+        return RuntimeResolution(binary=_validate_binary_candidate(candidate, "BIJUX_BIN"))
 
     for resolved in _workspace_runtime_binaries():
-        if os.path.isfile(resolved) and os.access(resolved, os.X_OK):
-            return RuntimeResolution(binary=resolved)
+        try:
+            return RuntimeResolution(
+                binary=_validate_binary_candidate(resolved, "workspace runtime")
+            )
+        except PlatformWheelUnavailable:
+            continue
 
     current_entrypoint = None
     if sys.argv and sys.argv[0]:
@@ -66,7 +70,9 @@ def _resolve_binary() -> RuntimeResolution:
     if resolved:
         resolved_path = Path(resolved).resolve()
         if current_entrypoint is None or resolved_path != current_entrypoint:
-            return RuntimeResolution(binary=str(resolved_path))
+            return RuntimeResolution(
+                binary=_validate_binary_candidate(str(resolved_path), "PATH")
+            )
 
     raise PlatformWheelUnavailable(
         "No compatible runtime binary found. Set BIJUX_BIN or install bijux-cli wheel for this platform."
@@ -95,13 +101,6 @@ def _workspace_runtime_binaries() -> list[str]:
 
 
 def version() -> str:
-    if NATIVE_AVAILABLE:
-        return native.version()
-    for package_name in ("bijux-cli", "bijux_cli_py"):
-        try:
-            return metadata.version(package_name)
-        except metadata.PackageNotFoundError:
-            continue
     result = execution_facade_with_status(["version"])
     if result.exit_code != 0:
         raise error_to_exception(
@@ -123,17 +122,9 @@ def command_tree_introspection() -> str:
         return json.dumps(
             {
                 "root": "bijux",
-                "namespaces": [
-                    "cli",
-                    "dev",
-                    "help",
-                    "version",
-                    "doctor",
-                    "repl",
-                    "plugins",
-                    "completion",
-                    "inspect",
-                ],
+                "namespaces": [],
+                "source": "fallback-empty",
+                "warning": f"inspect command failed: {result.stderr.strip() or f'exit {result.exit_code}'}",
             }
         )
     try:
@@ -154,7 +145,13 @@ def command_tree_introspection() -> str:
                     namespaces.append(head)
 
     normalized = sorted(set(namespaces))
-    return json.dumps({"root": "bijux", "namespaces": normalized})
+    return json.dumps(
+        {
+            "root": "bijux",
+            "namespaces": normalized,
+            "source": "runtime-inspect",
+        }
+    )
 
 
 def execution_facade(argv: Iterable[str]) -> str:
@@ -182,18 +179,44 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
             exit_code=int(outcome.get("exit_code", 1)),
             stdout=str(outcome.get("stdout", "")),
             stderr=str(outcome.get("stderr", "")),
-            error_kind=_normalize_error_kind(outcome.get("error_kind")),
+            error_kind=(
+                _normalize_error_kind(outcome.get("error_kind"))
+                or _classify_process_error_kind(
+                    int(outcome.get("exit_code", 1)),
+                    str(outcome.get("stderr", "")),
+                )
+            ),
         )
 
     runtime = _resolve_binary()
-    result = subprocess.run(
-        [runtime.binary, *args], capture_output=True, text=True, check=False
-    )
+    try:
+        result = subprocess.run(
+            [runtime.binary, *args],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_runtime_timeout_seconds(),
+        )
+    except subprocess.TimeoutExpired as exc:
+        timeout_seconds = _runtime_timeout_seconds()
+        return ExecutionResult(
+            exit_code=1,
+            stdout=(exc.stdout or ""),
+            stderr=f"runtime command timed out after {timeout_seconds}s",
+            error_kind="InternalError",
+        )
+    except OSError as exc:
+        return ExecutionResult(
+            exit_code=1,
+            stdout="",
+            stderr=f"runtime process failed: {exc}",
+            error_kind="InternalError",
+        )
     return ExecutionResult(
         exit_code=result.returncode,
         stdout=result.stdout,
         stderr=result.stderr,
-        error_kind=_classify_process_error_kind(result.returncode),
+        error_kind=_classify_process_error_kind(result.returncode, result.stderr),
     )
 
 
@@ -247,7 +270,7 @@ def ensure_native_extension() -> None:
 
 def check_python_runtime_supported(version_info: tuple[int, int] | None = None) -> bool:
     major, minor = version_info or (sys.version_info.major, sys.version_info.minor)
-    return (major, minor) >= (3, 9)
+    return (major, minor) >= (3, 11)
 
 
 def migration_warnings(legacy_python_only: bool = False) -> list[str]:
@@ -302,11 +325,46 @@ def _extract_error_message(payload: dict[str, object]) -> str:
     return "Unknown bijux-cli error"
 
 
-def _classify_process_error_kind(exit_code: int) -> str | None:
+def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
     if exit_code == 0:
         return None
     if exit_code == 2:
         return "UsageError"
     if exit_code == 3:
         return "ValidationError"
+    lower = stderr.lower()
+    if (
+        "unknown route" in lower
+        or "unknown namespace" in lower
+        or "usage" in lower
+    ):
+        return "UsageError"
+    if "validation" in lower or "invalid" in lower:
+        return "ValidationError"
     return "InternalError"
+
+
+def _runtime_timeout_seconds() -> int:
+    configured = os.environ.get("BIJUX_PY_SUBPROCESS_TIMEOUT")
+    if configured is None:
+        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
+    try:
+        parsed = int(configured)
+    except ValueError:
+        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
+    if parsed <= 0:
+        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
+    return parsed
+
+
+def _validate_binary_candidate(candidate: str, source: str) -> str:
+    candidate_path = Path(candidate).expanduser().resolve()
+    if not candidate_path.is_file():
+        raise PlatformWheelUnavailable(
+            f"{source} binary does not exist: {candidate_path}"
+        )
+    if not os.access(candidate_path, os.X_OK):
+        raise PlatformWheelUnavailable(
+            f"{source} binary is not executable: {candidate_path}"
+        )
+    return str(candidate_path)
