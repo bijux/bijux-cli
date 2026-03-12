@@ -423,7 +423,10 @@ fn ensure_migration_matrix(
     parity_rows: &[Value],
 ) -> Value {
     normalize_migration_matrix(&mut matrix);
-    let missing_rows = matrix.get("commands").and_then(Value::as_array).map_or(true, Vec::is_empty);
+    let missing_rows = matrix
+        .get("commands")
+        .and_then(Value::as_array)
+        .is_none_or(Vec::is_empty);
     if is_empty_object(&matrix) || missing_rows {
         matrix = synthesize_migration_matrix(status_report, parity_rows);
     }
