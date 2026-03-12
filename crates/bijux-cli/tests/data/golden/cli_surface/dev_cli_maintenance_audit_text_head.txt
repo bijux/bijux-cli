@@ -4,21 +4,13 @@
   "remaining_task_runner_only_behaviors": [
     "publish",
     "publish-py",
-    "publish-test",
-    "publish-test-py",
-    "sbom",
-    "sbom-clean",
-    "sbom-clean-py",
-    "sbom-dev",
-    "sbom-dev-py",
-    "sbom-prod",
-    "sbom-prod-py",
-    "sbom-py",
-    "sbom-summary",
-    "sbom-summary-py",
-    "sbom-validate",
-    "sbom-validate-py",
     "security",
-    "security-audit",
-    "security-audit-py",
-    "security-bandit",
+    "security-py",
+    "publish-rs",
+    "security"
+  ],
+  "replacement_rule": "new maintainer automation defaults to bijux dev cli commands",
+  "summary": {
+    "maintenance_classification_counts": {}
+  }
+}
