@@ -4,6 +4,7 @@ mod delegation;
 mod help;
 mod policy;
 mod route_exec;
+mod suggest;
 
 use anyhow::Result;
 use serde_json::json;
@@ -71,11 +72,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
-        return Ok(AppRunResult {
-            exit_code: 0,
-            stdout: help,
-            stderr: String::new(),
-        });
+        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
     }
 
     let mut prevalidated_intent = None;
@@ -112,15 +109,28 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         Err(error) => {
             let message = error.to_string();
             let code = policy::classify_error_exit_code(&message);
-            let rendered_error = render_value(
-                &json!({
-                    "status": "error",
-                    "code": code,
-                    "message": message,
-                    "command": intent.normalized_path.join(" "),
-                }),
-                policy::emitter_config(&intent.global_flags),
-            )?;
+            let mut error_payload = json!({
+                "status": "error",
+                "code": code,
+                "message": message,
+                "command": intent.normalized_path.join(" "),
+            });
+            if message.starts_with("unknown route: ") {
+                if let Some(correction) =
+                    suggest::correction_for_unknown_route(&intent.normalized_path)
+                {
+                    let nearest_command = correction.nearest_command;
+                    let next_command = correction.next_command;
+                    let next_help = correction.next_help;
+                    error_payload["nearest_command"] = json!(nearest_command);
+                    error_payload["next_command"] = json!(next_command.clone());
+                    error_payload["next_help"] = json!(next_help.clone());
+                    error_payload["hint"] =
+                        json!(format!("Try `{}` or `{}`.", next_command, next_help));
+                }
+            }
+            let rendered_error =
+                render_value(&error_payload, policy::emitter_config(&intent.global_flags))?;
             let error_content = if rendered_error.ends_with('\n') {
                 rendered_error
             } else {
@@ -135,18 +145,10 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, policy::emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') {
-        rendered
-    } else {
-        format!("{rendered}\n")
-    };
+    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
-        return Ok(AppRunResult {
-            exit_code: 2,
-            stdout: String::new(),
-            stderr: content,
-        });
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
     let route_exit_code = 0;
@@ -159,9 +161,5 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    Ok(AppRunResult {
-        exit_code: route_exit_code,
-        stdout: content,
-        stderr: String::new(),
-    })
+    Ok(AppRunResult { exit_code: route_exit_code, stdout: content, stderr: String::new() })
 }
