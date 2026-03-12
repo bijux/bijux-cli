@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::{json_artifact_state, read_json_if_exists};
+use crate::infra::artifacts::{artifact_source_path, json_artifact_state, read_json_if_exists};
 
 fn read_first_json(paths: &[&Path]) -> Value {
     for path in paths {
@@ -15,7 +15,10 @@ fn read_first_json(paths: &[&Path]) -> Value {
     }
     json!({
         "_artifact_state": "missing",
-        "_artifact_paths": paths.iter().map(|path| path.display().to_string()).collect::<Vec<_>>(),
+        "_artifact_paths": paths
+            .iter()
+            .map(|path| artifact_source_path(path))
+            .collect::<Vec<_>>(),
     })
 }
 

@@ -6,6 +6,18 @@ use serde_json::{json, Value};
 
 use crate::infra::artifacts::{read_json_if_exists, read_text_if_exists};
 
+fn ensure_array_report_key(mut payload: Value, key: &str) -> Value {
+    if payload.get(key).is_some() {
+        return payload;
+    }
+    if let Some(obj) = payload.as_object_mut() {
+        obj.insert(key.to_string(), json!([]));
+    } else {
+        payload = json!({ key: [] });
+    }
+    payload
+}
+
 /// `dev cli release status`
 #[must_use]
 pub fn build_status_report(workspace_root: &Path) -> Value {
@@ -127,27 +139,39 @@ pub fn build_notes_report(workspace_root: &Path) -> Value {
 /// `dev cli release behavior-changes`
 #[must_use]
 pub fn build_behavior_changes_report(workspace_root: &Path) -> Value {
-    read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"))
+    ensure_array_report_key(
+        read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json")),
+        "commands",
+    )
 }
 
 /// `dev cli release intentional-differences`
 #[must_use]
 pub fn build_intentional_differences_report(workspace_root: &Path) -> Value {
-    read_json_if_exists(
-        &workspace_root.join("artifacts/status/what_is_intentionally_different.json"),
+    ensure_array_report_key(
+        read_json_if_exists(
+            &workspace_root.join("artifacts/status/what_is_intentionally_different.json"),
+        ),
+        "items",
     )
 }
 
 /// `dev cli release unresolved-gaps`
 #[must_use]
 pub fn build_unresolved_gaps_report(workspace_root: &Path) -> Value {
-    read_json_if_exists(&workspace_root.join("artifacts/status/what_is_left.json"))
+    ensure_array_report_key(
+        read_json_if_exists(&workspace_root.join("artifacts/status/what_is_left.json")),
+        "items",
+    )
 }
 
 /// `dev cli release compatibility-leftovers`
 #[must_use]
 pub fn build_compatibility_leftovers_report(workspace_root: &Path) -> Value {
-    read_json_if_exists(
-        &workspace_root.join("artifacts/status/compatibility_debt_trend_report.json"),
+    ensure_array_report_key(
+        read_json_if_exists(
+            &workspace_root.join("artifacts/status/compatibility_debt_trend_report.json"),
+        ),
+        "series",
     )
 }

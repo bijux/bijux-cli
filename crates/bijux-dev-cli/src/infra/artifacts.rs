@@ -5,6 +5,22 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
+/// Render artifact path for payload metadata using a workspace-relative path when available.
+#[must_use]
+pub fn artifact_source_path(path: &Path) -> String {
+    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let normalized_workspace_root =
+        workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.clone());
+    let rendered = if let Ok(relative) = path.strip_prefix(&normalized_workspace_root) {
+        relative.to_path_buf()
+    } else if let Ok(cwd) = std::env::current_dir() {
+        path.strip_prefix(&cwd).unwrap_or(path).to_path_buf()
+    } else {
+        path.to_path_buf()
+    };
+    rendered.to_string_lossy().replace('\\', "/")
+}
+
 /// Read JSON payload from disk.
 ///
 /// On failure, returns an object carrying `_artifact_state`:
@@ -13,24 +29,28 @@ use serde_json::{json, Value};
 /// - `malformed`
 #[must_use]
 pub fn read_json_if_exists(path: &Path) -> Value {
+    let source = artifact_source_path(path);
     match fs::read_to_string(path) {
         Ok(text) => match serde_json::from_str::<Value>(&text) {
             Ok(payload) => payload,
             Err(error) => json!({
+                "source": source,
                 "_artifact_state": "malformed",
-                "_artifact_path": path.display().to_string(),
+                "_artifact_path": source,
                 "_artifact_error": error.to_string(),
             }),
         },
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             json!({
+                "source": source,
                 "_artifact_state": "missing",
-                "_artifact_path": path.display().to_string(),
+                "_artifact_path": source,
             })
         }
         Err(error) => json!({
+            "source": source,
             "_artifact_state": "unreadable",
-            "_artifact_path": path.display().to_string(),
+            "_artifact_path": source,
             "_artifact_error": error.to_string(),
         }),
     }
