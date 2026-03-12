@@ -5,7 +5,7 @@ This document is intentionally short. It only lists commands and rules that exis
 ## Prerequisites
 
 - Python 3.11 or newer
-- Rust toolchain (stable)
+- Rust toolchain (stable, managed by `rust-toolchain.toml`)
 - GNU Make
 
 Optional tools for some Rust targets:
