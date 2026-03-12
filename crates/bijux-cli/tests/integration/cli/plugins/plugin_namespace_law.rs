@@ -286,7 +286,7 @@ fn json_error_envelopes_for_namespace_rejection_are_stable() {
     assert!(payload["message"]
         .as_str()
         .expect("message")
-        .contains("plugin namespace is reserved: plugins"));
+        .contains("plugin namespace is reserved: cli"));
 }
 
 #[test]
@@ -299,5 +299,5 @@ fn text_errors_for_namespace_rejection_are_stable() {
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
-    assert!(stderr.contains("plugin namespace is reserved: plugins"));
+    assert!(stderr.contains("plugin namespace is reserved: cli"));
 }
