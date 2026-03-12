@@ -11,8 +11,3 @@ Options:
       --no-pretty           
       --config-path <PATH>  
   -h, --help                Print help
-
-Examples:
-  bijux dev cli contracts
-  bijux dev cli contracts --format json
-  bijux help dev cli contracts
