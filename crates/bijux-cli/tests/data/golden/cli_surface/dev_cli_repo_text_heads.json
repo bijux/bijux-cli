@@ -1,7 +1,7 @@
 {
-  "dev cli repo drift": "{\n  \"dead_command_references\": [",
-  "dev cli repo generated": "{\n  \"orphan_generated_outputs\": [",
-  "dev cli repo health": "{\n  \"repo_health\": {\n    \"drift\": {",
-  "dev cli repo inventories": "{\n  \"stale_inventories\": [",
-  "dev cli repo stale": "{\n  \"stale_generated_artifacts\": ["
+  "dev cli repo drift": "dead_command_references:",
+  "dev cli repo generated": "orphan_generated_outputs:",
+  "dev cli repo health": "repo_health:",
+  "dev cli repo inventories": "stale_inventories:",
+  "dev cli repo stale": "stale_generated_artifacts:"
 }

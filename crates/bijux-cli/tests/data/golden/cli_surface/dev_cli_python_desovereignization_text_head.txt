@@ -1,2 +1,2 @@
-direction_contract: python-surface-over-rust-core
-evidence_ids:
+artifact_integrity:
+  bridge_duplicate_law_report: missing
