@@ -23,6 +23,8 @@ TEST_ARTIFACTS_DIR      ?= artifacts/test
 SECURITY_ARTIFACTS_DIR  ?= artifacts/security
 BUILD_ARTIFACTS_DIR     ?= artifacts/build
 LINT_PATHS              ?= $(PYTHON_SRC_DIR)/bijux_cli_py
+RUFF_CACHE_DIR          ?= $(abspath $(LINT_ARTIFACTS_DIR)/.ruff_cache)
+PYTEST_BENCHMARK_DIR    ?= $(abspath $(TEST_ARTIFACTS_DIR)/benchmarks)
 
 PYTEST_INI := $(abspath $(PYTHON_CONFIG_DIR)/pytest.ini)
 COVCFG_INI := $(abspath $(PYTHON_CONFIG_DIR)/coveragerc.ini)
@@ -98,16 +100,17 @@ python-env-py:
 
 lint-py: python-env-py
 	@echo "→ Ruff format"
-	@mkdir -p "$(LINT_ARTIFACTS_DIR)"
-	@$(RUFF) format --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
+	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
+	@$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 	@echo "→ Ruff lint"
-	@$(RUFF) check --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
+	@$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"
+	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
 test-py: python-env-py
 	@echo "→ Running Python test suite on $(PYTHON_TEST_DIR)"
-	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis"
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis" "$(PYTEST_BENCHMARK_DIR)"
 	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
 	  echo "→ Building Rust runtime binary for Python parity tests"; \
 	  cargo build -q -p bijux-cli --bin bijux; \
@@ -115,13 +118,20 @@ test-py: python-env-py
 	@echo "   • JUnit XML → $(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)"
 	@echo "   • Hypothesis DB → $(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)"
 	@echo "   • Using pytest → $(PYTEST)"
-	@PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
+	@set -euo pipefail; \
+	BENCH_FLAGS=""; \
+	if "$(PYTEST)" -q --help 2>/dev/null | grep -q -- '--benchmark-storage'; then \
+	  BENCH_FLAGS="--benchmark-storage=file://$(PYTEST_BENCHMARK_DIR)"; \
+	fi; \
+	PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	HYPOTHESIS_DATABASE_DIRECTORY="$(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)" \
 	BIJUX_BIN="$(abspath $(PY_RUNTIME_BIN))" \
 	$(PYTEST) -c "$(PYTEST_INI)" "$(abspath $(PYTHON_TEST_DIR))" \
 	  --junitxml "$(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)" \
 	  -o cache_dir="$(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)" \
-	  -o addopts='$(PYTEST_ADDOPTS)'
+	  -o addopts='$(PYTEST_ADDOPTS)' \
+	  $$BENCH_FLAGS
+	@rm -rf .benchmarks .benchmark .ruff_cache || true
 
 security-py: python-env-py
 	@echo "→ Bandit (medium/high severity)"
