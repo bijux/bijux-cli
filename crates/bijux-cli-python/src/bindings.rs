@@ -63,7 +63,9 @@ fn json_string<T: Serialize>(value: &T) -> String {
 /// Build python-bridge marker.
 #[must_use]
 pub fn python_bridge_marker() -> ContractMarker {
-    ContractMarker { namespace: "python-bridge".to_string() }
+    ContractMarker {
+        namespace: "python-bridge".to_string(),
+    }
 }
 
 /// Return command tree introspection payload as JSON.
@@ -92,7 +94,10 @@ pub fn command_tree_introspection_api() -> String {
                     .collect::<Vec<_>>();
                 namespaces.sort();
                 namespaces.dedup();
-                return json_string(&CommandTreePayload { root: "bijux", namespaces });
+                return json_string(&CommandTreePayload {
+                    root: "bijux",
+                    namespaces,
+                });
             }
         }
     }
@@ -180,7 +185,11 @@ pub fn plugins_list_binding_api() -> Result<String, CompatibilityError> {
 
 /// Execute `repl --help` through the bridge.
 pub fn repl_bootstrap_binding_api() -> Result<String, CompatibilityError> {
-    execution_facade_api(&["bijux".to_string(), "repl".to_string(), "--help".to_string()])
+    execution_facade_api(&[
+        "bijux".to_string(),
+        "repl".to_string(),
+        "--help".to_string(),
+    ])
 }
 
 /// Export known schema helpers for Python wrappers.
