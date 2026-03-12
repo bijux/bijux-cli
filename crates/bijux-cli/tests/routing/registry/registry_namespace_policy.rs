@@ -19,9 +19,17 @@ use thiserror as _;
 #[test]
 fn official_reserved_namespaces_take_precedence() {
     let mut registry = RouteRegistry::default();
-    for ns in
-        ["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"]
-    {
+    for ns in [
+        "cli",
+        "dev",
+        "help",
+        "version",
+        "doctor",
+        "repl",
+        "plugins",
+        "completion",
+        "inspect",
+    ] {
         let result = registry.register_plugin_namespace(ns);
         assert!(
             matches!(result, Err(RouteError::Reserved(_))),
@@ -41,7 +49,10 @@ fn official_reserved_namespaces_take_precedence() {
 fn known_bijux_tool_registry_matches_expected_namespaces() {
     let expected = ["agent", "atlas", "dag", "dna", "gnss", "rag", "rar", "vex"];
     let official: Vec<&str> = OFFICIAL_PRODUCT_NAMESPACES.to_vec();
-    let known: Vec<&str> = KNOWN_BIJUX_TOOLS.iter().map(|tool| tool.namespace).collect();
+    let known: Vec<&str> = KNOWN_BIJUX_TOOLS
+        .iter()
+        .map(|tool| tool.namespace)
+        .collect();
 
     assert_eq!(official, expected);
     assert_eq!(known, expected);
@@ -53,7 +64,10 @@ fn known_bijux_tools_follow_standard_binary_and_package_patterns() {
         let runtime_binary = tool.runtime_binary();
         let control_binary = tool.control_binary();
         assert_eq!(tool.runtime_binary(), format!("bijux-{}", tool.namespace));
-        assert_eq!(tool.control_binary(), format!("bijux-dev-{}", tool.namespace));
+        assert_eq!(
+            tool.control_binary(),
+            format!("bijux-dev-{}", tool.namespace)
+        );
         assert_eq!(runtime_binary, format!("bijux-{}", tool.namespace));
         assert_eq!(control_binary, format!("bijux-dev-{}", tool.namespace));
     }
@@ -99,8 +113,11 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
         })
         .collect();
 
-    let actual: BTreeMap<String, OfficialProductRegistryEntry> =
-        registry.entries.into_iter().map(|entry| (entry.namespace.clone(), entry)).collect();
+    let actual: BTreeMap<String, OfficialProductRegistryEntry> = registry
+        .entries
+        .into_iter()
+        .map(|entry| (entry.namespace.clone(), entry))
+        .collect();
 
     assert_eq!(actual, expected);
 }
@@ -108,7 +125,9 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
 #[test]
 fn normalized_and_case_folded_namespace_collisions_are_rejected() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("my-plugin").expect("baseline namespace should register");
+    registry
+        .register_plugin_namespace("my-plugin")
+        .expect("baseline namespace should register");
 
     let normalized_collision = registry
         .register_plugin_namespace("my_plugin")
@@ -124,7 +143,9 @@ fn normalized_and_case_folded_namespace_collisions_are_rejected() {
 #[test]
 fn hidden_alias_paths_remain_builtin_when_namespace_resembles_alias_tail() {
     let mut registry = RouteRegistry::default();
-    registry.register_plugin_namespace("registry").expect("namespace is allowed");
+    registry
+        .register_plugin_namespace("registry")
+        .expect("namespace is allowed");
 
     let resolved = registry
         .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
@@ -143,7 +164,10 @@ fn concurrent_registration_on_normalized_equivalent_namespaces_yields_single_win
         let sync = Arc::clone(&barrier);
         handles.push(std::thread::spawn(move || {
             sync.wait();
-            shared.lock().expect("lock registry").register_plugin_namespace(namespace)
+            shared
+                .lock()
+                .expect("lock registry")
+                .register_plugin_namespace(namespace)
         }));
     }
 
@@ -168,9 +192,14 @@ fn user_plugin_namespace_rejection_rules_apply() {
         registry.register_plugin_namespace("status").is_err(),
         "builtin root collision must fail"
     );
-    assert!(registry.register_plugin_namespace("plugins").is_err(), "reserved namespace must fail");
+    assert!(
+        registry.register_plugin_namespace("plugins").is_err(),
+        "reserved namespace must fail"
+    );
 
-    registry.register_plugin_namespace("community").expect("first plugin register should succeed");
+    registry
+        .register_plugin_namespace("community")
+        .expect("first plugin register should succeed");
     assert!(
         registry.register_plugin_namespace("community").is_err(),
         "duplicate plugin namespace must fail"
@@ -180,7 +209,8 @@ fn user_plugin_namespace_rejection_rules_apply() {
 #[test]
 fn plugin_name_collision_with_builtin_command_root_is_rejected() {
     let mut registry = RouteRegistry::default();
-    let err =
-        registry.register_plugin_namespace("config").expect_err("config root must be protected");
+    let err = registry
+        .register_plugin_namespace("config")
+        .expect_err("config root must be protected");
     assert!(matches!(err, RouteError::Conflict(_)));
 }
