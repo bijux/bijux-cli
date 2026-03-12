@@ -16,19 +16,14 @@ fn stale_generated_artifacts(root: &Path) -> Vec<String> {
     collect_files_recursive(&status)
         .into_iter()
         .filter(|path| {
-            path.extension()
-                .and_then(|ext| ext.to_str())
-                .is_some_and(|ext| ext == "tmp")
-                || path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| {
-                        name.contains("stale")
-                            || Path::new(name)
-                                .extension()
-                                .and_then(|ext| ext.to_str())
-                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                    })
+            path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext == "tmp")
+                || path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
+                    name.contains("stale")
+                        || Path::new(name)
+                            .extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                })
         })
         .map(|path| relative_to_root(&path, root))
         .collect()
@@ -40,16 +35,13 @@ fn stale_snapshots(root: &Path) -> Vec<String> {
         .filter(|path| {
             let rel_path = relative_to_root(path, root);
             rel_path.contains("/tests/data/golden/cli_surface/")
-                && path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| {
-                        name.contains(".old.")
-                            || Path::new(name)
-                                .extension()
-                                .and_then(|ext| ext.to_str())
-                                .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
-                    })
+                && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
+                    name.contains(".old.")
+                        || Path::new(name)
+                            .extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("bak"))
+                })
         })
         .map(|path| relative_to_root(&path, root))
         .collect()
@@ -102,11 +94,7 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
         for token in text.split_whitespace() {
             for reference in docs_refs_in_token(token) {
                 if !root.join(&reference).exists() {
-                    dead.push(format!(
-                        "{} -> {}",
-                        relative_to_root(&path, root),
-                        reference
-                    ));
+                    dead.push(format!("{} -> {}", relative_to_root(&path, root), reference));
                 }
             }
         }
@@ -173,20 +161,13 @@ fn dead_command_references(root: &Path) -> Vec<String> {
         return selection_errors;
     };
 
-    let expected: std::collections::BTreeSet<String> = command_registry()
-        .iter()
-        .map(|row| row.command.as_str().to_string())
-        .collect();
+    let expected: std::collections::BTreeSet<String> =
+        command_registry().iter().map(|row| row.command.as_str().to_string()).collect();
     let actual: std::collections::BTreeSet<String> = inventory.commands.into_iter().collect();
 
-    let missing_expected: Vec<String> = expected
-        .difference(&actual)
-        .map(ToString::to_string)
-        .collect();
-    let unknown: Vec<String> = actual
-        .difference(&expected)
-        .map(ToString::to_string)
-        .collect();
+    let missing_expected: Vec<String> =
+        expected.difference(&actual).map(ToString::to_string).collect();
+    let unknown: Vec<String> = actual.difference(&expected).map(ToString::to_string).collect();
 
     let mut dead = Vec::new();
     if !inventory.parse_warnings.is_empty() {
@@ -211,10 +192,7 @@ fn dead_command_references(root: &Path) -> Vec<String> {
         ));
     }
     if !unknown.is_empty() {
-        dead.push(format!(
-            "{source_path}: unknown commands ({})",
-            unknown.join(", ")
-        ));
+        dead.push(format!("{source_path}: unknown commands ({})", unknown.join(", ")));
     }
     dead
 }
@@ -227,12 +205,8 @@ fn docs_refs_in_token(token: &str) -> Vec<String> {
             .find(|ch: char| matches!(ch, ')' | ']' | '>' | '"' | '\'' | ',' | ';' | '`'))
             .unwrap_or(slice.len());
         let candidate = slice[..stop].trim_matches(|ch: char| matches!(ch, '(' | '[' | '<'));
-        let canonical = candidate
-            .split(['#', '?'])
-            .next()
-            .map(str::trim)
-            .unwrap_or_default()
-            .to_string();
+        let canonical =
+            candidate.split(['#', '?']).next().map(str::trim).unwrap_or_default().to_string();
         if canonical.starts_with("docs/") && !canonical.is_empty() {
             out.push(canonical);
         }
@@ -249,10 +223,7 @@ struct CommandInventory {
 }
 
 fn parse_command_inventory(payload: &Value) -> Result<CommandInventory, String> {
-    let rows = payload
-        .get("commands")
-        .and_then(Value::as_array)
-        .ok_or("missing commands key")?;
+    let rows = payload.get("commands").and_then(Value::as_array).ok_or("missing commands key")?;
     let mut commands = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
     let mut duplicates = std::collections::BTreeSet::new();
@@ -270,9 +241,7 @@ fn parse_command_inventory(payload: &Value) -> Result<CommandInventory, String> 
             }
             command.trim().to_string()
         } else {
-            parse_warnings.push(format!(
-                "commands[{idx}] is neither string nor object.command"
-            ));
+            parse_warnings.push(format!("commands[{idx}] is neither string nor object.command"));
             continue;
         };
 
@@ -303,10 +272,7 @@ pub fn build_generated_report(workspace_root: &Path) -> Value {
             .into_iter()
             .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
             .filter(|path| {
-                let name = path
-                    .file_name()
-                    .and_then(|v| v.to_str())
-                    .unwrap_or_default();
+                let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
                 name.starts_with("orphan_")
             })
             .map(|path| relative_to_root(&path, workspace_root))
@@ -363,14 +329,12 @@ pub fn build_health_report(workspace_root: &Path) -> Value {
     let inventories = build_inventories_report(workspace_root);
     let stale = build_stale_report(workspace_root);
     let drift = build_drift_report(workspace_root);
-    let stale_crate_api_docs = if workspace_root
-        .join("artifacts/status/stale_crate_api_docs.json")
-        .exists()
-    {
-        json!(["artifacts/status/stale_crate_api_docs.json"])
-    } else {
-        json!([])
-    };
+    let stale_crate_api_docs =
+        if workspace_root.join("artifacts/status/stale_crate_api_docs.json").exists() {
+            json!(["artifacts/status/stale_crate_api_docs.json"])
+        } else {
+            json!([])
+        };
     json!({
         "repo_health": {
             "generated": generated,
@@ -393,10 +357,7 @@ mod tests {
     fn temp_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
             "bijux-repo-health-{name}-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         root
@@ -416,15 +377,9 @@ mod tests {
     #[test]
     fn repo_health_detects_orphan_generated_outputs() {
         let root = temp_root("orphan");
-        fs::write(
-            root.join("artifacts/status/orphan_generated_output.json"),
-            "{}",
-        )
-        .expect("write");
+        fs::write(root.join("artifacts/status/orphan_generated_output.json"), "{}").expect("write");
         let generated = build_generated_report(&root);
-        let orphan = generated["orphan_generated_outputs"]
-            .as_array()
-            .expect("orphan");
+        let orphan = generated["orphan_generated_outputs"].as_array().expect("orphan");
         assert!(!orphan.is_empty());
     }
 
@@ -432,16 +387,11 @@ mod tests {
     fn repo_drift_flags_forbidden_legacy_exception_paths() {
         let root = temp_root("forbidden-legacy-files");
         fs::create_dir_all(root.join("configs/allowlists")).expect("mkdir allowlists");
-        fs::write(
-            root.join("configs/allowlists/automation.toml"),
-            "version = 1\n",
-        )
-        .expect("write allowlist");
+        fs::write(root.join("configs/allowlists/automation.toml"), "version = 1\n")
+            .expect("write allowlist");
 
         let drift = build_drift_report(&root);
-        let dead = drift["dead_maintenance_references"]
-            .as_array()
-            .expect("dead refs");
+        let dead = drift["dead_maintenance_references"].as_array().expect("dead refs");
         assert_eq!(dead.len(), 2);
         assert_eq!(dead[0], "configs/allowlists");
         assert_eq!(dead[1], "configs/allowlists/automation.toml");
@@ -459,11 +409,7 @@ mod tests {
 
         let drift = build_drift_report(&root);
         let dead = drift["dead_docs_references"].as_array().expect("dead docs");
-        assert_eq!(
-            dead.len(),
-            2,
-            "expected both broken references to be reported"
-        );
+        assert_eq!(dead.len(), 2, "expected both broken references to be reported");
     }
 
     #[test]
@@ -482,25 +428,18 @@ mod tests {
         .expect("write command inventory");
 
         let drift = build_drift_report(&root);
-        let dead = drift["dead_command_references"]
-            .as_array()
-            .expect("dead commands");
+        let dead = drift["dead_command_references"].as_array().expect("dead commands");
         assert!(
-            dead.iter().any(|item| item
-                .as_str()
-                .is_some_and(|s| s.contains("owner mismatches"))),
+            dead.iter().any(|item| item.as_str().is_some_and(|s| s.contains("owner mismatches"))),
             "owner mismatch must be reported"
         );
         assert!(
-            dead.iter().any(|item| item
-                .as_str()
-                .is_some_and(|s| s.contains("unknown commands"))),
+            dead.iter().any(|item| item.as_str().is_some_and(|s| s.contains("unknown commands"))),
             "unknown command must be reported"
         );
         assert!(
-            dead.iter().any(|item| item
-                .as_str()
-                .is_some_and(|s| s.contains("missing expected commands"))),
+            dead.iter()
+                .any(|item| item.as_str().is_some_and(|s| s.contains("missing expected commands"))),
             "missing expected commands must be reported"
         );
     }

@@ -36,15 +36,9 @@ mod tests {
 
     #[test]
     fn route_audit_report_shape_is_stable() {
-        let routes = vec![vec![
-            "dev".to_string(),
-            "cli".to_string(),
-            "status".to_string(),
-        ]];
-        let aliases = vec![(
-            vec!["status".to_string()],
-            vec!["cli".to_string(), "status".to_string()],
-        )];
+        let routes = vec![vec!["dev".to_string(), "cli".to_string(), "status".to_string()]];
+        let aliases =
+            vec![(vec!["status".to_string()], vec!["cli".to_string(), "status".to_string()])];
         let report = build_report_from_query(&routes, &aliases);
         assert!(report.get("routes").is_some());
         assert!(report.get("aliases").is_some());

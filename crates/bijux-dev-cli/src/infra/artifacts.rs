@@ -9,9 +9,8 @@ use serde_json::{json, Value};
 #[must_use]
 pub fn artifact_source_path(path: &Path) -> String {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
-    let normalized_workspace_root = workspace_root
-        .canonicalize()
-        .unwrap_or_else(|_| workspace_root.clone());
+    let normalized_workspace_root =
+        workspace_root.canonicalize().unwrap_or_else(|_| workspace_root.clone());
     let rendered = if let Ok(relative) = path.strip_prefix(&normalized_workspace_root) {
         relative.to_path_buf()
     } else if let Ok(cwd) = std::env::current_dir() {
@@ -60,10 +59,7 @@ pub fn read_json_if_exists(path: &Path) -> Value {
 /// Return the normalized artifact state for a payload returned by `read_json_if_exists`.
 #[must_use]
 pub fn json_artifact_state(payload: &Value) -> &str {
-    payload
-        .get("_artifact_state")
-        .and_then(Value::as_str)
-        .unwrap_or("valid")
+    payload.get("_artifact_state").and_then(Value::as_str).unwrap_or("valid")
 }
 
 /// Read text payload from disk and return empty string when unavailable.
@@ -99,10 +95,7 @@ pub fn collect_files_recursive(base: &Path) -> Vec<PathBuf> {
 /// Render a path relative to workspace root with normalized separators.
 #[must_use]
 pub fn relative_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 /// Parse makefile target names from a `makes/*.mk` style file.
@@ -147,10 +140,7 @@ mod tests {
     fn read_json_if_exists_reports_missing_files() {
         let root = std::env::temp_dir().join(format!(
             "bijux-artifacts-missing-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         let payload = read_json_if_exists(&root.join("missing.json"));
         assert_eq!(json_artifact_state(&payload), "missing");
@@ -160,10 +150,7 @@ mod tests {
     fn read_json_if_exists_reports_malformed_files() {
         let root = std::env::temp_dir().join(format!(
             "bijux-artifacts-malformed-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(&root).expect("mkdir");
         let path = root.join("broken.json");
@@ -177,10 +164,7 @@ mod tests {
     fn read_json_if_exists_reports_unreadable_paths() {
         let root = std::env::temp_dir().join(format!(
             "bijux-artifacts-unreadable-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(&root).expect("mkdir");
 
@@ -192,10 +176,7 @@ mod tests {
     fn read_json_if_exists_keeps_valid_payloads() {
         let root = std::env::temp_dir().join(format!(
             "bijux-artifacts-valid-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(&root).expect("mkdir");
         let path = root.join("ok.json");

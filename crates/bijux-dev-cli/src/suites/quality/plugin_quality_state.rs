@@ -11,11 +11,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .unwrap_or_else(|| json!({}))
             };
             let module_status_from_matrix = |matrix: &Value, prefixes: &[&str]| -> Value {
-                let rows = matrix
-                    .get("commands")
-                    .and_then(Value::as_array)
-                    .cloned()
-                    .unwrap_or_default();
+                let rows =
+                    matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
                 let matched = rows
                     .into_iter()
                     .filter(|row| {
@@ -141,9 +138,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "dev_cli_state_audit_text.txt",
                 "dev_cli_state_audit_no_color.txt",
             ] {
-                let p = workspace_root
-                    .join("crates/bijux-cli/tests/snapshots")
-                    .join(name);
+                let p = workspace_root.join("crates/bijux-cli/tests/snapshots").join(name);
                 if p.exists() {
                     snapshots.push(format!("crates/bijux-cli/tests/snapshots/{name}"));
                 }
@@ -178,17 +173,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &payload,
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/state_migration_status.json",
-                    "artifacts/status/unified_state_behavior_report.json",
-                    "artifacts/status/unified_state_corruption_report.json",
-                    "artifacts/status/unified_state_rollback_report.json",
-                    "artifacts/status/unified_state_path_resolution_report.json",
-                    "artifacts/status/unified_state_doctor_snapshots.json",
-                    "artifacts/status/unified_state_audit_payload.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/state_migration_status.json",
+                "artifacts/status/unified_state_behavior_report.json",
+                "artifacts/status/unified_state_corruption_report.json",
+                "artifacts/status/unified_state_rollback_report.json",
+                "artifacts/status/unified_state_path_resolution_report.json",
+                "artifacts/status/unified_state_doctor_snapshots.json",
+                "artifacts/status/unified_state_audit_payload.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
             let test_root = workspace_root.join("crates/bijux-cli/tests/bin_surface");
@@ -203,26 +196,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let assert_count =
                     (text.matches("assert!(").count() + text.matches("assert_eq!(").count()) as i64;
                 let score = assert_count
-                    + if [
-                        "failure",
-                        "error",
-                        "malformed",
-                        "missing",
-                        "invalid",
-                        "usage",
-                    ]
-                    .iter()
-                    .any(|k| lower.contains(k))
+                    + if ["failure", "error", "malformed", "missing", "invalid", "usage"]
+                        .iter()
+                        .any(|k| lower.contains(k))
                     {
                         3
                     } else {
                         0
                     }
-                    + if lower.contains("repeat") || lower.contains("determin") {
-                        2
-                    } else {
-                        0
-                    }
+                    + if lower.contains("repeat") || lower.contains("determin") { 2 } else { 0 }
                     + if lower.contains("consisten")
                         || lower.contains("schema")
                         || lower.contains("shape")
@@ -231,31 +213,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     } else {
                         0
                     }
-                    + if lower.contains("corrupt") || lower.contains("rollback") {
-                        2
-                    } else {
-                        0
-                    };
+                    + if lower.contains("corrupt") || lower.contains("rollback") { 2 } else { 0 };
                 rows.push((rel_path, text, score, assert_count));
             }
             let domains: [(&str, fn(&str) -> bool); 5] = [
                 ("commands", |rel| {
-                    ["command", "root", "cli_", "ported", "help"]
-                        .iter()
-                        .any(|k| rel.contains(k))
+                    ["command", "root", "cli_", "ported", "help"].iter().any(|k| rel.contains(k))
                 }),
                 ("config", |rel| rel.contains("config")),
                 ("history", |rel| rel.contains("history")),
                 ("memory", |rel| rel.contains("memory")),
                 ("diagnostics", |rel| {
-                    [
-                        "diagnostics",
-                        "doctor",
-                        "inspect",
-                        "dev_cli_output_contracts",
-                    ]
-                    .iter()
-                    .any(|k| rel.contains(k))
+                    ["diagnostics", "doctor", "inspect", "dev_cli_output_contracts"]
+                        .iter()
+                        .any(|k| rel.contains(k))
                 }),
             ];
             let mut by_value = serde_json::Map::<String, Value>::new();
@@ -401,14 +372,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "new stateful features require at least one corruption or rollback test",
                                         ],
                                     })).ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/deep_tests_by_value_report.json",
-                    "artifacts/status/deep_missing_behavior_cases_report.json",
-                    "artifacts/status/deep_weak_tests_replacement_report.json",
-                    "artifacts/status/deep_test_first_domains_contract.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/deep_tests_by_value_report.json",
+                "artifacts/status/deep_missing_behavior_cases_report.json",
+                "artifacts/status/deep_weak_tests_replacement_report.json",
+                "artifacts/status/deep_test_first_domains_contract.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-PERFORMANCE-REPORTS" => {
             let generated_at = generated_at_utc();
@@ -430,10 +399,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "plugins list payload-size",
                 "repl startup memory estimate",
             ];
-            let rendering = vec![
-                "output json render (large payload)",
-                "output yaml render (large payload)",
-            ];
+            let rendering =
+                vec!["output json render (large payload)", "output yaml render (large payload)"];
             let thresholds = json!({
                 "mode":"critical-path-only",
                 "why":"guard user-visible regressions first; avoid vanity microbenchmarks",
@@ -501,19 +468,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             for s in &rendering {
                 text.push_str(&format!("  - {s}\n"));
             }
-            fs::write(
-                workspace_root.join("artifacts/status/performance_report.txt"),
-                text,
-            )
-            .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/performance_report.json",
-                    "artifacts/status/performance_regression_budget.json",
-                    "artifacts/status/performance_benchmark_policy.json",
-                    "artifacts/status/performance_report.txt"
-                ]}),
-            )
+            fs::write(workspace_root.join("artifacts/status/performance_report.txt"), text).ok()?;
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/performance_report.json",
+                "artifacts/status/performance_regression_budget.json",
+                "artifacts/status/performance_benchmark_policy.json",
+                "artifacts/status/performance_report.txt"
+            ]}))
         }
         _ => None,
     }

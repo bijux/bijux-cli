@@ -20,11 +20,7 @@ fn fallback_report(payload: Value, source: &str) -> Value {
 }
 
 fn duplication_list(payload: &Value, key: &str) -> Vec<Value> {
-    payload
-        .get(key)
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
+    payload.get(key).and_then(Value::as_array).cloned().unwrap_or_default()
 }
 
 fn bridge_duplicate_area(payload: &Value, area: &str) -> Vec<Value> {
@@ -64,14 +60,10 @@ pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
         execution_payload,
         "artifacts/status/python_bridge_execution_artifact.json",
     );
-    let conversion = fallback_report(
-        conversion_payload,
-        "artifacts/status/bridge_conversion_artifact.json",
-    );
-    let drift = fallback_report(
-        drift_payload,
-        "artifacts/status/python_bridge_drift_artifact.json",
-    );
+    let conversion =
+        fallback_report(conversion_payload, "artifacts/status/bridge_conversion_artifact.json");
+    let drift =
+        fallback_report(drift_payload, "artifacts/status/python_bridge_drift_artifact.json");
     json!({
         "bridge_status": {
             "execution": execution,
@@ -182,9 +174,8 @@ pub fn build_sovereignty_audit_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
     let sovereignty = build_sovereignty_audit_report(workspace_root);
-    let duplication_total = sovereignty["python_sovereignty_audit"]["duplication_total"]
-        .as_u64()
-        .unwrap_or(0);
+    let duplication_total =
+        sovereignty["python_sovereignty_audit"]["duplication_total"].as_u64().unwrap_or(0);
     json!({
         "drift": {
             "duplication_total": duplication_total,
@@ -225,10 +216,7 @@ mod tests {
     fn sovereignty_audit_reaches_zero_when_duplication_is_zero() {
         let root = std::env::temp_dir().join(format!(
             "bijux-python-sovereignty-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         fs::write(

@@ -200,31 +200,12 @@ mod tests {
     #[test]
     fn owns_path_matches_dev_cli_dispatch_surface() {
         assert!(owns_path(&["dev".into(), "cli".into(), "status".into()]));
-        assert!(owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "maintenance".into(),
-            "audit".into()
-        ]));
-        assert!(owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "release".into(),
-            "status".into()
-        ]));
+        assert!(owns_path(&["dev".into(), "cli".into(), "maintenance".into(), "audit".into()]));
+        assert!(owns_path(&["dev".into(), "cli".into(), "release".into(), "status".into()]));
 
         assert!(!owns_path(&["dev".into(), "status".into()]));
         assert!(!owns_path(&["cli".into(), "status".into()]));
-        assert!(!owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "not-a-command".into()
-        ]));
-        assert!(!owns_path(&[
-            "dev".into(),
-            "cli".into(),
-            "unknown".into(),
-            "leaf".into()
-        ]));
+        assert!(!owns_path(&["dev".into(), "cli".into(), "not-a-command".into()]));
+        assert!(!owns_path(&["dev".into(), "cli".into(), "unknown".into(), "leaf".into()]));
     }
 }

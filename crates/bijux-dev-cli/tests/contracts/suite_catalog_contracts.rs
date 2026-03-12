@@ -10,11 +10,8 @@ use bijux_dev_cli::contracts::status::build_inventory_report;
 fn status_inventory_contains_contracts_from_all_suite_domains() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let inventory = build_inventory_report(&root);
-    let rows = inventory
-        .get("rows")
-        .and_then(serde_json::Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows =
+        inventory.get("rows").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
 
     let ids: BTreeSet<String> = rows
         .iter()
@@ -32,11 +29,8 @@ fn status_inventory_contains_contracts_from_all_suite_domains() {
 fn status_inventory_contract_ids_are_unique() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let inventory = build_inventory_report(&root);
-    let rows = inventory
-        .get("rows")
-        .and_then(serde_json::Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows =
+        inventory.get("rows").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
 
     let mut ids = BTreeSet::new();
     for row in rows {

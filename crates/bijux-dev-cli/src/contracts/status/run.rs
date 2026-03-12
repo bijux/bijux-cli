@@ -17,9 +17,7 @@ fn find_spec(
         return rows.into_iter().find(|spec| spec.contract_id == id);
     }
     if let Some(source) = source_ref {
-        return rows
-            .into_iter()
-            .find(|spec| spec.source_ref.as_deref() == Some(source));
+        return rows.into_iter().find(|spec| spec.source_ref.as_deref() == Some(source));
     }
     None
 }

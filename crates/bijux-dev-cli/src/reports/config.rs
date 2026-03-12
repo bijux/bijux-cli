@@ -129,30 +129,19 @@ mod tests {
     #[test]
     fn config_reports_expose_stable_top_level_keys() {
         let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        assert!(build_rust_owner_report(&workspace_root)
-            .get("rust_owner")
-            .is_some());
-        assert!(build_python_owner_report(&workspace_root)
-            .get("python_owner")
-            .is_some());
-        assert!(build_ownership_report(&workspace_root)
-            .get("owners")
-            .is_some());
+        assert!(build_rust_owner_report(&workspace_root).get("rust_owner").is_some());
+        assert!(build_python_owner_report(&workspace_root).get("python_owner").is_some());
+        assert!(build_ownership_report(&workspace_root).get("owners").is_some());
         assert!(build_drift_report(&workspace_root).get("drift").is_some());
         assert!(build_shape_report(&workspace_root).get("schemas").is_some());
-        assert!(build_evidence_map_report(&workspace_root)
-            .get("evidence_ids")
-            .is_some());
+        assert!(build_evidence_map_report(&workspace_root).get("evidence_ids").is_some());
     }
 
     #[test]
     fn drift_report_detects_missing_rust_owner() {
         let temp_root = std::env::temp_dir().join(format!(
             "bijux-config-drift-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(temp_root.join("artifacts/status")).expect("mkdir");
         fs::write(
@@ -169,10 +158,7 @@ mod tests {
     fn ownership_and_shape_share_same_source_of_truth() {
         let temp_root = std::env::temp_dir().join(format!(
             "bijux-config-source-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(temp_root.join("artifacts/status")).expect("mkdir");
         fs::write(

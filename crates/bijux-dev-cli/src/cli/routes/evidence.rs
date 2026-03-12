@@ -13,9 +13,7 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "show" => {
             let id = command_option_value(argv, "--id")
                 .or_else(|| {
-                    command_positionals(argv, &["dev", "cli", "evidence", "show"])
-                        .first()
-                        .cloned()
+                    command_positionals(argv, &["dev", "cli", "evidence", "show"]).first().cloned()
                 })
                 .ok_or_else(|| anyhow!("Missing argument: --id required"))?;
             dev_evidence::build_show_report(&workspace_root(), &id)

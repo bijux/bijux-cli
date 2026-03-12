@@ -26,9 +26,7 @@ pub fn build_inventory_report(_workspace_root: &Path) -> Value {
     let specs = status_contract_specs();
     let mut kind_counts = BTreeMap::<String, usize>::new();
     for spec in &specs {
-        *kind_counts
-            .entry(spec.kind.as_str().to_string())
-            .or_insert(0) += 1;
+        *kind_counts.entry(spec.kind.as_str().to_string()).or_insert(0) += 1;
     }
 
     json!({
