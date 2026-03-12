@@ -56,11 +56,8 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path) -> Value {
 
 pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> Result<Value> {
     let record = inspect_plugin(plugin_registry_path, plugin)?;
-    let _ = validate_manifest(
-        record.manifest.clone(),
-        env!("CARGO_PKG_VERSION"),
-        RESERVED_NAMESPACES,
-    )?;
+    let _ =
+        validate_manifest(record.manifest.clone(), env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
 
     if matches!(record.state, PluginLifecycleState::Disabled) {
         anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
@@ -114,11 +111,7 @@ pub(crate) fn install_plugin_from_manifest(
 
     let installed = install_plugin_manifest(
         plugin_registry_path,
-        InstallPluginRequest {
-            manifest_text,
-            source,
-            trust_level,
-        },
+        InstallPluginRequest { manifest_text, source, trust_level },
         env!("CARGO_PKG_VERSION"),
     )?;
 
