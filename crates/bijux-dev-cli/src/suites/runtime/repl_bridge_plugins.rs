@@ -10,31 +10,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
-                (
-                    21,
-                    "python_scaffold_install_list_inspect_uninstall_end_to_end",
-                ),
-                (
-                    22,
-                    "rust_scaffold_install_list_inspect_uninstall_end_to_end",
-                ),
+                (21, "python_scaffold_install_list_inspect_uninstall_end_to_end"),
+                (22, "rust_scaffold_install_list_inspect_uninstall_end_to_end"),
                 (23, "installed_plugin_help_entrypoint_is_deterministic"),
                 (24, "installed_plugin_disable_rejects_plugin_check"),
                 (25, "disabled_plugin_enable_restores_plugin_check"),
-                (
-                    26,
-                    "duplicate_install_without_force_is_deterministic_rejection",
-                ),
-                (
-                    27,
-                    "duplicate_install_force_flag_behavior_is_deterministic_when_unsupported",
-                ),
+                (26, "duplicate_install_without_force_is_deterministic_rejection"),
+                (27, "duplicate_install_force_flag_behavior_is_deterministic_when_unsupported"),
                 (28, "uninstall_missing_plugin_returns_stable_failure"),
                 (29, "inspect_broken_registry_returns_stable_diagnostics"),
-                (
-                    30,
-                    "plugin_check_after_entrypoint_deletion_reports_stable_failure",
-                ),
+                (30, "plugin_check_after_entrypoint_deletion_reports_stable_failure"),
                 (31, "plugin_help_flows_through_root_help_tree"),
                 (32, "plugin_command_output_uses_core_envelope_rules"),
                 (33, "plugin_command_stderr_stdout_discipline_is_stable"),
@@ -43,10 +28,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (36, "uninstalling_one_plugin_does_not_affect_other"),
                 (37, "registry_survives_restart_after_successful_install"),
                 (38, "registry_survives_restart_after_successful_uninstall"),
-                (
-                    39,
-                    "plugin_check_reports_healthy_and_unhealthy_in_same_registry",
-                ),
+                (39, "plugin_check_reports_healthy_and_unhealthy_in_same_registry"),
             ];
             let matrix_rows: Vec<Value> = rows
                                 .iter()
@@ -80,11 +62,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/plugin_lifecycle_test_matrix.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_lifecycle_test_matrix.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
             let source = fs::read_to_string(
@@ -104,21 +84,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (49, "simulated_registry_write_failure_during_uninstall"),
                 (50, "simulated_enable_failure_when_plugin_files_missing"),
                 (51, "simulated_disable_failure_when_registry_is_corrupted"),
-                (
-                    52,
-                    "rollback_proof_install_failure_preserves_existing_plugins",
-                ),
-                (
-                    53,
-                    "rollback_proof_uninstall_failure_preserves_existing_plugins",
-                ),
+                (52, "rollback_proof_install_failure_preserves_existing_plugins"),
+                (53, "rollback_proof_uninstall_failure_preserves_existing_plugins"),
                 (54, "retry_install_after_partial_failure_is_idempotent"),
                 (55, "retry_uninstall_after_partial_failure_is_idempotent"),
                 (56, "failed_install_does_not_leave_claimed_namespace"),
-                (
-                    57,
-                    "failed_uninstall_does_not_orphan_registry_state_silently",
-                ),
+                (57, "failed_uninstall_does_not_orphan_registry_state_silently"),
                 (58, "plugin_doctor_reports_rollback_relevant_damage_clearly"),
                 (59, "machine_readable_rollback_diagnostics_are_stable"),
             ];
@@ -154,11 +125,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/plugin_failure_rollback_test_matrix.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_failure_rollback_test_matrix.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {
             let source = fs::read_to_string(
@@ -175,24 +144,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (7, "rejects_plugin_namespace_repl"),
                 (8, "rejects_official_product_namespace_dag"),
                 (9, "rejects_official_product_namespace_atlas"),
-                (
-                    10,
-                    "rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen",
-                ),
+                (10, "rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen"),
                 (11, "rejects_case_insensitive_normalized_collision"),
                 (12, "rejects_namespace_with_leading_digit"),
                 (13, "rejects_namespace_with_whitespace"),
                 (14, "rejects_namespace_with_shell_hostile_punctuation"),
                 (15, "rejects_empty_namespace"),
-                (
-                    16,
-                    "rejects_namespace_differing_only_by_hidden_alias_collision",
-                ),
+                (16, "rejects_namespace_differing_only_by_hidden_alias_collision"),
                 (17, "rejection_messages_explain_the_reason_clearly"),
-                (
-                    18,
-                    "json_error_envelopes_for_namespace_rejection_are_stable",
-                ),
+                (18, "json_error_envelopes_for_namespace_rejection_are_stable"),
                 (19, "text_errors_for_namespace_rejection_are_stable"),
             ];
             let matrix_rows: Vec<Value> = rows
@@ -225,11 +185,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/reserved_namespace_test_matrix.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/reserved_namespace_test_matrix.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT" => {
             let source =
@@ -247,16 +205,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ),
                 (
                     "exit_mapping",
-                    vec![
-                        "map_error_category_to_exit",
-                        "USAGE_EXIT_CODE",
-                        "INTERNAL_EXIT_CODE",
-                    ],
+                    vec!["map_error_category_to_exit", "USAGE_EXIT_CODE", "INTERNAL_EXIT_CODE"],
                 ),
-                (
-                    "output_shaping",
-                    vec!["render_value(", "EmitterConfig", "render_command_help("],
-                ),
+                ("output_shaping", vec!["render_value(", "EmitterConfig", "render_command_help("]),
                 (
                     "namespace_validation",
                     vec![
@@ -269,11 +220,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let details: Vec<Value> = checks
                 .iter()
                 .map(|(area, tokens)| {
-                    let hits: Vec<&str> = tokens
-                        .iter()
-                        .copied()
-                        .filter(|token| source.contains(token))
-                        .collect();
+                    let hits: Vec<&str> =
+                        tokens.iter().copied().filter(|token| source.contains(token)).collect();
                     json!({
                         "area": area,
                         "duplicate_rules": hits,
@@ -301,11 +249,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/bridge_duplicate_law_report.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/bridge_duplicate_law_report.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-REPORT" => {
             write_status_artifact_json(
@@ -352,11 +298,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }),
                             )
                             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/plugin_state_report.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/plugin_state_report.json"
+            ]}))
         }
         "STATUS-CONTRACT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS" => {
             let pid = std::process::id();
@@ -375,41 +319,30 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let path_mixed = format!("{}:{}:{}", cargo_bin.display(), pip_bin.display(), path);
             let runtime_env = vec![
                 ("PATH", path_mixed.clone()),
-                (
-                    "BIJUX_BIN",
-                    temp_root.join("missing-bijux").display().to_string(),
-                ),
+                ("BIJUX_BIN", temp_root.join("missing-bijux").display().to_string()),
                 ("BIJUX_WHEEL_VERSION", "0.0.1".to_string()),
                 ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
             ];
-            let package_env = vec![
-                ("PATH", path_mixed),
-                ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
-            ];
+            let package_env =
+                vec![("PATH", path_mixed), ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())];
             let runtime_payload = run_bijux_json_env(
                 workspace_root,
                 &["dev", "cli", "runtime-identity"],
                 &runtime_env,
             )
             .ok()?;
-            let package_payload = run_bijux_json_env(
-                workspace_root,
-                &["dev", "cli", "package-health"],
-                &package_env,
-            )
-            .ok()?;
+            let package_payload =
+                run_bijux_json_env(workspace_root, &["dev", "cli", "package-health"], &package_env)
+                    .ok()?;
             let runtime_second = run_bijux_json_env(
                 workspace_root,
                 &["dev", "cli", "runtime-identity"],
                 &runtime_env,
             )
             .ok()?;
-            let package_second = run_bijux_json_env(
-                workspace_root,
-                &["dev", "cli", "package-health"],
-                &package_env,
-            )
-            .ok()?;
+            let package_second =
+                run_bijux_json_env(workspace_root, &["dev", "cli", "package-health"], &package_env)
+                    .ok()?;
             let _ = fs::remove_dir_all(&temp_root);
 
             let runtime_checks = json!({
@@ -489,14 +422,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 }),
             )
             .ok()?;
-            Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                    "artifacts/status/runtime_identity_diagnostics_artifact.json",
-                    "artifacts/status/package_health_diagnostics_artifact.json",
-                    "artifacts/status/install_ambiguity_diagnostics_artifact.json",
-                    "artifacts/status/runtime_package_diagnostics_drift_artifact.json"
-                ]}),
-            )
+            Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
+                "artifacts/status/runtime_identity_diagnostics_artifact.json",
+                "artifacts/status/package_health_diagnostics_artifact.json",
+                "artifacts/status/install_ambiguity_diagnostics_artifact.json",
+                "artifacts/status/runtime_package_diagnostics_drift_artifact.json"
+            ]}))
         }
         _ => None,
     }
