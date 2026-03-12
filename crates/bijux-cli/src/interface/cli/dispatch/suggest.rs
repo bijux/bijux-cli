@@ -26,7 +26,6 @@ const ROOT_COMMANDS: &[&str] = &[
     "plugins",
     "repl",
     "completion",
-    "inspect",
     "atlas",
     "history",
     "memory",
