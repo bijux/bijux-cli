@@ -62,7 +62,7 @@ clean: ## Remove virtualenv, caches, build, and artifacts
 clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
 	@echo "→ Cleaning (keeping $(VENV)) ..."
 	@$(RM) \
-	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
+	  .pytest_cache htmlcov coverage.xml dist build *.egg-info demo .tmp_home \
 	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
 	  docs/reference usage_test usage_test_artifacts .cache default_*.profraw || true

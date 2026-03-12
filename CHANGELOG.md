@@ -90,7 +90,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Documentation Content:** All top-level Markdown documents (`README.md`, `USAGE.md`, `TESTS.md`, `TOOLING.md`, `CONTRIBUTING.md`, etc.) have been significantly rewritten and expanded with tables of contents, `back-to-top` links, and cross-references to the new artifact pages.
 * **Build System:**
     * All `Makefile` modules have been refactored to use the new hygienic `artifacts/` directory structure for outputs and caches.
-    * `tox.ini` has been updated to align with the new Makefile targets and to run a comprehensive suite of checks for the `py311` environment, mirroring the full CI validation process.
+    * CI command mapping was updated to align with Makefile targets and run a comprehensive `py311` validation flow.
 * **API Schema:** The OpenAPI `schema.yaml` has been improved with stricter validation (`additionalProperties: false`), better descriptions, response links, and more detailed examples.
 * **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules with clearer casts.
 
@@ -217,15 +217,15 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
 
-* **tox orchestration**
+* **Python matrix orchestration**
 
-    * Configured multi-Python test envs (`py311`, `py312`, `py313`).
-    * Mapped Makefile workflows into tox envs (`lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `changelog`, `citation`) to ensure reproducibility.
-    * Passed `MAKEFLAGS` to execute Makefile targets inside tox-managed virtualenvs.
+    * Configured multi-Python test matrix (`py311`, `py312`, `py313`).
+    * Mapped Makefile workflows (`lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `changelog`, `citation`) to CI runners for reproducibility.
+    * Passed `MAKEFLAGS` to execute Makefile targets inside CI-managed virtual environments.
 
 * **Continuous Integration**
 
-    * Added **GitHub Actions** workflow running tox across Python versions with Node.js 20 and Java 17 for API checks.
+    * Added **GitHub Actions** workflow running matrix checks across Python versions with Node.js 20 and Java 17 for API checks.
     * CI/CD pipelines directly leverage the modularized Makefile for consistent local/CI behavior.
 
 * **Packaging / PyPI page**

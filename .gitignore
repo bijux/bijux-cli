@@ -43,7 +43,6 @@ dist/
 .coverage.*
 .coverage/
 htmlcov/
-.tox/
 .nox/
 .pytest_cache/
 .mypy_cache/

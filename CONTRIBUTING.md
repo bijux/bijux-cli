@@ -13,7 +13,6 @@ This guide is the single source of truth for local setup, workflows, and PR rule
 - [Tests & Coverage](#tests-coverage)
 - [Style, Types, Hygiene](#style-types-hygiene)
 - [Security & Supply Chain](#security-supply-chain)
-- [Tox Envs (Mirror CI)](#tox-envs-mirror-ci)
 - [Commits & PRs](#commits-prs)
 - [Rust Workspace Rules](#rust-workspace-rules)
 - [Troubleshooting](#troubleshooting)
@@ -38,7 +37,7 @@ This guide is the single source of truth for local setup, workflows, and PR rule
 git clone https://github.com/bijux/bijux-cli.git
 cd bijux-cli
 make PYTHON=python3.11 install
-source .venv/bin/activate
+source artifacts/python/.venv/bin/activate
 ```
 
 **Sanity check**
@@ -58,7 +57,7 @@ make lint test docs
 
 ## Daily Workflow
 
-* Everything runs inside **.venv/**
+* Everything runs inside **artifacts/python/.venv/**
 * No global installs after `make install`
 * Make targets mirror CI jobs 1:1
 
@@ -143,30 +142,6 @@ make sbom      # CycloneDX, saved to artifacts_pages/
 
 * No secrets in code or tests
 * Keep dependency pins sane; document any suppressions
-
-[Back to top](#top)
-
----
-
-<a id="tox-envs-mirror-ci"></a>
-
-## Tox Envs (Mirror CI)
-
-| Env                         | Runs            |
-| --------------------------- | --------------- |
-| `py311` / `py312` / `py313` | `make test`     |
-| `lint`                      | `make lint`     |
-| `quality`                   | `make quality`  |
-| `security`                  | `make security` |
-| `docs`                      | `make docs`     |
-| `build`                     | `make build`    |
-| `sbom`                      | `make sbom`     |
-
-List all:
-
-```bash
-tox -av
-```
 
 [Back to top](#top)
 

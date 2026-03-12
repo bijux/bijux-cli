@@ -4,7 +4,7 @@ respect-gitignore = true
 src = ["src", "tests"]
 
 exclude = [
-  ".git", ".hg", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".venv",
+  ".git", ".hg", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv",
   "build", "dist", "docs", "htmlcov", "__pycache__", "migrations", "*.egg-info"
 ]
 
