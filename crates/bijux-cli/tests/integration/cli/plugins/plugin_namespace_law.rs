@@ -167,11 +167,25 @@ fn rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen() {
     write_manifest(&first_manifest, "my-plugin", "my-plugin", "plugin.py:run");
     write_manifest(&second_manifest, "my_plugin", "my_plugin", "plugin.py:run");
 
-    let first =
-        run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
+    let first = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            first_manifest.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
     assert_eq!(first.status.code(), Some(0));
-    let second =
-        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
+    let second = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            second_manifest.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
     assert_eq!(second.status.code(), Some(1));
     let stderr = String::from_utf8(second.stderr).expect("stderr utf-8");
     assert!(
@@ -191,11 +205,25 @@ fn rejects_case_insensitive_normalized_collision() {
     write_manifest(&first_manifest, "my-plugin", "my-plugin", "plugin.py:run");
     write_manifest(&second_manifest, "MY-PLUGIN", "MY-PLUGIN", "plugin.py:run");
 
-    let first =
-        run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
+    let first = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            first_manifest.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
     assert_eq!(first.status.code(), Some(1));
-    let second =
-        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
+    let second = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            second_manifest.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
     assert_eq!(second.status.code(), Some(1));
     let first_stderr = String::from_utf8(first.stderr).expect("stderr utf-8");
     let second_stderr = String::from_utf8(second.stderr).expect("stderr utf-8");
@@ -240,7 +268,15 @@ fn rejects_empty_namespace() {
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let manifest = root.join("empty.json");
     write_manifest(&manifest, "", "empty", "plugin.py:run");
-    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
     assert_eq!(out.status.code(), Some(1));
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
     assert!(stderr.contains("plugin manifest field invalid: name"));
@@ -275,7 +311,16 @@ fn json_error_envelopes_for_namespace_rejection_are_stable() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let out = run(
-        &["--format", "json", "--no-pretty", "cli", "plugins", "scaffold", "python", "cli"],
+        &[
+            "--format",
+            "json",
+            "--no-pretty",
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "cli",
+        ],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));
@@ -294,8 +339,12 @@ fn text_errors_for_namespace_rejection_are_stable() {
     let root = tmp_dir("text-envelope");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
-    let out =
-        run(&["--format", "text", "cli", "plugins", "scaffold", "python", "cli"], &plugins_dir);
+    let out = run(
+        &[
+            "--format", "text", "cli", "plugins", "scaffold", "python", "cli",
+        ],
+        &plugins_dir,
+    );
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");

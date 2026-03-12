@@ -104,8 +104,11 @@ fn memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safel
     let truncated_error = String::from_utf8(truncated.stderr).expect("utf-8");
     assert!(truncated_error.contains("Malformed memory state"));
 
-    fs::write(&memory_file, r#"{"alpha":1,"beta":{},"gamma":{"unexpected":true}}"#)
-        .expect("write mixed memory");
+    fs::write(
+        &memory_file,
+        r#"{"alpha":1,"beta":{},"gamma":{"unexpected":true}}"#,
+    )
+    .expect("write mixed memory");
 
     let list = run_with_env(
         &["memory", "list", "--format", "json", "--no-pretty"],
@@ -116,12 +119,21 @@ fn memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safel
     assert_eq!(list_payload["count"], 3);
 
     let doctor = run_with_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[("HOME", home.display().to_string())],
     );
     assert!(matches!(doctor.status.code(), Some(0) | Some(1)));
     let doctor_payload = parse_json(&doctor.stdout);
-    let issues = doctor_payload["doctor"]["issues"].as_array().expect("issues");
+    let issues = doctor_payload["doctor"]["issues"]
+        .as_array()
+        .expect("issues");
     assert!(issues.iter().any(|item| item["area"] == "memory"));
 }
 
