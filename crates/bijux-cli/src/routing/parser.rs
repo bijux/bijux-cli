@@ -304,6 +304,7 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
+        .subcommand(Command::new("inspect").hide(true))
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(
@@ -331,9 +332,9 @@ pub fn root_command() -> Command {
             ),
     );
 
-    // Legacy path support normalized later to `dev cli ...`.
+    // Keep parser-level `dev` compatibility hidden for delegated ownership.
     let dev_group = with_hidden_leaf_subcommands(
-        Command::new("dev").subcommand(dev_cli_group.clone()),
+        Command::new("dev").hide(true).subcommand(dev_cli_group.clone()),
         DEV_LEGACY_ALIASES,
     );
 
@@ -364,8 +365,7 @@ pub fn root_command() -> Command {
         .subcommand(plugins_group)
         .subcommand(Command::new("repl"))
         .subcommand(Command::new("completion"))
-        .subcommand(Command::new("inspect"))
-        .subcommand(Command::new("atlas"))
+        .subcommand(Command::new("inspect").hide(true))
         .subcommand(
             Command::new("history")
                 .subcommand(Command::new("clear"))

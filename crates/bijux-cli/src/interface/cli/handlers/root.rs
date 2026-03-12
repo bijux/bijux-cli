@@ -17,10 +17,6 @@ pub(crate) fn try_handle(normalized_path: &[String], argv: &[String]) -> Option<
             "status": "ok",
             "topics": ["commands", "configuration", "plugins", "repl", "diagnostics"],
         })),
-        [a] if a == "atlas" => Some(json!({
-            "status": "ok",
-            "mount": "atlas",
-        })),
         [a] if a == "sleep" => {
             let duration_secs = argv
                 .get(2)
