@@ -60,6 +60,17 @@ fn json_string<T: Serialize>(value: &T) -> String {
     serde_json::to_string(value).expect("bridge payload serialization should not fail")
 }
 
+fn normalized_argv(argv: &[String]) -> Vec<String> {
+    if matches!(argv.first().map(String::as_str), Some("bijux" | "bijux-rs")) {
+        return argv.to_vec();
+    }
+
+    let mut normalized = Vec::with_capacity(argv.len() + 1);
+    normalized.push("bijux".to_string());
+    normalized.extend(argv.iter().cloned());
+    normalized
+}
+
 /// Build python-bridge marker.
 #[must_use]
 pub fn python_bridge_marker() -> ContractMarker {
@@ -119,7 +130,8 @@ pub fn command_tree_introspection_api() -> String {
 
 /// Execute the Rust-backed CLI facade through the canonical runtime entrypoint.
 pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityError> {
-    match run_app(argv) {
+    let argv = normalized_argv(argv);
+    match run_app(&argv) {
         Ok(result) => Ok(select_primary_stream(&result)),
         Err(error) => Ok(json_string(&BridgeErrorEnvelope {
             status: "error",
@@ -133,7 +145,8 @@ pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityErro
 
 /// Return execution outcome with full stream context.
 pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityError> {
-    match run_app(argv) {
+    let argv = normalized_argv(argv);
+    match run_app(&argv) {
         Ok(result) => {
             let error_kind =
                 python_exception_tag(classify_failure(result.exit_code, &result.stderr));

@@ -30,6 +30,30 @@ fn version_binding_matches_core_output() {
 }
 
 #[test]
+fn execution_facade_accepts_argv_without_program_token() {
+    let bridge = parse_json(&execution_facade_api(&["version".to_string()]).expect("bridge"));
+    let direct = parse_json(
+        &run_app(&["bijux".to_string(), "version".to_string()])
+            .expect("core run")
+            .stdout,
+    );
+    assert_eq!(bridge, direct);
+}
+
+#[test]
+fn execution_outcome_accepts_argv_without_program_token() {
+    let bridge =
+        parse_json(&execution_outcome_api(&["version".to_string()]).expect("bridge outcome"));
+    let direct = run_app(&["bijux".to_string(), "version".to_string()]).expect("core run");
+    assert_eq!(
+        bridge["exit_code"].as_i64().unwrap_or(-1),
+        i64::from(direct.exit_code)
+    );
+    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), direct.stdout);
+    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), direct.stderr);
+}
+
+#[test]
 fn doctor_binding_matches_core_output() {
     let bridge = parse_json(&doctor_binding_api().expect("bridge doctor"));
     let direct = parse_json(

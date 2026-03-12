@@ -25,6 +25,7 @@ fn python_bridge_invokes_same_core_entrypoint_as_binary() {
         fs::read_to_string(root.join("crates/bijux-cli/src/bin/bijux.rs")).expect("read core bin");
 
     assert!(bindings.contains("use bijux_cli::api::runtime::{run_app, AppRunResult};"));
-    assert!(bindings.contains("match run_app(argv)"));
+    assert!(bindings.contains("normalized_argv"));
+    assert!(bindings.contains("match run_app(&argv)"));
     assert!(bin_main.contains("run_cli_from_env()"));
 }
