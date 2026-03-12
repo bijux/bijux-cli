@@ -1,6 +1,4 @@
-{
-  "key": "alpha",
-  "status": "updated",
-  "updated": "<CONFIG_PATH>",
-  "value": "1"
-}
+key: alpha
+status: updated
+updated: <CONFIG_PATH>
+value: 1
