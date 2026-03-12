@@ -11,10 +11,7 @@ use shlex as _;
 use thiserror as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], env: &[(&str, &str)]) -> std::process::Output {
@@ -38,14 +35,8 @@ fn startup_commands_execute_through_binary() {
     ] {
         let out = run_with(&args);
         assert!(out.status.success(), "expected success for {args:?}");
-        assert!(
-            out.stderr.is_empty(),
-            "stderr should be empty for startup command {args:?}"
-        );
-        assert!(
-            !out.stdout.is_empty(),
-            "stdout should not be empty for startup command {args:?}"
-        );
+        assert!(out.stderr.is_empty(), "stderr should be empty for startup command {args:?}");
+        assert!(!out.stdout.is_empty(), "stdout should not be empty for startup command {args:?}");
         let text = String::from_utf8(out.stdout).expect("stdout should be utf-8");
         if expect_usage_text {
             assert!(
@@ -55,10 +46,7 @@ fn startup_commands_execute_through_binary() {
         } else {
             let payload: serde_json::Value =
                 serde_json::from_str(&text).expect("non-help startup command should emit json");
-            assert!(
-                payload.is_object(),
-                "startup json payload should be object for {args:?}"
-            );
+            assert!(payload.is_object(), "startup json payload should be object for {args:?}");
         }
     }
 }
@@ -78,23 +66,11 @@ fn success_machine_output_keeps_stderr_empty() {
 fn failure_output_routes_to_stderr_and_not_stdout() {
     let out = run_with(&["cli", "unknown-command"]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(
-        out.stdout.is_empty(),
-        "stdout should be empty for usage failures"
-    );
-    assert!(
-        !out.stderr.is_empty(),
-        "stderr should contain usage details"
-    );
+    assert!(out.stdout.is_empty(), "stdout should be empty for usage failures");
+    assert!(!out.stderr.is_empty(), "stderr should contain usage details");
     let stderr = String::from_utf8(out.stderr).expect("stderr should be utf-8");
-    assert!(
-        stderr.contains("Usage: bijux"),
-        "stderr should include usage summary"
-    );
-    assert!(
-        stderr.contains("Commands:"),
-        "stderr should include command table"
-    );
+    assert!(stderr.contains("Usage: bijux"), "stderr should include usage summary");
+    assert!(stderr.contains("Commands:"), "stderr should include command table");
 }
 
 #[test]
@@ -114,10 +90,7 @@ fn compatibility_alias_binary_still_executes() {
         .arg("version")
         .output()
         .expect("compatibility alias binary should execute");
-    assert!(
-        out.status.success(),
-        "legacy alias must remain functional during deprecation window"
-    );
+    assert!(out.status.success(), "legacy alias must remain functional during deprecation window");
 }
 
 #[test]
@@ -141,17 +114,11 @@ fn color_mode_executes_through_binary() {
 
 #[test]
 fn no_color_env_executes_through_binary() {
-    let out = run_with_env(
-        &["--color", "always", "cli", "status"],
-        &[("NO_COLOR", "1")],
-    );
+    let out = run_with_env(&["--color", "always", "cli", "status"], &[("NO_COLOR", "1")]);
     assert!(out.status.success());
     assert!(out.stderr.is_empty());
     let text = String::from_utf8(out.stdout.clone()).expect("stdout should be utf-8");
-    assert!(
-        !text.contains("\u{1b}["),
-        "NO_COLOR should suppress ansi escapes"
-    );
+    assert!(!text.contains("\u{1b}["), "NO_COLOR should suppress ansi escapes");
     let payload: serde_json::Value =
         serde_json::from_str(&text).expect("stdout should be valid json");
     assert_eq!(payload["status"], "ok");
@@ -175,10 +142,7 @@ fn pretty_json_executes_through_binary() {
     let out = run_with(&["--format", "json", "--pretty", "cli", "status"]);
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).expect("stdout should be utf-8");
-    assert!(
-        text.lines().count() > 2,
-        "pretty output should be multiline json"
-    );
+    assert!(text.lines().count() > 2, "pretty output should be multiline json");
 }
 
 #[test]
@@ -208,10 +172,7 @@ fn help_fast_path_timing_regression_guard() {
         String::from_utf8_lossy(&out.stdout).contains("Usage:"),
         "help output should include usage section"
     );
-    assert!(
-        elapsed < Duration::from_secs(2),
-        "help fast-path regressed: {elapsed:?}"
-    );
+    assert!(elapsed < Duration::from_secs(2), "help fast-path regressed: {elapsed:?}");
 }
 
 #[test]
@@ -224,10 +185,7 @@ fn version_fast_path_timing_regression_guard() {
     let payload: serde_json::Value =
         serde_json::from_slice(&out.stdout).expect("version output should be valid json");
     assert!(payload["version"].is_string());
-    assert!(
-        elapsed < Duration::from_secs(2),
-        "version fast-path regressed: {elapsed:?}"
-    );
+    assert!(elapsed < Duration::from_secs(2), "version fast-path regressed: {elapsed:?}");
 }
 
 #[cfg(unix)]
