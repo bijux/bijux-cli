@@ -10,7 +10,22 @@ use crate::interface::cli::handlers::{
     memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
 };
 use crate::interface::cli::parser::ParsedGlobalFlags;
-use crate::routing::registry::{RouteRegistry, RouteTarget};
+use crate::routing::registry::{RouteError, RouteRegistry, RouteTarget};
+
+fn populate_plugin_namespaces(registry: &mut RouteRegistry, plugin_registry_path: &std::path::Path) {
+    let _ = registry.register_plugin_namespace("community");
+    if let Ok(installed_plugins) = list_plugins(plugin_registry_path) {
+        for plugin in installed_plugins {
+            let namespace = plugin.manifest.namespace.0;
+            let _ = registry.register_plugin_namespace(&namespace);
+        }
+    }
+}
+
+fn should_preload_plugin_namespaces(normalized_path: &[String]) -> bool {
+    matches!(normalized_path, [a] if a == "plugins")
+        || matches!(normalized_path, [a, b] if a == "cli" && b == "inspect")
+}
 
 pub(super) fn route_response(
     normalized_path: &[String],
@@ -21,15 +36,20 @@ pub(super) fn route_response(
     let plugin_registry_path = paths.plugin_registry_file.clone();
 
     let mut registry = RouteRegistry::default();
-    let _ = registry.register_plugin_namespace("community");
-    if let Ok(installed_plugins) = list_plugins(&plugin_registry_path) {
-        for plugin in installed_plugins {
-            let namespace = plugin.manifest.namespace.0;
-            let _ = registry.register_plugin_namespace(&namespace);
-        }
+    let mut plugin_namespaces_loaded = false;
+    if should_preload_plugin_namespaces(normalized_path) {
+        populate_plugin_namespaces(&mut registry, &plugin_registry_path);
+        plugin_namespaces_loaded = true;
     }
 
-    let target = registry.resolve(normalized_path)?;
+    let target = match registry.resolve(normalized_path) {
+        Ok(target) => target,
+        Err(RouteError::Unknown(_)) if !plugin_namespaces_loaded => {
+            populate_plugin_namespaces(&mut registry, &plugin_registry_path);
+            registry.resolve(normalized_path)?
+        }
+        Err(error) => return Err(error.into()),
+    };
     if let RouteTarget::Plugin(namespace) = target {
         anyhow::bail!(
             "plugin route execution is not implemented: namespace={namespace}, route={}",

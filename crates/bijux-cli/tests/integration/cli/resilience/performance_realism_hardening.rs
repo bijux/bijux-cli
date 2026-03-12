@@ -193,3 +193,85 @@ fn payload_size_benchmarks_for_key_commands_stay_within_budget() {
         "plugins list payload budget exceeded: {plugins_list_bytes} bytes"
     );
 }
+
+#[test]
+fn non_plugin_commands_do_not_scale_with_large_plugin_registries() {
+    let temp = temp_dir("non-plugin-registry-isolation");
+    let plugins_dir = temp.join("plugins-large");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let large_records: Vec<String> = (0..4_000)
+        .map(|i| {
+            format!("{{\"namespace\":\"p{i}\",\"entrypoint\":\"plugin{i}.py\",\"enabled\":true}}")
+        })
+        .collect();
+    fs::write(plugins_dir.join("registry.json"), format!("[{}]", large_records.join(",")))
+        .expect("write large registry");
+
+    let config = temp.join("config.env");
+    fs::write(&config, "BIJUXCLI_ALPHA=1\n").expect("seed config");
+    let history = temp.join("history.json");
+    fs::write(&history, "[{\"command\":\"status\",\"timestamp\":1}]").expect("seed history");
+
+    let config_args = [
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        config.to_str().expect("utf-8"),
+    ];
+    let history_args = ["history", "--format", "json", "--no-pretty", "--limit", "1"];
+
+    let base_config_ms = average_duration_ms(&config_args, &[], 5);
+    let stressed_config_ms = average_duration_ms(
+        &config_args,
+        &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.display().to_string())],
+        5,
+    );
+    assert!(
+        stressed_config_ms <= base_config_ms.saturating_mul(3) + 80,
+        "config get should not scale with plugin registry size: base={base_config_ms}ms stressed={stressed_config_ms}ms"
+    );
+
+    let base_history_ms = average_duration_ms(
+        &history_args,
+        &[("BIJUXCLI_HISTORY_FILE", history.display().to_string())],
+        5,
+    );
+    let stressed_history_ms = average_duration_ms(
+        &history_args,
+        &[
+            ("BIJUXCLI_HISTORY_FILE", history.display().to_string()),
+            ("BIJUXCLI_PLUGINS_DIR", plugins_dir.display().to_string()),
+        ],
+        5,
+    );
+    assert!(
+        stressed_history_ms <= base_history_ms.saturating_mul(3) + 80,
+        "history should not scale with plugin registry size: base={base_history_ms}ms stressed={stressed_history_ms}ms"
+    );
+}
+
+#[test]
+fn large_history_with_small_limit_stays_within_startup_budget() {
+    let temp = temp_dir("history-limit-budget");
+    let history = temp.join("large.history.json");
+    let entries: Vec<String> =
+        (0..20_000).map(|i| format!("{{\"command\":\"status\",\"timestamp\":{i}}}")).collect();
+    fs::write(&history, format!("[{}]", entries.join(","))).expect("write large history");
+
+    let args = ["history", "--format", "json", "--no-pretty", "--limit", "1"];
+    let envs = [("BIJUXCLI_HISTORY_FILE", history.display().to_string())];
+    let avg_ms = average_duration_ms(&args, &envs, 4);
+    assert!(avg_ms <= 900, "history --limit startup budget exceeded: {avg_ms}ms");
+
+    let output = run_once(&args, &envs);
+    assert!(output.status.success(), "history --limit should succeed");
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("json payload");
+    let rows = payload["entries"].as_array().expect("entries array");
+    assert_eq!(rows.len(), 1, "history --limit should return one entry");
+}
