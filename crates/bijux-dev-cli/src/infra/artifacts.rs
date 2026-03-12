@@ -5,13 +5,41 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
 
-/// Read JSON payload from disk and return `{}` when the file is missing or malformed.
+/// Read JSON payload from disk.
+///
+/// On failure, returns an object carrying `_artifact_state`:
+/// - `missing`
+/// - `unreadable`
+/// - `malformed`
 #[must_use]
 pub fn read_json_if_exists(path: &Path) -> Value {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|text| serde_json::from_str::<Value>(&text).ok())
-        .unwrap_or_else(|| json!({}))
+    match fs::read_to_string(path) {
+        Ok(text) => match serde_json::from_str::<Value>(&text) {
+            Ok(payload) => payload,
+            Err(error) => json!({
+                "_artifact_state": "malformed",
+                "_artifact_path": path.display().to_string(),
+                "_artifact_error": error.to_string(),
+            }),
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            json!({
+                "_artifact_state": "missing",
+                "_artifact_path": path.display().to_string(),
+            })
+        }
+        Err(error) => json!({
+            "_artifact_state": "unreadable",
+            "_artifact_path": path.display().to_string(),
+            "_artifact_error": error.to_string(),
+        }),
+    }
+}
+
+/// Return the normalized artifact state for a payload returned by `read_json_if_exists`.
+#[must_use]
+pub fn json_artifact_state(payload: &Value) -> &str {
+    payload.get("_artifact_state").and_then(Value::as_str).unwrap_or("valid")
 }
 
 /// Read text payload from disk and return empty string when unavailable.
@@ -77,4 +105,65 @@ pub fn parse_make_targets(path: &Path) -> Vec<String> {
     out.sort();
     out.dedup();
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use serde_json::json;
+
+    use super::{json_artifact_state, read_json_if_exists};
+
+    #[test]
+    fn read_json_if_exists_reports_missing_files() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-missing-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        let payload = read_json_if_exists(&root.join("missing.json"));
+        assert_eq!(json_artifact_state(&payload), "missing");
+    }
+
+    #[test]
+    fn read_json_if_exists_reports_malformed_files() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-malformed-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        fs::create_dir_all(&root).expect("mkdir");
+        let path = root.join("broken.json");
+        fs::write(&path, "{not-json").expect("write");
+
+        let payload = read_json_if_exists(&path);
+        assert_eq!(json_artifact_state(&payload), "malformed");
+    }
+
+    #[test]
+    fn read_json_if_exists_reports_unreadable_paths() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-unreadable-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        fs::create_dir_all(&root).expect("mkdir");
+
+        let payload = read_json_if_exists(&root);
+        assert_eq!(json_artifact_state(&payload), "unreadable");
+    }
+
+    #[test]
+    fn read_json_if_exists_keeps_valid_payloads() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-valid-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        fs::create_dir_all(&root).expect("mkdir");
+        let path = root.join("ok.json");
+        fs::write(&path, r#"{"ok":true}"#).expect("write");
+
+        let payload = read_json_if_exists(&path);
+        assert_eq!(json_artifact_state(&payload), "valid");
+        assert_eq!(payload, json!({"ok": true}));
+    }
 }
