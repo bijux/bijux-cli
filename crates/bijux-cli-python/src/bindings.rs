@@ -61,7 +61,7 @@ fn json_string<T: Serialize>(value: &T) -> String {
 }
 
 fn normalized_argv(argv: &[String]) -> Vec<String> {
-    if matches!(argv.first().map(String::as_str), Some("bijux" | "bijux-rs")) {
+    if matches!(argv.first().map(String::as_str), Some("bijux")) {
         return argv.to_vec();
     }
 

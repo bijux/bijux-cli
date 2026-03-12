@@ -85,15 +85,6 @@ fn bin_and_core_outputs_match_for_same_argv() {
 }
 
 #[test]
-fn compatibility_alias_binary_still_executes() {
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .arg("version")
-        .output()
-        .expect("compatibility alias binary should execute");
-    assert!(out.status.success(), "legacy alias must remain functional during deprecation window");
-}
-
-#[test]
 fn trace_mode_executes_through_binary() {
     let out = run_with(&["--log-level", "trace", "cli", "status"]);
     assert!(out.status.success());
