@@ -80,7 +80,7 @@ clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
 	fi
 	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
-all: clean install test lint security docs build ## Run full pipeline (clean → build)
+all: fmt lint security test build ## Run quality gates and build artifacts
 	@echo "✔ All targets completed"
 
 fmt: fmt-rs fmt-py ## Run Rust and Python formatters
