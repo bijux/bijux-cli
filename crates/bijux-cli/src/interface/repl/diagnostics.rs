@@ -22,6 +22,7 @@ pub fn session_diagnostics_dump(session: &ReplSession) -> String {
         "history_size": session.history.len(),
         "history_limit": session.history_limit,
         "plugin_completion_hooks": session.plugin_completion_hooks.keys().collect::<Vec<_>>(),
+        "completion_registries": session.completion_registries.keys().collect::<Vec<_>>(),
         "last_error": session.last_error,
     });
     format!("{}\n", serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string()))
@@ -35,6 +36,11 @@ pub fn estimated_session_memory_bytes(session: &ReplSession) -> usize {
         + session.history.iter().map(String::len).sum::<usize>()
         + session
             .plugin_completion_hooks
+            .iter()
+            .map(|(k, v)| k.len() + v.iter().map(String::len).sum::<usize>())
+            .sum::<usize>()
+        + session
+            .completion_registries
             .iter()
             .map(|(k, v)| k.len() + v.iter().map(String::len).sum::<usize>())
             .sum::<usize>()

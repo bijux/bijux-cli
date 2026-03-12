@@ -4,7 +4,8 @@
 pub use crate::interface::repl::{
     benchmark_startup_latency, check_repl_budgets, completion_candidates, configure_history,
     estimated_session_memory_bytes, execute_repl_input, execute_repl_line, flush_history,
-    inspect_last_error, load_history, register_plugin_completion_hook,
+    inspect_last_error, load_history, register_completion_registry,
+    register_plugin_completion_hook,
     render_repl_command_reference, repl_argv_from_line, replay_history_command,
     session_diagnostics_dump, shutdown_repl, startup_repl, startup_repl_with_diagnostics,
     ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplShutdownContract,

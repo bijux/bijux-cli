@@ -9,7 +9,9 @@ mod reference;
 mod session;
 mod types;
 
-pub use completion::{completion_candidates, register_plugin_completion_hook};
+pub use completion::{
+    completion_candidates, register_completion_registry, register_plugin_completion_hook,
+};
 pub use diagnostics::{
     benchmark_startup_latency, check_repl_budgets, estimated_session_memory_bytes,
     inspect_last_error, session_diagnostics_dump,

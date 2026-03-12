@@ -62,6 +62,8 @@ pub struct ReplSession {
     pub last_error: Option<String>,
     /// Plugin completion hooks by namespace.
     pub plugin_completion_hooks: BTreeMap<String, Vec<String>>,
+    /// Extension completion registries keyed by owner identifier.
+    pub completion_registries: BTreeMap<String, Vec<String>>,
 }
 
 /// REPL emission stream.

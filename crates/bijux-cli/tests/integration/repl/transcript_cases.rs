@@ -8,8 +8,9 @@ use std::time::{Duration, Instant};
 use bijux_cli as _;
 use bijux_cli::api::repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line,
-    inspect_last_error, load_history, register_plugin_completion_hook, repl_argv_from_line,
-    startup_repl, startup_repl_with_diagnostics, ReplEvent, ReplInput,
+    inspect_last_error, load_history, register_completion_registry,
+    register_plugin_completion_hook, repl_argv_from_line, startup_repl,
+    startup_repl_with_diagnostics, ReplEvent, ReplInput,
 };
 use bijux_cli::api::routing::parser::parse_intent;
 use bijux_cli::api::runtime::run_app;
@@ -140,7 +141,12 @@ fn repl_line_tokenization_matches_cli_parser_expectations() {
 
 #[test]
 fn completion_includes_reserved_namespace_candidates() {
-    let (session, _) = startup_repl("default", None);
+    let (mut session, _) = startup_repl("default", None);
+    register_completion_registry(
+        &mut session,
+        "bijux-products",
+        vec!["atlas".to_string(), "dev".to_string(), "dev cli status".to_string()],
+    );
     let atlas = completion_candidates(&session, "atl");
     let cli = completion_candidates(&session, "cli");
 
@@ -278,7 +284,12 @@ fn transcript_case_trace_mode_in_session() {
 
 #[test]
 fn completion_covers_grouped_cli_dev_and_partial_tokens() {
-    let (session, _) = startup_repl("default", None);
+    let (mut session, _) = startup_repl("default", None);
+    register_completion_registry(
+        &mut session,
+        "bijux-dev-cli",
+        vec!["dev".to_string(), "dev cli".to_string(), "dev cli status".to_string()],
+    );
     let cli = completion_candidates(&session, "cli");
     let dev = completion_candidates(&session, "dev");
     let partial = completion_candidates(&session, "sta");

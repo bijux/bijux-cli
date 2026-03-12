@@ -6,8 +6,8 @@ use std::fs;
 
 use bijux_cli as _;
 use bijux_cli::api::repl::{
-    completion_candidates, configure_history, load_history, register_plugin_completion_hook,
-    startup_repl, startup_repl_with_diagnostics,
+    completion_candidates, configure_history, load_history, register_completion_registry,
+    register_plugin_completion_hook, startup_repl, startup_repl_with_diagnostics,
 };
 use serde_json as _;
 use shlex as _;
@@ -19,7 +19,12 @@ fn temp_history_path(name: &str) -> std::path::PathBuf {
 
 #[test]
 fn completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported() {
-    let (session, _) = startup_repl("default", None);
+    let (mut session, _) = startup_repl("default", None);
+    register_completion_registry(
+        &mut session,
+        "bijux-dev-cli",
+        vec!["dev".to_string(), "dev cli".to_string(), "dev cli status".to_string()],
+    );
 
     let root = completion_candidates(&session, "");
     let root_partial = completion_candidates(&session, "sta");
@@ -62,7 +67,12 @@ fn completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported(
 
 #[test]
 fn completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions() {
-    let (session, _) = startup_repl("default", None);
+    let (mut session, _) = startup_repl("default", None);
+    register_completion_registry(
+        &mut session,
+        "bijux-dev-cli",
+        vec!["dev".to_string(), "dev cli".to_string(), "dev cli status".to_string()],
+    );
     let reserved = completion_candidates(&session, "cli");
     let dev = completion_candidates(&session, "dev ");
 
