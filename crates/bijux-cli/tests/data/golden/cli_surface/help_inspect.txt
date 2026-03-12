@@ -13,6 +13,4 @@ Options:
 Examples:
   bijux inspect
   bijux inspect --format json
-  bijux inspect --format yaml
-
-Compatibility note: inspect output includes plugin compatibility warnings when present.
+  bijux help inspect

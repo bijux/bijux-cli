@@ -2,7 +2,6 @@ Usage: bijux [OPTIONS] [COMMAND]
 
 Commands:
   cli         
-  dev         
   status      
   audit       
   docs        
@@ -13,8 +12,6 @@ Commands:
   plugins     
   repl        
   completion  
-  inspect     
-  atlas       
   history     
   memory      
   help        Print this message or the help of the given subcommand(s)
@@ -41,11 +38,6 @@ version     Runtime version report
 Configuration & Plugins:
 config      Configuration management commands
 plugins     Plugin lifecycle and diagnostics commands
-
-Developer Surface:
-dev         Maintainer engineering and repository diagnostics commands
-inspect     Route and schema inspection
-atlas       Product and namespace registry report
 
 State & Interaction:
 history     History state management
