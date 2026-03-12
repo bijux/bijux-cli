@@ -32,10 +32,10 @@ ifeq ($(wildcard $(MKDOCS_CFG)),)
   $(error mkdocs config '$(MKDOCS_CFG)' not found)
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-prep
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene
 
 ##@ Documentation
-docs: docs-clean docs-prep ## Build documentation (mkdocs --strict) to artifacts/docs/site
+docs: docs-clean ## Build documentation (mkdocs --strict) to artifacts/docs/site
 	@echo "Building documentation"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -43,7 +43,7 @@ docs: docs-clean docs-prep ## Build documentation (mkdocs --strict) to artifacts
 	@$(MAKE) docs-hygiene
 	@echo "Documentation build complete"
 
-docs-serve: docs-prep ## Serve documentation locally (auto-reload; no disk generation)
+docs-serve: ## Serve documentation locally (auto-reload; no disk generation)
 	@HOST=$${HOST:-$(DOCS_HOST)}; PORT=$${PORT:-$(DOCS_PORT)}; \
 	  if command -v lsof >/dev/null 2>&1; then \
 	    while lsof -tiTCP:$$PORT -sTCP:LISTEN >/dev/null 2>&1; do PORT=$$((PORT+1)); done; \
@@ -68,10 +68,6 @@ docs-check: ## Validate documentation builds without errors
 	    --site-dir "$(DOCS_SITE_DIR)"
 	@$(MAKE) docs-hygiene
 	@echo "Documentation passes build checks"
-
-docs-prep: ## Validate docs source directory is present
-	@echo "Preparing docs (source: docs/)"
-	@test -d "docs" || (echo "ERROR: docs/ directory is missing"; exit 1)
 
 docs-clean: ## Remove generated documentation artifacts
 	@echo "Cleaning documentation build artifacts"
