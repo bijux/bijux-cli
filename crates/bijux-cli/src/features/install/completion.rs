@@ -49,12 +49,15 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
     match shell {
         CompletionShell::Bash => home_dir.join(".bash_completion.d").join("bijux"),
         CompletionShell::Zsh => home_dir.join(".zsh").join("completions").join("_bijux"),
-        CompletionShell::Fish => {
-            home_dir.join(".config").join("fish").join("completions").join("bijux.fish")
-        }
-        CompletionShell::PowerShell => {
-            home_dir.join("Documents").join("PowerShell").join("Microsoft.PowerShell_profile.ps1")
-        }
+        CompletionShell::Fish => home_dir
+            .join(".config")
+            .join("fish")
+            .join("completions")
+            .join("bijux.fish"),
+        CompletionShell::PowerShell => home_dir
+            .join("Documents")
+            .join("PowerShell")
+            .join("Microsoft.PowerShell_profile.ps1"),
     }
 }
 
@@ -62,7 +65,9 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
 #[must_use]
 #[allow(dead_code)]
 pub(crate) fn detect_shell(shell_env: Option<&str>) -> Option<CompletionShell> {
-    let raw = shell_env.map(ToOwned::to_owned).or_else(|| std::env::var("SHELL").ok())?;
+    let raw = shell_env
+        .map(ToOwned::to_owned)
+        .or_else(|| std::env::var("SHELL").ok())?;
     let raw = raw.as_str();
     if raw.contains("bash") {
         return Some(CompletionShell::Bash);

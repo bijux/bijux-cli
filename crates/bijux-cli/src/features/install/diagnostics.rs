@@ -46,16 +46,21 @@ pub fn install_health_report(
     let active_binary = resolve_active_binary(path_value, bin_override);
     let has_path_shadowing = path_binaries.len() > 1;
     let has_duplicate_installs = path_binaries.iter().any(|path| path.contains(".cargo"))
-        && path_binaries.iter().any(|path| path.contains("site-packages"));
+        && path_binaries
+            .iter()
+            .any(|path| path.contains("site-packages"));
     let stale_wrapper_scripts = detect_stale_wrapper_scripts(path_value);
     let has_mismatched_wheel_binary_versions =
         wheel_version.is_some_and(|version| version != runtime_version);
     let legacy_installer_conflicts = legacy_installer_conflicts(path_value);
-    let active_binary_missing =
-        active_binary.as_deref().is_some_and(|path| !Path::new(path).exists());
+    let active_binary_missing = active_binary
+        .as_deref()
+        .is_some_and(|path| !Path::new(path).exists());
     let broken_symlink_active_binary = active_binary.as_deref().is_some_and(|path| {
         let p = Path::new(path);
-        fs::symlink_metadata(p).map(|meta| meta.file_type().is_symlink()).unwrap_or(false)
+        fs::symlink_metadata(p)
+            .map(|meta| meta.file_type().is_symlink())
+            .unwrap_or(false)
             && fs::metadata(p).is_err()
     });
 
