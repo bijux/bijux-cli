@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import os
+from collections.abc import Iterable
+from dataclasses import dataclass
+from importlib import metadata
 import json
+import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
-from dataclasses import dataclass
-from importlib import metadata
-from typing import Iterable
 
 from ._exceptions import (
     BijuxPythonError,
@@ -21,12 +21,12 @@ from ._exceptions import (
     ValidationError,
 )
 
-
 _STRICT_NATIVE_IMPORT = os.environ.get("BIJUX_PY_STRICT_IMPORT") == "1"
 _NATIVE_IMPORT_ERROR: Exception | None = None
 
 try:
     from . import _native as native
+
     NATIVE_AVAILABLE = True
 except (ImportError, ModuleNotFoundError, OSError) as exc:  # pragma: no cover
     if _STRICT_NATIVE_IMPORT:
@@ -75,7 +75,10 @@ def version() -> str:
     result = execution_facade_with_status(["version"])
     if result.exit_code != 0:
         raise error_to_exception(
-            {"error_kind": result.error_kind, "message": result.stderr or "failed to query version"}
+            {
+                "error_kind": result.error_kind,
+                "message": result.stderr or "failed to query version",
+            }
         )
     return result.stdout.strip()
 
@@ -83,7 +86,9 @@ def version() -> str:
 def command_tree_introspection() -> str:
     if NATIVE_AVAILABLE:
         return native.command_tree_introspection()
-    result = execution_facade_with_status(["inspect", "--format", "json", "--no-pretty"])
+    result = execution_facade_with_status(
+        ["inspect", "--format", "json", "--no-pretty"]
+    )
     if result.exit_code != 0:
         return json.dumps(
             {
@@ -137,7 +142,9 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
         try:
             outcome = json.loads(native.execution_outcome(args))
         except json.JSONDecodeError as exc:
-            raise InternalError(f"invalid native execution outcome payload: {exc}") from exc
+            raise InternalError(
+                f"invalid native execution outcome payload: {exc}"
+            ) from exc
         return ExecutionResult(
             exit_code=int(outcome.get("exit_code", 1)),
             stdout=str(outcome.get("stdout", "")),
@@ -146,7 +153,9 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
         )
 
     runtime = _resolve_binary()
-    result = subprocess.run([runtime.binary, *args], capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        [runtime.binary, *args], capture_output=True, text=True, check=False
+    )
     return ExecutionResult(
         exit_code=result.returncode,
         stdout=result.stdout,
@@ -211,7 +220,9 @@ def check_python_runtime_supported(version_info: tuple[int, int] | None = None) 
 def migration_warnings(legacy_python_only: bool = False) -> list[str]:
     if not legacy_python_only:
         return []
-    return ["Python-only runtime assumptions are deprecated; commands delegate to Rust runtime."]
+    return [
+        "Python-only runtime assumptions are deprecated; commands delegate to Rust runtime."
+    ]
 
 
 def post_install_diagnostics() -> dict[str, object]:
@@ -230,7 +241,11 @@ def post_install_diagnostics() -> dict[str, object]:
 
 
 def _normalize_error_kind(value: object) -> str | None:
-    if isinstance(value, str) and value in {"UsageError", "ValidationError", "InternalError"}:
+    if isinstance(value, str) and value in {
+        "UsageError",
+        "ValidationError",
+        "InternalError",
+    }:
         return value
     return None
 

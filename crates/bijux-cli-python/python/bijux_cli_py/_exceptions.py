@@ -1,5 +1,7 @@
 """Python exception hierarchy for bijux-cli runtime facade."""
 
+from __future__ import annotations
+
 
 class BijuxPythonError(RuntimeError):
     """Base error for Python facade failures."""

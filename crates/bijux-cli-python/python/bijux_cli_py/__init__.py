@@ -1,5 +1,7 @@
 """Python facade for Rust-backed bijux-cli runtime."""
 
+from __future__ import annotations
+
 from ._exceptions import (
     BijuxPythonError,
     InternalError,
@@ -14,12 +16,12 @@ from ._facade import (
     config_resolution_helpers,
     ensure_native_extension,
     error_to_exception,
-    execution_facade_with_status,
     execution_facade,
+    execution_facade_with_status,
     install_path_helpers,
     migration_warnings,
-    post_install_diagnostics,
     plugin_registry_inspection,
+    post_install_diagnostics,
     version,
 )
 from .compat import get_command_tree, get_version, run_cli

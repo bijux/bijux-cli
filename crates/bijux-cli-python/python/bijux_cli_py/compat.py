@@ -8,7 +8,9 @@ from ._facade import command_tree_introspection, execution_facade, version
 
 
 def get_version() -> str:
-    warnings.warn("get_version() is deprecated; use version()", DeprecationWarning, stacklevel=2)
+    warnings.warn(
+        "get_version() is deprecated; use version()", DeprecationWarning, stacklevel=2
+    )
     return version()
 
 
@@ -22,5 +24,9 @@ def get_command_tree() -> str:
 
 
 def run_cli(argv: list[str]) -> str:
-    warnings.warn("run_cli() is deprecated; use execution_facade()", DeprecationWarning, stacklevel=2)
+    warnings.warn(
+        "run_cli() is deprecated; use execution_facade()",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return execution_facade(argv)
