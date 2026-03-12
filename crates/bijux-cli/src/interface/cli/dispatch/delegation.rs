@@ -134,9 +134,6 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
     let first = argv.get(1)?;
 
     if let Some(tool) = known_bijux_tool(first) {
-        if tool.namespace == "atlas" && argv.len() == 2 {
-            return None;
-        }
         let runtime_binary = tool.runtime_binary();
         let runtime_package = runtime_binary.clone();
         let command_surface = format!("bijux {}", tool.namespace);
@@ -149,7 +146,9 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
     }
 
     if first == "dev" {
-        let tool_namespace = argv.get(2)?;
+        let Some(tool_namespace) = argv.get(2) else {
+            return Some(delegate_dev_cli(&[]));
+        };
         if let Some(tool) = known_bijux_tool(tool_namespace) {
             let control_binary = tool.control_binary();
             let control_package = control_binary.clone();
