@@ -7,7 +7,13 @@ pub fn command_option_value(argv: &[String], name: &str) -> Option<String> {
     if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
         return Some(found[prefixed.len()..].to_string());
     }
-    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
+    argv.iter().position(|arg| arg == name).and_then(|idx| {
+        let next = argv.get(idx + 1)?;
+        if next.starts_with('-') {
+            return None;
+        }
+        Some(next.clone())
+    })
 }
 
 /// Return passthrough args after `--`.
@@ -76,4 +82,46 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
         i += 1;
     }
     positional
+}
+
+#[cfg(test)]
+mod tests {
+    use super::command_option_value;
+
+    fn argv(items: &[&str]) -> Vec<String> {
+        items.iter().map(|item| (*item).to_string()).collect()
+    }
+
+    #[test]
+    fn command_option_value_reads_equals_form() {
+        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id=EVIDENCE-1001-TEST"]);
+        assert_eq!(
+            command_option_value(&args, "--id").as_deref(),
+            Some("EVIDENCE-1001-TEST")
+        );
+    }
+
+    #[test]
+    fn command_option_value_reads_separate_token_form() {
+        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-TEST"]);
+        assert_eq!(
+            command_option_value(&args, "--id").as_deref(),
+            Some("EVIDENCE-1001-TEST")
+        );
+    }
+
+    #[test]
+    fn command_option_value_rejects_next_flag_as_value() {
+        let args = argv(&[
+            "bijux",
+            "dev",
+            "cli",
+            "evidence",
+            "show",
+            "--id",
+            "--kind",
+            "runtime",
+        ]);
+        assert_eq!(command_option_value(&args, "--id"), None);
+    }
 }
