@@ -10,7 +10,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 #[test]
@@ -52,7 +55,14 @@ fn repeated_pretty_flags_are_rejected_deterministically() {
 
 #[test]
 fn repeated_no_pretty_flags_are_rejected_deterministically() {
-    let out = run(&["--no-pretty", "--no-pretty", "--format", "json", "cli", "status"]);
+    let out = run(&[
+        "--no-pretty",
+        "--no-pretty",
+        "--format",
+        "json",
+        "cli",
+        "status",
+    ]);
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("Usage: bijux"));
 }
@@ -87,10 +97,20 @@ fn repeated_config_flags_are_rejected_deterministically() {
 
 #[test]
 fn conflicting_pretty_and_no_pretty_have_stable_resolution() {
-    let out = run(&["--pretty", "--no-pretty", "--format", "json", "cli", "status"]);
+    let out = run(&[
+        "--pretty",
+        "--no-pretty",
+        "--format",
+        "json",
+        "cli",
+        "status",
+    ]);
     assert_eq!(out.status.code(), Some(0));
     let stdout = String::from_utf8(out.stdout).expect("stdout utf-8");
-    assert_eq!(stdout.trim(), "{\"runtime\":\"rust-foundation\",\"status\":\"ok\"}");
+    assert_eq!(
+        stdout.trim(),
+        "{\"runtime\":\"rust-foundation\",\"status\":\"ok\"}"
+    );
 }
 
 #[test]
