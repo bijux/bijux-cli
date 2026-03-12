@@ -9,11 +9,10 @@ use crate::contracts::maintenance::{generated_at_utc, run_native_status_contract
 use super::inventory::status_contract_specs;
 
 fn find_spec(
-    workspace_root: &Path,
     contract_id: Option<&str>,
     source_ref: Option<&str>,
 ) -> Option<super::model::StatusContractSpec> {
-    let rows = status_contract_specs(workspace_root);
+    let rows = status_contract_specs();
     if let Some(id) = contract_id {
         return rows.into_iter().find(|spec| spec.contract_id == id);
     }
@@ -29,15 +28,25 @@ pub fn run_contract(
     workspace_root: &Path,
     contract_id: Option<&str>,
     source_ref: Option<&str>,
-    _args: &[String],
+    args: &[String],
 ) -> Value {
+    if !args.is_empty() {
+        return json!({
+            "status": "failed",
+            "contract_id": contract_id,
+            "source_ref": source_ref,
+            "error": "status contracts do not support passthrough arguments after '--'",
+            "passthrough_args": args,
+        });
+    }
+
     if let Some(id) = contract_id {
         if let Some(result) = run_native_status_contract(workspace_root, id) {
             return result;
         }
     }
 
-    let Some(spec) = find_spec(workspace_root, contract_id, source_ref) else {
+    let Some(spec) = find_spec(contract_id, source_ref) else {
         return json!({
             "status": "failed",
             "error": "status contract not found; pass --id with a known STATUS-CONTRACT-* value",
@@ -65,7 +74,24 @@ pub fn run_all_contracts(
     kind_filter: Option<&str>,
     args: &[String],
 ) -> Value {
-    let mut specs = status_contract_specs(workspace_root);
+    if !args.is_empty() {
+        return json!({
+            "generated_at_utc": generated_at_utc(),
+            "kind_filter": kind_filter.map(|kind| kind.to_ascii_lowercase()),
+            "count": 0,
+            "ok": 0,
+            "failed": 1,
+            "error": "status contracts do not support passthrough arguments after '--'",
+            "passthrough_args": args,
+            "results": [json!({
+                "status": "failed",
+                "error": "status contracts do not support passthrough arguments after '--'",
+                "passthrough_args": args,
+            })],
+        });
+    }
+
+    let mut specs = status_contract_specs();
     if let Some(kind) = kind_filter {
         let kind = kind.to_ascii_lowercase();
         specs.retain(|spec| spec.kind.as_str() == kind);
@@ -98,4 +124,35 @@ pub fn run_all_contracts(
         "failed": failed,
         "results": results,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::{run_all_contracts, run_contract};
+
+    #[test]
+    fn run_contract_rejects_passthrough_args() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let payload = run_contract(&root, None, None, &["--unexpected".to_string()]);
+        assert_eq!(payload["status"], "failed");
+        assert!(
+            payload["error"]
+                .as_str()
+                .is_some_and(|value| value.contains("passthrough arguments"))
+        );
+    }
+
+    #[test]
+    fn run_all_contracts_rejects_passthrough_args() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let payload = run_all_contracts(&root, None, &["--unexpected".to_string()]);
+        assert_eq!(payload["failed"], 1);
+        assert!(
+            payload["error"]
+                .as_str()
+                .is_some_and(|value| value.contains("passthrough arguments"))
+        );
+    }
 }
