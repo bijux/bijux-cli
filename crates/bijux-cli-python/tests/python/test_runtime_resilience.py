@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from bijux_cli_py._facade import (
     error_to_exception,
     execution_facade,
     execution_facade_with_status,
+    version as facade_version,
 )
 from bijux_cli_py._exceptions import InternalError, UsageError, ValidationError
 
@@ -100,3 +102,107 @@ def test_workspace_runtime_resolution_wins_over_path_binary(
 
     result = execution_facade(["version"])
     assert '"0.3.0"' in result
+
+
+def test_bijux_bin_override_must_point_to_executable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setenv("BIJUX_BIN", "/definitely/missing/runtime")
+
+    with pytest.raises(PlatformWheelUnavailable):
+        _ = execution_facade_with_status(["version"])
+
+
+def test_version_api_delegates_to_runtime_outcome(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setattr(
+        facade,
+        "execution_facade_with_status",
+        lambda _argv: facade.ExecutionResult(
+            exit_code=0,
+            stdout='{"version":"9.9.9"}\n',
+            stderr="",
+            error_kind=None,
+        ),
+    )
+    assert facade_version().strip() == '{"version":"9.9.9"}'
+
+
+def test_subprocess_error_classification_uses_stderr_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setattr(
+        facade,
+        "_resolve_binary",
+        lambda: facade.RuntimeResolution(binary="/tmp/fake-bijux"),
+    )
+    monkeypatch.setattr(
+        facade.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            args=["/tmp/fake-bijux", "status"],
+            returncode=1,
+            stdout="",
+            stderr="invalid configuration value",
+        ),
+    )
+    result = execution_facade_with_status(["status"])
+    assert result.exit_code == 1
+    assert result.error_kind == "ValidationError"
+
+
+def test_subprocess_timeout_is_normalized_to_internal_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setattr(
+        facade,
+        "_resolve_binary",
+        lambda: facade.RuntimeResolution(binary="/tmp/fake-bijux"),
+    )
+
+    def _raise_timeout(*_args: object, **_kwargs: object) -> object:
+        raise subprocess.TimeoutExpired(cmd=["/tmp/fake-bijux", "status"], timeout=1)
+
+    monkeypatch.setattr(facade.subprocess, "run", _raise_timeout)
+
+    result = execution_facade_with_status(["status"])
+    assert result.exit_code == 1
+    assert result.error_kind == "InternalError"
+    assert "timed out" in result.stderr
+
+
+def test_command_tree_fallback_includes_warning_instead_of_stale_namespaces(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    monkeypatch.setattr(
+        facade,
+        "execution_facade_with_status",
+        lambda _argv: facade.ExecutionResult(
+            exit_code=2,
+            stdout="",
+            stderr="unknown namespace: inspect",
+            error_kind="UsageError",
+        ),
+    )
+
+    payload = json.loads(facade.command_tree_introspection())
+    assert payload["root"] == "bijux"
+    assert payload["namespaces"] == []
+    assert payload["source"] == "fallback-empty"
+    assert "warning" in payload

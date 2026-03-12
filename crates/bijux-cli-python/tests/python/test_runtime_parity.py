@@ -33,6 +33,17 @@ def _runtime_binary() -> str:
     if override:
         return override
 
+    workspace_root = Path(__file__).resolve().parents[4]
+    workspace_candidates = [
+        workspace_root / "artifacts" / "rust" / "target" / "debug" / "bijux",
+        workspace_root / "artifacts" / "rust" / "target" / "release" / "bijux",
+        workspace_root / "target" / "debug" / "bijux",
+        workspace_root / "target" / "release" / "bijux",
+    ]
+    for candidate in workspace_candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
     for name in ("bijux",):
         resolved = shutil.which(name)
         if resolved:
@@ -139,7 +150,8 @@ def test_config_precedence_helpers_and_alias_apis() -> None:
 
 
 def test_runtime_support_and_migration_warnings() -> None:
-    assert check_python_runtime_supported((3, 10))
+    assert check_python_runtime_supported((3, 11))
+    assert not check_python_runtime_supported((3, 10))
     assert not check_python_runtime_supported((3, 8))
     assert migration_warnings(legacy_python_only=True)
 

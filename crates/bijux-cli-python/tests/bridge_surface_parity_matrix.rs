@@ -57,7 +57,10 @@ fn bridge_and_core_agree_on_exit_codes_for_representative_matrix() {
     for args in cases {
         let bridge = bridge_outcome(&args);
         let core = core_outcome(&args);
-        assert_eq!(bridge["exit_code"], core["exit_code"], "exit drift for {args:?}");
+        assert_eq!(
+            bridge["exit_code"], core["exit_code"],
+            "exit drift for {args:?}"
+        );
     }
 }
 
@@ -68,15 +71,24 @@ fn bridge_and_core_agree_on_stream_routing_for_success_and_usage_failure() {
     let success_core = core_outcome(&success_args);
     assert_eq!(success_bridge["stdout"], success_core["stdout"]);
     assert_eq!(success_bridge["stderr"], success_core["stderr"]);
-    assert!(success_bridge["stderr"].as_str().unwrap_or_default().is_empty());
+    assert!(success_bridge["stderr"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
 
     let usage_args = ["unknown-command"];
     let usage_bridge = bridge_outcome(&usage_args);
     let usage_core = core_outcome(&usage_args);
     assert_eq!(usage_bridge["stdout"], usage_core["stdout"]);
     assert_eq!(usage_bridge["stderr"], usage_core["stderr"]);
-    assert!(usage_bridge["stdout"].as_str().unwrap_or_default().is_empty());
-    assert!(!usage_bridge["stderr"].as_str().unwrap_or_default().is_empty());
+    assert!(usage_bridge["stdout"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
+    assert!(!usage_bridge["stderr"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
 }
 
 #[test]
@@ -90,7 +102,10 @@ fn bridge_and_core_agree_on_payload_shape_for_status_doctor_and_inspect() {
     for args in cases {
         let bridge = bridge_outcome(&args);
         let core = core_outcome(&args);
-        assert_eq!(bridge["exit_code"], core["exit_code"], "exit drift for {args:?}");
+        assert_eq!(
+            bridge["exit_code"], core["exit_code"],
+            "exit drift for {args:?}"
+        );
         let bridge_payload = parse_json(bridge["stdout"].as_str().unwrap_or_default());
         let core_payload = parse_json(core["stdout"].as_str().unwrap_or_default());
         assert_eq!(bridge_payload, core_payload, "payload drift for {args:?}");
@@ -114,5 +129,6 @@ fn bridge_command_tree_introspection_matches_core_root_namespaces() {
         .collect();
 
     assert_eq!(bridge_tree["root"], "bijux");
+    assert_eq!(bridge_tree["source"], "runtime-inspect");
     assert_eq!(bridge_namespaces, core_namespaces);
 }
