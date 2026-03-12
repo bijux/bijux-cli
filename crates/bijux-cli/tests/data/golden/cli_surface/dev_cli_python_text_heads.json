@@ -1,7 +1,7 @@
 {
-  "dev cli python bridge-status": "{\n  \"bridge_status\": {\n    \"conversion\": {\n",
-  "dev cli python drift": "{\n  \"drift\": {\n    \"duplication_total\": 0,\n",
-  "dev cli python packaging": "{\n  \"packaging\": {\n    \"linkage_model\": \"polars-like-thin-python-surface\",",
-  "dev cli python sovereignty-audit": "{\n  \"direction_contract\": \"python-surface-over-rust-core\",",
-  "dev cli python surface-status": "{\n  \"python_role\": \"surface-and-bridge\",\n"
+   "dev cli python bridge-status" : "bridge_status:\n  conversion:\n    coverage_ids:",
+   "dev cli python drift" : "drift:\n  duplication_total: 0\n  status: clean",
+   "dev cli python packaging" : "packaging:\n  linkage_model: polars-like-thin-python-surface\n  python_package_role: bridge-only",
+   "dev cli python sovereignty-audit" : "direction_contract: python-surface-over-rust-core\nevidence_ids:\n  - EVIDENCE-1501-PYTHON-SURFACE-ONLY",
+   "dev cli python surface-status" : "python_role: surface-and-bridge\nsurface_status:\n  source: artifacts/status/python_path_command_inventory.json"
 }
