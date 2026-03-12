@@ -4,7 +4,7 @@
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
-pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "inspect", "completion", "repl"];
+pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
@@ -62,6 +62,7 @@ pub const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "list-products",
     "list-plugins",
 ];
+#[allow(dead_code)]
 pub const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
     "audit",
     "coverage",
@@ -73,6 +74,7 @@ pub const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
     "workspace-coverage-proof",
     "python-link-proof",
 ];
+#[allow(dead_code)]
 pub const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
     "status",
     "evidence",
@@ -87,6 +89,7 @@ pub const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
     "unresolved-gaps",
     "compatibility-leftovers",
 ];
+#[allow(dead_code)]
 pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "list",
     "show",
@@ -99,12 +102,16 @@ pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "command-map",
     "parity-map",
 ];
+#[allow(dead_code)]
 pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
+#[allow(dead_code)]
 pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
     &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
+#[allow(dead_code)]
 pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
     &["health", "drift", "inventories", "generated", "stale"];
+#[allow(dead_code)]
 pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
     "remaining",
     "migrated",
@@ -121,6 +128,7 @@ pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
     "capture-python-behavior",
     "provenance-statement",
 ];
+#[allow(dead_code)]
 pub const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
 pub const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
@@ -185,18 +193,6 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("plugins where", "cli plugins where"),
     ("plugins explain", "cli plugins explain"),
     ("plugins schema", "cli plugins schema"),
-    ("dev inventory", "dev cli inventory"),
-    ("dev route-audit", "dev cli route-audit"),
-    ("dev parity", "dev cli parity"),
-    ("dev docs-audit", "dev cli docs-audit"),
-    ("dev plugin-health", "dev cli plugin-health"),
-    ("dev status", "dev cli status"),
-    ("dev package-health", "dev cli package-health"),
-    ("dev doctor", "dev cli doctor"),
-    ("dev runtime-identity", "dev cli runtime-identity"),
-    ("dev state-audit", "dev cli state-audit"),
-    ("dev state-doctor", "dev cli state-doctor"),
-    ("dev list-plugins", "dev cli list-plugins"),
 ];
 
 fn contains(values: &[&str], value: &str) -> bool {
@@ -213,8 +209,6 @@ fn build_built_in_route_paths() -> Vec<String> {
         "audit".to_string(),
         "docs".to_string(),
         "sleep".to_string(),
-        "atlas".to_string(),
-        "dev".to_string(),
         "config".to_string(),
         "config list".to_string(),
         "history".to_string(),
@@ -270,18 +264,18 @@ pub fn is_known_route(path: &[String]) -> bool {
         return false;
     }
 
+    if let [a, b, c, ..] = path {
+        if a == "dev" && b == "cli" && contains(DEV_CLI_SUBCOMMANDS, c) {
+            return true;
+        }
+    }
+
     let key = path.join(" ");
     let canonical = ALIAS_REWRITES
         .iter()
         .find(|(alias, _)| *alias == key.as_str())
         .map(|(_, canonical)| *canonical)
         .unwrap_or(key.as_str());
-
-    // Runtime delegates `dev cli ...` command ownership to the external control-plane binary.
-    // Keep this as a namespace boundary instead of hardcoding every maintainer subcommand here.
-    if canonical == "dev cli" || canonical.starts_with("dev cli ") {
-        return true;
-    }
 
     KNOWN_ROUTE_PATHS.get_or_init(build_known_route_paths).contains(canonical)
 }
