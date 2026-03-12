@@ -54,14 +54,42 @@ def _resolve_binary() -> RuntimeResolution:
     if candidate:
         return RuntimeResolution(binary=candidate)
 
-    for name in ("bijux",):
-        resolved = shutil.which(name)
-        if resolved:
+    for resolved in _workspace_runtime_binaries():
+        if os.path.isfile(resolved) and os.access(resolved, os.X_OK):
             return RuntimeResolution(binary=resolved)
+
+    current_entrypoint = None
+    if sys.argv and sys.argv[0]:
+        current_entrypoint = Path(sys.argv[0]).resolve()
+
+    resolved = shutil.which("bijux")
+    if resolved:
+        resolved_path = Path(resolved).resolve()
+        if current_entrypoint is None or resolved_path != current_entrypoint:
+            return RuntimeResolution(binary=str(resolved_path))
 
     raise PlatformWheelUnavailable(
         "No compatible runtime binary found. Set BIJUX_BIN or install bijux-cli wheel for this platform."
     )
+
+
+def _workspace_runtime_binaries() -> list[str]:
+    module_path = Path(__file__).resolve()
+    workspace_root = None
+    for parent in module_path.parents:
+        if (parent / "Cargo.toml").is_file() and (parent / "crates" / "bijux-cli").is_dir():
+            workspace_root = parent
+            break
+    if workspace_root is None:
+        return []
+
+    candidates = [
+        workspace_root / "artifacts" / "rust" / "target" / "debug" / "bijux",
+        workspace_root / "artifacts" / "rust" / "target" / "release" / "bijux",
+        workspace_root / "target" / "debug" / "bijux",
+        workspace_root / "target" / "release" / "bijux",
+    ]
+    return [str(path) for path in candidates]
 
 
 def version() -> str:
