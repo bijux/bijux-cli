@@ -3,6 +3,8 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::{Arc, Barrier};
+use std::thread;
 
 use bijux_cli::api::runtime::run_app;
 use bijux_cli_python::{
@@ -321,4 +323,66 @@ fn diagnostics_payloads_match_between_binary_and_bridge() {
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert_eq!(bridge["issues"], core["issues"]);
     assert_eq!(bridge["checks"], core["checks"]);
+}
+
+#[test]
+fn execution_outcome_is_stable_under_parallel_success_calls() {
+    let workers = 12;
+    let barrier = Arc::new(Barrier::new(workers));
+    let mut handles = Vec::with_capacity(workers);
+
+    for _ in 0..workers {
+        let barrier = barrier.clone();
+        handles.push(thread::spawn(move || {
+            barrier.wait();
+            let payload = parse_json(
+                &execution_outcome_api(&["bijux".to_string(), "status".to_string()])
+                    .expect("bridge outcome"),
+            );
+            assert_eq!(payload["exit_code"], 0);
+            assert_eq!(payload["error_kind"], Value::Null);
+            assert!(payload["stderr"].as_str().unwrap_or_default().is_empty());
+            assert!(payload["stdout"].as_str().unwrap_or_default().contains("\"status\""));
+        }));
+    }
+
+    for handle in handles {
+        handle.join().expect("worker should complete");
+    }
+}
+
+#[test]
+fn execution_outcome_keeps_error_classification_consistent_under_parallel_mixed_calls() {
+    let workers = 16;
+    let barrier = Arc::new(Barrier::new(workers));
+    let mut handles = Vec::with_capacity(workers);
+
+    for index in 0..workers {
+        let barrier = barrier.clone();
+        handles.push(thread::spawn(move || {
+            barrier.wait();
+            let argv = if index % 2 == 0 {
+                vec!["bijux".to_string(), "status".to_string()]
+            } else {
+                vec!["bijux".to_string(), "ghost".to_string()]
+            };
+            let payload =
+                parse_json(&execution_outcome_api(&argv).expect("bridge outcome should serialize"));
+
+            if index % 2 == 0 {
+                assert_eq!(payload["exit_code"], 0);
+                assert_eq!(payload["error_kind"], Value::Null);
+                assert!(payload["stderr"].as_str().unwrap_or_default().is_empty());
+            } else {
+                assert_eq!(payload["exit_code"], 2);
+                assert_eq!(payload["error_kind"], "UsageError");
+                assert!(payload["stdout"].as_str().unwrap_or_default().is_empty());
+                assert!(!payload["stderr"].as_str().unwrap_or_default().is_empty());
+            }
+        }));
+    }
+
+    for handle in handles {
+        handle.join().expect("worker should complete");
+    }
 }
