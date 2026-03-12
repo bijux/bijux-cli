@@ -8,6 +8,7 @@ mod route_exec;
 use anyhow::Result;
 use serde_json::json;
 
+use crate::contracts::known_bijux_tool;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
@@ -22,6 +23,27 @@ pub struct AppRunResult {
     pub stdout: String,
     /// Payload that should be written to stderr.
     pub stderr: String,
+}
+
+fn should_prevalidate_dev_cli_argv(argv: &[String]) -> bool {
+    if argv.get(1).map(String::as_str) != Some("dev") {
+        return false;
+    }
+
+    match argv.get(2).map(String::as_str) {
+        Some("cli") => true,
+        Some(namespace) => known_bijux_tool(namespace).is_none(),
+        None => false,
+    }
+}
+
+fn root_usage_help_text() -> Result<String> {
+    let help_argv = vec!["bijux".to_string(), "--help".to_string()];
+    if let Some(help) = help::try_render_clap_help(&help_argv) {
+        return Ok(help);
+    }
+
+    Ok(format!("{}\n", render_command_help(&[])?.trim_end()))
 }
 
 /// Execute the CLI for provided argv and return output streams and exit code.
@@ -47,16 +69,29 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
     }
 
+    let mut prevalidated_intent = None;
+    if should_prevalidate_dev_cli_argv(argv) {
+        let intent = parse_intent(argv)?;
+        if intent.normalized_path.is_empty() {
+            return Ok(AppRunResult {
+                exit_code: 2,
+                stdout: String::new(),
+                stderr: root_usage_help_text()?,
+            });
+        }
+        prevalidated_intent = Some(intent);
+    }
+
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
         return Ok(delegated);
     }
 
-    let intent = parse_intent(argv)?;
+    let intent = prevalidated_intent.unwrap_or(parse_intent(argv)?);
     if intent.normalized_path.is_empty() {
         return Ok(AppRunResult {
             exit_code: 2,
             stdout: String::new(),
-            stderr: format!("{}\n", render_command_help(&[])?.trim_end()),
+            stderr: root_usage_help_text()?,
         });
     }
 
