@@ -65,7 +65,9 @@ fn cli_flags_override_env_backed_values_and_config_path() {
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert_eq!(payload["value"], "from-env-value");
-    assert_eq!(payload["source_path"], arg_path.to_str().expect("utf-8"));
+    assert_eq!(payload["source"], "env");
+    assert_eq!(payload["source_env"], "BIJUXCLI_ALPHA");
+    assert!(payload["source_path"].is_null());
 }
 
 #[test]
@@ -92,6 +94,8 @@ fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
     assert_eq!(env_over_file.status.code(), Some(0));
     let env_payload: Value = serde_json::from_slice(&env_over_file.stdout).expect("json");
     assert_eq!(env_payload["value"], "from-env");
+    assert_eq!(env_payload["source"], "env");
+    assert!(env_payload["source_path"].is_null());
 
     let file_over_default = run(&[
         "cli",
@@ -107,6 +111,7 @@ fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
     assert_eq!(file_over_default.status.code(), Some(0));
     let file_payload: Value = serde_json::from_slice(&file_over_default.stdout).expect("json");
     assert_eq!(file_payload["value"], "from-file");
+    assert_eq!(file_payload["source"], "file");
 
     let missing_fallback = run(&[
         "config",
@@ -184,6 +189,7 @@ fn source_metadata_and_dev_cli_env_precedence_are_reported() {
     ]);
     assert_eq!(get.status.code(), Some(0));
     let get_payload: Value = serde_json::from_slice(&get.stdout).expect("json");
+    assert_eq!(get_payload["source"], "file");
     assert!(get_payload.get("source_path").is_some());
 
     let env = run_with_env(

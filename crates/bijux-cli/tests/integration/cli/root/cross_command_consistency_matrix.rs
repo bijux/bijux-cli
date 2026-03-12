@@ -130,6 +130,7 @@ fn config_get_and_dev_env_agree_on_source_precedence() {
         .stdout,
     );
 
+    assert_eq!(get["source"], "file");
     assert_eq!(get["source_path"], env["active"]["config_file"]);
     assert_eq!(env["source_precedence"], serde_json::json!(["flags", "env", "config", "defaults"]));
 }

@@ -96,19 +96,26 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
     fn get_value(&self, raw_key: &str) -> Result<Value, ConfigError> {
         let normalized_key = normalize_key(raw_key)?;
         let env_key = format!("BIJUXCLI_{}", normalized_key.to_ascii_uppercase());
-        let value = if let Ok(value) = std::env::var(&env_key) {
-            value
-        } else {
-            let values = self.load_map()?;
-            values
-                .get(&normalized_key)
-                .cloned()
-                .ok_or_else(|| ConfigError::not_found(format!("Config key not found: {raw_key}")))?
-        };
+        if let Ok(value) = std::env::var(&env_key) {
+            return Ok(json!({
+                "value": value,
+                "key": normalized_key,
+                "source": "env",
+                "source_env": env_key,
+                "source_path": serde_json::Value::Null,
+            }));
+        }
+
+        let values = self.load_map()?;
+        let value = values
+            .get(&normalized_key)
+            .cloned()
+            .ok_or_else(|| ConfigError::not_found(format!("Config key not found: {raw_key}")))?;
 
         Ok(json!({
             "value": value,
             "key": normalized_key,
+            "source": "file",
             "source_path": self.path_provider.config_path(),
         }))
     }

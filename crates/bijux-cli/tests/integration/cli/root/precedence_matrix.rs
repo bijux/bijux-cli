@@ -84,7 +84,8 @@ fn cli_flags_override_env_values() {
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
     assert_eq!(payload["value"], "env");
-    assert_eq!(payload["source_path"], config.to_str().expect("utf-8"));
+    assert_eq!(payload["source"], "env");
+    assert!(payload["source_path"].is_null());
 }
 
 #[test]
@@ -107,6 +108,7 @@ fn env_values_override_config_file_values() {
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
     assert_eq!(payload["value"], "env");
+    assert_eq!(payload["source"], "env");
 }
 
 #[test]
@@ -126,6 +128,7 @@ fn config_file_values_override_defaults() {
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
     assert_eq!(payload["value"], "config");
+    assert_eq!(payload["source"], "file");
 }
 
 #[test]
