@@ -2,12 +2,12 @@ Usage: bijux dev cli contracts [OPTIONS]
 
 Options:
       --all                 
-  -f, --format <FORMAT>     
+  -f, --format <FORMAT>     Output format: text, json, or yaml
       --kind <kind>         [possible values: generate, check, enforce, warn, run, status]
-  -q, --quiet               
-      --log-level <LEVEL>   
-      --color <MODE>        
-      --pretty              
-      --no-pretty           
-      --config-path <PATH>  
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
   -h, --help                Print help

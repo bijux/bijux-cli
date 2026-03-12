@@ -1,11 +1,11 @@
 Usage: bijux dev cli state-audit [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>     
-  -q, --quiet               
-      --log-level <LEVEL>   
-      --color <MODE>        
-      --pretty              
-      --no-pretty           
-      --config-path <PATH>  
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
   -h, --help                Print help
