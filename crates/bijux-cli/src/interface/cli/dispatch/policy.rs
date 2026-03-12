@@ -36,6 +36,8 @@ pub(super) fn classify_error_exit_code(message: &str) -> i32 {
         || message.contains("Missing parameter")
         || message.contains("Unsupported format")
         || message.contains("Failed to load config")
+        || message.contains("unknown route:")
+        || message.contains("plugin route execution is not implemented")
     {
         2
     } else if message.contains("Non-ASCII") || message.contains("Control characters") {

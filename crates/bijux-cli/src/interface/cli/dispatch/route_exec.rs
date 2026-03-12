@@ -4,6 +4,7 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::features::diagnostics::state_paths::resolve_state_paths;
+use crate::features::plugins::list_plugins;
 use crate::interface::cli::handlers::{
     cli as cli_handlers, config as config_handlers, history as history_handlers,
     memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
@@ -16,20 +17,25 @@ pub(super) fn route_response(
     argv: &[String],
     global_flags: &ParsedGlobalFlags,
 ) -> Result<Value> {
-    let mut registry = RouteRegistry::default();
-    let _ = registry.register_plugin_namespace("community");
-
-    let target = registry.resolve(normalized_path)?;
-    if matches!(target, RouteTarget::Plugin(_)) {
-        return Ok(json!({
-            "status": "ok",
-            "route": normalized_path.join(" "),
-            "owner": "plugin"
-        }));
-    }
-
     let paths = resolve_state_paths(global_flags)?;
     let plugin_registry_path = paths.plugin_registry_file.clone();
+
+    let mut registry = RouteRegistry::default();
+    let _ = registry.register_plugin_namespace("community");
+    if let Ok(installed_plugins) = list_plugins(&plugin_registry_path) {
+        for plugin in installed_plugins {
+            let namespace = plugin.manifest.namespace.0;
+            let _ = registry.register_plugin_namespace(&namespace);
+        }
+    }
+
+    let target = registry.resolve(normalized_path)?;
+    if let RouteTarget::Plugin(namespace) = target {
+        anyhow::bail!(
+            "plugin route execution is not implemented: namespace={namespace}, route={}",
+            normalized_path.join(" ")
+        );
+    }
 
     if let Some(payload) =
         config_handlers::execute_config_command(normalized_path, argv, &paths.config_file)?

@@ -132,9 +132,10 @@ fn installed_plugin_help_entrypoint_is_deterministic() {
     scaffold_and_install("python", "helpplug", &root, &plugins_dir);
 
     let out = run(&["helpplug", "--help"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown route: helpplug"));
+    assert!(String::from_utf8_lossy(&out.stderr)
+        .contains("plugin route execution is not implemented: namespace=helpplug"));
 }
 
 #[test]

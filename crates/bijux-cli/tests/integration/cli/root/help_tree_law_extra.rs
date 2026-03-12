@@ -196,7 +196,7 @@ fn no_color_root_help_and_grouped_help_are_stable() {
 fn unknown_command_suggestions_are_deterministic_and_namespace_scoped() {
     let first = run(&["sttaus", "--format", "json", "--no-pretty"]);
     let second = run(&["sttaus", "--format", "json", "--no-pretty"]);
-    assert_eq!(first.status.code(), Some(1));
+    assert_eq!(first.status.code(), Some(2));
     assert_eq!(first.stdout, second.stdout);
 
     let payload = parse_error_payload(&first);
@@ -204,7 +204,7 @@ fn unknown_command_suggestions_are_deterministic_and_namespace_scoped() {
     assert_eq!(payload["message"], "unknown route: sttaus");
 
     let namespaced = run(&["devv", "cli", "routes", "--format", "json", "--no-pretty"]);
-    assert_eq!(namespaced.status.code(), Some(1));
+    assert_eq!(namespaced.status.code(), Some(2));
     let err = parse_error_payload(&namespaced);
     assert_eq!(err["message"], "unknown route: devv");
 }
