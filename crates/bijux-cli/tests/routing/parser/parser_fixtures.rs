@@ -99,13 +99,8 @@ fn parser_flag_order_permutations_keep_same_result() {
         vec!["bijux", "--format", "json", "cli", "status", "--quiet"],
     ];
 
-    let baseline = parse_intent(
-        &variants[0]
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<_>>(),
-    )
-    .expect("baseline parse");
+    let baseline = parse_intent(&variants[0].iter().map(|x| x.to_string()).collect::<Vec<_>>())
+        .expect("baseline parse");
 
     for variant in variants.iter().skip(1) {
         let intent = parse_intent(&variant.iter().map(|x| x.to_string()).collect::<Vec<_>>())
@@ -168,10 +163,7 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
 fn hidden_compatibility_aliases_are_normalized() {
     let cases = [
         (vec!["bijux", "status"], vec!["status"]),
-        (
-            vec!["bijux", "plugins", "inspect"],
-            vec!["cli", "plugins", "inspect"],
-        ),
+        (vec!["bijux", "plugins", "inspect"], vec!["cli", "plugins", "inspect"]),
         (vec!["bijux", "dev", "doctor"], vec!["dev", "cli", "doctor"]),
     ];
 
