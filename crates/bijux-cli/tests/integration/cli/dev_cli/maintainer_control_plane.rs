@@ -85,8 +85,8 @@ fn required_maintainer_commands_emit_skimmable_text() {
         assert!(!text.trim().is_empty(), "text output empty for {command}");
         assert!(text.len() <= 2_000_000, "text output unexpectedly huge for {command}");
         assert!(
-            text.contains('{') || text.contains('['),
-            "text output should be structured for {command}"
+            text.lines().any(|line| line.contains(':')),
+            "text output should be key-value structured for {command}"
         );
     }
 }

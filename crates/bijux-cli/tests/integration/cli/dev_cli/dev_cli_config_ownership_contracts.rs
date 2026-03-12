@@ -65,8 +65,8 @@ fn config_ownership_text_outputs_are_non_empty_and_structured() {
         let text = String::from_utf8(out.stdout).expect("utf8");
         assert!(!text.trim().is_empty(), "text output empty for {command}");
         assert!(
-            text.contains('{') || text.contains('['),
-            "text output should remain structured for {command}"
+            text.lines().any(|line| line.contains(':')),
+            "text output should remain key-value structured for {command}"
         );
     }
 }
