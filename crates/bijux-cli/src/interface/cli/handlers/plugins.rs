@@ -18,42 +18,54 @@ pub(crate) fn try_handle(
     plugin_registry_path: &Path,
 ) -> Result<Option<Value>> {
     match normalized_path {
-        [a] if a == "plugins" => {
-            Ok(Some(plugin_operations::plugins_overview(plugin_registry_path, &paths.plugins_dir)))
-        }
+        [a] if a == "plugins" => Ok(Some(plugin_operations::plugins_overview(
+            plugin_registry_path,
+            &paths.plugins_dir,
+        ))),
         [a, b] if a == "plugins" && b == "info" => {
             Ok(Some(plugin_operations::plugins_info(plugin_registry_path)))
         }
-        [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
-            Ok(Some(plugin_operations::plugins_list(plugin_registry_path, &paths.plugins_dir)))
-        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "list" => Ok(Some(
+            plugin_operations::plugins_list(plugin_registry_path, &paths.plugins_dir),
+        )),
         [a, b, c] if a == "cli" && b == "plugins" && c == "info" => {
             Ok(Some(plugin_operations::plugins_info(plugin_registry_path)))
         }
-        [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
-            Ok(Some(plugin_operations::plugins_inspect(plugin_registry_path)))
-        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => Ok(Some(
+            plugin_operations::plugins_inspect(plugin_registry_path),
+        )),
         [a, b, c] if a == "cli" && b == "plugins" && c == "check" => {
-            let plugin =
-                command_positionals(argv, &["cli", "plugins", "check"])
-                    .first()
-                    .cloned()
-                    .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
-            Ok(Some(plugin_operations::check_plugin_health(plugin_registry_path, &plugin)?))
+            let plugin = command_positionals(argv, &["cli", "plugins", "check"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
+            Ok(Some(plugin_operations::check_plugin_health(
+                plugin_registry_path,
+                &plugin,
+            )?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
             let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
-            let kind = positional.first().cloned().unwrap_or_else(|| "python".to_string());
-            let namespace =
-                positional.get(1).cloned().unwrap_or_else(|| "sample-plugin".to_string());
+            let kind = positional
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "python".to_string());
+            let namespace = positional
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| "sample-plugin".to_string());
             let force = command_has_flag(argv, "--force");
             let target = command_option_value(argv, &["cli", "plugins", "scaffold"], "--path")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
-                    env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace)
+                    env::current_dir()
+                        .unwrap_or_else(|_| PathBuf::from("."))
+                        .join(&namespace)
                 });
 
-            Ok(Some(plugin_operations::scaffold_plugin(&kind, &namespace, force, &target)?))
+            Ok(Some(plugin_operations::scaffold_plugin(
+                &kind, &namespace, force, &target,
+            )?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "install" => {
             let manifest_arg = command_positionals(argv, &["cli", "plugins", "install"])
@@ -87,18 +99,24 @@ pub(crate) fn try_handle(
                 .first()
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
-            Ok(Some(plugin_operations::enable_plugin_namespace(plugin_registry_path, &namespace)?))
+            Ok(Some(plugin_operations::enable_plugin_namespace(
+                plugin_registry_path,
+                &namespace,
+            )?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "disable" => {
             let namespace = command_positionals(argv, &["cli", "plugins", "disable"])
                 .first()
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
-            Ok(Some(plugin_operations::disable_plugin_namespace(plugin_registry_path, &namespace)?))
+            Ok(Some(plugin_operations::disable_plugin_namespace(
+                plugin_registry_path,
+                &namespace,
+            )?))
         }
-        [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
-            Ok(Some(plugin_operations::plugin_doctor_report(plugin_registry_path)?))
-        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => Ok(Some(
+            plugin_operations::plugin_doctor_report(plugin_registry_path)?,
+        )),
         [a, b, c] if a == "cli" && b == "plugins" && c == "reserved-names" => {
             Ok(Some(plugin_operations::reserved_namespaces_report()))
         }
@@ -106,7 +124,9 @@ pub(crate) fn try_handle(
             plugin_operations::plugin_locations_report(&paths.plugins_dir, plugin_registry_path),
         )),
         [a, b, c] if a == "cli" && b == "plugins" && c == "explain" => {
-            let plugin = command_positionals(argv, &["cli", "plugins", "explain"]).first().cloned();
+            let plugin = command_positionals(argv, &["cli", "plugins", "explain"])
+                .first()
+                .cloned();
             Ok(Some(plugin_operations::explain_plugin_report(
                 plugin_registry_path,
                 plugin.as_deref(),
