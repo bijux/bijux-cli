@@ -9,9 +9,9 @@ High-value documents only. Everything else is supporting detail.
 - [Plugin state](plugin_state.md)
 
 ## Core Law
-- [Architecture index](10-architecture/index.md)
-- [Quality and change management](10-architecture/quality-and-change-management.md)
-- [Runtime and distribution](10-architecture/runtime-and-distribution.md)
+- [Architecture index](04-architecture/index.md)
+- [Quality and change management](04-architecture/quality-and-change-management.md)
+- [Runtime and distribution](04-architecture/runtime-and-distribution.md)
 - [Constitution index](constitution/index.md)
 
 ## Usage

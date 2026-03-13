@@ -58,4 +58,4 @@ output formats.
 
 - [REPL reference](../reference/repl.md)
 - [Commands reference](../reference/commands.md)
-- [Routing and surfaces architecture](../10-architecture/routing-and-surfaces.md)
+- [Routing and surfaces architecture](../04-architecture/routing-and-surfaces.md)

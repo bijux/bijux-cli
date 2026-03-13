@@ -60,6 +60,6 @@ claim that the current evidence supports shipping more than delaying.
 
 ## Where To Go Deeper
 
-- [Quality and change management](../10-architecture/quality-and-change-management.md)
-- [Runtime and distribution](../10-architecture/runtime-and-distribution.md)
+- [Quality and change management](../04-architecture/quality-and-change-management.md)
+- [Runtime and distribution](../04-architecture/runtime-and-distribution.md)
 - [Migrating from Python core](../MIGRATING_FROM_PYTHON_CORE.md)

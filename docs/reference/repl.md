@@ -39,6 +39,6 @@ REPL sessions expose diagnostics dump and startup budget checks for latency and 
 
 ## Related Pages
 
-- [Routing and surfaces architecture](../10-architecture/routing-and-surfaces.md)
-- [Execution pipeline](../10-architecture/execution-pipeline.md)
+- [Routing and surfaces architecture](../04-architecture/routing-and-surfaces.md)
+- [Execution pipeline](../04-architecture/execution-pipeline.md)
 - [Current Python behavior inventory](current-python/index.md)

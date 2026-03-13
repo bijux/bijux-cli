@@ -85,7 +85,7 @@ leaving ambiguous installs behind.
 
 ## Related Pages
 
-- [Architecture quality and change management](../10-architecture/quality-and-change-management.md)
+- [Architecture quality and change management](../04-architecture/quality-and-change-management.md)
 - [Exit codes](../reference/exit-codes.md)
 - [Environment and precedence inputs](../reference/environment.md)
 - [Plugin state](../plugin_state.md)

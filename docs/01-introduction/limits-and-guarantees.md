@@ -57,7 +57,7 @@ Use these sources, in this order:
 
 1. [Constitution index](../constitution/index.md)
 2. [Status and gaps](../KNOWN_GAPS.md)
-3. [Quality and change management](../10-architecture/quality-and-change-management.md)
+3. [Quality and change management](../04-architecture/quality-and-change-management.md)
 
 ## Closing Rule
 

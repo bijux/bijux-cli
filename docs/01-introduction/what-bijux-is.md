@@ -50,4 +50,4 @@ platform support beyond POSIX environments.
 
 - [First Run](first-run.md)
 - [Command Model](command-model.md)
-- [System Overview](../10-architecture/system-overview.md)
+- [System Overview](../04-architecture/system-overview.md)
