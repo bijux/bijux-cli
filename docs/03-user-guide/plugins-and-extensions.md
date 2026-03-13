@@ -32,6 +32,54 @@ bijux cli plugins uninstall NAMESPACE
 bijux cli plugins schema
 ```
 
+## Minimal Local Plugin Walkthrough
+
+Create a minimal local plugin directory:
+
+```bash
+mkdir -p ./my-plugin
+cat > ./my-plugin/plugin.manifest.json <<'JSON'
+{
+  "name": "my-plugin",
+  "version": "0.1.0",
+  "schema_version": "v2",
+  "manifest_version": "v2",
+  "compatibility": {
+    "min_inclusive": "0.2.1-dev",
+    "max_exclusive": "1.0.0"
+  },
+  "namespace": "my-plugin",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}
+JSON
+cat > ./my-plugin/plugin.py <<'PY'
+def main(argv: list[str]) -> dict[str, object]:
+    return {"status": "ok", "argv": argv}
+PY
+```
+
+Install, inspect, validate, and remove it:
+
+```bash
+bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins list
+bijux plugins inspect my-plugin
+bijux plugins check my-plugin
+bijux plugins explain my-plugin
+bijux plugins uninstall my-plugin
+```
+
+Expected shape:
+
+- `list` includes `my-plugin` after install
+- `inspect` shows manifest, source, and trust metadata
+- `check` verifies manifest validity and entrypoint presence
+- `explain` shows compatibility or load diagnostics
+- `list` no longer reports the namespace after uninstall
+
 ## Working Rule
 
 - install from the manifest file

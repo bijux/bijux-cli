@@ -35,6 +35,23 @@ bijux doctor
 bijux cli paths
 ```
 
+## Script-Safe Status Check
+
+For automation, use explicit machine-readable output:
+
+```bash
+bijux status --format json --no-pretty
+```
+
+Expected result:
+
+- valid JSON
+- exit code `0` on success
+- no styling noise mixed into the payload
+
+Scripts should pair structured output with exit-code checks rather than parsing
+human-readable text.
+
 ## When To Use Each One
 
 - `version` when you need to know which runtime you are actually invoking

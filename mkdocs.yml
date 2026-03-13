@@ -104,7 +104,9 @@ plugins:
         guides/python/runtime-migration.md: 06-reference/integrations-and-routed-runtimes.md
         getting-started/index.md: 02-getting-started/index.md
         getting-started/quickstart.md: 02-getting-started/run-your-first-commands.md
-        examples/index.md: examples/workflows.md
+        examples/index.md: 03-user-guide/everyday-commands.md
+        examples/workflows.md: 03-user-guide/everyday-commands.md
+        examples/plugins.md: 03-user-guide/plugins-and-extensions.md
         guides/hermetic-builds.md: 05-development/release-and-compatibility.md
         guides/reproducible-releases.md: 05-development/release-and-compatibility.md
         guides/release-checklist.md: 05-development/release-and-compatibility.md

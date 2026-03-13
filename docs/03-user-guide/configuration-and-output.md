@@ -55,6 +55,25 @@ bijux status --format yaml
 - use `json` for scripts and CI
 - check exit codes together with structured output
 
+## Precedence Example
+
+If more than one source defines a value, the runtime resolves it in a fixed
+order:
+
+```bash
+bijux cli config set format=yaml
+export BIJUXCLI_FORMAT=json
+bijux status --format yaml
+```
+
+Expected behavior:
+
+- the CLI flag wins over the environment
+- the environment wins over config
+- defaults apply only when no other source provides a value
+
+This is why explicit flags are the safest choice for automation and CI.
+
 ## Honest Limit
 
 Configuration helps control behavior, but it does not override unsupported
