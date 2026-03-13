@@ -69,16 +69,8 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             source: "dev cli parity".to_string(),
             proof_kind: "matrix".to_string(),
             artifact_links: vec![relative_to_root(&parity, workspace_root)],
-            freshness: if parity.exists() {
-                "fresh".to_string()
-            } else {
-                "stale".to_string()
-            },
-            status: if parity.exists() {
-                EvidenceStatus::Proven
-            } else {
-                EvidenceStatus::Blocked
-            },
+            freshness: if parity.exists() { "fresh".to_string() } else { "stale".to_string() },
+            status: if parity.exists() { EvidenceStatus::Proven } else { EvidenceStatus::Blocked },
             strength: EvidenceStrength::Strong,
         },
         EvidenceRecord {
@@ -131,10 +123,7 @@ fn records_json(workspace_root: &Path) -> Vec<Value> {
 
 fn artifacts_exist(record: &EvidenceRecord, workspace_root: &Path) -> bool {
     !record.artifact_links.is_empty()
-        && record
-            .artifact_links
-            .iter()
-            .all(|artifact| workspace_root.join(artifact).exists())
+        && record.artifact_links.iter().all(|artifact| workspace_root.join(artifact).exists())
 }
 
 fn audit_records(records: &[EvidenceRecord], workspace_root: &Path) -> Value {
@@ -175,9 +164,8 @@ pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
     }
 
     let records = records_json(workspace_root);
-    let record = records
-        .into_iter()
-        .find(|item| item.get("id").and_then(Value::as_str) == Some(id));
+    let record =
+        records.into_iter().find(|item| item.get("id").and_then(Value::as_str) == Some(id));
     json!({
         "record": record,
         "found": record.is_some(),
@@ -239,11 +227,7 @@ pub fn build_matrix_report(workspace_root: &Path) -> Value {
     let by_status = records_json(workspace_root).into_iter().fold(
         BTreeMap::<String, usize>::new(),
         |mut acc, row| {
-            let key = row
-                .get("status")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown")
-                .to_string();
+            let key = row.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
             *acc.entry(key).or_insert(0) += 1;
             acc
         },
@@ -285,10 +269,7 @@ pub fn build_command_map_report(workspace_root: &Path) -> Value {
         .iter()
         .map(|entry| {
             let command = entry.command.as_str().to_string();
-            let evidence_ids = mapping_by_command
-                .get(&command)
-                .cloned()
-                .unwrap_or_default();
+            let evidence_ids = mapping_by_command.get(&command).cloned().unwrap_or_default();
             let mapping_status = if evidence_ids.is_empty() {
                 unmapped += 1;
                 "unmapped"
@@ -319,11 +300,7 @@ pub fn build_parity_map_report(workspace_root: &Path) -> Value {
     let matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
     let matrix_state = json_artifact_state(&matrix).to_string();
-    let rows = matrix
-        .get("commands")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
     let mapping_by_command = evidence_ids_by_command(&evidence_records(workspace_root));
     let mut mapped_count = 0usize;
     let mut unmapped_count = 0usize;
@@ -337,10 +314,7 @@ pub fn build_parity_map_report(workspace_root: &Path) -> Value {
                 .unwrap_or("unknown")
                 .trim()
                 .to_string();
-            let evidence_ids = mapping_by_command
-                .get(&command)
-                .cloned()
-                .unwrap_or_default();
+            let evidence_ids = mapping_by_command.get(&command).cloned().unwrap_or_default();
             let mapping_status = if evidence_ids.is_empty() {
                 unmapped_count += 1;
                 "unmapped"
@@ -430,22 +404,14 @@ mod tests {
                 row.get("command").and_then(Value::as_str) == Some("dev cli package-health")
             })
             .expect("package health row");
-        assert_eq!(
-            package_health["evidence_ids"]
-                .as_array()
-                .map(|rows| rows.len()),
-            Some(1)
-        );
+        assert_eq!(package_health["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
     }
 
     #[test]
     fn parity_map_does_not_assign_blanket_evidence() {
         let root = std::env::temp_dir().join(format!(
             "bijux-evidence-parity-map-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         fs::write(
@@ -455,9 +421,7 @@ mod tests {
         .expect("write matrix");
 
         let parity_map = build_parity_map_report(&root);
-        let rows = parity_map["parity_map"]
-            .as_array()
-            .expect("parity map rows");
+        let rows = parity_map["parity_map"].as_array().expect("parity map rows");
         let unknown = rows
             .iter()
             .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli unknown"))
@@ -466,13 +430,7 @@ mod tests {
             .iter()
             .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli parity"))
             .expect("parity row");
-        assert_eq!(
-            unknown["evidence_ids"].as_array().map(|rows| rows.len()),
-            Some(0)
-        );
-        assert_eq!(
-            parity["evidence_ids"].as_array().map(|rows| rows.len()),
-            Some(1)
-        );
+        assert_eq!(unknown["evidence_ids"].as_array().map(|rows| rows.len()), Some(0));
+        assert_eq!(parity["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
     }
 }

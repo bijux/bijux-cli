@@ -58,10 +58,8 @@ impl StatusContractSpec {
     #[must_use]
     pub fn from_row(row: &Value) -> Option<Self> {
         let contract_id = row.get("contract_id")?.as_str()?.to_string();
-        let kind = row
-            .get("kind")
-            .and_then(Value::as_str)
-            .and_then(StatusContractKind::from_str)?;
+        let kind =
+            row.get("kind").and_then(Value::as_str).and_then(StatusContractKind::from_str)?;
         let source_ref = row
             .get("source_ref")
             .and_then(Value::as_str)
@@ -86,14 +84,7 @@ impl StatusContractSpec {
             .map(str::trim)
             .filter(|value| !value.is_empty())?
             .to_string();
-        Some(Self {
-            contract_id,
-            kind,
-            source_ref,
-            implementation,
-            outputs,
-            command,
-        })
+        Some(Self { contract_id, kind, source_ref, implementation, outputs, command })
     }
 
     /// Convert specification back to inventory row payload.

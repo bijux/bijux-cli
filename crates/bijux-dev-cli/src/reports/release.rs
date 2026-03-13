@@ -28,9 +28,7 @@ fn with_artifact_integrity(mut payload: Value, key: &str, state: &str) -> Value 
         });
     }
     if let Some(obj) = payload.as_object_mut() {
-        let mut integrity = obj
-            .remove("artifact_integrity")
-            .unwrap_or_else(|| json!({}));
+        let mut integrity = obj.remove("artifact_integrity").unwrap_or_else(|| json!({}));
         if !integrity.is_object() {
             integrity = json!({});
         }
@@ -94,10 +92,7 @@ pub fn build_evidence_report(workspace_root: &Path) -> Value {
 pub fn build_readiness_report(workspace_root: &Path) -> Value {
     let manifest =
         read_json_if_exists(&workspace_root.join("artifacts/status/release_status_manifest.json"));
-    let status = manifest
-        .get("status")
-        .and_then(Value::as_str)
-        .unwrap_or("blocked");
+    let status = manifest.get("status").and_then(Value::as_str).unwrap_or("blocked");
     let checks = manifest.get("checks").cloned().unwrap_or_else(|| json!({}));
     let manifest_state = json_artifact_state(&manifest).to_string();
     json!({

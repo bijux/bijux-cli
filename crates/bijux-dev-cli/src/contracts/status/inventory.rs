@@ -43,17 +43,13 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
     let rows: Vec<Value> = specs
         .into_iter()
         .map(|spec| {
-            *kind_counts
-                .entry(spec.kind.as_str().to_string())
-                .or_insert(0) += 1;
+            *kind_counts.entry(spec.kind.as_str().to_string()).or_insert(0) += 1;
             let output_artifacts = output_artifact_rows(workspace_root, &spec.outputs);
             let missing_output_paths: Vec<String> = output_artifacts
                 .iter()
                 .filter(|item| item.get("exists") != Some(&Value::Bool(true)))
                 .filter_map(|item| {
-                    item.get("path")
-                        .and_then(Value::as_str)
-                        .map(ToString::to_string)
+                    item.get("path").and_then(Value::as_str).map(ToString::to_string)
                 })
                 .collect();
             let has_missing_outputs = !missing_output_paths.is_empty();
@@ -64,18 +60,9 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
                 .count();
             let mut row = spec.to_row();
             if let Some(obj) = row.as_object_mut() {
-                obj.insert(
-                    "output_artifacts".to_string(),
-                    Value::Array(output_artifacts),
-                );
-                obj.insert(
-                    "missing_output_paths".to_string(),
-                    json!(missing_output_paths),
-                );
-                obj.insert(
-                    "workspace_outputs_ready".to_string(),
-                    json!(!has_missing_outputs),
-                );
+                obj.insert("output_artifacts".to_string(), Value::Array(output_artifacts));
+                obj.insert("missing_output_paths".to_string(), json!(missing_output_paths));
+                obj.insert("workspace_outputs_ready".to_string(), json!(!has_missing_outputs));
             }
             row
         })

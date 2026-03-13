@@ -200,10 +200,7 @@ mod tests {
         assert_eq!(payload["status"], "ok");
         assert_eq!(payload["integrity_status"], "ok");
         assert_eq!(payload["plugins"].as_array().map(Vec::len), Some(1));
-        assert_eq!(
-            payload["integrity_issues"].as_array().map(Vec::len),
-            Some(0)
-        );
+        assert_eq!(payload["integrity_issues"].as_array().map(Vec::len), Some(0));
     }
 
     #[test]
@@ -219,9 +216,6 @@ mod tests {
         assert_eq!(payload["status"], "degraded");
         assert_eq!(payload["integrity_status"], "degraded");
         assert_eq!(payload["plugins"].as_array().map(Vec::len), Some(1));
-        assert_eq!(
-            payload["integrity_issues"].as_array().map(Vec::len),
-            Some(1)
-        );
+        assert_eq!(payload["integrity_issues"].as_array().map(Vec::len), Some(1));
     }
 }

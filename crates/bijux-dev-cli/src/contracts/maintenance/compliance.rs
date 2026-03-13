@@ -64,12 +64,7 @@ fn required_non_empty_string(
     row_index: usize,
     issues: &mut Vec<Value>,
 ) -> Option<String> {
-    match row
-        .get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
+    match row.get(key).and_then(Value::as_str).map(str::trim).filter(|value| !value.is_empty()) {
         Some(value) => Some(value.to_string()),
         None => {
             issues.push(json!({
@@ -104,11 +99,7 @@ fn required_string_array(
 
     let mut out = Vec::new();
     for (index, value) in values.iter().enumerate() {
-        let Some(as_str) = value
-            .as_str()
-            .map(str::trim)
-            .filter(|item| !item.is_empty())
-        else {
+        let Some(as_str) = value.as_str().map(str::trim).filter(|item| !item.is_empty()) else {
             issues.push(json!({
                 "source": source,
                 "row_index": row_index + 1,
@@ -154,11 +145,7 @@ fn build_requirement_catalog(workspace_root: &Path) -> Value {
     let status_report = build_status_contracts_report(workspace_root);
     let generator_report = build_generators_report(workspace_root);
     let status_rows = report_rows(&status_report, "status-contracts", &mut integrity_issues);
-    let generator_rows = report_rows(
-        &generator_report,
-        "status-generators",
-        &mut integrity_issues,
-    );
+    let generator_rows = report_rows(&generator_report, "status-generators", &mut integrity_issues);
 
     let mut rows = Vec::<Value>::new();
     for (index, row) in status_rows.iter().enumerate() {
@@ -198,13 +185,9 @@ fn build_requirement_catalog(workspace_root: &Path) -> Value {
         ) else {
             continue;
         };
-        let Some(outputs) = required_string_array(
-            row,
-            "outputs",
-            "status-contracts",
-            index,
-            &mut integrity_issues,
-        ) else {
+        let Some(outputs) =
+            required_string_array(row, "outputs", "status-contracts", index, &mut integrity_issues)
+        else {
             continue;
         };
         rows.push(json!({
@@ -301,12 +284,8 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     let mut scan_errors = Vec::<Value>::new();
     for path in collect_files(&workspace_root.join("crates")) {
         if path.extension().is_none_or(|ext| ext != "rs")
-            || !path
-                .components()
-                .any(|segment| segment.as_os_str() == "tests")
-            || path
-                .components()
-                .any(|segment| segment.as_os_str() == "target")
+            || !path.components().any(|segment| segment.as_os_str() == "tests")
+            || path.components().any(|segment| segment.as_os_str() == "target")
         {
             continue;
         }
@@ -358,10 +337,8 @@ pub fn build_migrated_report(workspace_root: &Path) -> Value {
     let migrated: Vec<Value> = controls
         .iter()
         .map(|control| {
-            let from = control
-                .get("from")
-                .and_then(Value::as_str)
-                .expect("migration control `from`");
+            let from =
+                control.get("from").and_then(Value::as_str).expect("migration control `from`");
             let to = control
                 .get("replacement")
                 .and_then(Value::as_str)
@@ -384,10 +361,8 @@ pub fn build_migrated_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
-    let removed = controls
-        .iter()
-        .filter(|row| row.get("status") == Some(&json!("removed")))
-        .count();
+    let removed =
+        controls.iter().filter(|row| row.get("status") == Some(&json!("removed"))).count();
 
     json!({
         "generated_at_utc": generated_at_utc(),
@@ -413,10 +388,7 @@ pub fn build_remaining_report(workspace_root: &Path) -> Value {
 
     let root_maintenance: Vec<String> = collect_files(&workspace_root.join("maintenance"))
         .into_iter()
-        .filter(|p| {
-            p.parent()
-                .is_some_and(|parent| parent.ends_with("maintenance"))
-        })
+        .filter(|p| p.parent().is_some_and(|parent| parent.ends_with("maintenance")))
         .map(|p| rel(&p, workspace_root))
         .collect();
 
@@ -458,20 +430,16 @@ pub fn build_diff_report(workspace_root: &Path) -> Value {
         None => Vec::new(),
     };
 
-    let remaining_controls: BTreeSet<String> = match remaining
-        .get("migration_controls_remaining")
-        .and_then(Value::as_array)
-    {
-        Some(rows) => rows
-            .iter()
-            .filter_map(|row| {
-                row.get("control_id")
-                    .and_then(Value::as_str)
-                    .map(ToString::to_string)
-            })
-            .collect(),
-        None => BTreeSet::new(),
-    };
+    let remaining_controls: BTreeSet<String> =
+        match remaining.get("migration_controls_remaining").and_then(Value::as_array) {
+            Some(rows) => rows
+                .iter()
+                .filter_map(|row| {
+                    row.get("control_id").and_then(Value::as_str).map(ToString::to_string)
+                })
+                .collect(),
+            None => BTreeSet::new(),
+        };
 
     json!({
         "generated_at_utc": generated_at_utc(),

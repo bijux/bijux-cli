@@ -93,21 +93,13 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let (parsed, parse_error) = match fs::read_to_string(&path) {
         Ok(text) => match serde_json::from_str::<Value>(&text) {
             Ok(parsed) => (Some(parsed), None),
-            Err(error) => (
-                None,
-                Some(format!(
-                    "audit report is invalid JSON at {}: {error}",
-                    path.display()
-                )),
-            ),
+            Err(error) => {
+                (None, Some(format!("audit report is invalid JSON at {}: {error}", path.display())))
+            }
         },
-        Err(error) => (
-            None,
-            Some(format!(
-                "failed to read audit report at {}: {error}",
-                path.display()
-            )),
-        ),
+        Err(error) => {
+            (None, Some(format!("failed to read audit report at {}: {error}", path.display())))
+        }
     };
     let Some(parsed) = parsed else {
         return json!({
@@ -332,10 +324,7 @@ pub(crate) fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 pub(crate) fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 pub(crate) fn parse_make_targets(path: &Path) -> Vec<String> {
@@ -377,15 +366,7 @@ pub(crate) fn status_slug_for_name(value: &str) -> String {
         }
     }
     let mut cleaned = slug.trim_matches('-').to_string();
-    for suffix in [
-        "-report",
-        "-audit",
-        "-baseline",
-        "-guide",
-        "-rules",
-        "-law",
-        "-status",
-    ] {
+    for suffix in ["-report", "-audit", "-baseline", "-guide", "-rules", "-law", "-status"] {
         if cleaned.ends_with(suffix) {
             cleaned.truncate(cleaned.len().saturating_sub(suffix.len()));
         }
@@ -422,10 +403,7 @@ pub(crate) fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Val
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "command failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -444,14 +422,9 @@ pub(crate) fn run_bijux_json_env(
     for (key, value) in envs {
         cmd.env(key, value);
     }
-    let output = cmd
-        .output()
-        .map_err(|err| format!("failed to run bijux command: {err}"))?;
+    let output = cmd.output().map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "command failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -466,10 +439,7 @@ pub(crate) fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<Str
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "command failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
