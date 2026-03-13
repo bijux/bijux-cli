@@ -152,12 +152,13 @@ plugins:
         constitution/PLUGIN_SANDBOXING_POLICY.md: 07-contracts/plugin-contracts.md
         constitution/BINARY_OWNERSHIP_AND_INSTALL_POLICY.md: 07-contracts/distribution-and-ownership.md
         constitution/PYTHON_DISTRIBUTION_POLICY.md: 07-contracts/distribution-and-ownership.md
-        concepts/architecture.md: concepts/index.md
-        concepts/execution-model.md: concepts/index.md
-        concepts/exit-policy.md: concepts/index.md
-        concepts/logging.md: concepts/index.md
-        concepts/plugin-lifecycle.md: concepts/index.md
-        concepts/precedence.md: concepts/index.md
+        concepts/index.md: 01-introduction/command-model.md
+        concepts/architecture.md: 01-introduction/command-model.md
+        concepts/execution-model.md: 01-introduction/command-model.md
+        concepts/exit-policy.md: 07-contracts/interface-and-compatibility.md
+        concepts/logging.md: 07-contracts/output-and-stream-contracts.md
+        concepts/plugin-lifecycle.md: 07-contracts/plugin-contracts.md
+        concepts/precedence.md: 06-reference/state-and-environment.md
         architecture/index.md: 04-architecture/index.md
         architecture/walkthrough.md: 04-architecture/system-overview.md
         architecture/crate_boundaries.md: 04-architecture/workspace-map.md
