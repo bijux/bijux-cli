@@ -173,6 +173,27 @@ fn ensure_aliases_do_not_conflict(
     Ok(())
 }
 
+fn resolve_namespace_reference(
+    registry: &PluginRegistry,
+    reference: &str,
+) -> Result<String, PluginError> {
+    let normalized = reference.to_ascii_lowercase();
+    if let Some((namespace, _)) =
+        registry.plugins.iter().find(|(namespace, _)| namespace.to_ascii_lowercase() == normalized)
+    {
+        return Ok(namespace.clone());
+    }
+
+    registry
+        .plugins
+        .iter()
+        .find(|(_, record)| {
+            record.manifest.aliases.iter().any(|alias| alias.to_ascii_lowercase() == normalized)
+        })
+        .map(|(namespace, _)| namespace.clone())
+        .ok_or_else(|| PluginError::PluginNotFound(reference.to_string()))
+}
+
 fn validate_local_entrypoint(record: &PluginRecord) -> Result<(), PluginError> {
     match record.manifest.kind {
         PluginKind::Delegated | PluginKind::Python => {
@@ -264,7 +285,8 @@ pub fn install_plugin(
 /// Remove plugin from registry.
 pub fn uninstall_plugin(registry_path: &Path, namespace: &str) -> Result<(), PluginError> {
     update_registry(registry_path, |registry| {
-        if registry.plugins.remove(namespace).is_none() {
+        let resolved = resolve_namespace_reference(registry, namespace)?;
+        if registry.plugins.remove(&resolved).is_none() {
             return Err(PluginError::PluginNotFound(namespace.to_string()));
         }
         Ok(())
@@ -280,9 +302,10 @@ fn set_plugin_state(
     let mut updated: Option<PluginRecord> = None;
 
     update_registry(registry_path, |registry| {
+        let resolved = resolve_namespace_reference(registry, namespace)?;
         let plugin = registry
             .plugins
-            .get_mut(namespace)
+            .get_mut(&resolved)
             .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
         if state == crate::contracts::PluginLifecycleState::Enabled
             && plugin.state == crate::contracts::PluginLifecycleState::Broken
@@ -310,9 +333,10 @@ pub fn disable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRec
 /// Inspect plugin by namespace.
 pub fn inspect_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
     let registry = load_registry(registry_path)?;
+    let resolved = resolve_namespace_reference(&registry, namespace)?;
     registry
         .plugins
-        .get(namespace)
+        .get(&resolved)
         .cloned()
         .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))
 }

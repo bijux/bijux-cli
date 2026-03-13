@@ -275,7 +275,7 @@ pub fn root_command() -> Command {
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
         .subcommand(Command::new("info"))
-        .subcommand(Command::new("inspect"))
+        .subcommand(Command::new("inspect").arg(Arg::new("plugin").num_args(1)))
         .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)))
         .subcommand(Command::new("enable").arg(Arg::new("plugin").num_args(1)))
         .subcommand(Command::new("disable").arg(Arg::new("plugin").num_args(1)))
@@ -289,13 +289,18 @@ pub fn root_command() -> Command {
                         .value_name("LABEL")
                         .help("Override the displayed provenance label without changing local manifest resolution"),
                 )
-                .arg(Arg::new("trust").long("trust").num_args(1)),
+                .arg(
+                    Arg::new("trust")
+                        .long("trust")
+                        .num_args(1)
+                        .value_parser(["core", "verified", "community", "unknown"]),
+                ),
         )
         .subcommand(Command::new("uninstall").arg(Arg::new("namespace").num_args(1)))
         .subcommand(
             Command::new("scaffold")
-                .arg(Arg::new("kind").num_args(1))
-                .arg(Arg::new("namespace").num_args(1))
+                .arg(Arg::new("kind").num_args(1).required(true))
+                .arg(Arg::new("namespace").num_args(1).required(true))
                 .arg(Arg::new("path").long("path").num_args(1))
                 .arg(Arg::new("force").long("force").action(ArgAction::SetTrue)),
         )

@@ -37,6 +37,15 @@ fn manifest_file(scaffold_dir: &Path) -> PathBuf {
     scaffold_dir.join("plugin.manifest.json")
 }
 
+fn add_alias(manifest_path: &Path, alias: &str) {
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).expect("read manifest"))
+            .expect("parse manifest");
+    manifest["aliases"] = Value::Array(vec![Value::String(alias.to_string())]);
+    fs::write(manifest_path, serde_json::to_string_pretty(&manifest).expect("serialize manifest"))
+        .expect("write manifest");
+}
+
 #[test]
 fn python_scaffold_install_list_inspect_uninstall_flow() {
     let root = tmp_dir("python-flow");
@@ -173,6 +182,117 @@ fn local_install_keeps_manifest_anchor_when_source_label_is_overridden() {
 
     let explain = run_ok_json(&["cli", "plugins", "explain", "labelplug"], &plugins_dir);
     assert!(explain["diagnostics"].as_array().is_some_and(|rows| rows.is_empty()));
+}
+
+#[test]
+fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
+    let root = tmp_dir("alias-commands");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "aliasplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    add_alias(&manifest_file(&scaffold_dir), "alias-short");
+
+    run_ok_json(
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+
+    let inspect = run_ok_json(&["cli", "plugins", "inspect", "alias-short"], &plugins_dir);
+    let plugins = inspect["plugins"].as_array().expect("plugins array");
+    assert_eq!(plugins.len(), 1);
+    assert_eq!(plugins[0]["manifest"]["namespace"], "aliasplug");
+
+    let check = run_ok_json(&["cli", "plugins", "check", "alias-short"], &plugins_dir);
+    assert_eq!(check["plugin"], "alias-short");
+
+    let disable = run_ok_json(&["cli", "plugins", "disable", "alias-short"], &plugins_dir);
+    assert_eq!(disable["status"], "disabled");
+
+    let enable = run_ok_json(&["cli", "plugins", "enable", "alias-short"], &plugins_dir);
+    assert_eq!(enable["status"], "enabled");
+
+    let uninstall = run_ok_json(&["cli", "plugins", "uninstall", "alias-short"], &plugins_dir);
+    assert_eq!(uninstall["status"], "uninstalled");
+    assert_eq!(uninstall["namespace"], "alias-short");
+}
+
+#[test]
+fn explain_rejects_unknown_plugin_reference() {
+    let root = tmp_dir("explain-missing");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let out = run(&["cli", "plugins", "explain", "missing-plugin"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("plugin not found"));
+}
+
+#[test]
+fn install_rejects_unknown_trust_level() {
+    let root = tmp_dir("invalid-trust");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "trustplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+            "--trust",
+            "friends-only",
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("invalid value 'friends-only'"));
+    assert!(stderr.contains("[possible values: core, verified, community, unknown]"));
+}
+
+#[test]
+fn scaffold_requires_kind_and_namespace_arguments() {
+    let root = tmp_dir("scaffold-required-args");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let missing_kind = run(&["cli", "plugins", "scaffold"], &plugins_dir);
+    assert_eq!(missing_kind.status.code(), Some(2));
+    let missing_kind_stderr = String::from_utf8_lossy(&missing_kind.stderr);
+    assert!(missing_kind_stderr.contains("the following required arguments were not provided"));
+    assert!(missing_kind_stderr.contains("<kind>"));
+    assert!(missing_kind_stderr.contains("<namespace>"));
+
+    let missing_namespace = run(&["cli", "plugins", "scaffold", "python"], &plugins_dir);
+    assert_eq!(missing_namespace.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&missing_namespace.stderr).contains("<namespace>"));
 }
 
 #[test]

@@ -31,7 +31,8 @@ pub(crate) fn try_handle(
             Ok(Some(plugin_operations::plugins_info(plugin_registry_path)))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
-            Ok(Some(plugin_operations::plugins_inspect(plugin_registry_path)))
+            let plugin = command_positionals(argv, &["cli", "plugins", "inspect"]).first().cloned();
+            Ok(Some(plugin_operations::plugins_inspect(plugin_registry_path, plugin.as_deref())?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "check" => {
             let plugin =
@@ -43,9 +44,14 @@ pub(crate) fn try_handle(
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
             let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
-            let kind = positional.first().cloned().unwrap_or_else(|| "python".to_string());
-            let namespace =
-                positional.get(1).cloned().unwrap_or_else(|| "sample-plugin".to_string());
+            let kind = positional
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin kind required"))?;
+            let namespace = positional
+                .get(1)
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin namespace required"))?;
             let force = command_has_flag(argv, "--force");
             let target = command_option_value(argv, &["cli", "plugins", "scaffold"], "--path")
                 .map(PathBuf::from)
@@ -74,7 +80,7 @@ pub(crate) fn try_handle(
                 plugin_registry_path,
                 &manifest_path,
                 Some(&source),
-                parse_trust_level(trust.as_deref()),
+                parse_trust_level(trust.as_deref())?,
             )?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "uninstall" => {
@@ -115,7 +121,7 @@ pub(crate) fn try_handle(
             Ok(Some(plugin_operations::explain_plugin_report(
                 plugin_registry_path,
                 plugin.as_deref(),
-            )))
+            )?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "schema" => {
             Ok(Some(plugin_operations::plugin_schema_report()))
@@ -124,11 +130,14 @@ pub(crate) fn try_handle(
     }
 }
 
-fn parse_trust_level(raw: Option<&str>) -> PluginTrustLevel {
+fn parse_trust_level(raw: Option<&str>) -> Result<PluginTrustLevel> {
     match raw.unwrap_or("community") {
-        "core" => PluginTrustLevel::Core,
-        "verified" => PluginTrustLevel::Verified,
-        "unknown" => PluginTrustLevel::Unknown,
-        _ => PluginTrustLevel::Community,
+        "core" => Ok(PluginTrustLevel::Core),
+        "verified" => Ok(PluginTrustLevel::Verified),
+        "community" => Ok(PluginTrustLevel::Community),
+        "unknown" => Ok(PluginTrustLevel::Unknown),
+        invalid => Err(anyhow::anyhow!(
+            "Invalid argument: trust level must be one of: core, verified, community, unknown; got {invalid}"
+        )),
     }
 }
