@@ -92,8 +92,9 @@ pub(super) fn try_handle(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
             let root = workspace_root();
-            let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
-            dev_package_health::build_report(state)
+            let runtime_identity =
+                dev_runtime_identity::build_report(runtime.runtime_identity_input());
+            dev_package_health::build_report(&root, runtime_identity)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "env" => {
             dev_env::build_report(runtime.env_map(), &runtime.active_paths())

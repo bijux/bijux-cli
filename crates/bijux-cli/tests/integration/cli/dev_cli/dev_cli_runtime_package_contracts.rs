@@ -211,6 +211,19 @@ fn package_health_reports_python_runtime_relevance_and_assumptions() {
             .is_some_and(|rows| !rows.is_empty()),
         "install assumptions should be present"
     );
+    assert!(
+        payload["package_entrypoints"].as_array().is_some_and(|rows| rows.iter().any(|row| {
+            row["channel"] == "pip"
+                && row["package"] == "bijux-cli"
+                && row["entrypoint"] == "bijux"
+                && row["target"] == "bijux_cli_py.cli:main"
+        })),
+        "package health should report the live python console script target"
+    );
+    assert_eq!(
+        payload["runtime_identity_rules"]["python_package_points_users_to_bijux"],
+        true
+    );
 }
 
 #[test]
