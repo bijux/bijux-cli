@@ -1,42 +1,7 @@
 //! Help rendering interception for clap-managed output.
 
-use crate::interface::cli::help::decorate_help_text;
+use crate::interface::cli::help::{decorate_help_text, normalize_help_whitespace};
 use crate::interface::cli::parser::root_command;
-
-fn normalize_help_whitespace(raw: &str) -> String {
-    let mut normalized = String::new();
-    let mut previous_blank = false;
-    let mut in_options_section = false;
-
-    for line in raw.lines() {
-        let trimmed = line.trim_end();
-        let blank_line = trimmed.trim().is_empty();
-        let section_header = !trimmed.starts_with(' ') && trimmed.ends_with(':');
-        if trimmed == "Options:" {
-            in_options_section = true;
-        } else if in_options_section && section_header {
-            in_options_section = false;
-        }
-
-        if blank_line {
-            if in_options_section {
-                continue;
-            }
-            if previous_blank {
-                continue;
-            }
-            previous_blank = true;
-            normalized.push('\n');
-            continue;
-        }
-
-        previous_blank = false;
-        normalized.push_str(trimmed);
-        normalized.push('\n');
-    }
-
-    normalized
-}
 
 fn is_known_help_global_flag(token: &str) -> bool {
     matches!(
@@ -57,6 +22,30 @@ fn canonical_help_flag_name(token: &str) -> &'static str {
         "--config-path" => "--config-path",
         _ => unreachable!("canonical_help_flag_name called with unsupported token"),
     }
+}
+
+fn validate_help_flag_value(flag: &'static str, value: &str) -> std::result::Result<(), String> {
+    let valid = match flag {
+        "--format" => matches!(value, "json" | "yaml" | "text"),
+        "--log-level" => {
+            matches!(value, "trace" | "debug" | "info" | "warning" | "error" | "critical")
+        }
+        "--color" => matches!(value, "auto" | "always" | "never"),
+        "--config-path" => true,
+        _ => false,
+    };
+    if valid {
+        return Ok(());
+    }
+
+    let message = match flag {
+        "--format" => format!("invalid format: {value}"),
+        "--log-level" => format!("invalid log level: {value}"),
+        "--color" => format!("invalid color mode: {value}"),
+        "--config-path" => format!("invalid config path: {value}"),
+        _ => format!("invalid value for {flag}: {value}"),
+    };
+    Err(message)
 }
 
 fn parse_help_flag_with_equals(token: &str) -> Option<(&'static str, &str)> {
@@ -84,6 +73,7 @@ pub(super) fn parse_help_path_tokens(
             if token == "--" {
                 return Err(format!("Missing value for {flag}"));
             }
+            validate_help_flag_value(flag, token)?;
             continue;
         }
 
@@ -102,6 +92,7 @@ pub(super) fn parse_help_path_tokens(
                 if value.is_empty() {
                     return Err(format!("Missing value for {flag}"));
                 }
+                validate_help_flag_value(flag, value)?;
                 continue;
             }
             if help_global_flag_takes_value(token) {
@@ -219,5 +210,17 @@ mod tests {
     fn parse_help_path_tokens_rejects_empty_equals_values() {
         let parsed = parse_help_path_tokens(&vec_of(&["--format="]), false);
         assert_eq!(parsed, Err("Missing value for --format".to_string()));
+    }
+
+    #[test]
+    fn parse_help_path_tokens_rejects_invalid_flag_values() {
+        let format = parse_help_path_tokens(&vec_of(&["--format", "toml"]), false);
+        assert_eq!(format, Err("invalid format: toml".to_string()));
+
+        let color = parse_help_path_tokens(&vec_of(&["--color=rainbow"]), false);
+        assert_eq!(color, Err("invalid color mode: rainbow".to_string()));
+
+        let level = parse_help_path_tokens(&vec_of(&["--log-level", "verbose"]), false);
+        assert_eq!(level, Err("invalid log level: verbose".to_string()));
     }
 }
