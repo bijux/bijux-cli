@@ -1,6 +1,6 @@
-# Root make defaults, shared environment, and user-facing core targets.
+# Root make defaults, shared environment, and user-facing targets.
 
-# Core config
+# Core configuration.
 .DELETE_ON_ERROR:
 .DEFAULT_GOAL         := all
 .SHELLFLAGS           := -eu -o pipefail -c
@@ -34,7 +34,7 @@ $(VENV):
 	  $(PYTHON) -m venv $(VENV); \
 	fi
 
-install: $(VENV) ## Install project in editable mode into artifact-scoped virtualenv
+install: $(VENV) ## Install the project into the artifact-scoped virtualenv
 	@if [ -x "$(VENV_PYTHON)" ] && ! "$(VENV_PYTHON)" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \
 	  echo "→ Recreating $(VENV) with Python >=3.11"; \
 	  $(RM) "$(VENV)"; \
@@ -44,10 +44,10 @@ install: $(VENV) ## Install project in editable mode into artifact-scoped virtua
 	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
 	@$(VENV_PYTHON) -m pip install -e "$(PYTHON_EDITABLE_SPEC)"
 
-bootstrap: install ## Setup environment
+bootstrap: install ## Prepare the local development environment
 .PHONY: bootstrap
 
-clean: ## Remove virtualenv, caches, build, and artifacts
+clean: ## Remove the virtualenv, caches, build outputs, and artifacts
 	@$(MAKE) clean-soft
 	@echo "→ Cleaning ($(VENV)) ..."
 	@if [ -d "$(VENV)" ]; then \
@@ -63,7 +63,7 @@ clean: ## Remove virtualenv, caches, build, and artifacts
 	fi
 	@$(RM) .venv .venv*/
 
-clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
+clean-soft: ## Remove generated outputs and keep the artifact-scoped virtualenv
 	@echo "→ Cleaning (keeping $(VENV)) ..."
 	@$(RM) \
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info demo .tmp_home \
@@ -81,31 +81,31 @@ clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
 	fi
 	@find . -path "./$(VENV)" -prune -o -type d -name '__pycache__' -exec $(RM) {} +
 
-all: fmt lint security test build ## Run quality gates and build artifacts
+all: fmt lint security test build ## Run quality checks and build distributions
 	@echo "✔ All targets completed"
 
 fmt: fmt-rs fmt-py ## Run Rust and Python formatters
 lint: lint-rs lint-py ## Run Rust and Python lint checks
 test: test-rs test-py ## Run Rust and Python test suites
 security: audit-rs security-py ## Run Rust and Python security checks
-build: build-py ## Build Python distribution artifacts
+build: build-py ## Build Python distribution packages
 .PHONY: fmt
 
 fmt lint test security docs build: | bootstrap
 
-dev-cli-status: ## Show maintainer status report via bijux dev cli
+dev-cli-status: ## Show the maintainer status report
 	@mkdir -p "$(PROFRAW_DIR)"
 	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli status --text
 
-dev-cli-crate-health: ## Show crate health and duplication report via bijux dev cli
+dev-cli-crate-health: ## Show the maintainer crate health report
 	@mkdir -p "$(PROFRAW_DIR)"
 	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli crate-health --text
 
-dev-cli-parity: ## Show parity summary via bijux dev cli
+dev-cli-parity: ## Show the maintainer parity report
 	@mkdir -p "$(PROFRAW_DIR)"
 	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
 
-env: ## Show the effective core make environment
+env: ## Show the effective make environment
 	@printf '%s\n' \
 	  "PYTHON=$(PYTHON)" \
 	  "VENV=$(VENV)" \
@@ -114,7 +114,7 @@ env: ## Show the effective core make environment
 	  "BIJUX_RUNTIME_BIN=$(BIJUX_RUNTIME_BIN)" \
 	  "PYTHON_EDITABLE_SPEC=$(PYTHON_EDITABLE_SPEC)"
 
-help: ## Show this help
+help: ## Show the available targets
 	@awk 'BEGIN{FS=":.*##"; OFS="";} \
 	  /^##@/ {gsub(/^##@ */,""); print "\n\033[1m" $$0 "\033[0m"; next} \
 	  /^[a-zA-Z0-9_.-]+:.*##/ {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' \

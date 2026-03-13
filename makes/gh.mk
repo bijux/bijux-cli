@@ -1,5 +1,5 @@
 # GitHub Actions entrypoints.
-# Keep workflow YAML thin by routing shell logic through make.
+# Keep workflow files thin by routing shell logic through make.
 
 GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
 GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
@@ -15,18 +15,18 @@ GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS ?= 20
 	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token gh-release-wait-for-ci
 
 ##@ GitHub
-gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without mutating files
+gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without modifying files
 
-gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without mutating files
+gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without modifying files
 
 gh-security: install security ## Run GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
 
-gh-docs-install: install docs-require ## Resolve documentation build dependencies for GitHub Actions
+gh-docs-install: install docs-require ## Install the documentation toolchain for GitHub Actions
 	@"$(MKDOCS_BIN)" --version
 
-gh-docs-export-release-tag: ## Export release tag for docs builds
+gh-docs-export-release-tag: ## Export the release tag for documentation builds
 	@$(call require_var,GITHUB_ENV)
 	@set -euo pipefail; \
 	tag="main"; \
@@ -35,7 +35,7 @@ gh-docs-export-release-tag: ## Export release tag for docs builds
 	fi; \
 	echo "RELEASE_TAG=$${tag}" >> "$${GITHUB_ENV}"
 
-docs-artifact-pages: ## Generate stable docs pages that summarize release artifact directories
+docs-artifact-pages: ## Generate documentation pages that summarize release artifacts
 	@set -euo pipefail; \
 	pages_dir="$(GH_DOCS_PAGES_DIR)"; \
 	mkdir -p "$${pages_dir}"; \
@@ -72,7 +72,7 @@ docs-artifact-pages: ## Generate stable docs pages that summarize release artifa
 		} > "$${pages_dir}/$${page}.md"; \
 	done
 
-docs-artifact-pages-check: docs-artifact-pages ## Ensure generated docs artifact summary pages exist
+docs-artifact-pages-check: docs-artifact-pages ## Verify that generated release artifact pages exist
 	@set -euo pipefail; \
 	pages_dir="$(GH_DOCS_PAGES_DIR)"; \
 	for page in index rust python docs; do \
@@ -83,11 +83,11 @@ docs-artifact-pages-check: docs-artifact-pages ## Ensure generated docs artifact
 		fi; \
 	done
 
-gh-docs-configure-git: ## Configure Git author identity for docs deployment
+gh-docs-configure-git: ## Configure the Git author identity for documentation deployment
 	@git config user.name "github-actions[bot]"
 	@git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-gh-release-plan-pypi: ## Determine whether a tagged green commit should publish to PyPI
+gh-release-plan-pypi: ## Determine whether the tagged commit should publish to PyPI
 	@$(call require_var,GITHUB_OUTPUT)
 	@$(call require_var,TARGET_SHA)
 	@set -euo pipefail; \
@@ -121,7 +121,7 @@ gh-release-plan-pypi: ## Determine whether a tagged green commit should publish 
 		echo "version=$${version}"; \
 	} >> "$${GITHUB_OUTPUT}"
 
-gh-release-plan-crates: ## Determine whether a tagged green commit should publish workspace crates
+gh-release-plan-crates: ## Determine whether the tagged commit should publish workspace crates
 	@$(call require_var,GITHUB_OUTPUT)
 	@$(call require_var,TARGET_SHA)
 	@set -euo pipefail; \
@@ -170,10 +170,10 @@ gh-release-plan-crates: ## Determine whether a tagged green commit should publis
 		echo "version=$${version}"; \
 	} >> "$${GITHUB_OUTPUT}"
 
-gh-release-require-cargo-token: ## Fail with a clear message when crates.io credentials are missing
+gh-release-require-cargo-token: ## Verify that crates.io credentials are available
 	@$(call require_var,CARGO_REGISTRY_TOKEN)
 
-gh-release-wait-for-ci: ## Wait for the newest CI workflow run on the release SHA to complete successfully
+gh-release-wait-for-ci: ## Wait for the latest CI run on the release SHA to succeed
 	@$(call require_var,GITHUB_TOKEN)
 	@$(call require_var,GITHUB_REPOSITORY)
 	@$(call require_var,TARGET_SHA)

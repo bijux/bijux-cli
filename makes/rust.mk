@@ -1,4 +1,4 @@
-# Rust quality gates and reports (artifact-scoped, no root pollution)
+# Rust quality checks and reports that write only under `artifacts/`.
 
 RS_ARTIFACT_ROOT ?= artifacts/rust
 RS_RUN_ID ?= local
@@ -33,7 +33,7 @@ NEXTEST_PROFILE ?= default
 NEXTEST_STATUS_LEVEL ?= all
 NEXTEST_FINAL_STATUS_LEVEL ?= all
 NEXTEST_SHOW_PROGRESS ?= counter
-# Default fast-lane exclusions: known tests that consistently exceed 10 seconds.
+# Default fast-lane exclusions for tests that consistently exceed 10 seconds.
 # Override with NEXTEST_FILTER_EXPR to run a custom selection.
 NEXTEST_SLOW_EXCLUDE_EXPR ?= not ( \
 	test(/repo_health_exposes_stale_generated_artifact_detection/) or \
@@ -59,7 +59,7 @@ endef
 .PHONY: fmt-rs lint-rs test-rs test-all-rs coverage-rs audit-rs publish-rs
 
 ##@ Rust
-fmt-rs: ## Run Rust format checks (artifact-scoped)
+fmt-rs: ## Run Rust formatting checks
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
 	@printf '%s\n' "run: cargo fmt --all -- --check"
 	@set -o pipefail; \
@@ -70,7 +70,7 @@ fmt-rs: ## Run Rust format checks (artifact-scoped)
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo fmt --all -- --check 2>&1 | tee "$(RS_FMT_REPORT)"
 
-lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
+lint-rs: ## Run Rust clippy checks with -D warnings
 	@mkdir -p "$(dir $(RS_LINT_REPORT))"
 	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
 	@set -o pipefail; \
@@ -82,7 +82,7 @@ lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee "$(RS_LINT_REPORT)"
 
-test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
+test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
@@ -110,7 +110,7 @@ test-rs: ## Run Rust nextest fast suite and skip known >10s tests by default
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
 	test $$status -eq 0
 
-test-all-rs: ## Run Rust nextest full ignored-inclusive suite (artifact-scoped)
+test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
@@ -139,7 +139,7 @@ test-all-rs: ## Run Rust nextest full ignored-inclusive suite (artifact-scoped)
 	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
 	test $$status -eq 0
 
-coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-scoped)
+coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
@@ -179,7 +179,7 @@ coverage-rs: ## Run Rust llvm-cov via nextest and emit lcov/report (artifact-sco
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-lcov:" "$(RS_LCOV_FILE)"; \
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-report:" "$(RS_COVERAGE_SUMMARY_REPORT)"
 
-audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
+audit-rs: ## Run cargo-deny and cargo-audit
 	$(call rs_require_tool,cargo-deny)
 	$(call rs_require_tool,cargo-audit)
 	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
@@ -196,7 +196,7 @@ audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
 	test $$deny_status -eq 0; \
 	test $$audit_status -eq 0
 
-publish-rs: ## Publish Rust crates (dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to release)
+publish-rs: ## Publish Rust crates and dry-run by default
 	@set -euo pipefail; \
 	if [ -z "$(RUST_PUBLISH_PACKAGES)" ]; then \
 		echo "RUST_PUBLISH_PACKAGES is empty; nothing to publish"; \

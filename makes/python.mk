@@ -1,5 +1,5 @@
-# Minimal Python lane for bijux-cli-python.
-# Supported workflows: lint, test, security, build, publish.
+# Python commands for bijux-cli-python.
+# Supported workflows: lint, test, security, build, and publish.
 
 PYTHON_PACKAGE_DIR    ?= crates/bijux-cli-python
 PYTHON_SRC_DIR        ?= $(PYTHON_PACKAGE_DIR)/python
@@ -36,7 +36,7 @@ PYTEST_DEFAULT_MARKER_EXPR ?= not nightly and not slow
 PYTEST_MARKER_EXPR         ?= $(PYTEST_DEFAULT_MARKER_EXPR)
 PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short --cov=bijux_cli_py --cov-branch --cov-config=$(COVCFG_INI) --cov-report=term-missing:skip-covered --cov-report=html:$(abspath $(TEST_ARTIFACTS_DIR)/htmlcov) --cov-report=xml:$(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml) --cov-fail-under=60
 
-# Mirrors [tool.security.pip_audit_ignore] in crates/bijux-cli-python/pyproject.toml.
+# Mirror [tool.security.pip_audit_ignore] in crates/bijux-cli-python/pyproject.toml.
 PIP_AUDIT_IGNORE_IDS ?= \
 	PYSEC-2022-42969
 PIP_AUDIT_IGNORE_FLAGS := $(foreach id,$(PIP_AUDIT_IGNORE_IDS),--ignore-vuln $(id))
@@ -86,10 +86,10 @@ define run_pytest
 endef
 
 ##@ Python
-python-env: install ## Prepare the artifact-scoped Python virtualenv and developer tools
+python-env: install ## Prepare the artifact-scoped Python virtualenv and tools
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
 
-python-env-py: python-env ## Backward-compatible alias for python-env
+python-env-py: python-env ## Run the legacy alias for python-env
 
 fmt-py: python-env ## Run Python formatting with Ruff
 	@echo "→ Ruff format"
@@ -99,7 +99,7 @@ fmt-py: python-env ## Run Python formatting with Ruff
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-fmt-check-py: python-env ## Check Python formatting without modifying files
+fmt-check-py: python-env ## Verify Python formatting without modifying files
 	@echo "→ Ruff format check"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -o pipefail; \
@@ -114,7 +114,7 @@ lint-py: fmt-py ## Run Python lint fixes with Ruff
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-lint-check-py: python-env ## Run Python lint checks without modifying files
+lint-check-py: python-env ## Verify Python lint checks without modifying files
 	@echo "→ Ruff lint check"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -o pipefail; \
@@ -144,7 +144,7 @@ security-py: python-env ## Run Python security checks
 	$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/pip-audit.txt"
 
-build-py: python-env ## Build Python wheel and source distribution
+build-py: python-env ## Build the Python wheel and source distribution
 	@echo "→ Building Python wheel and sdist"
 	@mkdir -p "$(BUILD_ARTIFACTS_DIR)"
 	@rm -f "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz "$(BUILD_ARTIFACTS_DIR)/twine-check.log" || true
