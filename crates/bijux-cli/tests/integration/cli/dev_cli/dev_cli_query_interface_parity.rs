@@ -6,6 +6,7 @@ use std::process::Command;
 use bijux_cli::api::diagnostics::{registry_inventory, route_inventory, state_diagnostics_query};
 use bijux_cli::api::install::query::runtime_identity_query;
 use bijux_cli::api::routing::registry::RouteRegistry;
+use bijux_cli::api::version::runtime_semver;
 use bijux_cli::contracts::contracts_schema_query;
 use serde_json::Value;
 
@@ -84,7 +85,7 @@ fn runtime_identity_and_state_audit_match_runtime_query_surfaces() {
         &std::env::var("PATH").unwrap_or_default(),
         std::env::var("BIJUX_BIN").ok().as_deref(),
         std::env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
-        env!("CARGO_PKG_VERSION"),
+        runtime_semver(),
     );
     let runtime_identity =
         run_ok_json(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]);

@@ -1,6 +1,6 @@
 [package]
 name = "bijux-cli-python"
-version = "0.3.0"
+version.workspace = true
 description = "Python bridge bindings for the Bijux command-line runtime."
 edition.workspace = true
 license.workspace = true
@@ -13,7 +13,7 @@ name = "bijux_cli_python"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-bijux-cli = { package = "bijux-cli", path = "../bijux-cli", version = "0.3.0" }
+bijux-cli = { package = "bijux-cli", path = "../bijux-cli" }
 pyo3 = { version = "0.24.1", optional = true, default-features = false, features = ["extension-module", "macros"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

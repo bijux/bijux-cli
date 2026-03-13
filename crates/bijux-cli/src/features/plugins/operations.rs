@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
+use crate::api::version::runtime_semver;
 use crate::contracts::{PluginKind, PluginLifecycleState};
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
@@ -36,7 +37,7 @@ pub(crate) fn plugins_list(plugin_registry_path: &Path, plugins_dir: &Path) -> V
 pub(crate) fn plugins_info(plugin_registry_path: &Path) -> Value {
     let plugins = list_plugins(plugin_registry_path).unwrap_or_default();
     let warnings =
-        compatibility_warnings(plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default();
+        compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default();
 
     json!({
         "status": "ok",
@@ -50,14 +51,17 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path) -> Value {
     json!({
         "plugins": list_plugins(plugin_registry_path).unwrap_or_default(),
         "status": "loaded",
-        "compatibility_warnings": compatibility_warnings(plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+        "compatibility_warnings": compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default(),
     })
 }
 
 pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> Result<Value> {
     let record = inspect_plugin(plugin_registry_path, plugin)?;
-    let _ =
-        validate_manifest(record.manifest.clone(), env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
+    let _ = validate_manifest(
+        record.manifest.clone(),
+        runtime_semver(),
+        RESERVED_NAMESPACES,
+    )?;
 
     if matches!(record.state, PluginLifecycleState::Disabled) {
         anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
@@ -111,8 +115,12 @@ pub(crate) fn install_plugin_from_manifest(
 
     let installed = install_plugin_manifest(
         plugin_registry_path,
-        InstallPluginRequest { manifest_text, source, trust_level },
-        env!("CARGO_PKG_VERSION"),
+        InstallPluginRequest {
+            manifest_text,
+            source,
+            trust_level,
+        },
+        runtime_semver(),
     )?;
 
     Ok(json!({
@@ -189,7 +197,7 @@ pub(crate) fn plugin_locations_report(plugins_dir: &Path, plugin_registry_path: 
 
 pub(crate) fn explain_plugin_report(plugin_registry_path: &Path, plugin: Option<&str>) -> Value {
     let diagnostics =
-        load_time_diagnostics(plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default();
+        load_time_diagnostics(plugin_registry_path, runtime_semver()).unwrap_or_default();
     let report = plugin_doctor(plugin_registry_path).ok();
 
     let mut filtered: Vec<Value> = diagnostics

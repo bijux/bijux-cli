@@ -1,5 +1,6 @@
 use std::fs;
 
+use bijux_cli::api::version::{runtime_semver, runtime_version};
 use serde_json::{json, Value};
 
 use crate::cli::args::{command_has_flag, command_option_value, command_positionals};
@@ -146,13 +147,13 @@ pub(super) fn try_handle(
                 let kind_filter = command_option_value(argv, "--kind");
                 dev_contracts::build_all_report(
                     &workspace_root(),
-                    env!("CARGO_PKG_VERSION"),
+                    runtime_version(),
                     kind_filter.as_deref(),
                 )
             } else {
                 let contracts_query = runtime.contracts_schema_input();
                 dev_contracts::build_report_from_query(
-                    env!("CARGO_PKG_VERSION"),
+                    runtime_semver(),
                     &contracts_query.schema_ids,
                     &contracts_query.schema_version,
                 )
@@ -183,7 +184,10 @@ pub(super) fn try_handle(
 }
 
 fn routing_context() -> ReportContext {
-    ReportContext { generated_at: String::new(), data_source: "bijux-cli::routing".to_string() }
+    ReportContext {
+        generated_at: String::new(),
+        data_source: "bijux-cli::routing".to_string(),
+    }
 }
 
 fn markdown_docs() -> Vec<String> {
@@ -199,7 +203,10 @@ fn snapshot_fixtures() -> Vec<String> {
     let root = workspace_root();
     collect_files_recursive(&root.join("crates"))
         .into_iter()
-        .filter(|p| p.to_string_lossy().contains("tests/data/golden/cli_surface/"))
+        .filter(|p| {
+            p.to_string_lossy()
+                .contains("tests/data/golden/cli_surface/")
+        })
         .map(|p| relative_to_root(&p, &root))
         .collect()
 }

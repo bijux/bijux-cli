@@ -1,6 +1,6 @@
 [package]
 name = "bijux-cli"
-version = "0.3.0"
+version.workspace = true
 description = "Core Bijux command-line runtime and routing surface."
 edition.workspace = true
 license.workspace = true
@@ -31,6 +31,9 @@ thiserror.workspace = true
 
 [lints]
 workspace = true
+
+[build-dependencies]
+semver = { version = "1.0.27", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 libc = "0.2.177"

@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
+use crate::api::version::{runtime_semver, runtime_version};
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::install::{install_health_report, post_install_hint};
 use crate::features::plugins::{compatibility_warnings, plugin_origin_metadata};
@@ -19,15 +20,13 @@ pub(crate) fn try_handle(
     plugin_registry_path: &Path,
 ) -> Option<Value> {
     match normalized_path {
-        [a, b] if a == "cli" && b == "version" => {
-            Some(json!({"version": env!("CARGO_PKG_VERSION")}))
-        }
+        [a, b] if a == "cli" && b == "version" => Some(json!({"version": runtime_version()})),
         [a, b] if a == "cli" && b == "doctor" => {
             let install_report = install_health_report(
                 &env::var("PATH").unwrap_or_default(),
                 env::var("BIJUX_BIN").ok().as_deref(),
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
-                env!("CARGO_PKG_VERSION"),
+                runtime_semver(),
             );
             Some(json!({
                 "status": "healthy",
@@ -75,7 +74,7 @@ pub(crate) fn try_handle(
                     })
                 }).collect::<Vec<_>>(),
                 "plugin_origins": plugin_origin_metadata(plugin_registry_path).unwrap_or_default(),
-                "compatibility_warnings": compatibility_warnings(plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+                "compatibility_warnings": compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default(),
                 "contracts": {
                     "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"],
                     "version": "v1",
@@ -90,15 +89,16 @@ pub(crate) fn try_handle(
                 &env::var("PATH").unwrap_or_default(),
                 env::var("BIJUX_BIN").ok().as_deref(),
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
-                env!("CARGO_PKG_VERSION"),
+                runtime_semver(),
             );
-            let hint =
-                install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
-                    || {
-                        "Run `bijux version` and `bijux cli doctor` to verify your environment."
-                            .to_string()
-                    },
-                );
+            let hint = install_report
+                .active_binary
+                .as_deref()
+                .map(post_install_hint)
+                .unwrap_or_else(|| {
+                    "Run `bijux version` and `bijux cli doctor` to verify your environment."
+                        .to_string()
+                });
             Some(json!({
                 "config": paths.config_file,
                 "history": paths.history_file,

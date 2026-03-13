@@ -11,3 +11,4 @@ pub mod plugins;
 pub mod repl;
 pub mod routing;
 pub mod runtime;
+pub mod version;
