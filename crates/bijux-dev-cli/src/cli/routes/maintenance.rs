@@ -25,11 +25,18 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
             dev_maintenance::build_generators_report(&workspace_root())
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "generate" => {
-            let source_ref = command_option_value(argv, "--source-ref")
-                .or_else(|| command_option_value(argv, "--source"));
+            let source_ref = command_option_value(
+                argv,
+                &["dev", "cli", "maintenance", "generate"],
+                "--source-ref",
+            )
+            .or_else(|| {
+                command_option_value(argv, &["dev", "cli", "maintenance", "generate"], "--source")
+            });
             dev_maintenance::run_generator(
                 &workspace_root(),
-                command_option_value(argv, "--id").as_deref(),
+                command_option_value(argv, &["dev", "cli", "maintenance", "generate"], "--id")
+                    .as_deref(),
                 source_ref.as_deref(),
             )
         }
@@ -54,12 +61,24 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [a, b, c, d, e]
             if a == "dev" && b == "cli" && c == "maintenance" && d == "status" && e == "run" =>
         {
-            let passthrough = command_passthrough_args(argv);
-            let source_ref = command_option_value(argv, "--source-ref")
-                .or_else(|| command_option_value(argv, "--source"));
+            let passthrough =
+                command_passthrough_args(argv, &["dev", "cli", "maintenance", "status", "run"]);
+            let source_ref = command_option_value(
+                argv,
+                &["dev", "cli", "maintenance", "status", "run"],
+                "--source-ref",
+            )
+            .or_else(|| {
+                command_option_value(
+                    argv,
+                    &["dev", "cli", "maintenance", "status", "run"],
+                    "--source",
+                )
+            });
             dev_maintenance::run_status_contract(
                 &workspace_root(),
-                command_option_value(argv, "--id").as_deref(),
+                command_option_value(argv, &["dev", "cli", "maintenance", "status", "run"], "--id")
+                    .as_deref(),
                 source_ref.as_deref(),
                 &passthrough,
             )
@@ -71,10 +90,16 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
                 && d == "status"
                 && e == "run-all" =>
         {
-            let passthrough = command_passthrough_args(argv);
+            let passthrough =
+                command_passthrough_args(argv, &["dev", "cli", "maintenance", "status", "run-all"]);
             dev_maintenance::run_all_status_contracts(
                 &workspace_root(),
-                command_option_value(argv, "--kind").as_deref(),
+                command_option_value(
+                    argv,
+                    &["dev", "cli", "maintenance", "status", "run-all"],
+                    "--kind",
+                )
+                .as_deref(),
                 &passthrough,
             )
         }
@@ -89,7 +114,12 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [a, b, c, d] if a == "dev" && b == "cli" && c == "maintenance" && d == "pip-audit" => {
             dev_maintenance::build_pip_audit_report(
                 &workspace_root(),
-                command_option_value(argv, "--report-path").as_deref(),
+                command_option_value(
+                    argv,
+                    &["dev", "cli", "maintenance", "pip-audit"],
+                    "--report-path",
+                )
+                .as_deref(),
             )
         }
         [a, b, c, d]
@@ -100,10 +130,18 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [a, b, c, d]
             if a == "dev" && b == "cli" && c == "maintenance" && d == "provenance-statement" =>
         {
-            let tag = command_option_value(argv, "--tag")
-                .ok_or_else(|| anyhow!("Missing argument: --tag required"))?;
-            let output_dir = command_option_value(argv, "--output-dir")
-                .ok_or_else(|| anyhow!("Missing argument: --output-dir required"))?;
+            let tag = command_option_value(
+                argv,
+                &["dev", "cli", "maintenance", "provenance-statement"],
+                "--tag",
+            )
+            .ok_or_else(|| anyhow!("Missing argument: --tag required"))?;
+            let output_dir = command_option_value(
+                argv,
+                &["dev", "cli", "maintenance", "provenance-statement"],
+                "--output-dir",
+            )
+            .ok_or_else(|| anyhow!("Missing argument: --output-dir required"))?;
             dev_maintenance::build_provenance_statement_report(&tag, Path::new(&output_dir))
         }
         _ => return Ok(None),

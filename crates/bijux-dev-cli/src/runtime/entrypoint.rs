@@ -124,6 +124,32 @@ fn no_color_enabled(value: Option<OsString>) -> bool {
     value.is_some()
 }
 
+fn classify_error_exit_code(message: &str) -> i32 {
+    let lower = message.to_ascii_lowercase();
+    if lower.contains("missing argument")
+        || lower.contains("invalid argument")
+        || lower.contains("key cannot be empty")
+        || lower.contains("invalid key")
+        || lower.contains("unknown config section")
+        || lower.contains("config key not found")
+        || lower.contains("missing parameter")
+        || lower.contains("unsupported format")
+        || lower.contains("failed to load config")
+        || lower.contains("unknown route:")
+        || lower.contains("plugin route execution is not implemented")
+        || lower.contains("plugin not found")
+        || lower.starts_with("invalid format:")
+        || lower.starts_with("invalid color mode:")
+        || lower.starts_with("invalid log level:")
+    {
+        2
+    } else if lower.contains("non-ascii") || lower.contains("control characters") {
+        3
+    } else {
+        1
+    }
+}
+
 fn try_render_clap_help(argv: &[String]) -> Option<String> {
     match root_command().try_get_matches_from(argv) {
         Ok(_) => None,
@@ -180,6 +206,43 @@ fn route_response(
     Ok(payload.unwrap_or_else(|| json!({"status": "error", "message": "unknown route"})))
 }
 
+fn expanded_dev_cli_path(normalized_path: &[String], argv: &[String]) -> Vec<String> {
+    let [a, b, c] = normalized_path else {
+        return normalized_path.to_vec();
+    };
+    if a != "dev" || b != "cli" {
+        return normalized_path.to_vec();
+    }
+    if !matches!(
+        c.as_str(),
+        "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+    ) {
+        return normalized_path.to_vec();
+    }
+
+    let Some(start) = argv
+        .windows(2)
+        .position(|window| window[0] == "dev" && window[1] == "cli")
+        .map(|idx| idx + 2)
+    else {
+        return normalized_path.to_vec();
+    };
+
+    let mut expanded = vec!["dev".to_string(), "cli".to_string()];
+    for token in argv.iter().skip(start) {
+        if token == "--" || token.starts_with('-') {
+            break;
+        }
+        expanded.push(token.clone());
+    }
+
+    if expanded.len() < 3 {
+        return normalized_path.to_vec();
+    }
+
+    expanded
+}
+
 fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
     let is_maintenance_runner = matches!(
         normalized_path,
@@ -229,6 +292,26 @@ fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> O
     Some(0)
 }
 
+fn payload_route_exit_code(normalized_path: &[String], payload: &Value) -> i32 {
+    if let Some(code) = payload.get("code").and_then(Value::as_i64).filter(|code| *code > 0) {
+        return code as i32;
+    }
+    if payload.get("status").and_then(Value::as_str) == Some("error") {
+        return 1;
+    }
+    maintenance_route_exit_code(normalized_path, payload).unwrap_or(0)
+}
+
+fn normalize_process_exit_code(code: i32) -> u8 {
+    if code <= 0 {
+        return u8::from(code != 0);
+    }
+    if code > i32::from(u8::MAX) {
+        return u8::MAX;
+    }
+    code as u8
+}
+
 /// Execute `bijux-dev-cli` and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let synthetic_argv = synthetic_dev_cli_argv(argv);
@@ -246,41 +329,36 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(result);
     }
 
-    let intent = parse_intent(&synthetic_parse_argv)?;
+    let intent = match parse_intent(&synthetic_parse_argv) {
+        Ok(intent) => intent,
+        Err(error) => {
+            return Ok(AppRunResult {
+                exit_code: 2,
+                stdout: String::new(),
+                stderr: format!("{error}\n"),
+            });
+        }
+    };
     if intent.normalized_path.is_empty() {
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: root_help_text() });
     }
 
-    let is_unknown = !dev_dispatch::owns_path(&intent.normalized_path);
+    let expanded_path = expanded_dev_cli_path(&intent.normalized_path, &synthetic_parse_argv);
+    let is_unknown = !dev_dispatch::owns_path(&expanded_path);
 
-    let response = route_response(&intent.normalized_path, &synthetic_argv, &intent.global_flags);
+    let response = route_response(&expanded_path, &synthetic_parse_argv, &intent.global_flags);
     let payload = match response {
         Ok(value) => value,
         Err(error) => {
             let message = error.to_string();
-            let code = if message.contains("Missing argument")
-                || message.contains("Invalid argument")
-                || message.contains("Key cannot be empty")
-                || message.contains("Invalid key")
-                || message.contains("Unknown config section")
-                || message.contains("Config key not found")
-                || message.contains("Missing parameter")
-                || message.contains("Unsupported format")
-                || message.contains("Failed to load config")
-            {
-                2
-            } else if message.contains("Non-ASCII") || message.contains("Control characters") {
-                3
-            } else {
-                1
-            };
+            let code = classify_error_exit_code(&message);
 
             let rendered_error = render_value(
                 &json!({
                     "status": "error",
                     "code": code,
                     "message": message,
-                    "command": intent.normalized_path.join(" "),
+                    "command": expanded_path.join(" "),
                 }),
                 emitter_config(&intent.global_flags),
             )?;
@@ -304,8 +382,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
-    let route_exit_code =
-        maintenance_route_exit_code(&intent.normalized_path, &payload).unwrap_or(0);
+    let route_exit_code = payload_route_exit_code(&expanded_path, &payload);
 
     if intent.global_flags.quiet {
         return Ok(AppRunResult {
@@ -338,14 +415,19 @@ pub fn run_cli_from_env() -> ExitCode {
     };
 
     emit_run_result(&result);
-    ExitCode::from(result.exit_code as u8)
+    ExitCode::from(normalize_process_exit_code(result.exit_code))
 }
 
 #[cfg(test)]
 mod tests {
     use std::ffi::OsString;
 
-    use super::{no_color_enabled, synthetic_dev_cli_parse_argv};
+    use serde_json::json;
+
+    use super::{
+        classify_error_exit_code, expanded_dev_cli_path, no_color_enabled,
+        normalize_process_exit_code, payload_route_exit_code, synthetic_dev_cli_parse_argv,
+    };
 
     fn argv(items: &[&str]) -> Vec<String> {
         items.iter().map(|item| (*item).to_string()).collect()
@@ -415,5 +497,59 @@ mod tests {
         assert!(no_color_enabled(Some(OsString::from("0"))));
         assert!(no_color_enabled(Some(OsString::from(""))));
         assert!(!no_color_enabled(None));
+    }
+
+    #[test]
+    fn expanded_path_lifts_nested_dev_cli_routes_from_argv() {
+        let normalized = argv(&["dev", "cli", "maintenance"]);
+        let full_argv = argv(&[
+            "bijux",
+            "--format",
+            "json",
+            "dev",
+            "cli",
+            "maintenance",
+            "status",
+            "run",
+            "--id",
+            "STATUS-001",
+        ]);
+        let expanded = expanded_dev_cli_path(&normalized, &full_argv);
+        assert_eq!(expanded, argv(&["dev", "cli", "maintenance", "status", "run"]));
+    }
+
+    #[test]
+    fn expanded_path_keeps_non_nested_routes_stable() {
+        let normalized = argv(&["dev", "cli", "state-doctor"]);
+        let full_argv = argv(&["bijux", "dev", "cli", "state-doctor", "unexpected"]);
+        let expanded = expanded_dev_cli_path(&normalized, &full_argv);
+        assert_eq!(expanded, normalized);
+    }
+
+    #[test]
+    fn payload_error_code_maps_to_non_zero_exit() {
+        let code = payload_route_exit_code(
+            &argv(&["dev", "cli", "state-doctor"]),
+            &json!({"status": "error", "code": 2}),
+        );
+        assert_eq!(code, 2);
+    }
+
+    #[test]
+    fn process_exit_code_is_normalized_to_os_range() {
+        assert_eq!(normalize_process_exit_code(0), 0);
+        assert_eq!(normalize_process_exit_code(2), 2);
+        assert_eq!(normalize_process_exit_code(-1), 1);
+        assert_eq!(normalize_process_exit_code(300), u8::MAX);
+    }
+
+    #[test]
+    fn classifier_maps_usage_and_encoding_messages_to_stable_codes() {
+        assert_eq!(classify_error_exit_code("Missing argument: --id required"), 2);
+        assert_eq!(classify_error_exit_code("invalid format: nope"), 2);
+        assert_eq!(
+            classify_error_exit_code("Non-ASCII characters are not allowed in keys or values."),
+            3
+        );
     }
 }

@@ -11,7 +11,7 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
             dev_evidence::build_list_report(&workspace_root())
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "show" => {
-            let id = command_option_value(argv, "--id")
+            let id = command_option_value(argv, &["dev", "cli", "evidence", "show"], "--id")
                 .or_else(|| {
                     command_positionals(argv, &["dev", "cli", "evidence", "show"]).first().cloned()
                 })

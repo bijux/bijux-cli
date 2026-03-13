@@ -143,8 +143,9 @@ pub(super) fn try_handle(
             dev_control_plane::build_plugin_health_report(machine, text)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
-            if command_has_flag(argv, "--all") {
-                let kind_filter = command_option_value(argv, "--kind");
+            if command_has_flag(argv, &["dev", "cli", "contracts"], "--all") {
+                let kind_filter =
+                    command_option_value(argv, &["dev", "cli", "contracts"], "--kind");
                 dev_contracts::build_all_report(
                     &workspace_root(),
                     runtime_version(),
