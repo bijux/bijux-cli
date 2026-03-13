@@ -20,33 +20,30 @@ flowchart LR
     A --> D[Exit codes]
 ```
 
-## Top-Level Commands
+## Built-In Top-Level Commands
 
 | Command | Purpose |
 | --- | --- |
-| `agent` | Bijux Agent runtime command proxy |
-| `atlas` | Bijux Atlas runtime command proxy |
+| `cli` | Canonical runtime namespace for explicit subcommands such as `paths` and `self-test` |
 | `audit` | Diagnostics audit report |
 | `config` | Configuration management |
-| `dag` | Bijux DAG runtime command proxy |
-| `dev` | Developer tools |
-| `dna` | Bijux DNA runtime command proxy |
 | `docs` | Documentation tools |
 | `doctor` | Environment diagnostics |
-| `gnss` | Bijux GNSS runtime command proxy |
 | `help` | Global help |
 | `history` | REPL history tools |
 | `memory` | In-memory key/value tools |
 | `plugins` | Plugin management |
-| `rag` | Bijux RAG runtime command proxy |
-| `rar` | Bijux RAR runtime command proxy |
 | `repl` | Interactive shell |
+| `completion` | Shell completion output |
 | `sleep` | Sleep for a duration |
 | `status` | CLI status probe |
 | `version` | CLI version |
-| `vex` | Bijux VEX runtime command proxy |
 
 ## Common Subcommand Groups
+
+### `cli`
+
+`status`, `paths`, `config`, `self-test`, `plugins`
 
 ### `config`
 
@@ -66,10 +63,18 @@ flowchart LR
 
 `clear`, `delete`, `get`, `list`, `set`, `service`
 
-### `dev`
+## Routed Namespaces
 
-`agent`, `atlas`, `dag`, `di`, `dna`, `gnss`, `list-products`,
-`list-plugins`, `rag`, `rar`, `service`, `vex`
+Some valid command families are routed dynamically and are not part of the
+static built-in help inventory:
+
+- `bijux dev <product> ...` for maintainer control planes such as
+  `bijux dev cli ...`
+- `bijux <product> ...` for adjacent Bijux product runtimes when the matching
+  binary is available and allowed by the current routing policy
+
+Use [Integrations And Routed Runtimes](integrations-and-routed-runtimes.md) for
+the routed-product and maintainer-route rules.
 
 ## REPL Session Controls
 

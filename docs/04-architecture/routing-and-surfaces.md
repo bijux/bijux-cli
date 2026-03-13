@@ -10,7 +10,7 @@ graph TD
     B[Canonical cli namespace]
     C[REPL]
     D[Python package facade]
-    E[Maintainer control-plane]
+    E[Maintainer and product routes]
 
     A --> R[Shared route model]
     B --> R
@@ -30,19 +30,33 @@ flowchart LR
 
 ### Root CLI
 
-This is the shortest user-facing surface, for example:
+This is the shortest built-in user-facing surface, for example:
 
 - `bijux status`
+- `bijux config list`
 - `bijux plugins list`
+- `bijux doctor`
 
 ### Canonical `cli` Namespace
 
-This is the explicit runtime namespace:
+This is the explicit runtime namespace for routes that either do not exist at
+the root or are useful to inspect in their normalized form:
 
-- `bijux cli status`
+- `bijux cli paths`
 - `bijux cli plugins inspect`
+- `bijux cli self-test`
 
-The canonical namespace matters because it keeps routing explicit even when root aliases exist.
+The canonical namespace matters because it exposes the normalized route shape
+even when shorter root commands also exist.
+
+### Routed Maintainer And Product Surfaces
+
+These are valid routed surfaces, but they are not part of the static built-in
+command inventory:
+
+- `bijux dev cli ...` for the maintainer control-plane
+- `bijux <product> ...` for adjacent Bijux products when the matching runtime
+  binary is available and allowed
 
 ### REPL
 
@@ -58,8 +72,8 @@ The Python package is a distribution surface that calls into the Rust runtime or
 
 ```mermaid
 flowchart TD
-    A[User input] --> B{Known compatibility alias?}
-    B -->|yes| C[Rewrite to canonical route]
+    A[User input] --> B{Known alias or routed namespace?}
+    B -->|yes| C[Normalize route]
     B -->|no| D[Keep parsed route]
     C --> E[Dispatch]
     D --> E
@@ -93,7 +107,7 @@ The project treats help output as a contract because:
 The route model is shared, but not every route is equal:
 
 - some routes are public runtime behavior
-- some routes are compatibility aliases
-- some routes are maintainer-only
+- some routes are normalized compatibility aliases
+- some routes are routed product or maintainer namespaces
 
 The architecture works because those categories are kept separate in code and documentation.

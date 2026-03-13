@@ -39,25 +39,10 @@ Pipx:
 pipx install bijux-cli
 ```
 
-### Windows
+### Unsupported platforms
 
-Cargo:
-
-```powershell
-cargo install --locked bijux-cli
-```
-
-Pip:
-
-```powershell
-py -m pip install --upgrade bijux-cli
-```
-
-Pipx:
-
-```powershell
-pipx install bijux-cli
-```
+Windows is not a supported platform today. Do not treat an installation that
+appears to work on Windows as part of the supported contract.
 
 ## Virtual Environments
 
@@ -111,7 +96,7 @@ Upgrade the channel you actually use, then rerun:
 ```bash
 bijux version
 bijux cli paths
-bijux cli doctor
+bijux doctor
 ```
 
 Cargo uninstall:
@@ -136,7 +121,7 @@ If both Cargo and Pip installs exist:
 1. `BIJUX_BIN` wins when set to a valid absolute runtime path
 2. otherwise, the first `bijux` in `PATH` wins
 
-If `bijux cli doctor` reports ambiguity or mismatch:
+If `bijux doctor` reports ambiguity or mismatch:
 
 - remove the extra install
 - or set `BIJUX_BIN` explicitly for automation

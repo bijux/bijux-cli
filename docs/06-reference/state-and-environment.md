@@ -49,6 +49,7 @@ uppercase `BIJUXCLI_` prefix when materialized in environment form.
 | `BIJUXCLI_LOG_LEVEL` | Log level override |
 | `BIJUXCLI_COLOR` | Color mode override |
 | `BIJUXCLI_CONFIG` | Config file path override |
+| `BIJUXCLI_HISTORY_FILE` | History file path override |
 | `BIJUXCLI_PLUGINS_DIR` | Plugin directory override |
 | `BIJUXCLI_ALLOWED_PRODUCT_BINS` | Allowlist for routed product binaries |
 | `BIJUXCLI_PRODUCT_BIN_DIR` | Additional product binary directory |

@@ -26,12 +26,12 @@ flowchart LR
 ## Common Configuration Commands
 
 ```bash
-bijux cli config list
-bijux cli config get KEY
-bijux cli config set KEY=VALUE
-bijux cli config unset KEY
-bijux cli config export ./bijux.env
-bijux cli config load ./bijux.env
+bijux config list
+bijux config get KEY
+bijux config set KEY=VALUE
+bijux config unset KEY
+bijux config export ./bijux.env
+bijux config load ./bijux.env
 ```
 
 ## Output Rule
@@ -61,7 +61,7 @@ If more than one source defines a value, the runtime resolves it in a fixed
 order:
 
 ```bash
-bijux cli config set format=yaml
+bijux config set format=yaml
 export BIJUXCLI_FORMAT=json
 bijux status --format yaml
 ```

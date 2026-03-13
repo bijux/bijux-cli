@@ -24,12 +24,12 @@ flowchart LR
 ## Common Commands
 
 ```bash
-bijux cli plugins list
-bijux cli plugins inspect NAMESPACE
-bijux cli plugins install ./plugin.manifest.json
-bijux cli plugins check NAMESPACE
-bijux cli plugins uninstall NAMESPACE
-bijux cli plugins schema
+bijux plugins list
+bijux plugins inspect NAMESPACE
+bijux plugins install ./plugin.manifest.json
+bijux plugins check NAMESPACE
+bijux plugins uninstall NAMESPACE
+bijux plugins schema
 ```
 
 ## Minimal Local Plugin Walkthrough

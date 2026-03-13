@@ -24,7 +24,7 @@ sequenceDiagram
     B-->>U: runtime identity
     U->>B: bijux cli paths
     B-->>U: active binary and state paths
-    U->>B: bijux cli doctor
+    U->>B: bijux doctor
     B-->>U: install health report
 ```
 
@@ -44,7 +44,7 @@ Run:
 ```bash
 bijux version
 bijux cli paths
-bijux cli doctor
+bijux doctor
 ```
 
 These commands answer three different questions:
@@ -55,8 +55,8 @@ These commands answer three different questions:
 
 ## Honest Rule
 
-Do not treat an install as complete until `bijux cli doctor` is clean enough
-for your intended use. A command existing in `PATH` is not the same as a sound
+Do not treat an install as complete until `bijux doctor` is clean enough for
+your intended use. A command existing in `PATH` is not the same as a sound
 runtime setup.
 
 ## Read Next

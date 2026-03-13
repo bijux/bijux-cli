@@ -38,7 +38,7 @@ Run:
 ```bash
 bijux version
 bijux cli paths
-bijux cli doctor
+bijux doctor
 ```
 
 These commands are still the fastest way to separate environment problems from
