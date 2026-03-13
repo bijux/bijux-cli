@@ -191,8 +191,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ];
             let policy_files = json!({
                 "artifact_retention": "docs/architecture/artifact-retention-policy.md",
-                "snapshot_retention": "docs/architecture/snapshot-retention-policy.md",
-                "document_retention": "docs/architecture/document-retention-policy.md",
+                "snapshot_retention": "docs/architecture/artifact-retention-policy.md",
+                "document_retention": "docs/architecture/artifact-retention-policy.md",
             });
             write_status_artifact_json(
                 workspace_root,

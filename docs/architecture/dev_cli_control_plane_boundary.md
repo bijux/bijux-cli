@@ -5,82 +5,45 @@
 ## Boundary Rules
 
 1. `bijux-dev-cli` owns maintainer automation and maintainer-facing report assembly.
-2. Runtime crates (`bijux-cli`, `bijux-cli::install`, `bijux-cli-plugin`, `bijux-cli-output`) own runtime law and structured-data services.
+2. Runtime crates own runtime law and read-only runtime data services.
 3. Runtime crates must not own maintainer workflow orchestration or maintainer-facing dashboard formatting.
 4. `bijux dev cli ...` is the canonical maintainer command surface.
 5. `bijux` remains the only canonical executable.
 6. `bijux-dev-cli` is a workspace crate, not a second public runtime executable package.
 7. `bijux-dev-cli` is not a second runtime law center; runtime law remains in runtime crates and command contracts.
 
-## Current-Reality Boundary Freeze
+## Allowed Ownership
 
-Before extraction starts, maintainers must generate and review:
+- `dev cli routes`, `registry`, `env`, `contracts`, `parity`, and `status` report assembly
+- `dev cli runtime-identity`, `package-health`, `state-audit`, and `state-doctor` report assembly
+- `dev cli docs-audit`, `crate-health`, `inventory`, and release-facing evidence reports
+- maintainer text and machine-readable envelopes for those report surfaces
 
-- `artifacts/status/dev_cli_owned_behaviors_inventory.json`
-- `artifacts/status/runtime_owned_behaviors_inventory.json`
-- `artifacts/status/misplaced_dev_behaviors_report.json`
+## Disallowed Ownership
 
-These files represent the frozen baseline for extraction. Extraction work must reduce misplaced maintainer behavior while preserving command surface and output contracts.
+- core parser and routing law for non-`dev cli` command surfaces
+- runtime state mutation behavior
+- plugin runtime execution law
+- shared stdout/stderr and exit-code policy for end-user commands
+- direct replacement of the canonical `bijux` surface
 
-## Route and Registry Ownership Freeze
+## Release Truth
 
-- `dev cli routes` presentation assembly is owned by `bijux-dev-cli`.
-- `dev cli registry` presentation assembly is owned by `bijux-dev-cli`.
-- `bijux-cli` exposes read-only query data for route and registry inventory.
-- `bijux-cli` delegates these maintainer presentations to `bijux-dev-cli`.
+Release truth for maintainer workflows comes from `dev cli release *`.
 
-## Env Contracts Parity Status Ownership Freeze
+- status and readiness claims come from `bijux dev cli release status` and `readiness`
+- evidence claims come from `bijux dev cli release evidence`
+- blocker and gap claims come from `bijux dev cli release gaps`
 
-- `dev cli env` report assembly is owned by `bijux-dev-cli`.
-- `dev cli contracts` report assembly is owned by `bijux-dev-cli`.
-- `dev cli parity` report assembly is owned by `bijux-dev-cli`.
-- `dev cli status` report assembly is owned by `bijux-dev-cli`.
-- `bijux-cli` only passes runtime-resolved inputs and delegates these report builds.
-
-## Runtime Identity State Ownership Freeze
-
-- `dev cli runtime-identity` report assembly is owned by `bijux-dev-cli`.
-- `dev cli package-health` report assembly is owned by `bijux-dev-cli`.
-- `dev cli state-audit` report assembly is owned by `bijux-dev-cli`.
-- `dev cli state-doctor` report assembly is owned by `bijux-dev-cli`.
-- `bijux-cli` provides low-level state and install diagnostics inputs only.
-
-## Script Docs Crate Health Ownership Freeze
-
-- `dev cli inventory` and `dev cli script-audit` inventory assembly are owned by `bijux-dev-cli`.
-- `dev cli docs-audit` report assembly is owned by `bijux-dev-cli`.
-- `dev cli crate-health` report assembly is owned by `bijux-dev-cli`.
-- `bijux-cli` delegates these report surfaces and does not shape their presentation payloads.
-
-## Operational Notes
+## Query Boundary
 
 - `bijux-cli` remains the canonical entrypoint and dispatch host.
-- `bijux-dev-cli` will become the implementation owner of maintainer workflows behind `bijux dev cli ...`.
-- Runtime crates should expose minimal read-only query data needed by `bijux-dev-cli`.
+- Runtime crates expose read-only structured query interfaces for maintainer reports.
+- Query interfaces are data-only and do not render maintainer dashboards.
+- Runtime crates must not import `bijux-dev-cli`.
 
-## Bin And Routing Ownership Freeze
+## Evidence
 
-- `bijux-cli` owns process entrypoint concerns only: argv decoding, `run_app()` invocation, stream writes, and process exit code.
-- `bijux-cli` does not implement maintainer workflow routing branches or maintainer payload formatting.
-- `bijux-cli` owns command identity, normalization, and route resolution only.
-- `bijux-cli` does not own maintainer report assembly or maintainer dashboard formatting.
-- Dispatch ownership evidence must be generated at:
-  - `artifacts/status/dev_cli_dispatch_ownership_report.json`
-  - `artifacts/status/bin_entrypoint_responsibility_diff.json`
-
-## Runtime Query Interface Freeze
-
-- Runtime crates expose read-only structured query interfaces for maintainer reports:
-  - `bijux-cli`: route and registry inventory, contracts schema inventory.
-  - `bijux-cli::install`: runtime identity diagnostics query.
-  - `bijux-cli`: state diagnostics and parity/status artifact availability query.
-- Query interfaces are data-only and must not render text or assemble maintainer dashboards.
-- Runtime crates other than `bijux-cli` must not import `bijux-dev-cli`.
-- The query interface layer is the bridge between runtime data and maintainer report assembly.
-
-## Runtime Dev Leakage Rule
-
-- Runtime crates are audited for maintainer-workflow leakage at:
-  - `artifacts/status/runtime_dev_leakage_report.json`
-- The expected steady state is zero leakage score across runtime crates.
-- Any remaining leakage must be explicitly justified and tracked before release.
+- `artifacts/status/dev_cli_dispatch_ownership_report.json`
+- `artifacts/status/bin_entrypoint_responsibility_diff.json`
+- `artifacts/status/runtime_dev_leakage_report.json`
