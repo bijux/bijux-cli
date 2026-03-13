@@ -18,6 +18,9 @@ use crate::shared::telemetry::{
     truncate_chars, TelemetrySpan, MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS,
 };
 
+const MAX_PATH_FIELD_SEGMENTS: usize = 32;
+const MAX_PATH_SEGMENT_CHARS: usize = 128;
+
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppRunResult {
@@ -94,6 +97,22 @@ fn bounded_message(message: &str) -> (String, bool) {
     truncate_chars(message, MAX_TEXT_FIELD_CHARS)
 }
 
+fn bounded_segments(path: &[String]) -> (Vec<String>, usize, usize) {
+    let mut bounded = Vec::with_capacity(path.len().min(MAX_PATH_FIELD_SEGMENTS));
+    let mut truncated_segment_count = 0usize;
+
+    for segment in path.iter().take(MAX_PATH_FIELD_SEGMENTS) {
+        let (value, truncated) = truncate_chars(segment, MAX_PATH_SEGMENT_CHARS);
+        bounded.push(value);
+        if truncated {
+            truncated_segment_count += 1;
+        }
+    }
+
+    let clipped_segment_count = path.len().saturating_sub(MAX_PATH_FIELD_SEGMENTS);
+    (bounded, truncated_segment_count, clipped_segment_count)
+}
+
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let telemetry = TelemetrySpan::start("bijux-cli", argv);
@@ -129,7 +148,9 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if argv.len() == 2 && matches!(argv[1].as_str(), "--version" | "-V") {
-        telemetry.record("dispatch.version.alias", json!({"flag": argv[1]}));
+        let (flag, flag_truncated) = bounded_command(&argv[1]);
+        telemetry
+            .record("dispatch.version.alias", json!({"flag": flag, "flag_truncated": flag_truncated}));
         let normalized = vec![argv[0].clone(), "version".to_string()];
         return run_app_inner(&normalized, telemetry);
     }
@@ -157,9 +178,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                 delegated_argv.push("--help".to_string());
                 if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
                 {
+                    let (target, target_truncated) = bounded_command(first);
                     telemetry.record(
                         "dispatch.delegated.help",
-                        json!({"target": first, "exit_code": delegated.exit_code}),
+                        json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
                     );
                     return Ok(delegated);
                 }
@@ -168,11 +190,13 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let rendered = match render_command_help(&path_refs) {
             Ok(rendered) => rendered,
             Err(_) => {
+                let requested = path_refs.join(" ");
+                let (requested_bounded, requested_truncated) = bounded_command(&requested);
                 telemetry.record(
                     "dispatch.help.unknown_topic",
                     json!({
-                        "requested": path_refs.join(" "),
-                        "requested_truncated": path_refs.join(" ").chars().count() > MAX_COMMAND_FIELD_CHARS,
+                        "requested": requested_bounded,
+                        "requested_truncated": requested_truncated,
                         "exit_code": 2,
                     }),
                 );
@@ -185,10 +209,13 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                 });
             }
         };
+        let topic = if path.is_empty() { "root".to_string() } else { path.join(" ") };
+        let (topic_bounded, topic_truncated) = bounded_command(&topic);
         telemetry.record(
             "dispatch.help.rendered",
             json!({
-                "topic": if path.is_empty() { "root".to_string() } else { path.join(" ") },
+                "topic": topic_bounded,
+                "topic_truncated": topic_truncated,
                 "exit_code": 0,
             }),
         );
@@ -204,9 +231,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         && argv.get(1).is_some_and(|first| first == "dev" || known_bijux_tool(first).is_some())
     {
         if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
+            let target_arg = argv.get(1).cloned().unwrap_or_default();
+            let (target, target_truncated) = bounded_command(&target_arg);
             telemetry.record(
                 "dispatch.delegated.help_flag",
-                json!({"target": argv.get(1).cloned().unwrap_or_default(), "exit_code": delegated.exit_code}),
+                json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
             );
             return Ok(delegated);
         }
@@ -221,9 +250,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
+        let target_arg = argv.get(1).cloned().unwrap_or_default();
+        let (target, target_truncated) = bounded_command(&target_arg);
         telemetry.record(
             "dispatch.delegated.command",
-            json!({"target": argv.get(1).cloned().unwrap_or_default(), "exit_code": delegated.exit_code}),
+            json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
         );
         return Ok(delegated);
     }
@@ -257,11 +288,22 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             });
         }
     };
+    let (command_path, command_path_truncated_segment_count, command_path_clipped_segment_count) =
+        bounded_segments(&intent.command_path);
+    let (
+        normalized_path,
+        normalized_path_truncated_segment_count,
+        normalized_path_clipped_segment_count,
+    ) = bounded_segments(&intent.normalized_path);
     telemetry.record(
         "dispatch.intent.parsed",
         json!({
-            "command_path": intent.command_path.clone(),
-            "normalized_path": intent.normalized_path.clone(),
+            "command_path": command_path,
+            "command_path_truncated_segment_count": command_path_truncated_segment_count,
+            "command_path_clipped_segment_count": command_path_clipped_segment_count,
+            "normalized_path": normalized_path,
+            "normalized_path_truncated_segment_count": normalized_path_truncated_segment_count,
+            "normalized_path_clipped_segment_count": normalized_path_clipped_segment_count,
             "quiet": intent.global_flags.quiet,
         }),
     );
@@ -295,7 +337,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             telemetry.record(
                 "dispatch.route.error",
                 json!({
-                    "command": command,
+                    "command": command.clone(),
                     "command_truncated": command_truncated,
                     "exit_code": code,
                     "exit_kind": crate::shared::telemetry::exit_code_kind(code),
@@ -307,8 +349,8 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                 telemetry.record(
                     "dispatch.route.unknown",
                     json!({
-                        "command": command_joined,
-                        "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS,
+                        "command": command.clone(),
+                        "command_truncated": command_truncated,
                         "exit_code": code,
                         "source": "error_path",
                     }),
@@ -376,11 +418,12 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
 
     if is_unknown {
         let command_joined = intent.normalized_path.join(" ");
+        let (command, command_truncated) = bounded_command(&command_joined);
         telemetry.record(
             "dispatch.route.unknown",
             json!({
-                "command": command_joined,
-                "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS,
+                "command": command,
+                "command_truncated": command_truncated,
                 "exit_code": 2,
                 "status": payload.get("status").and_then(serde_json::Value::as_str),
             }),
@@ -394,7 +437,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     telemetry.record(
         "dispatch.route.completed",
         json!({
-            "command": command,
+            "command": command.clone(),
             "command_truncated": command_truncated,
             "status": payload.get("status").and_then(serde_json::Value::as_str),
             "exit_code": route_exit_code,
@@ -405,7 +448,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     if intent.global_flags.quiet {
         telemetry.record(
             "dispatch.quiet.suppressed",
-            json!({"command": command_joined, "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS, "exit_code": route_exit_code}),
+            json!({"command": command, "command_truncated": command_truncated, "exit_code": route_exit_code}),
         );
         return Ok(AppRunResult {
             exit_code: route_exit_code,
@@ -423,7 +466,7 @@ mod tests {
 
     use serde_json::Value;
 
-    use super::run_app;
+    use super::{run_app, MAX_PATH_SEGMENT_CHARS};
     use crate::api::telemetry::{TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV};
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
@@ -479,5 +522,32 @@ mod tests {
             !rows.iter().any(|row| row["stage"] == "dispatch.route.completed"),
             "unknown routes must not be reported as completed"
         );
+    }
+
+    #[test]
+    fn run_app_bounds_intent_path_segments_in_telemetry() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("telemetry").join("events.jsonl");
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let oversized = "x".repeat(MAX_PATH_SEGMENT_CHARS + 48);
+        let result = run_app(&["bijux".to_string(), oversized.clone()]).expect("run");
+        assert_eq!(result.exit_code, 2);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry output");
+        let rows: Vec<Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+        let parsed = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.intent.parsed")
+            .expect("intent parsed event");
+        let first = parsed["payload"]["normalized_path"][0].as_str().expect("first segment");
+        assert_eq!(first.chars().count(), MAX_PATH_SEGMENT_CHARS);
+        assert_eq!(parsed["payload"]["normalized_path_truncated_segment_count"], 1);
     }
 }
