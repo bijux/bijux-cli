@@ -224,6 +224,24 @@ fn unknown_help_topic_returns_usage_exit_and_stderr_message() {
 }
 
 #[test]
+fn help_command_rejects_missing_global_flag_values_with_usage_exit() {
+    let out = run(&["help", "--format"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("utf-8");
+    assert!(stderr.contains("Missing value for --format"));
+}
+
+#[test]
+fn help_command_treats_tokens_after_separator_as_topics() {
+    let out = run(&["help", "--", "--help"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("utf-8");
+    assert!(stderr.contains("Unknown help topic"));
+}
+
+#[test]
 fn unknown_command_suggestions_are_deterministic_and_namespace_scoped() {
     let first = run(&["sttaus", "--format", "json", "--no-pretty"]);
     let second = run(&["sttaus", "--format", "json", "--no-pretty"]);

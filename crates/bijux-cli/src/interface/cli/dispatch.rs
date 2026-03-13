@@ -41,54 +41,6 @@ fn root_usage_help_text() -> Result<String> {
     Ok(format!("{}\n", render_command_help(&[])?.trim_end()))
 }
 
-fn is_known_help_global_flag(token: &str) -> bool {
-    matches!(
-        token,
-        "--help" | "-h" | "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text"
-    )
-}
-
-fn help_global_flag_takes_value(token: &str) -> bool {
-    matches!(token, "--format" | "-f" | "--log-level" | "--color" | "--config-path")
-}
-
-fn is_known_help_global_flag_with_equals(token: &str) -> bool {
-    token.starts_with("--format=")
-        || token.starts_with("--log-level=")
-        || token.starts_with("--color=")
-        || token.starts_with("--config-path=")
-}
-
-fn parse_help_command_path(argv: &[String]) -> std::result::Result<Vec<String>, String> {
-    let mut path = Vec::new();
-    let mut consume_next = false;
-
-    for token in argv.iter().skip(2) {
-        if consume_next {
-            consume_next = false;
-            continue;
-        }
-
-        if token == "--" {
-            continue;
-        }
-        if is_known_help_global_flag(token) || is_known_help_global_flag_with_equals(token) {
-            continue;
-        }
-        if help_global_flag_takes_value(token) {
-            consume_next = true;
-            continue;
-        }
-        if token.starts_with('-') {
-            return Err(format!("Unknown help flag: {token}"));
-        }
-
-        path.push(token.clone());
-    }
-
-    Ok(path)
-}
-
 fn bounded_command(command: &str) -> (String, bool) {
     truncate_chars(command, MAX_COMMAND_FIELD_CHARS)
 }
@@ -168,7 +120,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if argv.len() >= 2 && argv[1] == "help" {
-        let path = match parse_help_command_path(argv) {
+        let path = match help::parse_help_command_path(argv) {
             Ok(path) => path,
             Err(message) => {
                 let (bounded, message_truncated) = bounded_message(&message);
