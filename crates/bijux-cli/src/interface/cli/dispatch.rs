@@ -626,22 +626,17 @@ mod tests {
     use serde_json::Value;
 
     use super::{run_app, MAX_PATH_SEGMENT_CHARS};
-    use crate::api::telemetry::{TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV};
-    use crate::shared::telemetry::TEST_ENV_LOCK;
+    use crate::shared::telemetry::{install_test_telemetry_config, TEST_ENV_LOCK};
 
     #[test]
     fn run_app_writes_opt_in_telemetry_events() {
         let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
-        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+        let _telemetry = install_test_telemetry_config(Some(sink.clone()), false);
 
         let result = run_app(&["bijux".to_string(), "status".to_string()]).expect("run");
         assert_eq!(result.exit_code, 0);
-
-        std::env::remove_var(TELEMETRY_FILE_ENV);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<Value> =
@@ -662,15 +657,11 @@ mod tests {
         let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
-        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+        let _telemetry = install_test_telemetry_config(Some(sink.clone()), false);
 
         let result =
             run_app(&["bijux".to_string(), "definitely-not-a-command".to_string()]).expect("run");
         assert_eq!(result.exit_code, 2);
-
-        std::env::remove_var(TELEMETRY_FILE_ENV);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<Value> =
@@ -694,17 +685,13 @@ mod tests {
         let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
-        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+        let _telemetry = install_test_telemetry_config(Some(sink.clone()), false);
 
         let result = run_app(&["bijux".to_string(), "status".to_string(), "--quiet".to_string()])
             .expect("run");
         assert_eq!(result.exit_code, 0);
         assert!(result.stdout.is_empty());
         assert!(result.stderr.is_empty());
-
-        std::env::remove_var(TELEMETRY_FILE_ENV);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<Value> =
@@ -722,15 +709,11 @@ mod tests {
         let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
-        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+        let _telemetry = install_test_telemetry_config(Some(sink.clone()), false);
 
         let oversized = "x".repeat(MAX_PATH_SEGMENT_CHARS + 48);
         let result = run_app(&["bijux".to_string(), oversized.clone()]).expect("run");
         assert_eq!(result.exit_code, 2);
-
-        std::env::remove_var(TELEMETRY_FILE_ENV);
-        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<Value> =
