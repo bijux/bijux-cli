@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli as _;
+use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -103,6 +104,11 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         let produced = file_set(&scaffold_dir);
         let expected = expected_snapshot(kind);
         assert_eq!(produced, expected, "{kind} scaffold file set drifted");
+        let manifest: Value = serde_json::from_str(
+            &fs::read_to_string(manifest_file(&scaffold_dir)).expect("read manifest"),
+        )
+        .expect("parse manifest");
+        assert_eq!(manifest["compatibility"]["min_inclusive"], runtime_semver());
 
         for forbidden in ["README.md", "pyproject.toml", "Cargo.toml", ".gitignore"] {
             assert!(
@@ -156,6 +162,33 @@ fn scaffold_force_replaces_existing_directory_contents() {
 
     assert!(!scaffold_dir.join("stale.txt").exists(), "force should replace stale content");
     assert_eq!(file_set(&scaffold_dir), expected_snapshot("python"));
+}
+
+#[test]
+fn scaffold_invalid_kind_with_force_keeps_existing_directory_untouched() {
+    let root = tmp_dir("scaffold-kind-force");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("unknown-plugin");
+    fs::create_dir_all(&scaffold_dir).expect("mkdir scaffold dir");
+    fs::write(scaffold_dir.join("keep.txt"), "keep").expect("write keep file");
+
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "shell",
+            "unknown-plugin",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+            "--force",
+        ],
+        &plugins_dir,
+    );
+
+    assert_eq!(out.status.code(), Some(1));
+    assert!(scaffold_dir.join("keep.txt").exists(), "invalid kind must not delete existing data");
 }
 
 #[test]

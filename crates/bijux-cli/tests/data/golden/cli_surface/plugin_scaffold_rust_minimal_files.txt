@@ -1,2 +1,3 @@
 plugin.manifest.json
+plugin.py
 src/lib.rs

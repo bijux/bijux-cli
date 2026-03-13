@@ -15,8 +15,9 @@ fn is_safe_scaffold_path(path: &Path) -> bool {
 
 fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
     format!(
-        "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"0.1.0\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
+        "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
+        runtime_semver(),
         namespace,
         plugin_kind,
         "plugin:main",
@@ -46,6 +47,7 @@ pub(crate) fn scaffold_plugin_layout(
     if !is_safe_scaffold_path(base_dir) {
         anyhow::bail!("scaffold path is unsafe");
     }
+    let plugin_kind = scaffold_manifest_kind(kind)?;
     if base_dir.exists() {
         if !force {
             anyhow::bail!("scaffold path already exists; pass --force to overwrite");
@@ -58,7 +60,6 @@ pub(crate) fn scaffold_plugin_layout(
         }
     }
 
-    let plugin_kind = scaffold_manifest_kind(kind)?;
     fs::create_dir_all(base_dir)?;
     let manifest_path = base_dir.join("plugin.manifest.json");
     fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, namespace))?;
@@ -68,6 +69,10 @@ pub(crate) fn scaffold_plugin_layout(
             "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv}\n",
         )?;
     } else {
+        fs::write(
+            base_dir.join("plugin.py"),
+            "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv, \"bridge\": \"replace plugin.py with your Rust bridge entrypoint\"}\n",
+        )?;
         fs::create_dir_all(base_dir.join("src"))?;
         fs::write(
             base_dir.join("src/lib.rs"),

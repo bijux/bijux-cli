@@ -8,6 +8,7 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
+use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -88,6 +89,7 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     .expect("parse py manifest");
     assert_eq!(py_manifest["kind"], "python");
     assert_eq!(py_manifest["entrypoint"], "plugin:main");
+    assert_eq!(py_manifest["compatibility"]["min_inclusive"], runtime_semver());
 
     let rs_dir = root.join("rust-plugin");
     run_ok_json(
@@ -108,6 +110,8 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     .expect("parse rs manifest");
     assert_eq!(rs_manifest["kind"], "delegated");
     assert_eq!(rs_manifest["entrypoint"], "plugin:main");
+    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], runtime_semver());
+    assert!(rs_dir.join("plugin.py").exists(), "rust scaffold must emit delegated shim");
 }
 
 #[test]
