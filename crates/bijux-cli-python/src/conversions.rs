@@ -21,6 +21,9 @@ pub fn classify_failure(exit_code: i32, stderr: &str) -> BridgeErrorKind {
     if exit_code == ExitCode::Usage as i32 {
         return BridgeErrorKind::Usage;
     }
+    if exit_code == ExitCode::Encoding as i32 {
+        return BridgeErrorKind::Validation;
+    }
     let lower = stderr.to_ascii_lowercase();
     if lower.contains("unknown route")
         || lower.contains("unknown namespace")
@@ -54,5 +57,20 @@ pub fn python_exception_tag(kind: BridgeErrorKind) -> &'static str {
         BridgeErrorKind::Usage => "UsageError",
         BridgeErrorKind::Validation => "ValidationError",
         BridgeErrorKind::Internal => "InternalError",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bijux_cli::contracts::ExitCode;
+
+    use super::{classify_failure, BridgeErrorKind};
+
+    #[test]
+    fn classify_failure_maps_encoding_exit_code_to_validation() {
+        assert_eq!(
+            classify_failure(ExitCode::Encoding as i32, "encoding failure"),
+            BridgeErrorKind::Validation
+        );
     }
 }

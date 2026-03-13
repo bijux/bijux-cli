@@ -27,22 +27,42 @@ pub(super) fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
 }
 
 pub(super) fn classify_error_exit_code(message: &str) -> i32 {
-    if message.contains("Missing argument")
-        || message.contains("Invalid argument")
-        || message.contains("Key cannot be empty")
-        || message.contains("Invalid key")
-        || message.contains("Unknown config section")
-        || message.contains("Config key not found")
-        || message.contains("Missing parameter")
-        || message.contains("Unsupported format")
-        || message.contains("Failed to load config")
-        || message.contains("unknown route:")
-        || message.contains("plugin route execution is not implemented")
+    let lower = message.to_ascii_lowercase();
+    if lower.contains("missing argument")
+        || lower.contains("invalid argument")
+        || lower.contains("key cannot be empty")
+        || lower.contains("invalid key")
+        || lower.contains("unknown config section")
+        || lower.contains("config key not found")
+        || lower.contains("missing parameter")
+        || lower.contains("unsupported format")
+        || lower.contains("failed to load config")
+        || lower.contains("unknown route:")
+        || lower.contains("plugin route execution is not implemented")
+        || lower.contains("plugin not found")
+        || lower.starts_with("invalid format:")
+        || lower.starts_with("invalid color mode:")
+        || lower.starts_with("invalid log level:")
     {
         2
-    } else if message.contains("Non-ASCII") || message.contains("Control characters") {
+    } else if lower.contains("non-ascii") || lower.contains("control characters") {
         3
     } else {
         1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::classify_error_exit_code;
+
+    #[test]
+    fn classifier_maps_usage_and_encoding_messages_to_stable_codes() {
+        assert_eq!(classify_error_exit_code("Missing argument: KEY required"), 2);
+        assert_eq!(classify_error_exit_code("invalid format: nope"), 2);
+        assert_eq!(
+            classify_error_exit_code("Non-ASCII characters are not allowed in keys or values."),
+            3
+        );
     }
 }

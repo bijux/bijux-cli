@@ -168,7 +168,16 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         });
     }
 
-    let intent = parse_intent(argv)?;
+    let intent = match parse_intent(argv) {
+        Ok(intent) => intent,
+        Err(error) => {
+            return Ok(AppRunResult {
+                exit_code: 2,
+                stdout: String::new(),
+                stderr: format!("{error}\n"),
+            });
+        }
+    };
     if intent.normalized_path.is_empty() {
         return Ok(AppRunResult {
             exit_code: 2,

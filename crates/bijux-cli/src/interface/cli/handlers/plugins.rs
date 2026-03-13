@@ -59,7 +59,7 @@ pub(crate) fn try_handle(
             let manifest_arg = command_positionals(argv, &["cli", "plugins", "install"])
                 .first()
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("manifest path is required"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: manifest path required"))?;
             let manifest_path = PathBuf::from(&manifest_arg);
             let source = command_option_value(argv, &["cli", "plugins", "install"], "--source")
                 .unwrap_or(manifest_arg.clone());
@@ -76,7 +76,7 @@ pub(crate) fn try_handle(
             let namespace = command_positionals(argv, &["cli", "plugins", "uninstall"])
                 .first()
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin namespace required"))?;
             Ok(Some(plugin_operations::uninstall_plugin_namespace(
                 plugin_registry_path,
                 &namespace,
@@ -86,14 +86,14 @@ pub(crate) fn try_handle(
             let namespace = command_positionals(argv, &["cli", "plugins", "enable"])
                 .first()
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin namespace required"))?;
             Ok(Some(plugin_operations::enable_plugin_namespace(plugin_registry_path, &namespace)?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "disable" => {
             let namespace = command_positionals(argv, &["cli", "plugins", "disable"])
                 .first()
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin namespace required"))?;
             Ok(Some(plugin_operations::disable_plugin_namespace(plugin_registry_path, &namespace)?))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
