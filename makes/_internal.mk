@@ -34,7 +34,7 @@ $(VENV):
 	  $(PYTHON) -m venv $(VENV); \
 	fi
 
-install: $(VENV) ## Install the project into the artifact-scoped virtualenv
+install: $(VENV) ## Install the project into the repo-managed virtualenv under artifacts/
 	@if [ -x "$(VENV_PYTHON)" ] && ! "$(VENV_PYTHON)" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \
 	  echo "→ Recreating $(VENV) with Python >=3.11"; \
 	  $(RM) "$(VENV)"; \
@@ -63,7 +63,7 @@ clean: ## Remove the virtualenv, caches, build outputs, and artifacts
 	fi
 	@$(RM) .venv .venv*/
 
-clean-soft: ## Remove generated outputs and keep the artifact-scoped virtualenv
+clean-soft: ## Remove generated outputs and keep the repo-managed virtualenv under artifacts/
 	@echo "→ Cleaning (keeping $(VENV)) ..."
 	@$(RM) \
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info demo .tmp_home \
@@ -92,18 +92,6 @@ build: build-py ## Build Python distribution packages
 .PHONY: fmt
 
 fmt lint test security docs build: | bootstrap
-
-dev-cli-status: ## Show the maintainer status report
-	@mkdir -p "$(PROFRAW_DIR)"
-	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli status --text
-
-dev-cli-crate-health: ## Show the maintainer crate health report
-	@mkdir -p "$(PROFRAW_DIR)"
-	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli crate-health --text
-
-dev-cli-parity: ## Show the maintainer parity report
-	@mkdir -p "$(PROFRAW_DIR)"
-	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
 
 env: ## Show the effective make environment
 	@printf '%s\n' \

@@ -22,7 +22,8 @@ cd bijux-cli
 make install
 ```
 
-`make install` creates `artifacts/python/.venv` and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
+`make install` prepares the repository-managed virtualenv under `artifacts/`
+and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
 
 ## Commands
 

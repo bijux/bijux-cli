@@ -86,7 +86,7 @@ define run_pytest
 endef
 
 ##@ Python
-python-env: install ## Prepare the artifact-scoped Python virtualenv and tools
+python-env: install ## Prepare the repo-managed Python virtualenv and tools
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
 
 python-env-py: python-env ## Run the legacy alias for python-env
