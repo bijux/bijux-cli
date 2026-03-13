@@ -99,9 +99,17 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunResult> {
     if argv.len() == 1 {
         telemetry.record("dispatch.help.default", json!({"reason":"no_args"}));
+        let help_text = match render_command_help(&[]) {
+            Ok(help) => help,
+            Err(error) => {
+                telemetry
+                    .record("dispatch.help.render.error", json!({"message": error.to_string()}));
+                return Err(error);
+            }
+        };
         return Ok(AppRunResult {
             exit_code: 0,
-            stdout: format!("{}\n", render_command_help(&[])?.trim_end()),
+            stdout: format!("{}\n", help_text.trim_end()),
             stderr: String::new(),
         });
     }
@@ -142,6 +150,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let rendered = match render_command_help(&path_refs) {
             Ok(rendered) => rendered,
             Err(_) => {
+                telemetry.record(
+                    "dispatch.help.unknown_topic",
+                    json!({"requested": path_refs.join(" ")}),
+                );
                 return Ok(AppRunResult {
                     exit_code: 2,
                     stdout: String::new(),
@@ -172,6 +184,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if let Some(help) = help::try_render_clap_help(argv) {
+        telemetry.record("dispatch.clap.short_circuit", json!({"kind":"help_or_version"}));
         return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
     }
 
@@ -184,6 +197,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if let Some(usage_error) = help::try_render_clap_usage_error(argv) {
+        telemetry.record("dispatch.clap.short_circuit", json!({"kind":"usage_error"}));
         return Ok(AppRunResult {
             exit_code: 2,
             stdout: String::new(),
@@ -216,11 +230,15 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     );
     if intent.normalized_path.is_empty() {
         telemetry.record("dispatch.intent.empty", json!({}));
-        return Ok(AppRunResult {
-            exit_code: 2,
-            stdout: String::new(),
-            stderr: root_usage_help_text()?,
-        });
+        let usage = match root_usage_help_text() {
+            Ok(value) => value,
+            Err(error) => {
+                telemetry
+                    .record("dispatch.help.render.error", json!({"message": error.to_string()}));
+                return Err(error);
+            }
+        };
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: usage });
     }
 
     let is_unknown = !is_known_catalog_route(&intent.normalized_path);
@@ -261,7 +279,16 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                 }
             }
             let rendered_error =
-                render_value(&error_payload, policy::emitter_config(&intent.global_flags))?;
+                match render_value(&error_payload, policy::emitter_config(&intent.global_flags)) {
+                    Ok(value) => value,
+                    Err(error) => {
+                        telemetry.record(
+                            "dispatch.render.error",
+                            json!({"stream":"stderr","message": error.to_string()}),
+                        );
+                        return Err(error.into());
+                    }
+                };
             let error_content = if rendered_error.ends_with('\n') {
                 rendered_error
             } else {
@@ -275,7 +302,23 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
     };
 
-    let rendered = render_value(&payload, policy::emitter_config(&intent.global_flags))?;
+    telemetry.record(
+        "dispatch.route.success",
+        json!({
+            "command": intent.normalized_path.join(" "),
+            "status": payload.get("status").and_then(serde_json::Value::as_str),
+        }),
+    );
+    let rendered = match render_value(&payload, policy::emitter_config(&intent.global_flags)) {
+        Ok(value) => value,
+        Err(error) => {
+            telemetry.record(
+                "dispatch.render.error",
+                json!({"stream":"stdout","message": error.to_string()}),
+            );
+            return Err(error.into());
+        }
+    };
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
@@ -289,7 +332,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let route_exit_code = 0;
 
     if intent.global_flags.quiet {
-        telemetry.record("dispatch.quiet.suppressed", json!({"exit_code": route_exit_code}));
+        telemetry.record(
+            "dispatch.quiet.suppressed",
+            json!({"command": intent.normalized_path.join(" "), "exit_code": route_exit_code}),
+        );
         return Ok(AppRunResult {
             exit_code: route_exit_code,
             stdout: String::new(),
