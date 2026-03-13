@@ -97,6 +97,16 @@ fn bounded_message(message: &str) -> (String, bool) {
     truncate_chars(message, MAX_TEXT_FIELD_CHARS)
 }
 
+fn bounded_status(status: Option<&str>) -> (Option<String>, bool) {
+    match status {
+        Some(value) => {
+            let (bounded, truncated) = bounded_message(value);
+            (Some(bounded), truncated)
+        }
+        None => (None, false),
+    }
+}
+
 fn bounded_segments(path: &[String]) -> (Vec<String>, usize, usize) {
     let mut bounded = Vec::with_capacity(path.len().min(MAX_PATH_FIELD_SEGMENTS));
     let mut truncated_segment_count = 0usize;
@@ -371,11 +381,29 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                     let nearest_command = correction.nearest_command;
                     let next_command = correction.next_command;
                     let next_help = correction.next_help;
+                    let (nearest_command_bounded, nearest_command_truncated) =
+                        bounded_command(&nearest_command);
+                    let (next_command_bounded, next_command_truncated) =
+                        bounded_command(&next_command);
+                    let (next_help_bounded, next_help_truncated) = bounded_command(&next_help);
                     error_payload["nearest_command"] = json!(nearest_command);
                     error_payload["next_command"] = json!(next_command.clone());
                     error_payload["next_help"] = json!(next_help.clone());
                     error_payload["hint"] =
                         json!(format!("Try `{}` or `{}`.", next_command, next_help));
+                    telemetry.record(
+                        "dispatch.route.suggested",
+                        json!({
+                            "command": command,
+                            "command_truncated": command_truncated,
+                            "nearest_command": nearest_command_bounded,
+                            "nearest_command_truncated": nearest_command_truncated,
+                            "next_command": next_command_bounded,
+                            "next_command_truncated": next_command_truncated,
+                            "next_help": next_help_bounded,
+                            "next_help_truncated": next_help_truncated,
+                        }),
+                    );
                 }
             }
             let rendered_error = match render_value(
@@ -421,13 +449,16 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     if is_unknown {
         let command_joined = intent.normalized_path.join(" ");
         let (command, command_truncated) = bounded_command(&command_joined);
+        let (status, status_truncated) =
+            bounded_status(payload.get("status").and_then(serde_json::Value::as_str));
         telemetry.record(
             "dispatch.route.unknown",
             json!({
                 "command": command,
                 "command_truncated": command_truncated,
                 "exit_code": 2,
-                "status": payload.get("status").and_then(serde_json::Value::as_str),
+                "status": status,
+                "status_truncated": status_truncated,
             }),
         );
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
@@ -436,12 +467,15 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let route_exit_code = 0;
     let command_joined = intent.normalized_path.join(" ");
     let (command, command_truncated) = bounded_command(&command_joined);
+    let (status, status_truncated) =
+        bounded_status(payload.get("status").and_then(serde_json::Value::as_str));
     telemetry.record(
         "dispatch.route.completed",
         json!({
             "command": command.clone(),
             "command_truncated": command_truncated,
-            "status": payload.get("status").and_then(serde_json::Value::as_str),
+            "status": status,
+            "status_truncated": status_truncated,
             "exit_code": route_exit_code,
             "exit_kind": crate::shared::telemetry::exit_code_kind(route_exit_code),
         }),
@@ -520,6 +554,7 @@ mod tests {
         let rows: Vec<Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
         assert!(rows.iter().any(|row| row["stage"] == "dispatch.route.unknown"));
+        assert!(rows.iter().any(|row| row["stage"] == "dispatch.route.suggested"));
         assert!(
             !rows.iter().any(|row| row["stage"] == "dispatch.route.completed"),
             "unknown routes must not be reported as completed"
