@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-03-10T11:57:22.407657+00:00",
-  "generator": "scripts/status/generate_help_tree_law_reports.py",
+  "coverage_ids": [
+    360
+  ],
+  "generated_at": "2026-03-13T01:16:09Z",
+  "generator": "bijux-dev-cli",
   "law": "help tree is a law surface",
   "scope": "help tree contract",
-  "status": "frozen",
-  "tasks": [
-    360
-  ]
+  "status": "not-frozen"
 }

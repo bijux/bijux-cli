@@ -219,7 +219,7 @@
       "test": "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"
     }
   ],
-  "generated_at": "2026-03-11T04:58:22Z",
+  "generated_at": "2026-03-13T01:25:33Z",
   "generator": "bijux-dev-cli",
   "scope": "diagnostics matrix"
 }

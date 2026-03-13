@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-03-10T11:57:22.407657+00:00",
-  "generator": "scripts/status/generate_help_tree_law_reports.py",
-  "proof": {
-    "bridge_help_parity": true,
-    "inspect_help_agreement": true,
-    "repeated_discovery_stability": true,
-    "routes_help_agreement": true
-  },
-  "scope": "command-tree help consistency",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     350,
     351,
     352,
     355,
     357
-  ]
+  ],
+  "generated_at": "2026-03-13T01:16:09Z",
+  "generator": "bijux-dev-cli",
+  "proof": {
+    "bridge_help_parity": false,
+    "inspect_help_agreement": false,
+    "repeated_discovery_stability": false,
+    "routes_help_agreement": false
+  },
+  "scope": "command-tree help consistency",
+  "status": "partial"
 }

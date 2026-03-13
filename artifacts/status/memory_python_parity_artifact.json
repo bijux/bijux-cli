@@ -3,7 +3,7 @@
     "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
     "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs"
   ],
-  "generated_at": "2026-03-11T05:02:23Z",
+  "generated_at": "2026-03-13T01:16:15Z",
   "generator": "bijux-dev-cli",
   "scope": "memory parity versus overlapping python behavior",
   "status": "partial"

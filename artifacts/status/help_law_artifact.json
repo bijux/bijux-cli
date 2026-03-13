@@ -1,9 +1,5 @@
 {
-  "generated_at": "2026-03-10T11:57:22.407657+00:00",
-  "generator": "scripts/status/generate_help_tree_law_reports.py",
-  "scope": "help law",
-  "status": "complete",
-  "tasks": [
+  "coverage_ids": [
     341,
     342,
     343,
@@ -21,96 +17,100 @@
     355,
     356
   ],
-  "todo_coverage": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "root_help_lists_commands_in_stable_order",
-      "todo": 341
+      "coverage_id": 341,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "root_help_lists_commands_in_stable_order"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "cli_help_lists_subcommands_in_stable_order",
-      "todo": 342
+      "coverage_id": 342,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "cli_help_lists_subcommands_in_stable_order"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "dev_cli_help_lists_subcommands_in_stable_order",
-      "todo": 343
+      "coverage_id": 343,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "dev_cli_help_lists_subcommands_in_stable_order"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "plugin_installed_help_keeps_builtin_order_stable",
-      "todo": 344
+      "coverage_id": 344,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "plugin_installed_help_keeps_builtin_order_stable"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "no_color_root_help_and_grouped_help_are_stable",
-      "todo": 345
+      "coverage_id": 345,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "no_color_root_help_and_grouped_help_are_stable"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "no_color_root_help_and_grouped_help_are_stable",
-      "todo": 346
+      "coverage_id": 346,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "no_color_root_help_and_grouped_help_are_stable"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
-      "todo": 347
+      "coverage_id": 347,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
-      "todo": 348
+      "coverage_id": 348,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "hidden_aliases_do_not_appear_as_canonical_help_entries",
-      "todo": 349
+      "coverage_id": 349,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "hidden_aliases_do_not_appear_as_canonical_help_entries"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export",
-      "todo": 350
+      "coverage_id": 350,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export",
-      "todo": 351
+      "coverage_id": 351,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "binary_and_bridge_help_trees_are_identical_for_covered_commands",
-      "todo": 352
+      "coverage_id": 352,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "binary_and_bridge_help_trees_are_identical_for_covered_commands"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
-      "todo": 353
+      "coverage_id": 353,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
-      "todo": 354
+      "coverage_id": 354,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
-      "status": "covered",
-      "test": "command_tree_is_stable_across_repeated_plugin_discovery_runs",
-      "todo": 355
+      "coverage_id": 355,
+      "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+      "status": "missing",
+      "test": "command_tree_is_stable_across_repeated_plugin_discovery_runs"
     }
-  ]
+  ],
+  "generated_at": "2026-03-13T01:16:09Z",
+  "generator": "bijux-dev-cli",
+  "scope": "help law",
+  "status": "partial"
 }

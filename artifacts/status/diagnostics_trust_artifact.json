@@ -96,7 +96,7 @@
       "test": "diagnostics_runs_are_deterministic_for_covered_commands"
     }
   ],
-  "generated_at": "2026-03-11T05:26:18Z",
+  "generated_at": "2026-03-13T01:16:05Z",
   "generator": "bijux-dev-cli",
   "scope": "diagnostics trust",
   "status": "partial"

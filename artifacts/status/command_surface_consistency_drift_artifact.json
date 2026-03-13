@@ -1,8 +1,24 @@
 {
-  "drift_count": 0,
-  "drift_todos": [],
-  "generated_at": "2026-03-10T05:03:08.197679+00:00",
-  "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-  "scope": "todo 395 cross-command drift detector artifact",
-  "status": "clean"
+  "drift_count": 15,
+  "drift_coverage_ids": [
+    381,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    388,
+    389,
+    390,
+    391,
+    392,
+    393,
+    394,
+    395
+  ],
+  "generated_at": "2026-03-13T01:41:12Z",
+  "generator": "bijux-dev-cli",
+  "scope": "cross-command drift detector artifact",
+  "status": "drift"
 }

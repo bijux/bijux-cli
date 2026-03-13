@@ -6,13 +6,13 @@
   ],
   "files": {
     "python": {
+      "plugin.entry": {
+        "classification": "essential",
+        "reason": "runtime entrypoint for delegated plugins"
+      },
       "plugin.manifest.json": {
         "classification": "essential",
         "reason": "required for install, namespace validation, and lifecycle commands"
-      },
-      "plugin.py": {
-        "classification": "essential",
-        "reason": "runtime entrypoint for delegated python plugins"
       }
     },
     "rust": {
@@ -27,6 +27,6 @@
     }
   },
   "freeze_rule": "every scaffolded file must have a justification and decorative outputs stay excluded",
-  "generated_at": "2026-03-11T05:18:54Z",
+  "generated_at": "2026-03-13T01:16:21Z",
   "generator": "bijux-dev-cli"
 }

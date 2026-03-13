@@ -3,7 +3,7 @@
   "coverage_ids": [
     157
   ],
-  "generated_at": "2026-03-11T05:19:16Z",
+  "generated_at": "2026-03-13T01:16:21Z",
   "generator": "bijux-dev-cli",
   "regression_suite_ok": true,
   "scope": "plugin/history/memory corruption triage",

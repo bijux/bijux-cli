@@ -132,7 +132,7 @@
       "test": "interrupted_process_behavior_is_normalized_for_interactive_entrypoint"
     }
   ],
-  "generated_at": "2026-03-11T04:49:24Z",
+  "generated_at": "2026-03-13T01:41:12Z",
   "generator": "bijux-dev-cli",
   "scope": "adversarial filesystem/process matrix",
   "status": "partial"

@@ -2,37 +2,37 @@
   "areas": [
     {
       "area": "commands",
-      "complete": 6,
-      "status": "complete",
+      "complete": 0,
+      "status": "missing",
       "total": 6
     },
     {
       "area": "config",
-      "complete": 2,
-      "status": "complete",
+      "complete": 0,
+      "status": "missing",
       "total": 2
     },
     {
       "area": "history",
-      "complete": 2,
-      "status": "complete",
+      "complete": 0,
+      "status": "missing",
       "total": 2
     },
     {
       "area": "memory",
-      "complete": 1,
-      "status": "complete",
+      "complete": 0,
+      "status": "missing",
       "total": 1
     },
     {
       "area": "diagnostics",
-      "complete": 1,
-      "status": "complete",
+      "complete": 0,
+      "status": "missing",
       "total": 1
     }
   ],
-  "generated_at": "2026-03-10T05:03:08.197679+00:00",
-  "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-  "next_wave_input": "Use this summary as source-of-truth for prioritization instead of intuition.",
-  "scope": "todo 398 complete/partial/missing summary for commands/config/history/memory/diagnostics"
+  "generated_at": "2026-03-13T01:41:12Z",
+  "generator": "bijux-dev-cli",
+  "prioritization_note": "Use this summary as source-of-truth for prioritization instead of intuition.",
+  "scope": "complete/partial/missing summary for commands/config/history/memory/diagnostics"
 }

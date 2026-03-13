@@ -1,97 +1,97 @@
 {
-  "generated_at": "2026-03-10T05:03:08.197679+00:00",
-  "generator": "scripts/status/generate_command_surface_consistency_reports.py",
-  "scope": "todo 381-394 cross-command consistency artifact",
-  "todo_rows": [
+  "coverage_rows": [
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "inspect_and_dev_routes_agree_on_route_ownership",
-      "todo": 381
+      "coverage_id": 381,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "inspect_and_dev_routes_agree_on_route_ownership"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "inspect_and_dev_registry_agree_on_plugin_ownership_model",
-      "todo": 382
+      "coverage_id": 382,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "inspect_and_dev_registry_agree_on_plugin_ownership_model"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "config_get_and_dev_env_agree_on_source_precedence",
-      "todo": 383
+      "coverage_id": 383,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "config_get_and_dev_env_agree_on_source_precedence"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "doctor_and_state_audit_agree_on_corruption_detection_when_applicable",
-      "todo": 384
+      "coverage_id": 384,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "doctor_and_state_audit_agree_on_corruption_detection_when_applicable"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules",
-      "todo": 385
+      "coverage_id": 385,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status",
-      "todo": 386
+      "coverage_id": 386,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status",
-      "todo": 387
+      "coverage_id": 387,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status",
-      "todo": 388
+      "coverage_id": 388,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs",
-      "todo": 389
+      "coverage_id": 389,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs",
-      "todo": 390
+      "coverage_id": 390,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs",
-      "todo": 391
+      "coverage_id": 391,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs",
-      "todo": 392
+      "coverage_id": 392,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_direct_core_agree_on_same_command_results",
-      "todo": 393
+      "coverage_id": 393,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_direct_core_agree_on_same_command_results"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_direct_core_agree_on_same_command_results",
-      "todo": 394
+      "coverage_id": 394,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_direct_core_agree_on_same_command_results"
     },
     {
-      "evidence": "crates/bijux-cli-bin/tests/cross_command_consistency_matrix.rs",
-      "status": "complete",
-      "test": "binary_and_direct_core_agree_on_same_command_results",
-      "todo": 395
+      "coverage_id": 395,
+      "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
+      "status": "missing",
+      "test": "binary_and_direct_core_agree_on_same_command_results"
     }
-  ]
+  ],
+  "generated_at": "2026-03-13T01:41:12Z",
+  "generator": "bijux-dev-cli",
+  "scope": "cross-command consistency artifact"
 }

@@ -61,15 +61,9 @@
       "reason": "language boundary remains useful while python bridge is maintained",
       "review": "paying rent with bridge parity and conversion law tests",
       "status": "watch"
-    },
-    {
-      "crate": "bijux-cli-evidence",
-      "reason": "evidence IDs and helpers should stay reusable across tooling surfaces",
-      "review": "must stay separate",
-      "status": "keep"
     }
   ],
-  "generated_at": "2026-03-11T05:31:39Z",
+  "generated_at": "2026-03-13T01:41:17Z",
   "generator": "bijux-dev-cli",
   "metrics": {
     "cross_crate_change_frequency": [],
@@ -83,26 +77,10 @@
         },
         "compile_ok": true,
         "compile_seconds": null,
-        "crate": "bijux-cli-evidence",
-        "dependency_fan_in": null,
-        "dependency_fan_out": 1,
-        "public_api_count": 13,
-        "test_build_ok": true,
-        "test_build_seconds": null
-      },
-      {
-        "churn": {
-          "commit_count": null,
-          "deletions": null,
-          "files_changed_entries": null,
-          "insertions": null
-        },
-        "compile_ok": true,
-        "compile_seconds": null,
         "crate": "bijux-dev-cli",
         "dependency_fan_in": null,
-        "dependency_fan_out": 2,
-        "public_api_count": 213,
+        "dependency_fan_out": 1,
+        "public_api_count": 300,
         "test_build_ok": true,
         "test_build_seconds": null
       },
@@ -117,8 +95,8 @@
         "compile_seconds": null,
         "crate": "bijux-cli",
         "dependency_fan_in": null,
-        "dependency_fan_out": 1,
-        "public_api_count": 596,
+        "dependency_fan_out": 0,
+        "public_api_count": 630,
         "test_build_ok": true,
         "test_build_seconds": null
       },
@@ -134,7 +112,7 @@
         "crate": "bijux-cli-python",
         "dependency_fan_in": null,
         "dependency_fan_out": 1,
-        "public_api_count": 22,
+        "public_api_count": 23,
         "test_build_ok": true,
         "test_build_seconds": null
       }

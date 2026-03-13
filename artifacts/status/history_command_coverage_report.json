@@ -109,7 +109,7 @@
       "test": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates"
     }
   ],
-  "generated_at": "2026-03-11T04:57:58Z",
+  "generated_at": "2026-03-13T01:16:11Z",
   "generator": "bijux-dev-cli",
   "scope": "history command coverage",
   "summary": {

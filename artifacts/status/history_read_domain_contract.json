@@ -5,7 +5,7 @@
     "artifacts/status/history_command_matrix_artifact.json",
     "artifacts/status/history_corruption_matrix_artifact.json"
   ],
-  "generated_at": "2026-03-11T04:57:58Z",
+  "generated_at": "2026-03-13T01:16:11Z",
   "generator": "bijux-dev-cli",
   "rule": "History read behavior must remain deterministic, format-stable, and resilient under malformed storage states.",
   "status": "frozen"
