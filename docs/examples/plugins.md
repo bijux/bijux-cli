@@ -16,7 +16,7 @@ cat > ./my-plugin/plugin.manifest.json <<'JSON'
   "schema_version": "v2",
   "manifest_version": "v2",
   "compatibility": {
-    "min_inclusive": "0.2.0",
+    "min_inclusive": "0.2.1-dev",
     "max_exclusive": "1.0.0"
   },
   "namespace": "my-plugin",

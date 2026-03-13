@@ -8,11 +8,12 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
-use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
+
+const SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -90,7 +91,7 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert_eq!(py_manifest["kind"], "python");
     assert_eq!(py_manifest["entrypoint"], "plugin:main");
     assert_eq!(py_manifest["version"], "0.1.0");
-    assert_eq!(py_manifest["compatibility"]["min_inclusive"], runtime_semver());
+    assert_eq!(py_manifest["compatibility"]["min_inclusive"], SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE);
     assert_eq!(py_manifest["compatibility"]["max_exclusive"], "1.0.0");
 
     let rs_dir = root.join("rust-plugin");
@@ -113,7 +114,7 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert_eq!(rs_manifest["kind"], "delegated");
     assert_eq!(rs_manifest["entrypoint"], "plugin:main");
     assert_eq!(rs_manifest["version"], "0.1.0");
-    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], runtime_semver());
+    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE);
     assert_eq!(rs_manifest["compatibility"]["max_exclusive"], "1.0.0");
     assert!(rs_dir.join("plugin.py").exists(), "rust scaffold must emit delegated shim");
 }

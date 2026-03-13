@@ -7,11 +7,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli as _;
-use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
+
+const SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
@@ -109,7 +110,10 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         )
         .expect("parse manifest");
         assert_eq!(manifest["version"], "0.1.0");
-        assert_eq!(manifest["compatibility"]["min_inclusive"], runtime_semver());
+        assert_eq!(
+            manifest["compatibility"]["min_inclusive"],
+            SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE
+        );
         assert_eq!(manifest["compatibility"]["max_exclusive"], "1.0.0");
 
         for forbidden in ["README.md", "pyproject.toml", "Cargo.toml", ".gitignore"] {

@@ -27,7 +27,7 @@ Generated files:
 
 Keep `plugin.py` aligned with your Rust bridge, keep the manifest namespace stable after release,
 and update the compatibility range when the supported Bijux host versions change. The default
-template values target plugin version `0.1.0` with host compatibility from `0.2.0` up to, but
+template values target plugin version `0.1.0` with host compatibility from `0.2.1-dev` up to, but
 not including, `1.0.0`.
 Use `plugin_namespace` for the durable CLI name and `crate_name` for the Cargo identifier when
 `project_name` contains presentation-only punctuation.

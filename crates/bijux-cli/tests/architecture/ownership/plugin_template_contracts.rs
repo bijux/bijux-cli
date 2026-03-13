@@ -6,6 +6,10 @@ use std::path::{Path, PathBuf};
 
 use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV2};
 
+const TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
+const TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
+const TEMPLATE_CONTRACT_VERSION: &str = "0.2.1-dev";
+
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -54,8 +58,8 @@ fn render_template(text: &str) -> String {
         .replace("{{cookiecutter.project_slug}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
         .replace("{{cookiecutter.plugin_version}}", "0.1.0")
-        .replace("{{cookiecutter.cli_min}}", "0.2.0")
-        .replace("{{cookiecutter.cli_max}}", "1.0.0")
+        .replace("{{cookiecutter.cli_min}}", TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE)
+        .replace("{{cookiecutter.cli_max}}", TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE)
         .replace("{{cookiecutter.crate_name}}", "testplug_rs")
         .replace("{{cookiecutter.rust_edition}}", "2021")
 }
@@ -159,8 +163,15 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(manifest.capabilities.is_empty());
         assert_eq!(manifest.namespace, Namespace::new("testplug").expect("valid namespace"));
         assert!(
-            manifest.compatibility.supports_host("0.2.0").expect("valid compatibility"),
-            "{path} should support the current stable release floor"
+            !manifest.compatibility.supports_host("0.2.0").expect("valid compatibility"),
+            "{path} must not claim support for the published 0.2.0 host"
+        );
+        assert!(
+            manifest
+                .compatibility
+                .supports_host(TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE)
+                .expect("valid compatibility"),
+            "{path} should support the current post-0.2.0 host floor"
         );
     }
 }
@@ -172,14 +183,17 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
         let payload: serde_json::Value =
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
         assert_eq!(payload["plugin_version"], "0.1.0", "{path} must default new plugins to 0.1.0");
-        assert_eq!(payload["cli_min"], "0.2.0", "{path} must require bijux-cli >=0.2.0");
         assert_eq!(
-            payload["cli_max"], "1.0.0",
+            payload["cli_min"], TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE,
+            "{path} must require the first post-0.2.0 Bijux host line"
+        );
+        assert_eq!(
+            payload["cli_max"], TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE,
             "{path} must keep future compatibility open until the 1.0.0 boundary"
         );
         assert_eq!(
-            payload["_template_version"], "0.2.0",
-            "{path} must track the current template contract release"
+            payload["_template_version"], TEMPLATE_CONTRACT_VERSION,
+            "{path} must track the current template contract version"
         );
 
         let project_slug = payload["project_slug"].as_str().expect("project slug template");
