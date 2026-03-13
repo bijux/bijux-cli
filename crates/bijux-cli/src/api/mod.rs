@@ -11,4 +11,5 @@ pub mod plugins;
 pub mod repl;
 pub mod routing;
 pub mod runtime;
+pub mod telemetry;
 pub mod version;

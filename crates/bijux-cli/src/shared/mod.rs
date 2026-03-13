@@ -3,4 +3,5 @@
 
 pub mod argv;
 pub mod output;
+pub mod telemetry;
 pub mod version;
