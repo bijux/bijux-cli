@@ -57,7 +57,7 @@ These commands do not prove:
 Go to:
 
 - [Install and verify](../02-getting-started/install-and-verify.md)
-- [Installation guide](../guides/installation.md)
+- [Installation and recovery](../02-getting-started/installation-and-recovery.md)
 - [Command surface](../06-reference/command-surface.md)
 - [Status and gaps](../KNOWN_GAPS.md)
 

@@ -71,32 +71,37 @@ plugins:
   - autorefs
   - redirects:
       redirect_maps:
-        getting-started/installation.md: 02-getting-started/install-and-verify.md
-        guides/installation-unified.md: guides/installation.md
-        guides/install-method-parity.md: guides/installation.md
-        guides/install-channels.md: guides/installation.md
-        guides/install-ci-containers.md: guides/installation.md
-        guides/install-linux.md: guides/installation.md
-        guides/install-macos.md: guides/installation.md
-        guides/install-windows.md: guides/installation.md
-        guides/uninstall-cargo.md: guides/installation.md
-        guides/uninstall-pip.md: guides/installation.md
-        guides/dual-install-behavior.md: guides/installation.md
-        guides/upgrade-pypi-users.md: guides/installation.md
+        getting-started/installation.md: 02-getting-started/installation-and-recovery.md
+        guides/index.md: 02-getting-started/index.md
+        guides/installation.md: 02-getting-started/installation-and-recovery.md
+        guides/installation-unified.md: 02-getting-started/installation-and-recovery.md
+        guides/install-method-parity.md: 02-getting-started/installation-and-recovery.md
+        guides/install-channels.md: 02-getting-started/installation-and-recovery.md
+        guides/install-ci-containers.md: 02-getting-started/installation-and-recovery.md
+        guides/install-linux.md: 02-getting-started/installation-and-recovery.md
+        guides/install-macos.md: 02-getting-started/installation-and-recovery.md
+        guides/install-windows.md: 02-getting-started/installation-and-recovery.md
+        guides/uninstall-cargo.md: 02-getting-started/installation-and-recovery.md
+        guides/uninstall-pip.md: 02-getting-started/installation-and-recovery.md
+        guides/dual-install-behavior.md: 02-getting-started/installation-and-recovery.md
+        guides/upgrade-pypi-users.md: 02-getting-started/installation-and-recovery.md
         guides/config-unified.md: 03-user-guide/configuration-and-output.md
         guides/plugin-unified.md: 03-user-guide/plugins-and-extensions.md
         guides/repl-unified.md: 06-reference/command-surface.md
         reference/repl-command-reference.md: 06-reference/command-surface.md
-        guides/python/internal-differences.md: guides/python/runtime-migration.md
-        guides/python/library-wrapper.md: guides/api-usage.md
-        guides/python/packaging-maintainers.md: guides/installation.md
-        guides/python/pipx-installs.md: guides/installation.md
+        guides/python/internal-differences.md: 06-reference/integrations-and-routed-runtimes.md
+        guides/python/library-wrapper.md: 06-reference/integrations-and-routed-runtimes.md
+        guides/python/packaging-maintainers.md: 02-getting-started/installation-and-recovery.md
+        guides/python/pipx-installs.md: 02-getting-started/installation-and-recovery.md
         guides/python/plugin-delegation.md: 03-user-guide/plugins-and-extensions.md
         guides/cli-usage.md: 03-user-guide/everyday-commands.md
         guides/configuration.md: 03-user-guide/configuration-and-output.md
         guides/plugins.md: 03-user-guide/plugins-and-extensions.md
-        guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
-        guides/python/virtualenv-installs.md: guides/installation.md
+        guides/python/rust-engine-invocation.md: 06-reference/integrations-and-routed-runtimes.md
+        guides/python/virtualenv-installs.md: 02-getting-started/installation-and-recovery.md
+        guides/api-usage.md: 06-reference/integrations-and-routed-runtimes.md
+        guides/atlas-local-routing.md: 06-reference/integrations-and-routed-runtimes.md
+        guides/python/runtime-migration.md: 06-reference/integrations-and-routed-runtimes.md
         getting-started/index.md: 02-getting-started/index.md
         getting-started/quickstart.md: 02-getting-started/run-your-first-commands.md
         examples/index.md: examples/workflows.md

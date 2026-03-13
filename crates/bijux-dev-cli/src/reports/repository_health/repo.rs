@@ -398,9 +398,9 @@ mod tests {
     #[test]
     fn repo_drift_reports_all_broken_docs_references_per_file() {
         let root = temp_root("docs-refs");
-        fs::create_dir_all(root.join("docs/guides")).expect("mkdir docs");
+        fs::create_dir_all(root.join("docs/02-getting-started")).expect("mkdir docs");
         fs::write(
-            root.join("docs/guides/index.md"),
+            root.join("docs/02-getting-started/index.md"),
             "[one](docs/missing/one.md) and [two](docs/missing/two.md)\n",
         )
         .expect("write docs");

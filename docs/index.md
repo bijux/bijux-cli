@@ -26,7 +26,7 @@ High-value documents only. Everything else is supporting detail.
 - [Everyday commands](03-user-guide/everyday-commands.md)
 - [Configuration and output](03-user-guide/configuration-and-output.md)
 - [Plugins and extensions](03-user-guide/plugins-and-extensions.md)
-- [Installation guide](guides/installation.md)
+- [Installation and recovery](02-getting-started/installation-and-recovery.md)
 - [Development guide](05-development/index.md)
 - [Integrations and routed runtimes](06-reference/integrations-and-routed-runtimes.md)
 
