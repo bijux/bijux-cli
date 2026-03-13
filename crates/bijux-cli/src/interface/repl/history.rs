@@ -6,7 +6,7 @@ use crate::infrastructure::fs_store::atomic_write_text;
 use super::execution::execute_repl_line;
 use super::types::{
     ReplError, ReplFrame, ReplSession, REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES,
-    REPL_HISTORY_MAX_ENTRIES,
+    REPL_HISTORY_MAX_ENTRIES, REPL_LAST_ERROR_MAX_CHARS,
 };
 
 #[derive(Debug, Default)]
@@ -15,6 +15,15 @@ struct HistoryParseReport {
     malformed: bool,
     dropped_entries: usize,
     truncated_entries: usize,
+}
+
+fn set_history_warning(session: &mut ReplSession, message: &str) {
+    let bounded = message
+        .chars()
+        .filter(|ch| !ch.is_control())
+        .take(REPL_LAST_ERROR_MAX_CHARS)
+        .collect::<String>();
+    session.last_error = Some(bounded);
 }
 
 fn sanitize_history_command(raw: &str) -> Option<(String, bool)> {
@@ -55,12 +64,15 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
     if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
         let mut report = HistoryParseReport::default();
         for entry in entries {
-            match entry
-                .as_object()
-                .and_then(|obj| obj.get("command"))
-                .and_then(serde_json::Value::as_str)
-                .and_then(sanitize_history_command)
-            {
+            let normalized = match entry {
+                serde_json::Value::String(value) => sanitize_history_command(&value),
+                serde_json::Value::Object(object) => object
+                    .get("command")
+                    .and_then(serde_json::Value::as_str)
+                    .and_then(sanitize_history_command),
+                _ => None,
+            };
+            match normalized {
                 Some((sanitized, truncated)) => {
                     report.entries.push(sanitized);
                     report.truncated_entries += usize::from(truncated);
@@ -114,25 +126,56 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
     let Some(path) = &session.history_file else {
         return Ok(());
     };
-    if !path.exists() {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(err) => return Err(err.into()),
+    };
+    if metadata.file_type().is_symlink() && fs::metadata(path).is_err() {
+        session.history.clear();
+        set_history_warning(session, "history path is a broken symlink; history reset");
         return Ok(());
     }
     let metadata = fs::metadata(path)?;
     if !metadata.is_file() {
         session.history.clear();
-        session.last_error = Some("history path is not a regular file; history reset".to_string());
+        set_history_warning(session, "history path is not a regular file; history reset");
         return Ok(());
     }
     if metadata.len() > REPL_HISTORY_FILE_MAX_BYTES {
         session.history.clear();
-        session.last_error = Some(format!(
-            "history file exceeds {} bytes and was ignored",
-            REPL_HISTORY_FILE_MAX_BYTES
-        ));
+        set_history_warning(
+            session,
+            &format!("history file exceeds {} bytes and was ignored", REPL_HISTORY_FILE_MAX_BYTES),
+        );
         return Ok(());
     }
 
-    let text = fs::read_to_string(path)?;
+    let bytes = match fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(err) => {
+            session.history.clear();
+            set_history_warning(session, &format!("history file is unreadable: {err}"));
+            return Ok(());
+        }
+    };
+    if bytes.len() as u64 > REPL_HISTORY_FILE_MAX_BYTES {
+        session.history.clear();
+        set_history_warning(
+            session,
+            &format!("history file exceeds {} bytes and was ignored", REPL_HISTORY_FILE_MAX_BYTES),
+        );
+        return Ok(());
+    }
+    let text = match String::from_utf8(bytes) {
+        Ok(value) => value,
+        Err(_) => {
+            session.history.clear();
+            set_history_warning(session, "history file is not valid UTF-8; history reset");
+            return Ok(());
+        }
+    };
     let report = parse_history_entries(&text);
     let mut entries = report.entries;
     if entries.len() > session.history_limit {
@@ -140,12 +183,15 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
     }
     session.history = entries;
     if report.malformed && session.history.is_empty() {
-        session.last_error = Some("history file is malformed; history reset".to_string());
+        set_history_warning(session, "history file is malformed; history reset");
     } else if report.dropped_entries > 0 || report.truncated_entries > 0 {
-        session.last_error = Some(format!(
-            "history normalized: dropped={}, truncated={}",
-            report.dropped_entries, report.truncated_entries
-        ));
+        set_history_warning(
+            session,
+            &format!(
+                "history normalized: dropped={}, truncated={}",
+                report.dropped_entries, report.truncated_entries
+            ),
+        );
     } else {
         session.last_error = None;
     }
@@ -206,10 +252,13 @@ pub(crate) fn push_history(session: &mut ReplSession, command: &str) {
     };
     session.history.push(sanitized);
     if truncated {
-        session.last_error = Some(format!(
-            "history command exceeded {} characters and was truncated",
-            REPL_HISTORY_ENTRY_MAX_CHARS
-        ));
+        set_history_warning(
+            session,
+            &format!(
+                "history command exceeded {} characters and was truncated",
+                REPL_HISTORY_ENTRY_MAX_CHARS
+            ),
+        );
     }
     if session.history.len() > session.history_limit {
         let overflow = session.history.len() - session.history_limit;
@@ -275,6 +324,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_history_supports_mixed_json_string_and_object_entries() {
+        let payload = serde_json::json!([
+            "status",
+            {"command": "doctor"},
+            {"command": "bad\u{0002}"},
+            42
+        ])
+        .to_string();
+        let report = parse_history_entries(&payload);
+        assert_eq!(report.entries, vec!["status".to_string(), "doctor".to_string()]);
+        assert!(report.malformed);
+        assert_eq!(report.dropped_entries, 2);
+    }
+
+    #[test]
     fn load_history_reports_normalization_diagnostics() {
         let path = temp_history_file("normalize");
         std::fs::write(&path, "status\nbad\u{0007}\n").expect("history write should succeed");
@@ -318,6 +382,42 @@ mod tests {
 
         assert!(session.history.is_empty());
         assert!(session.last_error.as_deref().unwrap_or_default().contains("exceeds"));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn load_history_normalizes_invalid_utf8_files() {
+        let path = temp_history_file("invalid-utf8");
+        std::fs::write(&path, [0xff, 0xfe, 0xfd]).expect("history write should succeed");
+
+        let (mut session, _) = startup_repl("", None);
+        configure_history(&mut session, Some(path.clone()), true, 50);
+        load_history(&mut session).expect("invalid utf8 should be normalized");
+
+        assert!(session.history.is_empty());
+        assert!(session.last_error.as_deref().unwrap_or_default().contains("not valid UTF-8"));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn load_history_resets_broken_symlink_paths() {
+        use std::os::unix::fs as unix_fs;
+
+        let target = temp_history_file("broken-symlink-target");
+        let path = temp_history_file("broken-symlink-link");
+        let _ = std::fs::remove_file(&target);
+        let _ = std::fs::remove_file(&path);
+        unix_fs::symlink(&target, &path).expect("symlink should be created");
+
+        let (mut session, _) = startup_repl("", None);
+        configure_history(&mut session, Some(path.clone()), true, 50);
+        load_history(&mut session).expect("broken symlink should be normalized");
+
+        assert!(session.history.is_empty());
+        assert!(session.last_error.as_deref().unwrap_or_default().contains("broken symlink"));
 
         let _ = std::fs::remove_file(path);
     }
