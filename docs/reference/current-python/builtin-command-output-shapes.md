@@ -40,7 +40,7 @@
 - `plugins list`: plugin list payload.
 - `plugins info`: plugin metadata payload.
 - `plugins check`: plugin health payload.
-- `plugins install`: install status payload (`installed` or `dry-run`).
+- `plugins install`: install status payload for a validated manifest install.
 - `plugins uninstall`: uninstall status payload.
 - `plugins scaffold`: scaffold status payload.
 - `repl`: REPL control/session status semantics.

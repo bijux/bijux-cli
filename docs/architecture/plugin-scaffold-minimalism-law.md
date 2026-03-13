@@ -5,7 +5,7 @@ The plugin scaffold output is intentionally minimal and runnable.
 ## Required files
 
 - Python scaffold: `plugin.manifest.json`, `plugin.py`
-- Rust scaffold: `plugin.manifest.json`, `src/lib.rs`
+- Rust scaffold: `plugin.manifest.json`, `plugin.py`, `src/lib.rs`
 
 ## Forbidden decorative files
 
