@@ -130,6 +130,6 @@ extra_javascript:
 
 watch:
   - artifacts
-  - src
+  - crates
   - configs
-  - tests
+  - templates
