@@ -172,14 +172,6 @@ fn command_preview(argv: &[String]) -> (String, bool, Option<usize>, &'static st
     )
 }
 
-fn runtime_build_profile() -> &'static str {
-    if cfg!(debug_assertions) {
-        "debug"
-    } else {
-        "release"
-    }
-}
-
 fn bounded_cwd() -> (Option<String>, bool, Option<String>, bool) {
     match std::env::current_dir() {
         Ok(path) => {
@@ -315,7 +307,22 @@ impl TelemetrySpan {
                 map.insert("command_preview_source".to_string(), json!(preview_source));
                 map.insert("runtime_version".to_string(), json!(super::version::runtime_version()));
                 map.insert("runtime_semver".to_string(), json!(super::version::runtime_semver()));
-                map.insert("build_profile".to_string(), json!(runtime_build_profile()));
+                map.insert(
+                    "runtime_version_source".to_string(),
+                    json!(super::version::runtime_version_source()),
+                );
+                map.insert(
+                    "runtime_git_commit".to_string(),
+                    json!(super::version::runtime_git_commit()),
+                );
+                map.insert(
+                    "runtime_git_dirty".to_string(),
+                    json!(super::version::runtime_git_dirty()),
+                );
+                map.insert(
+                    "build_profile".to_string(),
+                    json!(super::version::runtime_build_profile()),
+                );
                 map.insert("cwd".to_string(), json!(cwd));
                 map.insert("cwd_truncated".to_string(), json!(cwd_truncated));
                 map.insert("cwd_error".to_string(), json!(cwd_error));
@@ -334,7 +341,10 @@ impl TelemetrySpan {
                 "command_preview_source": preview_source,
                 "runtime_version": super::version::runtime_version(),
                 "runtime_semver": super::version::runtime_semver(),
-                "build_profile": runtime_build_profile(),
+                "runtime_version_source": super::version::runtime_version_source(),
+                "runtime_git_commit": super::version::runtime_git_commit(),
+                "runtime_git_dirty": super::version::runtime_git_dirty(),
+                "build_profile": super::version::runtime_build_profile(),
                 "cwd": cwd,
                 "cwd_truncated": cwd_truncated,
                 "cwd_error": cwd_error,

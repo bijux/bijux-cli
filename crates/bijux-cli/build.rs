@@ -5,7 +5,29 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use semver::Version;
+use semver::{BuildMetadata, Prerelease, Version};
+
+const VERSION_SOURCE_OVERRIDE: &str = "override";
+const VERSION_SOURCE_GIT_TAG: &str = "git-tag";
+const VERSION_SOURCE_GIT_DESCRIBE: &str = "git-describe";
+const VERSION_SOURCE_PACKAGE_FALLBACK: &str = "package-fallback";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RuntimeBuildVersion {
+    semver_version: String,
+    display_version: String,
+    source: &'static str,
+    git_commit: Option<String>,
+    git_dirty: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct GitDescribeVersion {
+    base_semver: String,
+    commits_since_tag: u64,
+    commit_abbrev: String,
+    dirty: bool,
+}
 
 fn main() {
     println!("cargo:rerun-if-env-changed=BIJUX_VERSION_OVERRIDE");
@@ -14,11 +36,16 @@ fn main() {
     emit_git_rerun_hints(&workspace_root);
 
     let package_version = env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "0.0.0".to_string());
-    let (semver_version, display_version) =
-        resolve_runtime_versions(&workspace_root, &package_version);
+    let metadata = resolve_runtime_versions(&workspace_root, &package_version);
 
-    println!("cargo:rustc-env=BIJUX_BUILD_SEMVER_VERSION={semver_version}");
-    println!("cargo:rustc-env=BIJUX_BUILD_DISPLAY_VERSION={display_version}");
+    println!("cargo:rustc-env=BIJUX_BUILD_SEMVER_VERSION={}", metadata.semver_version);
+    println!("cargo:rustc-env=BIJUX_BUILD_DISPLAY_VERSION={}", metadata.display_version);
+    println!("cargo:rustc-env=BIJUX_BUILD_VERSION_SOURCE={}", metadata.source);
+    emit_optional_env("BIJUX_BUILD_GIT_COMMIT", metadata.git_commit.as_deref());
+    emit_optional_env(
+        "BIJUX_BUILD_GIT_DIRTY",
+        metadata.git_dirty.map(|dirty| if dirty { "1" } else { "0" }),
+    );
 }
 
 fn workspace_root() -> PathBuf {
@@ -30,19 +57,51 @@ fn workspace_root() -> PathBuf {
         .map_or_else(|| manifest_dir.clone(), Path::to_path_buf)
 }
 
-fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> (String, String) {
+fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> RuntimeBuildVersion {
+    let git_commit = git_commit_abbrev(workspace_root);
+    let git_dirty = git_dirty_state(workspace_root);
+
     if let Some(override_version) =
         env::var("BIJUX_VERSION_OVERRIDE").ok().and_then(|value| normalize_version_string(&value))
     {
-        return (override_version.clone(), override_version);
+        return RuntimeBuildVersion {
+            semver_version: override_version.clone(),
+            display_version: override_version,
+            source: VERSION_SOURCE_OVERRIDE,
+            git_commit,
+            git_dirty,
+        };
     }
 
     if let Some(version) = describe_tag_version(workspace_root) {
-        return (version.clone(), version);
+        return RuntimeBuildVersion {
+            semver_version: version.clone(),
+            display_version: version,
+            source: VERSION_SOURCE_GIT_TAG,
+            git_commit,
+            git_dirty,
+        };
+    }
+
+    if let Some(describe) = describe_git_version(workspace_root) {
+        let semver_version = semver_from_git_describe(&describe).unwrap_or(describe.base_semver);
+        return RuntimeBuildVersion {
+            semver_version: semver_version.clone(),
+            display_version: semver_version,
+            source: VERSION_SOURCE_GIT_DESCRIBE,
+            git_commit: Some(describe.commit_abbrev),
+            git_dirty: Some(describe.dirty),
+        };
     }
 
     let fallback = fallback_package_version(package_version);
-    (fallback.clone(), fallback)
+    RuntimeBuildVersion {
+        semver_version: fallback.clone(),
+        display_version: fallback,
+        source: VERSION_SOURCE_PACKAGE_FALLBACK,
+        git_commit,
+        git_dirty,
+    }
 }
 
 fn describe_tag_version(workspace_root: &Path) -> Option<String> {
@@ -58,6 +117,62 @@ fn describe_tag_version(workspace_root: &Path) -> Option<String> {
     normalize_version_string(tag.trim())
 }
 
+fn describe_git_version(workspace_root: &Path) -> Option<GitDescribeVersion> {
+    let output = Command::new("git")
+        .args(["-C", workspace_root.to_string_lossy().as_ref()])
+        .args(["describe", "--tags", "--match", "v[0-9]*", "--long", "--dirty", "--abbrev=12"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let describe = String::from_utf8_lossy(&output.stdout);
+    parse_git_describe(describe.trim())
+}
+
+fn parse_git_describe(raw: &str) -> Option<GitDescribeVersion> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let (without_dirty, dirty) = match trimmed.strip_suffix("-dirty") {
+        Some(value) => (value, true),
+        None => (trimmed, false),
+    };
+
+    let (tag_and_count, commit_abbrev) = without_dirty.rsplit_once("-g")?;
+    if commit_abbrev.trim().is_empty() {
+        return None;
+    }
+
+    let (tag, count_raw) = tag_and_count.rsplit_once('-')?;
+    let commits_since_tag = count_raw.parse::<u64>().ok()?;
+    let base_semver = normalize_version_string(tag)?;
+    Some(GitDescribeVersion {
+        base_semver,
+        commits_since_tag,
+        commit_abbrev: commit_abbrev.trim().to_string(),
+        dirty,
+    })
+}
+
+fn semver_from_git_describe(describe: &GitDescribeVersion) -> Option<String> {
+    let mut version = Version::parse(&describe.base_semver).ok()?;
+
+    if describe.commits_since_tag > 0 {
+        version.pre = Prerelease::new(&format!("dev.{}", describe.commits_since_tag)).ok()?;
+    }
+
+    let build_tag = if describe.dirty {
+        format!("g{}.dirty", describe.commit_abbrev)
+    } else {
+        format!("g{}", describe.commit_abbrev)
+    };
+    version.build = BuildMetadata::new(&build_tag).ok()?;
+    Some(version.to_string())
+}
+
 fn fallback_package_version(package_version: &str) -> String {
     normalize_version_string(package_version).unwrap_or_else(|| package_version.to_string())
 }
@@ -67,6 +182,40 @@ fn normalize_version_string(raw: &str) -> Option<String> {
     let without_prefix = trimmed.strip_prefix('v').unwrap_or(trimmed);
     let parsed = Version::parse(without_prefix).ok()?;
     Some(parsed.to_string())
+}
+
+fn git_commit_abbrev(workspace_root: &Path) -> Option<String> {
+    let output = Command::new("git")
+        .args(["-C", workspace_root.to_string_lossy().as_ref()])
+        .args(["rev-parse", "--short=12", "HEAD"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if commit.is_empty() {
+        return None;
+    }
+    Some(commit)
+}
+
+fn git_dirty_state(workspace_root: &Path) -> Option<bool> {
+    let output = Command::new("git")
+        .args(["-C", workspace_root.to_string_lossy().as_ref()])
+        .args(["status", "--porcelain"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    Some(!String::from_utf8_lossy(&output.stdout).trim().is_empty())
+}
+
+fn emit_optional_env(key: &str, value: Option<&str>) {
+    if let Some(value) = value {
+        println!("cargo:rustc-env={key}={value}");
+    }
 }
 
 fn emit_git_rerun_hints(workspace_root: &Path) {

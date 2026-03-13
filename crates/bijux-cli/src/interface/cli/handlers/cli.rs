@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
-use crate::api::version::{runtime_semver, runtime_version};
+use crate::api::version::{runtime_semver, runtime_version_info};
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::install::{install_health_report, post_install_hint};
 use crate::features::plugins::{compatibility_warnings, plugin_origin_metadata};
@@ -20,7 +20,18 @@ pub(crate) fn try_handle(
     plugin_registry_path: &Path,
 ) -> Option<Value> {
     match normalized_path {
-        [a, b] if a == "cli" && b == "version" => Some(json!({"version": runtime_version()})),
+        [a, b] if a == "cli" && b == "version" => {
+            let version = runtime_version_info();
+            Some(json!({
+                "name": version.name,
+                "version": version.version,
+                "semver": version.semver,
+                "source": version.source,
+                "git_commit": version.git_commit,
+                "git_dirty": version.git_dirty,
+                "build_profile": version.build_profile,
+            }))
+        }
         [a, b] if a == "cli" && b == "doctor" => {
             let install_report = install_health_report(
                 &env::var("PATH").unwrap_or_default(),
