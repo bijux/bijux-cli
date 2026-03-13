@@ -24,18 +24,14 @@ else
   DOCS_ENV      :=
 endif
 
-# Guardrails
-ifeq ($(strip $(MKDOCS_BIN)),)
-  $(error mkdocs not found. Activate your venv or install dev deps)
-endif
-ifeq ($(wildcard $(MKDOCS_CFG)),)
-  $(error mkdocs config '$(MKDOCS_CFG)' not found)
-endif
-
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require
 
 ##@ Documentation
-docs: docs-clean ## Build documentation (mkdocs --strict) to artifacts/docs/site
+docs-require: ## Verify the shared documentation toolchain and config
+	@$(call require_tool,$(MKDOCS_BIN))
+	@$(call require_file,$(MKDOCS_CFG))
+
+docs: docs-clean docs-require ## Build documentation (mkdocs --strict) to artifacts/docs/site
 	@echo "Building documentation"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -43,7 +39,7 @@ docs: docs-clean ## Build documentation (mkdocs --strict) to artifacts/docs/site
 	@$(MAKE) docs-hygiene
 	@echo "Documentation build complete"
 
-docs-serve: ## Serve documentation locally (auto-reload; no disk generation)
+docs-serve: docs-require ## Serve documentation locally (auto-reload; no disk generation)
 	@HOST=$${HOST:-$(DOCS_HOST)}; PORT=$${PORT:-$(DOCS_PORT)}; \
 	  if command -v lsof >/dev/null 2>&1; then \
 	    while lsof -tiTCP:$$PORT -sTCP:LISTEN >/dev/null 2>&1; do PORT=$$((PORT+1)); done; \
@@ -53,13 +49,13 @@ docs-serve: ## Serve documentation locally (auto-reload; no disk generation)
 	  XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) SITE_URL=http://$$HOST:$$PORT/ \
 	    "$(MKDOCS_BIN)" serve --config-file "$(MKDOCS_CFG)" --dev-addr $$HOST:$$PORT
 
-docs-deploy: ## Deploy documentation to GitHub Pages (strict)
+docs-deploy: docs-require ## Deploy documentation to GitHub Pages (strict)
 	@echo "Deploying documentation to GitHub Pages"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
 	  "$(MKDOCS_BIN)" gh-deploy --strict --config-file "$(MKDOCS_CFG)"
 
-docs-check: ## Validate documentation builds without errors
+docs-check: docs-require ## Validate documentation builds without errors
 	@echo "Checking documentation build integrity"
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -71,7 +67,7 @@ docs-check: ## Validate documentation builds without errors
 
 docs-clean: ## Remove generated documentation artifacts
 	@echo "Cleaning documentation build artifacts"
-	@rm -rf "$(DOCS_SITE_DIR)" artifacts/docs/.cache site .cache
+	@rm -rf "$(DOCS_SITE_DIR)" "$(DOCS_CACHE_DIR)" site .cache
 
 docs-hygiene: ## Fail if root 'site/' or '.cache/' or generated under docs/
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)

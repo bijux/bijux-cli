@@ -17,10 +17,11 @@ PIP_AUDIT  ?= $(ACT)/pip-audit
 BUILD_PY   ?= $(VENV_PYTHON) -m build
 TWINE      ?= $(VENV_PYTHON) -m twine
 
-LINT_ARTIFACTS_DIR      ?= artifacts/lint
-TEST_ARTIFACTS_DIR      ?= artifacts/test
-SECURITY_ARTIFACTS_DIR  ?= artifacts/security
-BUILD_ARTIFACTS_DIR     ?= artifacts/build
+PYTHON_ARTIFACTS_DIR    ?= artifacts/python
+LINT_ARTIFACTS_DIR      ?= $(PYTHON_ARTIFACTS_DIR)/lint
+TEST_ARTIFACTS_DIR      ?= $(PYTHON_ARTIFACTS_DIR)/test
+SECURITY_ARTIFACTS_DIR  ?= $(PYTHON_ARTIFACTS_DIR)/security
+BUILD_ARTIFACTS_DIR     ?= $(PYTHON_ARTIFACTS_DIR)/build
 LINT_PATHS              ?= $(PYTHON_SRC_DIR)/bijux_cli_py
 RUFF_CACHE_DIR          ?= $(abspath $(LINT_ARTIFACTS_DIR)/.ruff_cache)
 PYTEST_BENCHMARK_DIR    ?= $(abspath $(TEST_ARTIFACTS_DIR)/benchmarks)

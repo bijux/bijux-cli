@@ -18,9 +18,8 @@ gh-security: install security ## Run GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
 
-gh-docs-install: install ## Install documentation build dependencies for GitHub Actions
-	@$(call require_tool,$(ACT)/mkdocs)
-	@"$(ACT)/mkdocs" --version
+gh-docs-install: install docs-require ## Resolve documentation build dependencies for GitHub Actions
+	@"$(MKDOCS_BIN)" --version
 
 gh-docs-export-release-tag: ## Export release tag for docs builds
 	@$(call require_var,GITHUB_ENV)
@@ -40,21 +39,15 @@ docs-artifact-pages: ## Generate stable docs pages that summarize release artifa
 		echo; \
 		echo "This release site summarizes the artifact directories available at docs build time."; \
 		echo; \
-		echo "- [Test artifacts](test.md)"; \
-		echo "- [Lint artifacts](lint.md)"; \
-		echo "- [Quality artifacts](quality.md)"; \
-		echo "- [Security artifacts](security.md)"; \
-		echo "- [SBOM artifacts](sbom.md)"; \
-		echo "- [Citation artifacts](citation.md)"; \
+		echo "- [Rust lane artifacts](rust.md)"; \
+		echo "- [Python lane artifacts](python.md)"; \
+		echo "- [Documentation artifacts](docs.md)"; \
 	} > "$${pages_dir}/index.md"; \
-	for page in test lint quality security sbom citation; do \
+	for page in rust python docs; do \
 		case "$${page}" in \
-			test) source_dir="artifacts/test" ;; \
-			lint) source_dir="artifacts/lint" ;; \
-			quality) source_dir="artifacts/quality" ;; \
-			security) source_dir="artifacts/security" ;; \
-			sbom) source_dir="artifacts/sbom" ;; \
-			citation) source_dir="artifacts/citation" ;; \
+			rust) source_dir="artifacts/rust" ;; \
+			python) source_dir="artifacts/python" ;; \
+			docs) source_dir="artifacts/docs" ;; \
 		esac; \
 		title="$$(printf '%s' "$${page}" | tr '[:lower:]' '[:upper:]' | sed 's/^/Artifact Snapshot: /')"; \
 		{ \
@@ -74,10 +67,10 @@ docs-artifact-pages: ## Generate stable docs pages that summarize release artifa
 		} > "$${pages_dir}/$${page}.md"; \
 	done
 
-docs-artifact-pages-check: ## Ensure generated docs artifact summary pages exist
+docs-artifact-pages-check: docs-artifact-pages ## Ensure generated docs artifact summary pages exist
 	@set -euo pipefail; \
 	pages_dir="$(GH_DOCS_PAGES_DIR)"; \
-	for page in index test lint quality security sbom citation; do \
+	for page in index rust python docs; do \
 		file="$${pages_dir}/$${page}.md"; \
 		if [ ! -s "$${file}" ]; then \
 			echo "missing generated docs page: $${file}" >&2; \

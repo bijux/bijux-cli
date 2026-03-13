@@ -69,14 +69,17 @@ clean-soft: ## Remove build artifacts but keep artifact-scoped virtualenv
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info demo .tmp_home \
 	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
-	  docs/reference usage_test usage_test_artifacts .cache default_*.profraw || true
-	@if [ -d artifacts ]; then \
-	  find artifacts -mindepth 1 -maxdepth 1 ! -name python -exec rm -rf {} +; \
-	  if [ -d artifacts/python ]; then \
-	    find artifacts/python -mindepth 1 -maxdepth 1 ! -name '.venv' -exec rm -rf {} +; \
-	  fi; \
+	  usage_test usage_test_artifacts .cache default_*.profraw || true
+	@if [ -d artifacts/rust ]; then \
+	  find artifacts/rust -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \
 	fi
-	@find . -type d -name '__pycache__' -exec $(RM) {} +
+	@if [ -d artifacts/python ]; then \
+	  find artifacts/python -mindepth 1 -maxdepth 1 ! -name '.venv' -exec rm -rf {} +; \
+	fi
+	@if [ -d artifacts/docs ]; then \
+	  rm -rf artifacts/docs/site artifacts/docs/.cache artifacts/docs/docs/artifacts; \
+	fi
+	@find . -path "./$(VENV)" -prune -o -type d -name '__pycache__' -exec $(RM) {} +
 
 all: fmt lint security test build ## Run quality gates and build artifacts
 	@echo "✔ All targets completed"
