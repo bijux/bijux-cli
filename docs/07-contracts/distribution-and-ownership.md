@@ -26,6 +26,8 @@ flowchart TD
 - canonical crate identity: `bijux-cli`
 - compatibility alias metadata may exist for `bijux`
 - the documented and preferred install channel is `bijux-cli`
+- `bijux-dev-cli` is a workspace maintainer crate and must not be treated as a
+  published public install channel
 
 ### Python
 
@@ -59,6 +61,8 @@ The machine-readable routed product registry is
 - wrappers must delegate to the same Rust command engine
 - Python API changes require additive compatibility shims or explicit
   deprecation messaging
+- tagged release publication must produce package metadata that matches the tag
+  version exactly, even when the working branch stays on the next dev line
 
 ## Honest Limit
 

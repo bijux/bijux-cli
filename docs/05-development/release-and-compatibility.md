@@ -32,6 +32,8 @@ sequenceDiagram
 - prefer the repository workflows over manual publish sequences
 - check runtime identity and compatibility before tagging
 - keep rollback tied to released versions, not local artifacts
+- keep workspace manifests on the active dev line; let tagged publish workflows
+  stamp the exact release version into their temporary release tree
 
 ## Common Review Commands
 
@@ -69,8 +71,8 @@ current state is:
 
 - release as a minor version only when documented behavior remains compatible
 - release as a major version when documented behavior changes incompatibly
-- keep `pip install bijux-cli` and tagged publish workflows aligned with the
-  same runtime identity
+- keep `python -m pip install bijux-cli` and tagged publish workflows aligned
+  with the same runtime identity
 - if a release regresses compatibility, roll back to the last known-good
   published version in the affected channel
 

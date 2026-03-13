@@ -154,10 +154,10 @@ Requires **Python ≥ 3.11** (3.11–3.13 tested).
 pipx install bijux-cli
 
 # Standard
-pip install bijux-cli
+python3 -m pip install --upgrade bijux-cli
 ```
 
-Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
+Upgrade with `pipx upgrade bijux-cli` or `python3 -m pip install --upgrade bijux-cli`.
 
 Quick verification:
 
@@ -334,8 +334,8 @@ make test-unit-py
 make test-nightly-py
 make fmt-rs lint-rs audit-rs test-all-rs
 make build-py
-make publish-py    # requires PYPI_API_TOKEN
-make publish-rs    # dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to publish
+make publish-py    # requires PYPI_API_TOKEN; set RELEASE_VERSION=x.y.z for a tagged release publish
+make publish-rs    # dry-run by default; set RUST_PUBLISH_DRY_RUN=0 RELEASE_VERSION=x.y.z to publish a tagged release
 ```
 
 Parity checks worth running:

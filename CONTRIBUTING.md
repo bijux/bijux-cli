@@ -25,6 +25,10 @@ make install
 `make install` prepares the repository-managed virtualenv under `artifacts/`
 and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
 
+Workspace package manifests stay on the current development line. Tagged release
+publishes stamp the exact tag version into a temporary release tree instead of
+committing release-only version edits back into the working branch.
+
 ## Commands
 
 Use `make help` to see current targets.

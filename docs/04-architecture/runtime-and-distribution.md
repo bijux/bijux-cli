@@ -30,6 +30,11 @@ The runtime version model is intentionally split:
 
 - display version tracks the latest released tag line, for example `v0.2.0+dev...`
 - compatibility semver for a development build moves onto the next patch line, for example `0.2.1-dev...`
+- workspace package manifests stay on that development line until release
+  publication
+- release workflows stamp the exact tag version into a temporary release tree so
+  published artifacts match the tag without forcing release-only manifest edits
+  into the main branch
 
 This split exists because a development checkout should not claim to be the exact published release while still needing an honest semver for compatibility checks.
 
@@ -39,7 +44,8 @@ This split exists because a development checkout should not claim to be the exac
 
 `bijux-cli` is the runtime crate.
 
-`bijux-dev-cli` is the maintainer diagnostics crate.
+`bijux-dev-cli` is the maintainer diagnostics crate. It is a workspace-owned
+maintainer package, not a published public install channel.
 
 ### Python Package
 
