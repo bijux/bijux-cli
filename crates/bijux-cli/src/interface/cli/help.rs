@@ -2,11 +2,11 @@
 
 use anyhow::Result;
 
-use crate::routing::parser::root_command;
 use crate::routing::model::{
     CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_INTERACTION_COMMANDS,
     ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
 };
+use crate::routing::parser::root_command;
 
 pub(crate) fn normalize_help_whitespace(raw: &str) -> String {
     let mut normalized = String::new();

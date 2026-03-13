@@ -254,7 +254,11 @@ fn help_command_rejects_invalid_global_flag_values_with_usage_exit() {
         vec!["help", "--log-level", "verbose"],
     ] {
         let out = run(&args);
-        assert_eq!(out.status.code(), Some(2), "invalid help flag should be usage error for {args:?}");
+        assert_eq!(
+            out.status.code(),
+            Some(2),
+            "invalid help flag should be usage error for {args:?}"
+        );
         assert!(out.stdout.is_empty(), "invalid help flag should not print stdout for {args:?}");
         let stderr = String::from_utf8(out.stderr).expect("utf-8");
         assert!(stderr.contains("invalid "), "expected actionable validation error for {args:?}");

@@ -5,7 +5,8 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
-pub const ROOT_RUNTIME_COMMANDS: &[&str] = &["status", "audit", "docs", "sleep", "doctor", "version"];
+pub const ROOT_RUNTIME_COMMANDS: &[&str] =
+    &["status", "audit", "docs", "sleep", "doctor", "version"];
 pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
 pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
@@ -123,7 +124,8 @@ pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
 pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
     &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
-pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] = &["health", "drift", "inventories", "generated", "stale"];
+pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
+    &["health", "drift", "inventories", "generated", "stale"];
 
 pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     "status",

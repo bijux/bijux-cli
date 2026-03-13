@@ -98,8 +98,7 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
         curr[0] = i + 1;
         for (j, right_ch) in right_chars.iter().enumerate() {
             let substitution_cost = usize::from(left_ch != right_ch);
-            curr[j + 1] =
-                (curr[j] + 1).min(prev[j + 1] + 1).min(prev[j] + substitution_cost);
+            curr[j + 1] = (curr[j] + 1).min(prev[j + 1] + 1).min(prev[j] + substitution_cost);
         }
         std::mem::swap(&mut prev, &mut curr);
     }
@@ -124,19 +123,21 @@ fn known_help_topics() -> Vec<String> {
             .iter()
             .map(|command| format!("dev cli maintenance status {command}")),
     );
-    topics
-        .extend(DEV_CLI_RUSTDOC_SUBCOMMANDS.iter().map(|command| format!("dev cli rustdoc {command}")));
-    topics
-        .extend(DEV_CLI_RELEASE_SUBCOMMANDS.iter().map(|command| format!("dev cli release {command}")));
     topics.extend(
-        DEV_CLI_EVIDENCE_SUBCOMMANDS
-            .iter()
-            .map(|command| format!("dev cli evidence {command}")),
+        DEV_CLI_RUSTDOC_SUBCOMMANDS.iter().map(|command| format!("dev cli rustdoc {command}")),
     );
-    topics
-        .extend(DEV_CLI_CONFIG_SUBCOMMANDS.iter().map(|command| format!("dev cli config {command}")));
-    topics
-        .extend(DEV_CLI_PYTHON_SUBCOMMANDS.iter().map(|command| format!("dev cli python {command}")));
+    topics.extend(
+        DEV_CLI_RELEASE_SUBCOMMANDS.iter().map(|command| format!("dev cli release {command}")),
+    );
+    topics.extend(
+        DEV_CLI_EVIDENCE_SUBCOMMANDS.iter().map(|command| format!("dev cli evidence {command}")),
+    );
+    topics.extend(
+        DEV_CLI_CONFIG_SUBCOMMANDS.iter().map(|command| format!("dev cli config {command}")),
+    );
+    topics.extend(
+        DEV_CLI_PYTHON_SUBCOMMANDS.iter().map(|command| format!("dev cli python {command}")),
+    );
     topics.extend(DEV_CLI_REPO_SUBCOMMANDS.iter().map(|command| format!("dev cli repo {command}")));
     topics.sort();
     topics.dedup();
@@ -148,9 +149,7 @@ fn is_known_help_topic(path: &[String]) -> bool {
         return true;
     }
     let requested = path.join(" ").to_ascii_lowercase();
-    known_help_topics()
-        .iter()
-        .any(|candidate| candidate.eq_ignore_ascii_case(requested.as_str()))
+    known_help_topics().iter().any(|candidate| candidate.eq_ignore_ascii_case(requested.as_str()))
 }
 
 fn suggest_help_topics(requested: &str) -> Vec<String> {
@@ -266,18 +265,17 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
         if let Some(first) = path.first().map(String::as_str) {
             if first == "dev" || known_bijux_tool(first).is_some() {
-                let delegated_path =
-                    if matches!(
-                        path.as_slice(),
-                        [dev, cli, group, ..]
-                            if dev == "dev"
-                                && cli == "cli"
-                                && DEV_CLI_NESTED_SUBCOMMANDS.contains(&group.as_str())
-                    ) {
-                        vec!["dev".to_string(), "cli".to_string(), path[2].clone()]
-                    } else {
-                        path.clone()
-                    };
+                let delegated_path = if matches!(
+                    path.as_slice(),
+                    [dev, cli, group, ..]
+                        if dev == "dev"
+                            && cli == "cli"
+                            && DEV_CLI_NESTED_SUBCOMMANDS.contains(&group.as_str())
+                ) {
+                    vec!["dev".to_string(), "cli".to_string(), path[2].clone()]
+                } else {
+                    path.clone()
+                };
                 let mut delegated_argv = vec!["bijux".to_string()];
                 delegated_argv.extend(delegated_path);
                 delegated_argv.push("--help".to_string());
@@ -738,8 +736,8 @@ mod tests {
 
     #[test]
     fn help_unknown_topic_emits_suggestions_for_near_matches() {
-        let result = run_app(&["bijux".to_string(), "help".to_string(), "sttaus".to_string()])
-            .expect("run");
+        let result =
+            run_app(&["bijux".to_string(), "help".to_string(), "sttaus".to_string()]).expect("run");
         assert_eq!(result.exit_code, 2);
         assert!(result.stderr.contains("Unknown help topic: sttaus."));
         assert!(result.stderr.contains("Did you mean:"));
