@@ -672,7 +672,7 @@
     "schemas": [
       "output-envelope-v1",
       "error-envelope-v1",
-      "plugin-manifest-v1"
+      "plugin-manifest-v2"
     ],
     "version": "v1"
   },

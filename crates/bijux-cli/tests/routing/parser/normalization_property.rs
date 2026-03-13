@@ -3,7 +3,7 @@
 //! Property tests for namespace and command-path normalization.
 
 use bijux_cli::contracts::{
-    CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV1,
+    CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV2,
 };
 use proptest::prelude::*;
 use serde as _;
@@ -54,11 +54,11 @@ fn plugin_manifest_constructor_enforces_invariants() {
     let namespace = Namespace::new("sample_plugin").expect("namespace");
     let capability = PluginCapability::new("inspect", Some("1")).expect("capability");
 
-    let manifest = PluginManifestV1::new(
+    let manifest = PluginManifestV2::new(
         "sample",
         "1.0.0",
-        "1",
-        "1",
+        "v2",
+        "v2",
         compatibility,
         namespace,
         PluginKind::Delegated,

@@ -371,7 +371,7 @@ pub(crate) fn explain_plugin_report(plugin_registry_path: &Path, plugin: Option<
 
 pub(crate) fn plugin_schema_report() -> Value {
     json!({
-        "schema": "plugin-manifest-v1",
+        "schema": "plugin-manifest-v2",
         "required_fields": [
             "name",
             "version",

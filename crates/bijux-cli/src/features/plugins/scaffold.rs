@@ -8,7 +8,7 @@ use anyhow::Result;
 use crate::api::version::runtime_semver;
 
 use super::{
-    is_reserved_namespace, parse_manifest_v1, validate_manifest, validate_namespace_text,
+    is_reserved_namespace, parse_manifest_v2, validate_manifest, validate_namespace_text,
     RESERVED_NAMESPACES,
 };
 
@@ -22,7 +22,7 @@ fn is_safe_scaffold_path(path: &Path) -> bool {
 
 fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
     format!(
-        "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
+        "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
         SCAFFOLD_PLUGIN_VERSION,
         SCAFFOLD_COMPATIBILITY_MIN,
@@ -89,7 +89,7 @@ pub(crate) fn scaffold_plugin_layout(
 
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
-    let manifest = parse_manifest_v1(&manifest_text)?;
+    let manifest = parse_manifest_v2(&manifest_text)?;
     let _ = validate_manifest(manifest, runtime_semver(), RESERVED_NAMESPACES)?;
 
     Ok(manifest_path)

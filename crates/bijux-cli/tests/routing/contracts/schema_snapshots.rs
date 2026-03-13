@@ -3,7 +3,7 @@
 //! Schema snapshot tests to detect accidental drift.
 
 use bijux_cli::contracts::{
-    error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema,
+    error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v2_schema,
 };
 use clap as _;
 use proptest as _;
@@ -28,8 +28,8 @@ fn schema_snapshots_are_deterministic_and_match_expected_files() {
             "tests/routing/snapshots/error_envelope_v1.schema.json",
         ),
         (
-            plugin_manifest_v1_schema as fn() -> schemars::schema::RootSchema,
-            "tests/routing/snapshots/plugin_manifest_v1.schema.json",
+            plugin_manifest_v2_schema as fn() -> schemars::schema::RootSchema,
+            "tests/routing/snapshots/plugin_manifest_v2.schema.json",
         ),
     ];
 

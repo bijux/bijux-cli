@@ -33,7 +33,7 @@ pub use entrypoint::{
 };
 pub use errors::PluginError;
 pub(crate) use manifest::validate_namespace_text;
-pub use manifest::{parse_manifest_v1, validate_manifest};
+pub use manifest::{parse_manifest_v2, validate_manifest};
 #[allow(unused_imports)]
 pub use models::{
     InstallPluginRequest, PluginDiscoveryCache, PluginDoctorReport, PluginLoadDiagnostic,

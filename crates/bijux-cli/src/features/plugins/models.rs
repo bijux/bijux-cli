@@ -3,14 +3,14 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use crate::contracts::{PluginLifecycleState, PluginManifestV1};
+use crate::contracts::{PluginLifecycleState, PluginManifestV2};
 use serde::{Deserialize, Serialize};
 
 /// Runtime-facing plugin record persisted in registry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PluginRecord {
     /// Plugin manifest.
-    pub manifest: PluginManifestV1,
+    pub manifest: PluginManifestV2,
     /// Plugin lifecycle state.
     pub state: PluginLifecycleState,
     /// Source artifact reference.
@@ -103,7 +103,7 @@ pub struct InstallPluginRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatedPlugin {
     /// Valid manifest.
-    pub manifest: PluginManifestV1,
+    pub manifest: PluginManifestV2,
     /// Initial lifecycle state after validation.
     pub state: PluginLifecycleState,
 }

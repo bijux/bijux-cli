@@ -192,8 +192,8 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
             r#"{{
   "name": "extcheck",
   "version": "1.0.0",
-  "schema_version": "v1",
-  "manifest_version": "v1",
+  "schema_version": "v2",
+  "manifest_version": "v2",
   "compatibility": {{ "min_inclusive": "0.1.0", "max_exclusive": "2.0.0" }},
   "namespace": "extcheck",
   "kind": "external-exec",

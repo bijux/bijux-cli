@@ -212,7 +212,7 @@ pub fn repl_bootstrap_binding_api() -> Result<String, CompatibilityError> {
 #[must_use]
 pub fn schema_export_helpers_api() -> String {
     json!({
-        "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"],
+        "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v2"],
     })
     .to_string()
 }

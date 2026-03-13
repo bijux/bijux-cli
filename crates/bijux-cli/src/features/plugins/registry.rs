@@ -13,7 +13,7 @@ use super::entrypoint::{
     resolve_external_exec_entrypoint,
 };
 use super::errors::PluginError;
-use super::manifest::{is_version_compatible, parse_manifest_v1, validate_manifest};
+use super::manifest::{is_version_compatible, parse_manifest_v2, validate_manifest};
 use super::models::{
     InstallPluginRequest, PluginDoctorReport, PluginLoadEntry, PluginOriginMetadata, PluginRecord,
     PluginRegistry,
@@ -233,7 +233,7 @@ pub fn install_plugin(
     reserved_namespaces: &[&str],
 ) -> Result<PluginRecord, PluginError> {
     let manifest_checksum_sha256 = checksum_sha256(&request.manifest_text);
-    let manifest = parse_manifest_v1(&request.manifest_text)?;
+    let manifest = parse_manifest_v2(&request.manifest_text)?;
     let validated = validate_manifest(manifest, host_version, reserved_namespaces)?;
 
     let namespace = validated.manifest.namespace.0.clone();
@@ -361,7 +361,7 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
 /// Check plugin compatibility against host version without mutating registry.
 #[allow(dead_code)]
 pub fn compatibility_check(
-    manifest: &crate::contracts::PluginManifestV1,
+    manifest: &crate::contracts::PluginManifestV2,
     host_version: &str,
 ) -> Result<bool, PluginError> {
     let _ = semver::VersionReq::parse(&format!("={host_version}"))

@@ -12,7 +12,7 @@ use bijux_cli::contracts::{
     ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, ErrorDetailsV1,
     ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, Namespace,
     NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PluginCapability,
-    PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
+    PluginKind, PluginLifecycleState, PluginManifestV2, PrettyMode,
 };
 use clap as _;
 use proptest as _;
@@ -91,7 +91,7 @@ fn roundtrip_for_all_contract_types() {
     let ns_meta =
         NamespaceMetadata { name: ns.clone(), reserved: true, owner: "bijux-cli".to_string() };
 
-    let plugin_manifest = PluginManifestV1 {
+    let plugin_manifest = PluginManifestV2 {
         name: "sample".to_string(),
         version: "1.2.3".to_string(),
         schema_version: "v1".to_string(),
@@ -200,8 +200,8 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
     let bad_manifest = json!({
         "name": "sample",
         "version": "1.2.3",
-        "schema_version": "v1",
-        "manifest_version": "v1",
+        "schema_version": "v2",
+        "manifest_version": "v2",
         "compatibility": {
             "min_inclusive": "1.0.0",
             "max_exclusive": "2.0.0"
@@ -212,7 +212,7 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
         "entrypoint": "sample_plugin:main",
         "capabilities": []
     });
-    let manifest_err = serde_json::from_value::<PluginManifestV1>(bad_manifest)
+    let manifest_err = serde_json::from_value::<PluginManifestV2>(bad_manifest)
         .expect_err("unknown plugin kind must fail");
     assert!(manifest_err.to_string().contains("kind"));
 }

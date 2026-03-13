@@ -3,7 +3,7 @@
 use schemars::schema::RootSchema;
 use schemars::schema_for;
 
-use crate::contracts::{ErrorEnvelopeV1, OutputEnvelopeV1, PluginManifestV1};
+use crate::contracts::{ErrorEnvelopeV1, OutputEnvelopeV1, PluginManifestV2};
 
 /// Build a JSON Schema for `OutputEnvelopeV1`.
 #[must_use]
@@ -17,8 +17,8 @@ pub fn error_envelope_v1_schema() -> RootSchema {
     schema_for!(ErrorEnvelopeV1)
 }
 
-/// Build a JSON Schema for `PluginManifestV1`.
+/// Build a JSON Schema for `PluginManifestV2`.
 #[must_use]
-pub fn plugin_manifest_v1_schema() -> RootSchema {
-    schema_for!(PluginManifestV1)
+pub fn plugin_manifest_v2_schema() -> RootSchema {
+    schema_for!(PluginManifestV2)
 }

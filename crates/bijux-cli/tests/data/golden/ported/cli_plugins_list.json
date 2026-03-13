@@ -11,10 +11,10 @@
         },
         "entrypoint": "plugin:main",
         "kind": "python",
-        "manifest_version": "v1",
+        "manifest_version": "v2",
         "name": "smokeplug",
         "namespace": "smokeplug",
-        "schema_version": "v1",
+        "schema_version": "v2",
         "version": "0.1.0"
       },
       "manifest_checksum_sha256": "782158372ac394faacccca25a6fa99d3cf00c2d32a42cb783afb8a1629871592",

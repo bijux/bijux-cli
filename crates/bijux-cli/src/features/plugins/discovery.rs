@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::errors::PluginError;
-use super::manifest::parse_manifest_v1;
+use super::manifest::parse_manifest_v2;
 use super::models::PluginDiscoveryCache;
 
 /// Scan plugin directory tree for manifests at `<plugin-dir>/*/plugin.manifest.json`.
@@ -44,7 +44,7 @@ pub fn refresh_discovery_cache(
 
     for manifest_path in discovered {
         let text = fs::read_to_string(&manifest_path)?;
-        let manifest = parse_manifest_v1(&text)?;
+        let manifest = parse_manifest_v2(&text)?;
         manifests.insert(manifest.namespace.0, manifest_path);
     }
 

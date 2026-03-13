@@ -102,9 +102,9 @@ pub enum PluginLifecycleState {
     Incompatible,
 }
 
-/// Stable plugin manifest contract.
+/// Current plugin manifest contract.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct PluginManifestV1 {
+pub struct PluginManifestV2 {
     /// Plugin name.
     pub name: String,
     /// Plugin version.
@@ -129,8 +129,8 @@ pub struct PluginManifestV1 {
     pub capabilities: Vec<PluginCapability>,
 }
 
-impl PluginManifestV1 {
-    /// Build a validated plugin manifest.
+impl PluginManifestV2 {
+    /// Build a validated v2 plugin manifest.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: &str,
@@ -153,8 +153,14 @@ impl PluginManifestV1 {
         if schema_version.trim().is_empty() {
             return Err("plugin schema_version cannot be empty".to_string());
         }
+        if schema_version != "v2" {
+            return Err("plugin schema_version must be v2".to_string());
+        }
         if manifest_version.trim().is_empty() {
             return Err("plugin manifest_version cannot be empty".to_string());
+        }
+        if manifest_version != "v2" {
+            return Err("plugin manifest_version must be v2".to_string());
         }
         if entrypoint.trim().is_empty() {
             return Err("plugin entrypoint cannot be empty".to_string());

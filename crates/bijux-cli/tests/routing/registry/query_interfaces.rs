@@ -8,13 +8,13 @@ use bijux_cli::contracts::contracts_schema_query;
 #[test]
 fn contracts_schema_query_shape_is_stable() {
     let query = contracts_schema_query();
-    assert_eq!(query.schema_version, "v1");
+    assert_eq!(query.schema_version, "v2");
     assert_eq!(
         query.schema_ids,
         vec![
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
-            "plugin-manifest-v1".to_string(),
+            "plugin-manifest-v2".to_string(),
         ]
     );
 }

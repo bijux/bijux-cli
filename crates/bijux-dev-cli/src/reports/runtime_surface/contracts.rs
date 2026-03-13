@@ -16,8 +16,8 @@ fn contract_rows(schema_ids: &[String]) -> Vec<Value> {
             "error-envelope-v1" => {
                 json!({"name": "error-envelope", "schema": "error-envelope-v1", "version": "1.0.0"})
             }
-            "plugin-manifest-v1" => {
-                json!({"name": "plugin-manifest", "schema": "plugin-manifest-v1", "version": "1.0.0"})
+            "plugin-manifest-v2" => {
+                json!({"name": "plugin-manifest", "schema": "plugin-manifest-v2", "version": "1.0.0"})
             }
             other => json!({"name": other, "schema": other, "version": "1.0.0"}),
         })
@@ -92,7 +92,7 @@ fn build_all_report_from_payloads(
 
     json!({
         "kind": "dev_cli_contracts_all_report_v1",
-        "schema_version": "v1",
+        "schema_version": "v2",
         "runtime_version": runtime_version,
         "generated_at_utc": run_results.get("generated_at_utc").cloned().unwrap_or(Value::Null),
         "mode": "all",
@@ -118,9 +118,9 @@ pub fn build_report(runtime_version: &str) -> Value {
     let schema_ids = vec![
         "output-envelope-v1".to_string(),
         "error-envelope-v1".to_string(),
-        "plugin-manifest-v1".to_string(),
+        "plugin-manifest-v2".to_string(),
     ];
-    build_report_from_query(runtime_version, &schema_ids, "v1")
+    build_report_from_query(runtime_version, &schema_ids, "v2")
 }
 
 /// Builds the maintainer contracts/schema report envelope from routing query data.
@@ -159,7 +159,7 @@ mod tests {
     fn contracts_report_shape_is_stable() {
         let report = build_report("0.1.0");
         assert!(report.get("contracts").is_some());
-        assert_eq!(report.get("schema_version").and_then(serde_json::Value::as_str), Some("v1"));
+        assert_eq!(report.get("schema_version").and_then(serde_json::Value::as_str), Some("v2"));
     }
 
     #[test]
@@ -167,9 +167,9 @@ mod tests {
         let schema_ids = vec![
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
-            "plugin-manifest-v1".to_string(),
+            "plugin-manifest-v2".to_string(),
         ];
-        let report = build_report_from_query("0.1.0", &schema_ids, "v1");
+        let report = build_report_from_query("0.1.0", &schema_ids, "v2");
         assert_eq!(report["contracts"].as_array().map_or(0, Vec::len), 3);
     }
 

@@ -2,21 +2,21 @@
 
 use std::collections::BTreeSet;
 
-use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV2};
 use semver::Version;
 
 use super::constants::{is_reserved_namespace, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES};
 use super::errors::PluginError;
 use super::models::ValidatedPlugin;
 
-/// Parse `PluginManifestV1` from JSON text.
-pub fn parse_manifest_v1(text: &str) -> Result<PluginManifestV1, PluginError> {
+/// Parse `PluginManifestV2` from JSON text.
+pub fn parse_manifest_v2(text: &str) -> Result<PluginManifestV2, PluginError> {
     serde_json::from_str(text).map_err(|error| PluginError::ManifestParse(error.to_string()))
 }
 
 /// Validate plugin manifest against host compatibility and namespace rules.
 pub fn validate_manifest(
-    manifest: PluginManifestV1,
+    manifest: PluginManifestV2,
     host_version: &str,
     reserved_namespaces: &[&str],
 ) -> Result<ValidatedPlugin, PluginError> {
@@ -32,7 +32,7 @@ pub fn validate_manifest(
     Ok(ValidatedPlugin { manifest, state: crate::contracts::PluginLifecycleState::Validated })
 }
 
-fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginError> {
+fn validate_required_fields(manifest: &PluginManifestV2) -> Result<(), PluginError> {
     if manifest.name.trim().is_empty() {
         return Err(PluginError::InvalidField("name".to_string()));
     }
@@ -44,13 +44,13 @@ fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginErr
     if manifest.schema_version.trim().is_empty() {
         return Err(PluginError::InvalidField("schema_version".to_string()));
     }
-    if manifest.schema_version != "v1" {
+    if manifest.schema_version != "v2" {
         return Err(PluginError::InvalidField("schema_version".to_string()));
     }
     if manifest.manifest_version.trim().is_empty() {
         return Err(PluginError::InvalidField("manifest_version".to_string()));
     }
-    if manifest.manifest_version != "v1" {
+    if manifest.manifest_version != "v2" {
         return Err(PluginError::InvalidField("manifest_version".to_string()));
     }
     Ok(())
@@ -184,7 +184,7 @@ pub(crate) fn is_version_compatible(
     Ok(true)
 }
 
-fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), PluginError> {
+fn validate_entrypoint_and_kind(manifest: &PluginManifestV2) -> Result<(), PluginError> {
     if manifest.entrypoint.trim().is_empty() {
         return Err(PluginError::InvalidEntrypoint { kind: manifest.kind });
     }
@@ -209,14 +209,14 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), Plugi
 #[cfg(test)]
 mod tests {
     use super::validate_manifest;
-    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV2};
 
-    fn sample_manifest() -> PluginManifestV1 {
-        PluginManifestV1 {
+    fn sample_manifest() -> PluginManifestV2 {
+        PluginManifestV2 {
             name: "sample".to_string(),
             version: "0.3.0".to_string(),
-            schema_version: "v1".to_string(),
-            manifest_version: "v1".to_string(),
+            schema_version: "v2".to_string(),
+            manifest_version: "v2".to_string(),
             compatibility: CompatibilityRange {
                 min_inclusive: "0.3.0".to_string(),
                 max_exclusive: Some("1.0.0".to_string()),
@@ -230,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_manifest_rejects_non_v1_schema_versions() {
+    fn validate_manifest_rejects_non_v2_schema_versions() {
         let mut manifest = sample_manifest();
         manifest.schema_version = "1".to_string();
         let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("schema version");
@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_manifest_rejects_non_v1_manifest_versions() {
+    fn validate_manifest_rejects_non_v2_manifest_versions() {
         let mut manifest = sample_manifest();
         manifest.manifest_version = "1".to_string();
         let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("manifest version");

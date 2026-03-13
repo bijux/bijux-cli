@@ -32,8 +32,8 @@ fn write_manifest(path: &Path, namespace: &str, alias: &str, entrypoint: &str) {
         r#"{{
   "name": "{namespace}",
   "version": "1.0.0",
-  "schema_version": "v1",
-  "manifest_version": "v1",
+  "schema_version": "v2",
+  "manifest_version": "v2",
   "compatibility": {{"min_inclusive":"0.1.0","max_exclusive":"2.0.0"}},
   "namespace": "{namespace}",
   "kind": "delegated",

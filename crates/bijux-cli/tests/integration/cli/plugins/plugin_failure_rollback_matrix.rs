@@ -44,8 +44,8 @@ fn write_manifest(path: &Path, namespace: &str, entrypoint: &str, min_version: &
             r#"{{
   "name": "{namespace}",
   "version": "0.1.0",
-  "schema_version": "v1",
-  "manifest_version": "v1",
+  "schema_version": "v2",
+  "manifest_version": "v2",
   "compatibility": {{"min_inclusive":"{min_version}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "python",
