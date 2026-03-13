@@ -61,7 +61,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS" => {
             let test_file = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/deterministic_hostile_state_matrix.rs");
+                .join("crates/bijux-cli/tests/integration/cli/resilience/deterministic_hostile_state_matrix.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
             let rows = vec![
                 (141, "corrupted_config_failure_class_is_stable_across_runs"),
@@ -88,7 +88,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "coverage_id": id,
                                     "test_name": name,
                                     "status": if text.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                    "evidence": "crates/bijux-cli/tests/bin_surface/deterministic_hostile_state_matrix.rs"
+                                    "evidence": "crates/bijux-cli/tests/integration/cli/resilience/deterministic_hostile_state_matrix.rs"
                                 })).collect::<Vec<_>>(),
                             })).ok()?;
             write_status_artifact_json(
@@ -118,8 +118,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS" => {
-            let test_file =
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/precedence_matrix.rs");
+            let test_file = workspace_root
+                .join("crates/bijux-cli/tests/integration/cli/root/precedence_matrix.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
             let env_payload =
                 run_bijux_json(workspace_root, &["env"]).unwrap_or_else(|_| json!({}));
@@ -136,7 +136,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 json!({
                                     "test_name": name,
                                     "status": if text.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                    "evidence":"crates/bijux-cli/tests/bin_surface/precedence_matrix.rs"
+                                    "evidence":"crates/bijux-cli/tests/integration/cli/root/precedence_matrix.rs"
                                 })
                             })
                             .collect::<Vec<_>>();

@@ -5,11 +5,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-MEMORY-SURFACE-REPORTS" => {
             let matrix_source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs"),
             )
             .unwrap_or_default();
             let parity_source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/memory_parity.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -39,7 +41,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "coverage_id": id,
                                             "test": name,
                                             "status": if in_matrix || in_parity { "complete" } else { "missing" },
-                                            "evidence": if in_matrix { "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs" } else { "crates/bijux-cli/tests/bin_surface/memory_parity.rs" },
+                                            "evidence": if in_matrix { "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs" } else { "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs" },
                                         })
                                     }).collect::<Vec<_>>();
             let generated_at = generated_at_utc();
@@ -82,8 +84,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "scope":"memory parity versus overlapping python behavior",
                                         "status": if parity_source.contains("fn memory_root_parity_with_python_summary_command(") { "complete" } else { "partial" },
                                         "evidence":[
-                                            "crates/bijux-cli/tests/bin_surface/memory_parity.rs",
-                                            "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs",
+                                            "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs",
+                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs",
                                         ],
                                     })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/memory_read_domain_contract.json", &json!({
@@ -93,7 +95,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "status":"frozen",
                                         "rule":"Memory read behavior is accepted only when determinism and corruption handling remain green.",
                                         "evidence":[
-                                            "crates/bijux-cli/tests/bin_surface/memory_command_matrix.rs",
+                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs",
                                             "artifacts/status/memory_command_matrix_artifact.json",
                                             "artifacts/status/memory_corruption_matrix_artifact.json",
                                             "artifacts/status/memory_python_parity_artifact.json",

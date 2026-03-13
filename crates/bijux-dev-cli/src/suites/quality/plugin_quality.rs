@@ -101,8 +101,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let lifecycle = json!({
                 "generated_at":generated_at,"generator":"bijux-dev-cli",
                 "stages":[
-                    {"stage":"discover-and-list","rust_owned":true,"python_era_assumptions":[],"evidence":["crates/bijux-cli/tests/bin_surface/plugin_cli_lifecycle.rs::python_and_rust_plugins_can_install_check_list_and_uninstall","crates/bijux-cli/tests/bin_surface/plugin_command_parity.rs"]},
-                    {"stage":"scaffold","rust_owned":true,"python_era_assumptions":["python scaffold runtime entrypoint remains plugin.entry for compatibility"],"evidence":["crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust"]},
+                    {"stage":"discover-and-list","rust_owned":true,"python_era_assumptions":[],"evidence":["crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs::python_and_rust_plugins_can_install_check_list_and_uninstall","crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs"]},
+                    {"stage":"scaffold","rust_owned":true,"python_era_assumptions":["python scaffold runtime entrypoint remains plugin.entry for compatibility"],"evidence":["crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust"]},
                     {"stage":"install-uninstall-enable-disable","rust_owned":true,"python_era_assumptions":[],"evidence":rollback.get("evidence").cloned().unwrap_or_else(|| json!([]))},
                     {"stage":"doctor-explain-where","rust_owned":true,"python_era_assumptions":[],"evidence":["artifacts/status/plugin_doctor_runtime_sample.json","artifacts/status/plugin_explain_runtime_sample.json","artifacts/status/plugin_where_runtime_sample.json"]},
                 ],
@@ -123,8 +123,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_scaffold_lifecycle_proof_report.json", &json!({
                                 "generated_at":generated_at,"generator":"bijux-dev-cli",
-                                "python_scaffold_e2e_proof":{"status":"complete","evidence_test":"crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust","kind":"python"},
-                                "rust_scaffold_e2e_proof":{"status":"complete","evidence_test":"crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust","kind":"rust"},
+                                "python_scaffold_e2e_proof":{"status":"complete","evidence_test":"crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust","kind":"python"},
+                                "rust_scaffold_e2e_proof":{"status":"complete","evidence_test":"crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust","kind":"rust"},
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_namespace_abuse_proof_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","abuse_report":namespace_abuse,"reserved_namespace_inventory":reserved_inventory})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/plugin_doctor_clarity_report.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","health_report":plugin_health,"runtime_sample":doctor_runtime,"status":if doctor_runtime.get("doctor").is_some() && doctor_runtime.get("status").is_some() {"clear"} else {"unclear"}})).ok()?;
@@ -164,9 +164,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let manifest_targets = "crates/bijux-cli-plugin/tests/plugin_manifest_fuzz_targets.rs";
             let manifest_reg = "crates/bijux-cli-plugin/tests/plugin_manifest_fuzz_regressions.rs";
             let scaffold_targets =
-                "crates/bijux-cli/tests/bin_surface/plugin_scaffold_fuzz_targets.rs";
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_fuzz_targets.rs";
             let scaffold_reg =
-                "crates/bijux-cli/tests/bin_surface/plugin_scaffold_fuzz_regressions.rs";
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_fuzz_regressions.rs";
             let mtxt = text(manifest_targets);
             let mrtxt = text(manifest_reg);
             let stxt = text(scaffold_targets);
@@ -316,8 +316,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
-            let campaign_test = "crates/bijux-cli/tests/bin_surface/randomized_plugin_state_corruption_campaigns.rs";
-            let regression_test = "crates/bijux-cli/tests/bin_surface/plugin_state_corruption_campaign_regressions.rs";
+            let campaign_test = "crates/bijux-cli/tests/integration/cli/resilience/randomized_plugin_state_corruption_campaigns.rs";
+            let regression_test = "crates/bijux-cli/tests/integration/cli/resilience/plugin_state_corruption_campaign_regressions.rs";
             let campaign_text =
                 fs::read_to_string(workspace_root.join(campaign_test)).unwrap_or_default();
             let regression_text =

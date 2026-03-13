@@ -15,9 +15,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [461, 462, 463, 464, 465, 466, 467, 477],
                                     "evidence_tests": [
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_doctor_reports_corruption_for_broken_config_states",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::invalid_utf8_config_file_is_reported_cleanly",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::config_doctor_reports_corruption_for_broken_config_states",
                                     ],
                                 }),
                             )
@@ -32,9 +32,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [468, 469, 470, 471, 472, 473, 474, 475, 476, 479],
                                     "evidence_tests": [
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",
-                                        "crates/bijux-cli/tests/bin_surface/config_corruption_hardening.rs::concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_file_shape",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::config_clear_and_unset_retry_are_idempotent_after_transient_write_failure",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_hardening.rs::concurrent_config_reads_during_mutation_and_parallel_writes_do_not_corrupt_file_shape",
                                     ],
                                 }),
                             )
@@ -392,11 +392,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/root/flag_normalization_matrix.rs",
+                ))
+                .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (81, "global_flags_before_namespace_are_accepted"),
                 (82, "global_flags_after_namespace_are_accepted_when_supported"),
@@ -425,7 +425,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/flag_normalization_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/root/flag_normalization_matrix.rs",
                                     })
                                 })
                                 .collect();

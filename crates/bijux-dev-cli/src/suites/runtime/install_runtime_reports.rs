@@ -13,7 +13,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let cli_text = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/plugin_cli_lifecycle.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs"),
             )
             .unwrap_or_default();
             let constants =
@@ -252,10 +253,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs"),
-            )
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs",
+            ))
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (301, "cargo_installed_invocation_version_is_green"),
@@ -281,7 +281,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": id,
                                         "test": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "covered" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs",
                                     })
                                 })
                                 .collect();

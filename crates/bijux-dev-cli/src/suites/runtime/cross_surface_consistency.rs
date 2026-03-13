@@ -15,10 +15,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [481, 482, 483, 484, 485, 488],
                                     "evidence_tests": [
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_enormous_line_layout_is_tolerated_with_tail_limit",
-                                        "crates/bijux-cli/tests/bin_surface/history_parity.rs::history_preserves_duplicate_commands_and_ordering",
-                                        "crates/bijux-cli/tests/bin_surface/history_parity.rs::history_skips_malformed_entries_inside_json_array",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::history_enormous_line_layout_is_tolerated_with_tail_limit",
+                                        "crates/bijux-cli/tests/integration/cli/history/history_parity.rs::history_preserves_duplicate_commands_and_ordering",
+                                        "crates/bijux-cli/tests/integration/cli/history/history_parity.rs::history_skips_malformed_entries_inside_json_array",
                                     ],
                                 }),
                             )
@@ -33,10 +33,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [489, 490, 491, 492, 493, 494, 496],
                                     "evidence_tests": [
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_commands_are_read_only_even_when_home_storage_is_unwritable",
-                                        "crates/bijux-cli/tests/bin_surface/memory_parity.rs::memory_malformed_state_is_treated_as_empty_like_python",
-                                        "crates/bijux-cli/tests/bin_surface/memory_parity.rs::memory_non_object_json_state_fails_with_error_envelope",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::memory_commands_are_read_only_even_when_home_storage_is_unwritable",
+                                        "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs::memory_malformed_state_is_treated_as_empty_like_python",
+                                        "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs::memory_non_object_json_state_fails_with_error_envelope",
                                     ],
                                 }),
                             )
@@ -87,8 +87,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "evidence_tests": [
                                         "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_exit_flush_reports_write_interruption_without_crashing_session",
                                         "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
-                                        "crates/bijux-cli/tests/bin_surface/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
                                     ],
                                     "artifacts": [
                                         "artifacts/status/history_corruption_matrix.json",

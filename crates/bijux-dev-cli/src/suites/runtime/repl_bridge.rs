@@ -395,7 +395,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs"),
+                    .join("crates/bijux-cli/tests/integration/repl/repl_execution_law_extra.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -423,7 +423,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": name,
                                         "status": if covered { "covered" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/repl_execution_law_extra.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_execution_law_extra.rs",
                                     })
                                 })
                                 .collect();

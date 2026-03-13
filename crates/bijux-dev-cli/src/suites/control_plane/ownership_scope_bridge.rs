@@ -266,11 +266,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("crates/bijux-cli-python/tests/bridge_bindings.rs"),
             )
             .unwrap_or_default();
-            let cross_surface_source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs"),
-            )
-            .unwrap_or_default();
+            let cross_surface_source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/root/cross_surface_equivalence.rs",
+                ))
+                .unwrap_or_default();
             let proof_tests = vec![
                                 (
                                     "same_route_graph",

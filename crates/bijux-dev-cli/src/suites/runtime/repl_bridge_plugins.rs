@@ -4,11 +4,11 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_matrix.rs",
+                ))
+                .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (21, "python_scaffold_install_list_inspect_uninstall_end_to_end"),
                 (22, "rust_scaffold_install_list_inspect_uninstall_end_to_end"),
@@ -37,7 +37,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_lifecycle_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -67,10 +67,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/plugin_failure_rollback_matrix.rs"),
-            )
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs",
+            ))
             .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (41, "simulated_disk_write_failure_during_install"),
@@ -100,7 +99,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_failure_rollback_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -131,7 +130,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs"),
             )
             .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
@@ -162,7 +162,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_namespace_law.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs",
                                     })
                                 })
                                 .collect();
@@ -287,7 +287,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     ],
                                     "overlap_parity_tests": [
                                         "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
-                                        "crates/bijux-cli/tests/bin_surface/plugin_command_parity.rs",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs",
                                     ],
                                     "remaining_gaps": [
                                         "scaffold command parity against Python templates",

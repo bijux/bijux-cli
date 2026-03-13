@@ -4,11 +4,11 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/root/cross_surface_equivalence.rs",
+                ))
+                .unwrap_or_default();
             let required: Vec<(i64, &str, &str)> = vec![
                 (
                     161,
@@ -97,7 +97,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let row = json!({
                     "coverage_id": coverage_id,
                     "law": law,
-                    "test": format!("crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs::{fn_name}"),
+                    "test": format!("crates/bijux-cli/tests/integration/cli/root/cross_surface_equivalence.rs::{fn_name}"),
                 });
                 if source.contains(&format!("fn {fn_name}(")) {
                     covered.push(row);
@@ -145,7 +145,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "law": "One command law across binary, core, python bridge, and repl for covered commands.",
                                     "freeze_rule": "New covered command paths must add cross-surface equivalence tests before merge.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs",
+                                        "crates/bijux-cli/tests/integration/cli/root/cross_surface_equivalence.rs",
                                         "artifacts/status/cross_surface_equivalence_report.json",
                                         "artifacts/status/cross_surface_drift_report.json",
                                     ],
@@ -263,7 +263,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
             let source =
                 fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/bin_surface/plugin_discovery_determinism_matrix.rs",
+                    "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
                 ))
                 .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
@@ -293,7 +293,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/plugin_discovery_determinism_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -326,7 +326,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "law": "plugin ordering is deterministic",
                     "status": "frozen",
                     "evidence": [
-                        "crates/bijux-cli/tests/bin_surface/plugin_discovery_determinism_matrix.rs",
+                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
                         "artifacts/status/plugin_discovery_determinism_report.json",
                     ],
                     "covers_todo": 80,
@@ -352,31 +352,31 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                             "topic": "install write failures",
                                             "coverage_ids": [441, 442, 443, 444, 445, 446],
                                             "tests": [
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
                                             ],
                                         },
                                         {
                                             "topic": "uninstall/disable/enable failure behavior",
                                             "coverage_ids": [447, 448, 449],
                                             "tests": [
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
                                             ],
                                         },
                                         {
                                             "topic": "post-install integrity checks",
                                             "coverage_ids": [450, 451, 452, 453, 454],
                                             "tests": [
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_runtime_kind_becomes_unsupported",
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor",
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::plugin_check_fails_when_runtime_kind_becomes_unsupported",
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor",
                                             ],
                                         },
                                         {
                                             "topic": "retry idempotency",
                                             "coverage_ids": [456, 457],
                                             "tests": [
-                                                "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
+                                                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
                                             ],
                                         },
                                     ],
@@ -396,8 +396,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
                                         "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
                                         "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
-                                        "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
-                                        "crates/bijux-cli/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
                                     ],
                                 }),
                             )
@@ -440,9 +440,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "install_source_diagnostics": install_source,
                                     "ambiguous_runtime_diagnostics": ambiguous_runtime,
                                     "evidence_tests": [
-                                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::pip_binary_shadowed_by_cargo_binary_is_reported",
-                                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::cargo_binary_shadowed_by_pip_binary_is_reported",
-                                        "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::package_health_and_runtime_identity_cover_ambiguous_install_state",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs::pip_binary_shadowed_by_cargo_binary_is_reported",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs::cargo_binary_shadowed_by_pip_binary_is_reported",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs::package_health_and_runtime_identity_cover_ambiguous_install_state",
                                     ],
                                 }),
                             )

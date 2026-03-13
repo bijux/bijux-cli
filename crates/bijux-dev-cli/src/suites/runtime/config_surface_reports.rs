@@ -5,7 +5,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/config_read_matrix.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -54,7 +55,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/config_read_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -86,7 +87,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config reads must remain deterministic, explainable, and consistent across listing/get surfaces.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/config_read_matrix.rs",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs",
                                         "artifacts/status/config_read_matrix_artifact.json",
                                     ],
                                 }),
@@ -98,10 +99,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/config_mutation_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
+                ))
+                .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (281, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
                 (282, "config_set_create_replace_preserve_quoted_spaces_and_invalid_key"),
@@ -130,7 +132,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/config_mutation_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -162,7 +164,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config mutation behavior is accepted only with rollback safety and idempotent retry proof.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/config_mutation_matrix.rs",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
                                         "artifacts/status/config_mutation_matrix_artifact.json",
                                     ],
                                 }),

@@ -96,10 +96,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
-            let targets =
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/config_fuzz_targets.rs");
+            let targets = workspace_root
+                .join("crates/bijux-cli/tests/integration/cli/config/config_fuzz_targets.rs");
             let regression = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/config_fuzz_regressions.rs");
+                .join("crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs");
             let min_dir = workspace_root.join("crates/bijux-cli/tests/fuzz/config_minimized_cases");
             let targets_text = fs::read_to_string(&targets).unwrap_or_default();
             let regression_text = fs::read_to_string(&regression).unwrap_or_default();
@@ -134,9 +134,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "test": test_name,
                                         "status": if source.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
                                         "evidence": if *test_name == "minimized_config_cases_replay_with_stable_exit_behavior" {
-                                            "crates/bijux-cli/tests/bin_surface/config_fuzz_regressions.rs"
+                                            "crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs"
                                         } else {
-                                            "crates/bijux-cli/tests/bin_surface/config_fuzz_targets.rs"
+                                            "crates/bijux-cli/tests/integration/cli/config/config_fuzz_targets.rs"
                                         },
                                     })
                                 })
@@ -236,7 +236,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-ADVERSARIAL-FS-PROCESS-REPORTS" => {
             let campaign_test = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs");
+                .join("crates/bijux-cli/tests/integration/cli/resilience/adversarial_fs_process_campaigns.rs");
             let min_cases_dir = workspace_root
                 .join("crates/bijux-cli/tests/fuzz/adversarial_fs_process_minimized_cases");
             let campaign_text = fs::read_to_string(&campaign_test).unwrap_or_default();
@@ -267,7 +267,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": id,
                                         "test": test_name,
                                         "status": if campaign_text.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/adversarial_fs_process_campaigns.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/resilience/adversarial_fs_process_campaigns.rs",
                                     })
                                 })
                                 .collect();
@@ -362,9 +362,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-STATE-CORRUPTION-HARNESS-REPORTS" => {
             let harness_test = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs");
+                .join("crates/bijux-cli/tests/integration/cli/resilience/randomized_state_corruption_harness.rs");
             let regression_test = workspace_root.join(
-                "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_regressions.rs",
+                "crates/bijux-cli/tests/integration/cli/resilience/randomized_state_corruption_regressions.rs",
             );
             let min_dir =
                 workspace_root.join("crates/bijux-cli/tests/fuzz/state_corruption_minimized_cases");
@@ -403,9 +403,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "test": test_name,
                                         "status": if text.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
                                         "evidence": if *src == "regression" {
-                                            "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_regressions.rs"
+                                            "crates/bijux-cli/tests/integration/cli/resilience/randomized_state_corruption_regressions.rs"
                                         } else {
-                                            "crates/bijux-cli/tests/bin_surface/randomized_state_corruption_harness.rs"
+                                            "crates/bijux-cli/tests/integration/cli/resilience/randomized_state_corruption_harness.rs"
                                         },
                                     })
                                 })

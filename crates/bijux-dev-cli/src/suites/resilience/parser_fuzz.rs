@@ -7,7 +7,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let routing_test =
                 workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_targets.rs");
             let bin_test = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/parser_invalid_utf8_argv.rs");
+                .join("crates/bijux-cli/tests/integration/cli/root/parser_invalid_utf8_argv.rs");
             let regression_test =
                 workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_regressions.rs");
             let corpus_dir = workspace_root

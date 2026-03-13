@@ -4,10 +4,9 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/config_deep_behavior_matrix.rs"),
-            )
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs",
+            ))
             .unwrap_or_default();
             let has_test = |name: &str| source.contains(&format!("fn {name}("));
             let run_json_or_empty =
@@ -88,7 +87,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let coverage_rows = required.iter().map(|(id, name)| json!({
                                 "coverage_id": id, "test_name": name,
                                 "status": if has_test(name) {"covered"} else {"missing"},
-                                "evidence": "crates/bijux-cli/tests/bin_surface/config_deep_behavior_matrix.rs"
+                                "evidence": "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs"
                             })).collect::<Vec<_>>();
             let missing = coverage_rows
                 .iter()
@@ -155,10 +154,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS" => {
             let now = generated_at_utc();
             let campaign_test = workspace_root.join(
-                "crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs",
+                "crates/bijux-cli/tests/integration/cli/resilience/randomized_config_corruption_campaigns.rs",
             );
             let regression_test = workspace_root.join(
-                "crates/bijux-cli/tests/bin_surface/config_corruption_campaign_regressions.rs",
+                "crates/bijux-cli/tests/integration/cli/resilience/config_corruption_campaign_regressions.rs",
             );
             let campaign_text = fs::read_to_string(&campaign_test).unwrap_or_default();
             let regression_text = fs::read_to_string(&regression_test).unwrap_or_default();
@@ -180,7 +179,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             ]);
             let coverage = required.iter().map(|(id, (src, name))| {
                                 let text = if *src == "campaign" { &campaign_text } else { &regression_text };
-                                json!({"coverage_id":id,"test":name,"status":if text.contains(&format!("fn {name}(")){"covered"}else{"missing"},"evidence":if *src=="campaign" {"crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs"} else {"crates/bijux-cli/tests/bin_surface/config_corruption_campaign_regressions.rs"}})
+                                json!({"coverage_id":id,"test":name,"status":if text.contains(&format!("fn {name}(")){"covered"}else{"missing"},"evidence":if *src=="campaign" {"crates/bijux-cli/tests/integration/cli/resilience/randomized_config_corruption_campaigns.rs"} else {"crates/bijux-cli/tests/integration/cli/resilience/config_corruption_campaign_regressions.rs"}})
                             }).collect::<Vec<_>>();
             let campaign_ok = Command::new("cargo")
                 .args([
@@ -228,7 +227,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_regression_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption regression replay","coverage_ids":[136],"status":if regression_ok{"clean"}else{"drift"},"minimized_cases":minimized})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_severity_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption severity classification","coverage_ids":[137],"status":"complete","classes":{"critical":["write-path panic","state file replacement with empty content"],"high":["rollback failure","nondeterministic failure class"],"medium":["malformed input with clean failure"],"low":["recoverable duplicate-key or whitespace anomalies"]}})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_recovery_classification.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption recovery classification","coverage_ids":[138],"status":"complete","paths":{"stable_failure":["usage/validation failure with unchanged file content"],"self_recovery":["repair input and rerun command to success"],"rollback_preserved":["failed load keeps previous coherent config"]}})).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_determinism_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption determinism","coverage_ids":[139],"status":if campaign_ok{"complete"}else{"partial"},"deterministic_failure_class_required":true,"evidence":"crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set"})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_determinism_artifact.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption determinism","coverage_ids":[139],"status":if campaign_ok{"complete"}else{"partial"},"deterministic_failure_class_required":true,"evidence":"crates/bijux-cli/tests/integration/cli/resilience/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set"})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/config_corruption_release_blocking_contract.json", &json!({"generated_at":now,"generator":"bijux-dev-cli","scope":"config corruption release-blocking contract","coverage_ids":(121..141).collect::<Vec<_>>(),"status":if campaign_ok && regression_ok && !minimized.is_empty() && missing.is_empty(){"frozen"}else{"partial"},"missing_coverage_ids":missing,"release_blocking":true,"policy":"config corruption campaign coverage and deterministic rollback behavior are required before release"})).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/config_corruption_campaign_artifact.json",

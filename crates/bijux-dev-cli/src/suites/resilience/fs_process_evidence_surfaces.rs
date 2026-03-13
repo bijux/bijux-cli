@@ -205,10 +205,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-HISTORY-SURFACE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/history_command_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
+                ))
+                .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (322, "history_root_listing_no_file_one_record_many_records_and_ordering"),
                 (323, "history_root_listing_no_file_one_record_many_records_and_ordering"),
@@ -236,7 +237,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
                                     })
                                 })
                                 .collect::<Vec<_>>();
@@ -302,7 +303,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "History read behavior must remain deterministic, format-stable, and resilient under malformed storage states.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/history_command_matrix.rs",
+                                        "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
                                         "artifacts/status/history_command_matrix_artifact.json",
                                         "artifacts/status/history_corruption_matrix_artifact.json",
                                     ],
