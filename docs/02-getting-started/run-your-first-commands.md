@@ -2,7 +2,7 @@
 
 ## Goal
 
-Use a small command set to prove the runtime is alive, routable, and returning
+Use a small command set to prove the runtime is alive, reachable, and returning
 useful output.
 
 ```mermaid

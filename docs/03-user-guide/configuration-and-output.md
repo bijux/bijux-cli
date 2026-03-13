@@ -34,6 +34,13 @@ bijux config export ./bijux.env
 bijux config load ./bijux.env
 ```
 
+For file handoff, both `export` and `load` return structured confirmation when
+you request JSON or YAML:
+
+- `config export PATH --format json --no-pretty` reports `status`, `file`, and
+  `file_format`
+- `config load PATH --format json --no-pretty` reports `status` and `file`
+
 ## Output Rule
 
 For automation, prefer:
@@ -51,7 +58,7 @@ bijux status --format yaml
 ## Practical Guidance
 
 - use `config list` to see the current effective state quickly
-- use `export` and `load` when you need file-based handoff
+- use `export PATH` and `load PATH` when you need file-based handoff
 - use `json` for scripts and CI
 - check exit codes together with structured output
 

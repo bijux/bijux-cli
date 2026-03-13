@@ -91,6 +91,22 @@ When using `bijux repl`, the documented session controls are:
 
 ## Structured Output Notes
 
+### `docs`
+
+- structured output returns the current documentation topic inventory
+- current JSON shape includes `status` and `topics`
+
+### `audit`
+
+- structured output returns runtime diagnostic audit categories and issues
+- current JSON shape includes `status`, `checks`, and `issues`
+
+### `sleep`
+
+- accepts an optional duration argument such as `1` or `250ms`
+- structured output reports the resolved sleep duration
+- current JSON shape includes `status` and `slept_seconds`
+
 ### `completion`
 
 - text output emits shell completion content for the selected shell workflow
@@ -108,6 +124,13 @@ When using `bijux repl`, the documented session controls are:
 - structured output returns `entries` and `summary`
 - the summary records filter state, sort mode, returned-entry count, and file
   integrity counters
+
+### `config export` and `config load`
+
+- `config export PATH` writes dotenv-style config and confirms the target file
+- `config load PATH` reads dotenv-style config and confirms the source file
+- current JSON export shape includes `status`, `file`, and `file_format`
+- current JSON load shape includes `status` and `file`
 
 ## Stable Exit Codes
 
