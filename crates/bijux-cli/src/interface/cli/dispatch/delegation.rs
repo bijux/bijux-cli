@@ -48,6 +48,35 @@ fn push_unique_candidate(candidates: &mut Vec<String>, path: PathBuf) {
     }
 }
 
+fn workspace_root() -> Option<PathBuf> {
+    Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(Path::to_path_buf)
+}
+
+fn try_delegate_dev_cli_via_cargo(
+    forwarded_args: &[String],
+) -> Option<Result<AppRunResult, String>> {
+    let workspace_root = workspace_root()?;
+    let manifest = workspace_root.join("crates").join(DEV_CLI_PACKAGE).join("Cargo.toml");
+    if !manifest.exists() {
+        return None;
+    }
+
+    let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    let mut command = Command::new(&cargo);
+    command.current_dir(&workspace_root);
+    command.args(["run", "-q", "-p", DEV_CLI_PACKAGE, "--"]);
+    command.args(forwarded_args);
+
+    Some(match command.output() {
+        Ok(output) => Ok(AppRunResult {
+            exit_code: output.status.code().unwrap_or(1),
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        }),
+        Err(error) => Err(format!("{cargo} run -q -p {DEV_CLI_PACKAGE} --: {error}")),
+    })
+}
+
 fn dev_cli_binary_candidates() -> Vec<String> {
     if let Ok(explicit) = env::var("BIJUX_DEV_CLI_BIN") {
         return vec![explicit];
@@ -85,6 +114,7 @@ fn dev_cli_binary_candidates() -> Vec<String> {
 
 fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let candidates = dev_cli_binary_candidates();
+    let explicit_override = env::var("BIJUX_DEV_CLI_BIN").is_ok();
     let mut last_error = String::new();
     let mut fallback_usage: Option<AppRunResult> = None;
 
@@ -115,6 +145,15 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
             }
             Err(error) => {
                 last_error = format!("{binary}: {error}");
+            }
+        }
+    }
+
+    if !explicit_override {
+        if let Some(result) = try_delegate_dev_cli_via_cargo(forwarded_args) {
+            match result {
+                Ok(output) => return output,
+                Err(error) => last_error = error,
             }
         }
     }
