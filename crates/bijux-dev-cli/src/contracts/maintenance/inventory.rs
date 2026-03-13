@@ -346,14 +346,22 @@ pub(crate) fn write_json(path: &Path, payload: &Value) -> Result<(), String> {
         .map_err(|err| format!("failed to write {}: {err}", path.display()))
 }
 
+fn normalize_maintainer_args(args: &[&str]) -> Vec<String> {
+    match args {
+        ["dev", "cli", rest @ ..] => rest.iter().map(|value| (*value).to_string()).collect(),
+        _ => args.iter().map(|value| (*value).to_string()).collect(),
+    }
+}
+
 pub(crate) fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Value, String> {
+    let normalized_args = normalize_maintainer_args(args);
     let output = Command::new("cargo")
-        .args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
+        .args(["run", "-q", "-p", "bijux-dev-cli", "--bin", "bijux-dev-cli", "--"])
+        .args(&normalized_args)
         .args(["--format", "json", "--no-pretty"])
         .current_dir(workspace_root)
         .output()
-        .map_err(|err| format!("failed to run bijux command: {err}"))?;
+        .map_err(|err| format!("failed to run bijux-dev-cli command: {err}"))?;
     if !output.status.success() {
         return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
@@ -366,15 +374,16 @@ pub(crate) fn run_bijux_json_env(
     args: &[&str],
     envs: &[(&str, String)],
 ) -> Result<Value, String> {
+    let normalized_args = normalize_maintainer_args(args);
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
+    cmd.args(["run", "-q", "-p", "bijux-dev-cli", "--bin", "bijux-dev-cli", "--"])
+        .args(&normalized_args)
         .args(["--format", "json", "--no-pretty"])
         .current_dir(workspace_root);
     for (key, value) in envs {
         cmd.env(key, value);
     }
-    let output = cmd.output().map_err(|err| format!("failed to run bijux command: {err}"))?;
+    let output = cmd.output().map_err(|err| format!("failed to run bijux-dev-cli command: {err}"))?;
     if !output.status.success() {
         return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }
@@ -383,13 +392,14 @@ pub(crate) fn run_bijux_json_env(
 }
 
 pub(crate) fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<String, String> {
+    let normalized_args = normalize_maintainer_args(args);
     let output = Command::new("cargo")
-        .args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-        .args(args)
+        .args(["run", "-q", "-p", "bijux-dev-cli", "--bin", "bijux-dev-cli", "--"])
+        .args(&normalized_args)
         .args(["--format", "text"])
         .current_dir(workspace_root)
         .output()
-        .map_err(|err| format!("failed to run bijux command: {err}"))?;
+        .map_err(|err| format!("failed to run bijux-dev-cli command: {err}"))?;
     if !output.status.success() {
         return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }

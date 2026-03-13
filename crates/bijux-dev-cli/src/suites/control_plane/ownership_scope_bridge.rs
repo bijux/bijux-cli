@@ -6,9 +6,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
             let run_cmd =
                 |args: &[&str], envs: &[(&str, String)]| -> Result<std::process::Output, String> {
+                    let normalized_args: Vec<&str> = match args {
+                        ["dev", "cli", rest @ ..] => rest.to_vec(),
+                        _ => args.to_vec(),
+                    };
                     let mut cmd = Command::new("cargo");
-                    cmd.args(["run", "-q", "-p", "bijux-cli", "--bin", "bijux", "--"])
-                        .args(args)
+                    cmd.args(["run", "-q", "-p", "bijux-dev-cli", "--bin", "bijux-dev-cli", "--"])
+                        .args(&normalized_args)
                         .current_dir(workspace_root);
                     for (k, v) in envs {
                         cmd.env(k, v);

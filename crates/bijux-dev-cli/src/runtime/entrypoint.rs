@@ -7,7 +7,7 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use bijux_cli::api::output::{render_value, EmitterConfig};
-use bijux_cli::api::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use bijux_cli::api::parser::{ParseError, ParsedGlobalFlags};
 use bijux_cli::api::telemetry::{
     exit_code_kind as telemetry_exit_code_kind, truncate_chars, TelemetrySpan,
     MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS,
@@ -17,6 +17,7 @@ use serde_json::{json, Value};
 
 use crate::cli::dispatch as dev_dispatch;
 use crate::runtime::query_provider::RuntimeQueryContext;
+use crate::schema::command_registry::command_registry;
 
 const MAX_PATH_FIELD_SEGMENTS: usize = 32;
 const MAX_PATH_SEGMENT_CHARS: usize = 128;
@@ -30,6 +31,13 @@ pub struct AppRunResult {
     pub stdout: String,
     /// Payload that should be written to stderr.
     pub stderr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MaintainerIntent {
+    command_path: Vec<String>,
+    normalized_path: Vec<String>,
+    global_flags: ParsedGlobalFlags,
 }
 
 fn decode_os_argv() -> Result<Vec<String>, OsString> {
@@ -205,44 +213,254 @@ fn classify_error_exit_code(message: &str) -> i32 {
     }
 }
 
-fn try_render_clap_help(argv: &[String]) -> Option<String> {
-    match root_command().try_get_matches_from(argv) {
-        Ok(_) => None,
-        Err(error)
-            if matches!(
-                error.kind(),
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
-            ) =>
-        {
-            Some(error.to_string())
-        }
-        Err(_) => None,
+fn strip_legacy_dev_cli_prefix(path: &[String]) -> Vec<String> {
+    match path {
+        [a, b, rest @ ..] if a == "dev" && b == "cli" => rest.to_vec(),
+        _ => path.to_vec(),
     }
+}
+
+fn canonical_dispatch_path(path: &[String]) -> Vec<String> {
+    let trimmed = strip_legacy_dev_cli_prefix(path);
+    let mut canonical = Vec::with_capacity(trimmed.len() + 2);
+    canonical.push("dev".to_string());
+    canonical.push("cli".to_string());
+    canonical.extend(trimmed);
+    canonical
+}
+
+fn parse_output_format(raw: Option<&str>) -> Result<Option<OutputFormat>, ParseError> {
+    raw.map(|value| match value {
+        "json" => Ok(OutputFormat::Json),
+        "yaml" => Ok(OutputFormat::Yaml),
+        "text" => Ok(OutputFormat::Text),
+        other => Err(ParseError::InvalidFormat(other.to_string())),
+    })
+    .transpose()
+}
+
+fn parse_color(raw: Option<&str>) -> Result<Option<ColorMode>, ParseError> {
+    raw.map(|value| match value {
+        "auto" => Ok(ColorMode::Auto),
+        "always" => Ok(ColorMode::Always),
+        "never" => Ok(ColorMode::Never),
+        other => Err(ParseError::InvalidColor(other.to_string())),
+    })
+    .transpose()
+}
+
+fn parse_log_level(raw: Option<&str>) -> Result<Option<LogLevel>, ParseError> {
+    raw.map(|value| match value {
+        "trace" => Ok(LogLevel::Trace),
+        "debug" => Ok(LogLevel::Debug),
+        "info" => Ok(LogLevel::Info),
+        "warning" => Ok(LogLevel::Warning),
+        "error" => Ok(LogLevel::Error),
+        "critical" => Ok(LogLevel::Critical),
+        other => Err(ParseError::InvalidLogLevel(other.to_string())),
+    })
+    .transpose()
+}
+
+fn extract_command_path(argv: &[String]) -> Vec<String> {
+    if argv.len() <= 1 {
+        return Vec::new();
+    }
+
+    let mut path = Vec::new();
+    let mut idx = 1;
+    while idx < argv.len() {
+        let token = argv[idx].as_str();
+        if token == "--" {
+            break;
+        }
+        if path.is_empty() {
+            if is_global_flag_without_value(token) || is_global_flag_with_equals(token) {
+                idx += 1;
+                continue;
+            }
+            if is_global_flag_with_value(token) {
+                idx += if argv.get(idx + 1).is_some() { 2 } else { 1 };
+                continue;
+            }
+        }
+        if token.starts_with('-') {
+            break;
+        }
+        path.push(argv[idx].clone());
+        idx += 1;
+    }
+    strip_legacy_dev_cli_prefix(&path)
+}
+
+fn parse_global_flags(argv: &[String]) -> Result<ParsedGlobalFlags, ParseError> {
+    let mut raw_format = None::<String>;
+    let mut raw_color = None::<String>;
+    let mut raw_log_level = None::<String>;
+    let mut config_path = None::<String>;
+    let mut quiet = false;
+    let mut pretty_mode = None::<PrettyMode>;
+    let mut force_json = false;
+    let mut force_text = false;
+
+    let mut idx = 1;
+    while idx < argv.len() {
+        let token = argv[idx].as_str();
+        if token == "--" {
+            break;
+        }
+        match token {
+            "--quiet" | "-q" => quiet = true,
+            "--pretty" => pretty_mode = Some(PrettyMode::Pretty),
+            "--no-pretty" => pretty_mode = Some(PrettyMode::Compact),
+            "--json" => {
+                force_json = true;
+                force_text = false;
+            }
+            "--text" => {
+                force_text = true;
+                force_json = false;
+            }
+            "--format" | "-f" => {
+                if let Some(value) = argv.get(idx + 1) {
+                    raw_format = Some(value.clone());
+                    idx += 1;
+                }
+            }
+            "--log-level" => {
+                if let Some(value) = argv.get(idx + 1) {
+                    raw_log_level = Some(value.clone());
+                    idx += 1;
+                }
+            }
+            "--color" => {
+                if let Some(value) = argv.get(idx + 1) {
+                    raw_color = Some(value.clone());
+                    idx += 1;
+                }
+            }
+            "--config-path" => {
+                if let Some(value) = argv.get(idx + 1) {
+                    config_path = Some(value.clone());
+                    idx += 1;
+                }
+            }
+            _ if token.starts_with("--format=") => {
+                raw_format = Some(token.trim_start_matches("--format=").to_string());
+            }
+            _ if token.starts_with("--log-level=") => {
+                raw_log_level = Some(token.trim_start_matches("--log-level=").to_string());
+            }
+            _ if token.starts_with("--color=") => {
+                raw_color = Some(token.trim_start_matches("--color=").to_string());
+            }
+            _ if token.starts_with("--config-path=") => {
+                config_path = Some(token.trim_start_matches("--config-path=").to_string());
+            }
+            _ => {}
+        }
+        idx += 1;
+    }
+
+    let output_format = if force_json {
+        Some(OutputFormat::Json)
+    } else if force_text {
+        Some(OutputFormat::Text)
+    } else {
+        parse_output_format(raw_format.as_deref())?
+    };
+
+    Ok(ParsedGlobalFlags {
+        output_format,
+        pretty_mode,
+        color_mode: parse_color(raw_color.as_deref())?,
+        log_level: parse_log_level(raw_log_level.as_deref())?,
+        quiet,
+        config_path,
+    })
+}
+
+fn parse_maintainer_intent(argv: &[String]) -> Result<MaintainerIntent, ParseError> {
+    let command_path = extract_command_path(argv);
+    let normalized_path = command_path.clone();
+    let global_flags = parse_global_flags(argv)?;
+
+    Ok(MaintainerIntent { command_path, normalized_path, global_flags })
+}
+
+fn help_requested(argv: &[String]) -> bool {
+    argv.iter().skip(1).take_while(|token| token.as_str() != "--").any(|token| {
+        matches!(token.as_str(), "--help" | "-h")
+    })
+}
+
+fn version_requested(argv: &[String]) -> bool {
+    argv.iter().skip(1).take_while(|token| token.as_str() != "--").any(|token| {
+        matches!(token.as_str(), "--version" | "-V")
+    })
 }
 
 fn root_help_text() -> String {
-    let help_argv = vec!["bijux".to_string(), "--help".to_string()];
-    try_render_clap_help(&help_argv).unwrap_or_default()
+    let mut lines = vec![
+        "Usage: bijux-dev-cli [OPTIONS] <COMMAND>".to_string(),
+        String::new(),
+        "Maintainer control-plane commands:".to_string(),
+    ];
+
+    let mut commands = command_registry()
+        .iter()
+        .filter(|entry| entry.visible)
+        .map(|entry| {
+            entry
+                .command
+                .as_str()
+                .strip_prefix("dev cli ")
+                .unwrap_or(entry.command.as_str())
+                .to_string()
+        })
+        .collect::<Vec<_>>();
+    commands.sort();
+    commands.dedup();
+
+    for command in commands {
+        lines.push(format!("  {command}"));
+    }
+
+    lines.extend([
+        String::new(),
+        "Options:".to_string(),
+        "  -f, --format <FORMAT>      Output format: text, json, or yaml".to_string(),
+        "  -q, --quiet                Suppress command output".to_string(),
+        "      --pretty               Pretty-print structured output".to_string(),
+        "      --no-pretty            Emit compact structured output".to_string(),
+        "      --color <MODE>         ANSI color policy".to_string(),
+        "      --log-level <LEVEL>    Log verbosity level".to_string(),
+        "      --config-path <PATH>   Use explicit config file path".to_string(),
+        "  -h, --help                 Print help".to_string(),
+        "  -V, --version              Print version".to_string(),
+    ]);
+
+    lines.join("\n") + "\n"
 }
 
-fn try_render_clap_result(argv: &[String]) -> Option<AppRunResult> {
-    match root_command().try_get_matches_from(argv) {
-        Ok(_) => None,
-        Err(error)
-            if matches!(
-                error.kind(),
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
-            ) =>
-        {
-            Some(AppRunResult { exit_code: 0, stdout: error.to_string(), stderr: String::new() })
-        }
-        Err(error) => {
-            let _ = error;
-            let message = root_help_text();
-            let stderr = if message.ends_with('\n') { message } else { format!("{message}\n") };
-            Some(AppRunResult { exit_code: 2, stdout: String::new(), stderr })
-        }
+fn try_render_entrypoint_result(argv: &[String]) -> Option<AppRunResult> {
+    if argv.len() == 1 || help_requested(argv) {
+        return Some(AppRunResult {
+            exit_code: 0,
+            stdout: root_help_text(),
+            stderr: String::new(),
+        });
     }
+
+    if version_requested(argv) {
+        return Some(AppRunResult {
+            exit_code: 0,
+            stdout: format!("{}\n", env!("CARGO_PKG_VERSION")),
+            stderr: String::new(),
+        });
+    }
+
+    None
 }
 
 fn route_response(
@@ -250,13 +468,15 @@ fn route_response(
     argv: &[String],
     global_flags: &ParsedGlobalFlags,
 ) -> Result<Value> {
-    if !dev_dispatch::owns_path(normalized_path) {
+    let dispatch_path = canonical_dispatch_path(normalized_path);
+
+    if !dev_dispatch::owns_path(&dispatch_path) {
         return Ok(json!({"status": "error", "message": "unknown route"}));
     }
 
     let context = RuntimeQueryContext::from_flags(global_flags)?;
     let runtime = context.provider();
-    let payload = dev_dispatch::try_handle(normalized_path, argv, &runtime)?;
+    let payload = dev_dispatch::try_handle(&dispatch_path, argv, &runtime)?;
 
     Ok(payload.unwrap_or_else(|| json!({"status": "error", "message": "unknown route"})))
 }
@@ -301,19 +521,10 @@ fn expanded_dev_cli_path(normalized_path: &[String], argv: &[String]) -> Vec<Str
 fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
     let is_maintenance_runner = matches!(
         normalized_path,
-        [a, b, c, d]
-            if a == "dev"
-                && b == "cli"
-                && c == "maintenance"
-                && (d == "generate" || d == "generate-all")
+        [a, b] if a == "maintenance" && (b == "generate" || b == "generate-all")
     ) || matches!(
         normalized_path,
-        [a, b, c, d, e]
-            if a == "dev"
-                && b == "cli"
-                && c == "maintenance"
-                && d == "status"
-                && (e == "run" || e == "run-all")
+        [a, b, c] if a == "maintenance" && b == "status" && (c == "run" || c == "run-all")
     );
 
     if !is_maintenance_runner {
@@ -412,15 +623,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
 
     if argv.len() == 1 {
         telemetry.record("dispatch.help.default", json!({"reason":"no_args"}));
-        let mut help_argv = synthetic_argv.clone();
-        help_argv.push("--help".to_string());
-        if let Some(help) = try_render_clap_help(&help_argv) {
-            telemetry.record("dispatch.help.rendered", json!({"topic":"root", "exit_code": 0}));
-            return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
-        }
+        telemetry.record("dispatch.help.rendered", json!({"topic":"root", "exit_code": 0}));
+        return Ok(AppRunResult { exit_code: 0, stdout: root_help_text(), stderr: String::new() });
     }
 
-    if let Some(result) = try_render_clap_result(&synthetic_argv) {
+    if let Some(result) = try_render_entrypoint_result(argv) {
         telemetry.record(
             "dispatch.clap.short_circuit",
             json!({
@@ -431,7 +638,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         return Ok(result);
     }
 
-    let intent = match parse_intent(&synthetic_parse_argv) {
+    let intent = match parse_maintainer_intent(argv) {
         Ok(intent) => intent,
         Err(error) => {
             let (message, message_truncated) = bounded_message(&error.to_string());
@@ -467,10 +674,12 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     );
     if intent.normalized_path.is_empty() {
         telemetry.record("dispatch.intent.empty", json!({}));
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: root_help_text() });
+        let help = root_help_text();
+        let stderr = if help.ends_with('\n') { help } else { format!("{help}\n") };
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr });
     }
 
-    let expanded_path = expanded_dev_cli_path(&intent.normalized_path, &synthetic_parse_argv);
+    let expanded_path = expanded_dev_cli_path(&intent.normalized_path, argv);
     if expanded_path != intent.normalized_path {
         let (from_path, from_truncated_segment_count, from_clipped_segment_count) =
             bounded_segments(&intent.normalized_path);
@@ -488,9 +697,9 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             }),
         );
     }
-    let is_unknown = !dev_dispatch::owns_path(&expanded_path);
+    let is_unknown = !dev_dispatch::owns_path(&canonical_dispatch_path(&expanded_path));
 
-    let response = route_response(&expanded_path, &synthetic_parse_argv, &intent.global_flags);
+    let response = route_response(&expanded_path, argv, &intent.global_flags);
     let payload = match response {
         Ok(value) => value,
         Err(error) => {
