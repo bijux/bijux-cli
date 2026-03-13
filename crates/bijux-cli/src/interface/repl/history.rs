@@ -6,6 +6,7 @@ use crate::infrastructure::fs_store::atomic_write_text;
 use super::execution::execute_repl_line;
 use super::types::{
     ReplError, ReplFrame, ReplSession, REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES,
+    REPL_HISTORY_MAX_ENTRIES,
 };
 
 #[derive(Debug, Default)]
@@ -102,7 +103,7 @@ pub fn configure_history(
 ) {
     session.history_file = history_file;
     session.history_enabled = enabled;
-    session.history_limit = limit.max(1);
+    session.history_limit = limit.clamp(1, REPL_HISTORY_MAX_ENTRIES);
 }
 
 /// Load history into the current session if enabled.
@@ -172,7 +173,25 @@ pub fn flush_history(session: &ReplSession) -> Result<(), ReplError> {
         persisted = persisted.split_off(persisted.len() - session.history_limit);
     }
 
-    let data = serde_json::to_string_pretty(&persisted)?;
+    let data = {
+        let full = serde_json::to_string_pretty(&persisted)?;
+        if (full.len() as u64 + 1) <= REPL_HISTORY_FILE_MAX_BYTES {
+            full
+        } else {
+            let mut low = 0usize;
+            let mut high = persisted.len();
+            while low < high {
+                let mid = low + (high - low) / 2;
+                let candidate = serde_json::to_string_pretty(&persisted[mid..])?;
+                if (candidate.len() as u64 + 1) <= REPL_HISTORY_FILE_MAX_BYTES {
+                    high = mid;
+                } else {
+                    low = mid + 1;
+                }
+            }
+            serde_json::to_string_pretty(&persisted[low..])?
+        }
+    };
     atomic_write_text(path, &(data + "\n"))
         .map_err(|err| std::io::Error::other(err.to_string()))?;
     Ok(())
@@ -214,7 +233,7 @@ mod tests {
 
     use super::{
         configure_history, load_history, parse_history_entries, push_history,
-        REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES,
+        REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES, REPL_HISTORY_MAX_ENTRIES,
     };
     use crate::interface::repl::session::startup_repl;
 
@@ -315,6 +334,33 @@ mod tests {
 
         assert_eq!(session.history, vec!["status".to_string()]);
         assert!(session.last_error.is_none());
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn configure_history_clamps_limit_to_max_bound() {
+        let (mut session, _) = startup_repl("", None);
+        configure_history(
+            &mut session,
+            Some(temp_history_file("clamp")),
+            true,
+            REPL_HISTORY_MAX_ENTRIES + 10_000,
+        );
+        assert_eq!(session.history_limit, REPL_HISTORY_MAX_ENTRIES);
+    }
+
+    #[test]
+    fn flush_history_never_exceeds_history_file_size_budget() {
+        let path = temp_history_file("flush-size-budget");
+        let (mut session, _) = startup_repl("", None);
+        configure_history(&mut session, Some(path.clone()), true, REPL_HISTORY_MAX_ENTRIES);
+        session.history =
+            (0..20_000).map(|idx| format!("status {idx} {}", "x".repeat(512))).collect();
+
+        super::flush_history(&session).expect("flush should succeed");
+        let metadata = std::fs::metadata(&path).expect("flushed file should exist");
+        assert!(metadata.len() <= REPL_HISTORY_FILE_MAX_BYTES);
 
         let _ = std::fs::remove_file(path);
     }
