@@ -38,4 +38,4 @@ Scope: `config set` command parity baseline and reliability checks.
 
 ## Deferred Improvements
 
-See `docs/architecture/config-set-post-parity-improvements.md`.
+See `docs/architecture/config-parity-report.md`.

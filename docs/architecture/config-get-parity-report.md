@@ -44,4 +44,4 @@ Scope: stable parity and behavior coverage.
 - `137`: complete (exit-code parity checks in parity tests).
 - `138`: complete (stderr/stdout routing parity checks).
 - `139`: complete (performance sanity benchmark guard).
-- `140`: complete (post-parity follow-up list published separately).
+- `140`: complete (follow-up items now summarized in `config-parity-report.md`).

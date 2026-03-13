@@ -53,3 +53,7 @@ Review these artifacts before publishing status:
 - `artifacts/status/what_is_deferred.json`
 - `artifacts/status/what_is_unproven.json`
 - `artifacts/status/next_200_priorities.json`
+
+For configuration-specific parity gaps and deferred changes, use
+`docs/architecture/config-parity-report.md` together with the generated parity
+artifacts rather than older hand-maintained gap lists.

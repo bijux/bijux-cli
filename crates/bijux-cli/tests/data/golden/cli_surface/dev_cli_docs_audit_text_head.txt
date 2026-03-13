@@ -14,7 +14,6 @@ docs:
   - docs/architecture/config-export-load-parity-report.md
   - docs/architecture/config-file-path-behavior.md
   - docs/architecture/config-get-parity-report.md
-  - docs/architecture/config-get-post-parity-improvements.md
   - docs/architecture/config-key-value-parity.md
   - docs/architecture/config-mutation-hardening-law.md
-  - docs/architecture/config-parity-matrix.md
+  - docs/architecture/config-parity-report.md
