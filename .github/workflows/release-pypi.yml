@@ -25,108 +25,35 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Resolve release SHA
-        id: target
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout release commit
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ steps.target.outputs.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Ensure tags are available
-        run: git fetch --tags --force --prune
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Determine tagged release version
+      - name: Plan PyPI release
         id: release
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha="${{ steps.target.outputs.sha }}"
-          tags="$(git tag --points-at "$sha" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
-          if [ -z "$tags" ]; then
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          tag="$(printf '%s\n' "$tags" | head -n1)"
-          version="${tag#v}"
-          package_version="$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name=="bijux-cli-python") | .version')"
-          if [ "$package_version" != "$version" ]; then
-            echo "::error::Tag version $version does not match bijux-cli-python version $package_version"
-            exit 1
-          fi
-          {
-            echo "publish=true"
-            echo "tag=$tag"
-            echo "version=$version"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Stop when commit is not a release tag
-        if: ${{ steps.release.outputs.publish != 'true' }}
-        run: echo "No semver tag points at this green CI commit; skipping PyPI publish."
-
-      - name: Check whether package version already exists on PyPI
-        if: ${{ steps.release.outputs.publish == 'true' }}
-        id: exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="${{ steps.release.outputs.version }}"
-          status="$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/bijux-cli/${version}/json" || true)"
-          if [ "$status" = "200" ]; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Stop when version already exists on PyPI
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published == 'true' }}
-        run: echo "bijux-cli ${{ steps.release.outputs.version }} is already available on PyPI; skipping publish."
-
-      - name: Ensure PyPI token is configured
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-        shell: bash
-        run: |
-          if [ -z "${{ secrets.PYPI_API_TOKEN }}" ]; then
-            echo "::error::Missing PYPI_API_TOKEN secret"
-            exit 1
-          fi
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: make gh-release-plan-pypi
 
       - name: Set up Python
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
+        if: ${{ steps.release.outputs.publish == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: crates/bijux-cli-python/pyproject.toml
 
+      - name: Set up Rust
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
       - uses: Swatinem/rust-cache@v2
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-
-      - name: Install release toolchain
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-        run: make install
-
-      - name: Build Python distributions
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-        run: make build-py
+        if: ${{ steps.release.outputs.publish == 'true' }}
 
       - name: Publish to PyPI
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: artifacts/build
-          skip-existing: true
-          verbose: true
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: make publish-py

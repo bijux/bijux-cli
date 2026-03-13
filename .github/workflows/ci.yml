@@ -39,17 +39,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python toolchain
-        run: make install
-
-      - name: Check Rust formatting
-        run: cargo fmt --all -- --check
-
-      - name: Check Python formatting
-        run: |
-          artifacts/python/.venv/bin/ruff format --check \
-            --config configs/python/ruff.toml \
-            crates/bijux-cli-python/python/bijux_cli_py
+      - name: Run formatting checks
+        run: make gh-fmt
 
   lint:
     name: lint
@@ -71,19 +62,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python toolchain
-        run: make install
-
-      - name: Lint Rust
-        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
-
-      - name: Lint Python
-        run: |
-          artifacts/python/.venv/bin/ruff check \
-            --select E,F,I,UP,B,SIM,C4,TID,PERF \
-            --ignore E501 \
-            --config configs/python/ruff.toml \
-            crates/bijux-cli-python/python/bijux_cli_py
+      - name: Run lint checks
+        run: make gh-lint
 
   security:
     name: security
@@ -107,26 +87,8 @@ jobs:
         with:
           tool: cargo-deny,cargo-audit
 
-      - name: Install Python toolchain
-        run: make install
-
-      - name: Audit Rust dependencies
-        run: cargo deny check --config configs/rust/deny.toml
-
-      - name: Scan Rust advisories
-        run: cargo audit
-
-      - name: Scan Python code
-        run: |
-          artifacts/python/.venv/bin/bandit \
-            -r crates/bijux-cli-python/python/bijux_cli_py \
-            -ll
-
-      - name: Audit Python dependencies
-        run: |
-          artifacts/python/.venv/bin/pip-audit \
-            --progress-spinner off \
-            --ignore-vuln PYSEC-2022-42969
+      - name: Run security checks
+        run: make gh-security
 
   test:
     name: test
@@ -146,11 +108,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Python toolchain
-        run: make install
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
 
-      - name: Run Rust tests
-        run: cargo test --workspace --locked
-
-      - name: Run Python tests
-        run: make test-py
+      - name: Run test suites
+        run: make gh-test
