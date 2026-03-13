@@ -2,9 +2,11 @@
 //! Config corruption and recovery hardening coverage.
 
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::thread;
+use std::time::Duration;
 
 use bijux_cli as _;
 use libc as _;
@@ -13,7 +15,34 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output().expect("binary should execute")
+    run_result(args).unwrap_or_else(|err| panic!("binary should execute for args {args:?}: {err}"))
+}
+
+fn run_result(args: &[&str]) -> io::Result<Output> {
+    const RETRIES: usize = 8;
+    let mut last_not_found: Option<io::Error> = None;
+
+    for attempt in 0..RETRIES {
+        match Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output() {
+            Ok(output) if output.status.code().is_some() => return Ok(output),
+            Ok(output) => {
+                if attempt + 1 == RETRIES {
+                    return Ok(output);
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                if attempt + 1 == RETRIES {
+                    return Err(err);
+                }
+                last_not_found = Some(err);
+                thread::sleep(Duration::from_millis(20));
+            }
+            Err(err) => return Err(err),
+        }
+    }
+
+    Err(last_not_found.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
 }
 
 fn run_ok_json(args: &[&str]) -> Value {

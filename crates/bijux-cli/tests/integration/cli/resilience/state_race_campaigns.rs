@@ -25,27 +25,44 @@ fn temp_dir(name: &str) -> PathBuf {
 }
 
 fn run_bin(args: &[&str]) -> io::Result<Output> {
-    let mut last_err: Option<io::Error> = None;
-    for _ in 0..3 {
-        match Command::new(env!("CARGO_BIN_EXE_bijux")).args(args).output() {
-            Ok(output) => return Ok(output),
-            Err(err) if err.kind() == io::ErrorKind::NotFound => {
-                last_err = Some(err);
+    run_with_env_result(args, &[])
+}
+
+fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
+    run_with_env_result(args, envs).unwrap_or_else(|err| panic!("run command {args:?}: {err}"))
+}
+
+fn run_with_env_result(args: &[&str], envs: &[(&str, String)]) -> io::Result<Output> {
+    const RETRIES: usize = 8;
+    let mut last_not_found: Option<io::Error> = None;
+
+    for attempt in 0..RETRIES {
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
+        cmd.args(args);
+        for (k, v) in envs {
+            cmd.env(k, v);
+        }
+
+        match cmd.output() {
+            Ok(output) if output.status.code().is_some() => return Ok(output),
+            Ok(output) => {
+                if attempt + 1 == RETRIES {
+                    return Ok(output);
+                }
                 thread::sleep(Duration::from_millis(10));
+            }
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                if attempt + 1 == RETRIES {
+                    return Err(err);
+                }
+                last_not_found = Some(err);
+                thread::sleep(Duration::from_millis(20));
             }
             Err(err) => return Err(err),
         }
     }
-    Err(last_err.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
-}
 
-fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux"));
-    cmd.args(args);
-    for (k, v) in envs {
-        cmd.env(k, v);
-    }
-    cmd.output().expect("run command")
+    Err(last_not_found.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
 }
 
 fn assert_known_status(out: &Output, context: &str) {
