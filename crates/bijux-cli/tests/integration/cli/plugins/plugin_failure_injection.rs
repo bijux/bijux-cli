@@ -276,3 +276,40 @@ fn install_and_uninstall_retries_are_idempotent_after_transient_write_failures()
     let second_uninstall = run(&["cli", "plugins", "uninstall", "retryplug"], &plugins_dir);
     assert!(second_uninstall.status.success());
 }
+
+#[test]
+#[cfg(unix)]
+fn unreadable_registry_surfaces_degraded_integrity_in_list_and_inspect() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("unreadable-registry");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let registry = plugins_dir.join("registry.json");
+    fs::write(&registry, "{\"version\":\"v1\",\"plugins\":{}}").expect("seed registry");
+
+    fs::set_permissions(&registry, fs::Permissions::from_mode(0o000)).expect("chmod 000");
+    if fs::read_to_string(&registry).is_ok() {
+        fs::set_permissions(&registry, fs::Permissions::from_mode(0o644)).expect("restore");
+        return;
+    }
+
+    let listed = run(&["cli", "plugins", "list"], &plugins_dir);
+    assert_eq!(listed.status.code(), Some(0));
+    assert!(listed.stderr.is_empty());
+    let listed_payload: Value = serde_json::from_slice(&listed.stdout).expect("list payload");
+    assert_eq!(listed_payload["integrity_status"], "degraded");
+    assert!(listed_payload["integrity_error"]
+        .as_str()
+        .is_some_and(|value| value.to_ascii_lowercase().contains("permission")));
+
+    let inspected = run(&["cli", "plugins", "inspect"], &plugins_dir);
+    assert_eq!(inspected.status.code(), Some(0));
+    assert!(inspected.stderr.is_empty());
+    let inspect_payload: Value = serde_json::from_slice(&inspected.stdout).expect("inspect payload");
+    assert_eq!(inspect_payload["status"], "degraded");
+    assert_eq!(inspect_payload["integrity_status"], "degraded");
+    assert!(inspect_payload["integrity_issues"].as_array().is_some_and(|rows| !rows.is_empty()));
+
+    fs::set_permissions(&registry, fs::Permissions::from_mode(0o644)).expect("restore");
+}
