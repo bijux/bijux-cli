@@ -13,9 +13,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let run_cmd = |args: &[&str]| -> Value {
                 run_bijux_json(workspace_root, args).unwrap_or_else(|_| json!({}))
             };
-            let evidence_audit = run_cmd(&["dev", "cli", "evidence", "audit"]);
-            let evidence_map = run_cmd(&["dev", "cli", "evidence", "command-map"]);
-            let parity_map = run_cmd(&["dev", "cli", "evidence", "parity-map"]);
+            let evidence_audit = run_cmd(&["evidence", "audit"]);
+            let evidence_map = run_cmd(&["evidence", "command-map"]);
+            let parity_map = run_cmd(&["evidence", "parity-map"]);
             let invalid_ids = evidence_audit
                 .get("invalid_ids")
                 .and_then(Value::as_array)
@@ -104,12 +104,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
 
-            let rust_owner = run_cmd(&["dev", "cli", "config", "rust-owner"]);
-            let python_owner = run_cmd(&["dev", "cli", "config", "python-owner"]);
-            let ownership = run_cmd(&["dev", "cli", "config", "ownership"]);
-            let drift = run_cmd(&["dev", "cli", "config", "drift"]);
-            let shape = run_cmd(&["dev", "cli", "config", "shape"]);
-            let evidence_link = run_cmd(&["dev", "cli", "config", "evidence-map"]);
+            let rust_owner = run_cmd(&["config", "rust-owner"]);
+            let python_owner = run_cmd(&["config", "python-owner"]);
+            let ownership = run_cmd(&["config", "ownership"]);
+            let drift = run_cmd(&["config", "drift"]);
+            let shape = run_cmd(&["config", "shape"]);
+            let evidence_link = run_cmd(&["config", "evidence-map"]);
             let _ = read("artifacts/status/config_ownership_truth.json");
             write_status_artifact_json(
                 workspace_root,

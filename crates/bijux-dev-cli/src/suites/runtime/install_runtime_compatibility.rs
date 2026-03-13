@@ -121,8 +121,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let test_file =
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/precedence_matrix.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
-            let env_payload = run_bijux_json(workspace_root, &["dev", "cli", "env"])
-                .unwrap_or_else(|_| json!({}));
+            let env_payload =
+                run_bijux_json(workspace_root, &["env"]).unwrap_or_else(|_| json!({}));
             let source_precedence =
                 env_payload.get("source_precedence").cloned().unwrap_or_else(|| json!([]));
             let precedence_rows = [

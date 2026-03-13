@@ -59,8 +59,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .current_dir(workspace_root)
                 .output()
                 .ok();
-            let corruption = run_json(&["dev", "cli", "state-audit"]);
-            let diagnostics = run_json(&["dev", "cli", "state-doctor"]);
+            let corruption = run_json(&["state-audit"]);
+            let diagnostics = run_json(&["state-doctor"]);
             let failure = Command::new("cargo")
                 .args(["run", "-q", "-p", "bijux-cli", "--", "memory", "list", "--unknown-flag"])
                 .current_dir(workspace_root)

@@ -335,7 +335,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     56,
                     "state_doctor_follows_stream_law",
-                    vec!["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+                    vec!["state-doctor", "--format", "json", "--no-pretty"],
                     0,
                     true,
                     true,

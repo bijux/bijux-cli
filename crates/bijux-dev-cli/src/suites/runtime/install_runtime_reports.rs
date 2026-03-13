@@ -83,12 +83,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS" => {
             let generated_at = generated_at_utc();
-            let runtime_identity =
-                run_bijux_json(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
-            let package_health =
-                run_bijux_json(workspace_root, &["dev", "cli", "package-health"]).ok()?;
-            let install_text =
-                run_bijux_text(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
+            let runtime_identity = run_bijux_json(workspace_root, &["runtime-identity"]).ok()?;
+            let package_health = run_bijux_json(workspace_root, &["package-health"]).ok()?;
+            let install_text = run_bijux_text(workspace_root, &["runtime-identity"]).ok()?;
             let diagnostics =
                 runtime_identity.get("diagnostics").cloned().unwrap_or_else(|| json!({}));
             let install_source_payload = json!({

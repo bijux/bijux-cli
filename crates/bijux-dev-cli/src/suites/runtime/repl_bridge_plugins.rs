@@ -325,24 +325,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ];
             let package_env =
                 vec![("PATH", path_mixed), ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())];
-            let runtime_payload = run_bijux_json_env(
-                workspace_root,
-                &["dev", "cli", "runtime-identity"],
-                &runtime_env,
-            )
-            .ok()?;
+            let runtime_payload =
+                run_bijux_json_env(workspace_root, &["runtime-identity"], &runtime_env).ok()?;
             let package_payload =
-                run_bijux_json_env(workspace_root, &["dev", "cli", "package-health"], &package_env)
-                    .ok()?;
-            let runtime_second = run_bijux_json_env(
-                workspace_root,
-                &["dev", "cli", "runtime-identity"],
-                &runtime_env,
-            )
-            .ok()?;
+                run_bijux_json_env(workspace_root, &["package-health"], &package_env).ok()?;
+            let runtime_second =
+                run_bijux_json_env(workspace_root, &["runtime-identity"], &runtime_env).ok()?;
             let package_second =
-                run_bijux_json_env(workspace_root, &["dev", "cli", "package-health"], &package_env)
-                    .ok()?;
+                run_bijux_json_env(workspace_root, &["package-health"], &package_env).ok()?;
             let _ = fs::remove_dir_all(&temp_root);
 
             let runtime_checks = json!({

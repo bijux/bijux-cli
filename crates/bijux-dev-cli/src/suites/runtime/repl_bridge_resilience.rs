@@ -254,19 +254,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS" => {
-            let bridge =
-                run_bijux_json(workspace_root, &["dev", "cli", "python", "bridge-status"]).ok()?;
-            let surface =
-                run_bijux_json(workspace_root, &["dev", "cli", "python", "surface-status"]).ok()?;
+            let bridge = run_bijux_json(workspace_root, &["python", "bridge-status"]).ok()?;
+            let surface = run_bijux_json(workspace_root, &["python", "surface-status"]).ok()?;
             let sovereignty =
-                run_bijux_json(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
-                    .ok()?;
-            let drift = run_bijux_json(workspace_root, &["dev", "cli", "python", "drift"]).ok()?;
-            let packaging =
-                run_bijux_json(workspace_root, &["dev", "cli", "python", "packaging"]).ok()?;
+                run_bijux_json(workspace_root, &["python", "sovereignty-audit"]).ok()?;
+            let drift = run_bijux_json(workspace_root, &["python", "drift"]).ok()?;
+            let packaging = run_bijux_json(workspace_root, &["python", "packaging"]).ok()?;
             let sovereignty_text =
-                run_bijux_text(workspace_root, &["dev", "cli", "python", "sovereignty-audit"])
-                    .ok()?;
+                run_bijux_text(workspace_root, &["python", "sovereignty-audit"]).ok()?;
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/python_bridge_status_report.json",

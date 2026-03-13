@@ -121,10 +121,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .unwrap_or_default();
             let inspect =
                 run_bijux_json(workspace_root, &["inspect"]).unwrap_or_else(|_| json!({}));
-            let routes = run_bijux_json(workspace_root, &["dev", "cli", "routes"])
-                .unwrap_or_else(|_| json!({}));
-            let registry = run_bijux_json(workspace_root, &["dev", "cli", "registry"])
-                .unwrap_or_else(|_| json!({}));
+            let routes = run_bijux_json(workspace_root, &["routes"]).unwrap_or_else(|_| json!({}));
+            let registry =
+                run_bijux_json(workspace_root, &["registry"]).unwrap_or_else(|_| json!({}));
             let route_key = |row: &Value| -> String {
                 row.get("segments")
                     .and_then(Value::as_array)

@@ -13,8 +13,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let run_json_or_empty =
                 |args: &[&str]| run_bijux_json(workspace_root, args).unwrap_or_else(|_| json!({}));
             let semantic_roundtrip = run_json_or_empty(&["cli", "config", "list"]);
-            let precedence_view = run_json_or_empty(&["dev", "cli", "env"]);
-            let corruption_view = run_json_or_empty(&["dev", "cli", "state-doctor"]);
+            let precedence_view = run_json_or_empty(&["env"]);
+            let corruption_view = run_json_or_empty(&["state-doctor"]);
             let determinism_a = Command::new("cargo")
                 .args([
                     "run",

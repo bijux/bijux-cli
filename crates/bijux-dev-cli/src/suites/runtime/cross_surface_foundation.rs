@@ -421,10 +421,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({}));
-            let package_health =
-                run_bijux_json(workspace_root, &["dev", "cli", "package-health"]).ok()?;
-            let runtime_identity =
-                run_bijux_json(workspace_root, &["dev", "cli", "runtime-identity"]).ok()?;
+            let package_health = run_bijux_json(workspace_root, &["package-health"]).ok()?;
+            let runtime_identity = run_bijux_json(workspace_root, &["runtime-identity"]).ok()?;
             write_status_artifact_json(
                                 workspace_root,
                                 "artifacts/status/packaging_ambiguity_report.json",
