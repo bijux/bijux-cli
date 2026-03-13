@@ -4,8 +4,10 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
-use crate::features::history::operations::{clear_history, list_history, HistoryListOptions};
-use crate::shared::argv::command_option_value;
+use crate::features::history::operations::{
+    clear_history, list_history, HistoryListOptions, DEFAULT_HISTORY_LIMIT, MAX_HISTORY_LIMIT,
+};
+use crate::routing::parser::root_command;
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
@@ -23,25 +25,34 @@ pub(crate) fn try_handle(
 }
 
 fn parse_history_list_options(argv: &[String]) -> Result<HistoryListOptions> {
-    let mut options = HistoryListOptions::default();
+    let matches = root_command()
+        .try_get_matches_from(argv)
+        .map_err(|error| anyhow!("Invalid argument: {error}"))?;
+    let Some(history_matches) = matches.subcommand_matches("history") else {
+        return Ok(HistoryListOptions::default());
+    };
 
-    if let Some(raw) = command_option_value(argv, &["history"], "--limit")
-        .or_else(|| command_option_value(argv, &["history"], "-l"))
-    {
-        options.limit = raw
-            .parse::<usize>()
-            .map_err(|_| anyhow!("Invalid argument: --limit must be a non-negative integer"))?;
+    let mut options = HistoryListOptions {
+        limit: history_matches.get_one::<usize>("limit").copied().unwrap_or(DEFAULT_HISTORY_LIMIT),
+        filter_contains: history_matches.get_one::<String>("filter").cloned(),
+        sort_by_timestamp: history_matches
+            .get_one::<String>("sort")
+            .is_some_and(|sort| sort == "timestamp"),
+    };
+
+    if options.limit == 0 {
+        return Err(anyhow!("Invalid argument: --limit must be greater than zero"));
     }
-    if let Some(raw) = command_option_value(argv, &["history"], "--filter")
-        .or_else(|| command_option_value(argv, &["history"], "-F"))
-    {
-        options.filter_contains = Some(raw);
+    if options.limit > MAX_HISTORY_LIMIT {
+        return Err(anyhow!("Invalid argument: --limit must not exceed {MAX_HISTORY_LIMIT}"));
     }
-    if let Some(sort) = command_option_value(argv, &["history"], "--sort") {
-        if sort != "timestamp" {
-            return Err(anyhow!("Invalid argument: --sort only supports `timestamp`"));
+
+    if let Some(filter) = options.filter_contains.take() {
+        let normalized = filter.trim();
+        if normalized.is_empty() {
+            return Err(anyhow!("Invalid argument: --filter must not be empty"));
         }
-        options.sort_by_timestamp = true;
+        options.filter_contains = Some(normalized.to_string());
     }
 
     Ok(options)

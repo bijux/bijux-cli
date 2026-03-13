@@ -93,6 +93,7 @@ fn history_missing_and_malformed_behaviors_are_stable() {
     assert_eq!(out_missing.status.code(), Some(0));
     let payload = parse_json(&out_missing.stdout);
     assert_eq!(payload["entries"], Value::Array(Vec::new()));
+    assert_eq!(payload["summary"]["source_format"], "missing");
 
     let malformed_path = temp.join("malformed.history");
     fs::write(&malformed_path, "{\"oops\":true}").expect("write malformed");
@@ -108,9 +109,9 @@ fn history_missing_and_malformed_behaviors_are_stable() {
     let envs_truncated = [("BIJUXCLI_HISTORY_FILE", truncated_path.display().to_string())];
     let out_truncated =
         run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_truncated);
-    assert_eq!(out_truncated.status.code(), Some(0));
-    let truncated_payload = parse_json(&out_truncated.stdout);
-    assert!(truncated_payload["entries"].is_array());
+    assert_eq!(out_truncated.status.code(), Some(1));
+    assert!(out_truncated.stdout.is_empty());
+    assert!(!out_truncated.stderr.is_empty());
 }
 
 #[test]
@@ -236,9 +237,9 @@ fn history_malformed_array_with_nested_noise_keeps_only_object_entries() {
     assert!(out.status.success());
     let payload = parse_json(&out.stdout);
     let loaded = payload["entries"].as_array().expect("entries");
-    assert_eq!(loaded.len(), 3);
+    assert_eq!(loaded.len(), 2);
     assert_eq!(loaded[0]["command"], "status");
-    assert_eq!(loaded[2]["command"], "doctor");
+    assert_eq!(loaded[1]["command"], "doctor");
 }
 
 #[test]
@@ -258,6 +259,7 @@ fn history_reads_repl_line_layout_for_cli_interop() {
     assert_eq!(loaded[0]["command"], "status");
     assert_eq!(loaded[1]["command"], "plugins list");
     assert_eq!(loaded[2]["command"], "history");
+    assert_eq!(payload["summary"]["source_format"], "legacy-lines");
 }
 
 #[test]

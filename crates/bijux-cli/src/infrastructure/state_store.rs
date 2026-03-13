@@ -10,7 +10,27 @@ use serde_json::{json, Value};
 
 use crate::infrastructure::fs_store::atomic_write_text;
 
-fn history_entry_from_command(command: &str) -> Value {
+const MAX_HISTORY_FILE_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_HISTORY_COMMAND_CHARS: usize = 4096;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct HistoryReadReport {
+    pub(crate) entries: Vec<Value>,
+    pub(crate) source_format: &'static str,
+    pub(crate) dropped_invalid_entries: usize,
+    pub(crate) file_bytes: u64,
+}
+
+fn normalize_history_command(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.chars().any(char::is_control) {
+        return None;
+    }
+    Some(trimmed.chars().take(MAX_HISTORY_COMMAND_CHARS).collect())
+}
+
+fn history_entry_from_command(command: &str) -> Option<Value> {
+    let command = normalize_history_command(command)?;
     json!({
         "command": command,
         "params": [],
@@ -20,11 +40,25 @@ fn history_entry_from_command(command: &str) -> Value {
         "duration_ms": 0.0,
         "raw": {},
     })
+    .into()
+}
+
+fn normalize_history_object(mut value: Value) -> Option<Value> {
+    let object = value.as_object_mut()?;
+    let command = object.get("command")?.as_str()?;
+    let normalized = normalize_history_command(command)?;
+    object.insert("command".to_string(), Value::String(normalized));
+    Some(value)
 }
 
 fn push_history_entry(entries: &mut VecDeque<Value>, entry: Value, limit: usize) {
-    if limit != usize::MAX && entries.len() == limit {
-        entries.pop_front();
+    if limit == 0 {
+        return;
+    }
+    if limit != usize::MAX {
+        while entries.len() >= limit {
+            entries.pop_front();
+        }
     }
     entries.push_back(entry);
 }
@@ -34,7 +68,7 @@ struct LimitedHistoryArraySeed {
 }
 
 impl<'de> DeserializeSeed<'de> for LimitedHistoryArraySeed {
-    type Value = Vec<Value>;
+    type Value = ParsedHistoryEntries;
 
     fn deserialize<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
     where
@@ -48,8 +82,14 @@ struct LimitedHistoryArrayVisitor {
     limit: usize,
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+struct ParsedHistoryEntries {
+    entries: Vec<Value>,
+    dropped_invalid_entries: usize,
+}
+
 impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
-    type Value = Vec<Value>;
+    type Value = ParsedHistoryEntries;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("a JSON array of history entries")
@@ -60,64 +100,119 @@ impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
         A: SeqAccess<'de>,
     {
         let mut entries = VecDeque::<Value>::new();
+        let mut dropped_invalid_entries = 0usize;
         while let Some(value) = seq.next_element::<Value>()? {
-            if value.is_object() {
-                push_history_entry(&mut entries, value, self.limit);
+            if let Some(normalized) = normalize_history_object(value) {
+                push_history_entry(&mut entries, normalized, self.limit);
+            } else {
+                dropped_invalid_entries += 1;
             }
         }
-        Ok(entries.into_iter().collect())
+        Ok(ParsedHistoryEntries { entries: entries.into_iter().collect(), dropped_invalid_entries })
     }
 }
 
-fn parse_history_array_entries(text: &str, limit: usize) -> Result<Vec<Value>> {
+fn parse_history_array_entries(text: &str, limit: usize) -> Result<ParsedHistoryEntries> {
     let mut deserializer = serde_json::Deserializer::from_str(text);
-    let entries = LimitedHistoryArraySeed { limit }
+    let parsed = LimitedHistoryArraySeed { limit }
         .deserialize(&mut deserializer)
         .map_err(|err| anyhow::anyhow!(err))?;
     deserializer.end().map_err(|err| anyhow::anyhow!(err))?;
-    Ok(entries)
+    Ok(parsed)
 }
 
-fn parse_history_entries(text: &str, limit: usize) -> Result<Vec<Value>> {
+fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> {
     let trimmed = text.trim();
     if trimmed.is_empty() {
-        return Ok(Vec::new());
+        return Ok(HistoryReadReport {
+            entries: Vec::new(),
+            source_format: "empty",
+            dropped_invalid_entries: 0,
+            file_bytes: 0,
+        });
     }
 
     if trimmed.starts_with('[') {
-        if let Ok(entries) = parse_history_array_entries(trimmed, limit) {
-            return Ok(entries);
-        }
+        let parsed = parse_history_array_entries(trimmed, limit).map_err(|error| {
+            anyhow::anyhow!("Malformed history state: invalid JSON array payload: {error}")
+        })?;
+        return Ok(HistoryReadReport {
+            entries: parsed.entries,
+            source_format: "json-array",
+            dropped_invalid_entries: parsed.dropped_invalid_entries,
+            file_bytes: 0,
+        });
     }
 
-    if serde_json::from_str::<Value>(trimmed).is_ok() {
-        anyhow::bail!("Unexpected history file format (not JSON array)");
+    if trimmed.starts_with('{') {
+        if serde_json::from_str::<Value>(trimmed).is_ok() {
+            anyhow::bail!("Malformed history state: expected JSON array payload");
+        }
+        anyhow::bail!("Malformed history state: invalid JSON object payload");
+    }
+
+    if matches!(trimmed.chars().next(), Some(']' | '}')) {
+        anyhow::bail!("Malformed history state: invalid JSON payload");
     }
 
     // Compatibility fallback for line-oriented history files with partial corruption.
     let mut out = VecDeque::<Value>::new();
+    let mut dropped_invalid_entries = 0usize;
+    let mut saw_json_line = false;
     for raw_line in text.lines() {
         let line = raw_line.trim();
         if line.is_empty() {
             continue;
         }
         if let Ok(value) = serde_json::from_str::<Value>(line) {
-            if value.is_object() {
-                push_history_entry(&mut out, value, limit);
+            saw_json_line = true;
+            if let Some(normalized) = normalize_history_object(value) {
+                push_history_entry(&mut out, normalized, limit);
+            } else {
+                dropped_invalid_entries += 1;
             }
             continue;
         }
-        push_history_entry(&mut out, history_entry_from_command(line), limit);
+        if let Some(entry) = history_entry_from_command(line) {
+            push_history_entry(&mut out, entry, limit);
+        } else {
+            dropped_invalid_entries += 1;
+        }
     }
-    Ok(out.into_iter().collect())
+    Ok(HistoryReadReport {
+        entries: out.into_iter().collect(),
+        source_format: if saw_json_line { "legacy-json-lines" } else { "legacy-lines" },
+        dropped_invalid_entries,
+        file_bytes: 0,
+    })
 }
 
 pub(crate) fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
+    Ok(read_history_report(path, limit)?.entries)
+}
+
+pub(crate) fn read_history_report(path: &Path, limit: usize) -> Result<HistoryReadReport> {
     if !path.exists() {
-        return Ok(Vec::new());
+        return Ok(HistoryReadReport {
+            entries: Vec::new(),
+            source_format: "missing",
+            dropped_invalid_entries: 0,
+            file_bytes: 0,
+        });
     }
+
+    let metadata = fs::metadata(path)?;
+    if metadata.len() > MAX_HISTORY_FILE_BYTES {
+        anyhow::bail!(
+            "History state exceeds {} bytes and cannot be loaded safely",
+            MAX_HISTORY_FILE_BYTES
+        );
+    }
+
     let text = fs::read_to_string(path)?;
-    parse_history_entries(&text, limit)
+    let mut report = parse_history_entries(&text, limit)?;
+    report.file_bytes = metadata.len();
+    Ok(report)
 }
 
 pub(crate) fn write_history_entries(path: &Path, entries: &[Value]) -> Result<()> {
@@ -148,4 +243,60 @@ pub(crate) fn write_json_document(path: &Path, value: &Value) -> Result<()> {
     let payload = serde_json::to_string_pretty(value)?;
     atomic_write_text(path, &(payload + "\n"))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_history_entries, read_history_report, MAX_HISTORY_FILE_BYTES};
+
+    fn temp_path(name: &str) -> std::path::PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        std::env::temp_dir().join(format!("bijux-state-store-{name}-{nanos}.json"))
+    }
+
+    #[test]
+    fn parse_history_entries_rejects_json_object_payloads() {
+        let error = parse_history_entries("{\"oops\":true}", 20).expect_err("must fail");
+        assert!(error.to_string().contains("expected JSON array"));
+    }
+
+    #[test]
+    fn parse_history_entries_rejects_malformed_json_array_payloads() {
+        let error = parse_history_entries("[{\"command\":\"status\"}", 20).expect_err("must fail");
+        assert!(error.to_string().contains("invalid JSON array payload"));
+    }
+
+    #[test]
+    fn parse_history_entries_drops_invalid_entries_inside_arrays() {
+        let report = parse_history_entries(
+            "[{\"command\":\"status\"},{\"foo\":1},null,{\"command\":\"doctor\"}]",
+            20,
+        )
+        .expect("must parse");
+        assert_eq!(report.entries.len(), 2);
+        assert_eq!(report.entries[0]["command"], "status");
+        assert_eq!(report.entries[1]["command"], "doctor");
+        assert_eq!(report.dropped_invalid_entries, 2);
+    }
+
+    #[test]
+    fn parse_history_entries_limit_zero_returns_no_entries() {
+        let report =
+            parse_history_entries("[{\"command\":\"status\"},{\"command\":\"doctor\"}]", 0)
+                .expect("must parse");
+        assert!(report.entries.is_empty());
+    }
+
+    #[test]
+    fn read_history_report_enforces_file_size_budget() {
+        let path = temp_path("oversized");
+        std::fs::write(&path, vec![b'x'; (MAX_HISTORY_FILE_BYTES + 1) as usize])
+            .expect("write oversized file");
+        let error = read_history_report(&path, 20).expect_err("must fail");
+        assert!(error.to_string().contains("exceeds"));
+        let _ = std::fs::remove_file(path);
+    }
 }

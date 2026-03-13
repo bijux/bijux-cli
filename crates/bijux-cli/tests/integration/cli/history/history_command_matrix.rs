@@ -134,9 +134,9 @@ fn history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates() {
         &["history", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_HISTORY_FILE", malformed.to_str().expect("utf-8"))],
     );
-    assert_eq!(malformed_out.status.code(), Some(0));
-    let malformed_json: Value = serde_json::from_slice(&malformed_out.stdout).expect("json");
-    assert!(malformed_json["entries"].as_array().is_some());
+    assert_eq!(malformed_out.status.code(), Some(1));
+    assert!(malformed_out.stdout.is_empty());
+    assert!(!malformed_out.stderr.is_empty());
 
     let mixed = root.join("mixed.history");
     fs::write(&mixed, "status\nBROKEN-LINE\nstatus\nplugins list\n").expect("write mixed");
@@ -151,6 +151,47 @@ fn history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates() {
     assert_eq!(rows[0]["command"], "status");
     assert_eq!(rows[1]["command"], "BROKEN-LINE");
     assert_eq!(rows[2]["command"], "status");
+}
+
+#[test]
+fn history_filter_and_sort_apply_before_limit() {
+    let root = temp_dir("filter-sort-before-limit");
+    let path = root.join("history.json");
+    fs::write(
+        &path,
+        serde_json::to_string(&vec![
+            entry("match-01", 1.0),
+            entry("noise-01", 100.0),
+            entry("noise-02", 101.0),
+            entry("noise-03", 102.0),
+            entry("match-02", 2.0),
+            entry("match-03", 3.0),
+        ])
+        .expect("json"),
+    )
+    .expect("write");
+
+    let out = run_with_env(
+        &[
+            "history",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--filter",
+            "match",
+            "--sort",
+            "timestamp",
+            "--limit",
+            "2",
+        ],
+        &[("BIJUXCLI_HISTORY_FILE", path.to_str().expect("utf-8"))],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    let rows = payload["entries"].as_array().expect("array");
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0]["command"], "match-02");
+    assert_eq!(rows[1]["command"], "match-03");
 }
 
 #[test]
@@ -223,6 +264,21 @@ fn history_invalid_limit_and_sort_values_fail_with_usage_exit() {
     assert!(invalid_limit.stdout.is_empty());
     assert!(!invalid_limit.stderr.is_empty());
 
+    let zero_limit = run(&["history", "--limit", "0"]);
+    assert_eq!(zero_limit.status.code(), Some(2));
+    assert!(zero_limit.stdout.is_empty());
+    assert!(!zero_limit.stderr.is_empty());
+
+    let oversized_limit = run(&["history", "--limit", "10001"]);
+    assert_eq!(oversized_limit.status.code(), Some(2));
+    assert!(oversized_limit.stdout.is_empty());
+    assert!(!oversized_limit.stderr.is_empty());
+
+    let empty_filter = run(&["history", "--filter", "   "]);
+    assert_eq!(empty_filter.status.code(), Some(2));
+    assert!(empty_filter.stdout.is_empty());
+    assert!(!empty_filter.stderr.is_empty());
+
     let invalid_sort = run(&["history", "--sort", "lexical"]);
     assert_eq!(invalid_sort.status.code(), Some(2));
     assert!(invalid_sort.stdout.is_empty());
@@ -253,6 +309,21 @@ fn history_clear_with_unwritable_parent_fails_stably() {
     assert!(!out.stderr.is_empty());
 
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).expect("restore");
+}
+
+#[test]
+fn history_clear_rejects_malformed_history_payloads() {
+    let root = temp_dir("clear-corruption");
+    let path = root.join("history.json");
+    fs::write(&path, "{\"oops\":true}").expect("seed malformed history");
+
+    let out = run_with_env(
+        &["history", "clear", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", path.to_str().expect("utf-8"))],
+    );
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
 }
 
 #[test]

@@ -62,9 +62,9 @@ fn history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable() {
         &["history", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_HISTORY_FILE", history.display().to_string())],
     );
-    assert_eq!(partial.status.code(), Some(0));
-    let partial_payload = parse_json(&partial.stdout);
-    assert!(partial_payload["entries"].is_array());
+    assert_eq!(partial.status.code(), Some(1));
+    assert!(partial.stdout.is_empty());
+    assert!(!partial.stderr.is_empty());
 }
 
 #[test]

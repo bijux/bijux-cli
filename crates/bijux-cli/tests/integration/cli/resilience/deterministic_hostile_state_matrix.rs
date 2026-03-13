@@ -149,9 +149,11 @@ fn broken_history_file_recovery_is_stable_across_runs() {
     let first = run(&["history", "--format", "json", "--no-pretty"], &envs);
     let second = run(&["history", "--format", "json", "--no-pretty"], &envs);
 
-    assert_eq!(first.status.code(), Some(0));
-    assert_eq!(second.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout);
+    assert_eq!(first.status.code(), Some(1));
+    assert_eq!(second.status.code(), Some(1));
+    assert!(first.stdout.is_empty());
+    assert!(second.stdout.is_empty());
+    assert_eq!(first.stderr, second.stderr);
 }
 
 #[test]
