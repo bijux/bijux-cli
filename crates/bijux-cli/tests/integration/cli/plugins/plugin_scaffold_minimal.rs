@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli as _;
-use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -108,7 +107,9 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
             &fs::read_to_string(manifest_file(&scaffold_dir)).expect("read manifest"),
         )
         .expect("parse manifest");
-        assert_eq!(manifest["compatibility"]["min_inclusive"], runtime_semver());
+        assert_eq!(manifest["version"], "0.3.0");
+        assert_eq!(manifest["compatibility"]["min_inclusive"], "0.3.0");
+        assert_eq!(manifest["compatibility"]["max_exclusive"], "1.0.0");
 
         for forbidden in ["README.md", "pyproject.toml", "Cargo.toml", ".gitignore"] {
             assert!(

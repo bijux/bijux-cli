@@ -61,8 +61,13 @@ pub(crate) fn try_handle(
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: manifest path required"))?;
             let manifest_path = PathBuf::from(&manifest_arg);
+            let default_source = manifest_path
+                .canonicalize()
+                .unwrap_or_else(|_| manifest_path.clone())
+                .to_string_lossy()
+                .into_owned();
             let source = command_option_value(argv, &["cli", "plugins", "install"], "--source")
-                .unwrap_or(manifest_arg.clone());
+                .unwrap_or(default_source);
             let trust = command_option_value(argv, &["cli", "plugins", "install"], "--trust");
 
             Ok(Some(plugin_operations::install_plugin_from_manifest(

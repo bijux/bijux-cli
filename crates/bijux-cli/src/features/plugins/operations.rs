@@ -17,6 +17,47 @@ use crate::features::plugins::{
     KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
 };
 
+fn installed_manifest_root(source: &str) -> Option<PathBuf> {
+    let path = Path::new(source);
+    if !path.is_file() {
+        return None;
+    }
+    if path.file_name().and_then(|name| name.to_str()) != Some("plugin.manifest.json") {
+        return None;
+    }
+    path.parent().map(Path::to_path_buf)
+}
+
+fn delegated_entrypoint_file(manifest_root: &Path, entrypoint: &str) -> Option<PathBuf> {
+    let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
+    if module.trim().is_empty() {
+        return None;
+    }
+
+    let mut path = manifest_root.to_path_buf();
+    for segment in module.split('.') {
+        if segment.trim().is_empty() {
+            return None;
+        }
+        path.push(segment);
+    }
+    if path.extension().is_none() {
+        path.set_extension("py");
+    }
+    Some(path)
+}
+
+fn missing_delegated_entrypoint(
+    record: &crate::features::plugins::PluginRecord,
+) -> Option<PathBuf> {
+    let manifest_root = installed_manifest_root(&record.source)?;
+    let entrypoint_path = delegated_entrypoint_file(&manifest_root, &record.manifest.entrypoint)?;
+    if entrypoint_path.exists() {
+        return None;
+    }
+    Some(entrypoint_path)
+}
+
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
     match list_plugins(plugin_registry_path) {
         Ok(plugins) => json!({
@@ -140,6 +181,12 @@ pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> 
                 anyhow::bail!("Invalid argument: plugin entrypoint is not executable");
             }
         }
+    }
+
+    if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
+        && missing_delegated_entrypoint(&record).is_some()
+    {
+        anyhow::bail!("Invalid argument: plugin entrypoint was not found");
     }
 
     Ok(json!({"plugin": plugin, "status": "healthy", "state": format!("{:?}", record.state)}))

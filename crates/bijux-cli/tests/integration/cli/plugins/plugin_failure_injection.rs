@@ -145,6 +145,40 @@ fn plugin_check_fails_when_entrypoint_disappears_after_install() {
 }
 
 #[test]
+fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
+    let root = tmp_dir("delegated-entrypoint-disappears");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let scaffold_dir = root.join("delegated_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "goneplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    install(&plugins_dir, &scaffold_dir.join("plugin.manifest.json"));
+
+    fs::remove_file(scaffold_dir.join("plugin.py")).expect("remove delegated entrypoint");
+    let check = run(&["cli", "plugins", "check", "goneplug"], &plugins_dir);
+    assert_eq!(check.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&check.stderr).contains("entrypoint"));
+
+    let explain = run_ok_json(&["cli", "plugins", "explain", "goneplug"], &plugins_dir);
+    assert!(explain["diagnostics"]
+        .as_array()
+        .expect("diagnostics")
+        .iter()
+        .any(|row| row["message"] == "delegated entrypoint was not found"));
+}
+
+#[test]
 fn plugin_check_fails_when_manifest_mutates_after_install() {
     let root = tmp_dir("manifest-mutates");
     let plugins_dir = root.join("plugins");

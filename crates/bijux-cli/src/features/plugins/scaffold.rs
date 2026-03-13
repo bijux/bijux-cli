@@ -9,15 +9,21 @@ use crate::api::version::runtime_semver;
 
 use super::{is_reserved_namespace, parse_manifest_v1, validate_manifest, RESERVED_NAMESPACES};
 
+const SCAFFOLD_PLUGIN_VERSION: &str = "0.3.0";
+const SCAFFOLD_COMPATIBILITY_MIN: &str = "0.3.0";
+const SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
+
 fn is_safe_scaffold_path(path: &Path) -> bool {
     !path.components().any(|component| matches!(component, Component::ParentDir))
 }
 
 fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
     format!(
-        "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
+        "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
-        runtime_semver(),
+        SCAFFOLD_PLUGIN_VERSION,
+        SCAFFOLD_COMPATIBILITY_MIN,
+        SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE,
         namespace,
         plugin_kind,
         "plugin:main",
@@ -76,7 +82,7 @@ pub(crate) fn scaffold_plugin_layout(
         fs::create_dir_all(base_dir.join("src"))?;
         fs::write(
             base_dir.join("src/lib.rs"),
-            "pub fn main(argv: &[String]) -> String { format!(\"ok {}\", argv.len()) }\n",
+            "pub fn run(argv: &[String]) -> String { format!(\"rust plugin received {} args\", argv.len()) }\n",
         )?;
     }
 

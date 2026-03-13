@@ -64,8 +64,6 @@ fn python_scaffold_install_list_inspect_uninstall_flow() {
             "plugins",
             "install",
             manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-            "--source",
-            "local",
             "--trust",
             "community",
         ],
@@ -82,6 +80,17 @@ fn python_scaffold_install_list_inspect_uninstall_flow() {
 
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
+    let source = inspected["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .find(|item| item["manifest"]["namespace"] == "pyflow")
+        .and_then(|item| item["source"].as_str())
+        .expect("source");
+    assert_eq!(
+        Path::new(source),
+        manifest_file(&scaffold_dir).canonicalize().expect("canonical manifest path")
+    );
 
     let uninstall = run_ok_json(&["cli", "plugins", "uninstall", "pyflow"], &plugins_dir);
     assert_eq!(uninstall["status"], "uninstalled");
