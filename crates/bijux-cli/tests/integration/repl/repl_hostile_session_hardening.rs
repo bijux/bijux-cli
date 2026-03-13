@@ -24,8 +24,9 @@ fn extremely_long_input_and_repeated_malformed_commands_recover() {
     let (mut session, _) = startup_repl("default", None);
 
     let long = format!("status {}", "x".repeat(256 * 1024));
-    let frame = execute_repl_line(&mut session, &long).expect("long line should not panic");
-    assert!(frame.is_some());
+    let err = execute_repl_line(&mut session, &long).expect_err("long line should be rejected");
+    assert!(err.to_string().contains("command length limit exceeded"));
+    assert_eq!(session.last_exit_code, 2);
 
     for _ in 0..5 {
         let err = execute_repl_input(&mut session, ReplInput::Line(":invalid-meta".to_string()))
