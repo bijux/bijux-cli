@@ -13,6 +13,7 @@ bijux-cli = { path = "../bijux-cli" }
 clap = { version = "4.5.51", features = ["std"] }
 serde.workspace = true
 serde_json.workspace = true
+tempfile.workspace = true
 
 [[bin]]
 name = "bijux-dev-cli"

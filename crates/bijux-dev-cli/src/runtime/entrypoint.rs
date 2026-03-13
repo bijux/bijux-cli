@@ -8,6 +8,7 @@ use std::process::ExitCode;
 use anyhow::Result;
 use bijux_cli::api::output::{render_value, EmitterConfig};
 use bijux_cli::api::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use bijux_cli::api::telemetry::{exit_code_kind as telemetry_exit_code_kind, TelemetrySpan};
 use bijux_cli::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use serde_json::{json, Value};
 
@@ -314,10 +315,24 @@ fn normalize_process_exit_code(code: i32) -> u8 {
 
 /// Execute `bijux-dev-cli` and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
+    let telemetry = TelemetrySpan::start("bijux-dev-cli", argv);
+    telemetry.record("dispatch.entry", json!({"argv_count": argv.len()}));
+    let result = run_app_inner(argv, &telemetry);
+    match &result {
+        Ok(value) => {
+            telemetry.finish_success(value.exit_code, value.stdout.len(), value.stderr.len())
+        }
+        Err(error) => telemetry.finish_error(&error.to_string()),
+    }
+    result
+}
+
+fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunResult> {
     let synthetic_argv = synthetic_dev_cli_argv(argv);
     let synthetic_parse_argv = synthetic_dev_cli_parse_argv(argv);
 
     if argv.len() == 1 {
+        telemetry.record("dispatch.help.default", json!({"reason":"no_args"}));
         let mut help_argv = synthetic_argv.clone();
         help_argv.push("--help".to_string());
         if let Some(help) = try_render_clap_help(&help_argv) {
@@ -326,12 +341,14 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(result) = try_render_clap_result(&synthetic_argv) {
+        telemetry.record("dispatch.clap.short_circuit", json!({"exit_code": result.exit_code}));
         return Ok(result);
     }
 
     let intent = match parse_intent(&synthetic_parse_argv) {
         Ok(intent) => intent,
         Err(error) => {
+            telemetry.record("dispatch.intent.error", json!({"message": error.to_string()}));
             return Ok(AppRunResult {
                 exit_code: 2,
                 stdout: String::new(),
@@ -339,7 +356,16 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
             });
         }
     };
+    telemetry.record(
+        "dispatch.intent.parsed",
+        json!({
+            "command_path": intent.command_path.clone(),
+            "normalized_path": intent.normalized_path.clone(),
+            "quiet": intent.global_flags.quiet,
+        }),
+    );
     if intent.normalized_path.is_empty() {
+        telemetry.record("dispatch.intent.empty", json!({}));
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: root_help_text() });
     }
 
@@ -352,6 +378,15 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
         Err(error) => {
             let message = error.to_string();
             let code = classify_error_exit_code(&message);
+            telemetry.record(
+                "dispatch.route.error",
+                json!({
+                    "command": expanded_path.join(" "),
+                    "exit_code": code,
+                    "exit_kind": telemetry_exit_code_kind(code),
+                    "message": message.clone(),
+                }),
+            );
 
             let rendered_error = render_value(
                 &json!({
@@ -379,12 +414,17 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
+        telemetry.record(
+            "dispatch.route.unknown",
+            json!({"command": expanded_path.join(" "), "exit_code": 2}),
+        );
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
     let route_exit_code = payload_route_exit_code(&expanded_path, &payload);
 
     if intent.global_flags.quiet {
+        telemetry.record("dispatch.quiet.suppressed", json!({"exit_code": route_exit_code}));
         return Ok(AppRunResult {
             exit_code: route_exit_code,
             stdout: String::new(),
@@ -401,6 +441,13 @@ pub fn run_cli_from_env() -> ExitCode {
     let argv = match decode_os_argv() {
         Ok(value) => value,
         Err(_) => {
+            let telemetry = TelemetrySpan::start(
+                "bijux-dev-cli",
+                &["bijux-dev-cli".to_string(), "<invalid-utf8-argv>".to_string()],
+            );
+            telemetry
+                .record("argv.decode.error", json!({"message":"invalid UTF-8 argument in argv"}));
+            telemetry.finish_success(2, 0, "invalid UTF-8 argument in argv\n".len());
             let _ = writeln!(io::stderr(), "invalid UTF-8 argument in argv");
             return ExitCode::from(2);
         }
@@ -420,14 +467,20 @@ pub fn run_cli_from_env() -> ExitCode {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+
+    use bijux_cli::api::telemetry::{TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV};
     use std::ffi::OsString;
 
     use serde_json::json;
 
     use super::{
         classify_error_exit_code, expanded_dev_cli_path, no_color_enabled,
-        normalize_process_exit_code, payload_route_exit_code, synthetic_dev_cli_parse_argv,
+        normalize_process_exit_code, payload_route_exit_code, run_app,
+        synthetic_dev_cli_parse_argv,
     };
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn argv(items: &[&str]) -> Vec<String> {
         items.iter().map(|item| (*item).to_string()).collect()
@@ -551,5 +604,26 @@ mod tests {
             classify_error_exit_code("Non-ASCII characters are not allowed in keys or values."),
             3
         );
+    }
+
+    #[test]
+    fn run_app_writes_opt_in_telemetry_events() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("telemetry").join("events.jsonl");
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let result =
+            run_app(&argv(&["bijux-dev-cli", "state-audit", "--format", "json"])).expect("run");
+        assert_eq!(result.exit_code, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry output");
+        assert!(body.lines().any(|line| line.contains("\"stage\":\"invocation.start\"")));
+        assert!(body.lines().any(|line| line.contains("\"stage\":\"invocation.finish\"")));
+        assert!(body.lines().all(|line| line.contains("\"runtime\":\"bijux-dev-cli\"")));
     }
 }
