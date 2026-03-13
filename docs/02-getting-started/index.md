@@ -38,9 +38,10 @@ mindmap
 ## Read This Set In Order
 
 1. [Install And Verify](install-and-verify.md)
-2. [Run Your First Commands](run-your-first-commands.md)
-3. [Use Structured Output](use-structured-output.md)
-4. [Troubleshoot Early Problems](troubleshoot-early-problems.md)
+2. [Installation And Recovery](installation-and-recovery.md)
+3. [Run Your First Commands](run-your-first-commands.md)
+4. [Use Structured Output](use-structured-output.md)
+5. [Troubleshoot Early Problems](troubleshoot-early-problems.md)
 
 ## Scope
 

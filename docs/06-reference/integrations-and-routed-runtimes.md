@@ -56,14 +56,45 @@ The current documented Python-facing facade exports:
 - `version()`
 - `command_tree_introspection()`
 - `execution_facade(argv)`
+- `execution_facade_with_status(argv)`
 - `output_envelope_model()`
 - `error_to_exception(payload)`
 - `config_resolution_helpers(home_dir)`
 - `plugin_registry_inspection(registry_file)`
 - `install_path_helpers(home_dir)`
+- `migration_warnings()`
+- `post_install_diagnostics()`
 
 The Python package is a Rust-backed compatibility surface, not a second
 independent runtime.
+
+Relevant runtime-facing exceptions include:
+
+- `PlatformWheelUnavailable`
+- `NativeExtensionUnavailable`
+
+## Local Product Routing
+
+Adjacent Bijux product binaries can be routed through the umbrella command when
+their binaries are discoverable.
+
+Typical local setup:
+
+```bash
+export BIJUX_DEV_MODE=1
+export BIJUXCLI_PRODUCT_BIN_DIR="/path/to/product/artifacts/bin"
+```
+
+Examples:
+
+```bash
+bijux atlas atlas --help
+bijux dev atlas --help
+bijux dev list-products --format json
+```
+
+The `list-products` output is the verification surface for resolved runtime and
+control-plane product binaries.
 
 ## Current Python Compatibility Baseline
 
@@ -80,6 +111,15 @@ Historically retained Python-facing overlap still matters for:
 - plugin command behavior
 - REPL and completion expectations
 - documented exit code meanings
+
+## Migration Notes That Still Matter
+
+- the Python package now delegates command execution to the Rust runtime
+- runtime resolution follows `BIJUX_BIN` first, then `bijux` on `PATH`
+- compatibility warnings and post-install diagnostics exist to surface legacy
+  Python-only assumptions
+- if no usable runtime binary is found, the facade fails rather than silently
+  inventing a second execution path
 
 ## Honest Limit
 

@@ -61,4 +61,4 @@ runtime setup.
 
 ## Read Next
 
-Continue to [Run Your First Commands](run-your-first-commands.md).
+Continue to [Installation And Recovery](installation-and-recovery.md).
