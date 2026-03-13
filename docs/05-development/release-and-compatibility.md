@@ -41,8 +41,8 @@ sequenceDiagram
 cargo test --locked --workspace
 python3 -m pytest crates/bijux-cli-python/tests/python/test_runtime_parity.py
 BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py
-bijux dev cli status --format json --no-pretty
-bijux dev cli parity --format json --no-pretty
+bijux-dev-cli status --format json --no-pretty
+bijux-dev-cli parity --format json --no-pretty
 make docs-check
 ```
 

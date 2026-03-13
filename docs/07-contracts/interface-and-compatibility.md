@@ -27,7 +27,6 @@ flowchart TD
 - the stable root entry forms include:
   - `bijux`
   - `bijux cli`
-  - `bijux dev cli`
 
 ## Reserved Root Namespaces
 

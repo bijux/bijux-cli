@@ -186,7 +186,8 @@ fn build_dev_group() -> Command {
         dev_cli = dev_cli.subcommand(delegated_command(command, true));
     }
 
-    let mut command = Command::new("dev").allow_external_subcommands(true).subcommand(dev_cli);
+    let mut command =
+        Command::new("dev").hide(true).allow_external_subcommands(true).subcommand(dev_cli);
 
     for namespace in KNOWN_BIJUX_TOOL_NAMESPACES {
         command = command.subcommand(delegated_command(namespace, true));

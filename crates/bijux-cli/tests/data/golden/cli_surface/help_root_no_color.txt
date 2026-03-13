@@ -2,7 +2,6 @@ Usage: bijux [OPTIONS] [COMMAND]
 
 Commands:
   cli
-  dev
   status
   audit
   docs
@@ -34,10 +33,6 @@ plugins      plugins
 state        history, memory
 interaction  repl, completion, cli
 
-Routed Namespaces:
-dev          maintainer control-plane namespace (`bijux dev cli ...`)
-<tool>       adjacent Bijux product runtime namespace when an owned binary is available
-
 Use `bijux help <command>` for command-specific help.
 
 Examples:
@@ -45,4 +40,3 @@ Examples:
   bijux config get foo
   bijux config set foo=bar
   bijux plugins list
-  bijux dev cli status --format json --no-pretty

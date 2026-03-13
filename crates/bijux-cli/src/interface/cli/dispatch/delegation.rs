@@ -12,7 +12,7 @@ const DEV_CLI_BINARY: &str = "bijux-dev-cli";
 const DEV_CLI_PACKAGE: &str = "bijux-dev-cli";
 
 fn dev_cli_install_guidance() -> &'static str {
-    "build the workspace with `cargo build -p bijux-dev-cli --bin bijux-dev-cli`, run through `cargo run -p bijux-cli -- dev cli ...`, or set `BIJUX_DEV_CLI_BIN` to an explicit delegate binary\n"
+    "build the workspace with `cargo build -p bijux-dev-cli --bin bijux-dev-cli`, run it with `cargo run -p bijux-dev-cli -- ...`, or set `BIJUX_DEV_CLI_BIN` to an explicit delegate binary\n"
 }
 
 fn delegate_to_external_binary(

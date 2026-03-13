@@ -25,7 +25,7 @@ flowchart LR
 
 | Key | Type | Meaning |
 | --- | --- | --- |
-| `format` | string | Structured output format: `json` or `yaml` |
+| `format` | string | Output format: `text`, `json`, or `yaml` |
 | `log_level` | string | Log level such as `trace`, `debug`, or `info` |
 | `color` | string | Color mode: `auto`, `always`, or `never` |
 
@@ -48,11 +48,6 @@ flags -> environment -> config -> defaults precedence chain.
 | `BIJUXCLI_FORMAT` | Output format override |
 | `BIJUXCLI_LOG_LEVEL` | Log level override |
 | `BIJUXCLI_COLOR` | Color mode override |
-| `BIJUXCLI_ALLOWED_PRODUCT_BINS` | Allowlist for routed product binaries |
-| `BIJUXCLI_PRODUCT_BIN_DIR` | Additional product binary directory |
-| `BIJUXCLI_PRODUCT_BIN_DIRS` | Comma-separated additional binary directories |
-| `BIJUXCLI_PRODUCT_BIN_PRECEDENCE` | Binary discovery order |
-| `BIJUXCLI_ENFORCE_PRODUCT_MAJOR_MATCH` | Enforce routed product major-version checks when set to `1` |
 
 `NO_COLOR=1` also affects color resolution.
 
@@ -78,6 +73,9 @@ they do not behave like normal config/env precedence inputs:
 | Variable | Purpose |
 | --- | --- |
 | `BIJUX_BIN` | Force the Python package or install diagnostics to use a specific runtime binary |
+
+Maintainer binaries such as `bijux-dev-cli` and `bijux-dev-<tool>` are kept out
+of the public runtime environment-variable surface documented here.
 
 ## Effective Precedence
 

@@ -2,14 +2,14 @@
 
 ## Purpose
 
-This page records the reference facts for product binary routing, plugin
-runtime behavior, Python facade APIs, and the remaining Python compatibility
-baseline that still matters.
+This page records the reference facts for product binaries, plugin runtime
+behavior, Python facade APIs, and the remaining Python compatibility baseline
+that still matters.
 
 ```mermaid
 flowchart TD
-    A[bijux <tool>] --> B[bijux-<tool> runtime binary]
-    C[bijux dev <tool>] --> D[bijux-dev-<tool> control binary]
+    A[bijux-<tool>] --> B[product runtime binary]
+    C[bijux-dev-<tool>] --> D[product control binary]
     E[Python package] --> F[Rust-backed facade]
     G[plugins command group] --> H[plugin.manifest.json lifecycle]
 ```
@@ -22,19 +22,18 @@ flowchart LR
 
 ## Product Binary Routing
 
-The `bijux` umbrella binary owns routed product execution.
-
 | Surface | Binary pattern |
 | --- | --- |
-| Runtime route | `bijux <tool> ...` -> `bijux-<tool>` |
-| Control-plane route | `bijux dev <tool> ...` -> `bijux-dev-<tool>` |
+| Runtime binary | `bijux-<tool>` |
+| Control-plane binary | `bijux-dev-<tool>` |
 
 Known routed product namespaces are:
 
 `agent`, `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, `vex`
 
-Configured product binary directories are checked before or after `PATH`
-according to `BIJUXCLI_PRODUCT_BIN_PRECEDENCE`.
+Owned product binaries are discovered by executable name on `PATH`. The `bijux`
+runtime command contract stays separate from these maintainer and product
+binaries.
 
 ## Plugin Runtime Reference
 
@@ -84,24 +83,24 @@ Relevant runtime-facing exceptions include:
 
 ## Local Product Routing
 
-Adjacent Bijux product binaries can be routed through the umbrella command when
-their binaries are discoverable.
+Adjacent Bijux product binaries can be invoked directly when their executables
+are discoverable.
 
 Typical local setup:
 
 ```bash
-export BIJUXCLI_PRODUCT_BIN_DIR="/path/to/product/bin"
+export PATH="/path/to/product/bin:$PATH"
 ```
 
 Examples:
 
 ```bash
-bijux atlas --help
-bijux dev atlas --help
-bijux dev cli list-products --format json --no-pretty
+bijux-atlas --help
+bijux-dev-atlas --help
+bijux-dev-cli list-products --format json --no-pretty
 ```
 
-The `list-products` output is the verification surface for resolved runtime and
+The `list-products` output is the verification surface for known runtime and
 control-plane product binaries.
 
 ## Current Python Compatibility Baseline

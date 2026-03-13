@@ -233,13 +233,13 @@ bijux status -f yaml --pretty
 
 ## Developer Introspection
 
-Maintainer diagnostics run through `bijux dev cli ...` from a workspace build
-or checkout:
+Maintainer diagnostics run through `bijux-dev-cli` from a workspace build or
+checkout:
 
 ```bash
-cargo run -q -p bijux-cli -- dev cli status --format json --no-pretty
-cargo run -q -p bijux-cli -- dev cli parity --format json --no-pretty
-cargo run -q -p bijux-cli -- dev cli state-doctor --text
+cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- state-doctor --text
 ```
 
 ---

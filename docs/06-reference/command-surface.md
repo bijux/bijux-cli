@@ -65,18 +65,16 @@ Subcommands: `clear`
 
 `clear`, `delete`, `get`, `list`, `set`
 
-## Routed Namespaces
+## Companion Binaries
 
-Some valid command families are routed dynamically and are not part of the
-static built-in help inventory:
+Maintainer and product tooling stays outside the runtime command inventory:
 
-- `bijux dev <product> ...` for maintainer control planes such as
-  `bijux dev cli ...`
-- `bijux <product> ...` for adjacent Bijux product runtimes when the matching
-  binary is available and allowed by the current routing policy
+- `bijux-dev-cli ...` for the maintainer control plane
+- `bijux-<product> ...` for adjacent Bijux product runtimes
+- `bijux-dev-<product> ...` for adjacent Bijux product control planes
 
 Use [Integrations And Routed Runtimes](integrations-and-routed-runtimes.md) for
-the routed-product and maintainer-route rules.
+the product-binary and maintainer-binary rules.
 
 ## REPL Session Controls
 

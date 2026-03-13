@@ -14,8 +14,8 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A[bijux <tool>] --> B[bijux-<tool>]
-    C[bijux dev <tool>] --> D[bijux-dev-<tool>]
+    A[bijux-<tool>] --> B[product runtime ownership]
+    C[bijux-dev-<tool>] --> D[product control-plane ownership]
     E[official product registry] --> F[routing ownership]
 ```
 
@@ -43,9 +43,8 @@ must not publish divergent public executables under the `bijux` command name.
 
 - runtime tool binaries follow `bijux-<tool>`
 - control-plane binaries follow `bijux-dev-<tool>`
-- umbrella routing follows:
-  - `bijux <tool> ...` -> `bijux-<tool>`
-  - `bijux dev <tool> ...` -> `bijux-dev-<tool>`
+- runtime and control-plane binaries stay separate from the public `bijux`
+  runtime command surface
 
 The machine-readable routed product registry is
 `contracts/official_product_namespace_registry.json`. The documentation site

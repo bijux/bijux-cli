@@ -49,14 +49,13 @@ the root or are useful to inspect in their normalized form:
 The canonical namespace matters because it exposes the normalized route shape
 even when shorter root commands also exist.
 
-### Routed Maintainer And Product Surfaces
+### Maintainer And Product Surfaces
 
-These are valid routed surfaces, but they are not part of the static built-in
-command inventory:
+These surfaces stay separate from the runtime command inventory:
 
-- `bijux dev cli ...` for the maintainer control-plane
-- `bijux <product> ...` for adjacent Bijux products when the matching runtime
-  binary is available and allowed
+- `bijux-dev-cli ...` for the maintainer control-plane
+- `bijux-<product> ...` and `bijux-dev-<product> ...` for adjacent runtime and
+  control-plane binaries when those owned executables are available
 
 ### REPL
 

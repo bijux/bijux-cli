@@ -129,10 +129,6 @@ fn help_grouped_guide(path: &[&str]) -> Option<String> {
   {}\n\
   {}\n\
 \n\
-Routed Namespaces:\n\
-  dev          maintainer control-plane namespace (`bijux dev cli ...`)\n\
-  <tool>       adjacent Bijux product runtime namespace when an owned binary is available\n\
-\n\
 Use `bijux help <command>` for command-specific help.",
             format_command_group_row("runtime", ROOT_RUNTIME_COMMANDS),
             format_command_group_row("state", ROOT_STATE_COMMANDS),
@@ -230,7 +226,6 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
             "bijux plugins list".to_string(),
-            "bijux dev cli status --format json --no-pretty".to_string(),
         ],
         ["cli"] => vec![
             "bijux cli status".to_string(),
