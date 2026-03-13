@@ -26,8 +26,10 @@ impl Default for HistoryListOptions {
 
 pub(crate) fn list_history(history_file: &Path, options: &HistoryListOptions) -> Result<Value> {
     let limit = options.limit.clamp(1, MAX_HISTORY_LIMIT);
-    let report = read_history_report(history_file, usize::MAX)?;
-    let total_entries = report.entries.len();
+    let requires_full_scan = options.filter_contains.is_some() || options.sort_by_timestamp;
+    let report =
+        read_history_report(history_file, if requires_full_scan { usize::MAX } else { limit })?;
+    let total_entries = report.total_entries;
     let mut indexed = report.entries.into_iter().enumerate().collect::<Vec<_>>();
 
     if let Some(needle) = options.filter_contains.as_deref() {
@@ -60,12 +62,13 @@ pub(crate) fn list_history(history_file: &Path, options: &HistoryListOptions) ->
         "summary": {
             "source_format": report.source_format,
             "file_bytes": report.file_bytes,
-            "total_entries": total_entries,
-            "returned_entries": entries.len(),
-            "dropped_invalid_entries": report.dropped_invalid_entries,
-            "limit": limit,
-            "filter_applied": options.filter_contains.is_some(),
-            "sort_mode": if options.sort_by_timestamp { "timestamp" } else { "preserve" },
+                "total_entries": total_entries,
+                "returned_entries": entries.len(),
+                "dropped_invalid_entries": report.dropped_invalid_entries,
+                "truncated_command_entries": report.truncated_command_entries,
+                "limit": limit,
+                "filter_applied": options.filter_contains.is_some(),
+                "sort_mode": if options.sort_by_timestamp { "timestamp" } else { "preserve" },
         }
     }))
 }

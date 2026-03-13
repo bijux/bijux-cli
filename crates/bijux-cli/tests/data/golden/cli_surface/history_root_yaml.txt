@@ -12,3 +12,4 @@ summary:
   sort_mode: preserve
   source_format: json-array
   total_entries: 2
+  truncated_command_entries: 0

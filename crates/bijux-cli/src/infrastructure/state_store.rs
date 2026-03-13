@@ -2,6 +2,7 @@
 
 use std::collections::VecDeque;
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 use anyhow::Result;
@@ -18,20 +19,25 @@ pub(crate) struct HistoryReadReport {
     pub(crate) entries: Vec<Value>,
     pub(crate) source_format: &'static str,
     pub(crate) dropped_invalid_entries: usize,
+    pub(crate) truncated_command_entries: usize,
+    pub(crate) total_entries: usize,
     pub(crate) file_bytes: u64,
 }
 
-fn normalize_history_command(raw: &str) -> Option<String> {
+fn normalize_history_command(raw: &str) -> Option<(String, bool)> {
     let trimmed = raw.trim();
     if trimmed.is_empty() || trimmed.chars().any(char::is_control) {
         return None;
     }
-    Some(trimmed.chars().take(MAX_HISTORY_COMMAND_CHARS).collect())
+    let mut chars = trimmed.chars();
+    let normalized = chars.by_ref().take(MAX_HISTORY_COMMAND_CHARS).collect::<String>();
+    let truncated = chars.next().is_some();
+    Some((normalized, truncated))
 }
 
-fn history_entry_from_command(command: &str) -> Option<Value> {
-    let command = normalize_history_command(command)?;
-    json!({
+fn history_entry_from_command(command: &str) -> Option<(Value, bool)> {
+    let (command, truncated) = normalize_history_command(command)?;
+    let value = json!({
         "command": command,
         "params": [],
         "timestamp": 0.0,
@@ -39,16 +45,16 @@ fn history_entry_from_command(command: &str) -> Option<Value> {
         "return_code": 0,
         "duration_ms": 0.0,
         "raw": {},
-    })
-    .into()
+    });
+    Some((value, truncated))
 }
 
-fn normalize_history_object(mut value: Value) -> Option<Value> {
+fn normalize_history_object(mut value: Value) -> Option<(Value, bool)> {
     let object = value.as_object_mut()?;
     let command = object.get("command")?.as_str()?;
-    let normalized = normalize_history_command(command)?;
+    let (normalized, truncated) = normalize_history_command(command)?;
     object.insert("command".to_string(), Value::String(normalized));
-    Some(value)
+    Some((value, truncated))
 }
 
 fn push_history_entry(entries: &mut VecDeque<Value>, entry: Value, limit: usize) {
@@ -86,6 +92,8 @@ struct LimitedHistoryArrayVisitor {
 struct ParsedHistoryEntries {
     entries: Vec<Value>,
     dropped_invalid_entries: usize,
+    truncated_command_entries: usize,
+    total_entries: usize,
 }
 
 impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
@@ -101,14 +109,23 @@ impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
     {
         let mut entries = VecDeque::<Value>::new();
         let mut dropped_invalid_entries = 0usize;
+        let mut truncated_command_entries = 0usize;
+        let mut total_entries = 0usize;
         while let Some(value) = seq.next_element::<Value>()? {
-            if let Some(normalized) = normalize_history_object(value) {
+            if let Some((normalized, truncated)) = normalize_history_object(value) {
                 push_history_entry(&mut entries, normalized, self.limit);
+                total_entries += 1;
+                truncated_command_entries += usize::from(truncated);
             } else {
                 dropped_invalid_entries += 1;
             }
         }
-        Ok(ParsedHistoryEntries { entries: entries.into_iter().collect(), dropped_invalid_entries })
+        Ok(ParsedHistoryEntries {
+            entries: entries.into_iter().collect(),
+            dropped_invalid_entries,
+            truncated_command_entries,
+            total_entries,
+        })
     }
 }
 
@@ -128,6 +145,8 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
             entries: Vec::new(),
             source_format: "empty",
             dropped_invalid_entries: 0,
+            truncated_command_entries: 0,
+            total_entries: 0,
             file_bytes: 0,
         });
     }
@@ -140,6 +159,8 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
             entries: parsed.entries,
             source_format: "json-array",
             dropped_invalid_entries: parsed.dropped_invalid_entries,
+            truncated_command_entries: parsed.truncated_command_entries,
+            total_entries: parsed.total_entries,
             file_bytes: 0,
         });
     }
@@ -158,6 +179,8 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
     // Compatibility fallback for line-oriented history files with partial corruption.
     let mut out = VecDeque::<Value>::new();
     let mut dropped_invalid_entries = 0usize;
+    let mut truncated_command_entries = 0usize;
+    let mut total_entries = 0usize;
     let mut saw_json_line = false;
     for raw_line in text.lines() {
         let line = raw_line.trim();
@@ -166,15 +189,23 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
         }
         if let Ok(value) = serde_json::from_str::<Value>(line) {
             saw_json_line = true;
-            if let Some(normalized) = normalize_history_object(value) {
+            if let Some((normalized, truncated)) = normalize_history_object(value) {
                 push_history_entry(&mut out, normalized, limit);
+                total_entries += 1;
+                truncated_command_entries += usize::from(truncated);
             } else {
                 dropped_invalid_entries += 1;
             }
             continue;
         }
-        if let Some(entry) = history_entry_from_command(line) {
+        if matches!(line.chars().next(), Some('[' | ']' | '{' | '}')) {
+            dropped_invalid_entries += 1;
+            continue;
+        }
+        if let Some((entry, truncated)) = history_entry_from_command(line) {
             push_history_entry(&mut out, entry, limit);
+            total_entries += 1;
+            truncated_command_entries += usize::from(truncated);
         } else {
             dropped_invalid_entries += 1;
         }
@@ -183,35 +214,51 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
         entries: out.into_iter().collect(),
         source_format: if saw_json_line { "legacy-json-lines" } else { "legacy-lines" },
         dropped_invalid_entries,
+        truncated_command_entries,
+        total_entries,
         file_bytes: 0,
     })
 }
 
-pub(crate) fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
-    Ok(read_history_report(path, limit)?.entries)
-}
-
 pub(crate) fn read_history_report(path: &Path, limit: usize) -> Result<HistoryReadReport> {
-    if !path.exists() {
-        return Ok(HistoryReadReport {
-            entries: Vec::new(),
-            source_format: "missing",
-            dropped_invalid_entries: 0,
-            file_bytes: 0,
-        });
+    let symlink_metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(HistoryReadReport {
+                entries: Vec::new(),
+                source_format: "missing",
+                dropped_invalid_entries: 0,
+                truncated_command_entries: 0,
+                total_entries: 0,
+                file_bytes: 0,
+            });
+        }
+        Err(error) => return Err(error.into()),
+    };
+    if symlink_metadata.file_type().is_symlink() && fs::metadata(path).is_err() {
+        anyhow::bail!("Malformed history state: history path is a broken symlink");
     }
 
-    let metadata = fs::metadata(path)?;
-    if metadata.len() > MAX_HISTORY_FILE_BYTES {
+    let file = fs::File::open(path)?;
+    let file_metadata = file.metadata()?;
+    if !file_metadata.is_file() {
+        anyhow::bail!("Malformed history state: history path is not a regular file");
+    }
+    let mut reader = std::io::BufReader::new(file);
+    let mut bytes = Vec::<u8>::new();
+    reader.by_ref().take(MAX_HISTORY_FILE_BYTES + 1).read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > MAX_HISTORY_FILE_BYTES {
         anyhow::bail!(
             "History state exceeds {} bytes and cannot be loaded safely",
             MAX_HISTORY_FILE_BYTES
         );
     }
-
-    let text = fs::read_to_string(path)?;
+    let file_bytes = bytes.len() as u64;
+    let text = String::from_utf8(bytes).map_err(|error| {
+        anyhow::anyhow!("Malformed history state: history file is not valid UTF-8: {error}")
+    })?;
     let mut report = parse_history_entries(&text, limit)?;
-    report.file_bytes = metadata.len();
+    report.file_bytes = file_bytes;
     Ok(report)
 }
 
@@ -288,6 +335,29 @@ mod tests {
             parse_history_entries("[{\"command\":\"status\"},{\"command\":\"doctor\"}]", 0)
                 .expect("must parse");
         assert!(report.entries.is_empty());
+        assert_eq!(report.total_entries, 2);
+    }
+
+    #[test]
+    fn parse_history_entries_tracks_truncated_commands_and_total_entries() {
+        let very_long = "x".repeat(5_000);
+        let payload = format!(
+            "[{{\"command\":\"status\"}},{{\"command\":\"{very_long}\"}},{{\"oops\":true}}]"
+        );
+        let report = parse_history_entries(&payload, 20).expect("must parse");
+        assert_eq!(report.total_entries, 2);
+        assert_eq!(report.truncated_command_entries, 1);
+        assert_eq!(report.dropped_invalid_entries, 1);
+    }
+
+    #[test]
+    fn parse_history_entries_drops_json_shaped_legacy_lines() {
+        let report =
+            parse_history_entries("status\n{oops:true}\nplugins list\n", 20).expect("must parse");
+        assert_eq!(report.entries.len(), 2);
+        assert_eq!(report.entries[0]["command"], "status");
+        assert_eq!(report.entries[1]["command"], "plugins list");
+        assert_eq!(report.dropped_invalid_entries, 1);
     }
 
     #[test]
@@ -297,6 +367,36 @@ mod tests {
             .expect("write oversized file");
         let error = read_history_report(&path, 20).expect_err("must fail");
         assert!(error.to_string().contains("exceeds"));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn read_history_report_rejects_non_regular_files() {
+        let path = temp_path("directory");
+        std::fs::create_dir_all(&path).expect("create directory");
+        let error = read_history_report(&path, 20).expect_err("must fail");
+        assert!(error.to_string().contains("not a regular file"));
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn read_history_report_rejects_invalid_utf8_payloads() {
+        let path = temp_path("invalid-utf8");
+        std::fs::write(&path, [0xff, 0xfe, 0x00]).expect("write bytes");
+        let error = read_history_report(&path, 20).expect_err("must fail");
+        assert!(error.to_string().contains("not valid UTF-8"));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_history_report_rejects_broken_symlink_payloads() {
+        use std::os::unix::fs::symlink;
+
+        let path = temp_path("broken-link");
+        symlink("/tmp/does-not-exist-bijux-history", &path).expect("create symlink");
+        let error = read_history_report(&path, 20).expect_err("must fail");
+        assert!(error.to_string().contains("broken symlink"));
         let _ = std::fs::remove_file(path);
     }
 }
