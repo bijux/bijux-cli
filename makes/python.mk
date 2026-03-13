@@ -157,7 +157,7 @@ build-py: python-env ## Build the Python wheel and source distribution
 	@set -o pipefail; \
 	$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
 
-publish-py: python-env ## Publish Python distributions to the configured index
+publish-py: ## Publish Python distributions to the configured index
 	@token="$${$(PYPI_TOKEN_ENV):-}"; \
 	if [ -z "$$token" ]; then \
 	  echo "✘ $(PYPI_TOKEN_ENV) is not set"; \
@@ -166,11 +166,17 @@ publish-py: python-env ## Publish Python distributions to the configured index
 	if [ -n "$(RELEASE_VERSION)" ]; then \
 	  echo "→ Publishing release version $(RELEASE_VERSION)"; \
 	else \
-	 	package_version="$$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; data=json.load(sys.stdin); pkgs={p[\"name\"]: p[\"version\"] for p in data[\"packages\"]}; print(pkgs.get(\"bijux-cli-python\", \"\"))')"; \
+	 	package_version="$$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; data=json.load(sys.stdin); pkgs={p['\''name'\'']: p['\''version'\''] for p in data['\''packages'\'']}; print(pkgs.get('\''bijux-cli-python'\'', '\'''\''))' 2>/dev/null)"; \
 	  if [ -z "$$package_version" ]; then \
 	    echo "✘ Could not resolve bijux-cli-python version from cargo metadata"; \
 	    exit 1; \
 	  fi; \
+	  case "$$package_version" in \
+	    *-*) if [ "$(PUBLISH_ALLOW_PRERELEASE)" != "1" ]; then \
+	      echo "✘ Refusing to publish prerelease workspace version $$package_version without RELEASE_VERSION or PUBLISH_ALLOW_PRERELEASE=1"; \
+	      exit 1; \
+	    fi ;; \
+	  esac; \
 	  echo "→ Publishing workspace package version $$package_version"; \
 	fi; \
 	$(MAKE) --no-print-directory build-py; \
