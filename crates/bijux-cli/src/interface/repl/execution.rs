@@ -5,6 +5,7 @@ use crate::routing::parser::root_command;
 use super::history::push_history;
 use super::types::{
     ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream, META_PREFIX,
+    REPL_LAST_ERROR_MAX_CHARS, REPL_MULTILINE_BUFFER_MAX_CHARS,
 };
 
 fn parse_shell_tokens_lossy(input: &str) -> Vec<String> {
@@ -12,9 +13,17 @@ fn parse_shell_tokens_lossy(input: &str) -> Vec<String> {
         .unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
 }
 
+fn bounded_error_message(message: &str) -> String {
+    message.chars().filter(|ch| !ch.is_control()).take(REPL_LAST_ERROR_MAX_CHARS).collect()
+}
+
+fn set_last_error(session: &mut ReplSession, message: &str) {
+    session.last_error = Some(bounded_error_message(message));
+}
+
 fn parse_shell_tokens_strict(input: &str) -> Result<Vec<String>, ReplError> {
     shlex::split(input).ok_or_else(|| {
-        let snippet = input.chars().take(256).collect::<String>();
+        let snippet = input.chars().filter(|ch| !ch.is_control()).take(256).collect::<String>();
         ReplError::InvalidCommandInput(format!("shell tokenization failed: {snippet}"))
     })
 }
@@ -45,7 +54,12 @@ pub fn repl_argv_from_line(line: &str) -> Vec<String> {
 
 fn needs_multiline_continuation(line: &str) -> bool {
     let trimmed = line.trim_end();
-    trimmed.ends_with('\\')
+    let trailing_backslashes = trimmed.chars().rev().take_while(|ch| *ch == '\\').count();
+    trailing_backslashes % 2 == 1
+}
+
+fn strip_single_continuation_backslash(line: &str) -> &str {
+    line.strip_suffix('\\').unwrap_or(line)
 }
 
 fn render_meta_help(path: &[String]) -> Result<String, ReplError> {
@@ -103,7 +117,7 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
                 content: "ok\n".to_string(),
             })))
         }
-        "exit" | "quit" => Ok(ReplEvent::Exit(None)),
+        "exit" | "quit" if tokens.len() == 1 => Ok(ReplEvent::Exit(None)),
         _ => Err(ReplError::InvalidMetaCommand(line.to_string())),
     }
 }
@@ -167,14 +181,18 @@ pub fn execute_repl_input(
             session.pending_multiline = None;
             session.commands_executed += 1;
             session.last_exit_code = 130;
-            session.last_error = Some("Interrupted".to_string());
+            set_last_error(session, "Interrupted");
             Ok(ReplEvent::Interrupted(ReplFrame {
                 stream: ReplStream::Stderr,
                 content: "Interrupted\n".to_string(),
             }))
         }
         ReplInput::Eof => {
-            session.pending_multiline = None;
+            if session.pending_multiline.take().is_some() {
+                session.commands_executed += 1;
+                session.last_exit_code = 2;
+                set_last_error(session, "EOF received with pending multiline command");
+            }
             Ok(ReplEvent::Exit(None))
         }
         ReplInput::Line(line) => {
@@ -184,16 +202,31 @@ pub fn execute_repl_input(
             }
 
             if needs_multiline_continuation(trimmed) {
-                let chunk = trimmed.trim_end_matches('\\').trim_end();
-                session.pending_multiline = Some(match session.pending_multiline.take() {
-                    Some(existing) => format!("{existing} {chunk}"),
+                let chunk = strip_single_continuation_backslash(trimmed).trim_end();
+                let pending = match session.pending_multiline.take() {
+                    Some(existing) => format!("{existing}\n{chunk}"),
                     None => chunk.to_string(),
-                });
+                };
+                if pending.chars().count() > REPL_MULTILINE_BUFFER_MAX_CHARS {
+                    session.commands_executed += 1;
+                    session.last_exit_code = 2;
+                    set_last_error(
+                        session,
+                        &format!(
+                            "multiline command exceeded {} characters",
+                            REPL_MULTILINE_BUFFER_MAX_CHARS
+                        ),
+                    );
+                    return Err(ReplError::InvalidCommandInput(
+                        "multiline command buffer limit exceeded".to_string(),
+                    ));
+                }
+                session.pending_multiline = Some(pending);
                 return Ok(ReplEvent::Continue(None));
             }
 
             let final_line = if let Some(existing) = session.pending_multiline.take() {
-                format!("{existing} {trimmed}")
+                format!("{existing}\n{trimmed}")
             } else {
                 trimmed.to_string()
             };
@@ -209,12 +242,12 @@ pub fn execute_repl_input(
                     Ok(ReplEvent::Interrupted(_)) => {
                         session.commands_executed += 1;
                         session.last_exit_code = 130;
-                        session.last_error = Some("Interrupted".to_string());
+                        set_last_error(session, "Interrupted");
                     }
                     Err(error) => {
                         session.commands_executed += 1;
                         session.last_exit_code = 2;
-                        session.last_error = Some(error.to_string());
+                        set_last_error(session, &error.to_string());
                     }
                 }
                 return outcome;
@@ -225,12 +258,13 @@ pub fn execute_repl_input(
                 Err(error) => {
                     session.commands_executed += 1;
                     session.last_exit_code = 2;
-                    session.last_error = Some(error.to_string());
+                    set_last_error(session, &error.to_string());
                     return Err(error);
                 }
             };
             let argv = std::iter::once("bijux".to_string()).chain(tokenized).collect::<Vec<_>>();
-            push_history(session, &final_line);
+            let history_line = final_line.replace('\n', " ");
+            push_history(session, &history_line);
 
             let effective_argv = apply_session_policy_to_argv(session, &argv);
             let result = match run_app(&effective_argv) {
@@ -238,7 +272,7 @@ pub fn execute_repl_input(
                 Err(error) => {
                     session.commands_executed += 1;
                     session.last_exit_code = 1;
-                    session.last_error = Some(error.to_string());
+                    set_last_error(session, &error.to_string());
                     return Err(ReplError::Core(error.to_string()));
                 }
             };
@@ -247,7 +281,7 @@ pub fn execute_repl_input(
             session.last_exit_code = result.exit_code;
 
             let frame = if result.exit_code != 0 && !result.stderr.is_empty() {
-                session.last_error = Some(result.stderr.clone());
+                set_last_error(session, &result.stderr);
                 Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
             } else if !result.stdout.is_empty() {
                 if result.exit_code == 0 {
@@ -258,15 +292,17 @@ pub fn execute_repl_input(
                 if result.exit_code == 0 {
                     session.last_error = None;
                 } else {
-                    session.last_error = Some(result.stderr.clone());
+                    set_last_error(session, &result.stderr);
                 }
                 Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
             } else {
                 if result.exit_code == 0 {
                     session.last_error = None;
                 } else {
-                    session.last_error =
-                        Some(format!("command failed with exit code {}", result.exit_code));
+                    set_last_error(
+                        session,
+                        &format!("command failed with exit code {}", result.exit_code),
+                    );
                 }
                 None
             };
@@ -290,9 +326,9 @@ pub fn execute_repl_line(
 
 #[cfg(test)]
 mod tests {
-    use super::execute_repl_line;
+    use super::{execute_repl_input, execute_repl_line, needs_multiline_continuation};
     use crate::interface::repl::session::startup_repl;
-    use crate::interface::repl::types::ReplError;
+    use crate::interface::repl::types::{ReplError, ReplInput, REPL_MULTILINE_BUFFER_MAX_CHARS};
 
     #[test]
     fn malformed_shell_input_returns_deterministic_invalid_input_error() {
@@ -339,14 +375,45 @@ mod tests {
     #[test]
     fn interrupt_updates_last_error_and_counter() {
         let (mut session, _) = startup_repl("", None);
-        let event = super::execute_repl_input(
-            &mut session,
-            crate::interface::repl::types::ReplInput::Interrupt,
-        )
-        .expect("interrupt should return event");
+        let event = execute_repl_input(&mut session, ReplInput::Interrupt)
+            .expect("interrupt should return event");
         assert!(matches!(event, crate::interface::repl::types::ReplEvent::Interrupted(_)));
         assert_eq!(session.last_exit_code, 130);
         assert_eq!(session.commands_executed, 1);
         assert_eq!(session.last_error.as_deref(), Some("Interrupted"));
+    }
+
+    #[test]
+    fn continuation_requires_odd_trailing_backslash_count() {
+        assert!(needs_multiline_continuation("status \\"));
+        assert!(!needs_multiline_continuation("status \\\\"));
+    }
+
+    #[test]
+    fn eof_with_pending_multiline_sets_usage_error_state() {
+        let (mut session, _) = startup_repl("", None);
+        let _ = execute_repl_input(&mut session, ReplInput::Line("status \\".to_string()))
+            .expect("line should set multiline pending");
+        let _ = execute_repl_input(&mut session, ReplInput::Eof).expect("eof should exit cleanly");
+        assert_eq!(session.last_exit_code, 2);
+        assert_eq!(session.commands_executed, 1);
+        assert!(session.last_error.as_deref().unwrap_or_default().contains("pending multiline"));
+    }
+
+    #[test]
+    fn meta_exit_with_extra_args_is_invalid() {
+        let (mut session, _) = startup_repl("", None);
+        let result = execute_repl_line(&mut session, ":exit now");
+        assert!(matches!(result, Err(ReplError::InvalidMetaCommand(_))));
+        assert_eq!(session.last_exit_code, 2);
+    }
+
+    #[test]
+    fn multiline_buffer_has_deterministic_upper_bound() {
+        let (mut session, _) = startup_repl("", None);
+        let oversized = format!("{}\\", "x".repeat(REPL_MULTILINE_BUFFER_MAX_CHARS + 1));
+        let result = execute_repl_line(&mut session, &oversized);
+        assert!(matches!(result, Err(ReplError::InvalidCommandInput(_))));
+        assert_eq!(session.last_exit_code, 2);
     }
 }

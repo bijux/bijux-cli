@@ -14,6 +14,8 @@ pub(crate) const META_PREFIX: char = ':';
 pub const REPL_HISTORY_ENTRY_MAX_CHARS: usize = 8 * 1024;
 /// Max bytes accepted when reading a persisted history file.
 pub const REPL_HISTORY_FILE_MAX_BYTES: u64 = 8 * 1024 * 1024;
+/// Max number of history entries retained by configuration.
+pub const REPL_HISTORY_MAX_ENTRIES: usize = 50_000;
 /// Max command completion candidates returned to callers.
 pub const REPL_COMPLETION_MAX_CANDIDATES: usize = 512;
 /// Max number of completion entries accepted per registry.
@@ -26,6 +28,10 @@ pub const REPL_PROFILE_MAX_CHARS: usize = 64;
 pub const REPL_PROMPT_MAX_CHARS: usize = 128;
 /// Max diagnostics entries emitted during startup checks.
 pub const REPL_STARTUP_DIAGNOSTIC_MAX_ENTRIES: usize = 128;
+/// Max characters retained for `last_error` state.
+pub const REPL_LAST_ERROR_MAX_CHARS: usize = 2_048;
+/// Max characters retained in pending multiline REPL buffers.
+pub const REPL_MULTILINE_BUFFER_MAX_CHARS: usize = 64 * 1024;
 
 /// Stable REPL startup contract.
 #[derive(Debug, Clone, PartialEq, Eq)]
