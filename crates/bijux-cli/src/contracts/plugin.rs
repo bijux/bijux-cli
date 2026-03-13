@@ -1,5 +1,5 @@
 use schemars::JsonSchema;
-use semver::{Version, VersionReq};
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use super::command::Namespace;
@@ -32,15 +32,15 @@ impl CompatibilityRange {
     pub fn supports_host(&self, host_version: &str) -> Result<bool, String> {
         let host = Version::parse(host_version)
             .map_err(|error| format!("invalid host semver: {error}"))?;
-        let min_req = VersionReq::parse(&format!(">={}", self.min_inclusive))
-            .map_err(|error| format!("invalid min constraint: {error}"))?;
-        if !min_req.matches(&host) {
+        let min = Version::parse(&self.min_inclusive)
+            .map_err(|error| format!("invalid min_inclusive semver: {error}"))?;
+        if host < min {
             return Ok(false);
         }
         if let Some(max) = &self.max_exclusive {
-            let max_req = VersionReq::parse(&format!("<{max}"))
-                .map_err(|error| format!("invalid max constraint: {error}"))?;
-            return Ok(max_req.matches(&host));
+            let max = Version::parse(max)
+                .map_err(|error| format!("invalid max_exclusive semver: {error}"))?;
+            return Ok(host < max);
         }
         Ok(true)
     }
