@@ -14,7 +14,9 @@ use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::shared::output::render_value;
-use crate::shared::telemetry::TelemetrySpan;
+use crate::shared::telemetry::{
+    truncate_chars, TelemetrySpan, MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS,
+};
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -84,6 +86,14 @@ fn parse_help_command_path(argv: &[String]) -> std::result::Result<Vec<String>, 
     Ok(path)
 }
 
+fn bounded_command(command: &str) -> (String, bool) {
+    truncate_chars(command, MAX_COMMAND_FIELD_CHARS)
+}
+
+fn bounded_message(message: &str) -> (String, bool) {
+    truncate_chars(message, MAX_TEXT_FIELD_CHARS)
+}
+
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let telemetry = TelemetrySpan::start("bijux-cli", argv);
@@ -102,8 +112,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let help_text = match render_command_help(&[]) {
             Ok(help) => help,
             Err(error) => {
-                telemetry
-                    .record("dispatch.help.render.error", json!({"message": error.to_string()}));
+                let (message, message_truncated) = bounded_message(&error.to_string());
+                telemetry.record(
+                    "dispatch.help.render.error",
+                    json!({"message": message, "message_truncated": message_truncated}),
+                );
                 return Err(error);
             }
         };
@@ -125,7 +138,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let path = match parse_help_command_path(argv) {
             Ok(path) => path,
             Err(message) => {
-                telemetry.record("dispatch.help.error", json!({"message": message.clone()}));
+                let (bounded, message_truncated) = bounded_message(&message);
+                telemetry.record(
+                    "dispatch.help.error",
+                    json!({"message": bounded, "message_truncated": message_truncated, "exit_code": 2}),
+                );
                 let mut stderr = message;
                 stderr.push('\n');
                 stderr.push_str("Run `bijux --help` for available runtime commands.\n");
@@ -153,7 +170,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             Err(_) => {
                 telemetry.record(
                     "dispatch.help.unknown_topic",
-                    json!({"requested": path_refs.join(" ")}),
+                    json!({
+                        "requested": path_refs.join(" "),
+                        "requested_truncated": path_refs.join(" ").chars().count() > MAX_COMMAND_FIELD_CHARS,
+                        "exit_code": 2,
+                    }),
                 );
                 return Ok(AppRunResult {
                     exit_code: 2,
@@ -224,7 +245,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let intent = match parse_intent(argv) {
         Ok(intent) => intent,
         Err(error) => {
-            telemetry.record("dispatch.intent.error", json!({"message": error.to_string()}));
+            let (message, message_truncated) = bounded_message(&error.to_string());
+            telemetry.record(
+                "dispatch.intent.error",
+                json!({"message": message, "message_truncated": message_truncated, "exit_code": 2}),
+            );
             return Ok(AppRunResult {
                 exit_code: 2,
                 stdout: String::new(),
@@ -245,8 +270,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let usage = match root_usage_help_text() {
             Ok(value) => value,
             Err(error) => {
-                telemetry
-                    .record("dispatch.help.render.error", json!({"message": error.to_string()}));
+                let (message, message_truncated) = bounded_message(&error.to_string());
+                telemetry.record(
+                    "dispatch.help.render.error",
+                    json!({"message": message, "message_truncated": message_truncated}),
+                );
                 return Err(error);
             }
         };
@@ -261,20 +289,26 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         Err(error) => {
             let message = error.to_string();
             let code = policy::classify_error_exit_code(&message);
+            let command_joined = intent.normalized_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
+            let (message_bounded, message_truncated) = bounded_message(&message);
             telemetry.record(
                 "dispatch.route.error",
                 json!({
-                    "command": intent.normalized_path.join(" "),
+                    "command": command,
+                    "command_truncated": command_truncated,
                     "exit_code": code,
                     "exit_kind": crate::shared::telemetry::exit_code_kind(code),
-                    "message": message.clone(),
+                    "message": message_bounded,
+                    "message_truncated": message_truncated,
                 }),
             );
             if message.starts_with("unknown route: ") {
                 telemetry.record(
                     "dispatch.route.unknown",
                     json!({
-                        "command": intent.normalized_path.join(" "),
+                        "command": command_joined,
+                        "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS,
                         "exit_code": code,
                         "source": "error_path",
                     }),
@@ -300,17 +334,20 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                         json!(format!("Try `{}` or `{}`.", next_command, next_help));
                 }
             }
-            let rendered_error =
-                match render_value(&error_payload, policy::emitter_config(&intent.global_flags)) {
-                    Ok(value) => value,
-                    Err(error) => {
-                        telemetry.record(
+            let rendered_error = match render_value(
+                &error_payload,
+                policy::emitter_config(&intent.global_flags),
+            ) {
+                Ok(value) => value,
+                Err(error) => {
+                    let (message, message_truncated) = bounded_message(&error.to_string());
+                    telemetry.record(
                             "dispatch.render.error",
-                            json!({"stream":"stderr","message": error.to_string()}),
+                            json!({"stream":"stderr","message": message, "message_truncated": message_truncated}),
                         );
-                        return Err(error.into());
-                    }
-                };
+                    return Err(error.into());
+                }
+            };
             let error_content = if rendered_error.ends_with('\n') {
                 rendered_error
             } else {
@@ -327,9 +364,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let rendered = match render_value(&payload, policy::emitter_config(&intent.global_flags)) {
         Ok(value) => value,
         Err(error) => {
+            let (message, message_truncated) = bounded_message(&error.to_string());
             telemetry.record(
                 "dispatch.render.error",
-                json!({"stream":"stdout","message": error.to_string()}),
+                json!({"stream":"stdout","message": message, "message_truncated": message_truncated}),
             );
             return Err(error.into());
         }
@@ -337,10 +375,12 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
+        let command_joined = intent.normalized_path.join(" ");
         telemetry.record(
             "dispatch.route.unknown",
             json!({
-                "command": intent.normalized_path.join(" "),
+                "command": command_joined,
+                "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS,
                 "exit_code": 2,
                 "status": payload.get("status").and_then(serde_json::Value::as_str),
             }),
@@ -349,10 +389,13 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     let route_exit_code = 0;
+    let command_joined = intent.normalized_path.join(" ");
+    let (command, command_truncated) = bounded_command(&command_joined);
     telemetry.record(
         "dispatch.route.completed",
         json!({
-            "command": intent.normalized_path.join(" "),
+            "command": command,
+            "command_truncated": command_truncated,
             "status": payload.get("status").and_then(serde_json::Value::as_str),
             "exit_code": route_exit_code,
             "exit_kind": crate::shared::telemetry::exit_code_kind(route_exit_code),
@@ -362,7 +405,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     if intent.global_flags.quiet {
         telemetry.record(
             "dispatch.quiet.suppressed",
-            json!({"command": intent.normalized_path.join(" "), "exit_code": route_exit_code}),
+            json!({"command": command_joined, "command_truncated": command_joined.chars().count() > MAX_COMMAND_FIELD_CHARS, "exit_code": route_exit_code}),
         );
         return Ok(AppRunResult {
             exit_code: route_exit_code,

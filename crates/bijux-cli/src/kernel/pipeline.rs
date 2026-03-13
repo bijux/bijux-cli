@@ -14,6 +14,7 @@ use crate::contracts::{
     CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
     Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
+use crate::shared::telemetry::{truncate_chars, MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS};
 use serde_json::{json, Value};
 
 static INVOCATION_COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -306,6 +307,14 @@ fn next_invocation_id() -> String {
     format!("kernel-{}-{}-{seq}", std::process::id(), unix_timestamp_millis())
 }
 
+fn bounded_command(command: &str) -> (String, bool) {
+    truncate_chars(command, MAX_COMMAND_FIELD_CHARS)
+}
+
+fn bounded_message(message: &str) -> (String, bool) {
+    truncate_chars(message, MAX_TEXT_FIELD_CHARS)
+}
+
 #[allow(dead_code)]
 fn is_fast_path(intent: &ExecutionIntent) -> bool {
     matches!(
@@ -336,21 +345,24 @@ pub(crate) fn execute_pipeline(
     }
 
     if ctx.cancelled.load(Ordering::SeqCst) {
+        let command_joined = ctx.intent.command_path.join(" ");
+        let (command, command_truncated) = bounded_command(&command_joined);
         for hook in diagnostics {
             hook.record(DiagnosticRecord {
                 id: "kernel_cancelled_before_dispatch".to_string(),
                 severity: "warning".to_string(),
                 message: "execution cancelled before dispatch".to_string(),
-                fields: BTreeMap::from([(
-                    "command".to_string(),
-                    json!(ctx.intent.command_path.join(" ")),
-                )]),
+                fields: BTreeMap::from([
+                    ("command".to_string(), json!(command)),
+                    ("command_truncated".to_string(), json!(command_truncated)),
+                ]),
             });
         }
         return Err(KernelError::Cancelled);
     }
 
     trace_events.push(InvocationEvent {
+        // Trace remains human-readable; diagnostics carry truncated metadata separately.
         timestamp: event_timestamp(),
         name: "bootstrap".to_string(),
         payload: BTreeMap::from([(
@@ -377,12 +389,15 @@ pub(crate) fn execute_pipeline(
             OutputStream::Stderr => "stderr",
         });
         for hook in diagnostics {
+            let command_joined = ctx.intent.command_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
             hook.record(DiagnosticRecord {
                 id: "kernel_dispatch_fast_path_completed".to_string(),
                 severity: "info".to_string(),
                 message: "fast-path command completed".to_string(),
                 fields: BTreeMap::from([
-                    ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                    ("command".to_string(), json!(command)),
+                    ("command_truncated".to_string(), json!(command_truncated)),
                     ("exit_code".to_string(), json!(exit_code as i32)),
                     ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
                 ]),
@@ -479,14 +494,19 @@ pub(crate) fn execute_pipeline(
             Ok(Err(err)) => HandlerOutcome::Error(err),
             Err(payload) => {
                 let panic_text = panic_message(payload);
+                let command_joined = ctx.intent.command_path.join(" ");
+                let (command, command_truncated) = bounded_command(&command_joined);
+                let (panic_message_text, panic_message_truncated) = bounded_message(&panic_text);
                 for hook in diagnostics {
                     hook.record(DiagnosticRecord {
                         id: "kernel_handler_panic".to_string(),
                         severity: "error".to_string(),
                         message: "sync handler panicked during dispatch".to_string(),
                         fields: BTreeMap::from([
-                            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
-                            ("panic_message".to_string(), json!(panic_text.clone())),
+                            ("command".to_string(), json!(command)),
+                            ("command_truncated".to_string(), json!(command_truncated)),
+                            ("panic_message".to_string(), json!(panic_message_text)),
+                            ("panic_message_truncated".to_string(), json!(panic_message_truncated)),
                         ]),
                     });
                 }
@@ -501,14 +521,23 @@ pub(crate) fn execute_pipeline(
                 Ok(Err(err)) => HandlerOutcome::Error(err),
                 Err(payload) => {
                     let panic_text = panic_message(payload);
+                    let command_joined = ctx.intent.command_path.join(" ");
+                    let (command, command_truncated) = bounded_command(&command_joined);
+                    let (panic_message_text, panic_message_truncated) =
+                        bounded_message(&panic_text);
                     for hook in diagnostics {
                         hook.record(DiagnosticRecord {
                             id: "kernel_handler_panic".to_string(),
                             severity: "error".to_string(),
                             message: "async handler panicked during dispatch".to_string(),
                             fields: BTreeMap::from([
-                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
-                                ("panic_message".to_string(), json!(panic_text.clone())),
+                                ("command".to_string(), json!(command)),
+                                ("command_truncated".to_string(), json!(command_truncated)),
+                                ("panic_message".to_string(), json!(panic_message_text)),
+                                (
+                                    "panic_message_truncated".to_string(),
+                                    json!(panic_message_truncated),
+                                ),
                             ]),
                         });
                     }
@@ -534,6 +563,8 @@ pub(crate) fn execute_pipeline(
 
     if let Some(limit) = ctx.timeout {
         if started_at.elapsed() > limit {
+            let command_joined = ctx.intent.command_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
             for hook in diagnostics {
                 hook.record(DiagnosticRecord {
                     id: "kernel_timeout_after_dispatch".to_string(),
@@ -543,8 +574,10 @@ pub(crate) fn execute_pipeline(
                         limit.as_millis()
                     ),
                     fields: BTreeMap::from([
-                        ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                        ("command".to_string(), json!(command)),
+                        ("command_truncated".to_string(), json!(command_truncated)),
                         ("timeout_ms".to_string(), json!(limit.as_millis())),
+                        ("elapsed_ms".to_string(), json!(started_at.elapsed().as_millis())),
                     ]),
                 });
             }
@@ -553,15 +586,17 @@ pub(crate) fn execute_pipeline(
     }
 
     if ctx.cancelled.load(Ordering::SeqCst) {
+        let command_joined = ctx.intent.command_path.join(" ");
+        let (command, command_truncated) = bounded_command(&command_joined);
         for hook in diagnostics {
             hook.record(DiagnosticRecord {
                 id: "kernel_cancelled_after_dispatch".to_string(),
                 severity: "warning".to_string(),
                 message: "execution cancelled after dispatch".to_string(),
-                fields: BTreeMap::from([(
-                    "command".to_string(),
-                    json!(ctx.intent.command_path.join(" ")),
-                )]),
+                fields: BTreeMap::from([
+                    ("command".to_string(), json!(command)),
+                    ("command_truncated".to_string(), json!(command_truncated)),
+                ]),
             });
         }
         return Err(KernelError::Cancelled);
@@ -569,28 +604,37 @@ pub(crate) fn execute_pipeline(
 
     match &outcome {
         HandlerOutcome::Success(_) => {
+            let command_joined = ctx.intent.command_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
             for hook in diagnostics {
                 hook.record(DiagnosticRecord {
                     id: "kernel_handler_outcome_success".to_string(),
                     severity: "info".to_string(),
                     message: "handler returned success payload".to_string(),
-                    fields: BTreeMap::from([(
-                        "command".to_string(),
-                        json!(ctx.intent.command_path.join(" ")),
-                    )]),
+                    fields: BTreeMap::from([
+                        ("command".to_string(), json!(command)),
+                        ("command_truncated".to_string(), json!(command_truncated)),
+                    ]),
                 });
             }
         }
         HandlerOutcome::Error(err) => {
+            let command_joined = ctx.intent.command_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
+            let (error_code, error_code_truncated) = bounded_message(&err.error.code);
+            let (error_category, error_category_truncated) = bounded_message(&err.error.category);
             for hook in diagnostics {
                 hook.record(DiagnosticRecord {
                     id: "kernel_handler_outcome_error".to_string(),
                     severity: "warning".to_string(),
                     message: "handler returned error payload".to_string(),
                     fields: BTreeMap::from([
-                        ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
-                        ("error_category".to_string(), json!(err.error.category.clone())),
-                        ("error_code".to_string(), json!(err.error.code.clone())),
+                        ("command".to_string(), json!(command)),
+                        ("command_truncated".to_string(), json!(command_truncated)),
+                        ("error_category".to_string(), json!(error_category)),
+                        ("error_category_truncated".to_string(), json!(error_category_truncated)),
+                        ("error_code".to_string(), json!(error_code)),
+                        ("error_code_truncated".to_string(), json!(error_code_truncated)),
                     ]),
                 });
             }
@@ -629,12 +673,15 @@ pub(crate) fn execute_pipeline(
     });
 
     for hook in diagnostics {
+        let command_joined = ctx.intent.command_path.join(" ");
+        let (command, command_truncated) = bounded_command(&command_joined);
         hook.record(DiagnosticRecord {
             id: "kernel_dispatch_completed".to_string(),
             severity: "info".to_string(),
             message: "kernel dispatch finished".to_string(),
             fields: BTreeMap::from([
-                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                ("command".to_string(), json!(command)),
+                ("command_truncated".to_string(), json!(command_truncated)),
                 ("exit_code".to_string(), json!(exit_code as i32)),
                 ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
                 ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
