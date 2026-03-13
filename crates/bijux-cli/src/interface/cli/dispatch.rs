@@ -13,6 +13,12 @@ use crate::contracts::known_bijux_tool;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
+use crate::routing::model::{
+    alias_rewrites, built_in_route_paths, DEV_CLI_CONFIG_SUBCOMMANDS, DEV_CLI_EVIDENCE_SUBCOMMANDS,
+    DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS, DEV_CLI_MAINTENANCE_SUBCOMMANDS,
+    DEV_CLI_NESTED_SUBCOMMANDS, DEV_CLI_PYTHON_SUBCOMMANDS, DEV_CLI_RELEASE_SUBCOMMANDS,
+    DEV_CLI_REPO_SUBCOMMANDS, DEV_CLI_RUSTDOC_SUBCOMMANDS, DEV_CLI_VISIBLE_SUBCOMMANDS,
+};
 use crate::shared::output::render_value;
 use crate::shared::telemetry::{
     truncate_chars, TelemetrySpan, MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS,
@@ -75,6 +81,126 @@ fn bounded_segments(path: &[String]) -> (Vec<String>, usize, usize) {
     (bounded, truncated_segment_count, clipped_segment_count)
 }
 
+fn levenshtein_distance(left: &str, right: &str) -> usize {
+    if left.is_empty() {
+        return right.chars().count();
+    }
+    if right.is_empty() {
+        return left.chars().count();
+    }
+
+    let left_chars = left.chars().collect::<Vec<_>>();
+    let right_chars = right.chars().collect::<Vec<_>>();
+    let mut prev = (0..=right_chars.len()).collect::<Vec<usize>>();
+    let mut curr = vec![0usize; right_chars.len() + 1];
+
+    for (i, left_ch) in left_chars.iter().enumerate() {
+        curr[0] = i + 1;
+        for (j, right_ch) in right_chars.iter().enumerate() {
+            let substitution_cost = usize::from(left_ch != right_ch);
+            curr[j + 1] =
+                (curr[j] + 1).min(prev[j + 1] + 1).min(prev[j] + substitution_cost);
+        }
+        std::mem::swap(&mut prev, &mut curr);
+    }
+
+    prev[right_chars.len()]
+}
+
+fn known_help_topics() -> Vec<String> {
+    let mut topics = built_in_route_paths().to_vec();
+    topics.extend(alias_rewrites().iter().map(|(alias, _)| alias.to_string()));
+    topics.push("help".to_string());
+    topics.push("dev".to_string());
+    topics.push("dev cli".to_string());
+    topics.extend(DEV_CLI_VISIBLE_SUBCOMMANDS.iter().map(|command| format!("dev cli {command}")));
+    topics.extend(
+        DEV_CLI_MAINTENANCE_SUBCOMMANDS
+            .iter()
+            .map(|command| format!("dev cli maintenance {command}")),
+    );
+    topics.extend(
+        DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS
+            .iter()
+            .map(|command| format!("dev cli maintenance status {command}")),
+    );
+    topics
+        .extend(DEV_CLI_RUSTDOC_SUBCOMMANDS.iter().map(|command| format!("dev cli rustdoc {command}")));
+    topics
+        .extend(DEV_CLI_RELEASE_SUBCOMMANDS.iter().map(|command| format!("dev cli release {command}")));
+    topics.extend(
+        DEV_CLI_EVIDENCE_SUBCOMMANDS
+            .iter()
+            .map(|command| format!("dev cli evidence {command}")),
+    );
+    topics
+        .extend(DEV_CLI_CONFIG_SUBCOMMANDS.iter().map(|command| format!("dev cli config {command}")));
+    topics
+        .extend(DEV_CLI_PYTHON_SUBCOMMANDS.iter().map(|command| format!("dev cli python {command}")));
+    topics.extend(DEV_CLI_REPO_SUBCOMMANDS.iter().map(|command| format!("dev cli repo {command}")));
+    topics.sort();
+    topics.dedup();
+    topics
+}
+
+fn is_known_help_topic(path: &[String]) -> bool {
+    if path.is_empty() {
+        return true;
+    }
+    let requested = path.join(" ").to_ascii_lowercase();
+    known_help_topics()
+        .iter()
+        .any(|candidate| candidate.eq_ignore_ascii_case(requested.as_str()))
+}
+
+fn suggest_help_topics(requested: &str) -> Vec<String> {
+    let requested = requested.trim().to_ascii_lowercase();
+    if requested.is_empty() {
+        return Vec::new();
+    }
+
+    let mut scored = Vec::new();
+    for candidate in known_help_topics() {
+        let normalized = candidate.to_ascii_lowercase();
+        if normalized == requested {
+            continue;
+        }
+        let prefix_match =
+            normalized.starts_with(&requested) || requested.starts_with(normalized.as_str());
+        let distance = levenshtein_distance(&requested, &normalized);
+        let threshold = (requested.chars().count().max(normalized.chars().count()) / 3).max(2);
+        if prefix_match || distance <= threshold {
+            scored.push((!prefix_match, distance, normalized.len(), candidate));
+        }
+    }
+
+    scored.sort();
+    scored.into_iter().map(|(_, _, _, candidate)| candidate).take(3).collect()
+}
+
+fn unknown_help_topic_result(requested: &str, telemetry: &TelemetrySpan) -> AppRunResult {
+    let suggestions = suggest_help_topics(requested);
+    let (requested_bounded, requested_truncated) = bounded_command(requested);
+    telemetry.record(
+        "dispatch.help.unknown_topic",
+        json!({
+            "requested": requested_bounded,
+            "requested_truncated": requested_truncated,
+            "suggestions_count": suggestions.len(),
+            "exit_code": 2,
+        }),
+    );
+    let mut stderr = format!("Unknown help topic: {requested}.\n");
+    if !suggestions.is_empty() {
+        stderr.push_str("Did you mean:\n");
+        for suggestion in suggestions {
+            stderr.push_str(&format!("  bijux help {suggestion}\n"));
+        }
+    }
+    stderr.push_str("Run `bijux --help` for available runtime commands.\n");
+    AppRunResult { exit_code: 2, stdout: String::new(), stderr }
+}
+
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     let telemetry = TelemetrySpan::start("bijux-cli", argv);
@@ -90,7 +216,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunResult> {
     if argv.len() == 1 {
         telemetry.record("dispatch.help.default", json!({"reason":"no_args"}));
-        let help_text = match render_command_help(&[]) {
+        let help_text = match root_usage_help_text() {
             Ok(help) => help,
             Err(error) => {
                 let (message, message_truncated) = bounded_message(&error.to_string());
@@ -135,10 +261,25 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             }
         };
         let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+        if !is_known_help_topic(&path) {
+            return Ok(unknown_help_topic_result(&path_refs.join(" "), telemetry));
+        }
         if let Some(first) = path.first().map(String::as_str) {
             if first == "dev" || known_bijux_tool(first).is_some() {
+                let delegated_path =
+                    if matches!(
+                        path.as_slice(),
+                        [dev, cli, group, ..]
+                            if dev == "dev"
+                                && cli == "cli"
+                                && DEV_CLI_NESTED_SUBCOMMANDS.contains(&group.as_str())
+                    ) {
+                        vec!["dev".to_string(), "cli".to_string(), path[2].clone()]
+                    } else {
+                        path.clone()
+                    };
                 let mut delegated_argv = vec!["bijux".to_string()];
-                delegated_argv.extend(path.iter().cloned());
+                delegated_argv.extend(delegated_path);
                 delegated_argv.push("--help".to_string());
                 if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
                 {
@@ -153,25 +294,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
         let rendered = match render_command_help(&path_refs) {
             Ok(rendered) => rendered,
-            Err(_) => {
-                let requested = path_refs.join(" ");
-                let (requested_bounded, requested_truncated) = bounded_command(&requested);
-                telemetry.record(
-                    "dispatch.help.unknown_topic",
-                    json!({
-                        "requested": requested_bounded,
-                        "requested_truncated": requested_truncated,
-                        "exit_code": 2,
-                    }),
-                );
-                return Ok(AppRunResult {
-                    exit_code: 2,
-                    stdout: String::new(),
-                    stderr:
-                        "Unknown help topic. Run `bijux --help` for available runtime commands.\n"
-                            .to_string(),
-                });
-            }
+            Err(_) => return Ok(unknown_help_topic_result(&path_refs.join(" "), telemetry)),
         };
         let topic = if path.is_empty() { "root".to_string() } else { path.join(" ") };
         let (topic_bounded, topic_truncated) = bounded_command(&topic);
@@ -611,5 +734,39 @@ mod tests {
         let first = parsed["payload"]["normalized_path"][0].as_str().expect("first segment");
         assert_eq!(first.chars().count(), MAX_PATH_SEGMENT_CHARS);
         assert_eq!(parsed["payload"]["normalized_path_truncated_segment_count"], 1);
+    }
+
+    #[test]
+    fn help_unknown_topic_emits_suggestions_for_near_matches() {
+        let result = run_app(&["bijux".to_string(), "help".to_string(), "sttaus".to_string()])
+            .expect("run");
+        assert_eq!(result.exit_code, 2);
+        assert!(result.stderr.contains("Unknown help topic: sttaus."));
+        assert!(result.stderr.contains("Did you mean:"));
+        assert!(result.stderr.contains("bijux help status"));
+    }
+
+    #[test]
+    fn levenshtein_distance_is_deterministic_for_help_suggestions() {
+        assert_eq!(super::levenshtein_distance("status", "status"), 0);
+        assert_eq!(super::levenshtein_distance("status", "sttaus"), 2);
+    }
+
+    #[test]
+    fn help_unknown_topic_suggests_root_alias_commands() {
+        let result = run_app(&["bijux".to_string(), "help".to_string(), "versoin".to_string()])
+            .expect("run");
+        assert_eq!(result.exit_code, 2);
+        assert!(result.stderr.contains("bijux help version"));
+    }
+
+    #[test]
+    fn default_help_matches_help_flag_surface() {
+        let no_args = run_app(&["bijux".to_string()]).expect("run without args");
+        let explicit = run_app(&["bijux".to_string(), "--help".to_string()]).expect("run --help");
+        assert_eq!(no_args.exit_code, 0);
+        assert_eq!(explicit.exit_code, 0);
+        assert_eq!(no_args.stdout, explicit.stdout);
+        assert_eq!(no_args.stderr, explicit.stderr);
     }
 }

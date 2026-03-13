@@ -230,6 +230,64 @@ fn no_color_is_supported_for_text_root_commands() {
 }
 
 #[test]
+fn help_command_matches_explicit_help_flag_output() {
+    let command_help = run(&["help"]);
+    let flag_help = run(&["--help"]);
+    assert_eq!(command_help.status.code(), Some(0));
+    assert_eq!(flag_help.status.code(), Some(0));
+    assert_eq!(command_help.stdout, flag_help.stdout);
+    assert_eq!(command_help.stderr, flag_help.stderr);
+
+    let topic_help = run(&["help", "status"]);
+    let topic_flag = run(&["status", "--help"]);
+    assert_eq!(topic_help.status.code(), Some(0));
+    assert_eq!(topic_flag.status.code(), Some(0));
+    assert_eq!(topic_help.stdout, topic_flag.stdout);
+    assert_eq!(topic_help.stderr, topic_flag.stderr);
+}
+
+#[test]
+fn help_command_rejects_invalid_global_flag_values_with_usage_exit() {
+    for args in [
+        vec!["help", "--format", "toml"],
+        vec!["help", "--color", "rainbow"],
+        vec!["help", "--log-level", "verbose"],
+    ] {
+        let out = run(&args);
+        assert_eq!(out.status.code(), Some(2), "invalid help flag should be usage error for {args:?}");
+        assert!(out.stdout.is_empty(), "invalid help flag should not print stdout for {args:?}");
+        let stderr = String::from_utf8(out.stderr).expect("utf-8");
+        assert!(stderr.contains("invalid "), "expected actionable validation error for {args:?}");
+        assert!(stderr.contains("Run `bijux --help`"), "expected help guidance for {args:?}");
+    }
+}
+
+#[test]
+fn unknown_help_topics_include_suggestions_for_alias_and_dev_typoes() {
+    let alias_typo = run(&["help", "versoin"]);
+    assert_eq!(alias_typo.status.code(), Some(2));
+    let alias_stderr = String::from_utf8(alias_typo.stderr).expect("utf-8");
+    assert!(alias_stderr.contains("Unknown help topic: versoin."));
+    assert!(alias_stderr.contains("bijux help version"));
+
+    let dev_typo = run(&["help", "dev", "cli", "maintenence"]);
+    assert_eq!(dev_typo.status.code(), Some(2));
+    let dev_stderr = String::from_utf8(dev_typo.stderr).expect("utf-8");
+    assert!(dev_stderr.contains("Unknown help topic: dev cli maintenence."));
+    assert!(dev_stderr.contains("bijux help dev cli maintenance"));
+}
+
+#[test]
+fn nested_dev_help_requests_do_not_execute_report_commands() {
+    let out = run(&["help", "dev", "cli", "repo", "health"]);
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(text.contains("Usage: bijux dev cli repo"));
+    assert!(!text.contains("\"repo_health\""), "help should not execute repo health report");
+    assert!(out.stderr.is_empty());
+}
+
+#[test]
 fn malformed_input_is_rejected_for_argument_taking_root_commands() {
     let malformed: &[&[&str]] = &[
         &["config", "get"],
