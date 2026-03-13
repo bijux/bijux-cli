@@ -57,7 +57,9 @@ _SUBPROCESS_ENV_STRIP_KEYS = frozenset(
 
 def _is_missing_native_module(exc: ImportError | ModuleNotFoundError) -> bool:
     name = getattr(exc, "name", None)
-    if isinstance(name, str) and (name == "bijux_cli_py._native" or name.endswith("._native")):
+    if isinstance(name, str) and (
+        name == "bijux_cli_py._native" or name.endswith("._native")
+    ):
         return True
     message = str(exc)
     if "No module named" in message and "bijux_cli_py._native" in message:
@@ -88,6 +90,7 @@ def _sanitized_subprocess_env() -> dict[str, str]:
         for key, value in os.environ.items()
         if key not in _SUBPROCESS_ENV_STRIP_KEYS
     }
+
 
 try:
     from . import _native as native
@@ -165,8 +168,9 @@ def _workspace_runtime_binaries() -> list[str]:
         workspace_root / "target" / "debug",
         workspace_root / "target" / "release",
     ):
-        for binary_name in _runtime_binary_filenames():
-            candidates.append(base / binary_name)
+        candidates.extend(
+            base / binary_name for binary_name in _runtime_binary_filenames()
+        )
     return [str(path) for path in candidates]
 
 
