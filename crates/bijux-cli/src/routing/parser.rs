@@ -291,7 +291,7 @@ pub fn root_command() -> Command {
                 .arg(Arg::new("kind").num_args(1))
                 .arg(Arg::new("namespace").num_args(1))
                 .arg(Arg::new("path").long("path").num_args(1))
-                .arg(Arg::new("force").long("force")),
+                .arg(Arg::new("force").long("force").action(ArgAction::SetTrue)),
         )
         .subcommand(Command::new("doctor"))
         .subcommand(Command::new("reserved-names"))

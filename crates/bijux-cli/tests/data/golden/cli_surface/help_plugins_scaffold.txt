@@ -7,7 +7,7 @@ Arguments:
 Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
       --path <path>
-      --force <force>
+      --force
   -q, --quiet               Suppress command output
       --log-level <LEVEL>   Log verbosity level
       --color <MODE>        ANSI color policy

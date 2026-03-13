@@ -13,16 +13,22 @@ fn is_safe_scaffold_path(path: &Path) -> bool {
     !path.components().any(|component| matches!(component, Component::ParentDir))
 }
 
-fn scaffold_manifest_json(kind: &str, namespace: &str) -> String {
-    let plugin_kind = if kind == "python" { "python" } else { "delegated" };
-    let entrypoint = if kind == "python" { "plugin:main" } else { "plugin:main" };
+fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
     format!(
         "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"0.1.0\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
         namespace,
         plugin_kind,
-        entrypoint,
+        "plugin:main",
     )
+}
+
+fn scaffold_manifest_kind(kind: &str) -> Result<&'static str> {
+    match kind {
+        "python" => Ok("python"),
+        "rust" => Ok("delegated"),
+        _ => anyhow::bail!("plugin scaffold kind must be one of: python, rust"),
+    }
 }
 
 pub(crate) fn scaffold_plugin_layout(
@@ -40,12 +46,22 @@ pub(crate) fn scaffold_plugin_layout(
     if !is_safe_scaffold_path(base_dir) {
         anyhow::bail!("scaffold path is unsafe");
     }
-    if base_dir.exists() && !force {
-        anyhow::bail!("scaffold path already exists; pass --force to overwrite");
+    if base_dir.exists() {
+        if !force {
+            anyhow::bail!("scaffold path already exists; pass --force to overwrite");
+        }
+
+        if base_dir.is_dir() {
+            fs::remove_dir_all(base_dir)?;
+        } else {
+            fs::remove_file(base_dir)?;
+        }
     }
+
+    let plugin_kind = scaffold_manifest_kind(kind)?;
     fs::create_dir_all(base_dir)?;
     let manifest_path = base_dir.join("plugin.manifest.json");
-    fs::write(&manifest_path, scaffold_manifest_json(kind, namespace))?;
+    fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, namespace))?;
     if kind == "python" {
         fs::write(
             base_dir.join("plugin.py"),

@@ -130,3 +130,58 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         assert_eq!(uninstall["status"], "uninstalled");
     }
 }
+
+#[test]
+fn scaffold_force_replaces_existing_directory_contents() {
+    let root = tmp_dir("scaffold-force");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("force-plugin");
+    fs::create_dir_all(&scaffold_dir).expect("mkdir scaffold dir");
+    fs::write(scaffold_dir.join("stale.txt"), "stale").expect("write stale file");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "force-plugin",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+            "--force",
+        ],
+        &plugins_dir,
+    );
+
+    assert!(!scaffold_dir.join("stale.txt").exists(), "force should replace stale content");
+    assert_eq!(file_set(&scaffold_dir), expected_snapshot("python"));
+}
+
+#[test]
+fn scaffold_rejects_unknown_kind() {
+    let root = tmp_dir("scaffold-kind");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("unknown-plugin");
+
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "shell",
+            "unknown-plugin",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    assert_eq!(out.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("plugin scaffold kind must be one of"),
+        "stderr={}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
