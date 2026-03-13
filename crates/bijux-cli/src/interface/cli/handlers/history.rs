@@ -19,7 +19,10 @@ pub(crate) fn try_handle(
             let list_options = parse_history_list_options(argv)?;
             Ok(Some(list_history(&paths.history_file, &list_options)?))
         }
-        [a, b] if a == "history" && b == "clear" => Ok(Some(clear_history(&paths.history_file)?)),
+        [a, b] if a == "history" && b == "clear" => {
+            let force = parse_history_clear_force(argv)?;
+            Ok(Some(clear_history(&paths.history_file, force)?))
+        }
         _ => Ok(None),
     }
 }
@@ -56,4 +59,15 @@ fn parse_history_list_options(argv: &[String]) -> Result<HistoryListOptions> {
     }
 
     Ok(options)
+}
+
+fn parse_history_clear_force(argv: &[String]) -> Result<bool> {
+    let matches = root_command()
+        .try_get_matches_from(argv)
+        .map_err(|error| anyhow!("Invalid argument: {error}"))?;
+    let force = matches
+        .subcommand_matches("history")
+        .and_then(|history| history.subcommand_matches("clear"))
+        .is_some_and(|clear| clear.get_flag("force"));
+    Ok(force)
 }

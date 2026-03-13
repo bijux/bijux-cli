@@ -70,16 +70,28 @@ pub(crate) fn list_history(history_file: &Path, options: &HistoryListOptions) ->
     }))
 }
 
-pub(crate) fn clear_history(history_file: &Path) -> Result<Value> {
-    let report = read_history_report(history_file, usize::MAX)?;
-    let removed = report.entries.len();
+pub(crate) fn clear_history(history_file: &Path, force: bool) -> Result<Value> {
+    let (removed, dropped_invalid_entries, source_format, read_error) =
+        match read_history_report(history_file, usize::MAX) {
+            Ok(report) => (
+                report.entries.len(),
+                report.dropped_invalid_entries,
+                Some(report.source_format),
+                None,
+            ),
+            Err(error) if force => (0, 0, None, Some(error.to_string())),
+            Err(error) => return Err(error),
+        };
     write_history_entries(history_file, &[])?;
 
     Ok(json!({
         "status": "cleared",
         "removed_entries": removed,
-        "dropped_invalid_entries": report.dropped_invalid_entries,
-        "source_format": report.source_format,
+        "dropped_invalid_entries": dropped_invalid_entries,
+        "source_format": source_format,
+        "force_applied": force,
+        "corruption_ignored": read_error.is_some(),
+        "read_error": read_error,
         "file": history_file,
     }))
 }

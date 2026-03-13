@@ -327,6 +327,23 @@ fn history_clear_rejects_malformed_history_payloads() {
 }
 
 #[test]
+fn history_clear_force_recovers_malformed_history_payloads() {
+    let root = temp_dir("clear-corruption-force");
+    let path = root.join("history.json");
+    fs::write(&path, "{\"oops\":true}").expect("seed malformed history");
+
+    let out = run_with_env(
+        &["history", "clear", "--force", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", path.to_str().expect("utf-8"))],
+    );
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    assert_eq!(payload["status"], "cleared");
+    assert_eq!(payload["force_applied"], true);
+    assert_eq!(payload["corruption_ignored"], true);
+}
+
+#[test]
 fn history_help_and_exit_discipline_for_root_and_clear() {
     let root_help = run(&["history", "--help"]);
     assert_eq!(root_help.status.code(), Some(0));
@@ -335,9 +352,9 @@ fn history_help_and_exit_discipline_for_root_and_clear() {
 
     let clear_help = run(&["history", "clear", "--help"]);
     assert_eq!(clear_help.status.code(), Some(0));
-    assert!(String::from_utf8(clear_help.stdout)
-        .expect("utf-8")
-        .contains("Usage: bijux history clear"));
+    let clear_help_text = String::from_utf8(clear_help.stdout).expect("utf-8");
+    assert!(clear_help_text.contains("Usage: bijux history clear"));
+    assert!(clear_help_text.contains("--force"));
     assert!(clear_help.stderr.is_empty());
 
     let malformed = run(&["history", "--unknown-flag"]);

@@ -340,7 +340,14 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("inspect").hide(true))
         .subcommand(
             Command::new("history")
-                .subcommand(Command::new("clear"))
+                .subcommand(
+                    Command::new("clear").arg(
+                        Arg::new("force")
+                            .long("force")
+                            .action(ArgAction::SetTrue)
+                            .help("Clear history even when existing state is malformed"),
+                    ),
+                )
                 .arg(
                     Arg::new("limit")
                         .long("limit")
