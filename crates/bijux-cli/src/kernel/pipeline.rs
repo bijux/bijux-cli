@@ -291,6 +291,16 @@ fn event_timestamp() -> String {
     unix_timestamp_millis().to_string()
 }
 
+fn exit_code_kind(exit_code: ExitCode) -> &'static str {
+    match exit_code {
+        ExitCode::Success => "success",
+        ExitCode::Usage => "usage",
+        ExitCode::Encoding => "encoding",
+        ExitCode::Aborted => "aborted",
+        ExitCode::Error => "error",
+    }
+}
+
 fn next_invocation_id() -> String {
     let seq = INVOCATION_COUNTER.fetch_add(1, Ordering::Relaxed);
     format!("kernel-{}-{}-{seq}", std::process::id(), unix_timestamp_millis())
@@ -326,6 +336,14 @@ pub(crate) fn execute_pipeline(
     }
 
     if ctx.cancelled.load(Ordering::SeqCst) {
+        for hook in diagnostics {
+            hook.record(DiagnosticRecord {
+                id: "kernel_cancelled_before_dispatch".to_string(),
+                severity: "warning".to_string(),
+                message: "execution cancelled before dispatch".to_string(),
+                fields: BTreeMap::new(),
+            });
+        }
         return Err(KernelError::Cancelled);
     }
 
@@ -342,6 +360,10 @@ pub(crate) fn execute_pipeline(
         );
         let exit_code = map_outcome_to_exit(&outcome);
         let emission = map_outcome_to_emission(outcome, ctx.policy.quiet);
+        let emission_stream = emission.as_ref().map(|item| match item.stream {
+            OutputStream::Stdout => "stdout",
+            OutputStream::Stderr => "stderr",
+        });
         return Ok(ExecutionResult {
             exit_code,
             emission,
@@ -373,6 +395,9 @@ pub(crate) fn execute_pipeline(
                                 ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
                                 ("mode".to_string(), json!("fast-path")),
                                 ("exit_code".to_string(), json!(exit_code as i32)),
+                                ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
+                                ("quiet".to_string(), json!(ctx.policy.quiet)),
+                                ("emission".to_string(), json!(emission_stream)),
                                 (
                                     "duration_ms".to_string(),
                                     json!(started_at.elapsed().as_millis()),
@@ -388,12 +413,28 @@ pub(crate) fn execute_pipeline(
     }
 
     if ctx.intent.command_path.first().is_some_and(|v| v == "plugins") {
+        trace_events.push(InvocationEvent {
+            timestamp: event_timestamp(),
+            name: "lifecycle.plugin.load".to_string(),
+            payload: BTreeMap::from([(
+                "command".to_string(),
+                json!(ctx.intent.command_path.join(" ")),
+            )]),
+        });
         for hook in lifecycle {
             hook.on_plugin_load();
         }
     }
     let is_repl_command = ctx.intent.command_path.first().is_some_and(|v| v == "repl");
     if is_repl_command {
+        trace_events.push(InvocationEvent {
+            timestamp: event_timestamp(),
+            name: "lifecycle.repl.start".to_string(),
+            payload: BTreeMap::from([(
+                "command".to_string(),
+                json!(ctx.intent.command_path.join(" ")),
+            )]),
+        });
         for hook in lifecycle {
             hook.on_repl_start();
         }
@@ -426,6 +467,14 @@ pub(crate) fn execute_pipeline(
     };
 
     if is_repl_command {
+        trace_events.push(InvocationEvent {
+            timestamp: event_timestamp(),
+            name: "lifecycle.repl.shutdown".to_string(),
+            payload: BTreeMap::from([(
+                "command".to_string(),
+                json!(ctx.intent.command_path.join(" ")),
+            )]),
+        });
         for hook in lifecycle {
             hook.on_repl_shutdown();
         }
@@ -433,16 +482,47 @@ pub(crate) fn execute_pipeline(
 
     if let Some(limit) = ctx.timeout {
         if started_at.elapsed() > limit {
+            for hook in diagnostics {
+                hook.record(DiagnosticRecord {
+                    id: "kernel_timeout_after_dispatch".to_string(),
+                    severity: "error".to_string(),
+                    message: format!(
+                        "execution exceeded timeout budget of {}ms",
+                        limit.as_millis()
+                    ),
+                    fields: BTreeMap::new(),
+                });
+            }
             return Err(KernelError::Timeout);
         }
     }
 
     if ctx.cancelled.load(Ordering::SeqCst) {
+        for hook in diagnostics {
+            hook.record(DiagnosticRecord {
+                id: "kernel_cancelled_after_dispatch".to_string(),
+                severity: "warning".to_string(),
+                message: "execution cancelled after dispatch".to_string(),
+                fields: BTreeMap::new(),
+            });
+        }
         return Err(KernelError::Cancelled);
     }
 
     let exit_code = map_outcome_to_exit(&outcome);
+    let outcome_error_category = match &outcome {
+        HandlerOutcome::Success(_) => None::<String>,
+        HandlerOutcome::Error(err) => Some(err.error.category.clone()),
+    };
+    let outcome_error_code = match &outcome {
+        HandlerOutcome::Success(_) => None::<String>,
+        HandlerOutcome::Error(err) => Some(err.error.code.clone()),
+    };
     let emission = map_outcome_to_emission(outcome, ctx.policy.quiet);
+    let emission_stream = emission.as_ref().map(|item| match item.stream {
+        OutputStream::Stdout => "stdout",
+        OutputStream::Stderr => "stderr",
+    });
 
     trace_events.push(InvocationEvent {
         timestamp: event_timestamp(),
@@ -451,14 +531,11 @@ pub(crate) fn execute_pipeline(
             ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
             ("mode".to_string(), json!("standard")),
             ("exit_code".to_string(), json!(exit_code as i32)),
+            ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
             ("quiet".to_string(), json!(ctx.policy.quiet)),
-            (
-                "emission".to_string(),
-                json!(emission.as_ref().map(|item| match item.stream {
-                    OutputStream::Stdout => "stdout",
-                    OutputStream::Stderr => "stderr",
-                })),
-            ),
+            ("error_category".to_string(), json!(outcome_error_category)),
+            ("error_code".to_string(), json!(outcome_error_code)),
+            ("emission".to_string(), json!(emission_stream)),
             ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
         ]),
     });
