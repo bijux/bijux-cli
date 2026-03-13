@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 use super::constants::REGISTRY_VERSION;
+use super::diagnostics::load_time_diagnostics;
 use super::entrypoint::{
     installed_manifest_root, is_executable, resolve_delegated_entrypoint,
     resolve_external_exec_entrypoint,
@@ -18,6 +19,7 @@ use super::models::{
     InstallPluginRequest, PluginDoctorReport, PluginLoadEntry, PluginOriginMetadata, PluginRecord,
     PluginRegistry,
 };
+use crate::api::version::runtime_semver;
 use crate::contracts::PluginKind;
 use crate::infrastructure::fs_store::atomic_write_text;
 
@@ -366,18 +368,21 @@ pub fn list_plugins(registry_path: &Path) -> Result<Vec<PluginRecord>, PluginErr
 /// Produce plugin health report.
 pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginError> {
     let registry = load_registry(registry_path)?;
-
-    let mut broken = Vec::new();
-    let mut incompatible = Vec::new();
-
-    for (namespace, plugin) in &registry.plugins {
-        if plugin.state == crate::contracts::PluginLifecycleState::Broken {
-            broken.push(namespace.clone());
-        }
-        if plugin.state == crate::contracts::PluginLifecycleState::Incompatible {
-            incompatible.push(namespace.clone());
-        }
-    }
+    let diagnostics = load_time_diagnostics(registry_path, runtime_semver())?;
+    let mut broken = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity == "error")
+        .map(|diagnostic| diagnostic.namespace.clone())
+        .collect::<Vec<_>>();
+    let mut incompatible = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity == "warning")
+        .map(|diagnostic| diagnostic.namespace.clone())
+        .collect::<Vec<_>>();
+    broken.sort();
+    broken.dedup();
+    incompatible.sort();
+    incompatible.dedup();
 
     Ok(PluginDoctorReport { installed: registry.plugins.len(), broken, incompatible })
 }

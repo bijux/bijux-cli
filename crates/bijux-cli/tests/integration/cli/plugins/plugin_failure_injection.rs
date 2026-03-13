@@ -69,6 +69,18 @@ fn install(plugins_dir: &Path, manifest_path: &Path) {
     );
 }
 
+fn mutate_manifest<F>(manifest_path: &Path, mutator: F)
+where
+    F: FnOnce(&mut Value),
+{
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).expect("read manifest"))
+            .expect("parse manifest");
+    mutator(&mut manifest);
+    fs::write(manifest_path, serde_json::to_string_pretty(&manifest).expect("serialize manifest"))
+        .expect("write manifest");
+}
+
 #[cfg(unix)]
 fn set_read_only_dir(path: &Path) {
     use std::os::unix::fs::PermissionsExt;
@@ -182,6 +194,142 @@ fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
     assert!(explain["diagnostics"]
         .as_array()
         .expect("diagnostics")
+        .iter()
+        .any(|row| row["message"] == "delegated entrypoint was not found"));
+
+    let inspect = run_ok_json(&["cli", "plugins", "inspect", "goneplug"], &plugins_dir);
+    assert!(inspect["compatibility_warnings"]
+        .as_array()
+        .expect("compatibility warnings")
+        .is_empty());
+    assert!(inspect["load_diagnostics"]
+        .as_array()
+        .expect("load diagnostics")
+        .iter()
+        .any(|row| row["message"] == "delegated entrypoint was not found"));
+}
+
+#[test]
+fn plugin_check_fails_when_manifest_file_drifts_after_install() {
+    let root = tmp_dir("manifest-drift");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let scaffold_dir = root.join("drift_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "driftplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    let manifest_path = scaffold_dir.join("plugin.manifest.json");
+    install(&plugins_dir, &manifest_path);
+
+    mutate_manifest(&manifest_path, |manifest| {
+        manifest["version"] = Value::String("0.1.1".to_string());
+    });
+
+    let check = run(&["cli", "plugins", "check", "driftplug"], &plugins_dir);
+    assert_eq!(check.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&check.stderr).contains("manifest file drifted since install"));
+
+    let explain = run_ok_json(&["cli", "plugins", "explain", "driftplug"], &plugins_dir);
+    assert!(explain["diagnostics"]
+        .as_array()
+        .expect("diagnostics")
+        .iter()
+        .any(|row| row["message"] == "manifest file drifted since install"));
+}
+
+#[test]
+fn enable_rejects_plugins_with_current_runtime_issues() {
+    let root = tmp_dir("enable-current-issues");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let scaffold_dir = root.join("enable_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "enableplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    install(&plugins_dir, &scaffold_dir.join("plugin.manifest.json"));
+    run_ok_json(&["cli", "plugins", "disable", "enableplug"], &plugins_dir);
+
+    fs::remove_file(scaffold_dir.join("plugin.py")).expect("remove entrypoint");
+    let enable = run(&["cli", "plugins", "enable", "enableplug"], &plugins_dir);
+    assert_eq!(enable.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&enable.stderr)
+        .contains("cannot enable plugin with current runtime issue"));
+}
+
+#[test]
+fn plugin_doctor_reports_live_runtime_failures() {
+    let root = tmp_dir("doctor-live-failures");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let drift_dir = root.join("drift_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "driftdoctor",
+            "--path",
+            drift_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    let drift_manifest = drift_dir.join("plugin.manifest.json");
+    install(&plugins_dir, &drift_manifest);
+    mutate_manifest(&drift_manifest, |manifest| {
+        manifest["version"] = Value::String("0.1.1".to_string());
+    });
+
+    let missing_dir = root.join("missing_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "missingdoctor",
+            "--path",
+            missing_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    install(&plugins_dir, &missing_dir.join("plugin.manifest.json"));
+    fs::remove_file(missing_dir.join("plugin.py")).expect("remove entrypoint");
+
+    let doctor = run_ok_json(&["cli", "plugins", "doctor"], &plugins_dir);
+    assert_eq!(doctor["status"], "degraded");
+    let broken = doctor["doctor"]["broken"].as_array().expect("broken array");
+    assert!(broken.iter().any(|value| value == "driftdoctor"));
+    assert!(broken.iter().any(|value| value == "missingdoctor"));
+    assert!(doctor["load_diagnostics"]
+        .as_array()
+        .expect("load diagnostics")
+        .iter()
+        .any(|row| row["message"] == "manifest file drifted since install"));
+    assert!(doctor["load_diagnostics"]
+        .as_array()
+        .expect("load diagnostics")
         .iter()
         .any(|row| row["message"] == "delegated entrypoint was not found"));
 }

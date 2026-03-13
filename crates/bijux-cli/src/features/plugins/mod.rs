@@ -27,6 +27,7 @@ pub use diagnostics::{
 pub use discovery::{
     discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir,
 };
+#[allow(unused_imports)]
 pub use entrypoint::{
     delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
     resolve_external_exec_entrypoint,

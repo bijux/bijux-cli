@@ -4,6 +4,8 @@ use std::fs;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sha2::Digest;
+
 use crate::contracts::PluginKind;
 
 use super::entrypoint::{
@@ -15,6 +17,113 @@ use super::manifest::is_version_compatible;
 use super::models::PluginLoadDiagnostic;
 use super::registry::{load_registry, save_registry};
 
+fn manifest_anchor_diagnostics(
+    record: &super::models::PluginRecord,
+) -> Result<Vec<PluginLoadDiagnostic>, PluginError> {
+    let Some(manifest_path) = record.manifest_path.as_deref() else {
+        return Ok(Vec::new());
+    };
+    let path = Path::new(manifest_path);
+    let mut diagnostics = Vec::new();
+    match fs::read_to_string(path) {
+        Ok(text) => {
+            let digest = sha2::Sha256::digest(text.as_bytes());
+            let current_checksum = format!("{digest:x}");
+            if current_checksum != record.manifest_checksum_sha256 {
+                diagnostics.push(PluginLoadDiagnostic {
+                    namespace: record.manifest.namespace.0.clone(),
+                    severity: "error".to_string(),
+                    message: "manifest file drifted since install".to_string(),
+                });
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            diagnostics.push(PluginLoadDiagnostic {
+                namespace: record.manifest.namespace.0.clone(),
+                severity: "error".to_string(),
+                message: "manifest file was not found".to_string(),
+            });
+        }
+        Err(error) => return Err(error.into()),
+    }
+
+    Ok(diagnostics)
+}
+
+fn record_load_diagnostics(
+    record: &super::models::PluginRecord,
+    host_version: &str,
+) -> Result<Vec<PluginLoadDiagnostic>, PluginError> {
+    let namespace = record.manifest.namespace.0.clone();
+    let mut diagnostics = manifest_anchor_diagnostics(record)?;
+
+    if record.state == crate::contracts::PluginLifecycleState::Broken {
+        diagnostics.push(PluginLoadDiagnostic {
+            namespace: namespace.clone(),
+            severity: "error".to_string(),
+            message: "plugin is marked broken".to_string(),
+        });
+    }
+
+    if !is_version_compatible(&record.manifest.compatibility, host_version)? {
+        diagnostics.push(PluginLoadDiagnostic {
+            namespace: namespace.clone(),
+            severity: "warning".to_string(),
+            message: format!("plugin compatibility does not include host {host_version}"),
+        });
+    }
+
+    if record.manifest.kind == PluginKind::ExternalExec
+        && !resolve_external_exec_entrypoint(
+            record.manifest_path.as_deref(),
+            &record.source,
+            &record.manifest.entrypoint,
+        )
+        .exists()
+    {
+        diagnostics.push(PluginLoadDiagnostic {
+            namespace: namespace.clone(),
+            severity: "error".to_string(),
+            message: "external-exec entrypoint was not found".to_string(),
+        });
+    }
+
+    if record.manifest.kind == PluginKind::ExternalExec {
+        let path = resolve_external_exec_entrypoint(
+            record.manifest_path.as_deref(),
+            &record.source,
+            &record.manifest.entrypoint,
+        );
+        if path.exists() && !is_executable(&path)? {
+            diagnostics.push(PluginLoadDiagnostic {
+                namespace: namespace.clone(),
+                severity: "error".to_string(),
+                message: "external-exec entrypoint is not executable".to_string(),
+            });
+        }
+    }
+
+    if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
+        && resolve_delegated_entrypoint(
+            record.manifest_path.as_deref(),
+            &record.source,
+            &record.manifest.entrypoint,
+        )
+        .is_none()
+        && installed_manifest_root(record.manifest_path.as_deref(), &record.source).is_some_and(
+            |root| !delegated_entrypoint_candidates(&root, &record.manifest.entrypoint).is_empty(),
+        )
+    {
+        diagnostics.push(PluginLoadDiagnostic {
+            namespace,
+            severity: "error".to_string(),
+            message: "delegated entrypoint was not found".to_string(),
+        });
+    }
+
+    Ok(diagnostics)
+}
+
 /// Generate load-time diagnostics for broken or incompatible plugins.
 pub fn load_time_diagnostics(
     registry_path: &Path,
@@ -23,73 +132,8 @@ pub fn load_time_diagnostics(
     let registry = load_registry(registry_path)?;
     let mut diagnostics = Vec::new();
 
-    for (namespace, record) in &registry.plugins {
-        if record.state == crate::contracts::PluginLifecycleState::Broken {
-            diagnostics.push(PluginLoadDiagnostic {
-                namespace: namespace.clone(),
-                severity: "error".to_string(),
-                message: "plugin is marked broken".to_string(),
-            });
-            continue;
-        }
-
-        if !is_version_compatible(&record.manifest.compatibility, host_version)? {
-            diagnostics.push(PluginLoadDiagnostic {
-                namespace: namespace.clone(),
-                severity: "warning".to_string(),
-                message: format!("plugin compatibility does not include host {host_version}"),
-            });
-        }
-
-        if record.manifest.kind == PluginKind::ExternalExec
-            && !resolve_external_exec_entrypoint(
-                record.manifest_path.as_deref(),
-                &record.source,
-                &record.manifest.entrypoint,
-            )
-            .exists()
-        {
-            diagnostics.push(PluginLoadDiagnostic {
-                namespace: namespace.clone(),
-                severity: "error".to_string(),
-                message: "external-exec entrypoint was not found".to_string(),
-            });
-        }
-
-        if record.manifest.kind == PluginKind::ExternalExec {
-            let path = resolve_external_exec_entrypoint(
-                record.manifest_path.as_deref(),
-                &record.source,
-                &record.manifest.entrypoint,
-            );
-            if path.exists() && !is_executable(&path)? {
-                diagnostics.push(PluginLoadDiagnostic {
-                    namespace: namespace.clone(),
-                    severity: "error".to_string(),
-                    message: "external-exec entrypoint is not executable".to_string(),
-                });
-            }
-        }
-
-        if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
-            && resolve_delegated_entrypoint(
-                record.manifest_path.as_deref(),
-                &record.source,
-                &record.manifest.entrypoint,
-            )
-            .is_none()
-            && installed_manifest_root(record.manifest_path.as_deref(), &record.source).is_some_and(
-                |root| {
-                    !delegated_entrypoint_candidates(&root, &record.manifest.entrypoint).is_empty()
-                },
-            )
-        {
-            diagnostics.push(PluginLoadDiagnostic {
-                namespace: namespace.clone(),
-                severity: "error".to_string(),
-                message: "delegated entrypoint was not found".to_string(),
-            });
-        }
+    for record in registry.plugins.values() {
+        diagnostics.extend(record_load_diagnostics(record, host_version)?);
     }
 
     Ok(diagnostics)
@@ -103,6 +147,7 @@ pub fn compatibility_warnings(
     let diagnostics = load_time_diagnostics(registry_path, host_version)?;
     Ok(diagnostics
         .into_iter()
+        .filter(|diagnostic| diagnostic.severity == "warning")
         .map(|diagnostic| format!("{}: {}", diagnostic.namespace, diagnostic.message))
         .collect())
 }

@@ -2,44 +2,20 @@
 //! Plugin feature operations exposed to command adapters.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::api::version::runtime_semver;
-use crate::contracts::{PluginKind, PluginLifecycleState};
+use crate::contracts::PluginLifecycleState;
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
-    load_time_diagnostics, plugin_doctor, resolve_delegated_entrypoint,
-    resolve_external_exec_entrypoint, scaffold::scaffold_plugin_layout, self_repair_registry,
+    load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
     KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
 };
-
-fn missing_delegated_entrypoint(
-    record: &crate::features::plugins::PluginRecord,
-) -> Option<PathBuf> {
-    if resolve_delegated_entrypoint(
-        record.manifest_path.as_deref(),
-        &record.source,
-        &record.manifest.entrypoint,
-    )
-    .is_some()
-    {
-        return None;
-    }
-    crate::features::plugins::delegated_entrypoint_candidates(
-        &crate::features::plugins::installed_manifest_root(
-            record.manifest_path.as_deref(),
-            &record.source,
-        )?,
-        &record.manifest.entrypoint,
-    )
-    .into_iter()
-    .next()
-}
 
 fn plugin_record_payload(record: &crate::features::plugins::PluginRecord) -> Value {
     json!({
@@ -113,13 +89,34 @@ pub(crate) fn plugins_info(plugin_registry_path: &Path) -> Value {
             Vec::new()
         }
     };
+    let load_diagnostics = match load_time_diagnostics(plugin_registry_path, runtime_semver()) {
+        Ok(diagnostics) => diagnostics
+            .into_iter()
+            .map(|diag| {
+                json!({
+                    "namespace": diag.namespace,
+                    "severity": diag.severity,
+                    "message": diag.message,
+                })
+            })
+            .collect::<Vec<_>>(),
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "load-time-diagnostics",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
 
+    let has_runtime_issues = !load_diagnostics.is_empty();
     json!({
-        "status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
         "plugins": plugin_records_payload(&plugins),
         "compatibility_warnings": warnings,
+        "load_diagnostics": load_diagnostics,
         "registry_file": plugin_registry_path,
-        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
         "integrity_issues": integrity_issues,
     })
 }
@@ -140,8 +137,17 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>)
             }
         }
     };
+    let requested_namespace =
+        plugin.and_then(|_| plugins.first().map(|record| record.manifest.namespace.0.clone()));
     let compatibility = match compatibility_warnings(plugin_registry_path, runtime_semver()) {
-        Ok(warnings) => warnings,
+        Ok(warnings) => warnings
+            .into_iter()
+            .filter(|warning| {
+                requested_namespace
+                    .as_deref()
+                    .is_none_or(|namespace| warning.starts_with(&format!("{namespace}:")))
+            })
+            .collect::<Vec<_>>(),
         Err(error) => {
             integrity_issues.push(json!({
                 "source": "compatibility",
@@ -150,13 +156,37 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>)
             Vec::new()
         }
     };
+    let load_diagnostics = match load_time_diagnostics(plugin_registry_path, runtime_semver()) {
+        Ok(diagnostics) => diagnostics
+            .into_iter()
+            .filter(|diag| {
+                requested_namespace.as_deref().is_none_or(|reference| diag.namespace == reference)
+            })
+            .map(|diag| {
+                json!({
+                    "namespace": diag.namespace,
+                    "severity": diag.severity,
+                    "message": diag.message,
+                })
+            })
+            .collect::<Vec<_>>(),
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "load-time-diagnostics",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
 
+    let has_runtime_issues = !load_diagnostics.is_empty();
     Ok(json!({
         "plugin": plugin,
         "plugins": plugin_records_payload(&plugins),
-        "status": if integrity_issues.is_empty() { "loaded" } else { "degraded" },
+        "status": if integrity_issues.is_empty() && !has_runtime_issues { "loaded" } else { "degraded" },
         "compatibility_warnings": compatibility,
-        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "load_diagnostics": load_diagnostics,
+        "integrity_status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
         "integrity_issues": integrity_issues,
     }))
 }
@@ -168,31 +198,11 @@ pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> 
     if matches!(record.state, PluginLifecycleState::Disabled) {
         anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
     }
-
-    if matches!(record.manifest.kind, PluginKind::ExternalExec) {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-
-            let path = resolve_external_exec_entrypoint(
-                record.manifest_path.as_deref(),
-                &record.source,
-                &record.manifest.entrypoint,
-            );
-            if !path.exists() {
-                anyhow::bail!("Invalid argument: plugin entrypoint was not found");
-            }
-            let mode = fs::metadata(&path)?.permissions().mode();
-            if mode & 0o111 == 0 {
-                anyhow::bail!("Invalid argument: plugin entrypoint is not executable");
-            }
-        }
-    }
-
-    if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
-        && missing_delegated_entrypoint(&record).is_some()
+    let current_diagnostics = load_time_diagnostics(plugin_registry_path, runtime_semver())?;
+    if let Some(diag) =
+        current_diagnostics.into_iter().find(|diag| diag.namespace == record.manifest.namespace.0)
     {
-        anyhow::bail!("Invalid argument: plugin entrypoint was not found");
+        anyhow::bail!("Invalid argument: {}", diag.message);
     }
 
     Ok(json!({"plugin": plugin, "status": "healthy", "state": format!("{:?}", record.state)}))
@@ -259,6 +269,17 @@ pub(crate) fn enable_plugin_namespace(
     plugin_registry_path: &Path,
     namespace: &str,
 ) -> Result<Value> {
+    let record = inspect_plugin(plugin_registry_path, namespace)?;
+    let _ = validate_manifest(record.manifest.clone(), runtime_semver(), RESERVED_NAMESPACES)?;
+    let current_diagnostics = load_time_diagnostics(plugin_registry_path, runtime_semver())?;
+    if let Some(diag) =
+        current_diagnostics.into_iter().find(|diag| diag.namespace == record.manifest.namespace.0)
+    {
+        anyhow::bail!(
+            "Invalid argument: cannot enable plugin with current runtime issue: {}",
+            diag.message
+        );
+    }
     let record = enable_plugin(plugin_registry_path, namespace)?;
     Ok(json!({
         "status": "enabled",
@@ -282,14 +303,22 @@ pub(crate) fn disable_plugin_namespace(
 pub(crate) fn plugin_doctor_report(plugin_registry_path: &Path) -> Result<Value> {
     let repaired = self_repair_registry(plugin_registry_path).is_ok();
     let report = plugin_doctor(plugin_registry_path)?;
+    let diagnostics = load_time_diagnostics(plugin_registry_path, runtime_semver())?;
 
     Ok(json!({
-        "status": "ok",
+        "status": if report.broken.is_empty() && report.incompatible.is_empty() { "ok" } else { "degraded" },
         "doctor": {
             "installed": report.installed,
             "broken": report.broken,
             "incompatible": report.incompatible,
         },
+        "load_diagnostics": diagnostics.into_iter().map(|diag| {
+            json!({
+                "namespace": diag.namespace,
+                "severity": diag.severity,
+                "message": diag.message,
+            })
+        }).collect::<Vec<_>>(),
         "self_repair_attempted": true,
         "self_repair_success": repaired,
     }))
