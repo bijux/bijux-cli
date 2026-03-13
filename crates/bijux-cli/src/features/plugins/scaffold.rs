@@ -12,8 +12,7 @@ use super::{
     RESERVED_NAMESPACES,
 };
 
-const SCAFFOLD_PLUGIN_VERSION: &str = "0.3.0";
-const SCAFFOLD_COMPATIBILITY_MIN: &str = "0.3.0";
+const SCAFFOLD_PLUGIN_VERSION: &str = "0.1.0";
 const SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
@@ -25,7 +24,7 @@ fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
         "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
         SCAFFOLD_PLUGIN_VERSION,
-        SCAFFOLD_COMPATIBILITY_MIN,
+        runtime_semver(),
         SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE,
         namespace,
         plugin_kind,

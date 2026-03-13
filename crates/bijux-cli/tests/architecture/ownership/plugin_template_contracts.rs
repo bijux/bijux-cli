@@ -53,8 +53,8 @@ fn render_template(text: &str) -> String {
     text.replace("{{cookiecutter.project_name}}", "testplug")
         .replace("{{cookiecutter.project_slug}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
-        .replace("{{cookiecutter.plugin_version}}", "0.3.0")
-        .replace("{{cookiecutter.cli_min}}", "0.3.0")
+        .replace("{{cookiecutter.plugin_version}}", "0.1.0")
+        .replace("{{cookiecutter.cli_min}}", "0.2.0")
         .replace("{{cookiecutter.cli_max}}", "1.0.0")
         .replace("{{cookiecutter.crate_name}}", "testplug_rs")
         .replace("{{cookiecutter.rust_edition}}", "2021")
@@ -159,8 +159,8 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(manifest.capabilities.is_empty());
         assert_eq!(manifest.namespace, Namespace::new("testplug").expect("valid namespace"));
         assert!(
-            manifest.compatibility.supports_host("0.3.0").expect("valid compatibility"),
-            "{path} should support the planned 0.3.0 release floor"
+            manifest.compatibility.supports_host("0.2.0").expect("valid compatibility"),
+            "{path} should support the current stable release floor"
         );
     }
 }
@@ -171,14 +171,14 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
     {
         let payload: serde_json::Value =
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
-        assert_eq!(payload["plugin_version"], "0.3.0", "{path} must default new plugins to 0.3.0");
-        assert_eq!(payload["cli_min"], "0.3.0", "{path} must require bijux-cli >=0.3.0");
+        assert_eq!(payload["plugin_version"], "0.1.0", "{path} must default new plugins to 0.1.0");
+        assert_eq!(payload["cli_min"], "0.2.0", "{path} must require bijux-cli >=0.2.0");
         assert_eq!(
             payload["cli_max"], "1.0.0",
             "{path} must keep future compatibility open until the 1.0.0 boundary"
         );
         assert_eq!(
-            payload["_template_version"], "0.3.0",
+            payload["_template_version"], "0.2.0",
             "{path} must track the current template contract release"
         );
 

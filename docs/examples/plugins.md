@@ -12,11 +12,11 @@ mkdir -p ./my-plugin
 cat > ./my-plugin/plugin.manifest.json <<'JSON'
 {
   "name": "my-plugin",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
   "compatibility": {
-    "min_inclusive": "0.3.0",
+    "min_inclusive": "0.2.0",
     "max_exclusive": "1.0.0"
   },
   "namespace": "my-plugin",

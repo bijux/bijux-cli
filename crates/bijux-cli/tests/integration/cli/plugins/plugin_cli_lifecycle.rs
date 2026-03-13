@@ -253,10 +253,10 @@ fn install_rejects_stale_manifest_version_markers() {
         &manifest,
         r#"{
   "name": "staleplug",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "schema_version": "v1",
   "manifest_version": "v1",
-  "compatibility": {"min_inclusive":"0.3.0", "max_exclusive": "1.0.0"},
+  "compatibility": {"min_inclusive":"0.2.0", "max_exclusive": "1.0.0"},
   "namespace": "staleplug",
   "kind": "python",
   "aliases": [],

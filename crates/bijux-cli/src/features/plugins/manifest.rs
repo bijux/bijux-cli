@@ -214,11 +214,11 @@ mod tests {
     fn sample_manifest() -> PluginManifestV2 {
         PluginManifestV2 {
             name: "sample".to_string(),
-            version: "0.3.0".to_string(),
+            version: "0.1.0".to_string(),
             schema_version: "v2".to_string(),
             manifest_version: "v2".to_string(),
             compatibility: CompatibilityRange {
-                min_inclusive: "0.3.0".to_string(),
+                min_inclusive: "0.2.0".to_string(),
                 max_exclusive: Some("1.0.0".to_string()),
             },
             namespace: Namespace::new("sample").expect("namespace"),
@@ -233,7 +233,7 @@ mod tests {
     fn validate_manifest_rejects_non_v2_schema_versions() {
         let mut manifest = sample_manifest();
         manifest.schema_version = "1".to_string();
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("schema version");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("schema version");
         assert_eq!(error.to_string(), "plugin manifest field invalid: schema_version");
     }
 
@@ -241,7 +241,7 @@ mod tests {
     fn validate_manifest_rejects_non_v2_manifest_versions() {
         let mut manifest = sample_manifest();
         manifest.manifest_version = "1".to_string();
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("manifest version");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("manifest version");
         assert_eq!(error.to_string(), "plugin manifest field invalid: manifest_version");
     }
 
@@ -249,15 +249,15 @@ mod tests {
     fn validate_manifest_rejects_non_semver_plugin_versions() {
         let mut manifest = sample_manifest();
         manifest.version = "release".to_string();
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("plugin version");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("plugin version");
         assert_eq!(error.to_string(), "plugin manifest field invalid: version");
     }
 
     #[test]
     fn validate_manifest_rejects_invalid_compatibility_windows() {
         let mut manifest = sample_manifest();
-        manifest.compatibility.max_exclusive = Some("0.3.0".to_string());
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("compatibility");
+        manifest.compatibility.max_exclusive = Some("0.2.0".to_string());
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("compatibility");
         assert_eq!(error.to_string(), "plugin manifest field invalid: compatibility.max_exclusive");
     }
 
@@ -265,7 +265,7 @@ mod tests {
     fn validate_manifest_rejects_alias_matching_namespace() {
         let mut manifest = sample_manifest();
         manifest.aliases = vec!["sample".to_string()];
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("alias conflict");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("alias conflict");
         assert_eq!(error.to_string(), "plugin alias conflicts with plugin namespace: sample");
     }
 
@@ -273,7 +273,7 @@ mod tests {
     fn validate_manifest_rejects_invalid_alias_format() {
         let mut manifest = sample_manifest();
         manifest.aliases = vec!["bad alias".to_string()];
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("alias format");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("alias format");
         assert_eq!(error.to_string(), "plugin alias is invalid: bad alias");
     }
 
@@ -281,7 +281,7 @@ mod tests {
     fn validate_manifest_rejects_reserved_aliases() {
         let mut manifest = sample_manifest();
         manifest.aliases = vec!["cli".to_string()];
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("reserved alias");
+        let error = validate_manifest(manifest, "0.2.0", &[]).expect_err("reserved alias");
         assert_eq!(error.to_string(), "plugin alias is reserved: cli");
     }
 }

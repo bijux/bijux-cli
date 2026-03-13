@@ -91,7 +91,7 @@ def test_workspace_runtime_resolution_wins_over_path_binary(
     import bijux_cli_py._facade as facade
 
     workspace_bin = tmp_path / "workspace-bijux"
-    workspace_bin.write_text('#!/bin/sh\necho \'{"version":"0.3.0"}\'\n', encoding="utf-8")
+    workspace_bin.write_text('#!/bin/sh\necho \'{"version":"8.8.8"}\'\n', encoding="utf-8")
     workspace_bin.chmod(0o755)
 
     path_dir = tmp_path / "path-bin"
@@ -106,7 +106,7 @@ def test_workspace_runtime_resolution_wins_over_path_binary(
     monkeypatch.setenv("PATH", str(path_dir))
 
     result = execution_facade(["version"])
-    assert '"0.3.0"' in result
+    assert '"8.8.8"' in result
 
 
 def test_bijux_bin_override_must_point_to_executable(
