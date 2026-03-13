@@ -7,8 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::contracts::PluginKind;
 
 use super::entrypoint::{
-    delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
-    resolve_external_exec_entrypoint,
+    delegated_entrypoint_candidates, installed_manifest_root, is_executable,
+    resolve_delegated_entrypoint, resolve_external_exec_entrypoint,
 };
 use super::errors::PluginError;
 use super::manifest::is_version_compatible;
@@ -42,8 +42,12 @@ pub fn load_time_diagnostics(
         }
 
         if record.manifest.kind == PluginKind::ExternalExec
-            && !resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint)
-                .exists()
+            && !resolve_external_exec_entrypoint(
+                record.manifest_path.as_deref(),
+                &record.source,
+                &record.manifest.entrypoint,
+            )
+            .exists()
         {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),
@@ -52,11 +56,33 @@ pub fn load_time_diagnostics(
             });
         }
 
+        if record.manifest.kind == PluginKind::ExternalExec {
+            let path = resolve_external_exec_entrypoint(
+                record.manifest_path.as_deref(),
+                &record.source,
+                &record.manifest.entrypoint,
+            );
+            if path.exists() && !is_executable(&path)? {
+                diagnostics.push(PluginLoadDiagnostic {
+                    namespace: namespace.clone(),
+                    severity: "error".to_string(),
+                    message: "external-exec entrypoint is not executable".to_string(),
+                });
+            }
+        }
+
         if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
-            && resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint).is_none()
-            && installed_manifest_root(&record.source).is_some_and(|root| {
-                !delegated_entrypoint_candidates(root, &record.manifest.entrypoint).is_empty()
-            })
+            && resolve_delegated_entrypoint(
+                record.manifest_path.as_deref(),
+                &record.source,
+                &record.manifest.entrypoint,
+            )
+            .is_none()
+            && installed_manifest_root(record.manifest_path.as_deref(), &record.source).is_some_and(
+                |root| {
+                    !delegated_entrypoint_candidates(&root, &record.manifest.entrypoint).is_empty()
+                },
+            )
         {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),

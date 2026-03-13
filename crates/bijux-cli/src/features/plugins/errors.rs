@@ -53,6 +53,20 @@ pub enum PluginError {
         /// Plugin kind.
         kind: PluginKind,
     },
+    /// Delegated or Python entrypoint file is missing on disk.
+    #[error("plugin entrypoint was not found at {path}")]
+    MissingEntrypointPath {
+        /// Plugin kind.
+        kind: PluginKind,
+        /// Missing path.
+        path: PathBuf,
+    },
+    /// External executable entrypoint exists but cannot be executed.
+    #[error("plugin entrypoint is not executable: {path}")]
+    NonExecutableEntrypoint {
+        /// Filesystem path.
+        path: PathBuf,
+    },
     /// Plugin kind is not supported by current runtime.
     #[error("plugin kind is not supported in current runtime: {0:?}")]
     UnsupportedKind(PluginKind),

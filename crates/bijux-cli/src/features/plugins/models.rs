@@ -15,6 +15,9 @@ pub struct PluginRecord {
     pub state: PluginLifecycleState,
     /// Source artifact reference.
     pub source: String,
+    /// Local manifest path used to resolve entrypoints after install.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest_path: Option<String>,
     /// Plugin trust level.
     pub trust_level: PluginTrustLevel,
     /// SHA-256 digest of raw manifest text.
@@ -90,6 +93,8 @@ pub struct InstallPluginRequest {
     pub manifest_text: String,
     /// Provenance source string.
     pub source: String,
+    /// Local manifest path for entrypoint resolution.
+    pub manifest_path: Option<String>,
     /// Assigned trust level.
     pub trust_level: PluginTrustLevel,
 }

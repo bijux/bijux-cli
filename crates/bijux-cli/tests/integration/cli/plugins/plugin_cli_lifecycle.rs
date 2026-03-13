@@ -136,6 +136,46 @@ fn rust_scaffold_install_list_inspect_uninstall_flow() {
 }
 
 #[test]
+fn local_install_keeps_manifest_anchor_when_source_label_is_overridden() {
+    let root = tmp_dir("custom-source-label");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "labelplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    let install = run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+            "--source",
+            "community-catalog",
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(install["plugin"]["source"], "community-catalog");
+
+    let check = run_ok_json(&["cli", "plugins", "check", "labelplug"], &plugins_dir);
+    assert_eq!(check["status"], "healthy");
+
+    let explain = run_ok_json(&["cli", "plugins", "explain", "labelplug"], &plugins_dir);
+    assert!(explain["diagnostics"].as_array().is_some_and(|rows| rows.is_empty()));
+}
+
+#[test]
 fn python_scaffold_broken_manifest_fails_install() {
     let root = tmp_dir("python-scaffold-broken");
     let plugins_dir = root.join("plugins");

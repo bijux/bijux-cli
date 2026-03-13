@@ -21,15 +21,38 @@ use crate::features::plugins::{
 fn missing_delegated_entrypoint(
     record: &crate::features::plugins::PluginRecord,
 ) -> Option<PathBuf> {
-    if resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint).is_some() {
+    if resolve_delegated_entrypoint(
+        record.manifest_path.as_deref(),
+        &record.source,
+        &record.manifest.entrypoint,
+    )
+    .is_some()
+    {
         return None;
     }
     crate::features::plugins::delegated_entrypoint_candidates(
-        crate::features::plugins::installed_manifest_root(&record.source)?,
+        &crate::features::plugins::installed_manifest_root(
+            record.manifest_path.as_deref(),
+            &record.source,
+        )?,
         &record.manifest.entrypoint,
     )
     .into_iter()
     .next()
+}
+
+fn plugin_record_payload(record: &crate::features::plugins::PluginRecord) -> Value {
+    json!({
+        "manifest": record.manifest,
+        "state": record.state,
+        "source": record.source,
+        "trust_level": record.trust_level,
+        "manifest_checksum_sha256": record.manifest_checksum_sha256,
+    })
+}
+
+fn plugin_records_payload(records: &[crate::features::plugins::PluginRecord]) -> Vec<Value> {
+    records.iter().map(plugin_record_payload).collect()
 }
 
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
@@ -37,7 +60,7 @@ pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) 
         Ok(plugins) => json!({
             "status": "ok",
             "count": plugins.len(),
-            "plugins": plugins,
+            "plugins": plugin_records_payload(&plugins),
             "directory": plugins_dir,
             "integrity_status": "ok",
         }),
@@ -55,7 +78,7 @@ pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) 
 pub(crate) fn plugins_list(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
     match list_plugins(plugin_registry_path) {
         Ok(plugins) => json!({
-            "plugins": plugins,
+            "plugins": plugin_records_payload(&plugins),
             "directory": plugins_dir,
             "integrity_status": "ok",
         }),
@@ -93,7 +116,7 @@ pub(crate) fn plugins_info(plugin_registry_path: &Path) -> Value {
 
     json!({
         "status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
-        "plugins": plugins,
+        "plugins": plugin_records_payload(&plugins),
         "compatibility_warnings": warnings,
         "registry_file": plugin_registry_path,
         "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
@@ -125,7 +148,7 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path) -> Value {
     };
 
     json!({
-        "plugins": plugins,
+        "plugins": plugin_records_payload(&plugins),
         "status": if integrity_issues.is_empty() { "loaded" } else { "degraded" },
         "compatibility_warnings": compatibility,
         "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
@@ -146,8 +169,11 @@ pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> 
         {
             use std::os::unix::fs::PermissionsExt;
 
-            let path =
-                resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint);
+            let path = resolve_external_exec_entrypoint(
+                record.manifest_path.as_deref(),
+                &record.source,
+                &record.manifest.entrypoint,
+            );
             if !path.exists() {
                 anyhow::bail!("Invalid argument: plugin entrypoint was not found");
             }
@@ -193,16 +219,23 @@ pub(crate) fn install_plugin_from_manifest(
     let source = source
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| manifest_path.to_string_lossy().into_owned());
+    let manifest_path = Some(
+        manifest_path
+            .canonicalize()
+            .unwrap_or_else(|_| manifest_path.to_path_buf())
+            .to_string_lossy()
+            .into_owned(),
+    );
 
     let installed = install_plugin_manifest(
         plugin_registry_path,
-        InstallPluginRequest { manifest_text, source, trust_level },
+        InstallPluginRequest { manifest_text, source, manifest_path, trust_level },
         runtime_semver(),
     )?;
 
     Ok(json!({
         "status": "installed",
-        "plugin": installed,
+        "plugin": plugin_record_payload(&installed),
     }))
 }
 

@@ -301,6 +301,99 @@ fn external_exec_plugin_install_resolves_relative_entrypoints_from_manifest_root
 }
 
 #[test]
+#[cfg(unix)]
+fn external_exec_install_keeps_manifest_anchor_when_source_label_is_overridden() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("external-source-label");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    fs::create_dir_all(root.join("bin")).expect("mkdir bin");
+
+    let entrypoint = root.join("bin").join("runner.sh");
+    fs::write(&entrypoint, "#!/bin/sh\necho ok\n").expect("write runner");
+    fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o755)).expect("chmod 755");
+
+    let manifest = root.join("runner.manifest.json");
+    fs::write(
+        &manifest,
+        r#"{
+  "name": "runnerlabel",
+  "version": "0.3.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {"min_inclusive":"0.3.0", "max_exclusive":"1.0.0"},
+  "namespace": "runnerlabel",
+  "kind": "external-exec",
+  "aliases": [],
+  "entrypoint": "bin/runner.sh",
+  "capabilities": []
+}"#,
+    )
+    .expect("write manifest");
+
+    let install = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest.to_str().expect("utf-8"),
+            "--source",
+            "verified-catalog",
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(
+        install.status.code(),
+        Some(0),
+        "stderr={}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+
+    let check = run_ok_json(&["cli", "plugins", "check", "runnerlabel"], &plugins_dir);
+    assert_eq!(check["status"], "healthy");
+}
+
+#[test]
+#[cfg(unix)]
+fn explain_reports_non_executable_external_entrypoints() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("external-non-executable");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let entrypoint = root.join("runner.sh");
+    fs::write(&entrypoint, "#!/bin/sh\necho ok\n").expect("write runner");
+    fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o644)).expect("chmod 644");
+
+    let manifest = root.join("runner.manifest.json");
+    fs::write(
+        &manifest,
+        format!(
+            r#"{{
+  "name": "noexecplug",
+  "version": "0.3.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {{"min_inclusive":"0.3.0", "max_exclusive":"1.0.0"}},
+  "namespace": "noexecplug",
+  "kind": "external-exec",
+  "aliases": [],
+  "entrypoint": "{}",
+  "capabilities": []
+}}"#,
+            entrypoint.to_string_lossy()
+        ),
+    )
+    .expect("write manifest");
+
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("not executable"));
+}
+
+#[test]
 fn plugin_check_fails_when_manifest_mutates_after_install() {
     let root = tmp_dir("manifest-mutates");
     let plugins_dir = root.join("plugins");

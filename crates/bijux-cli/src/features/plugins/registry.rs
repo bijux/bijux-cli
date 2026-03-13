@@ -9,7 +9,8 @@ use sha2::{Digest, Sha256};
 
 use super::constants::REGISTRY_VERSION;
 use super::entrypoint::{
-    installed_manifest_root, resolve_delegated_entrypoint, resolve_external_exec_entrypoint,
+    installed_manifest_root, is_executable, resolve_delegated_entrypoint,
+    resolve_external_exec_entrypoint,
 };
 use super::errors::PluginError;
 use super::manifest::{is_version_compatible, parse_manifest_v1, validate_manifest};
@@ -172,35 +173,49 @@ fn ensure_aliases_do_not_conflict(
     Ok(())
 }
 
-#[cfg(unix)]
-fn is_executable(path: &Path) -> Result<bool, PluginError> {
-    use std::os::unix::fs::PermissionsExt;
-
-    Ok(path.exists() && path.is_file() && fs::metadata(path)?.permissions().mode() & 0o111 != 0)
-}
-
-#[cfg(not(unix))]
-fn is_executable(path: &Path) -> Result<bool, PluginError> {
-    Ok(path.exists() && path.is_file())
-}
-
 fn validate_local_entrypoint(record: &PluginRecord) -> Result<(), PluginError> {
     match record.manifest.kind {
         PluginKind::Delegated | PluginKind::Python => {
-            if installed_manifest_root(&record.source).is_some()
-                && resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint)
-                    .is_none()
+            if let Some(manifest_root) =
+                installed_manifest_root(record.manifest_path.as_deref(), &record.source)
             {
-                return Err(PluginError::InvalidEntrypoint { kind: record.manifest.kind });
+                let candidates = super::entrypoint::delegated_entrypoint_candidates(
+                    &manifest_root,
+                    &record.manifest.entrypoint,
+                );
+                let resolved = resolve_delegated_entrypoint(
+                    record.manifest_path.as_deref(),
+                    &record.source,
+                    &record.manifest.entrypoint,
+                );
+                if resolved.is_none() {
+                    if let Some(path) = candidates.into_iter().next() {
+                        return Err(PluginError::MissingEntrypointPath {
+                            kind: record.manifest.kind,
+                            path,
+                        });
+                    }
+                }
             }
         }
         PluginKind::ExternalExec => {
             let entrypoint_path = Path::new(&record.manifest.entrypoint);
-            if installed_manifest_root(&record.source).is_some() || entrypoint_path.is_absolute() {
-                let path =
-                    resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint);
+            if installed_manifest_root(record.manifest_path.as_deref(), &record.source).is_some()
+                || entrypoint_path.is_absolute()
+            {
+                let path = resolve_external_exec_entrypoint(
+                    record.manifest_path.as_deref(),
+                    &record.source,
+                    &record.manifest.entrypoint,
+                );
+                if !path.exists() {
+                    return Err(PluginError::MissingEntrypointPath {
+                        kind: record.manifest.kind,
+                        path,
+                    });
+                }
                 if !is_executable(&path)? {
-                    return Err(PluginError::InvalidEntrypoint { kind: record.manifest.kind });
+                    return Err(PluginError::NonExecutableEntrypoint { path });
                 }
             }
         }
@@ -228,6 +243,7 @@ pub fn install_plugin(
         manifest: validated.manifest,
         state: crate::contracts::PluginLifecycleState::Installed,
         source,
+        manifest_path: request.manifest_path,
         trust_level,
         manifest_checksum_sha256,
     };
