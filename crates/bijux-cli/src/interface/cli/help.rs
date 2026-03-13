@@ -3,8 +3,12 @@
 use anyhow::Result;
 
 use crate::routing::parser::root_command;
+use crate::routing::model::{
+    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_INTERACTION_COMMANDS,
+    ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
+};
 
-fn normalize_help_whitespace(raw: &str) -> String {
+pub(crate) fn normalize_help_whitespace(raw: &str) -> String {
     let mut normalized = String::new();
     let mut previous_blank = false;
     let mut in_options_section = false;
@@ -40,12 +44,24 @@ fn normalize_help_whitespace(raw: &str) -> String {
 }
 
 pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
-    let mut cmd = root_command();
-    let target =
-        find_command_mut(&mut cmd, path).ok_or_else(|| anyhow::anyhow!("unknown help path"))?;
-    let mut out = Vec::new();
-    target.write_long_help(&mut out)?;
-    let normalized = normalize_help_whitespace(&String::from_utf8(out)?);
+    let mut argv = vec!["bijux".to_string()];
+    argv.extend(path.iter().map(|segment| (*segment).to_string()));
+    argv.push("--help".to_string());
+
+    let rendered = match root_command().try_get_matches_from(argv) {
+        Err(error)
+            if matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            ) =>
+        {
+            error.to_string()
+        }
+        Ok(_) => return Err(anyhow::anyhow!("unknown help path")),
+        Err(_) => return Err(anyhow::anyhow!("unknown help path")),
+    };
+
+    let normalized = normalize_help_whitespace(&rendered);
     Ok(decorate_help_text(normalized, path))
 }
 
@@ -67,10 +83,10 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     let mut sections = Vec::new();
 
     if let Some(grouped) = help_grouped_guide(path) {
-        sections.push(grouped.to_string());
+        sections.push(grouped);
     }
     if let Some(subcommands) = help_subcommand_guide(path) {
-        sections.push(subcommands.to_string());
+        sections.push(subcommands);
     }
 
     let examples = help_examples(path);
@@ -89,71 +105,96 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     }
 }
 
-fn help_grouped_guide(path: &[&str]) -> Option<&'static str> {
+fn format_command_group_row(name: &str, commands: &[&str]) -> String {
+    format!("{name:<12} {}", commands.join(", "))
+}
+
+fn help_grouped_guide(path: &[&str]) -> Option<String> {
     match path {
-        [] => Some(
-            "Command groups:\n\
-Runtime:\n\
-  status      Runtime status summary\n\
-  audit       Runtime audit report\n\
-  docs        Documentation audit and links\n\
-  sleep       Controlled sleep helper for diagnostics\n\
-  doctor      Runtime health diagnostics\n\
-  version     Runtime version report\n\
+        [] => Some(format!(
+            "Management Commands:\n\
+  {}\n\
+  config       config\n\
+  plugins      plugins\n\
+  {}\n\
+  {}\n\
 \n\
-Configuration & Plugins:\n\
-  config      Configuration management commands\n\
-  plugins     Plugin lifecycle and diagnostics commands\n\
-\n\
-State & Interaction:\n\
-  history     History state management\n\
-  memory      Memory state management\n\
-  repl        Interactive shell\n\
-  completion  Shell completion generation\n\
-  cli         Canonical runtime command namespace",
-        ),
+Use `bijux help <command>` for command-specific help.",
+            format_command_group_row("runtime", ROOT_RUNTIME_COMMANDS),
+            format_command_group_row("state", ROOT_STATE_COMMANDS),
+            format_command_group_row("interaction", ROOT_INTERACTION_COMMANDS),
+        )),
         _ => None,
     }
 }
 
-fn help_subcommand_guide(path: &[&str]) -> Option<&'static str> {
+fn render_subcommand_guide(rows: &[String]) -> String {
+    let mut out = String::from("Subcommand guide:\n");
+    for row in rows {
+        out.push_str("  ");
+        out.push_str(row);
+        out.push('\n');
+    }
+    out.trim_end().to_string()
+}
+
+fn config_subcommand_help(command: &str) -> &'static str {
+    match command {
+        "list" => "Print all key/value pairs",
+        "get" => "Read one key",
+        "set" => "Write one key=value pair",
+        "unset" => "Remove one key",
+        "clear" => "Remove all keys",
+        "reload" => "Validate and reload current file",
+        "export" => "Write config to a target path",
+        "load" => "Load config from a source path",
+        _ => "Configuration command",
+    }
+}
+
+fn plugin_subcommand_help(command: &str) -> &'static str {
+    match command {
+        "list" => "List discovered plugins",
+        "info" => "Show plugin inventory details",
+        "inspect" => "Inspect plugin contracts and compatibility",
+        "check" => "Validate a plugin namespace",
+        "enable" => "Enable a plugin namespace",
+        "disable" => "Disable a plugin namespace",
+        "install" => "Install plugin from manifest/source",
+        "uninstall" => "Remove a plugin namespace",
+        "scaffold" => "Generate a plugin template",
+        "doctor" => "Plugin health diagnostics",
+        "reserved-names" => "Show reserved plugin namespace rules",
+        "where" => "Show plugin state and install paths",
+        "explain" => "Explain plugin resolution outcome",
+        "schema" => "Show plugin manifest schema",
+        _ => "Plugin command",
+    }
+}
+
+fn help_subcommand_guide(path: &[&str]) -> Option<String> {
     match path {
-        ["cli"] => Some(
-            "Subcommand guide:\n\
-  status     Runtime status summary\n\
-  paths      Runtime state and filesystem paths\n\
-  config     Runtime configuration operations\n\
-  self-test  Deterministic runtime self-checks\n\
-  plugins    Canonical plugin lifecycle namespace",
-        ),
-        ["config"] | ["cli", "config"] => Some(
-            "Subcommand guide:\n\
-  list    Print all key/value pairs\n\
-  get     Read one key\n\
-  set     Write one key=value pair\n\
-  unset   Remove one key\n\
-  clear   Remove all keys\n\
-  reload  Validate and reload current file\n\
-  export  Write config to a target path\n\
-  load    Load config from a source path",
-        ),
-        ["plugins"] | ["cli", "plugins"] => Some(
-            "Subcommand guide:\n\
-  list            List discovered plugins\n\
-  info            Show plugin inventory details\n\
-  inspect         Inspect plugin contracts and compatibility\n\
-  check           Validate a plugin namespace\n\
-  enable          Enable a plugin namespace\n\
-  disable         Disable a plugin namespace\n\
-  install         Install plugin from manifest/source\n\
-  uninstall       Remove a plugin namespace\n\
-  scaffold        Generate a plugin template\n\
-  doctor          Plugin health diagnostics\n\
-  reserved-names  Show reserved plugin namespace rules\n\
-  where           Show plugin state and install paths\n\
-  explain         Explain plugin resolution outcome\n\
-  schema          Show plugin manifest schema",
-        ),
+        ["cli"] => Some(render_subcommand_guide(&[
+            "status     Runtime status summary".to_string(),
+            "paths      Runtime state and filesystem paths".to_string(),
+            "config     Runtime configuration operations".to_string(),
+            "self-test  Deterministic runtime self-checks".to_string(),
+            "plugins    Canonical plugin lifecycle namespace".to_string(),
+        ])),
+        ["config"] | ["cli", "config"] => {
+            let rows = CLI_CONFIG_SUBCOMMANDS
+                .iter()
+                .map(|command| format!("{command:<8} {}", config_subcommand_help(command)))
+                .collect::<Vec<_>>();
+            Some(render_subcommand_guide(&rows))
+        }
+        ["plugins"] | ["cli", "plugins"] => {
+            let rows = CLI_PLUGINS_SUBCOMMANDS
+                .iter()
+                .map(|command| format!("{command:<14} {}", plugin_subcommand_help(command)))
+                .collect::<Vec<_>>();
+            Some(render_subcommand_guide(&rows))
+        }
         _ => None,
     }
 }
@@ -240,16 +281,4 @@ fn default_examples(path: &[&str]) -> Vec<String> {
         format!("bijux {joined} --format json"),
         format!("bijux help {joined}"),
     ]
-}
-
-fn find_command_mut<'a>(
-    command: &'a mut clap::Command,
-    path: &[&str],
-) -> Option<&'a mut clap::Command> {
-    if let Some((head, tail)) = path.split_first() {
-        let child = command.find_subcommand_mut(head)?;
-        find_command_mut(child, tail)
-    } else {
-        Some(command)
-    }
 }

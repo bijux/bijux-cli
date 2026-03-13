@@ -5,6 +5,9 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
+pub const ROOT_RUNTIME_COMMANDS: &[&str] = &["status", "audit", "docs", "sleep", "doctor", "version"];
+pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
+pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
@@ -61,6 +64,66 @@ pub const DEV_CLI_VISIBLE_SUBCOMMANDS: &[&str] = &[
 pub const DEV_CLI_NESTED_SUBCOMMANDS: &[&str] =
     &["maintenance", "rustdoc", "release", "evidence", "config", "python", "repo"];
 pub const DEV_CLI_HIDDEN_SUBCOMMANDS: &[&str] = &["atlas", "di", "list-products", "list-plugins"];
+pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
+    "remaining",
+    "migrated",
+    "diff",
+    "audit",
+    "generators",
+    "generate",
+    "generate-all",
+    "requirements",
+    "flaky-tests",
+    "status",
+    "package-metadata",
+    "e2e-contract",
+    "pip-audit",
+    "capture-python-behavior",
+    "provenance-statement",
+];
+pub const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
+pub const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
+    "audit",
+    "coverage",
+    "broken-links",
+    "public-api",
+    "examples",
+    "migrate-website-api-docs",
+    "build-proof",
+    "workspace-coverage-proof",
+    "python-link-proof",
+];
+pub const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
+    "status",
+    "evidence",
+    "readiness",
+    "diff",
+    "gaps",
+    "summary",
+    "manifest",
+    "notes",
+    "behavior-changes",
+    "intentional-differences",
+    "unresolved-gaps",
+    "compatibility-leftovers",
+];
+pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
+    "list",
+    "show",
+    "audit",
+    "stale",
+    "matrix",
+    "website-export",
+    "ci-export",
+    "release-export",
+    "command-map",
+    "parity-map",
+];
+pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
+pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
+    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
+pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] = &["health", "drift", "inventories", "generated", "stale"];
 
 pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     "status",
