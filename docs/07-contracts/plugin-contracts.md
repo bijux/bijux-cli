@@ -85,6 +85,8 @@ The current plugin-management contract covers:
 - `schema`
 
 `inspect` may target one plugin or the full inventory.
+`explain` may target one plugin or the full inventory summary.
+`doctor` is the registry-wide health and self-repair view.
 
 It does not currently include executing installed plugin namespaces as direct
 runtime subcommands under `bijux`.

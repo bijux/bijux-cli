@@ -17,7 +17,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     A[Current Rust runtime] --> B[current bijux-cli-python]
-    B --> C[stable PyPI baseline]
+    B --> C[configured PyPI baseline 0.2.0]
 ```
 
 ## Product Binary Routing
@@ -47,6 +47,8 @@ The durable local plugin contract is based on `plugin.manifest.json`.
 - `plugins inspect [plugin]` can report either one plugin or the full
   inventory, and `plugins doctor` reports current-runtime drift and missing
   entrypoints
+- `plugins explain [plugin]` can report either a registry-wide summary or one
+  plugin's compatibility and load diagnostics
 - `plugins where` reports the active plugins directory and registry file
 - `plugins reserved-names` reports the current reserved plugin namespace
   inventory
@@ -88,15 +90,15 @@ their binaries are discoverable.
 Typical local setup:
 
 ```bash
-export BIJUXCLI_PRODUCT_BIN_DIR="/path/to/product/artifacts/bin"
+export BIJUXCLI_PRODUCT_BIN_DIR="/path/to/product/bin"
 ```
 
 Examples:
 
 ```bash
-bijux atlas atlas --help
+bijux atlas --help
 bijux dev atlas --help
-bijux dev list-products --format json
+bijux dev cli list-products --format json --no-pretty
 ```
 
 The `list-products` output is the verification surface for resolved runtime and

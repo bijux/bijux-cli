@@ -30,6 +30,9 @@ bijux plugins inspect
 bijux plugins inspect NAMESPACE
 bijux plugins install ./plugin.manifest.json
 bijux plugins check NAMESPACE
+bijux plugins doctor
+bijux plugins explain
+bijux plugins explain NAMESPACE
 bijux plugins where
 bijux plugins reserved-names
 bijux plugins uninstall NAMESPACE
@@ -73,8 +76,10 @@ bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
+bijux plugins doctor
 bijux plugins where
 bijux plugins reserved-names
+bijux plugins explain
 bijux plugins explain my-plugin
 bijux plugins uninstall my-plugin
 ```
@@ -86,9 +91,11 @@ Expected shape:
 - `inspect` without an argument shows the full inventory; with a namespace it
   shows one plugin's manifest, source, and trust metadata
 - `check` verifies manifest validity and entrypoint presence
+- `doctor` shows registry-wide health and load diagnostics
 - `where` shows the active plugins directory and registry file
 - `reserved-names` shows the namespaces that plugins must not claim
-- `explain` shows compatibility or load diagnostics
+- `explain` without an argument shows the overall plugin summary; with a
+  namespace it shows compatibility or load diagnostics for one plugin
 - `list` no longer reports the namespace after uninstall
 
 ## Working Rule
@@ -96,6 +103,7 @@ Expected shape:
 - install from the manifest file
 - use `reserved-names` before choosing a new namespace or alias
 - inspect before assuming a plugin is healthy
+- use `doctor` when you need registry-wide health rather than one plugin check
 - use `where` when debugging plugin state paths or the active registry file
 - check before relying on a plugin in automation
 - uninstall plugins you do not actively want to keep
@@ -132,8 +140,9 @@ feature toggle.
 
 ## What The Runtime Can Tell You
 
-`inspect`, `check`, and `doctor` can show compatibility, manifest drift, and
-current load issues. They cannot make an untrusted plugin safe.
+`inspect`, `check`, `doctor`, and `explain` can show compatibility, manifest
+drift, registry-wide health, and current load issues. They cannot make an
+untrusted plugin safe.
 
 Rust plugin management already adds guardrails beyond the historical Python
 baseline, including better reserved-namespace diagnostics, write-path rollback

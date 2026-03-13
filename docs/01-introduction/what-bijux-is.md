@@ -29,7 +29,7 @@ flowchart TD
 
 - deterministic global flag behavior
 - explicit command and output contracts
-- plugin-driven command surfaces
+- plugin management and compatibility surfaces
 - machine-readable output for scripts and CI
 - one execution model shared by CLI and REPL
 
