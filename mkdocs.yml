@@ -83,15 +83,18 @@ plugins:
         guides/uninstall-pip.md: guides/installation.md
         guides/dual-install-behavior.md: guides/installation.md
         guides/upgrade-pypi-users.md: guides/installation.md
-        guides/config-unified.md: guides/configuration.md
-        guides/plugin-unified.md: guides/plugins.md
+        guides/config-unified.md: 03-user-guide/configuration-and-output.md
+        guides/plugin-unified.md: 03-user-guide/plugins-and-extensions.md
         guides/repl-unified.md: reference/repl.md
         reference/repl-command-reference.md: reference/repl.md
         guides/python/internal-differences.md: guides/python/runtime-migration.md
         guides/python/library-wrapper.md: guides/api-usage.md
         guides/python/packaging-maintainers.md: guides/installation.md
         guides/python/pipx-installs.md: guides/installation.md
-        guides/python/plugin-delegation.md: guides/plugins.md
+        guides/python/plugin-delegation.md: 03-user-guide/plugins-and-extensions.md
+        guides/cli-usage.md: 03-user-guide/everyday-commands.md
+        guides/configuration.md: 03-user-guide/configuration-and-output.md
+        guides/plugins.md: 03-user-guide/plugins-and-extensions.md
         guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
         guides/python/virtualenv-installs.md: guides/installation.md
         getting-started/index.md: 02-getting-started/index.md

@@ -58,8 +58,8 @@ Move to the fuller docs when the basics are already proven:
 
 - [Installation guide](../guides/installation.md)
 - [Commands reference](../reference/commands.md)
-- [Configuration guide](../guides/configuration.md)
-- [Plugin guide](../guides/plugins.md)
+- [Configuration and output](../03-user-guide/configuration-and-output.md)
+- [Plugins and extensions](../03-user-guide/plugins-and-extensions.md)
 - [Status and gaps](../KNOWN_GAPS.md)
 
 ## Closing Rule

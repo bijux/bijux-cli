@@ -22,9 +22,11 @@ High-value documents only. Everything else is supporting detail.
 - [Exit codes](reference/exit-codes.md)
 
 ## Guides
+- [User guide](03-user-guide/index.md)
+- [Everyday commands](03-user-guide/everyday-commands.md)
+- [Configuration and output](03-user-guide/configuration-and-output.md)
+- [Plugins and extensions](03-user-guide/plugins-and-extensions.md)
 - [Installation guide](guides/installation.md)
-- [Plugin guide](guides/plugins.md)
-- [Configuration guide](guides/configuration.md)
 - [Development guide](guides/development.md)
 - [REPL reference](reference/repl.md)
 
