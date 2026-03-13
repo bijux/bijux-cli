@@ -46,9 +46,7 @@ impl ConfigRepository for FileConfigRepository {
             let value = decode_quoted_value(raw_value.trim());
             validate_value(&value)?;
             if out.contains_key(&key) {
-                return Err(ConfigError::parse(format!(
-                    "Duplicate key `{key}` at line {line_no}"
-                )));
+                return Err(ConfigError::parse(format!("Duplicate key `{key}` at line {line_no}")));
             }
             out.insert(key, value);
         }

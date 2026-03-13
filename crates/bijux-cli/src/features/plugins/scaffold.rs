@@ -10,22 +10,12 @@ use crate::api::version::runtime_semver;
 use super::{is_reserved_namespace, parse_manifest_v1, validate_manifest, RESERVED_NAMESPACES};
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
-    !path
-        .components()
-        .any(|component| matches!(component, Component::ParentDir))
+    !path.components().any(|component| matches!(component, Component::ParentDir))
 }
 
 fn scaffold_manifest_json(kind: &str, namespace: &str) -> String {
-    let plugin_kind = if kind == "python" {
-        "python"
-    } else {
-        "delegated"
-    };
-    let entrypoint = if kind == "python" {
-        "plugin:main"
-    } else {
-        "plugin:main"
-    };
+    let plugin_kind = if kind == "python" { "python" } else { "delegated" };
+    let entrypoint = if kind == "python" { "plugin:main" } else { "plugin:main" };
     format!(
         "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"0.1.0\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
@@ -44,10 +34,7 @@ pub(crate) fn scaffold_plugin_layout(
     if is_reserved_namespace(namespace, &[]) {
         anyhow::bail!("plugin namespace is reserved: {namespace}");
     }
-    if !namespace
-        .chars()
-        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
-    {
+    if !namespace.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
         anyhow::bail!("plugin namespace must be lowercase kebab-case");
     }
     if !is_safe_scaffold_path(base_dir) {

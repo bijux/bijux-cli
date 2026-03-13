@@ -306,7 +306,8 @@ fn unreadable_registry_surfaces_degraded_integrity_in_list_and_inspect() {
     let inspected = run(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected.status.code(), Some(0));
     assert!(inspected.stderr.is_empty());
-    let inspect_payload: Value = serde_json::from_slice(&inspected.stdout).expect("inspect payload");
+    let inspect_payload: Value =
+        serde_json::from_slice(&inspected.stdout).expect("inspect payload");
     assert_eq!(inspect_payload["status"], "degraded");
     assert_eq!(inspect_payload["integrity_status"], "degraded");
     assert!(inspect_payload["integrity_issues"].as_array().is_some_and(|rows| !rows.is_empty()));

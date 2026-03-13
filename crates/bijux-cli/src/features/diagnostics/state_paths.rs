@@ -39,9 +39,7 @@ fn home_dir_from_env(
     if let Some(value) = user_profile {
         return (
             PathBuf::from(value),
-            Some(format!(
-                "HOME is unset; resolved state paths from USERPROFILE ({value})"
-            )),
+            Some(format!("HOME is unset; resolved state paths from USERPROFILE ({value})")),
         );
     }
     if let (Some(drive), Some(path)) = (home_drive, home_path) {
@@ -333,24 +331,15 @@ mod tests {
             PathBuf::from("."),
         );
         assert_eq!(path, PathBuf::from(r"C:\Users\profile"));
-        assert!(warning
-            .as_deref()
-            .is_some_and(|value| value.contains("USERPROFILE")));
+        assert!(warning.as_deref().is_some_and(|value| value.contains("USERPROFILE")));
     }
 
     #[test]
     fn home_resolution_uses_homedrive_and_homepath_when_others_are_missing() {
-        let (path, warning) = home_dir_from_env(
-            None,
-            None,
-            Some("D:"),
-            Some("\\Work\\User"),
-            PathBuf::from("."),
-        );
+        let (path, warning) =
+            home_dir_from_env(None, None, Some("D:"), Some("\\Work\\User"), PathBuf::from("."));
         assert_eq!(path, PathBuf::from(r"D:\Work\User"));
-        assert!(warning
-            .as_deref()
-            .is_some_and(|value| value.contains("HOMEDRIVE/HOMEPATH")));
+        assert!(warning.as_deref().is_some_and(|value| value.contains("HOMEDRIVE/HOMEPATH")));
     }
 
     #[test]
@@ -358,8 +347,6 @@ mod tests {
         let fallback = PathBuf::from("/tmp/fallback");
         let (path, warning) = home_dir_from_env(None, None, None, None, fallback.clone());
         assert_eq!(path, fallback);
-        assert!(warning
-            .as_deref()
-            .is_some_and(|value| value.contains("current directory")));
+        assert!(warning.as_deref().is_some_and(|value| value.contains("current directory")));
     }
 }

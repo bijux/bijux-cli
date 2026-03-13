@@ -346,7 +346,9 @@ mod tests {
 
     use tempfile::TempDir;
 
-    use super::{load_registry, lock_path, save_registry, update_registry, PluginError, PluginRegistry};
+    use super::{
+        load_registry, lock_path, save_registry, update_registry, PluginError, PluginRegistry,
+    };
 
     #[test]
     fn concurrent_registry_writes_keep_registry_parseable() {

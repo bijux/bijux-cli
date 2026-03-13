@@ -31,9 +31,8 @@ fn workspace_root() -> PathBuf {
 }
 
 fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> (String, String) {
-    if let Some(override_version) = env::var("BIJUX_VERSION_OVERRIDE")
-        .ok()
-        .and_then(|value| normalize_version_string(&value))
+    if let Some(override_version) =
+        env::var("BIJUX_VERSION_OVERRIDE").ok().and_then(|value| normalize_version_string(&value))
     {
         return (override_version.clone(), override_version);
     }
@@ -87,11 +86,8 @@ fn emit_git_rerun_hints(workspace_root: &Path) {
     }
 
     let git_dir_path = PathBuf::from(&git_dir);
-    let resolved = if git_dir_path.is_absolute() {
-        git_dir_path
-    } else {
-        workspace_root.join(git_dir_path)
-    };
+    let resolved =
+        if git_dir_path.is_absolute() { git_dir_path } else { workspace_root.join(git_dir_path) };
 
     for relative in ["HEAD", "packed-refs", "refs/tags", "refs/heads"] {
         let candidate = resolved.join(relative);

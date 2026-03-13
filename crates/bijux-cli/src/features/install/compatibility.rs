@@ -114,11 +114,7 @@ pub fn discover_compatibility_paths(
         home,
     );
 
-    Ok(CompatibilityPaths {
-        config_file,
-        history_file,
-        plugins_dir,
-    })
+    Ok(CompatibilityPaths { config_file, history_file, plugins_dir })
 }
 
 /// Default compatibility paths anchored in the user home directory.
@@ -163,9 +159,7 @@ pub fn parse_compatibility_config(text: &str) -> Result<CompatibilityConfig, Com
                 values.insert(trimmed_key.to_string(), trimmed_value.to_string());
             }
             _ => {
-                return Err(CompatibilityError::UnsupportedConfigKey(
-                    trimmed_key.to_string(),
-                ));
+                return Err(CompatibilityError::UnsupportedConfigKey(trimmed_key.to_string()));
             }
         }
     }
@@ -283,17 +277,8 @@ mod tests {
             "{ENV_CONFIG_PATH}=cfg.env\n{ENV_HISTORY_PATH}=history.log\n{ENV_PLUGINS_PATH}=plugins\n"
         );
         let parsed = parse_compatibility_config(&source).expect("parse should pass");
-        assert_eq!(
-            parsed.config_file.as_deref(),
-            Some(std::path::Path::new("cfg.env"))
-        );
-        assert_eq!(
-            parsed.history_file.as_deref(),
-            Some(std::path::Path::new("history.log"))
-        );
-        assert_eq!(
-            parsed.plugins_dir.as_deref(),
-            Some(std::path::Path::new("plugins"))
-        );
+        assert_eq!(parsed.config_file.as_deref(), Some(std::path::Path::new("cfg.env")));
+        assert_eq!(parsed.history_file.as_deref(), Some(std::path::Path::new("history.log")));
+        assert_eq!(parsed.plugins_dir.as_deref(), Some(std::path::Path::new("plugins")));
     }
 }
