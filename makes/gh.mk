@@ -3,7 +3,7 @@
 
 GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
 GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
-GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
+GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python
 GH_RELEASE_CI_WORKFLOW_FILE ?= ci.yml
 GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS ?= 1800
 GH_RELEASE_CI_POLL_INTERVAL_SECONDS ?= 15
@@ -137,7 +137,6 @@ gh-release-plan-crates: ## Determine whether the tagged commit should publish wo
 		case "$${package}" in \
 			bijux-cli) manifest="crates/bijux-cli/Cargo.toml" ;; \
 			bijux-cli-python) manifest="crates/bijux-cli-python/Cargo.toml" ;; \
-			bijux-dev-cli) manifest="crates/bijux-dev-cli/Cargo.toml" ;; \
 			*) echo "unknown release package: $${package}" >&2; exit 1 ;; \
 		esac; \
 		package_version="$$(awk -F'\"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*\"/ { print $$2; exit }' "$${manifest}")"; \
