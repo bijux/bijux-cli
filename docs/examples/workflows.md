@@ -6,6 +6,11 @@ These examples show how bijux-cli behaves in realistic workflows. Each scenario 
 ## Scope
 The examples here use core commands only. They do not require plugins or custom configuration files unless explicitly stated.
 
+## Related Example Set
+
+For plugin install, inspect, and uninstall examples, use
+[Plugin examples](plugins.md).
+
 ## Example 1: Script‑Safe Status Check
 This example demonstrates how to obtain machine‑readable output for automation.
 

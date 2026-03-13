@@ -6,6 +6,12 @@ This document gives you a minimal end-to-end run of bijux-cli so you can see the
 ## Scope
 Quickstart uses a small set of commands and basic output formats. It does not introduce configuration files or plugin behavior.
 
+## Start Here
+
+Use this page after installation when you want the shortest path to a verified
+working runtime. It covers install validation, a first successful command, and
+one machine-readable command shape.
+
 ## First Command
 Run `bijux --help` to verify that the CLI responds and that the help system is available.
 

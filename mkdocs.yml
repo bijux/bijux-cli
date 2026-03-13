@@ -94,6 +94,13 @@ plugins:
         guides/python/plugin-delegation.md: guides/plugins.md
         guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
         guides/python/virtualenv-installs.md: guides/installation.md
+        getting-started/index.md: getting-started/quickstart.md
+        examples/index.md: examples/workflows.md
+        guides/hermetic-builds.md: guides/development.md
+        guides/reproducible-releases.md: guides/development.md
+        guides/release-checklist.md: guides/development.md
+        guides/upgrade-rollback-plan.md: guides/development.md
+        guides/compatibility-unified.md: guides/development.md
         reference/current-python/top-level-commands.md: reference/current-python/index.md
         reference/current-python/dev-commands.md: reference/current-python/index.md
         reference/current-python/repl-commands-and-shortcuts.md: reference/current-python/index.md

@@ -15,17 +15,16 @@ High-value documents only. Everything else is supporting detail.
 - [Constitution index](constitution/index.md)
 
 ## Usage
-- [Getting started](getting-started/index.md)
 - [Installation](guides/installation.md)
 - [Quickstart](getting-started/quickstart.md)
 - [Commands reference](reference/commands.md)
 - [Exit codes](reference/exit-codes.md)
 
 ## Guides
-- [Unified compatibility guide](guides/compatibility-unified.md)
 - [Installation guide](guides/installation.md)
 - [Plugin guide](guides/plugins.md)
 - [Configuration guide](guides/configuration.md)
+- [Development guide](guides/development.md)
 - [REPL reference](reference/repl.md)
 
 ## Generated Evidence
