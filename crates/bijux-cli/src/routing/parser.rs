@@ -173,10 +173,21 @@ fn delegated_command(name: &'static str, hidden: bool) -> Command {
 }
 
 fn build_dev_group() -> Command {
-    let mut command = Command::new("dev")
-        .hide(true)
-        .allow_external_subcommands(true)
-        .subcommand(delegated_command("cli", false));
+    let mut dev_cli = Command::new("cli");
+    for command in crate::routing::model::DEV_CLI_VISIBLE_SUBCOMMANDS {
+        let entry = if crate::routing::model::DEV_CLI_NESTED_SUBCOMMANDS.contains(command) {
+            delegated_command(command, false)
+        } else {
+            Command::new(*command)
+        };
+        dev_cli = dev_cli.subcommand(entry);
+    }
+    for command in crate::routing::model::DEV_CLI_HIDDEN_SUBCOMMANDS {
+        dev_cli = dev_cli.subcommand(delegated_command(command, true));
+    }
+
+    let mut command =
+        Command::new("dev").hide(true).allow_external_subcommands(true).subcommand(dev_cli);
 
     for namespace in KNOWN_BIJUX_TOOL_NAMESPACES {
         command = command.subcommand(delegated_command(namespace, true));
@@ -413,4 +424,25 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalized_path = normalize_command_path(&command_path);
 
     Ok(ParsedIntent { command_path, normalized_path, global_flags })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::root_command;
+
+    #[test]
+    fn dev_cli_help_lists_registered_subcommands() {
+        let argv =
+            vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "--help".to_string()];
+        let help = match root_command().try_get_matches_from(argv) {
+            Err(error) if matches!(error.kind(), clap::error::ErrorKind::DisplayHelp) => {
+                error.to_string()
+            }
+            other => panic!("expected clap help output, got {other:?}"),
+        };
+
+        assert!(help.contains("Commands:"));
+        assert!(help.contains("maintenance"));
+        assert!(help.contains("runtime-identity"));
+    }
 }

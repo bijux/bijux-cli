@@ -23,6 +23,44 @@ pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "explain",
     "schema",
 ];
+pub const DEV_CLI_VISIBLE_SUBCOMMANDS: &[&str] = &[
+    "maintenance",
+    "rustdoc",
+    "release",
+    "evidence",
+    "config",
+    "python",
+    "repo",
+    "contracts",
+    "dashboard",
+    "quickcheck",
+    "truth",
+    "blockers",
+    "next",
+    "inventory",
+    "routes",
+    "registry",
+    "parity",
+    "docs",
+    "docs-audit",
+    "plugin-health",
+    "status",
+    "maintenance-audit",
+    "snapshots-audit",
+    "fixture-audit",
+    "crate-health",
+    "package-health",
+    "route-audit",
+    "env",
+    "doctor",
+    "runtime-identity",
+    "docs-prune-plan",
+    "state-audit",
+    "state-doctor",
+];
+pub const DEV_CLI_NESTED_SUBCOMMANDS: &[&str] =
+    &["maintenance", "rustdoc", "release", "evidence", "config", "python", "repo"];
+pub const DEV_CLI_HIDDEN_SUBCOMMANDS: &[&str] = &["atlas", "di", "list-products", "list-plugins"];
 
 pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     "status",
