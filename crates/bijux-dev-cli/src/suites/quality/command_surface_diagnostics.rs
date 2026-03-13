@@ -4,16 +4,15 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS" => {
-            let tests = [
-                "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
-                "crates/bijux-cli/tests/bin_surface/diagnostics_contract_consistency.rs",
-                "crates/bijux-cli/tests/bin_surface/diagnostics_deep_behavior_extra.rs",
-            ];
             let mut sources = BTreeMap::<String, String>::new();
-            for path in tests {
-                let full = workspace_root.join(path);
-                if full.exists() {
-                    sources.insert(path.to_string(), fs::read_to_string(full).unwrap_or_default());
+            for root in ["crates/bijux-cli/tests", "crates/bijux-dev-cli/tests"] {
+                for path in collect_files(&workspace_root.join(root)) {
+                    if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
+                        sources.insert(
+                            rel(&path, workspace_root),
+                            fs::read_to_string(path).unwrap_or_default(),
+                        );
+                    }
                 }
             }
             let find_test = |name: &str| -> Option<String> {
@@ -24,26 +23,26 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 |args: &[&str]| run_bijux_json(workspace_root, args).unwrap_or_else(|_| json!({}));
             let doctor_a = run_json(&["doctor"]);
             let doctor_b = run_json(&["doctor"]);
-            let state_doctor_a = run_json(&["dev", "cli", "state-doctor"]);
-            let state_doctor_b = run_json(&["dev", "cli", "state-doctor"]);
+            let state_doctor_a = run_json(&["state-doctor"]);
+            let state_doctor_b = run_json(&["state-doctor"]);
             let inspect = run_json(&["inspect"]);
-            let env = run_json(&["dev", "cli", "env"]);
-            let contracts = run_json(&["dev", "cli", "contracts"]);
-            let routes = run_json(&["dev", "cli", "routes"]);
-            let registry = run_json(&["dev", "cli", "registry"]);
-            let plugin_health = run_json(&["dev", "cli", "plugin-health"]);
-            let package_health = run_json(&["dev", "cli", "package-health"]);
-            let runtime_identity = run_json(&["dev", "cli", "runtime-identity"]);
+            let env = run_json(&["env"]);
+            let contracts = run_json(&["contracts"]);
+            let routes = run_json(&["routes"]);
+            let registry = run_json(&["registry"]);
+            let plugin_health = run_json(&["plugin-health"]);
+            let package_health = run_json(&["package-health"]);
+            let runtime_identity = run_json(&["runtime-identity"]);
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (141, "doctor_findings_are_stable_and_do_not_reorder_nondeterministically"),
                                 (142, "doctor_findings_are_stable_and_do_not_reorder_nondeterministically"),
                                 (143, "doctor_json_and_text_are_stable_with_no_color_mode"),
                                 (144, "doctor_json_and_text_are_stable_with_no_color_mode"),
                                 (145, "inspect_and_doctor_agree_on_route_state_overlap_signals"),
-                                (146, "dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
-                                (147, "dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
-                                (148, "dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
-                                (149, "dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
+                                (146, "maintainer_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
+                                (147, "maintainer_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
+                                (148, "maintainer_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
+                                (149, "maintainer_env_contracts_routes_and_registry_match_current_snapshots_and_resolution"),
                                 (150, "state_doctor_and_plugin_health_match_corruption_harness_findings"),
                                 (151, "state_doctor_and_plugin_health_match_corruption_harness_findings"),
                                 (152, "package_health_and_runtime_identity_are_consistent_with_active_binary_conditions"),
@@ -167,19 +166,29 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/diagnostics_trust_law_extra.rs"),
-            )
-            .unwrap_or_default();
+            let mut sources = BTreeMap::<String, String>::new();
+            for root in ["crates/bijux-cli/tests", "crates/bijux-dev-cli/tests"] {
+                for path in collect_files(&workspace_root.join(root)) {
+                    if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
+                        sources.insert(
+                            rel(&path, workspace_root),
+                            fs::read_to_string(path).unwrap_or_default(),
+                        );
+                    }
+                }
+            }
+            let find_test = |name: &str| -> Option<String> {
+                let needle = format!("fn {name}(");
+                sources.iter().find(|(_, src)| src.contains(&needle)).map(|(p, _)| p.clone())
+            };
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                                (361, "dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable"),
-                                (362, "dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable"),
-                                (363, "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
-                                (364, "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
-                                (365, "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
-                                (366, "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
-                                (367, "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
+                                (361, "maintainer_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable"),
+                                (362, "maintainer_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable"),
+                                (363, "maintainer_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
+                                (364, "maintainer_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
+                                (365, "maintainer_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
+                                (366, "maintainer_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
+                                (367, "maintainer_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth"),
                                 (368, "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases"),
                                 (369, "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases"),
                                 (370, "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases"),
@@ -188,7 +197,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (373, "diagnostics_text_is_boring_and_json_is_machine_friendly"),
                                 (374, "diagnostics_runs_are_deterministic_for_covered_commands"),
                             ]);
-            let coverage = required.iter().map(|(id, t)| json!({"coverage_id":id,"test":t,"status":if source.contains(&format!("fn {t}(")){"covered"}else{"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/diagnostics_trust_law_extra.rs"})).collect::<Vec<_>>();
+            let coverage = required
+                .iter()
+                .map(|(id, t)| {
+                    let evidence = find_test(t);
+                    json!({"coverage_id":id,"test":t,"status":if evidence.is_some(){"covered"}else{"missing"},"evidence":evidence})
+                })
+                .collect::<Vec<_>>();
             let missing = coverage
                 .iter()
                 .filter(|r| r.get("status").and_then(Value::as_str) != Some("covered"))
@@ -283,10 +298,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .iter()
                 .filter(|r| r.get("status").and_then(Value::as_str) != Some("match"))
                 .count();
-            let plugin_health = run_bijux_json(workspace_root, &["dev", "cli", "plugin-health"])
-                .unwrap_or_else(|_| json!({}));
+            let plugin_health =
+                run_bijux_json(workspace_root, &["plugin-health"]).unwrap_or_else(|_| json!({}));
             let trust = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust","coverage_ids":[361,362,363,364,365,366,367,374,375],"status":if missing.is_empty(){"complete"}else{"partial"},"coverage_rows":coverage});
-            let actionable = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"actionable diagnostics","coverage_ids":[368,369,370,371,376],"status":if missing.is_empty(){"complete"}else{"partial"},"checks":{"plugin_health_has_guidance":serde_json::to_string(&plugin_health).unwrap_or_default().contains("Use `bijux-dev-cli plugin-health --format json`"),"doctor_payload_present":run_bijux_json(workspace_root,&["dev","cli","doctor"]).map(|v|v.is_object()).unwrap_or(false),"runtime_identity_payload_present":run_bijux_json(workspace_root,&["dev","cli","runtime-identity"]).map(|v|v.is_object()).unwrap_or(false)}});
+            let actionable = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"actionable diagnostics","coverage_ids":[368,369,370,371,376],"status":if missing.is_empty(){"complete"}else{"partial"},"checks":{"plugin_health_has_guidance":serde_json::to_string(&plugin_health).unwrap_or_default().contains("Use `bijux-dev-cli plugin-health --format json`"),"doctor_payload_present":run_bijux_json(workspace_root,&["doctor"]).map(|v|v.is_object()).unwrap_or(false),"runtime_identity_payload_present":run_bijux_json(workspace_root,&["runtime-identity"]).map(|v|v.is_object()).unwrap_or(false)}});
             let minimalism = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics minimalism","coverage_ids":[372,373,377],"status":if missing.is_empty(){"complete"}else{"partial"},"json_commands_checked":expected_keys.keys().collect::<Vec<_>>(),"json_schema_drift_count":schema_drift});
             let schema = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust schema drift","coverage_ids":[378],"status":if schema_drift==0 && missing.is_empty(){"clean"}else{"drift"},"drift_count":schema_drift + missing.len(),"schema_rows":schema_rows,"missing_coverage_ids":missing});
             let contract = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust contract","coverage_ids":[380],"status":if schema_drift==0 && missing.is_empty(){"frozen"}else{"not-frozen"},"law":"diagnostics are credible operator output"});

@@ -174,10 +174,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs"),
-            )
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
+            ))
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (301, "cli_flags_override_env_backed_values_and_config_path"),
@@ -187,9 +186,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (305, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
                 (306, "malformed_and_duplicate_config_source_behavior_is_stable"),
                 (307, "malformed_and_duplicate_config_source_behavior_is_stable"),
-                (308, "source_metadata_and_dev_cli_env_precedence_are_reported"),
-                (309, "source_metadata_and_dev_cli_env_precedence_are_reported"),
-                (310, "source_metadata_and_dev_cli_env_precedence_are_reported"),
+                (308, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
+                (309, "cli_flags_override_env_backed_values_and_config_path"),
+                (310, "env_overrides_file_and_file_overrides_default_with_missing_fallback"),
                 (311, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
                 (312, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
                 (313, "source_reports_json_text_are_deterministic_ignore_noise_and_env_order"),
@@ -206,7 +205,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
                                     })
                                 })
                                 .collect();
@@ -218,26 +217,26 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let get_payload =
                 run_bijux_json_env(workspace_root, &["cli", "config", "get", "alpha"], &envs)
                     .ok()?;
-            let dev_env_payload =
-                run_bijux_json_env(workspace_root, &["dev", "cli", "env"], &envs).ok()?;
+            let maintainer_env_payload =
+                run_bijux_json_env(workspace_root, &["env"], &envs).ok()?;
             let source_path = get_payload.get("source_path").cloned().unwrap_or(Value::Null);
-            let active_config = dev_env_payload
+            let active_config = maintainer_env_payload
                 .get("active")
                 .and_then(|v| v.get("config_file"))
                 .cloned()
                 .unwrap_or(Value::Null);
             let precedence =
-                dev_env_payload.get("source_precedence").cloned().unwrap_or(Value::Null);
+                maintainer_env_payload.get("source_precedence").cloned().unwrap_or(Value::Null);
             let mut drift_reasons = Vec::<String>::new();
             if source_path != active_config {
                 drift_reasons.push(
-                    "config_get.source_path does not match dev_cli_env.active.config_file"
+                    "config_get.source_path does not match maintainer_env.active.config_file"
                         .to_string(),
                 );
             }
             if precedence != json!(["flags", "env", "config", "defaults"]) {
                 drift_reasons.push(
-                    "dev_cli_env.source_precedence does not match expected order".to_string(),
+                    "maintainer_env.source_precedence does not match expected order".to_string(),
                 );
             }
             write_status_artifact_json(
@@ -250,8 +249,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "coverage_rows": coverage_rows,
                     "comparison": {
                         "config_get_source_path": source_path,
-                        "dev_cli_env_active_config_file": active_config,
-                        "dev_cli_env_source_precedence": precedence,
+                        "maintainer_env_active_config_file": active_config,
+                        "maintainer_env_source_precedence": precedence,
                     },
                     "status": if drift_reasons.is_empty() { "consistent" } else { "drift" },
                 }),
@@ -280,7 +279,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config precedence truth must be observable, deterministic, and consistent across config get and bijux-dev-cli env.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
                                         "artifacts/status/config_source_parity_artifact.json",
                                         "artifacts/status/config_source_drift_artifact.json",
                                     ],
