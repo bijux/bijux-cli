@@ -249,7 +249,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux plugins list".to_string(),
             "bijux plugins inspect".to_string(),
             "bijux plugins check sample".to_string(),
-            "bijux plugins install ./plugin.manifest.json --source local".to_string(),
+            "bijux plugins install ./plugin.manifest.json".to_string(),
         ],
         ["plugins", "inspect"] | ["cli", "plugins", "inspect"] => vec![
             "bijux cli plugins inspect".to_string(),

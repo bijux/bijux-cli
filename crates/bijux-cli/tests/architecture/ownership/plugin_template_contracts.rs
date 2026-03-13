@@ -34,6 +34,7 @@ fn walk_files(root: &Path) -> Vec<PathBuf> {
 
 fn render_template(text: &str) -> String {
     text.replace("{{cookiecutter.project_name}}", "testplug")
+        .replace("{{cookiecutter.project_slug}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
         .replace("{{cookiecutter.plugin_version}}", "0.3.0")
         .replace("{{cookiecutter.cli_min}}", "0.3.0")
@@ -62,6 +63,7 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             "list-plugins",
             "info <name|path>",
             "check <name|path>",
+            "--source local",
             "bijux_cli.plugins",
             "bijux_cli_version",
         ] {
@@ -113,6 +115,10 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
         assert_eq!(
             payload["cli_max"], "1.0.0",
             "{path} must keep future compatibility open until the 1.0.0 boundary"
+        );
+        assert_eq!(
+            payload["_template_version"], "0.3.0",
+            "{path} must track the current template contract release"
         );
     }
 }

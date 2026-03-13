@@ -1,10 +1,11 @@
 {
   "project_name": "testplug-rs",
-  "plugin_namespace": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-').replace('.', '-').replace(':', '-').replace('/', '-') }}",
+  "plugin_namespace": "{{ cookiecutter.project_slug }}",
   "plugin_version": "0.3.0",
-  "crate_name": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
+  "crate_name": "{{ cookiecutter.project_slug.replace('-', '_') }}",
   "cli_min": "0.3.0",
   "cli_max": "1.0.0",
   "rust_edition": "2021",
-  "_template_version": "0.1.0"
+  "_template_version": "0.3.0"
 }

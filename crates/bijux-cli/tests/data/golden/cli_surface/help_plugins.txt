@@ -47,4 +47,4 @@ Examples:
   bijux plugins list
   bijux plugins inspect
   bijux plugins check sample
-  bijux plugins install ./plugin.manifest.json --source local
+  bijux plugins install ./plugin.manifest.json

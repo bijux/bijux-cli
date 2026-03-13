@@ -9,14 +9,14 @@ more than the built-in `bijux plugins scaffold` minimal layout.
 ## Usage
 
 ```bash
-python3 -m cookiecutter ./templates/plugins-py project_name=my-plugin
-bijux plugins install ./my-plugin/plugin.manifest.json --source local
+python3 -m cookiecutter ./templates/plugins-py project_name="My Plugin" plugin_namespace=my-plugin
+bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins check my-plugin
 ```
 
 ```bash
-python3 -m cookiecutter ./templates/plugins-rs project_name=my-plugin
-bijux plugins install ./my-plugin/plugin.manifest.json --source local
+python3 -m cookiecutter ./templates/plugins-rs project_name="My Plugin" plugin_namespace=my-plugin
+bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins check my-plugin
 ```
 
