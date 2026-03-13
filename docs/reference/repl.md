@@ -19,6 +19,26 @@
 - `:plugin reload` (only when explicitly enabled by safety policy)
 - `:exit`
 
+## Command Surface
+
+Built-in commands exposed in the REPL reference tests:
+
+- `status`
+- `doctor`
+- `version`
+- `:help <command>`
+- `:set trace on|off`
+- `:set quiet on|off`
+- `:set format json|yaml|text`
+- `:plugin reload`
+- `:exit`
+
 ## Diagnostics
 
 REPL sessions expose diagnostics dump and startup budget checks for latency and memory.
+
+## Related Pages
+
+- [REPL parity report](../architecture/repl-parity-report.md)
+- [REPL baseline](../architecture/repl-baseline.md)
+- [Current Python REPL inventory](current-python/repl-commands-and-shortcuts.md)
