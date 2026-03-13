@@ -34,7 +34,7 @@ fn classify_make_target(target: &str) -> &'static str {
     }
 }
 
-/// Builds the dev-cli inventory payload consumed by maintainer audits.
+/// Builds the maintainer inventory payload consumed by maintainer audits.
 #[must_use]
 pub fn build_inventory_report(workspace_root: &Path) -> Value {
     let maintenance_files = collect_files_recursive(&workspace_root.join("maintenance"));

@@ -34,7 +34,7 @@ mod tests {
     fn routes_report_shape_is_stable() {
         let context =
             ReportContext { generated_at: String::new(), data_source: "routing".to_string() };
-        let routes = vec![vec!["dev".to_string(), "cli".to_string(), "status".to_string()]];
+        let routes = vec![vec!["status".to_string()]];
         let aliases =
             vec![(vec!["status".to_string()], vec!["cli".to_string(), "status".to_string()])];
 

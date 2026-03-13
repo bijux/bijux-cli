@@ -91,7 +91,7 @@ fn build_all_report_from_payloads(
     let contracts = contracts_all_rows(inventory, run_results);
 
     json!({
-        "kind": "dev_cli_contracts_all_report_v1",
+        "kind": "maintainer_contracts_all_report_v1",
         "schema_version": "v2",
         "runtime_version": runtime_version,
         "generated_at_utc": run_results.get("generated_at_utc").cloned().unwrap_or(Value::Null),
@@ -196,7 +196,7 @@ mod tests {
 
         let report =
             build_all_report_from_payloads("0.1.0", &inventory, &run_results, Some("generate"));
-        assert_eq!(report["kind"], "dev_cli_contracts_all_report_v1");
+        assert_eq!(report["kind"], "maintainer_contracts_all_report_v1");
         assert_eq!(report["summary"]["total"], 2);
         assert_eq!(report["summary"]["passed"], 1);
         assert_eq!(report["summary"]["failed"], 1);

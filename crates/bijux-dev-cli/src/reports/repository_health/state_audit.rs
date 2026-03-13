@@ -32,7 +32,7 @@ pub fn build_report(paths: StatePathStatusInput, corruption_health: Value) -> Va
             "memory": paths.memory,
         },
         "corruption_health": corruption_health,
-        "runtime": "dev-cli",
+        "runtime": "bijux-dev-cli",
     })
 }
 
@@ -40,7 +40,7 @@ pub fn build_report(paths: StatePathStatusInput, corruption_health: Value) -> Va
 #[must_use]
 pub fn build_doctor_report(diagnosis: Value) -> Value {
     json!({
-        "runtime": "dev-cli",
+        "runtime": "bijux-dev-cli",
         "state_truth_default": "bijux-dev-cli state-audit",
         "doctor": diagnosis,
     })

@@ -39,7 +39,7 @@ fn classify_group(command: &str) -> &'static str {
     let second = parts.next().unwrap_or_default();
 
     match (first, second) {
-        ("dev", "cli") => "dev-cli",
+        ("bijux-dev-cli", _) => "maintainer-control-plane",
         ("cli", "config") | ("config", _) => "config",
         ("cli", "plugins") | ("plugins", _) => "plugin",
         ("cli", _) => "cli",
@@ -137,7 +137,7 @@ fn ensure_command_matrix(workspace_root: &Path) -> Value {
             }),
             json!({
                 "command": "bijux-dev-cli parity",
-                "group": "dev-cli",
+                "group": "maintainer-control-plane",
                 "status": "partial",
                 "reason": "",
                 "blocker": "parity coverage incomplete",

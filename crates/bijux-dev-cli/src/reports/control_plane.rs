@@ -10,13 +10,13 @@ use crate::schema::command_registry::{command_registry, DevCliCommandGroup};
 /// Builds hidden `bijux-dev-cli atlas` report payload.
 #[must_use]
 pub fn build_atlas_report() -> Value {
-    json!({"status": "ok", "mount": "atlas", "entry_surface": "dev-cli"})
+    json!({"status": "ok", "mount": "atlas", "entry_surface": "bijux-dev-cli"})
 }
 
 /// Builds hidden `bijux-dev-cli di` report payload.
 #[must_use]
 pub fn build_dependency_injection_report() -> Value {
-    json!({"status": "ok", "container": "built-in", "entry_surface": "dev-cli"})
+    json!({"status": "ok", "container": "built-in", "entry_surface": "bijux-dev-cli"})
 }
 
 /// Canonical executable/package row for product command surfaces.
@@ -153,7 +153,7 @@ pub fn build_doctor_report(
     };
     json!({
         "status": status,
-        "runtime": "dev-cli",
+        "runtime": "bijux-dev-cli",
         "issues": {
             "config": config_issues,
             "paths": path_issues,
@@ -164,7 +164,7 @@ pub fn build_doctor_report(
     })
 }
 
-/// Builds canonical dev-cli command ownership report payload.
+/// Builds canonical maintainer command ownership report payload.
 #[must_use]
 pub fn build_command_ownership_report(generated_at: &str) -> Value {
     let mut grouped = BTreeMap::<String, Vec<&'static str>>::new();

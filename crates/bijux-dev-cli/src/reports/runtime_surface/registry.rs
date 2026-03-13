@@ -49,7 +49,7 @@ mod tests {
         let context =
             ReportContext { generated_at: String::new(), data_source: "routing".to_string() };
         let namespaces = vec![NamespaceInventoryRow {
-            name: "dev".to_string(),
+            name: "cli".to_string(),
             reserved: true,
             owner: "bijux-cli".to_string(),
         }];
