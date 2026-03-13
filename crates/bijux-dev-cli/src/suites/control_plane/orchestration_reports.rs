@@ -467,7 +467,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "maintenance_payload_present": maintenance.get("maintenance").is_some_and(Value::is_array),
                 "crate_metrics_payload_present": crate_health.get("crate_metrics").is_some_and(Value::is_object),
                 "docs_audit_summary_present": docs.get("docs_audit").is_some_and(Value::is_object),
-                "maintenance_audit_remaining_signal_present": maintenance.get("remaining_legacy_only_behaviors").is_some(),
+                "maintenance_audit_make_signal_present": maintenance.get("remaining_make_only_behaviors").is_some(),
                 "crate_health_dependency_edges_present": crate_health.get("dependency_edges").is_some_and(Value::is_array),
                 "crate_health_public_api_inventory_present": crate_health.get("public_api_by_crate").is_some_and(Value::is_object),
                 "repo_health_stale_generated_signal_present":

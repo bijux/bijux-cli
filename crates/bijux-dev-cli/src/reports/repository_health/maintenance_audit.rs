@@ -76,17 +76,6 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
             acc
         });
 
-    let remaining_legacy_only_behaviors: Vec<String> = maintenance
-        .iter()
-        .filter_map(|item| {
-            let classification = item.get("classification").and_then(Value::as_str).unwrap_or("");
-            if classification != "legacy" {
-                return None;
-            }
-            item.get("path").and_then(Value::as_str).map(ToString::to_string)
-        })
-        .collect();
-
     let remaining_make_only_behaviors: Vec<String> = makes
         .iter()
         .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
@@ -118,7 +107,6 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
             "maintenance_classification_counts": maintenance_summary,
         },
         "maintainer_maintenance_replacements": maintainer_maintenance_replacements,
-        "remaining_legacy_only_behaviors": remaining_legacy_only_behaviors,
         "remaining_make_only_behaviors": remaining_make_only_behaviors,
         "rule": "new maintainer automation defaults to bijux dev cli commands",
     })
@@ -130,10 +118,6 @@ pub fn build_report(inventory: Value) -> Value {
     json!({
         "maintenance": inventory.get("maintenance").cloned().unwrap_or_else(|| json!([])),
         "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
-        "remaining_legacy_only_behaviors": inventory
-            .get("remaining_legacy_only_behaviors")
-            .cloned()
-            .unwrap_or_else(|| json!([])),
         "remaining_make_only_behaviors": inventory
             .get("remaining_make_only_behaviors")
             .cloned()

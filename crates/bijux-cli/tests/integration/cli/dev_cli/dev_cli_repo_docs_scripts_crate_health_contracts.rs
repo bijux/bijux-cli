@@ -69,7 +69,6 @@ fn docs_audit_exposes_duplicate_and_stale_reference_signals() {
 fn maintenance_audit_exposes_remaining_and_migrated_views() {
     let scripts = run_ok_json(&["dev", "cli", "maintenance-audit"]);
     assert!(scripts["maintenance"].is_array());
-    assert!(scripts.get("remaining_legacy_only_behaviors").is_some());
     assert!(scripts.get("remaining_make_only_behaviors").is_some());
     assert!(scripts["replacement_rule"].is_string());
 }

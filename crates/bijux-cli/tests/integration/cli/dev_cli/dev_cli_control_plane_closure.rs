@@ -212,9 +212,9 @@ fn audit_integration_suite_links_repo_docs_and_crate_health() {
     let crate_json: Value = serde_json::from_slice(&crate_health.stdout).expect("crate json");
 
     assert!(script_json["maintenance"].as_array().is_some_and(|v| v.is_empty()));
-    assert!(script_json["remaining_legacy_only_behaviors"]
+    assert!(script_json["remaining_make_only_behaviors"]
         .as_array()
-        .is_some_and(|v| v.is_empty()));
+        .is_some_and(|v| !v.is_empty()));
     assert!(script_json["summary"].is_object());
     assert!(docs_json["docs_count"].as_u64().is_some_and(|v| v > 0));
     assert!(crate_json.get("crate_metrics").is_some());
