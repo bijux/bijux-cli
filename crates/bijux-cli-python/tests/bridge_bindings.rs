@@ -24,7 +24,9 @@ fn parse_json(text: &str) -> Value {
 fn version_binding_matches_core_output() {
     let bridge = parse_json(&version_binding_api().expect("bridge version"));
     let direct = parse_json(
-        &run_app(&["bijux".to_string(), "version".to_string()]).expect("core run").stdout,
+        &run_app(&["bijux".to_string(), "version".to_string()])
+            .expect("core run")
+            .stdout,
     );
     assert_eq!(bridge, direct);
 }
@@ -33,7 +35,9 @@ fn version_binding_matches_core_output() {
 fn execution_facade_accepts_argv_without_program_token() {
     let bridge = parse_json(&execution_facade_api(&["version".to_string()]).expect("bridge"));
     let direct = parse_json(
-        &run_app(&["bijux".to_string(), "version".to_string()]).expect("core run").stdout,
+        &run_app(&["bijux".to_string(), "version".to_string()])
+            .expect("core run")
+            .stdout,
     );
     assert_eq!(bridge, direct);
 }
@@ -43,7 +47,10 @@ fn execution_outcome_accepts_argv_without_program_token() {
     let bridge =
         parse_json(&execution_outcome_api(&["version".to_string()]).expect("bridge outcome"));
     let direct = run_app(&["bijux".to_string(), "version".to_string()]).expect("core run");
-    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(direct.exit_code));
+    assert_eq!(
+        bridge["exit_code"].as_i64().unwrap_or(-1),
+        i64::from(direct.exit_code)
+    );
     assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), direct.stdout);
     assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), direct.stderr);
 }
@@ -52,7 +59,9 @@ fn execution_outcome_accepts_argv_without_program_token() {
 fn doctor_binding_matches_core_output() {
     let bridge = parse_json(&doctor_binding_api().expect("bridge doctor"));
     let direct = parse_json(
-        &run_app(&["bijux".to_string(), "doctor".to_string()]).expect("core run").stdout,
+        &run_app(&["bijux".to_string(), "doctor".to_string()])
+            .expect("core run")
+            .stdout,
     );
     assert_eq!(bridge, direct);
 }
@@ -61,7 +70,9 @@ fn doctor_binding_matches_core_output() {
 fn status_binding_matches_core_output() {
     let bridge = parse_json(&status_binding_api().expect("bridge status"));
     let direct = parse_json(
-        &run_app(&["bijux".to_string(), "status".to_string()]).expect("core run").stdout,
+        &run_app(&["bijux".to_string(), "status".to_string()])
+            .expect("core run")
+            .stdout,
     );
     assert_eq!(bridge, direct);
 }
@@ -96,10 +107,21 @@ fn plugins_list_binding_matches_core_output() {
 #[test]
 fn execution_outcome_reports_error_kind_for_unknown_namespace() {
     let payload = parse_json(
-        &execution_outcome_api(&["bijux".to_string(), "ghost".to_string(), "status".to_string()])
-            .expect("bridge run"),
+        &execution_outcome_api(&[
+            "bijux".to_string(),
+            "ghost".to_string(),
+            "status".to_string(),
+        ])
+        .expect("bridge run"),
     );
     assert_eq!(payload["error_kind"], "UsageError");
+}
+
+#[test]
+fn execution_facade_returns_error_for_non_zero_exit() {
+    let err =
+        execution_facade_api(&["bijux".to_string(), "ghost".to_string()]).expect_err("must fail");
+    assert!(err.to_string().contains("UsageError"));
 }
 
 #[test]
@@ -130,13 +152,18 @@ fn config_resolution_respects_precedence() {
 
 #[test]
 fn config_resolution_helpers_apply_file_overrides_without_cli_args() {
-    let root =
-        std::env::temp_dir().join(format!("bijux-bridge-config-resolution-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-bridge-config-resolution-{}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&root);
     let state_root = root.join(".bijux");
     std::fs::create_dir_all(&state_root).expect("create state dir");
-    std::fs::write(state_root.join(".env"), "BIJUXCLI_HISTORY_FILE=custom/history.log\n")
-        .expect("write config");
+    std::fs::write(
+        state_root.join(".env"),
+        "BIJUXCLI_HISTORY_FILE=custom/history.log\n",
+    )
+    .expect("write config");
 
     let payload =
         parse_json(&config_resolution_helpers_api(&root).expect("config resolution helpers"));
@@ -229,19 +256,27 @@ fn usage_error_mapping_is_stable() {
 
 #[test]
 fn validation_error_mapping_is_stable() {
-    assert_eq!(classify_failure(1, "validation failed for key"), BridgeErrorKind::Validation);
+    assert_eq!(
+        classify_failure(1, "validation failed for key"),
+        BridgeErrorKind::Validation
+    );
 }
 
 #[test]
 fn internal_error_mapping_is_stable() {
-    assert_eq!(classify_failure(1, "runtime panic path"), BridgeErrorKind::Internal);
+    assert_eq!(
+        classify_failure(1, "runtime panic path"),
+        BridgeErrorKind::Internal
+    );
 }
 
 #[test]
 fn binary_and_bridge_use_same_command_registry_contract() {
     let bridge_tree = parse_json(&command_tree_introspection_api());
     let core_inspect = parse_json(
-        &run_app(&["bijux".to_string(), "inspect".to_string()]).expect("core inspect").stdout,
+        &run_app(&["bijux".to_string(), "inspect".to_string()])
+            .expect("core inspect")
+            .stdout,
     );
     let builtins = core_inspect["builtins"].as_array().expect("builtins array");
     let surface: Vec<String> = builtins
@@ -259,20 +294,35 @@ fn binary_and_bridge_use_same_command_registry_contract() {
         .collect();
 
     assert_eq!(bridge_tree["root"], "bijux");
-    assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
+    assert!(
+        bridge_tree["namespaces"]
+            .as_array()
+            .expect("namespaces")
+            .len()
+            >= 5
+    );
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
     assert!(
-        !surface.iter().any(|item| item == "dev" || item.starts_with("dev cli ")),
+        !surface
+            .iter()
+            .any(|item| item == "dev" || item.starts_with("dev cli ")),
         "command registry must keep the `dev` namespace outside runtime ownership"
     );
 }
 
 #[test]
 fn binary_and_bridge_use_same_exit_mapping_for_unknown_route() {
-    let argv = vec!["bijux".to_string(), "ghost".to_string(), "status".to_string()];
+    let argv = vec![
+        "bijux".to_string(),
+        "ghost".to_string(),
+        "status".to_string(),
+    ];
     let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
     let core = run_app(&argv).expect("core");
-    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(
+        bridge["exit_code"].as_i64().unwrap_or(-1),
+        i64::from(core.exit_code)
+    );
 }
 
 #[test]
@@ -282,7 +332,10 @@ fn binary_and_bridge_use_same_output_envelope_shape() {
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert!(bridge.get("status").is_some());
     assert_eq!(bridge.get("status"), core.get("status"));
-    assert_eq!(bridge.as_object().map(|o| o.len()), core.as_object().map(|o| o.len()));
+    assert_eq!(
+        bridge.as_object().map(|o| o.len()),
+        core.as_object().map(|o| o.len())
+    );
 }
 
 #[test]
@@ -295,14 +348,21 @@ fn binary_and_bridge_use_same_namespace_rejection_logic() {
     ];
     let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
     let core = run_app(&argv).expect("core");
-    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(
+        bridge["exit_code"].as_i64().unwrap_or(-1),
+        i64::from(core.exit_code)
+    );
     assert_eq!(bridge["error_kind"], "UsageError");
 }
 
 #[test]
 fn binary_and_bridge_use_same_plugin_registry_logic_for_listing() {
-    let argv =
-        vec!["bijux".to_string(), "cli".to_string(), "plugins".to_string(), "list".to_string()];
+    let argv = vec![
+        "bijux".to_string(),
+        "cli".to_string(),
+        "plugins".to_string(),
+        "list".to_string(),
+    ];
     let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert_eq!(bridge, core);
@@ -318,15 +378,20 @@ fn runtime_identity_matches_between_binary_and_bridge() {
     ];
     let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
     let core = parse_json(&run_app(&argv).expect("core").stdout);
-    assert_eq!(bridge["canonical_user_binary"], core["canonical_user_binary"]);
+    assert_eq!(
+        bridge["canonical_user_binary"],
+        core["canonical_user_binary"]
+    );
     assert_eq!(bridge["entrypoints"], core["entrypoints"]);
     assert_eq!(bridge["diagnostics"], core["diagnostics"]);
 }
 
 #[test]
 fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() {
-    let root =
-        std::env::temp_dir().join(format!("bijux-bridge-config-precedence-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-bridge-config-precedence-{}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).expect("create temp root");
     let config = root.join("config.env");
@@ -344,7 +409,10 @@ fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() 
 
     let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
     let core = run_app(&argv).expect("core");
-    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(
+        bridge["exit_code"].as_i64().unwrap_or(-1),
+        i64::from(core.exit_code)
+    );
     assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), core.stdout);
     assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), core.stderr);
 
@@ -353,8 +421,12 @@ fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() 
 
 #[test]
 fn diagnostics_payloads_match_between_binary_and_bridge() {
-    let argv =
-        vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "doctor".to_string()];
+    let argv = vec![
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "doctor".to_string(),
+    ];
     let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert_eq!(bridge["issues"], core["issues"]);
@@ -378,7 +450,10 @@ fn execution_outcome_is_stable_under_parallel_success_calls() {
             assert_eq!(payload["exit_code"], 0);
             assert_eq!(payload["error_kind"], Value::Null);
             assert!(payload["stderr"].as_str().unwrap_or_default().is_empty());
-            assert!(payload["stdout"].as_str().unwrap_or_default().contains("\"status\""));
+            assert!(payload["stdout"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("\"status\""));
         }));
     }
 

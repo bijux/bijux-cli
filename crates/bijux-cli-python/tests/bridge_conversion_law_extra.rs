@@ -15,13 +15,22 @@ fn parse_json(text: &str) -> Value {
 
 #[test]
 fn python_exception_mapping_covers_usage_validation_plugin_and_internal_failures() {
-    assert_eq!(python_exception_tag(classify_failure(2, "usage: bad args")), "UsageError");
-    assert_eq!(python_exception_tag(classify_failure(1, "validation failed")), "ValidationError");
+    assert_eq!(
+        python_exception_tag(classify_failure(2, "usage: bad args")),
+        "UsageError"
+    );
+    assert_eq!(
+        python_exception_tag(classify_failure(1, "validation failed")),
+        "ValidationError"
+    );
     assert_eq!(
         python_exception_tag(classify_failure(1, "plugin registry failed to load")),
         "InternalError"
     );
-    assert_eq!(python_exception_tag(classify_failure(1, "runtime panic path")), "InternalError");
+    assert_eq!(
+        python_exception_tag(classify_failure(1, "runtime panic path")),
+        "InternalError"
+    );
     assert_eq!(classify_failure(2, "usage"), BridgeErrorKind::Usage);
 }
 
@@ -37,11 +46,18 @@ fn error_and_success_envelope_fields_survive_python_conversion_intact() {
     assert_eq!(success["error_kind"], Value::Null);
 
     let usage_failure = parse_json(
-        &execution_outcome_api(&["bijux".to_string(), "ghost".to_string(), "status".to_string()])
-            .expect("usage outcome"),
+        &execution_outcome_api(&[
+            "bijux".to_string(),
+            "ghost".to_string(),
+            "status".to_string(),
+        ])
+        .expect("usage outcome"),
     );
     for key in ["exit_code", "stdout", "stderr", "error_kind"] {
-        assert!(usage_failure.get(key).is_some(), "missing error field: {key}");
+        assert!(
+            usage_failure.get(key).is_some(),
+            "missing error field: {key}"
+        );
     }
     assert_eq!(usage_failure["error_kind"], "UsageError");
 }
@@ -67,8 +83,10 @@ fn diagnostics_and_inspection_payloads_survive_conversion_with_stable_shape() {
             "bijux".to_string(),
             "cli".to_string(),
             "config".to_string(),
-            "get".to_string(),
-            "bridge_conversion_probe_key".to_string(),
+            "reload".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+            "--no-pretty".to_string(),
         ])
         .expect("config diagnostics"),
     );
@@ -86,13 +104,21 @@ fn bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitiv
         &execution_outcome_api(&["bijux".to_string(), "status".to_string()])
             .expect("status outcome"),
     );
-    let keys = payload.as_object().expect("object").keys().map(|k| k.as_str()).collect::<Vec<_>>();
+    let keys = payload
+        .as_object()
+        .expect("object")
+        .keys()
+        .map(|k| k.as_str())
+        .collect::<Vec<_>>();
     assert_eq!(keys, vec!["error_kind", "exit_code", "stderr", "stdout"]);
 
     let tree = parse_json(&command_tree_introspection_api());
     let namespaces = tree["namespaces"].as_array().expect("namespaces array");
-    let mut sorted =
-        namespaces.iter().filter_map(Value::as_str).map(ToString::to_string).collect::<Vec<_>>();
+    let mut sorted = namespaces
+        .iter()
+        .filter_map(Value::as_str)
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let original = sorted.clone();
     sorted.sort();
     sorted.dedup();
@@ -121,8 +147,10 @@ fn conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly
 
 #[test]
 fn malformed_plugin_registry_is_rejected_at_bridge_boundary() {
-    let root = std::env::temp_dir()
-        .join(format!("bijux-bridge-malformed-registry-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-bridge-malformed-registry-{}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).expect("create temp root");
     let registry = root.join("registry.json");
@@ -146,5 +174,8 @@ fn bridge_import_failure_paths_are_distinct_from_command_failures() {
     let bridge_self_check = parse_json(
         &execution_outcome_api(&["bijux".to_string(), "version".to_string()]).expect("version"),
     );
-    assert_ne!(bridge_self_check["stderr"], Value::String("ImportError".to_string()));
+    assert_ne!(
+        bridge_self_check["stderr"],
+        Value::String("ImportError".to_string())
+    );
 }
