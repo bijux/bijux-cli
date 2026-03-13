@@ -1,7 +1,0 @@
-{
-   "dev cli blockers" : "artifact_integrity:\n  release_gaps: missing",
-   "dev cli dashboard" : "artifact_integrity:\n  evidence: missing",
-   "dev cli next" : "next:\n  minimalism:\n    _artifact_path: artifacts/status/simplification_priorities.json",
-   "dev cli quickcheck" : "artifact_integrity:\n  evidence_audit: missing",
-   "dev cli truth" : "truth:\n  done:\n    generated_at: 1970-01-01T00:00:00+00:00"
-}

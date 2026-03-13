@@ -268,8 +268,10 @@ fn binary_and_bridge_use_same_command_registry_contract() {
     assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
     assert!(
-        !surface.iter().any(|item| item == "dev" || item.starts_with("dev cli ")),
-        "command registry must keep the `dev` namespace outside runtime ownership"
+        !surface
+            .iter()
+            .any(|item| item == "dev" || item.starts_with("dev cli ") || item.starts_with("bijux-dev-cli ")),
+        "command registry must keep maintainer command surfaces outside runtime ownership"
     );
 }
 
@@ -315,18 +317,18 @@ fn binary_and_bridge_use_same_plugin_registry_logic_for_listing() {
 }
 
 #[test]
-fn runtime_identity_matches_between_binary_and_bridge() {
+fn maintainer_runtime_identity_stays_outside_runtime_bridge() {
     let argv = vec![
         "bijux".to_string(),
         "dev".to_string(),
         "cli".to_string(),
         "runtime-identity".to_string(),
     ];
-    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
-    let core = parse_json(&run_app(&argv).expect("core").stdout);
-    assert_eq!(bridge["canonical_user_binary"], core["canonical_user_binary"]);
-    assert_eq!(bridge["entrypoints"], core["entrypoints"]);
-    assert_eq!(bridge["diagnostics"], core["diagnostics"]);
+    let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
+    let core = run_app(&argv).expect("core");
+    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(bridge["error_kind"], "UsageError");
+    assert!(bridge["stderr"].as_str().unwrap_or_default().contains("unknown route: dev"));
 }
 
 #[test]
@@ -358,13 +360,14 @@ fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() 
 }
 
 #[test]
-fn diagnostics_payloads_match_between_binary_and_bridge() {
+fn maintainer_doctor_stays_outside_runtime_bridge() {
     let argv =
         vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "doctor".to_string()];
-    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
-    let core = parse_json(&run_app(&argv).expect("core").stdout);
-    assert_eq!(bridge["issues"], core["issues"]);
-    assert_eq!(bridge["checks"], core["checks"]);
+    let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
+    let core = run_app(&argv).expect("core");
+    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(bridge["error_kind"], "UsageError");
+    assert!(bridge["stderr"].as_str().unwrap_or_default().contains("unknown route: dev"));
 }
 
 #[test]

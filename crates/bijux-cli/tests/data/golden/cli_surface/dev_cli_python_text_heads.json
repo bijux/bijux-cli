@@ -1,7 +1,0 @@
-{
-   "dev cli python bridge-status" : "artifact_integrity:\n  conversion: valid\n  drift: valid",
-   "dev cli python drift" : "drift:\n  duplication_total: 0\n  status: clean",
-   "dev cli python packaging" : "artifact_integrity:\n  runtime_identity: missing",
-   "dev cli python sovereignty-audit" : "artifact_integrity:\n  bridge_duplicate_law_report: missing",
-   "dev cli python surface-status" : "artifact_integrity:\n  surface_status: missing"
-}

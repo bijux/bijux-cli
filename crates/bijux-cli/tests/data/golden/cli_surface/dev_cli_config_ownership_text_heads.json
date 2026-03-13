@@ -1,8 +1,0 @@
-{
-   "dev cli config drift" : "drift:\n  missing_rust_owner: false\n  python_owner_count: 1",
-   "dev cli config evidence-map" : "config_behaviors:\n  corruption_evidence: []\n  ownership:",
-   "dev cli config ownership" : "compatibility_shims: []\ncorruption_evidence: []\nowners:",
-   "dev cli config python-owner" : "python_owner:\n  - crates/bijux-cli-python\nsource: config ownership truth",
-   "dev cli config rust-owner" : "rust_owner:\n  - crates/bijux-cli\nsource: config ownership truth",
-   "dev cli config shape" : "corruption_evidence: []\nowners:\n  python:"
-}

@@ -1,2 +1,0 @@
-artifact_integrity:
-  bridge_duplicate_law_report: missing
