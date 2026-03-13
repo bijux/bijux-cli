@@ -25,7 +25,7 @@ pub fn validate_manifest(
     reject_reserved_namespace(&manifest.namespace, reserved_namespaces)?;
     reject_core_namespace(&manifest.namespace)?;
     reject_known_bijux_project_namespace(&manifest.namespace)?;
-    validate_aliases(&manifest.aliases)?;
+    validate_aliases(&manifest.namespace, &manifest.aliases)?;
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
 
@@ -39,6 +39,8 @@ fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginErr
     if manifest.version.trim().is_empty() {
         return Err(PluginError::InvalidField("version".to_string()));
     }
+    Version::parse(&manifest.version)
+        .map_err(|_| PluginError::InvalidField("version".to_string()))?;
     if manifest.schema_version.trim().is_empty() {
         return Err(PluginError::InvalidField("schema_version".to_string()));
     }
@@ -54,63 +56,26 @@ fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginErr
     Ok(())
 }
 
-fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
-    let raw = namespace.0.as_str();
-    let bytes = raw.as_bytes();
+pub(crate) fn validate_namespace_text(namespace: &str) -> Result<(), PluginError> {
+    let bytes = namespace.as_bytes();
     if bytes.is_empty() || !bytes[0].is_ascii_lowercase() {
-        return Err(PluginError::InvalidNamespace(raw.to_string()));
+        return Err(PluginError::InvalidNamespace(namespace.to_string()));
     }
 
     if !bytes.iter().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
     {
-        return Err(PluginError::InvalidNamespace(raw.to_string()));
+        return Err(PluginError::InvalidNamespace(namespace.to_string()));
     }
 
-    if raw.contains("--") || raw.ends_with('-') {
-        return Err(PluginError::InvalidNamespace(raw.to_string()));
+    if namespace.contains("--") || namespace.ends_with('-') {
+        return Err(PluginError::InvalidNamespace(namespace.to_string()));
     }
 
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::validate_manifest;
-    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
-
-    fn sample_manifest() -> PluginManifestV1 {
-        PluginManifestV1 {
-            name: "sample".to_string(),
-            version: "0.3.0".to_string(),
-            schema_version: "v1".to_string(),
-            manifest_version: "v1".to_string(),
-            compatibility: CompatibilityRange {
-                min_inclusive: "0.3.0".to_string(),
-                max_exclusive: Some("1.0.0".to_string()),
-            },
-            namespace: Namespace::new("sample").expect("namespace"),
-            kind: PluginKind::Python,
-            aliases: Vec::new(),
-            entrypoint: "plugin:main".to_string(),
-            capabilities: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn validate_manifest_rejects_non_v1_schema_versions() {
-        let mut manifest = sample_manifest();
-        manifest.schema_version = "1".to_string();
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("schema version");
-        assert_eq!(error.to_string(), "plugin manifest field invalid: schema_version");
-    }
-
-    #[test]
-    fn validate_manifest_rejects_non_v1_manifest_versions() {
-        let mut manifest = sample_manifest();
-        manifest.manifest_version = "1".to_string();
-        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("manifest version");
-        assert_eq!(error.to_string(), "plugin manifest field invalid: manifest_version");
-    }
+fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
+    validate_namespace_text(namespace.0.as_str())
 }
 
 fn reject_reserved_namespace(namespace: &Namespace, reserved: &[&str]) -> Result<(), PluginError> {
@@ -134,9 +99,19 @@ fn reject_known_bijux_project_namespace(namespace: &Namespace) -> Result<(), Plu
     Ok(())
 }
 
-fn validate_aliases(aliases: &[String]) -> Result<(), PluginError> {
+fn validate_aliases(namespace: &Namespace, aliases: &[String]) -> Result<(), PluginError> {
     let mut seen = BTreeSet::new();
     for alias in aliases {
+        validate_alias_format(alias)?;
+        if alias == &namespace.0 {
+            return Err(PluginError::AliasNamespaceConflict(alias.clone()));
+        }
+        if is_reserved_namespace(alias, &[])
+            || CORE_NAMESPACES.iter().any(|value| *value == alias)
+            || KNOWN_BIJUX_PROJECT_NAMESPACES.iter().any(|value| *value == alias)
+        {
+            return Err(PluginError::ReservedAlias(alias.clone()));
+        }
         if !seen.insert(alias.to_ascii_lowercase()) {
             return Err(PluginError::DuplicateAlias(alias.clone()));
         }
@@ -144,10 +119,42 @@ fn validate_aliases(aliases: &[String]) -> Result<(), PluginError> {
     Ok(())
 }
 
+fn validate_alias_format(alias: &str) -> Result<(), PluginError> {
+    if alias.trim().is_empty() || alias.trim() != alias {
+        return Err(PluginError::InvalidAlias(alias.to_string()));
+    }
+
+    let bytes = alias.as_bytes();
+    if bytes.is_empty() || !bytes[0].is_ascii_lowercase() {
+        return Err(PluginError::InvalidAlias(alias.to_string()));
+    }
+
+    if !bytes.iter().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+    {
+        return Err(PluginError::InvalidAlias(alias.to_string()));
+    }
+
+    if alias.contains("--") || alias.ends_with('-') {
+        return Err(PluginError::InvalidAlias(alias.to_string()));
+    }
+
+    Ok(())
+}
+
 fn validate_compatibility(
     range: &CompatibilityRange,
     host_version: &str,
 ) -> Result<(), PluginError> {
+    let min = Version::parse(&range.min_inclusive)
+        .map_err(|_| PluginError::InvalidField("compatibility.min_inclusive".to_string()))?;
+    if let Some(max_exclusive) = &range.max_exclusive {
+        let max = Version::parse(max_exclusive)
+            .map_err(|_| PluginError::InvalidField("compatibility.max_exclusive".to_string()))?;
+        if max <= min {
+            return Err(PluginError::InvalidField("compatibility.max_exclusive".to_string()));
+        }
+    }
+
     if !is_version_compatible(range, host_version)? {
         return Err(PluginError::IncompatibleVersion { host_version: host_version.to_string() });
     }
@@ -197,4 +204,84 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), Plugi
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_manifest;
+    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+
+    fn sample_manifest() -> PluginManifestV1 {
+        PluginManifestV1 {
+            name: "sample".to_string(),
+            version: "0.3.0".to_string(),
+            schema_version: "v1".to_string(),
+            manifest_version: "v1".to_string(),
+            compatibility: CompatibilityRange {
+                min_inclusive: "0.3.0".to_string(),
+                max_exclusive: Some("1.0.0".to_string()),
+            },
+            namespace: Namespace::new("sample").expect("namespace"),
+            kind: PluginKind::Python,
+            aliases: Vec::new(),
+            entrypoint: "plugin:main".to_string(),
+            capabilities: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn validate_manifest_rejects_non_v1_schema_versions() {
+        let mut manifest = sample_manifest();
+        manifest.schema_version = "1".to_string();
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("schema version");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: schema_version");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_non_v1_manifest_versions() {
+        let mut manifest = sample_manifest();
+        manifest.manifest_version = "1".to_string();
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("manifest version");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: manifest_version");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_non_semver_plugin_versions() {
+        let mut manifest = sample_manifest();
+        manifest.version = "release".to_string();
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("plugin version");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: version");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_invalid_compatibility_windows() {
+        let mut manifest = sample_manifest();
+        manifest.compatibility.max_exclusive = Some("0.3.0".to_string());
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("compatibility");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: compatibility.max_exclusive");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_alias_matching_namespace() {
+        let mut manifest = sample_manifest();
+        manifest.aliases = vec!["sample".to_string()];
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("alias conflict");
+        assert_eq!(error.to_string(), "plugin alias conflicts with plugin namespace: sample");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_invalid_alias_format() {
+        let mut manifest = sample_manifest();
+        manifest.aliases = vec!["bad alias".to_string()];
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("alias format");
+        assert_eq!(error.to_string(), "plugin alias is invalid: bad alias");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_reserved_aliases() {
+        let mut manifest = sample_manifest();
+        manifest.aliases = vec!["cli".to_string()];
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("reserved alias");
+        assert_eq!(error.to_string(), "plugin alias is reserved: cli");
+    }
 }

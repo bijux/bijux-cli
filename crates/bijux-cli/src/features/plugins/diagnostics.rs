@@ -8,6 +8,7 @@ use crate::contracts::PluginKind;
 
 use super::entrypoint::{
     delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
+    resolve_external_exec_entrypoint,
 };
 use super::errors::PluginError;
 use super::manifest::is_version_compatible;
@@ -41,7 +42,8 @@ pub fn load_time_diagnostics(
         }
 
         if record.manifest.kind == PluginKind::ExternalExec
-            && !Path::new(&record.manifest.entrypoint).exists()
+            && !resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint)
+                .exists()
         {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),

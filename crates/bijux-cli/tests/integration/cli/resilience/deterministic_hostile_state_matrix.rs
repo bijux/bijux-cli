@@ -208,8 +208,10 @@ fn broken_plugin_does_not_nondeterministically_affect_healthy_output() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     setup_python_plugin(&root, &plugins_dir, "healthyplug");
-    let missing_entry = root.join("missing-entry.sh");
-    setup_external_plugin(&root, &plugins_dir, "brokenplug", &missing_entry);
+    let entrypoint = root.join("broken-entry.sh");
+    write_executable(&entrypoint);
+    setup_external_plugin(&root, &plugins_dir, "brokenplug", &entrypoint);
+    fs::remove_file(&entrypoint).expect("remove broken entrypoint");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
     let first = run(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);

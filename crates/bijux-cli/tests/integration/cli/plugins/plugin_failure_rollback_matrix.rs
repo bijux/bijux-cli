@@ -56,6 +56,14 @@ fn write_manifest(path: &Path, namespace: &str, entrypoint: &str, min_version: &
         ),
     )
     .expect("write manifest");
+    if !entrypoint.trim().is_empty() {
+        let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
+        fs::write(
+            path.parent().expect("manifest parent").join(format!("{module}.py")),
+            "def main(argv):\n    return {'status': 'ok'}\n",
+        )
+        .expect("write entrypoint");
+    }
 }
 
 fn install_ok(plugins_dir: &Path, manifest: &Path) {

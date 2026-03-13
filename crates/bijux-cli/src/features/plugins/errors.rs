@@ -29,6 +29,15 @@ pub enum PluginError {
     /// Alias duplication detected in single manifest.
     #[error("plugin manifest contains duplicate alias: {0}")]
     DuplicateAlias(String),
+    /// Alias format is invalid.
+    #[error("plugin alias is invalid: {0}")]
+    InvalidAlias(String),
+    /// Alias is reserved for core or official product ownership.
+    #[error("plugin alias is reserved: {0}")]
+    ReservedAlias(String),
+    /// Alias collides with the plugin namespace itself.
+    #[error("plugin alias conflicts with plugin namespace: {0}")]
+    AliasNamespaceConflict(String),
     /// Alias collides with an already installed plugin alias.
     #[error("plugin alias conflicts with installed plugin: {0}")]
     AliasConflict(String),

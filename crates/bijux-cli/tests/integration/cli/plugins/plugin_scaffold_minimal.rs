@@ -193,6 +193,36 @@ fn scaffold_invalid_kind_with_force_keeps_existing_directory_untouched() {
 }
 
 #[test]
+fn scaffold_invalid_namespace_with_force_keeps_existing_directory_untouched() {
+    let root = tmp_dir("scaffold-namespace-force");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("bad-namespace");
+    fs::create_dir_all(&scaffold_dir).expect("mkdir scaffold dir");
+    fs::write(scaffold_dir.join("keep.txt"), "keep").expect("write keep file");
+
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "1bad",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+            "--force",
+        ],
+        &plugins_dir,
+    );
+
+    assert_eq!(out.status.code(), Some(1));
+    assert!(
+        scaffold_dir.join("keep.txt").exists(),
+        "invalid namespace must not delete existing data"
+    );
+}
+
+#[test]
 fn scaffold_rejects_unknown_kind() {
     let root = tmp_dir("scaffold-kind");
     let plugins_dir = root.join("plugins");

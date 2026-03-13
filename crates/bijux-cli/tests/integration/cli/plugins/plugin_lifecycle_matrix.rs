@@ -79,6 +79,13 @@ fn write_external_exec_manifest(path: &Path, namespace: &str, entrypoint: &Path)
     fs::write(path, manifest).expect("write external-exec manifest");
 }
 
+#[cfg(unix)]
+fn mark_executable(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("chmod +x");
+}
+
 #[test]
 fn python_scaffold_install_list_inspect_uninstall_end_to_end() {
     let root = tmp_dir("plugin-lifecycle");
@@ -229,6 +236,8 @@ fn plugin_check_after_entrypoint_deletion_reports_stable_failure() {
 
     let entry_file = root.join("goneplug.sh");
     fs::write(&entry_file, "#!/bin/sh\necho ok\n").expect("write entrypoint");
+    #[cfg(unix)]
+    mark_executable(&entry_file);
     let manifest = root.join("goneplug.manifest.json");
     write_external_exec_manifest(&manifest, "goneplug", &entry_file);
     run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
@@ -365,6 +374,8 @@ fn plugin_check_reports_healthy_and_unhealthy_in_same_registry() {
     scaffold_and_install("python", "healthyplug", &root, &plugins_dir);
     let entry_file = root.join("unhealthyplug.sh");
     fs::write(&entry_file, "#!/bin/sh\necho broken\n").expect("write unhealthy entrypoint");
+    #[cfg(unix)]
+    mark_executable(&entry_file);
     let unhealthy_manifest = root.join("unhealthyplug.manifest.json");
     write_external_exec_manifest(&unhealthy_manifest, "unhealthyplug", &entry_file);
     run_ok_json(

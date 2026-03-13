@@ -52,6 +52,14 @@ fn write_python_manifest(path: &Path, namespace: &str, entrypoint: &str) {
         ),
     )
     .expect("write manifest");
+    if !entrypoint.trim().is_empty() {
+        let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
+        fs::write(
+            path.parent().expect("manifest parent").join(format!("{module}.py")),
+            "def main(argv):\n    return {'status': 'ok'}\n",
+        )
+        .expect("write entrypoint");
+    }
 }
 
 fn install(plugins_dir: &Path, manifest_path: &Path) {
@@ -179,6 +187,40 @@ fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
 }
 
 #[test]
+fn delegated_plugin_install_fails_when_local_entrypoint_is_missing() {
+    let root = tmp_dir("delegated-install-missing-entrypoint");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let scaffold_dir = root.join("delegated_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "missingplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    fs::remove_file(scaffold_dir.join("plugin.py")).expect("remove delegated entrypoint");
+
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("entrypoint"));
+}
+
+#[test]
 fn delegated_plugin_check_accepts_package_init_entrypoint() {
     let root = tmp_dir("delegated-package-entrypoint");
     let plugins_dir = root.join("plugins");
@@ -210,6 +252,51 @@ fn delegated_plugin_check_accepts_package_init_entrypoint() {
     install(&plugins_dir, &manifest);
 
     let check = run_ok_json(&["cli", "plugins", "check", "packageplug"], &plugins_dir);
+    assert_eq!(check["status"], "healthy");
+}
+
+#[test]
+#[cfg(unix)]
+fn external_exec_plugin_install_resolves_relative_entrypoints_from_manifest_root() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("external-relative-entrypoint");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    fs::create_dir_all(root.join("bin")).expect("mkdir bin");
+
+    let entrypoint = root.join("bin").join("runner.sh");
+    fs::write(&entrypoint, "#!/bin/sh\necho ok\n").expect("write runner");
+    fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o755)).expect("chmod 755");
+
+    let manifest = root.join("runner.manifest.json");
+    fs::write(
+        &manifest,
+        r#"{
+  "name": "runnerplug",
+  "version": "0.3.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {"min_inclusive":"0.3.0", "max_exclusive":"1.0.0"},
+  "namespace": "runnerplug",
+  "kind": "external-exec",
+  "aliases": [],
+  "entrypoint": "bin/runner.sh",
+  "capabilities": []
+}"#,
+    )
+    .expect("write manifest");
+
+    let install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(
+        install.status.code(),
+        Some(0),
+        "stderr={}",
+        String::from_utf8_lossy(&install.stderr)
+    );
+
+    let check = run_ok_json(&["cli", "plugins", "check", "runnerplug"], &plugins_dir);
     assert_eq!(check["status"], "healthy");
 }
 

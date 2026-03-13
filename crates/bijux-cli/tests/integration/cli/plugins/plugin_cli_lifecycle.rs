@@ -487,7 +487,7 @@ fn plugin_check_missing_argument_maps_to_usage_exit_code() {
 
 #[test]
 #[cfg(unix)]
-fn external_exec_plugin_with_non_executable_entrypoint_fails_check() {
+fn external_exec_plugin_with_non_executable_entrypoint_fails_install() {
     use std::os::unix::fs::PermissionsExt;
 
     let root = tmp_dir("external-exec-perm");
@@ -519,10 +519,10 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_check() {
     )
     .expect("write external manifest");
 
-    run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
-    let check = run(&["cli", "plugins", "check", "externalplug"], &plugins_dir);
-    assert_eq!(check.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&check.stderr).contains("not executable"));
+    let install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(install.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&install.stderr).contains("entrypoint"));
 }
 
 #[test]

@@ -8,12 +8,16 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 use super::constants::REGISTRY_VERSION;
+use super::entrypoint::{
+    installed_manifest_root, resolve_delegated_entrypoint, resolve_external_exec_entrypoint,
+};
 use super::errors::PluginError;
 use super::manifest::{is_version_compatible, parse_manifest_v1, validate_manifest};
 use super::models::{
     InstallPluginRequest, PluginDoctorReport, PluginLoadEntry, PluginOriginMetadata, PluginRecord,
     PluginRegistry,
 };
+use crate::contracts::PluginKind;
 use crate::infrastructure::fs_store::atomic_write_text;
 
 fn checksum_sha256(input: &str) -> String {
@@ -146,16 +150,61 @@ fn ensure_aliases_do_not_conflict(
     candidate: &PluginRecord,
 ) -> Result<(), PluginError> {
     let mut existing_aliases = BTreeSet::new();
+    let mut existing_namespaces = BTreeSet::new();
     for plugin in registry.plugins.values() {
+        existing_namespaces.insert(plugin.manifest.namespace.0.to_ascii_lowercase());
         for alias in &plugin.manifest.aliases {
             existing_aliases.insert(alias.to_ascii_lowercase());
         }
     }
 
+    if existing_aliases.contains(&candidate.manifest.namespace.0.to_ascii_lowercase()) {
+        return Err(PluginError::AliasConflict(candidate.manifest.namespace.0.clone()));
+    }
+
     for alias in &candidate.manifest.aliases {
-        if existing_aliases.contains(&alias.to_ascii_lowercase()) {
+        let normalized = alias.to_ascii_lowercase();
+        if existing_aliases.contains(&normalized) || existing_namespaces.contains(&normalized) {
             return Err(PluginError::AliasConflict(alias.clone()));
         }
+    }
+
+    Ok(())
+}
+
+#[cfg(unix)]
+fn is_executable(path: &Path) -> Result<bool, PluginError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    Ok(path.exists() && path.is_file() && fs::metadata(path)?.permissions().mode() & 0o111 != 0)
+}
+
+#[cfg(not(unix))]
+fn is_executable(path: &Path) -> Result<bool, PluginError> {
+    Ok(path.exists() && path.is_file())
+}
+
+fn validate_local_entrypoint(record: &PluginRecord) -> Result<(), PluginError> {
+    match record.manifest.kind {
+        PluginKind::Delegated | PluginKind::Python => {
+            if installed_manifest_root(&record.source).is_some()
+                && resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint)
+                    .is_none()
+            {
+                return Err(PluginError::InvalidEntrypoint { kind: record.manifest.kind });
+            }
+        }
+        PluginKind::ExternalExec => {
+            let entrypoint_path = Path::new(&record.manifest.entrypoint);
+            if installed_manifest_root(&record.source).is_some() || entrypoint_path.is_absolute() {
+                let path =
+                    resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint);
+                if !is_executable(&path)? {
+                    return Err(PluginError::InvalidEntrypoint { kind: record.manifest.kind });
+                }
+            }
+        }
+        PluginKind::Native => {}
     }
 
     Ok(())
@@ -182,6 +231,7 @@ pub fn install_plugin(
         trust_level,
         manifest_checksum_sha256,
     };
+    validate_local_entrypoint(&record)?;
 
     update_registry(registry_path, |registry| {
         if registry.plugins.contains_key(&namespace) {

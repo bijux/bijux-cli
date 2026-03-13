@@ -13,9 +13,9 @@ use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, resolve_delegated_entrypoint,
-    scaffold::scaffold_plugin_layout, self_repair_registry, uninstall_plugin, validate_manifest,
-    InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES,
-    RESERVED_NAMESPACES,
+    resolve_external_exec_entrypoint, scaffold::scaffold_plugin_layout, self_repair_registry,
+    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
+    KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
 };
 
 fn missing_delegated_entrypoint(
@@ -146,7 +146,8 @@ pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> 
         {
             use std::os::unix::fs::PermissionsExt;
 
-            let path = PathBuf::from(&record.manifest.entrypoint);
+            let path =
+                resolve_external_exec_entrypoint(&record.source, &record.manifest.entrypoint);
             if !path.exists() {
                 anyhow::bail!("Invalid argument: plugin entrypoint was not found");
             }

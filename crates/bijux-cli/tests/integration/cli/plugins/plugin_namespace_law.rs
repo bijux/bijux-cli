@@ -43,6 +43,14 @@ fn write_manifest(path: &Path, namespace: &str, alias: &str, entrypoint: &str) {
 }}"#
     );
     fs::write(path, body).expect("write manifest");
+    if !entrypoint.trim().is_empty() {
+        let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
+        fs::write(
+            path.parent().expect("manifest parent").join(format!("{module}.py")),
+            "def run(argv):\n    return {'status': 'ok'}\n",
+        )
+        .expect("write entrypoint");
+    }
 }
 
 fn scaffold_rejection(plugins_dir: &Path, namespace: &str) -> (i32, String, String) {
@@ -164,8 +172,8 @@ fn rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen() {
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let first_manifest = root.join("my-plugin.json");
     let second_manifest = root.join("my_plugin.json");
-    write_manifest(&first_manifest, "my-plugin", "my-plugin", "plugin.py:run");
-    write_manifest(&second_manifest, "my_plugin", "my_plugin", "plugin.py:run");
+    write_manifest(&first_manifest, "my-plugin", "alias-one", "plugin:run");
+    write_manifest(&second_manifest, "my_plugin", "alias-two", "plugin:run");
 
     let first =
         run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
@@ -188,8 +196,8 @@ fn rejects_case_insensitive_normalized_collision() {
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let first_manifest = root.join("my-plugin.json");
     let second_manifest = root.join("MY-PLUGIN.json");
-    write_manifest(&first_manifest, "my-plugin", "my-plugin", "plugin.py:run");
-    write_manifest(&second_manifest, "MY-PLUGIN", "MY-PLUGIN", "plugin.py:run");
+    write_manifest(&first_manifest, "my-plugin", "alias-one", "plugin:run");
+    write_manifest(&second_manifest, "MY-PLUGIN", "alias-two", "plugin:run");
 
     let first =
         run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
@@ -239,7 +247,7 @@ fn rejects_empty_namespace() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let manifest = root.join("empty.json");
-    write_manifest(&manifest, "", "empty", "plugin.py:run");
+    write_manifest(&manifest, "", "empty", "plugin:run");
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
@@ -254,6 +262,46 @@ fn rejects_namespace_differing_only_by_hidden_alias_collision() {
     let (code, _, stderr) = scaffold_rejection(&plugins_dir, "doctor");
     assert_eq!(code, 1);
     assert!(stderr.contains("plugin namespace is reserved: doctor"));
+}
+
+#[test]
+fn rejects_alias_that_matches_an_installed_namespace() {
+    let root = tmp_dir("alias-vs-installed-namespace");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir");
+
+    let first_manifest = root.join("stable.json");
+    write_manifest(&first_manifest, "stable", "stable-alias", "plugin:run");
+    let first =
+        run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(first.status.code(), Some(0));
+
+    let second_manifest = root.join("candidate.json");
+    write_manifest(&second_manifest, "candidate", "stable", "plugin:run");
+    let second =
+        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(second.status.code(), Some(1));
+    assert!(String::from_utf8(second.stderr).expect("stderr utf-8").contains("alias"));
+}
+
+#[test]
+fn rejects_namespace_that_matches_an_installed_alias() {
+    let root = tmp_dir("installed-alias-vs-namespace");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir");
+
+    let first_manifest = root.join("stable.json");
+    write_manifest(&first_manifest, "stable", "shared-name", "plugin:run");
+    let first =
+        run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(first.status.code(), Some(0));
+
+    let second_manifest = root.join("shared-name.json");
+    write_manifest(&second_manifest, "shared-name", "other-alias", "plugin:run");
+    let second =
+        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(second.status.code(), Some(1));
+    assert!(String::from_utf8(second.stderr).expect("stderr utf-8").contains("alias"));
 }
 
 #[test]

@@ -85,6 +85,15 @@ fn install_external_exec(root: &Path, plugins_dir: &Path, namespace: &str, entry
     assert!(out.status.success(), "external install should succeed");
 }
 
+fn write_executable(path: &Path) {
+    fs::write(path, "#!/bin/sh\necho ok\n").expect("write executable");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("chmod +x");
+    }
+}
+
 fn plugin_names(listed: &Value) -> Vec<String> {
     listed["plugins"]
         .as_array()
@@ -331,8 +340,10 @@ fn broken_plugin_does_not_reorder_healthy_plugins() {
     install_python(&root, &plugins_dir, "alphahealthy");
     install_python(&root, &plugins_dir, "bravohealthy");
 
-    let missing_entrypoint = root.join("missing.sh");
-    install_external_exec(&root, &plugins_dir, "brokenplug", &missing_entrypoint);
+    let broken_entrypoint = root.join("broken.sh");
+    write_executable(&broken_entrypoint);
+    install_external_exec(&root, &plugins_dir, "brokenplug", &broken_entrypoint);
+    fs::remove_file(&broken_entrypoint).expect("remove broken entrypoint");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     let names = plugin_names(&listed);
@@ -346,8 +357,10 @@ fn broken_plugin_does_not_hide_healthy_plugins() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     install_python(&root, &plugins_dir, "visiblehealthy");
-    let missing_entrypoint = root.join("missing-visible.sh");
-    install_external_exec(&root, &plugins_dir, "visiblebroken", &missing_entrypoint);
+    let broken_entrypoint = root.join("broken-visible.sh");
+    write_executable(&broken_entrypoint);
+    install_external_exec(&root, &plugins_dir, "visiblebroken", &broken_entrypoint);
+    fs::remove_file(&broken_entrypoint).expect("remove broken entrypoint");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     let names = plugin_names(&listed);

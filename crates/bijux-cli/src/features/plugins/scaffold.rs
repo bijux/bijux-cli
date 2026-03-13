@@ -7,7 +7,10 @@ use anyhow::Result;
 
 use crate::api::version::runtime_semver;
 
-use super::{is_reserved_namespace, parse_manifest_v1, validate_manifest, RESERVED_NAMESPACES};
+use super::{
+    is_reserved_namespace, parse_manifest_v1, validate_manifest, validate_namespace_text,
+    RESERVED_NAMESPACES,
+};
 
 const SCAFFOLD_PLUGIN_VERSION: &str = "0.3.0";
 const SCAFFOLD_COMPATIBILITY_MIN: &str = "0.3.0";
@@ -47,9 +50,7 @@ pub(crate) fn scaffold_plugin_layout(
     if is_reserved_namespace(namespace, &[]) {
         anyhow::bail!("plugin namespace is reserved: {namespace}");
     }
-    if !namespace.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
-        anyhow::bail!("plugin namespace must be lowercase kebab-case");
-    }
+    validate_namespace_text(namespace).map_err(anyhow::Error::from)?;
     if !is_safe_scaffold_path(base_dir) {
         anyhow::bail!("scaffold path is unsafe");
     }

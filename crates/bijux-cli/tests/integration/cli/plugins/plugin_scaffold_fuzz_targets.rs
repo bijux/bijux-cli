@@ -176,26 +176,40 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
     assert_eq!(inspect_a.status.code(), Some(0));
     assert_eq!(inspect_a.stdout, inspect_b.stdout);
 
+    let ext_entrypoint = root.join("extcheck.sh");
+    fs::write(&ext_entrypoint, "#!/bin/sh\necho ok\n").expect("write entrypoint");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&ext_entrypoint, fs::Permissions::from_mode(0o755))
+            .expect("set executable");
+    }
+
     let ext_manifest = root.join("external.manifest.json");
     fs::write(
         &ext_manifest,
-        r#"{
+        format!(
+            r#"{{
   "name": "extcheck",
   "version": "1.0.0",
   "schema_version": "v1",
   "manifest_version": "v1",
-  "compatibility": { "min_inclusive": "0.1.0", "max_exclusive": "2.0.0" },
+  "compatibility": {{ "min_inclusive": "0.1.0", "max_exclusive": "2.0.0" }},
   "namespace": "extcheck",
   "kind": "external-exec",
-  "aliases": ["extcheck"],
-  "entrypoint": "/tmp/definitely-missing-binary",
-  "capabilities": [{"name":"exec","version":"1"}]
-}"#,
+  "aliases": ["extcheck-run"],
+  "entrypoint": "{}",
+  "capabilities": [{{"name":"exec","version":"1"}}]
+}}"#,
+            ext_entrypoint.to_string_lossy()
+        ),
     )
     .expect("write manifest");
     let install_ext =
         run(&["cli", "plugins", "install", ext_manifest.to_str().expect("utf-8")], &plugins);
     assert_eq!(install_ext.status.code(), Some(0));
+
+    fs::remove_file(&ext_entrypoint).expect("remove entrypoint");
 
     let check = run(&["cli", "plugins", "check", "extcheck"], &plugins);
     assert_eq!(check.status.code(), Some(2));

@@ -29,8 +29,10 @@ pub use discovery::{
 };
 pub use entrypoint::{
     delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
+    resolve_external_exec_entrypoint,
 };
 pub use errors::PluginError;
+pub(crate) use manifest::validate_namespace_text;
 pub use manifest::{parse_manifest_v1, validate_manifest};
 #[allow(unused_imports)]
 pub use models::{
