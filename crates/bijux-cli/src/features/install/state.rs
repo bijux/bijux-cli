@@ -45,8 +45,32 @@ pub fn ensure_history_file(path: &Path) -> Result<(), CompatibilityError> {
         fs::create_dir_all(parent)?;
     }
 
-    if !path.exists() {
-        let mut file = fs::OpenOptions::new().create_new(true).write(true).open(path)?;
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if metadata.file_type().is_symlink() && fs::metadata(path).is_err() {
+                return Err(CompatibilityError::Io(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("history path is a broken symlink: {}", path.display()),
+                )));
+            }
+            if !metadata.file_type().is_file() {
+                return Err(CompatibilityError::Io(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("history path is not a regular file: {}", path.display()),
+                )));
+            }
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            let mut file = fs::OpenOptions::new().create_new(true).write(true).open(path)?;
+            file.write_all(b"[]\n")?;
+            file.sync_all()?;
+        }
+        Err(error) => return Err(CompatibilityError::Io(error)),
+    }
+
+    if fs::metadata(path)?.len() == 0 {
+        let mut file =
+            fs::OpenOptions::new().write(true).truncate(true).create(false).open(path)?;
         file.write_all(b"[]\n")?;
         file.sync_all()?;
     }
@@ -92,7 +116,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::super::compatibility::CompatibilityError;
-    use super::{acquire_state_lock, run_config_migrations};
+    use super::{acquire_state_lock, ensure_history_file, run_config_migrations};
 
     fn make_temp_dir(name: &str) -> PathBuf {
         let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -129,5 +153,36 @@ mod tests {
 
         let migrated = fs::read_to_string(&path).expect("read migrated");
         assert_eq!(migrated, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n");
+    }
+
+    #[test]
+    fn ensure_history_file_rejects_directory_paths() {
+        let temp = make_temp_dir("history-dir-shape");
+        let path = temp.join("history");
+        fs::create_dir_all(&path).expect("seed directory");
+        let err = ensure_history_file(&path).expect_err("must fail");
+        assert!(matches!(err, CompatibilityError::Io(_)));
+    }
+
+    #[test]
+    fn ensure_history_file_initializes_empty_files() {
+        let temp = make_temp_dir("history-empty");
+        let path = temp.join("history.json");
+        fs::write(&path, "").expect("seed empty");
+        ensure_history_file(&path).expect("ensure");
+        let text = fs::read_to_string(path).expect("read");
+        assert_eq!(text, "[]\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ensure_history_file_rejects_broken_symlink_paths() {
+        use std::os::unix::fs::symlink;
+
+        let temp = make_temp_dir("history-broken-link");
+        let path = temp.join("history.json");
+        symlink("/tmp/does-not-exist-bijux-history-install", &path).expect("symlink");
+        let err = ensure_history_file(&path).expect_err("must fail");
+        assert!(matches!(err, CompatibilityError::Io(_)));
     }
 }
