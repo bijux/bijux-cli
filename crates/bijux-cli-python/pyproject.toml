@@ -109,3 +109,6 @@ reason = "Vulnerability is in a transitive dev-only dependency; it is not part o
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
+markers = [
+  "nightly: network-backed or long-running compatibility checks excluded from the default test run",
+]
