@@ -1,4 +1,0 @@
-{
-  "allowed_remaining": [],
-  "reason": "Maintainer automation is routed through bijux dev cli commands; no legacy script allowlist entries remain."
-}
