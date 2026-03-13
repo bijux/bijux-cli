@@ -77,6 +77,10 @@ fn try_delegate_dev_cli_via_cargo(
     })
 }
 
+fn dev_cli_command_requires_workspace_source_sync(forwarded_args: &[String]) -> bool {
+    matches!(forwarded_args.first().map(String::as_str), Some("contracts"))
+}
+
 fn dev_cli_binary_candidates() -> Vec<String> {
     if let Ok(explicit) = env::var("BIJUX_DEV_CLI_BIN") {
         return vec![explicit];
@@ -118,7 +122,7 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let mut last_error = String::new();
     let mut fallback_usage: Option<AppRunResult> = None;
 
-    if !explicit_override {
+    if !explicit_override && dev_cli_command_requires_workspace_source_sync(forwarded_args) {
         if let Some(result) = try_delegate_dev_cli_via_cargo(forwarded_args) {
             match result {
                 Ok(output) => return output,
