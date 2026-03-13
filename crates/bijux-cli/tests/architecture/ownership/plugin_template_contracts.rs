@@ -44,17 +44,18 @@ fn render_template(text: &str) -> String {
 
 #[test]
 fn template_docs_reference_current_rendering_and_install_flow() {
-    for path in [
-        "templates/README.md",
-        "templates/plugins-py/README.md",
-        "templates/plugins-rs/README.md",
-    ] {
+    for path in
+        ["templates/README.md", "templates/plugins-py/README.md", "templates/plugins-rs/README.md"]
+    {
         let text = read_repo_file(path);
         assert!(
             text.to_ascii_lowercase().contains("cookiecutter"),
             "{path} should describe cookiecutter rendering"
         );
-        assert!(text.contains("plugin.manifest.json"), "{path} should reference plugin.manifest.json");
+        assert!(
+            text.contains("plugin.manifest.json"),
+            "{path} should reference plugin.manifest.json"
+        );
         for forbidden in [
             "--template",
             "plugin.json",
@@ -64,7 +65,10 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             "bijux_cli.plugins",
             "bijux_cli_version",
         ] {
-            assert!(!text.contains(forbidden), "{path} still references stale surface: {forbidden}");
+            assert!(
+                !text.contains(forbidden),
+                "{path} still references stale surface: {forbidden}"
+            );
         }
     }
 }
@@ -82,7 +86,8 @@ fn template_manifests_match_current_plugin_contract() {
         ),
     ] {
         let manifest: PluginManifestV1 =
-            serde_json::from_str(&render_template(&read_repo_file(path))).expect("valid manifest json");
+            serde_json::from_str(&render_template(&read_repo_file(path)))
+                .expect("valid manifest json");
         assert_eq!(manifest.schema_version, "v1");
         assert_eq!(manifest.manifest_version, "v1");
         assert_eq!(manifest.kind, expected_kind);

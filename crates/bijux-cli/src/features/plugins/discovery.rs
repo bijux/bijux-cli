@@ -69,8 +69,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_dir(label: &str) -> std::path::PathBuf {
-        let nonce =
-            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
         let dir = std::env::temp_dir().join(format!("bijux-plugin-discovery-{label}-{nonce}"));
         fs::create_dir_all(&dir).expect("create temp dir");
         dir
