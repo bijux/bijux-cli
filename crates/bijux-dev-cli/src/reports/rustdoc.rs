@@ -1,6 +1,7 @@
 //! Rustdoc control-plane audits and proof commands.
 
 use std::fs;
+use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -26,6 +27,18 @@ fn crate_rs_sources(workspace_root: &Path) -> Vec<PathBuf> {
         .into_iter()
         .filter(|p| p.extension().is_some_and(|ext| ext == "rs"))
         .collect()
+}
+
+fn path_has_generated_or_hidden_component(path: &Path, workspace_root: &Path) -> bool {
+    let relative = path.strip_prefix(workspace_root).unwrap_or(path);
+    relative.components().any(|component| match component {
+        Component::Normal(name) => {
+            let text = name.to_string_lossy();
+            text.starts_with('.')
+                || matches!(text.as_ref(), "__pycache__" | "artifacts" | "target")
+        }
+        _ => false,
+    })
 }
 
 /// `dev cli rustdoc coverage`
@@ -168,7 +181,13 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
     let readme_files: Vec<String> = collect_files_recursive(&workspace_root.join("crates"))
         .into_iter()
         .filter(|p| p.file_name().is_some_and(|name| name == "README.md"))
+        .filter(|p| !path_has_generated_or_hidden_component(p, workspace_root))
         .map(|p| relative_to_root(&p, workspace_root))
+        .collect();
+    let reference_docs: Vec<String> = docs_files
+        .iter()
+        .filter(|p| p.starts_with("docs/06-reference/"))
+        .cloned()
         .collect();
 
     json!({
@@ -177,9 +196,9 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
         "public_api": public_api,
         "examples": examples,
         "reports": {
-            "website_code_docs_delete_candidates": docs_files.iter().filter(|p| p.contains("reference/current-python")).cloned().collect::<Vec<_>>(),
+            "website_code_docs_delete_candidates": reference_docs,
             "readme_sections_to_link_into_rustdoc": readme_files,
-            "crate_readmes_with_generated_doc_duplication": docs_files.iter().filter(|p| p.contains("architecture") || p.contains("reference")).cloned().collect::<Vec<_>>(),
+            "crate_readmes_with_generated_doc_duplication": docs_files.iter().filter(|p| p.contains("04-architecture") || p.contains("06-reference")).cloned().collect::<Vec<_>>(),
             "code_doc_pages_duplicated_outside_rustdoc": docs_files,
         },
         "evidence_hook": {
@@ -192,7 +211,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
 /// `dev cli rustdoc migrate-website-api-docs`
 #[must_use]
 pub fn build_migration_report(workspace_root: &Path) -> Value {
-    let candidates: Vec<String> = collect_files_recursive(&workspace_root.join("docs/reference"))
+    let candidates: Vec<String> = collect_files_recursive(&workspace_root.join("docs/06-reference"))
         .into_iter()
         .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
         .map(|p| relative_to_root(&p, workspace_root))
@@ -236,8 +255,73 @@ pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
 /// `dev cli rustdoc python-link-proof`
 #[must_use]
 pub fn build_python_link_proof_report(workspace_root: &Path) -> Value {
-    let docs =
-        read(&workspace_root.join("docs/reference/current-python/golden-and-behavior-captures.md"));
-    let linked = docs.contains("dev cli") || docs.contains("rustdoc");
+    let docs = read(&workspace_root.join("docs/06-reference/integrations-and-routed-runtimes.md"));
+    let linked = docs.contains("Python package") && docs.contains("Rust runtime");
     json!({"status": if linked {"pass"} else {"fail"}, "python_docs_link_to_rust_truth": linked})
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use serde_json::Value;
+
+    use super::{
+        build_audit_report, build_migration_report, build_python_link_proof_report,
+    };
+
+    fn temp_root(prefix: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-rustdoc-{prefix}-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ));
+        fs::create_dir_all(&root).expect("mkdir");
+        root
+    }
+
+    #[test]
+    fn migration_report_reads_the_canonical_reference_tree() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let report = build_migration_report(&root);
+        let candidates = report["delete_candidates"].as_array().expect("candidates");
+        assert!(
+            candidates
+                .iter()
+                .filter_map(Value::as_str)
+                .any(|path| path == "docs/06-reference/index.md")
+        );
+    }
+
+    #[test]
+    fn python_link_proof_reads_the_canonical_reference_page() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let report = build_python_link_proof_report(&root);
+        assert_eq!(report["status"], "pass");
+        assert_eq!(report["python_docs_link_to_rust_truth"], true);
+    }
+
+    #[test]
+    fn audit_report_ignores_hidden_generated_readmes() {
+        let root = temp_root("audit-hidden-readmes");
+        fs::create_dir_all(root.join("docs/06-reference")).expect("docs");
+        fs::create_dir_all(root.join("crates/example")).expect("crate readme");
+        fs::create_dir_all(root.join("crates/example/.pytest_cache")).expect("hidden readme");
+        fs::write(root.join("docs/06-reference/index.md"), "# Reference\n").expect("write docs");
+        fs::write(root.join("crates/example/README.md"), "# Example\n").expect("write readme");
+        fs::write(root.join("crates/example/.pytest_cache/README.md"), "# Cache\n")
+            .expect("write hidden readme");
+
+        let report = build_audit_report(&root);
+        let readmes = report["reports"]["readme_sections_to_link_into_rustdoc"]
+            .as_array()
+            .expect("readmes");
+        let paths = readmes.iter().filter_map(Value::as_str).collect::<Vec<_>>();
+        assert!(paths.contains(&"crates/example/README.md"));
+        assert!(!paths.contains(&"crates/example/.pytest_cache/README.md"));
+    }
 }
