@@ -1,6 +1,11 @@
 doctor:
   issues:
     -
+      area: paths
+      message: compatibility override parsing failed for <HOME>/.bijux/.env: unsupported config key: BIJUXCLI_ALPHA
+      path: <HOME>/.bijux/.env
+      severity: warning
+    -
       area: memory
       keys:
         - int_test_key

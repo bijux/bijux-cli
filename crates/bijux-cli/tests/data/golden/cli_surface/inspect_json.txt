@@ -676,6 +676,8 @@
     ],
     "version": "v1"
   },
+  "integrity_issues": [],
+  "integrity_status": "ok",
   "plugin_origins": [],
   "reserved_namespaces": [
     {
