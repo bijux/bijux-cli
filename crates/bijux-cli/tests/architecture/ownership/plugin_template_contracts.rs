@@ -8,7 +8,7 @@ use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV2};
 
 const TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
 const TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
-const TEMPLATE_CONTRACT_VERSION: &str = "0.2.1-dev";
+const TEMPLATE_CONTRACT_VERSION: &str = "v2";
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

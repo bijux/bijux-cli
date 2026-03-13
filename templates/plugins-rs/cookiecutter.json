@@ -7,5 +7,5 @@
   "cli_min": "0.2.1-dev",
   "cli_max": "1.0.0",
   "rust_edition": "2021",
-  "_template_version": "0.2.1-dev"
+  "_template_version": "v2"
 }
