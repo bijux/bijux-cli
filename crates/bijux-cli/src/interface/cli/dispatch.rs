@@ -623,18 +623,15 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Mutex;
-
     use serde_json::Value;
 
     use super::{run_app, MAX_PATH_SEGMENT_CHARS};
     use crate::api::telemetry::{TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV};
-
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+    use crate::shared::telemetry::TEST_ENV_LOCK;
 
     #[test]
     fn run_app_writes_opt_in_telemetry_events() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);
@@ -662,7 +659,7 @@ mod tests {
 
     #[test]
     fn run_app_unknown_route_emits_unknown_stage_without_completed_stage() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);
@@ -694,7 +691,7 @@ mod tests {
 
     #[test]
     fn run_app_quiet_mode_records_suppressed_byte_metrics() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);
@@ -722,7 +719,7 @@ mod tests {
 
     #[test]
     fn run_app_bounds_intent_path_segments_in_telemetry() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);

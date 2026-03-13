@@ -22,6 +22,8 @@ static TELEMETRY_CONFIG_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
 static TELEMETRY_CONFIG_WARNING_KEYS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 static TELEMETRY_WRITE_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
 static TELEMETRY_WRITE_WARNING_KEYS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+#[cfg(test)]
+pub(crate) static TEST_ENV_LOCK: Mutex<()> = Mutex::new(());
 const MAX_COMMAND_PREVIEW_CHARS: usize = 128;
 const MAX_ARG_CHARS: usize = 256;
 const MAX_CAPTURED_ARGS: usize = 64;
@@ -435,9 +437,6 @@ mod tests {
         TELEMETRY_INCLUDE_ARGS_ENV,
     };
     use serde_json::{json, Value};
-    use std::sync::Mutex;
-
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn exit_code_kind_maps_stable_classes() {
@@ -451,7 +450,7 @@ mod tests {
 
     #[test]
     fn span_writes_start_and_finish_events_when_enabled() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
 
@@ -505,7 +504,7 @@ mod tests {
 
     #[test]
     fn span_marks_non_zero_exit_as_nonzero_result() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -528,7 +527,7 @@ mod tests {
 
     #[test]
     fn span_can_include_raw_argv_when_opted_in() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -555,7 +554,7 @@ mod tests {
 
     #[test]
     fn span_truncates_captured_argv_when_opted_in() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -582,7 +581,7 @@ mod tests {
 
     #[test]
     fn span_disables_sink_when_path_is_whitespace() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         std::env::set_var(TELEMETRY_FILE_ENV, "   ");
         std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
@@ -595,7 +594,7 @@ mod tests {
 
     #[test]
     fn span_disables_sink_when_path_points_to_directory() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         std::env::set_var(TELEMETRY_FILE_ENV, temp.path());
         std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
@@ -609,7 +608,7 @@ mod tests {
 
     #[test]
     fn span_truncates_internal_error_message() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -645,7 +644,7 @@ mod tests {
 
     #[test]
     fn span_truncates_oversized_stage_names() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -671,7 +670,7 @@ mod tests {
 
     #[test]
     fn start_preview_resolves_first_non_flag_command() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -700,7 +699,7 @@ mod tests {
 
     #[test]
     fn start_preview_uses_passthrough_after_double_dash() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -730,7 +729,7 @@ mod tests {
 
     #[test]
     fn span_normalizes_empty_stage_names() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
@@ -755,7 +754,7 @@ mod tests {
 
     #[test]
     fn span_truncates_oversized_payloads() {
-        let _guard = ENV_LOCK.lock().expect("env lock");
+        let _guard = super::TEST_ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("events.jsonl");
 
