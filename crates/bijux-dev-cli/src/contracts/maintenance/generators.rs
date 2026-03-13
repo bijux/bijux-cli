@@ -5,15 +5,18 @@ use serde_json::{json, Value};
 use super::compliance::build_flaky_tests_report;
 use super::inventory::{generated_at_utc, write_json};
 
-fn build_status_generators_report() -> Value {
-    let rows = vec![json!({
+fn status_generator_rows() -> Vec<Value> {
+    vec![json!({
         "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
         "source_ref": Value::Null,
         "implementation": "rust",
         "outputs": ["artifacts/status/flaky_tests.json"],
         "command": "bijux dev cli maintenance generate --id GEN-STATUS-FLAKY-TEST-LABELS",
-    })];
+    })]
+}
 
+fn build_status_generators_report() -> Value {
+    let rows = status_generator_rows();
     json!({
         "id_policy": "GEN-STATUS-<GENERATOR-SLUG>",
         "generated_at_utc": generated_at_utc(),
@@ -78,11 +81,7 @@ pub fn run_generator(
         });
     }
 
-    let rows = build_status_generators_report()
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = status_generator_rows();
 
     let Some(id) = generator_id else {
         return json!({
@@ -91,8 +90,9 @@ pub fn run_generator(
         });
     };
 
-    if let Some(row) =
-        rows.into_iter().find(|row| row.get("generator_id").and_then(Value::as_str) == Some(id))
+    if let Some(row) = rows
+        .into_iter()
+        .find(|row| row.get("generator_id").and_then(Value::as_str) == Some(id))
     {
         return run_status_generator_entry(workspace_root, &row);
     }
@@ -106,11 +106,7 @@ pub fn run_generator(
 /// Runs all status generators.
 #[must_use]
 pub fn run_all_generators(workspace_root: &Path) -> Value {
-    let rows = build_status_generators_report()
-        .get("rows")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let rows = status_generator_rows();
     let mut results = Vec::<Value>::new();
     let mut ok = 0usize;
     let mut failed = 0usize;

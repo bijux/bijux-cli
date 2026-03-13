@@ -8,7 +8,15 @@ use serde_json::{json, Value};
 #[must_use]
 pub fn build_package_metadata_report(workspace_root: &Path) -> Value {
     let workspace_toml = workspace_root.join("Cargo.toml");
-    let workspace = fs::read_to_string(workspace_toml).unwrap_or_default();
+    let workspace = match fs::read_to_string(&workspace_toml) {
+        Ok(contents) => contents,
+        Err(error) => {
+            return json!({
+                "status": "fail",
+                "failures": [format!("failed to read {}: {error}", workspace_toml.display())],
+            });
+        }
+    };
 
     let mut failures = Vec::new();
     if !workspace.contains("name") {
@@ -40,12 +48,23 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
     }
 
     let mut errors = Vec::new();
+    let mut scan_errors = Vec::new();
     let mut test_count = 0usize;
     for file in files {
         if file.extension().is_none_or(|ext| ext != "rs") {
             continue;
         }
-        let text = fs::read_to_string(&file).unwrap_or_default();
+        let text = match fs::read_to_string(&file) {
+            Ok(text) => text,
+            Err(error) => {
+                scan_errors.push(json!({
+                    "path": rel(&file, workspace_root),
+                    "error": "read-failed",
+                    "message": error.to_string(),
+                }));
+                continue;
+            }
+        };
         let file_test_count = text.matches("#[test]").count();
         test_count += file_test_count;
     }
@@ -60,6 +79,8 @@ pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
         "status": if errors.is_empty() { "pass" } else { "fail" },
         "test_count": test_count,
         "errors": errors,
+        "integrity_status": if scan_errors.is_empty() { "ok" } else { "degraded" },
+        "scan_errors": scan_errors,
     })
 }
 
@@ -69,36 +90,119 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     let path = report_path
         .map(PathBuf::from)
         .unwrap_or_else(|| workspace_root.join("artifacts_pages/security/dependency-audit.json"));
-    let parsed: Value = fs::read_to_string(&path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!([]));
+    let (parsed, parse_error) = match fs::read_to_string(&path) {
+        Ok(text) => match serde_json::from_str::<Value>(&text) {
+            Ok(parsed) => (Some(parsed), None),
+            Err(error) => (
+                None,
+                Some(format!(
+                    "audit report is invalid JSON at {}: {error}",
+                    path.display()
+                )),
+            ),
+        },
+        Err(error) => (
+            None,
+            Some(format!(
+                "failed to read audit report at {}: {error}",
+                path.display()
+            )),
+        ),
+    };
+    let Some(parsed) = parsed else {
+        return json!({
+            "status": "fail",
+            "report_path": path,
+            "remaining_vulnerabilities": [],
+            "integrity_status": "degraded",
+            "integrity_error": parse_error,
+        });
+    };
 
-    let dependencies = parsed
-        .as_array()
-        .cloned()
-        .or_else(|| parsed.get("dependencies").and_then(Value::as_array).cloned())
-        .unwrap_or_default();
+    let dependencies = match parsed {
+        Value::Array(rows) => rows,
+        Value::Object(_) => match parsed.get("dependencies").and_then(Value::as_array) {
+            Some(rows) => rows.clone(),
+            None => {
+                return json!({
+                    "status": "fail",
+                    "report_path": path,
+                    "remaining_vulnerabilities": [],
+                    "integrity_status": "degraded",
+                    "integrity_error": "audit report must be an array or include an array at key `dependencies`",
+                });
+            }
+        },
+        _ => {
+            return json!({
+                "status": "fail",
+                "report_path": path,
+                "remaining_vulnerabilities": [],
+                "integrity_status": "degraded",
+                "integrity_error": "audit report JSON root must be an object or array",
+            });
+        }
+    };
 
     let mut remaining = Vec::new();
+    let mut integrity_issues = Vec::new();
     for dep in dependencies {
-        let name = dep.get("name").and_then(Value::as_str).unwrap_or("?");
-        let version = dep.get("version").and_then(Value::as_str).unwrap_or("?");
-        for vuln in dep
+        let Some(name) = dep.get("name").and_then(Value::as_str).map(str::trim) else {
+            integrity_issues.push(json!({
+                "error": "missing-field",
+                "field": "name",
+                "row": dep,
+            }));
+            continue;
+        };
+        let Some(version) = dep.get("version").and_then(Value::as_str).map(str::trim) else {
+            integrity_issues.push(json!({
+                "error": "missing-field",
+                "field": "version",
+                "row": dep,
+            }));
+            continue;
+        };
+        let vulnerabilities = dep
             .get("vulnerabilities")
             .and_then(Value::as_array)
-            .cloned()
-            .or_else(|| dep.get("vulns").and_then(Value::as_array).cloned())
-            .unwrap_or_default()
-        {
-            let id = vuln.get("id").and_then(Value::as_str).unwrap_or("?");
-            let fix =
-                vuln.get("fix_versions").and_then(Value::as_array).cloned().unwrap_or_default();
+            .or_else(|| dep.get("vulns").and_then(Value::as_array));
+        let Some(vulnerabilities) = vulnerabilities else {
+            integrity_issues.push(json!({
+                "error": "missing-field",
+                "field": "vulnerabilities",
+                "package": name,
+                "version": version,
+            }));
+            continue;
+        };
+        for vuln in vulnerabilities {
+            let Some(id) = vuln.get("id").and_then(Value::as_str).map(str::trim) else {
+                integrity_issues.push(json!({
+                    "error": "missing-field",
+                    "field": "id",
+                    "package": name,
+                    "version": version,
+                    "vulnerability": vuln,
+                }));
+                continue;
+            };
+            let fix_versions = vuln.get("fix_versions").and_then(Value::as_array).cloned();
+            let Some(fix_versions) = fix_versions else {
+                integrity_issues.push(json!({
+                    "error": "missing-field",
+                    "field": "fix_versions",
+                    "package": name,
+                    "version": version,
+                    "id": id,
+                }));
+                continue;
+            };
             remaining.push(json!({
                 "package": name,
                 "version": version,
                 "id": id,
-                "fix_versions": fix,
+                "fix_versions": fix_versions,
             }));
         }
     }
@@ -107,6 +211,8 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
         "status": if remaining.is_empty() { "pass" } else { "fail" },
         "report_path": path,
         "remaining_vulnerabilities": remaining,
+        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_issues": integrity_issues,
     })
 }
 
@@ -114,16 +220,47 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
 #[must_use]
 pub fn build_python_capture_report(workspace_root: &Path) -> Value {
     let lock_path = workspace_root.join("artifacts/current-runtime-behavior-lock.json");
-    let lock: Value = fs::read_to_string(&lock_path)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_else(|| json!({}));
-    let capture_count =
-        lock.get("captures").and_then(Value::as_object).map_or(0, |captures| captures.len());
+    let lock = match fs::read_to_string(&lock_path) {
+        Ok(text) => match serde_json::from_str::<Value>(&text) {
+            Ok(value) => value,
+            Err(error) => {
+                return json!({
+                    "status": "fail",
+                    "lock_path": lock_path,
+                    "capture_count": 0,
+                    "integrity_status": "degraded",
+                    "integrity_error": format!("invalid lock JSON: {error}"),
+                });
+            }
+        },
+        Err(error) => {
+            return json!({
+                "status": "fail",
+                "lock_path": lock_path,
+                "capture_count": 0,
+                "integrity_status": "degraded",
+                "integrity_error": format!("failed to read lock file: {error}"),
+            });
+        }
+    };
+    let captures = match lock.get("captures").and_then(Value::as_object) {
+        Some(captures) => captures,
+        None => {
+            return json!({
+                "status": "fail",
+                "lock_path": lock_path,
+                "capture_count": 0,
+                "integrity_status": "degraded",
+                "integrity_error": "missing or invalid `captures` object",
+            });
+        }
+    };
+    let capture_count = captures.len();
     json!({
         "status": if capture_count > 0 { "pass" } else { "fail" },
         "lock_path": lock_path,
         "capture_count": capture_count,
+        "integrity_status": "ok",
     })
 }
 
@@ -139,7 +276,12 @@ pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value 
         .trim()
         .to_string();
 
-    let _ = fs::create_dir_all(output_dir);
+    if let Err(error) = fs::create_dir_all(output_dir) {
+        return json!({
+            "status": "failed",
+            "error": format!("failed to create output directory {}: {error}", output_dir.display()),
+        });
+    }
     let file = output_dir.join(format!("provenance-{tag}.json"));
     let payload = json!({
       "tag": tag,
@@ -147,10 +289,23 @@ pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value 
       "generator": "bijux dev cli maintenance provenance-statement",
       "note": "Provenance hook scaffold. Replace with signed attestation workflow when enabled."
     });
-    let _ = fs::write(
-        &file,
-        serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string()) + "\n",
-    );
+    let serialized = match serde_json::to_string_pretty(&payload) {
+        Ok(serialized) => serialized,
+        Err(error) => {
+            return json!({
+                "status": "failed",
+                "file": file,
+                "error": format!("failed to serialize provenance payload: {error}"),
+            });
+        }
+    };
+    if let Err(error) = fs::write(&file, serialized + "\n") {
+        return json!({
+            "status": "failed",
+            "file": file,
+            "error": format!("failed to write provenance payload: {error}"),
+        });
+    }
     json!({"status": "ok", "file": file, "payload": payload})
 }
 
@@ -177,7 +332,10 @@ pub(crate) fn collect_files(base: &Path) -> Vec<PathBuf> {
 }
 
 pub(crate) fn rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 pub(crate) fn parse_make_targets(path: &Path) -> Vec<String> {
@@ -219,7 +377,15 @@ pub(crate) fn status_slug_for_name(value: &str) -> String {
         }
     }
     let mut cleaned = slug.trim_matches('-').to_string();
-    for suffix in ["-report", "-audit", "-baseline", "-guide", "-rules", "-law", "-status"] {
+    for suffix in [
+        "-report",
+        "-audit",
+        "-baseline",
+        "-guide",
+        "-rules",
+        "-law",
+        "-status",
+    ] {
         if cleaned.ends_with(suffix) {
             cleaned.truncate(cleaned.len().saturating_sub(suffix.len()));
         }
@@ -256,7 +422,10 @@ pub(crate) fn run_bijux_json(workspace_root: &Path, args: &[&str]) -> Result<Val
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -275,9 +444,14 @@ pub(crate) fn run_bijux_json_env(
     for (key, value) in envs {
         cmd.env(key, value);
     }
-    let output = cmd.output().map_err(|err| format!("failed to run bijux command: {err}"))?;
+    let output = cmd
+        .output()
+        .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     serde_json::from_slice::<Value>(&output.stdout)
         .map_err(|err| format!("failed to parse command JSON output: {err}"))
@@ -292,7 +466,10 @@ pub(crate) fn run_bijux_text(workspace_root: &Path, args: &[&str]) -> Result<Str
         .output()
         .map_err(|err| format!("failed to run bijux command: {err}"))?;
     if !output.status.success() {
-        return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "command failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
