@@ -27,8 +27,8 @@ flowchart TD
     Manifest[plugin.manifest.json] --> Validate[Parse and validate manifest]
     Validate --> Entrypoint[Check current entrypoint availability]
     Entrypoint --> Registry[Write registry record]
-    Registry --> Inspect[Inspect and explain]
-    Registry --> Doctor[Doctor and load diagnostics]
+    Registry --> Inspect[Info, inspect, where, and explain]
+    Registry --> Doctor[Check, doctor, and load diagnostics]
 ```
 
 ## Current Plugin Model
@@ -41,7 +41,9 @@ The current plugin model includes:
 - compatibility ranges
 - trust labels
 - local entrypoint resolution
-- install, inspect, check, enable, disable, uninstall, scaffold, doctor, explain, and schema commands
+- reserved-name and alias collision checks
+- install, info, inspect, check, enable, disable, uninstall, scaffold, doctor,
+  reserved-names, where, explain, and schema commands
 
 ## What The Runtime Checks Now
 
@@ -50,6 +52,7 @@ The runtime checks more than stored registry state.
 Current health evaluation includes:
 
 - manifest validity
+- namespace and alias collision safety
 - compatibility range against the current runtime semver
 - manifest drift after install
 - delegated or Python entrypoint availability

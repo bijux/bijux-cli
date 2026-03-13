@@ -41,10 +41,15 @@ according to `BIJUXCLI_PRODUCT_BIN_PRECEDENCE`.
 The durable local plugin contract is based on `plugin.manifest.json`.
 
 - local installs consume `plugin.manifest.json`
+- `plugins info` reports registry-wide status and inventory details
 - delegated and Python plugins resolve their declared entrypoint from the
   installed manifest anchor when available
-- `plugins inspect [plugin]` and `plugins doctor` report current-runtime drift
-  and missing entrypoints
+- `plugins inspect [plugin]` can report either one plugin or the full
+  inventory, and `plugins doctor` reports current-runtime drift and missing
+  entrypoints
+- `plugins where` reports the active plugins directory and registry file
+- `plugins reserved-names` reports the current reserved plugin namespace
+  inventory
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install
@@ -102,8 +107,8 @@ control-plane product binaries.
 Compatibility review is still anchored on two comparisons:
 
 1. current `bijux-cli` vs current `bijux-cli-python`
-2. current `bijux-cli-python` vs the stable PyPI baseline still treated as the
-   release-compatibility line
+2. current `bijux-cli-python` vs the repository's configured stable PyPI
+   baseline, currently `bijux-cli==0.2.0`
 
 Historically retained Python-facing overlap still matters for:
 

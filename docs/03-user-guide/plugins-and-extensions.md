@@ -24,10 +24,14 @@ flowchart LR
 ## Common Commands
 
 ```bash
+bijux plugins info
 bijux plugins list
+bijux plugins inspect
 bijux plugins inspect NAMESPACE
 bijux plugins install ./plugin.manifest.json
 bijux plugins check NAMESPACE
+bijux plugins where
+bijux plugins reserved-names
 bijux plugins uninstall NAMESPACE
 bijux plugins schema
 ```
@@ -64,26 +68,35 @@ PY
 Install, inspect, validate, and remove it:
 
 ```bash
+bijux plugins info
 bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
+bijux plugins where
+bijux plugins reserved-names
 bijux plugins explain my-plugin
 bijux plugins uninstall my-plugin
 ```
 
 Expected shape:
 
+- `info` shows overall registry status and plugin inventory details
 - `list` includes `my-plugin` after install
-- `inspect` shows manifest, source, and trust metadata
+- `inspect` without an argument shows the full inventory; with a namespace it
+  shows one plugin's manifest, source, and trust metadata
 - `check` verifies manifest validity and entrypoint presence
+- `where` shows the active plugins directory and registry file
+- `reserved-names` shows the namespaces that plugins must not claim
 - `explain` shows compatibility or load diagnostics
 - `list` no longer reports the namespace after uninstall
 
 ## Working Rule
 
 - install from the manifest file
+- use `reserved-names` before choosing a new namespace or alias
 - inspect before assuming a plugin is healthy
+- use `where` when debugging plugin state paths or the active registry file
 - check before relying on a plugin in automation
 - uninstall plugins you do not actively want to keep
 
@@ -92,6 +105,7 @@ Expected shape:
 The current plugin surface is a management and diagnostics surface. These
 commands are implemented and supported for baseline use:
 
+- `info`
 - `list`
 - `inspect`
 - `check`
@@ -106,9 +120,10 @@ commands are implemented and supported for baseline use:
 - `explain`
 - `schema`
 
-Installed plugin namespaces are not currently executed as runtime subcommands
-inside `bijux-cli`. If your workflow depends on `bijux <plugin-namespace> ...`
-direct execution, that behavior is outside the current supported surface.
+Installed plugin namespaces are not currently executed as direct runtime
+subcommands under `bijux`. If your workflow depends on
+`bijux <plugin-namespace> ...` execution, that behavior is outside the current
+supported surface.
 
 ## Important Limit
 

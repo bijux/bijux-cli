@@ -24,16 +24,19 @@ flowchart TD
     A[plugin.manifest.json] --> B[namespace validation]
     B --> C[compatibility validation]
     C --> D[lifecycle registration]
-    D --> E[routeable plugin]
+    D --> E[management and diagnostics surface]
 ```
 
 ## Namespace Rules
 
 - plugins must not claim reserved root namespaces
 - plugin namespaces are normalized to lowercase kebab-case
+- plugin aliases are normalized to lowercase kebab-case
 - namespace registration is rejected when it conflicts with built-ins or
   existing plugin namespaces
 - case-insensitive collisions are rejected
+- alias registration is rejected when it conflicts with built-ins, reserved
+  namespaces, existing plugins, or other aliases
 
 ## Lifecycle Terms
 
@@ -66,6 +69,7 @@ failure.
 
 The current plugin-management contract covers:
 
+- `info`
 - `list`
 - `inspect`
 - `check`
@@ -80,8 +84,10 @@ The current plugin-management contract covers:
 - `explain`
 - `schema`
 
+`inspect` may target one plugin or the full inventory.
+
 It does not currently include executing installed plugin namespaces as direct
-runtime subcommands under `bijux-cli`.
+runtime subcommands under `bijux`.
 
 ## Stability Standard
 
