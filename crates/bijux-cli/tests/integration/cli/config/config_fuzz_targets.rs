@@ -80,14 +80,15 @@ fn fuzz_malformed_config_lines_fail_consistently() {
 }
 
 #[test]
-fn fuzz_duplicate_key_handling_keeps_last_value() {
+fn fuzz_duplicate_key_handling_rejects_ambiguous_state() {
     let root = temp_dir("dupes");
     let path = root.join("dupes.env");
     fs::write(&path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=2\nBIJUXCLI_ALPHA=3\n").expect("write");
 
-    let json =
-        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
-    assert_eq!(json["alpha"], "3");
+    let out = run(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("Duplicate key"));
 }
 
 #[test]

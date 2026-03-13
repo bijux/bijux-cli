@@ -218,9 +218,11 @@ fn config_load_valid_malformed_duplicate_and_unreadable_cases() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_success_machine(&duplicate, "config load duplicate source");
+    assert_eq!(duplicate.status.code(), Some(2));
+    assert!(duplicate.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&duplicate.stderr).contains("Duplicate key"));
     let duplicate_loaded = fs::read_to_string(&active).expect("active after duplicate load");
-    assert_eq!(duplicate_loaded, "BIJUXCLI_ALPHA=2\n");
+    assert_eq!(duplicate_loaded, "BIJUXCLI_ALPHA=1\n");
 
     fs::write(&source, "BROKEN\n").expect("seed malformed");
     let malformed = run(&[

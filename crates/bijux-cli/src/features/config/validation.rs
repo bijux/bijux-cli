@@ -16,7 +16,11 @@ pub(crate) fn normalize_key(raw: &str) -> Result<String, ConfigError> {
         return Err(ConfigError::validation(format!("Unknown config section in key: {key}")));
     }
 
-    let normalized = key.strip_prefix("BIJUXCLI_").unwrap_or(key).to_ascii_lowercase();
+    let normalized = key
+        .strip_prefix("BIJUXCLI_")
+        .or_else(|| key.strip_prefix("BIJUX_"))
+        .unwrap_or(key)
+        .to_ascii_lowercase();
     if !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
         return Err(ConfigError::validation(
             "Invalid key: only alphanumerics and underscore allowed.",
@@ -57,6 +61,7 @@ mod tests {
         assert_eq!(normalize_key("alpha").expect("lower"), "alpha");
         assert_eq!(normalize_key("MixedCase").expect("mixed"), "mixedcase");
         assert_eq!(normalize_key("BIJUXCLI_ALPHA").expect("prefix"), "alpha");
+        assert_eq!(normalize_key("BIJUX_ALPHA").expect("legacy prefix"), "alpha");
         assert_eq!(normalize_key("_").expect("underscore"), "_");
         assert_eq!(normalize_key("a1b2").expect("alphanumeric"), "a1b2");
     }

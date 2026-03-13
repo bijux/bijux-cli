@@ -81,7 +81,7 @@ fn root_config_malformed_file_is_error() {
 }
 
 #[test]
-fn root_config_duplicate_keys_keep_latest_value() {
+fn root_config_duplicate_keys_fail_fast() {
     let temp = make_temp_dir("duplicate");
     let path = temp.join("dupe.env");
     fs::write(&path, "BIJUXCLI_ALPHA=old\nBIJUXCLI_ALPHA=new\n").expect("write dupes");
@@ -94,9 +94,9 @@ fn root_config_duplicate_keys_keep_latest_value() {
     ])
     .expect("run_app");
 
-    assert_eq!(out.exit_code, 0);
-    let payload = parse_json(&out.stdout);
-    assert_eq!(payload["alpha"], "new");
+    assert_eq!(out.exit_code, 1);
+    assert!(out.stdout.is_empty());
+    assert!(out.stderr.contains("Duplicate key"));
 }
 
 #[test]

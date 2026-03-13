@@ -23,7 +23,11 @@ impl ConfigKey {
             return Err("config key cannot contain section separator '.'".to_string());
         }
 
-        let normalized = trimmed.strip_prefix("BIJUXCLI_").unwrap_or(trimmed).to_ascii_lowercase();
+        let normalized = trimmed
+            .strip_prefix("BIJUXCLI_")
+            .or_else(|| trimmed.strip_prefix("BIJUX_"))
+            .unwrap_or(trimmed)
+            .to_ascii_lowercase();
         if !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
             return Err("config key must contain only alphanumerics and '_'".to_string());
         }

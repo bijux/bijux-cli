@@ -98,9 +98,9 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
         "--config-path",
         duplicate.to_str().expect("utf-8"),
     ]);
-    let dup_json = assert_success_json(&dup_out, "root config list duplicate");
-    assert_eq!(dup_json["alpha"], "3");
-    assert_eq!(dup_json["beta"], "2");
+    assert_eq!(dup_out.status.code(), Some(1));
+    assert!(dup_out.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&dup_out.stderr).contains("Duplicate key"));
 
     let malformed_out = run(&[
         "config",

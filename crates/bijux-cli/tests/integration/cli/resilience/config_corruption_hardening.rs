@@ -110,10 +110,9 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
         }
     }
 
-    assert_eq!(
-        c.status.code(),
-        Some(0),
-        "duplicate keys must resolve to last value deterministically"
+    assert!(
+        c.status.code().is_some_and(|code| code != 0),
+        "duplicate keys must be rejected to avoid silent override drift"
     );
     let f_repeat =
         run(&["cli", "config", "reload", "--config-path", null_bytes.to_str().expect("utf-8")]);

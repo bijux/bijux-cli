@@ -45,6 +45,11 @@ impl ConfigRepository for FileConfigRepository {
             let key = normalize_key(raw_key)?;
             let value = decode_quoted_value(raw_value.trim());
             validate_value(&value)?;
+            if out.contains_key(&key) {
+                return Err(ConfigError::parse(format!(
+                    "Duplicate key `{key}` at line {line_no}"
+                )));
+            }
             out.insert(key, value);
         }
         Ok(out)
@@ -108,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn parser_keeps_last_duplicate_key_value() {
+    fn parser_rejects_duplicate_keys() {
         let repo = FileConfigRepository;
         let temp = make_temp_dir("dupes");
         let path = temp.join("dupes.env");
@@ -118,10 +123,8 @@ mod tests {
         )
         .expect("write dupes");
 
-        let loaded = repo.load(&path).expect("parse");
-        assert_eq!(loaded.len(), 2, "duplicate keys should collapse to one entry each");
-        assert_eq!(loaded.get("alpha").map(String::as_str), Some("1"));
-        assert_eq!(loaded.get("beta").map(String::as_str), Some("new"));
+        let err = repo.load(&path).expect_err("duplicate keys must be rejected");
+        assert!(err.to_string().contains("Duplicate key `alpha`"));
     }
 
     #[test]

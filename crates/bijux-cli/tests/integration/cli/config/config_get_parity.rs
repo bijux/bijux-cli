@@ -164,6 +164,11 @@ fn config_get_found_missing_invalid_and_normalized_keys() {
     let normalized_json = assert_success_json_output(&normalized, "config get normalized key");
     assert_eq!(normalized_json["key"], "mixed");
 
+    let normalized_alias = run(&["cli", "config", "get", "BIJUX_MIXED", "--config-path", path]);
+    let normalized_alias_json =
+        assert_success_json_output(&normalized_alias, "config get normalized alias key");
+    assert_eq!(normalized_alias_json["key"], "mixed");
+
     let missing = run(&["cli", "config", "get", "missing", "--config-path", path]);
     assert_eq!(missing.status.code(), Some(2));
     assert!(missing.stdout.is_empty());
@@ -191,6 +196,15 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
     );
     let override_json = assert_success_json_output(&override_out, "config get path override");
     assert_eq!(override_json["value"], "flag");
+
+    let env_alias = run_with_env(
+        &["cli", "config", "get", "alpha", "--config-path", flag_path.to_str().expect("utf-8")],
+        &[("BIJUX_ALPHA", "alias-env".to_string())],
+    );
+    let env_alias_json = assert_success_json_output(&env_alias, "config get env alias override");
+    assert_eq!(env_alias_json["value"], "alias-env");
+    assert_eq!(env_alias_json["source"], "env");
+    assert_eq!(env_alias_json["source_env"], "BIJUX_ALPHA");
 
     let malformed =
         run(&["cli", "config", "get", "alpha", "--config-path", bad_path.to_str().expect("utf-8")]);

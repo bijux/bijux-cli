@@ -165,9 +165,9 @@ fn malformed_and_duplicate_config_source_behavior_is_stable() {
         "--config-path",
         duplicate.to_str().expect("utf-8"),
     ]);
-    assert_eq!(duplicate_get.status.code(), Some(0));
-    let duplicate_payload: Value = serde_json::from_slice(&duplicate_get.stdout).expect("json");
-    assert_eq!(duplicate_payload["value"], "2");
+    assert_eq!(duplicate_get.status.code(), Some(1));
+    assert!(duplicate_get.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&duplicate_get.stderr).contains("Duplicate key"));
 }
 
 #[test]

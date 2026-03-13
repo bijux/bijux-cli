@@ -244,9 +244,9 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
         "--config-path",
         duplicate.to_str().expect("utf-8"),
     ]);
-    assert_success_output(&out_duplicate, "root config duplicate-key listing");
-    let duplicate_json: Value = serde_json::from_slice(&out_duplicate.stdout).expect("json");
-    assert_eq!(duplicate_json["alpha"], "new");
+    assert_eq!(out_duplicate.status.code(), Some(1));
+    assert!(out_duplicate.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&out_duplicate.stderr).contains("Duplicate key"));
 
     let out_override = run_with_env(
         &["config", "--config-path", flag_path.to_str().expect("utf-8")],

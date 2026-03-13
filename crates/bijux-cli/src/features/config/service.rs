@@ -90,15 +90,17 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn get_value(&self, raw_key: &str) -> Result<Value, ConfigError> {
         let normalized_key = normalize_key(raw_key)?;
-        let env_key = format!("BIJUXCLI_{}", normalized_key.to_ascii_uppercase());
-        if let Ok(value) = std::env::var(&env_key) {
-            return Ok(json!({
-                "value": value,
-                "key": normalized_key,
-                "source": "env",
-                "source_env": env_key,
-                "source_path": serde_json::Value::Null,
-            }));
+        let upper = normalized_key.to_ascii_uppercase();
+        for env_key in [format!("BIJUXCLI_{upper}"), format!("BIJUX_{upper}")] {
+            if let Ok(value) = std::env::var(&env_key) {
+                return Ok(json!({
+                    "value": value,
+                    "key": normalized_key,
+                    "source": "env",
+                    "source_env": env_key,
+                    "source_path": serde_json::Value::Null,
+                }));
+            }
         }
 
         let values = self.load_map()?;
