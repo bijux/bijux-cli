@@ -22,6 +22,10 @@ pub const REPL_COMPLETION_MAX_CANDIDATES: usize = 512;
 pub const REPL_COMPLETION_REGISTRY_MAX_ENTRIES: usize = 1024;
 /// Max number of characters retained per completion entry.
 pub const REPL_COMPLETION_ENTRY_MAX_CHARS: usize = 256;
+/// Max number of completion registry owners retained in a session.
+pub const REPL_COMPLETION_REGISTRY_MAX_OWNERS: usize = 256;
+/// Max number of plugin completion namespaces retained in a session.
+pub const REPL_PLUGIN_COMPLETION_MAX_NAMESPACES: usize = 256;
 /// Max number of characters retained for profile labels.
 pub const REPL_PROFILE_MAX_CHARS: usize = 64;
 /// Max number of characters retained for prompt text.
