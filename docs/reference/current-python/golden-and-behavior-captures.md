@@ -1,43 +1,20 @@
-# Golden Outputs and Behavior Captures
+# Current Python Compatibility Notes
 
 ## Purpose
-Provide concrete capture files for stable compatibility coverage from the current Python implementation.
+Describe the remaining Python-facing compatibility checks after the tracked
+capture files were retired.
 
-## Capture root
-- `artifacts/python-behavior/golden/*.json`
-- `artifacts/python-behavior/golden/config/*.json`
-- `artifacts/python-behavior/runtime/repl-interactive.txt`
-- `artifacts/current-python-behavior-lock.json`
+## Current checks
 
-## Reproduction command
-- `bijux dev cli scripts capture-python-behavior`
+- Current Rust runtime vs current Python package:
+  - `crates/bijux-cli-python/tests/python/test_runtime_parity.py`
+  - `crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs`
+- Current Python package vs PyPI stable release `0.2.0`:
+  - `crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py`
+  - run intentionally with `BIJUX_ENABLE_STABLE_PYPI_PARITY=1`
 
-## Capture mapping
-- 41: `golden/bijux_help.json`
-- 42: `golden/bijux_version.json`
-- 43: `golden/bijux_doctor.json`
-- 44: `golden/bijux_status_text.json`
-- 45: `golden/bijux_status_json_no_pretty.json`
-- 46: `golden/bijux_status_yaml_pretty.json`
-- 47: `golden/bijux_plugins_list.json`
-- 48: `golden/bijux_config_root.json`
-- 49: `golden/bijux_history_root.json`
-- 50: `golden/bijux_dev_help.json`
-- 51: `golden/behavior_success_streams.json`
-- 52: `golden/behavior_validation_failure_streams.json`
-- 53: `golden/behavior_internal_failure_streams.json`
-- 54: `golden/behavior_quiet_mode.json`
-- 55: `golden/behavior_debug_log_level.json`
-- 56: `golden/behavior_help_short_circuit.json`
-- 57: `golden/behavior_repl_startup_piped.json` and `runtime/repl-interactive.txt`
-- 58: `golden/behavior_plugins_install.json`, `golden/behavior_plugins_check.json`, `golden/behavior_plugins_uninstall.json`
-- 59: `golden/behavior_config_precedence_config_only.json`, `golden/behavior_config_precedence_env_override.json`, `golden/behavior_config_precedence_cli_override.json`
-- 60: `artifacts/current-python-behavior-lock.json`
+## Removed workflow
 
-## Format of each golden capture
-Each `golden/*.json` file includes:
-- `argv`
-- `exit_code`
-- `stdout`
-- `stderr`
-- `env_overrides`
+Tracked files under `artifacts/python-behavior/` and
+`artifacts/current-python-behavior-lock.json` are no longer part of the repo.
+`artifacts/` is disposable local output only.

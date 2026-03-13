@@ -2,15 +2,14 @@
 
 ## Purpose
 
-Capture the historical Python runtime behavior that still matters for parity
-work, migration review, and regression analysis.
+Record the Python-facing compatibility surface that still matters for release
+review and regression checks.
 
 ## Scope
 
-This section records behavior that was previously owned by the Python runtime
-lineage. The current runtime is Rust-backed, so this inventory stays focused on
-observable command behavior, snapshots, and compatibility notes rather than old
-implementation paths.
+The current runtime is Rust-backed. This section stays focused on observable
+command overlap and compatibility notes, not on preserving generated artifact
+snapshots inside the repo.
 
 ## Command Inventory
 

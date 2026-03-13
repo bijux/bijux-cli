@@ -25,11 +25,8 @@ Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source
 > **At a glance**
 > Plugin-driven · Deterministic flags · Dependency Injection · Sync + Async · REPL · JSON/YAML output
 > **Quality**
-> Quality status is evidence-backed by generated artifacts in this repo.
-> → See `artifacts/parity/command_parity_matrix.json`,
-> `artifacts/status/test_quality_audit.json`,
-> `artifacts/status/docs_audit.json`,
-> and `artifacts/status/what_is_partial.json`.
+> Quality status is checked from live tests and maintainer commands.
+> `artifacts/` is disposable local output and is not part of the repo contract.
 
 ---
 
@@ -326,7 +323,8 @@ Precedence: **flags → env → config → defaults**
 
 ## Tests & Quality
 
-Bijux quality claims are evidence-backed through generated artifacts and CI gates.
+Bijux quality claims are checked through tests, CI gates, and live maintainer
+commands.
 
 Run locally:
 
@@ -341,8 +339,12 @@ make publish-py    # requires PYPI_API_TOKEN
 make publish-rs    # dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to publish
 ```
 
-Artifacts:
-[https://bijux.github.io/bijux-cli/artifacts/](https://bijux.github.io/bijux-cli/artifacts/)
+Parity checks worth running:
+
+```bash
+python3 -m pytest crates/bijux-cli-python/tests/python/test_runtime_parity.py
+BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py
+```
 
 ---
 
@@ -370,7 +372,8 @@ crates/*/tests/ Crate-local test suites
 
 ## Roadmap
 
-Roadmap priorities are generated from parity and status artifacts.
+Roadmap priorities come from open tests, maintainer review, and current command
+surfaces.
 
 ---
 

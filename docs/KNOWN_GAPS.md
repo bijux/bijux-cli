@@ -1,19 +1,20 @@
 # Status And Gaps
 
-Use generated artifacts as the source of truth for current status and remaining
-gaps.
+Use tests and live maintainer commands as the source of truth for current
+status and remaining gaps. Generated artifacts are disposable outputs, not repo
+inputs.
 
 ## Current Inputs
 
-- `artifacts/parity/command_parity_matrix.json`
-- `artifacts/status/status_known_parity_gaps.json`
-- `artifacts/status/runtime_unity_report.json`
-- `artifacts/status/docs_audit.json`
-- `artifacts/status/test_quality_audit.json`
+- `cargo test --workspace`
+- `python3 -m pytest crates/bijux-cli-python/tests/python`
+- `bijux dev cli status --format json --no-pretty`
+- `bijux dev cli parity --format json --no-pretty`
 
 ## Claim Discipline
 
-- Do not describe work as complete unless the supporting artifact exists and is current.
+- Do not describe work as complete unless the supporting test or live maintainer
+  command is current and green.
 - Treat missing evidence as an open gap, not an implicit success.
 - Review `bijux dev cli status --format json` before making maintainer status claims.
 
@@ -45,14 +46,11 @@ For release or review summaries, keep the outcome shape explicit:
 2. `left`
 3. `blocked` or `deferred`
 
-Review these artifacts before publishing status:
+Review these commands before publishing status:
 
-- `artifacts/status/what_is_done.json`
-- `artifacts/status/what_is_left.json`
-- `artifacts/status/what_is_partial.json`
-- `artifacts/status/what_is_deferred.json`
-- `artifacts/status/what_is_unproven.json`
-- `artifacts/status/next_200_priorities.json`
+- `bijux dev cli status --format json --no-pretty`
+- `bijux dev cli parity --format json --no-pretty`
+- `bijux dev cli docs-audit --format json --no-pretty`
 
 For configuration-specific parity gaps and deferred changes, use
 `docs/architecture/config-parity-report.md` together with the generated parity

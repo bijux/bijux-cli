@@ -10,7 +10,7 @@ Python references:
 - `src/bijux_cli/cli/repl/parsing.py`
 - `src/bijux_cli/cli/repl/execution.py`
 - `src/bijux_cli/cli/repl/ui.py`
-- `artifacts/python-behavior/runtime/repl-interactive.txt`
+- `crates/bijux-cli-python/tests/python/test_runtime_parity.py`
 
 Rust references:
 
@@ -42,7 +42,7 @@ Rust references:
 - `357`: complete (repl output parity check against non-interactive CLI for `status`)
 - `358`: complete (this report)
 - `359`: complete (`:plugin reload` removed to avoid REPL-only semantics drift)
-- `360`: complete (REPL remains "same law, different surface" with artifact-backed parity checks)
+- `360`: complete (REPL remains "same law, different surface" with live parity checks)
 
 ## Key implementation updates
 

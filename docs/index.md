@@ -27,11 +27,11 @@ High-value documents only. Everything else is supporting detail.
 - [Development guide](guides/development.md)
 - [REPL reference](reference/repl.md)
 
-## Generated Evidence
-- `artifacts/status/current_rust_state.json`
-- `artifacts/status/dev_cli_inventory.json`
-- `artifacts/status/docs_audit.json`
-- `artifacts/parity/rust_python_parity_report.json`
+## Live Checks
+- `cargo test --workspace`
+- `python3 -m pytest crates/bijux-cli-python/tests/python`
+- `bijux dev cli status --format json --no-pretty`
+- `bijux dev cli parity --format json --no-pretty`
 
 ## Docs Rule
 Fewer docs, higher signal. Every long-form doc must explain law or explain change.

@@ -43,20 +43,19 @@ cargo test --locked --workspace
 Before tagging a release, confirm:
 
 1. CI is green for the release commit.
-2. Release evidence artifacts exist and are current.
-3. Parity and known-gap artifacts have been reviewed.
+2. Live maintainer checks have been run from a clean checkout.
+3. Current parity and known-gap review is complete.
 4. Package-health and runtime-identity reports are green.
 5. Docs build succeeds.
 6. `bijux version` and `bijux cli doctor` pass in a clean environment.
 
-Use generated artifacts rather than handwritten status summaries:
+Use live commands first. Generated artifacts are disposable local output:
 
-- `artifacts/status/release_evidence_bundle.json`
-- `artifacts/status/release_status_manifest.json`
-- `artifacts/status/release_truth_report.json`
-- `artifacts/status/docs_audit.json`
-- `artifacts/status/test_quality_audit.json`
-- `artifacts/parity/command_parity_matrix.json`
+- `bijux dev cli status --format json --no-pretty`
+- `bijux dev cli parity --format json --no-pretty`
+- `bijux dev cli docs-audit --format json --no-pretty`
+- `cargo test --workspace`
+- `python3 -m pytest crates/bijux-cli-python/tests/python`
 
 ## Rollback And Compatibility Checks
 
@@ -68,19 +67,15 @@ If a release candidate or published version regresses:
 4. pin the rollback version in CI and deployment manifests
 5. capture the regression with impact and reproduction details
 
-For maintainer-facing compatibility review, prefer generated evidence and `dev`
-surfaces:
+For maintainer-facing compatibility review, prefer live runtime checks and the
+two explicit compatibility comparisons:
 
 ```bash
 bijux dev cli runtime-identity --json --no-pretty
 bijux dev cli parity --json --no-pretty
+python3 -m pytest crates/bijux-cli-python/tests/python/test_runtime_parity.py
+BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py
 ```
-
-Review:
-
-- `artifacts/status/runtime_unity_report.json`
-- `artifacts/parity/binary_vs_python_bridge_parity_report.json`
-- `artifacts/parity/command_parity_matrix.json`
 
 ## References
 - [Contributor mental model](contributor-mental-model.md)

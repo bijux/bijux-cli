@@ -6,11 +6,11 @@ Define the migration path from the Python implementation to the Rust foundation 
 ## Compatibility principle
 The `bijux` command is the product surface. Migration work must preserve documented contracts for command grammar, flags, output envelopes, errors, stream routing, and exit codes.
 
-## Current baseline artifacts
+## Current baseline inputs
 - Constitution and compatibility contracts under `docs/constitution/`.
 - Python behavior inventory under `docs/reference/current-python/`.
-- Golden capture set under `artifacts/python-behavior/golden/`.
-- Lock snapshot at `artifacts/current-python-behavior-lock.json`.
+- Current Rust vs current Python parity tests.
+- Stable-release compatibility checks against the published PyPI baseline.
 
 ## Migration stages
 1. Implement Rust contracts and typed models in `bijux-cli-contracts`.
@@ -18,7 +18,7 @@ The `bijux` command is the product surface. Migration work must preserve documen
 3. Implement execution kernel in `bijux-cli`.
 4. Implement output and error emission in `bijux-cli-output`.
 5. Implement plugin and REPL boundaries in dedicated crates.
-6. Run parity checks against captured Python behavior.
+6. Run parity checks against the current Python package and the stable PyPI baseline.
 7. Cut over entrypoint only after parity criteria pass.
 
 ## Parity gates
@@ -36,5 +36,7 @@ The `bijux` command is the product surface. Migration work must preserve documen
 - If documented behavior changes incompatibly, release as a major version.
 
 ## Rollback strategy
-- Keep Python core path available behind a release toggle until Rust parity is proven.
-- On parity regression, revert binary entrypoint to Python core in the next patch release.
+- Keep rollback instructions tied to released package versions, not to checked-in
+  generated capture files.
+- On parity regression, revert to the last known-good published version in the
+  affected channel.
