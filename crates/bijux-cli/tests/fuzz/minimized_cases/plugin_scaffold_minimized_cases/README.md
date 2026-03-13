@@ -1,4 +1,8 @@
 # Plugin Scaffold Minimized Cases
 
-Retained minimized scaffold fuzz reproducer argument vectors.
-Any drift in deterministic behavior for these cases must fail CI.
+This directory contains retained `.argv` files replayed by
+`tests/integration/cli/plugins/plugin_scaffold_fuzz_regressions.rs`.
+
+- Keep one argument token per non-comment line.
+- `{ROOT}` is replaced by the replay test with a temporary workspace path.
+- Store only minimized scaffold regressions here.

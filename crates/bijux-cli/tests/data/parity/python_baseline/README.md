@@ -1,11 +1,9 @@
 # Python Baseline Parity Inputs
 
-This directory is the single source of truth for Python-origin baseline inputs used by Rust parity tests.
+This directory is reserved for hand-authored Python baseline inputs that Rust parity tests can reuse.
 
-Rules:
 - Keep files deterministic and reviewable.
-- Store only stable baseline inputs and expected payloads.
-- Do not write runtime-generated reports here.
+- Store source inputs here only.
+- Put generated snapshots under `tests/data/golden/ported/`.
 
-Current baseline payload snapshots remain under `tests/data/golden/ported/`.
-As parity coverage is expanded, add canonical Python baseline inputs in this directory.
+The directory is currently empty apart from this note.

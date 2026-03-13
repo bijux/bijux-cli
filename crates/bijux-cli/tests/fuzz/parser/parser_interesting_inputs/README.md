@@ -1,4 +1,8 @@
 # Parser Interesting Input Corpus
 
-Each file contains one argv sequence per line, space-delimited, starting with `bijux`.
-These inputs are intentionally adversarial and are replayed by parser fuzz regression tests.
+This directory contains `.txt` corpora replayed by
+`tests/routing/parser/parser_fuzz_regressions.rs`.
+
+- Each non-comment line is one space-delimited argv sequence.
+- Lines usually start with `bijux`.
+- Keep inputs adversarial but readable; this corpus is for broad parser coverage, not only minimized crashes.

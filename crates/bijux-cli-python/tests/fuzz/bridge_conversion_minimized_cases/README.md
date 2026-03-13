@@ -1,4 +1,8 @@
 # Bridge Conversion Minimized Cases
 
-Retained minimized bridge-conversion repro payloads for deterministic replay.
-Any drift in conversion-shape expectations must fail CI.
+This directory contains retained `.json` samples replayed by
+`tests/bridge_conversion_fuzz_regressions.rs`.
+
+- Keep each file minimized and reviewable.
+- Store one JSON payload per file.
+- Use this directory for retained regression samples, not generated reports.

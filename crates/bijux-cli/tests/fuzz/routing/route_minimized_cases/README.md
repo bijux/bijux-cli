@@ -1,4 +1,8 @@
 # Route Minimized Cases
 
-Minimized route-fuzz reproducer inputs retained for deterministic replay.
-If a case regresses, CI must fail via the route/registry fuzz gate.
+This directory contains retained `.txt` files replayed by
+`tests/routing/laws/route_fuzz_regressions.rs`.
+
+- Keep one namespace token per non-comment line.
+- Blank lines and `#` comments are ignored by the replay test.
+- Add only minimized cases that exercise route registration order or normalization edge cases.
