@@ -27,4 +27,4 @@ Choosing explicit output formats and flags prevents surprises in CI and automati
 
 ## References
 - [Commands](../reference/commands.md)
-- [Precedence rules](../concepts/precedence.md)
+- [Concepts overview](../concepts/index.md)

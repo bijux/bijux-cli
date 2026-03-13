@@ -255,7 +255,7 @@ Once a higher-priority flag applies, lower-priority inputs are ignored.
 |        5 | `--pretty / --no-pretty`     | Formatting toggle                      |
 |        6 | `--log-level <level>`        | Logging threshold                      |
 
-See the full rationale in the [Precedence docs](https://bijux.github.io/bijux-cli/concepts/precedence/).
+See the full rationale in the [Concepts docs](https://bijux.github.io/bijux-cli/concepts/).
 
 ---
 

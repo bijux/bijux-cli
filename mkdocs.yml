@@ -99,6 +99,12 @@ plugins:
         reference/current-python/repl-commands-and-shortcuts.md: reference/current-python/index.md
         reference/current-python/shell-completion-behavior.md: reference/current-python/index.md
         reference/current-python/exit-codes-used-in-tests.md: reference/current-python/index.md
+        concepts/architecture.md: concepts/index.md
+        concepts/execution-model.md: concepts/index.md
+        concepts/exit-policy.md: concepts/index.md
+        concepts/logging.md: concepts/index.md
+        concepts/plugin-lifecycle.md: concepts/index.md
+        concepts/precedence.md: concepts/index.md
         architecture/config-get-post-parity-improvements.md: architecture/config-parity-report.md
         architecture/config-set-post-parity-improvements.md: architecture/config-parity-report.md
         architecture/config-parity-matrix.md: architecture/config-parity-report.md

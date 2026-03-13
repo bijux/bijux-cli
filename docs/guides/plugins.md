@@ -15,7 +15,7 @@ bijux cli plugins check NAMESPACE
 ## References
 
 - [Plugin examples](../examples/plugins.md)
-- [Plugin lifecycle concept](../concepts/plugin-lifecycle.md)
+- [Concepts overview](../concepts/index.md)
 - [Plugin state](../plugin_state.md)
 - [Plugin write-path parity report](../architecture/plugin-write-path-parity-report.md)
 

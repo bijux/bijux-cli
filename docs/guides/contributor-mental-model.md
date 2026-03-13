@@ -25,5 +25,5 @@ The mental model is intentionally strict because it enables strong guarantees an
 This document does not define coding style rules or release procedures.
 
 ## References
-- [Execution model](../concepts/execution-model.md)
+- [Concepts overview](../concepts/index.md)
 - [Architecture walk-through](../architecture/walkthrough.md)
