@@ -1,4 +1,0 @@
-^Dexit
-[?12l[?25hbijux> 
-
-Exiting REPL.

@@ -1,8 +1,0 @@
-{
-  "drift_count": 0,
-  "drift_reasons": [],
-  "generated_at": "2026-03-13T01:41:17Z",
-  "generator": "bijux-dev-cli",
-  "scope": "config precedence/source drift",
-  "status": "clean"
-}

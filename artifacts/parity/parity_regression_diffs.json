@@ -1,6 +1,0 @@
-{
-  "baseline": "docs/architecture/parity/baseline_command_parity_matrix.json",
-  "current": "artifacts/parity/command_parity_matrix.json",
-  "regressions": [],
-  "warnings": []
-}

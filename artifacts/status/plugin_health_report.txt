@@ -1,7 +1,0 @@
-{
-  "machine_report": {
-    "machine_report": {},
-    "text_report": "Plugin Runtime Health\nstatus: degraded\ncomplete commands: 7\npartial commands: 5\nplugin parity rows complete: 0/0\nremaining gaps: 3\n\nUse `bijux dev cli plugin-health --format json` for machine-readable details.\n"
-  },
-  "text_report": ""
-}
