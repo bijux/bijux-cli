@@ -15,8 +15,9 @@ High-value documents only. Everything else is supporting detail.
 - [Constitution index](constitution/index.md)
 
 ## Usage
+- [Introduction](01-introduction/index.md)
 - [Installation](guides/installation.md)
-- [Quickstart](getting-started/quickstart.md)
+- [First run](01-introduction/first-run.md)
 - [Commands reference](reference/commands.md)
 - [Exit codes](reference/exit-codes.md)
 
