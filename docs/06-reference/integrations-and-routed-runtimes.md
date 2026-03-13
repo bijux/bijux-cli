@@ -48,6 +48,8 @@ The durable local plugin contract is based on `plugin.manifest.json`.
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install
+- installed plugin namespaces are not currently executed as routed
+  `bijux <plugin-namespace> ...` subcommands
 
 ## Python Facade APIs
 

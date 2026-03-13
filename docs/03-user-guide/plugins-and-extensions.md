@@ -87,6 +87,29 @@ Expected shape:
 - check before relying on a plugin in automation
 - uninstall plugins you do not actively want to keep
 
+## Current Scope
+
+The current plugin surface is a management and diagnostics surface. These
+commands are implemented and supported for baseline use:
+
+- `list`
+- `inspect`
+- `check`
+- `enable`
+- `disable`
+- `install`
+- `uninstall`
+- `scaffold`
+- `doctor`
+- `reserved-names`
+- `where`
+- `explain`
+- `schema`
+
+Installed plugin namespaces are not currently executed as runtime subcommands
+inside `bijux-cli`. If your workflow depends on `bijux <plugin-namespace> ...`
+direct execution, that behavior is outside the current supported surface.
+
 ## Important Limit
 
 Plugins are not sandboxed. Installing a plugin is a trust decision, not just a
@@ -96,6 +119,10 @@ feature toggle.
 
 `inspect`, `check`, and `doctor` can show compatibility, manifest drift, and
 current load issues. They cannot make an untrusted plugin safe.
+
+Rust plugin management already adds guardrails beyond the historical Python
+baseline, including better reserved-namespace diagnostics, write-path rollback
+coverage, and current-runtime drift reporting.
 
 ## Read Next
 

@@ -53,6 +53,27 @@ two directions:
 - current `bijux-cli-python` vs the latest stable PyPI release line that is
   still treated as the compatibility baseline
 
+## Runtime Migration Baseline
+
+The Python-core migration is no longer an active documentation track. The
+current state is:
+
+- the `bijux` command surface is owned by the Rust runtime
+- the Python package remains a compatibility surface, not a second independent
+  runtime
+- compatibility review is preserved through the two live comparisons above
+- cutover decisions and rollback decisions are tied to published versions, not
+  to checked-in snapshots or migration-era capture files
+
+## Release Decision Rules
+
+- release as a minor version only when documented behavior remains compatible
+- release as a major version when documented behavior changes incompatibly
+- keep `pip install bijux-cli` and tagged publish workflows aligned with the
+  same runtime identity
+- if a release regresses compatibility, roll back to the last known-good
+  published version in the affected channel
+
 ## Honest Limit
 
 A green release checklist is not a guarantee that no regression exists. It is a
@@ -62,4 +83,4 @@ claim that the current evidence supports shipping more than delaying.
 
 - [Quality and change management](../04-architecture/quality-and-change-management.md)
 - [Runtime and distribution](../04-architecture/runtime-and-distribution.md)
-- [Migrating from Python core](../MIGRATING_FROM_PYTHON_CORE.md)
+- [Integrations and routed runtimes](../06-reference/integrations-and-routed-runtimes.md)

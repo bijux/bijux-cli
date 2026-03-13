@@ -62,6 +62,42 @@ failure.
 - `native` is reserved for forward compatibility and is intentionally not
   executable today
 
+## Stable Management Surface
+
+The current plugin-management contract covers:
+
+- `list`
+- `inspect`
+- `check`
+- `enable`
+- `disable`
+- `install`
+- `uninstall`
+- `scaffold`
+- `doctor`
+- `reserved-names`
+- `where`
+- `explain`
+- `schema`
+
+It does not currently include executing installed plugin namespaces as direct
+runtime subcommands under `bijux-cli`.
+
+## Stability Standard
+
+Treat the plugin-management surface as stable only when all of the following
+remain true:
+
+- scaffolded plugins are installable and checkable for the supported kinds
+- install, uninstall, enable, and disable preserve registry consistency and
+  rollback guarantees on failure
+- corrupt registry input is diagnosable and any self-repair behavior is
+  explicit
+- plugin command failures keep the documented stdout, stderr, and exit-code
+  contract
+- current health evidence exists through live tests or maintainer checks
+  instead of checked-in artifact snapshots
+
 ## Trust And Safety Limits
 
 - plugins are not sandboxed
