@@ -9,6 +9,7 @@ MKDOCS_CFG       ?= mkdocs.yml
 # Keep documentation build outputs and caches under `artifacts/`.
 DOCS_SITE_DIR    ?= artifacts/docs/site
 DOCS_CACHE_DIR   ?= artifacts/docs/.cache
+DOCS_CONTRACT_DIR ?= $(DOCS_SITE_DIR)/contracts
 
 ENABLE_SOCIAL_CARDS ?= false
 SITE_URL            ?= http://127.0.0.1:8000/
@@ -73,4 +74,9 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
 	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden"; exit 1)
+	@test -f "$(DOCS_CONTRACT_DIR)/schemas/output-envelope-v1.schema.json" || (echo "ERROR: published contract schema copy is missing"; exit 1)
+	@test -f "$(DOCS_CONTRACT_DIR)/schemas/error-envelope-v1.schema.json" || (echo "ERROR: published contract error schema copy is missing"; exit 1)
+	@test -f "$(DOCS_CONTRACT_DIR)/schemas/plugin-manifest-v2.schema.json" || (echo "ERROR: published contract plugin schema copy is missing"; exit 1)
+	@test -f "$(DOCS_CONTRACT_DIR)/official_product_namespace_registry.json" || (echo "ERROR: published contract registry copy is missing"; exit 1)
+	@test -f "$(DOCS_CONTRACT_DIR)/product_mount_metadata_contract.json" || (echo "ERROR: published contract mount metadata copy is missing"; exit 1)
 	@echo "Docs hygiene OK"

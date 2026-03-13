@@ -306,6 +306,9 @@ plugins:
       loop: false
       effect: zoom
 
+hooks:
+  - configs/mkdocs_hooks/publish_contract_assets.py
+
 markdown_extensions:
   - admonition
   - footnotes
