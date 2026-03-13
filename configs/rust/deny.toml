@@ -11,7 +11,9 @@ allow = [
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+# Workspace path dependencies intentionally omit explicit versions because crate
+# versions are derived from release tags, so wildcard requirements are warning-level.
+wildcards = "warn"
 
 [sources]
 unknown-registry = "deny"

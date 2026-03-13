@@ -63,14 +63,14 @@ endef
 ##@ Rust
 fmt-rs: ## Run Rust format checks (artifact-scoped)
 	@mkdir -p "$(dir $(RS_FMT_REPORT))"
-	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
+	@printf '%s\n' "run: cargo fmt --all -- --check"
 	@set -o pipefail; \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
 	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml 2>&1 | tee "$(RS_FMT_REPORT)"
+	cargo fmt --all -- --check 2>&1 | tee "$(RS_FMT_REPORT)"
 
 lint-rs: ## Run Rust clippy checks with -D warnings (artifact-scoped)
 	@mkdir -p "$(dir $(RS_LINT_REPORT))"
@@ -185,13 +185,18 @@ audit-rs: ## Run cargo-deny and cargo-audit (artifact-scoped)
 	$(call rs_require_tool,cargo-deny)
 	$(call rs_require_tool,cargo-audit)
 	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
-	@set -o pipefail; { \
+	@set -o pipefail; \
+	deny_status=0; \
+	audit_status=0; \
+	{ \
 		echo "run: cargo deny check --config configs/rust/deny.toml"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check --config configs/rust/deny.toml; \
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check --config configs/rust/deny.toml || deny_status=$$?; \
 		echo; \
 		echo "run: cargo audit"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit; \
-	} 2>&1 | tee "$(RS_AUDIT_REPORT)"
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit || audit_status=$$?; \
+	} 2>&1 | tee "$(RS_AUDIT_REPORT)"; \
+	test $$deny_status -eq 0; \
+	test $$audit_status -eq 0
 
 publish-rs: ## Publish Rust crates (dry-run by default; set RUST_PUBLISH_DRY_RUN=0 to release)
 	@set -euo pipefail; \

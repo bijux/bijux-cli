@@ -101,13 +101,15 @@ python-env-py:
 fmt-py: python-env-py
 	@echo "→ Ruff format"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
-	@$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
+	@set -o pipefail; \
+	$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
 lint-py: fmt-py
 	@echo "→ Ruff lint"
-	@$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
+	@set -o pipefail; \
+	$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
@@ -140,11 +142,13 @@ security-py: python-env-py
 	@echo "→ Bandit (medium/high severity)"
 	@mkdir -p "$(SECURITY_ARTIFACTS_DIR)"
 	@$(BANDIT) -r "$(PYTHON_SRC_DIR)/bijux_cli_py" -ll -f json -o "$(SECURITY_ARTIFACTS_DIR)/bandit.json"
-	@$(BANDIT) -r "$(PYTHON_SRC_DIR)/bijux_cli_py" -ll \
+	@set -o pipefail; \
+	$(BANDIT) -r "$(PYTHON_SRC_DIR)/bijux_cli_py" -ll \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/bandit.txt"
 	@echo "→ pip-audit"
 	@$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) -f json -o "$(SECURITY_ARTIFACTS_DIR)/pip-audit.json"
-	@$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) \
+	@set -o pipefail; \
+	$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/pip-audit.txt"
 
 build-py: python-env-py
@@ -152,7 +156,8 @@ build-py: python-env-py
 	@mkdir -p "$(BUILD_ARTIFACTS_DIR)"
 	@rm -f "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz "$(BUILD_ARTIFACTS_DIR)/twine-check.log" || true
 	@$(BUILD_PY) --wheel --sdist --outdir "$(BUILD_ARTIFACTS_DIR)" "$(PYTHON_PACKAGE_DIR)"
-	@$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
+	@set -o pipefail; \
+	$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
 
 publish-py: python-env-py
 	@echo "→ Validating Python/Rust package version parity"
