@@ -4,27 +4,28 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::{collect_files_recursive, json_artifact_state, read_json_if_exists, relative_to_root};
+use crate::infra::artifacts::{
+    collect_files_recursive, json_artifact_state, read_json_if_exists, relative_to_root,
+};
 
 /// Builds the maintainer documentation audit report payload.
 #[must_use]
 pub fn build_report(workspace_root: &Path) -> Value {
-    let artifact_summary = read_json_if_exists(&workspace_root.join("artifacts/status/docs_audit.json"));
+    let artifact_summary =
+        read_json_if_exists(&workspace_root.join("artifacts/status/docs_audit.json"));
     let all_docs_files = collect_files_recursive(&workspace_root.join("docs"))
         .into_iter()
         .map(|p| relative_to_root(&p, workspace_root))
         .collect::<Vec<_>>();
-    let docs_files = all_docs_files
-        .iter()
-        .filter(|path| path.ends_with(".md"))
-        .cloned()
+    let contract_assets = collect_files_recursive(&workspace_root.join("contracts"))
+        .into_iter()
+        .map(|p| relative_to_root(&p, workspace_root))
         .collect::<Vec<_>>();
+    let docs_files =
+        all_docs_files.iter().filter(|path| path.ends_with(".md")).cloned().collect::<Vec<_>>();
     let machine_readable_docs = all_docs_files
         .iter()
-        .filter(|path| {
-            path.ends_with(".json")
-                && (path.starts_with("docs/07-contracts/") || path.starts_with("docs/assets/"))
-        })
+        .filter(|path| path.ends_with(".json") && path.starts_with("docs/assets/"))
         .cloned()
         .collect::<Vec<_>>();
     let site_assets = all_docs_files
@@ -45,6 +46,7 @@ pub fn build_report(workspace_root: &Path) -> Value {
             "docs_count": docs_files.len(),
             "markdown_count": docs_files.len(),
             "machine_readable_count": machine_readable_docs.len(),
+            "contract_asset_count": contract_assets.len(),
             "site_asset_count": site_assets.len(),
             "total_file_count": all_docs_files.len(),
         },
@@ -52,6 +54,8 @@ pub fn build_report(workspace_root: &Path) -> Value {
         "docs_count": docs_files.len(),
         "machine_readable_docs": machine_readable_docs,
         "machine_readable_count": machine_readable_docs.len(),
+        "contract_assets": contract_assets,
+        "contract_asset_count": contract_assets.len(),
         "site_assets": site_assets,
         "site_asset_count": site_assets.len(),
         "total_docs_file_count": all_docs_files.len(),
@@ -74,27 +78,26 @@ mod tests {
         assert!(report.get("docs_count").is_some());
         assert!(report.get("docs_audit").is_some());
         assert!(report.get("machine_readable_docs").is_some());
+        assert!(report.get("contract_assets").is_some());
         assert!(report.get("site_assets").is_some());
     }
 
     #[test]
-    fn docs_audit_tracks_non_markdown_files_under_docs() {
+    fn docs_audit_tracks_non_markdown_files_under_docs_and_contract_roots() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_report(&root);
         let machine_readable_docs =
             report["machine_readable_docs"].as_array().expect("machine-readable docs");
+        let contract_assets = report["contract_assets"].as_array().expect("contract assets");
         let site_assets = report["site_assets"].as_array().expect("site assets");
-        assert!(
-            machine_readable_docs
-                .iter()
-                .filter_map(Value::as_str)
-                .any(|path| path == "docs/07-contracts/schemas/output-envelope-v1.schema.json")
-        );
-        assert!(
-            site_assets
-                .iter()
-                .filter_map(Value::as_str)
-                .any(|path| path == "docs/assets/styles/extra.css")
-        );
+        assert!(contract_assets
+            .iter()
+            .filter_map(Value::as_str)
+            .any(|path| path == "contracts/schemas/output-envelope-v1.schema.json"));
+        assert!(machine_readable_docs.is_empty());
+        assert!(site_assets
+            .iter()
+            .filter_map(Value::as_str)
+            .any(|path| path == "docs/assets/styles/extra.css"));
     }
 }

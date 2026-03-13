@@ -54,13 +54,15 @@ These pages are intentionally normative:
 ## Machine-Readable Contract Assets
 
 These files are part of the kept contract surface and should be reviewed
-alongside the markdown pages when a contract changes:
+alongside the markdown pages when a contract changes. The canonical source of
+truth lives under `contracts/`. The documentation site publishes copies under
+its `contracts/` path:
 
-- `docs/07-contracts/schemas/output-envelope-v1.schema.json`
-- `docs/07-contracts/schemas/error-envelope-v1.schema.json`
-- `docs/07-contracts/schemas/plugin-manifest-v2.schema.json`
-- `docs/07-contracts/official_product_namespace_registry.json`
-- `docs/07-contracts/product_mount_metadata_contract.json`
+- `contracts/schemas/output-envelope-v1.schema.json`
+- `contracts/schemas/error-envelope-v1.schema.json`
+- `contracts/schemas/plugin-manifest-v2.schema.json`
+- `contracts/official_product_namespace_registry.json`
+- `contracts/product_mount_metadata_contract.json`
 
 ## Next Step
 

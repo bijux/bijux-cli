@@ -85,11 +85,11 @@ Precedence is stable and resolves as:
 - current baselines are envelope `v1` and plugin manifest `v2`
 - future changes must not repurpose existing documented fields with new meaning
 
-Supporting schemas live under:
+Supporting schemas live under `contracts/schemas/`:
 
-- `docs/07-contracts/schemas/error-envelope-v1.schema.json`
-- `docs/07-contracts/schemas/output-envelope-v1.schema.json`
-- `docs/07-contracts/schemas/plugin-manifest-v2.schema.json`
+- `contracts/schemas/error-envelope-v1.schema.json`
+- `contracts/schemas/output-envelope-v1.schema.json`
+- `contracts/schemas/plugin-manifest-v2.schema.json`
 
 Deprecation is a compatibility process:
 

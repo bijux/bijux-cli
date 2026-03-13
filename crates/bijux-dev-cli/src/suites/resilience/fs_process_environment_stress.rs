@@ -5,13 +5,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PRODUCT-MOUNT-READINESS-REPORTS" => {
             let registry = fs::read_to_string(
-                workspace_root.join("docs/07-contracts/official_product_namespace_registry.json"),
+                workspace_root.join("contracts/official_product_namespace_registry.json"),
             )
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({}));
             let contract = fs::read_to_string(
-                workspace_root.join("docs/07-contracts/product_mount_metadata_contract.json"),
+                workspace_root.join("contracts/product_mount_metadata_contract.json"),
             )
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
@@ -67,8 +67,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs",
                                         "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
                                         "crates/bijux-cli/tests/routing/route_law_consistency.rs",
-                                        "docs/07-contracts/official_product_namespace_registry.json",
-                                        "docs/07-contracts/product_mount_metadata_contract.json",
+                                        "contracts/official_product_namespace_registry.json",
+                                        "contracts/product_mount_metadata_contract.json",
                                     ],
                                 }),
                             )

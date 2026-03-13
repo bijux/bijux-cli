@@ -48,7 +48,8 @@ must not publish divergent public executables under the `bijux` command name.
   - `bijux dev <tool> ...` -> `bijux-dev-<tool>`
 
 The machine-readable routed product registry is
-`docs/07-contracts/official_product_namespace_registry.json`.
+`contracts/official_product_namespace_registry.json`. The documentation site
+publishes a copy under its `contracts/` path.
 
 ## Python Distribution Policy
 

@@ -73,8 +73,8 @@ downgrading to another format.
 
 ## Machine-Readable Schemas
 
-- success envelope schema: `docs/07-contracts/schemas/output-envelope-v1.schema.json`
-- error envelope schema: `docs/07-contracts/schemas/error-envelope-v1.schema.json`
+- success envelope schema: `contracts/schemas/output-envelope-v1.schema.json`
+- error envelope schema: `contracts/schemas/error-envelope-v1.schema.json`
 
 ## Honest Limit
 
