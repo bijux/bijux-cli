@@ -1,9 +1,33 @@
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::contracts::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use crate::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
 
 use super::types::{ReplSession, ReplShutdownContract, ReplStartupContract};
+
+static REPL_SESSION_COUNTER: AtomicU64 = AtomicU64::new(1);
+
+fn next_session_id() -> String {
+    let seq = REPL_SESSION_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let millis = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis();
+    format!("repl-{}-{millis}-{seq}", std::process::id())
+}
+
+fn resolve_prompt(profile: &str, prompt: Option<&str>) -> (String, bool) {
+    if let Some(value) = prompt {
+        let rendered = value.to_string();
+        let include_profile_context = !profile.trim().is_empty() && rendered.contains(profile);
+        return (rendered, include_profile_context);
+    }
+
+    if profile.trim().is_empty() {
+        return ("bijux> ".to_string(), false);
+    }
+
+    (format!("bijux[{profile}]> "), true)
+}
 
 /// Startup REPL session using the same policy precedence and routing registry as CLI.
 #[must_use]
@@ -22,9 +46,9 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         &PolicyInputs { env: defaults.clone(), config: defaults.clone(), defaults },
     );
 
-    let prompt = prompt.unwrap_or("bijux> ").to_string();
+    let (prompt, include_profile_context) = resolve_prompt(profile, prompt);
     let session = ReplSession {
-        session_id: "repl-1".to_string(),
+        session_id: next_session_id(),
         prompt: prompt.clone(),
         profile: profile.to_string(),
         policy: policy.clone(),
@@ -41,8 +65,7 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         completion_registries: BTreeMap::new(),
     };
 
-    let startup =
-        ReplStartupContract { prompt, include_profile_context: !profile.is_empty(), policy };
+    let startup = ReplStartupContract { prompt, include_profile_context, policy };
 
     (session, startup)
 }
@@ -55,8 +78,16 @@ pub fn startup_repl_with_diagnostics(
     broken_plugins: &[&str],
 ) -> (ReplSession, ReplStartupContract, Vec<String>) {
     let (session, startup) = startup_repl(profile, prompt);
-    let diagnostics = broken_plugins
+    let mut namespaces = broken_plugins
         .iter()
+        .map(|namespace| namespace.trim())
+        .filter(|namespace| !namespace.is_empty())
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    namespaces.sort();
+    namespaces.dedup();
+    let diagnostics = namespaces
+        .into_iter()
         .map(|namespace| format!("plugin {namespace} is broken and will be skipped"))
         .collect();
     (session, startup, diagnostics)

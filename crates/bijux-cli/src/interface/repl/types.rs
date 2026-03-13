@@ -10,6 +10,8 @@ pub const REPL_MEMORY_BUDGET_BYTES: usize = 2 * 1024 * 1024;
 
 /// REPL startup command prefix.
 pub(crate) const META_PREFIX: char = ':';
+/// Max number of characters retained per history command.
+pub const REPL_HISTORY_ENTRY_MAX_CHARS: usize = 8 * 1024;
 
 /// Stable REPL startup contract.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,6 +135,9 @@ pub enum ReplError {
     /// Invalid REPL command.
     #[error("invalid repl command: {0}")]
     InvalidMetaCommand(String),
+    /// Invalid command-line tokenization input.
+    #[error("invalid command input: {0}")]
+    InvalidCommandInput(String),
     /// History replay index was invalid.
     #[error("history index out of bounds: {0}")]
     HistoryIndexOutOfBounds(usize),
