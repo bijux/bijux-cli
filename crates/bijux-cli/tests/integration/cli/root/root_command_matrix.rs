@@ -79,8 +79,15 @@ fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     };
 
     let payload = run_ok_json(&["version", "--format", "json", "--no-pretty"]);
-    let expected_semver = tag.trim_start_matches('v');
-    assert_eq!(payload["semver"], expected_semver);
+    let tagged_semver = semver::Version::parse(tag.trim_start_matches('v')).expect("tag semver");
+    let actual_semver = semver::Version::parse(payload["semver"].as_str().expect("runtime semver"))
+        .expect("runtime semver");
+    let source = payload["source"].as_str().expect("source");
+    if source == "git-tag" {
+        assert_eq!(actual_semver, tagged_semver);
+    } else {
+        assert!(actual_semver > tagged_semver);
+    }
 
     let version = payload["version"].as_str().expect("display version");
     assert!(version.starts_with(&tag), "display version should start with {tag}, got {version}");

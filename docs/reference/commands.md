@@ -58,7 +58,7 @@ It lists commands and subcommands only.
 | --- | --- |
 | list | List installed plugins |
 | info | Show plugin metadata |
-| inspect | Inspect plugin contracts and compatibility |
+| inspect | Inspect one plugin or the full inventory |
 | check | Validate a plugin namespace |
 | enable | Enable a plugin namespace |
 | disable | Disable a plugin namespace |
@@ -69,7 +69,7 @@ It lists commands and subcommands only.
 | reserved-names | Show reserved plugin namespace rules |
 | where | Show plugin state and install paths |
 | explain | Explain plugin resolution outcome |
-| schema | Show plugin manifest schema |
+| schema | Show the current plugin manifest JSON schema |
 
 ### History subcommands
 

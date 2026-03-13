@@ -11,8 +11,10 @@ Install locally with:
 ```bash
 bijux plugins install ./plugin.manifest.json
 bijux plugins list
+bijux plugins inspect {{cookiecutter.plugin_namespace}}
 bijux plugins check {{cookiecutter.plugin_namespace}}
 bijux plugins explain {{cookiecutter.plugin_namespace}}
+bijux plugins schema
 ```
 
 Keep `plugin.py` aligned with the Rust bridge, keep `plugin_namespace` stable after release,

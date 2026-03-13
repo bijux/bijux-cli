@@ -11,8 +11,10 @@ Install locally with:
 ```bash
 bijux plugins install ./plugin.manifest.json
 bijux plugins list
+bijux plugins inspect {{cookiecutter.plugin_namespace}}
 bijux plugins check {{cookiecutter.plugin_namespace}}
 bijux plugins explain {{cookiecutter.plugin_namespace}}
+bijux plugins schema
 ```
 
 Keep `plugin_namespace` stable after release, update the compatibility range in

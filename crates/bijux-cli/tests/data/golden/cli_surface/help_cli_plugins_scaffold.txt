@@ -1,8 +1,8 @@
-Usage: bijux cli plugins scaffold [OPTIONS] [kind] [namespace]
+Usage: bijux cli plugins scaffold [OPTIONS] <kind> <namespace>
 
 Arguments:
-  [kind]
-  [namespace]
+  <kind>
+  <namespace>
 
 Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
@@ -17,6 +17,6 @@ Options:
   -h, --help                Print help
 
 Examples:
-  bijux cli plugins scaffold
-  bijux cli plugins scaffold --format json
+  bijux cli plugins scaffold python sample-plugin
+  bijux cli plugins scaffold python sample-plugin --format json
   bijux help cli plugins scaffold

@@ -30,7 +30,7 @@ Options:
 Subcommand guide:
 list            List discovered plugins
 info            Show plugin inventory details
-inspect         Inspect plugin contracts and compatibility
+inspect         Inspect one plugin or the full inventory
 check           Validate a plugin namespace
 enable          Enable a plugin namespace
 disable         Disable a plugin namespace
@@ -41,10 +41,10 @@ doctor          Plugin health diagnostics
 reserved-names  Show reserved plugin namespace rules
 where           Show plugin state and install paths
 explain         Explain plugin resolution outcome
-schema          Show plugin manifest schema
+schema          Show the current plugin manifest JSON schema
 
 Examples:
   bijux plugins list
-  bijux plugins inspect
+  bijux plugins inspect sample
   bijux plugins check sample
   bijux plugins install ./plugin.manifest.json

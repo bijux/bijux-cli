@@ -25,5 +25,7 @@ declared entrypoint module, not the older `plugin.json` metadata file.
 - Delegated and Python plugins resolve `plugin:main`-style entrypoints from the installed manifest
   directory when a local manifest anchor is available, even if the displayed source label was
   overridden during install.
+- `plugins inspect [plugin]` and `plugins doctor` report current-runtime manifest drift and missing
+  entrypoints instead of relying only on stored registry state.
 - Compatibility is validated from `compatibility.min_inclusive` and `compatibility.max_exclusive`.
 - Duplicate namespaces and alias conflicts are rejected during install.

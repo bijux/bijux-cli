@@ -1,4 +1,7 @@
-Usage: bijux cli plugins inspect [OPTIONS]
+Usage: bijux cli plugins inspect [OPTIONS] [plugin]
+
+Arguments:
+  [plugin]
 
 Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
@@ -11,8 +14,8 @@ Options:
   -h, --help                Print help
 
 Examples:
-  bijux cli plugins inspect
-  bijux cli plugins inspect --format json
+  bijux cli plugins inspect sample
+  bijux cli plugins inspect sample --format json
   bijux help cli plugins inspect
 
 Compatibility note: inspect output includes plugin compatibility warnings when present.

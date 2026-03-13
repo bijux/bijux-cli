@@ -30,6 +30,7 @@ Areas where Rust plugin behavior already provides stronger guardrails:
 - plugin origin metadata in inspection paths
 - transaction rollback assertions for write-path failure cases
 - schema discoverability via `plugins schema`
+- current-runtime drift and missing-entrypoint diagnostics in `plugins inspect`, `plugins explain`, and `plugins doctor`
 - delegated entrypoint presence checks for local manifest installs
 
 ## Overlap Parity Evidence

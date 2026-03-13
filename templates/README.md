@@ -15,8 +15,10 @@ python3 -m cookiecutter ./templates/plugins-py \
   plugin_namespace=my-plugin
 bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
+bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
+bijux plugins schema
 ```
 
 ```bash
@@ -27,8 +29,10 @@ python3 -m cookiecutter ./templates/plugins-rs \
   crate_name=my_plugin
 bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
+bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
+bijux plugins schema
 ```
 
 These templates are rendered with Cookiecutter. The built-in `bijux plugins scaffold` command does

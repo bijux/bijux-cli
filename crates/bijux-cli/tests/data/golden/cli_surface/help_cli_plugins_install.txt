@@ -7,7 +7,7 @@ Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
       --source <LABEL>      Override the displayed provenance label without changing local manifest resolution
   -q, --quiet               Suppress command output
-      --trust <trust>
+      --trust <trust>       [possible values: core, verified, community, unknown]
       --log-level <LEVEL>   Log verbosity level
       --color <MODE>        ANSI color policy
       --pretty              Pretty-print structured output

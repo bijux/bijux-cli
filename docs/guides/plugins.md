@@ -10,6 +10,7 @@ bijux cli plugins list
 bijux cli plugins inspect NAMESPACE
 bijux cli plugins install ./plugin.manifest.json
 bijux cli plugins check NAMESPACE
+bijux cli plugins schema
 ```
 
 ## References

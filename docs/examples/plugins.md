@@ -46,9 +46,10 @@ health checks can validate delegated entrypoints against the installed source tr
 
 ```bash
 bijux plugins list
-bijux plugins inspect
+bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
+bijux plugins schema
 ```
 
 Expected behavior:

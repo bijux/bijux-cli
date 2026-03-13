@@ -166,7 +166,7 @@ fn plugin_subcommand_help(command: &str) -> &'static str {
     match command {
         "list" => "List discovered plugins",
         "info" => "Show plugin inventory details",
-        "inspect" => "Inspect plugin contracts and compatibility",
+        "inspect" => "Inspect one plugin or the full inventory",
         "check" => "Validate a plugin namespace",
         "enable" => "Enable a plugin namespace",
         "disable" => "Disable a plugin namespace",
@@ -177,7 +177,7 @@ fn plugin_subcommand_help(command: &str) -> &'static str {
         "reserved-names" => "Show reserved plugin namespace rules",
         "where" => "Show plugin state and install paths",
         "explain" => "Explain plugin resolution outcome",
-        "schema" => "Show plugin manifest schema",
+        "schema" => "Show the current plugin manifest JSON schema",
         _ => "Plugin command",
     }
 }
@@ -247,7 +247,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ],
         ["plugins"] => vec![
             "bijux plugins list".to_string(),
-            "bijux plugins inspect".to_string(),
+            "bijux plugins inspect sample".to_string(),
             "bijux plugins check sample".to_string(),
             "bijux plugins install ./plugin.manifest.json".to_string(),
         ],
@@ -256,9 +256,14 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux plugins install ./plugin.manifest.json --format json".to_string(),
             "bijux plugins install ./plugin.manifest.json --source community-catalog".to_string(),
         ],
+        ["plugins", "scaffold"] => vec![
+            "bijux plugins scaffold python sample-plugin".to_string(),
+            "bijux plugins scaffold python sample-plugin --format json".to_string(),
+            "bijux help plugins scaffold".to_string(),
+        ],
         ["plugins", "inspect"] | ["cli", "plugins", "inspect"] => vec![
-            "bijux cli plugins inspect".to_string(),
-            "bijux cli plugins inspect --format json".to_string(),
+            "bijux cli plugins inspect sample".to_string(),
+            "bijux cli plugins inspect sample --format json".to_string(),
             "bijux help cli plugins inspect".to_string(),
         ],
         ["repl"] => vec!["bijux repl".to_string(), "bijux repl --format text".to_string()],
@@ -282,7 +287,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ],
         ["cli", "plugins"] => vec![
             "bijux cli plugins list".to_string(),
-            "bijux cli plugins inspect".to_string(),
+            "bijux cli plugins inspect sample".to_string(),
             "bijux cli plugins check sample".to_string(),
         ],
         ["cli", "plugins", "install"] => vec![
@@ -290,6 +295,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli plugins install ./plugin.manifest.json --format json".to_string(),
             "bijux cli plugins install ./plugin.manifest.json --source community-catalog"
                 .to_string(),
+        ],
+        ["cli", "plugins", "scaffold"] => vec![
+            "bijux cli plugins scaffold python sample-plugin".to_string(),
+            "bijux cli plugins scaffold python sample-plugin --format json".to_string(),
+            "bijux help cli plugins scaffold".to_string(),
         ],
         _ => default_examples(path),
     }

@@ -245,8 +245,9 @@ fn simulated_enable_failure_when_plugin_files_missing() {
         .expect("write broken state");
 
     let out = run(&["cli", "plugins", "enable", "enablefail"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(1));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("cannot enable broken plugin"));
+    assert_eq!(out.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&out.stderr)
+        .contains("cannot enable plugin with current runtime issue: plugin is marked broken"));
 }
 
 #[test]

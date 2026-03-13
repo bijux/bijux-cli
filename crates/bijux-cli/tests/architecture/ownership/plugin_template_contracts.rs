@@ -75,12 +75,20 @@ fn assert_rendered_project_readme(path: &str) {
         "{path} should document list verification after install"
     );
     assert!(
+        rendered.contains("bijux plugins inspect testplug"),
+        "{path} should document targeted inspection for the rendered namespace"
+    );
+    assert!(
         rendered.contains("bijux plugins check testplug"),
         "{path} should document health checks for the rendered namespace"
     );
     assert!(
         rendered.contains("bijux plugins explain testplug"),
         "{path} should document diagnostic explanation for the rendered namespace"
+    );
+    assert!(
+        rendered.contains("bijux plugins schema"),
+        "{path} should document schema discovery for the manifest contract"
     );
     assert!(
         rendered.contains("compatibility range"),
@@ -106,7 +114,9 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             text.contains("plugin.manifest.json"),
             "{path} should reference plugin.manifest.json"
         );
-        for required in ["plugins explain", "reserved", "compatibility"] {
+        for required in
+            ["plugins inspect", "plugins explain", "plugins schema", "reserved", "compatibility"]
+        {
             assert!(
                 text.to_ascii_lowercase().contains(required),
                 "{path} should document current plugin guidance: {required}"
