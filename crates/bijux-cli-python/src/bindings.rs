@@ -66,9 +66,7 @@ fn normalized_argv(argv: &[String]) -> Vec<String> {
 /// Build python-bridge marker.
 #[must_use]
 pub fn python_bridge_marker() -> ContractMarker {
-    ContractMarker {
-        namespace: "python-bridge".to_string(),
-    }
+    ContractMarker { namespace: "python-bridge".to_string() }
 }
 
 /// Return command tree introspection payload as JSON.
@@ -157,10 +155,7 @@ pub fn execution_outcome_api(argv: &[String]) -> Result<String, CompatibilityErr
             let error_kind = if result.exit_code == 0 {
                 None
             } else {
-                Some(python_exception_tag(classify_failure(
-                    result.exit_code,
-                    &result.stderr,
-                )))
+                Some(python_exception_tag(classify_failure(result.exit_code, &result.stderr)))
             };
             Ok(json_string(&ExecutionOutcomePayload {
                 exit_code: result.exit_code,
@@ -210,11 +205,7 @@ pub fn plugins_list_binding_api() -> Result<String, CompatibilityError> {
 
 /// Execute `repl --help` through the bridge.
 pub fn repl_bootstrap_binding_api() -> Result<String, CompatibilityError> {
-    execution_facade_api(&[
-        "bijux".to_string(),
-        "repl".to_string(),
-        "--help".to_string(),
-    ])
+    execution_facade_api(&["bijux".to_string(), "repl".to_string(), "--help".to_string()])
 }
 
 /// Export known schema helpers for Python wrappers.
@@ -282,10 +273,7 @@ pub fn plugin_registry_inspection_api(registry_path: &Path) -> Result<String, Co
     let parsed: Value = serde_json::from_str(&text).map_err(|error| {
         CompatibilityError::Io(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!(
-                "invalid plugin registry json at {}: {error}",
-                registry_path.display()
-            ),
+            format!("invalid plugin registry json at {}: {error}", registry_path.display()),
         ))
     })?;
     Ok(json_string(&parsed))
