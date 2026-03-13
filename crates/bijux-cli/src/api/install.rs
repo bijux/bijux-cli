@@ -6,6 +6,6 @@ pub use crate::features::install::{
     discover_compatibility_paths, ensure_history_file, ensure_plugins_dir, install_health_report,
     load_compatibility_config, parse_compatibility_config, pip_install_strategy, query,
     run_config_migrations, write_compatibility_config, CompatibilityConfig, CompatibilityError,
-    CompatibilityPaths, PackageChannel, PathOverrides, StateLockGuard, ENV_CONFIG_PATH,
-    ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+    CompatibilityPaths, PathOverrides, StateLockGuard, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
+    ENV_PLUGINS_PATH,
 };

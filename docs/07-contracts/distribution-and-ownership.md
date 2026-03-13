@@ -24,7 +24,6 @@ flowchart TD
 ### Cargo
 
 - canonical crate identity: `bijux-cli`
-- compatibility alias metadata may exist for `bijux`
 - the documented and preferred install channel is `bijux-cli`
 - `bijux-dev-cli` is a workspace maintainer crate and must not be treated as a
   published public install channel
@@ -32,15 +31,13 @@ flowchart TD
 ### Python
 
 - canonical distribution: `bijux-cli`
-- compatibility metadata may still refer to `bijux`
 - the documented and preferred install channel is `bijux-cli`
 
 ## Binary Ownership Rule
 
 `bijux-cli` is the sole owner of the public `bijux` command contract.
-Compatibility package names may exist, but they are optional and must delegate
-to the same runtime behavior when present. They must not publish divergent
-public executables.
+Published install packages must delegate to the same runtime behavior. They
+must not publish divergent public executables under the `bijux` command name.
 
 ## Routed Product Naming
 

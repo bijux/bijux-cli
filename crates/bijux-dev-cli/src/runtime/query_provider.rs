@@ -15,7 +15,7 @@ use bijux_cli::api::diagnostics::{
 };
 use bijux_cli::api::install::{
     canonical_crate_name, cargo_install_strategy, install_health_report, pip_install_strategy,
-    query::runtime_identity_query, PackageChannel,
+    query::runtime_identity_query,
 };
 use bijux_cli::api::parser::ParsedGlobalFlags;
 use bijux_cli::api::plugins::{list_plugins, load_time_diagnostics};
@@ -267,10 +267,8 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             env::var("BIJUX_PYTHON_BRIDGE_SUPPORTED"),
             Ok(value) if matches!(value.as_str(), "0" | "false" | "FALSE")
         );
-        let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
-        let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
-        let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
-        let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
+        let cargo_canonical = cargo_install_strategy();
+        let pip_canonical = pip_install_strategy();
         let stale_wrapper_maintenance = install_query.stale_wrapper_maintenance();
 
         dev_runtime_identity::RuntimeIdentityInput {
@@ -288,9 +286,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             },
             python_bridge_supported,
             cargo_canonical_package: cargo_canonical.package_name,
-            cargo_compat_package: cargo_compat.package_name,
             pip_canonical_package: pip_canonical.package_name,
-            pip_compat_package: pip_compat.package_name,
             canonical_crate_name: canonical_crate_name().to_string(),
         }
     }

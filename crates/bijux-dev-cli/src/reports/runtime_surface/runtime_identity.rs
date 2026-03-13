@@ -63,12 +63,8 @@ pub struct RuntimeIdentityInput {
     pub python_bridge_supported: bool,
     /// Cargo canonical package name.
     pub cargo_canonical_package: String,
-    /// Cargo compatibility package name.
-    pub cargo_compat_package: String,
     /// Pip canonical package name.
     pub pip_canonical_package: String,
-    /// Pip compatibility package name.
-    pub pip_compat_package: String,
     /// Canonical crate package name.
     pub canonical_crate_name: String,
 }
@@ -116,11 +112,9 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
         "package_channels": {
             "cargo": {
                 "canonical": input.cargo_canonical_package,
-                "compatibility": input.cargo_compat_package,
             },
             "pip": {
                 "canonical": input.pip_canonical_package,
-                "compatibility": input.pip_compat_package,
             },
             "canonical_crate_name": input.canonical_crate_name,
         },
@@ -157,9 +151,7 @@ mod tests {
             },
             python_bridge_supported: true,
             cargo_canonical_package: "bijux-cli".to_string(),
-            cargo_compat_package: "bijux-cli".to_string(),
             pip_canonical_package: "bijux-cli".to_string(),
-            pip_compat_package: "bijux-cli".to_string(),
             canonical_crate_name: "bijux-cli".to_string(),
         };
         let report = build_report(input);

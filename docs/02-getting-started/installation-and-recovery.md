@@ -13,10 +13,6 @@ Canonical package names:
 - Pip: `bijux-cli`
 - Pipx: `bijux-cli`
 
-Compatibility alias packages may still exist for `bijux`, but they are not the
-preferred path. If you intentionally use them, keep them aligned with the same
-runtime line and verify the resulting `bijux` binary immediately.
-
 ## Local Install Commands
 
 ### Linux and macOS

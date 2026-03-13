@@ -96,9 +96,7 @@ impl RuntimeQueryProvider for StubRuntime {
             },
             python_bridge_supported: true,
             cargo_canonical_package: "bijux-cli".into(),
-            cargo_compat_package: "bijux".into(),
             pip_canonical_package: "bijux-cli".into(),
-            pip_compat_package: "bijux".into(),
             canonical_crate_name: "bijux-cli".into(),
         }
     }

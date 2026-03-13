@@ -26,7 +26,7 @@ pub use io::atomic_write_text;
 #[allow(unused_imports)]
 pub use metadata::{
     canonical_crate_name, cargo_install_strategy, pip_install_strategy, Ecosystem, InstallStrategy,
-    PackageChannel, CANONICAL_EXECUTABLE,
+    CANONICAL_EXECUTABLE,
 };
 #[allow(unused_imports)]
 pub use paths::{
@@ -68,27 +68,19 @@ mod tests {
     }
 
     #[test]
-    fn cargo_channels_resolve_to_same_canonical_executable() {
-        let canonical = cargo_install_strategy(PackageChannel::Canonical);
-        let compatibility = cargo_install_strategy(PackageChannel::Compatibility);
+    fn cargo_install_strategy_uses_canonical_public_package() {
+        let canonical = cargo_install_strategy();
         assert_eq!(canonical.ecosystem, Ecosystem::Cargo);
-        assert_eq!(compatibility.ecosystem, Ecosystem::Cargo);
         assert_eq!(canonical.package_name, "bijux-cli");
-        assert_eq!(compatibility.package_name, "bijux");
         assert_eq!(canonical.executable_name, CANONICAL_EXECUTABLE);
-        assert_eq!(compatibility.executable_name, CANONICAL_EXECUTABLE);
     }
 
     #[test]
-    fn pip_channels_resolve_to_same_canonical_executable() {
-        let canonical = pip_install_strategy(PackageChannel::Canonical);
-        let compatibility = pip_install_strategy(PackageChannel::Compatibility);
+    fn pip_install_strategy_uses_canonical_public_package() {
+        let canonical = pip_install_strategy();
         assert_eq!(canonical.ecosystem, Ecosystem::Pip);
-        assert_eq!(compatibility.ecosystem, Ecosystem::Pip);
         assert_eq!(canonical.package_name, "bijux-cli");
-        assert_eq!(compatibility.package_name, "bijux");
         assert_eq!(canonical.executable_name, CANONICAL_EXECUTABLE);
-        assert_eq!(compatibility.executable_name, CANONICAL_EXECUTABLE);
     }
 
     #[test]
@@ -464,15 +456,11 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_notes_cover_pip_and_cargo_users() {
-        let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
-        let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
-        let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
-        let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
+    fn install_strategy_names_match_between_pip_and_cargo() {
+        let cargo_canonical = cargo_install_strategy();
+        let pip_canonical = pip_install_strategy();
         assert_eq!(cargo_canonical.package_name, pip_canonical.package_name);
-        assert_eq!(cargo_compat.package_name, pip_compat.package_name);
         assert_eq!(cargo_canonical.executable_name, pip_canonical.executable_name);
-        assert_eq!(cargo_compat.executable_name, pip_compat.executable_name);
     }
 
     #[test]
