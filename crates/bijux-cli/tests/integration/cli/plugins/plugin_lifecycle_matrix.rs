@@ -12,6 +12,8 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
+const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+
 static TEMP_DIR_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
@@ -67,7 +69,7 @@ fn write_external_exec_manifest(path: &Path, namespace: &str, entrypoint: &Path)
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "external-exec",
   "aliases": [],

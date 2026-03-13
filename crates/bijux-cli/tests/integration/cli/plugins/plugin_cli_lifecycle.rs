@@ -11,6 +11,8 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
+const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
@@ -392,7 +394,7 @@ fn install_rejects_stale_manifest_version_markers() {
   "version": "0.1.0",
   "schema_version": "v1",
   "manifest_version": "v1",
-  "compatibility": {"min_inclusive":"0.2.0", "max_exclusive": "1.0.0"},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": "1.0.0"},
   "namespace": "staleplug",
   "kind": "python",
   "aliases": [],
@@ -462,7 +464,7 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.1.0", "max_exclusive": null},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": null},
   "namespace": "broken",
   "kind": "python",
   "aliases": [],
@@ -485,7 +487,7 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.1.0", "max_exclusive": null},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": null},
   "namespace": "cli",
   "kind": "python",
   "aliases": [],
@@ -683,7 +685,7 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_install() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
   "namespace": "externalplug",
   "kind": "external-exec",
   "aliases": [],

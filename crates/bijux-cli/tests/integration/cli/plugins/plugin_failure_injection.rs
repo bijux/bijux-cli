@@ -11,6 +11,8 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
+const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
         .args(args)
@@ -42,7 +44,7 @@ fn write_python_manifest(path: &Path, namespace: &str, entrypoint: &str) {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "python",
   "aliases": [],
@@ -145,7 +147,7 @@ fn plugin_check_fails_when_entrypoint_disappears_after_install() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
   "namespace": "goneplug",
   "kind": "external-exec",
   "aliases": [],
@@ -388,7 +390,7 @@ fn delegated_plugin_check_accepts_package_init_entrypoint() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.2.0", "max_exclusive": "1.0.0"},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": "1.0.0"},
   "namespace": "packageplug",
   "kind": "python",
   "aliases": [],
@@ -425,7 +427,7 @@ fn external_exec_plugin_install_resolves_relative_entrypoints_from_manifest_root
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.2.0", "max_exclusive":"1.0.0"},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive":"1.0.0"},
   "namespace": "runnerplug",
   "kind": "external-exec",
   "aliases": [],
@@ -470,7 +472,7 @@ fn external_exec_install_keeps_manifest_anchor_when_source_label_is_overridden()
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.2.0", "max_exclusive":"1.0.0"},
+  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive":"1.0.0"},
   "namespace": "runnerlabel",
   "kind": "external-exec",
   "aliases": [],
@@ -524,7 +526,7 @@ fn explain_reports_non_executable_external_entrypoints() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"0.2.0", "max_exclusive":"1.0.0"}},
+  "compatibility": {{"min_inclusive":"0.2.1-dev", "max_exclusive":"1.0.0"}},
   "namespace": "noexecplug",
   "kind": "external-exec",
   "aliases": [],
