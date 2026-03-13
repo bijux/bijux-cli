@@ -15,7 +15,7 @@ fn strategy_for_known_path() -> impl Strategy<Value = Vec<String>> {
         Just(vec!["status".to_string()]),
         Just(vec!["plugins".to_string(), "list".to_string()]),
         Just(vec!["config".to_string(), "get".to_string()]),
-        Just(vec!["dev".to_string(), "cli".to_string(), "routes".to_string()]),
+        Just(vec!["atlas".to_string(), "status".to_string()]),
     ]
 }
 

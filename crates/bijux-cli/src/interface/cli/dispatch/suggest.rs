@@ -2,7 +2,6 @@
 
 use std::cmp::max;
 
-use crate::contracts::KNOWN_BIJUX_TOOL_NAMESPACES;
 use crate::routing::model::{CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, CLI_ROOT_ALIASES};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +13,6 @@ pub(super) struct RouteCorrection {
 
 const ROOT_COMMANDS: &[&str] = &[
     "cli",
-    "dev",
     "status",
     "audit",
     "docs",
@@ -51,7 +49,6 @@ fn suggest_path(path: &[String]) -> Option<Vec<String>> {
         "config" => suggest_tail("config", rest, CLI_CONFIG_SUBCOMMANDS, "config"),
         "plugins" => suggest_tail("plugins", rest, CLI_PLUGINS_SUBCOMMANDS, "plugins"),
         "cli" => suggest_cli(rest),
-        "dev" => suggest_dev(rest),
         known if ROOT_COMMANDS.contains(&known) => Some(path.to_vec()),
         _ => {
             let best_root = nearest(first, ROOT_COMMANDS)?;
@@ -79,35 +76,6 @@ fn suggest_cli(rest: &[String]) -> Option<Vec<String>> {
             let best = nearest(second, &candidates)?;
             Some(vec!["cli".to_string(), best.to_string()])
         }
-    }
-}
-
-fn suggest_dev(rest: &[String]) -> Option<Vec<String>> {
-    let [second, tail @ ..] = rest else {
-        return Some(vec!["dev".to_string(), "cli".to_string()]);
-    };
-
-    if second == "cli" {
-        let [third, _] = tail else {
-            return Some(vec!["dev".to_string(), "cli".to_string()]);
-        };
-
-        return Some(vec!["dev".to_string(), "cli".to_string(), third.clone()]);
-    }
-
-    if KNOWN_BIJUX_TOOL_NAMESPACES.contains(&second.as_str()) {
-        let mut out = vec!["dev".to_string(), second.clone()];
-        out.extend(tail.iter().cloned());
-        return Some(out);
-    }
-
-    let mut candidates = vec!["cli"];
-    candidates.extend_from_slice(KNOWN_BIJUX_TOOL_NAMESPACES);
-    let best = nearest(second, &candidates)?;
-    if best == "cli" {
-        Some(vec!["dev".to_string(), "cli".to_string()])
-    } else {
-        Some(vec!["dev".to_string(), best.to_string()])
     }
 }
 

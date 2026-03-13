@@ -8,7 +8,6 @@ use std::process::{Command, Output};
 
 use bijux_cli as _;
 use libc as _;
-use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
@@ -27,38 +26,6 @@ fn temp_dir(name: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
-}
-
-fn parse_json(bytes: &[u8]) -> Value {
-    serde_json::from_slice(bytes).expect("json")
-}
-
-#[test]
-fn history_doctor_and_state_doctor_agree_on_history_corruption_findings() {
-    let root = temp_dir("doctor-consistency");
-    let history = root.join("history.log");
-    fs::write(&history, "{oops:true}\n").expect("write malformed history");
-    let envs = [("BIJUXCLI_HISTORY_FILE", history.display().to_string())];
-
-    let doctor = run_with_env(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"], &envs);
-    let state_doctor =
-        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
-    assert_eq!(doctor.status.code(), Some(0));
-    assert_eq!(state_doctor.status.code(), Some(0));
-
-    let doctor_json = parse_json(&doctor.stdout);
-    let state_json = parse_json(&state_doctor.stdout);
-
-    let doctor_has_history_issue =
-        doctor_json["issues"]["history"].as_array().map(|rows| !rows.is_empty()).unwrap_or(false);
-    let state_has_history_issue = state_json["doctor"]["issues"]
-        .as_array()
-        .map(|rows| rows.iter().any(|row| row["area"] == "history"))
-        .unwrap_or(false);
-    assert_eq!(
-        doctor_has_history_issue, state_has_history_issue,
-        "doctor and state-doctor should agree on presence of history corruption findings"
-    );
 }
 
 #[cfg(unix)]

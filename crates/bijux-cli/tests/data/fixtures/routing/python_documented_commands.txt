@@ -7,7 +7,6 @@ completion
 atlas
 audit
 config
-dev
 docs
 help
 history

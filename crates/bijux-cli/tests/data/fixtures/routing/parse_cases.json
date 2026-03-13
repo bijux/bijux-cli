@@ -40,14 +40,14 @@
     "routed": true
   },
   {
-    "argv": ["bijux", "dev", "cli", "routes"],
-    "expected_normalized": ["dev", "cli", "routes"],
-    "routed": true
+    "argv": ["bijux", "atlas", "status"],
+    "expected_normalized": ["atlas"],
+    "routed": false
   },
   {
-    "argv": ["bijux", "dev", "cli", "registry"],
-    "expected_normalized": ["dev", "cli", "registry"],
-    "routed": true
+    "argv": ["bijux", "rag", "doctor"],
+    "expected_normalized": ["rag"],
+    "routed": false
   },
   {
     "argv": ["bijux", "cli"],
@@ -55,8 +55,8 @@
     "routed": false
   },
   {
-    "argv": ["bijux", "dev", "cli"],
-    "expected_normalized": ["dev", "cli"],
+    "argv": ["bijux", "atlas"],
+    "expected_normalized": ["atlas"],
     "routed": false
   },
   {

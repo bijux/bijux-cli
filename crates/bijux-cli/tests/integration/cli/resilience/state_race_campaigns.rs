@@ -391,39 +391,11 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
         })
     };
 
-    let doctor_reader = {
-        let env = Arc::clone(&env_arc);
-        thread::spawn(move || {
-            for _ in 0..80 {
-                let out = run_with_env(
-                    &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
-                    &env,
-                );
-                assert_known_status(&out, "state-doctor race");
-            }
-        })
-    };
-
-    let audit_reader = {
-        let env = Arc::clone(&env_arc);
-        thread::spawn(move || {
-            for _ in 0..50 {
-                let out = run_with_env(
-                    &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
-                    &env,
-                );
-                assert_known_status(&out, "state-audit race");
-            }
-        })
-    };
-
     registry_mutator.join().expect("join registry mutator");
     registry_reader.join().expect("join registry reader");
     history_writer.join().expect("join history writer");
     history_reader.join().expect("join history reader");
     memory_reader.join().expect("join memory reader");
-    doctor_reader.join().expect("join doctor reader");
-    audit_reader.join().expect("join audit reader");
 
     // Non-corruption invariant: final readers still execute under known status classes.
     let plugin_final =

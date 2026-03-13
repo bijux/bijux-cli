@@ -214,9 +214,7 @@ fn exercise_domain(root: &Path, domain: Domain, target: &Path) -> Output {
     match domain {
         Domain::Config => run_with_env(
             &[
-                "dev",
-                "cli",
-                "state-doctor",
+                "doctor",
                 "--format",
                 "json",
                 "--no-pretty",
@@ -234,10 +232,7 @@ fn exercise_domain(root: &Path, domain: Domain, target: &Path) -> Output {
         }
         Domain::InstallMetadata => {
             envs.push(("BIJUXCLI_INSTALL_STATE_FILE", target.display().to_string()));
-            run_with_env(
-                &["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"],
-                &envs,
-            )
+            run_with_env(&["doctor", "--format", "json", "--no-pretty"], &envs)
         }
     }
 }

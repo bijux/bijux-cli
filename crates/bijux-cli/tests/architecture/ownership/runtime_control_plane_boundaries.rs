@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Architecture boundaries for delegated `dev` and product mount commands.
+//! Architecture boundaries between the runtime binary and maintainer binaries.
 
 use std::path::Path;
 
@@ -8,26 +8,26 @@ fn read(path: &str) -> String {
 }
 
 #[test]
-fn runtime_dispatch_keeps_dev_and_product_execution_at_process_boundary() {
+fn runtime_dispatch_only_delegates_runtime_product_namespaces() {
     let dispatch = read(concat!(env!("CARGO_MANIFEST_DIR"), "/src/interface/cli/dispatch.rs"));
     let delegation =
         read(concat!(env!("CARGO_MANIFEST_DIR"), "/src/interface/cli/dispatch/delegation.rs"));
 
     assert!(
         dispatch.contains("try_delegate_known_bijux_tool"),
-        "runtime dispatch must delegate `dev` and product namespaces before local handlers"
-    );
-    assert!(
-        delegation.contains("delegate_dev_cli"),
-        "delegation module must call the external dev control-plane binary"
+        "runtime dispatch must keep runtime product delegation at the process boundary"
     );
     assert!(
         delegation.contains("known_bijux_tool"),
         "delegation module must use shared product namespace contracts"
     );
     assert!(
-        !delegation.contains("bijux_dev_cli"),
-        "runtime crate must not import dev-cli crate symbols directly"
+        !delegation.contains("bijux-dev-cli"),
+        "runtime delegation must not invoke maintainer binaries directly"
+    );
+    assert!(
+        !dispatch.contains("first == \"dev\""),
+        "runtime dispatch must not special-case maintainer command namespaces"
     );
 }
 

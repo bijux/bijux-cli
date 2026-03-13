@@ -96,26 +96,15 @@ fn fuzz_cli_argv_parsing_does_not_panic() {
 }
 
 #[test]
-fn fuzz_dev_cli_argv_parsing_does_not_panic() {
-    let dev_sub = [
-        "routes",
-        "registry",
-        "status",
-        "doctor",
-        "state-audit",
-        "state-doctor",
-        "runtime-identity",
-        "parity",
-        "custom-command",
-    ];
+fn fuzz_external_runtime_mount_argv_parsing_does_not_panic() {
+    let product_sub = ["status", "doctor", "config", "custom-command"];
     let mut seed = 0xA11C_E003_u64;
 
     for _ in 0..240 {
         let mut argv = vec![
             "bijux".to_string(),
-            "dev".to_string(),
-            "cli".to_string(),
-            pick(&dev_sub, &mut seed).to_string(),
+            pick(&["atlas", "rag", "vex"], &mut seed).to_string(),
+            pick(&product_sub, &mut seed).to_string(),
         ];
         argv.extend(random_suffix(&mut seed, 5));
         let first = stable_parse(&argv);
@@ -183,10 +172,8 @@ fn fuzz_diagnostics_command_argv_parsing_does_not_panic() {
     let commands = [
         vec!["bijux", "doctor"],
         vec!["bijux", "inspect"],
-        vec!["bijux", "dev", "cli", "doctor"],
-        vec!["bijux", "dev", "cli", "state-doctor"],
-        vec!["bijux", "dev", "cli", "state-audit"],
-        vec!["bijux", "dev", "cli", "runtime-identity"],
+        vec!["bijux", "atlas", "doctor"],
+        vec!["bijux", "rag", "status"],
     ];
 
     for _ in 0..220 {
@@ -279,9 +266,9 @@ fn fuzz_help_path_parsing_and_alias_resolution_is_safe() {
         vec!["bijux", "--help"],
         vec!["bijux", "help"],
         vec!["bijux", "cli", "--help"],
-        vec!["bijux", "dev", "cli", "--help"],
+        vec!["bijux", "atlas", "--help"],
         vec!["bijux", "plugins", "inspect", "--help"],
-        vec!["bijux", "dev", "cli", "doctor", "--help"],
+        vec!["bijux", "rag", "status", "--help"],
     ];
 
     for case in cases {
@@ -294,9 +281,9 @@ fn fuzz_help_path_parsing_and_alias_resolution_is_safe() {
         parse_intent(&["bijux".into(), "plugins".into(), "inspect".into()]).expect("alias parse");
     assert_eq!(alias.normalized_path, vec!["cli", "plugins", "inspect"]);
 
-    let dev_route =
-        parse_intent(&["bijux".into(), "dev".into(), "doctor".into()]).expect("dev route parse");
-    assert_eq!(dev_route.normalized_path, vec!["dev", "doctor"]);
+    let external_route =
+        parse_intent(&["bijux".into(), "atlas".into(), "doctor".into()]).expect("mount parse");
+    assert_eq!(external_route.normalized_path, vec!["atlas"]);
 }
 
 #[test]

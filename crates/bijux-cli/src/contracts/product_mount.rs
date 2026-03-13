@@ -18,7 +18,7 @@ impl KnownBijuxTool {
         format!("bijux-{}", self.namespace)
     }
 
-    /// Control-plane executable used by `bijux dev <tool> ...`.
+    /// Maintainer executable used by `bijux-dev-<tool> ...`.
     #[must_use]
     pub fn control_binary(&self) -> String {
         format!("bijux-dev-{}", self.namespace)
@@ -57,6 +57,6 @@ pub struct ProductMountMetadata {
     pub namespace: Namespace,
     /// Runtime executable used by `bijux <namespace>`.
     pub runtime_binary: String,
-    /// Control-plane executable used by `bijux dev <namespace>`.
+    /// Maintainer executable used by `bijux-dev-<namespace>`.
     pub control_binary: String,
 }

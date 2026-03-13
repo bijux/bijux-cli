@@ -329,28 +329,12 @@ fn help_command_rejects_invalid_global_flag_values_with_usage_exit() {
 }
 
 #[test]
-fn unknown_help_topics_include_suggestions_for_alias_and_dev_typoes() {
+fn unknown_help_topics_include_suggestions_for_alias_typoes() {
     let alias_typo = run(&["help", "versoin"]);
     assert_eq!(alias_typo.status.code(), Some(2));
     let alias_stderr = String::from_utf8(alias_typo.stderr).expect("utf-8");
     assert!(alias_stderr.contains("Unknown help topic: versoin."));
     assert!(alias_stderr.contains("bijux help version"));
-
-    let dev_typo = run(&["help", "dev", "cli", "maintenence"]);
-    assert_eq!(dev_typo.status.code(), Some(2));
-    let dev_stderr = String::from_utf8(dev_typo.stderr).expect("utf-8");
-    assert!(dev_stderr.contains("Unknown help topic: dev cli maintenence."));
-    assert!(dev_stderr.contains("bijux help dev cli maintenance"));
-}
-
-#[test]
-fn nested_dev_help_requests_do_not_execute_report_commands() {
-    let out = run(&["help", "dev", "cli", "repo", "health"]);
-    assert_eq!(out.status.code(), Some(0));
-    let text = String::from_utf8(out.stdout).expect("utf-8");
-    assert!(text.contains("Usage: bijux dev cli repo"));
-    assert!(!text.contains("\"repo_health\""), "help should not execute repo health report");
-    assert!(out.stderr.is_empty());
 }
 
 #[test]

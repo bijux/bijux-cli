@@ -2,7 +2,6 @@ audit
 cli
 completion
 config
-dev
 docs
 doctor
 help

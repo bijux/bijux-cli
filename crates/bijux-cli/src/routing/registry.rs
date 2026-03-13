@@ -3,7 +3,9 @@
 use std::cmp::max;
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::contracts::{CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES};
+use crate::contracts::{
+    known_bijux_tool, CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES,
+};
 
 /// Route target categories.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,10 +155,17 @@ impl RouteRegistry {
         let mut rows = Vec::new();
 
         for ns in &self.reserved {
+            let owner = if ns == "dev" {
+                "bijux-dev-cli".to_string()
+            } else if let Some(tool) = known_bijux_tool(ns) {
+                tool.runtime_binary()
+            } else {
+                "bijux-cli".to_string()
+            };
             rows.push(NamespaceMetadata {
                 name: Namespace(ns.clone()),
                 reserved: true,
-                owner: "bijux-cli".to_string(),
+                owner,
             });
         }
 
@@ -186,7 +195,6 @@ impl RouteRegistry {
                 roots.insert(head.to_string());
             }
         }
-        roots.insert("dev".to_string());
         roots.insert("help".to_string());
         roots.extend(self.plugin_namespaces.iter().cloned());
 

@@ -42,18 +42,14 @@ fn parse_cases_match_expected_normalization_and_routing() {
         );
 
         let resolved = registry.resolve(&intent.normalized_path);
-        let delegated_dev_route =
-            matches!(intent.normalized_path.as_slice(), [a, ..] if a == "dev");
 
-        match (case.routed, delegated_dev_route, resolved) {
-            (true, true, Err(_)) => {}
-            (true, true, Ok(_)) => {}
-            (true, false, Ok(RouteTarget::BuiltIn | RouteTarget::Plugin(_))) => {}
-            (true, false, other) => {
+        match (case.routed, resolved) {
+            (true, Ok(RouteTarget::BuiltIn | RouteTarget::Plugin(_))) => {}
+            (true, other) => {
                 panic!("expected routed case, got: {other:?} for {:?}", case.argv)
             }
-            (false, _, Err(_)) => {}
-            (false, _, other) => {
+            (false, Err(_)) => {}
+            (false, other) => {
                 panic!("expected unrouted case, got: {other:?} for {:?}", case.argv)
             }
         }
@@ -114,17 +110,15 @@ fn parser_supports_global_flags_before_and_after_namespace() {
         "bijux".to_string(),
         "--color".to_string(),
         "never".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "routes".to_string(),
+        "atlas".to_string(),
+        "status".to_string(),
     ])
     .expect("before parse");
 
     let after = parse_intent(&[
         "bijux".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "routes".to_string(),
+        "atlas".to_string(),
+        "status".to_string(),
         "--color".to_string(),
         "never".to_string(),
     ])
@@ -138,10 +132,6 @@ fn parser_supports_global_flags_before_and_after_namespace() {
 fn empty_grouped_commands_are_detected() {
     let cli = parse_intent(&["bijux".to_string(), "cli".to_string()]).expect("parse cli");
     assert_eq!(cli.normalized_path, vec!["cli"]);
-
-    let dev_cli = parse_intent(&["bijux".to_string(), "dev".to_string(), "cli".to_string()])
-        .expect("parse dev cli");
-    assert_eq!(dev_cli.normalized_path, vec!["dev", "cli"]);
 }
 
 #[test]
@@ -149,7 +139,7 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
     for argv in [
         vec!["bijux", "--help"],
         vec!["bijux", "cli", "--help"],
-        vec!["bijux", "dev", "cli", "--help"],
+        vec!["bijux", "atlas", "--help"],
     ] {
         let intent = parse_intent(&argv.iter().map(|x| x.to_string()).collect::<Vec<_>>())
             .expect("help parse should not error");
@@ -158,11 +148,11 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
 }
 
 #[test]
-fn compatibility_aliases_are_normalized_and_dev_routes_are_left_as_is() {
+fn compatibility_aliases_are_normalized_and_external_mounts_are_left_as_is() {
     let cases = [
         (vec!["bijux", "status"], vec!["status"]),
         (vec!["bijux", "plugins", "inspect"], vec!["cli", "plugins", "inspect"]),
-        (vec!["bijux", "dev", "doctor"], vec!["dev", "doctor"]),
+        (vec!["bijux", "atlas", "doctor"], vec!["atlas"]),
     ];
 
     for (argv, expected) in cases {

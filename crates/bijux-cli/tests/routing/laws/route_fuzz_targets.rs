@@ -185,5 +185,5 @@ fn fuzz_route_tree_text_rendering_is_stable() {
     let b = registry.render_command_tree();
     assert_eq!(a, b);
     assert!(a.contains("cli"));
-    assert!(a.contains("dev"));
+    assert!(!a.contains("dev"));
 }

@@ -125,35 +125,6 @@ fn memory_wrong_type_and_missing_required_shape_failures_are_stable() {
 }
 
 #[test]
-fn memory_state_audit_and_state_doctor_agree_on_malformed_state_findings() {
-    let root = temp_dir("diagnostics");
-    let home = root.join("home");
-    let memory = home.join(".bijux").join(".memory.json");
-    fs::create_dir_all(memory.parent().expect("parent")).expect("mkdir");
-    fs::write(&memory, "{\"bad\":1}").expect("write wrong-type memory");
-    let envs = [("HOME", home.display().to_string())];
-
-    let audit =
-        run_with_env(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"], &envs);
-    let doctor =
-        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
-    assert_eq!(audit.status.code(), Some(0));
-    assert_eq!(doctor.status.code(), Some(0));
-
-    let audit_json = parse_json(&audit.stdout);
-    let doctor_json = parse_json(&doctor.stdout);
-    let audit_has_memory = audit_json["corruption_health"]["issues"]
-        .as_array()
-        .map(|rows| rows.iter().any(|row| row["area"] == "memory"))
-        .unwrap_or(false);
-    let doctor_has_memory = doctor_json["doctor"]["issues"]
-        .as_array()
-        .map(|rows| rows.iter().any(|row| row["area"] == "memory"))
-        .unwrap_or(false);
-    assert_eq!(audit_has_memory, doctor_has_memory);
-}
-
-#[test]
 fn memory_path_override_and_quiet_mode_keep_functional_semantics() {
     let root = temp_dir("path-quiet");
     let home = root.join("home");

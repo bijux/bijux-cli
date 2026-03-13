@@ -85,7 +85,6 @@ fn startup_benchmarks_for_key_commands_stay_within_budget() {
         (&["status", "--format", "json", "--no-pretty"], vec![], 8, 250),
         (&["doctor", "--format", "json", "--no-pretty"], vec![], 6, 500),
         (&["plugins", "list", "--format", "json", "--no-pretty"], vec![], 6, 400),
-        (&["dev", "cli", "status", "--format", "json", "--no-pretty"], vec![], 4, 900),
     ];
 
     for (args, envs, iterations, budget_ms) in cases {

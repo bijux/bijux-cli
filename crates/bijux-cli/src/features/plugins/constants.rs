@@ -10,7 +10,7 @@ pub const RESERVED_NAMESPACES: &[&str] =
     &["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"];
 
 /// Reserved namespaces currently owned by bijux-cli core command graph.
-pub const CORE_NAMESPACES: &[&str] = &["cli", "dev"];
+pub const CORE_NAMESPACES: &[&str] = &["cli"];
 
 /// Reserved namespaces owned by known Bijux tool projects.
 pub const KNOWN_BIJUX_PROJECT_NAMESPACES: &[&str] = KNOWN_BIJUX_TOOL_NAMESPACES;

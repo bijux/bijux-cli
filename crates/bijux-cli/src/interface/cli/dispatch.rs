@@ -14,12 +14,7 @@ use crate::contracts::OutputFormat;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
-use crate::routing::model::{
-    alias_rewrites, built_in_route_paths, DEV_CLI_CONFIG_SUBCOMMANDS, DEV_CLI_EVIDENCE_SUBCOMMANDS,
-    DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS, DEV_CLI_MAINTENANCE_SUBCOMMANDS,
-    DEV_CLI_NESTED_SUBCOMMANDS, DEV_CLI_PYTHON_SUBCOMMANDS, DEV_CLI_RELEASE_SUBCOMMANDS,
-    DEV_CLI_REPO_SUBCOMMANDS, DEV_CLI_RUSTDOC_SUBCOMMANDS, DEV_CLI_VISIBLE_SUBCOMMANDS,
-};
+use crate::routing::model::{alias_rewrites, built_in_route_paths};
 use crate::shared::output::render_value;
 use crate::shared::telemetry::{
     truncate_chars, TelemetrySpan, MAX_COMMAND_FIELD_CHARS, MAX_TEXT_FIELD_CHARS,
@@ -111,35 +106,6 @@ fn known_help_topics() -> Vec<String> {
     let mut topics = built_in_route_paths().to_vec();
     topics.extend(alias_rewrites().iter().map(|(alias, _)| alias.to_string()));
     topics.push("help".to_string());
-    topics.push("dev".to_string());
-    topics.push("dev cli".to_string());
-    topics.extend(DEV_CLI_VISIBLE_SUBCOMMANDS.iter().map(|command| format!("dev cli {command}")));
-    topics.extend(
-        DEV_CLI_MAINTENANCE_SUBCOMMANDS
-            .iter()
-            .map(|command| format!("dev cli maintenance {command}")),
-    );
-    topics.extend(
-        DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS
-            .iter()
-            .map(|command| format!("dev cli maintenance status {command}")),
-    );
-    topics.extend(
-        DEV_CLI_RUSTDOC_SUBCOMMANDS.iter().map(|command| format!("dev cli rustdoc {command}")),
-    );
-    topics.extend(
-        DEV_CLI_RELEASE_SUBCOMMANDS.iter().map(|command| format!("dev cli release {command}")),
-    );
-    topics.extend(
-        DEV_CLI_EVIDENCE_SUBCOMMANDS.iter().map(|command| format!("dev cli evidence {command}")),
-    );
-    topics.extend(
-        DEV_CLI_CONFIG_SUBCOMMANDS.iter().map(|command| format!("dev cli config {command}")),
-    );
-    topics.extend(
-        DEV_CLI_PYTHON_SUBCOMMANDS.iter().map(|command| format!("dev cli python {command}")),
-    );
-    topics.extend(DEV_CLI_REPO_SUBCOMMANDS.iter().map(|command| format!("dev cli repo {command}")));
     let mut expanded = Vec::new();
     for topic in topics {
         let mut prefix = Vec::new();
@@ -273,20 +239,9 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             return Ok(unknown_help_topic_result(&path_refs.join(" "), telemetry));
         }
         if let Some(first) = path.first().map(String::as_str) {
-            if first == "dev" || known_bijux_tool(first).is_some() {
-                let delegated_path = if matches!(
-                    path.as_slice(),
-                    [dev, cli, group, ..]
-                        if dev == "dev"
-                            && cli == "cli"
-                            && DEV_CLI_NESTED_SUBCOMMANDS.contains(&group.as_str())
-                ) {
-                    vec!["dev".to_string(), "cli".to_string(), path[2].clone()]
-                } else {
-                    path.clone()
-                };
+            if known_bijux_tool(first).is_some() {
                 let mut delegated_argv = vec!["bijux".to_string()];
-                delegated_argv.extend(delegated_path);
+                delegated_argv.extend(path.clone());
                 delegated_argv.push("--help".to_string());
                 if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
                 {
@@ -321,9 +276,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     let has_help_flag = argv.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h"));
-    if has_help_flag
-        && argv.get(1).is_some_and(|first| first == "dev" || known_bijux_tool(first).is_some())
-    {
+    if has_help_flag && argv.get(1).is_some_and(|first| known_bijux_tool(first).is_some()) {
         if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
             let target_arg = argv.get(1).cloned().unwrap_or_default();
             let (target, target_truncated) = bounded_command(&target_arg);

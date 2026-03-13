@@ -18,13 +18,13 @@ fn parser_returns_usage_intent_for_diverse_argv_without_panics() {
         vec!["bijux"],
         vec!["bijux", "status"],
         vec!["bijux", "cli", "status"],
-        vec!["bijux", "dev", "cli", "routes"],
+        vec!["bijux", "atlas", "status"],
         vec!["bijux", "--quiet", "plugins", "inspect"],
         vec!["bijux", "plugins", "list", "--format", "yaml"],
         vec!["bijux", "--color", "always", "--log-level", "trace", "doctor"],
         vec!["bijux", "config", "get", "--no-pretty"],
         vec!["bijux", "--unknown"],
-        vec!["bijux", "dev", "cli", "contracts", "--format", "json"],
+        vec!["bijux", "rag", "doctor", "--format", "json"],
     ];
 
     for case in corpus {

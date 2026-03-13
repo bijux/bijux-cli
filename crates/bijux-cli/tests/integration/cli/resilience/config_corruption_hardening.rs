@@ -159,27 +159,6 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     );
 }
 
-#[test]
-fn config_doctor_reports_corruption_for_broken_config_states() {
-    let root = temp_dir("doctor-corruption");
-    let config_path = root.join("doctor.env");
-    write_config(&config_path, "BIJUXCLI_ALPHA=1\nBROKEN\n");
-
-    let out = run(&[
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
-    assert!(matches!(out.status.code(), Some(0) | Some(1)));
-    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
-    let issues = payload["doctor"]["issues"].as_array().expect("issues");
-    assert!(issues.iter().any(|issue| issue["area"] == "config"));
-}
 
 #[test]
 #[cfg(unix)]

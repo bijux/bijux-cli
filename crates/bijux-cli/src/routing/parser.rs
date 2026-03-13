@@ -3,9 +3,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
-use crate::contracts::{
-    ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES,
-};
+use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES};
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -168,34 +166,6 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
     })
 }
 
-fn delegated_command(name: &'static str, hidden: bool) -> Command {
-    Command::new(name).hide(hidden).allow_external_subcommands(true)
-}
-
-fn build_dev_group() -> Command {
-    let mut dev_cli = Command::new("cli").allow_external_subcommands(true);
-    for command in crate::routing::model::DEV_CLI_VISIBLE_SUBCOMMANDS {
-        let entry = if crate::routing::model::DEV_CLI_NESTED_SUBCOMMANDS.contains(command) {
-            delegated_command(command, false)
-        } else {
-            Command::new(*command)
-        };
-        dev_cli = dev_cli.subcommand(entry);
-    }
-    for command in crate::routing::model::DEV_CLI_HIDDEN_SUBCOMMANDS {
-        dev_cli = dev_cli.subcommand(delegated_command(command, true));
-    }
-
-    let mut command =
-        Command::new("dev").hide(true).allow_external_subcommands(true).subcommand(dev_cli);
-
-    for namespace in KNOWN_BIJUX_TOOL_NAMESPACES {
-        command = command.subcommand(delegated_command(namespace, true));
-    }
-
-    command
-}
-
 /// Build the root clap command for `bijux`.
 #[must_use]
 #[allow(clippy::too_many_lines)]
@@ -336,7 +306,6 @@ pub fn root_command() -> Command {
         .subcommand_required(false)
         .allow_external_subcommands(true)
         .subcommand(cli_group)
-        .subcommand(build_dev_group())
         // Legacy roots kept for alias normalization.
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
@@ -412,9 +381,6 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let command_path = extract_path(&raw_matches);
     let normalize_external_globals = matches!(
         command_path.as_slice(),
-        [a, b, ..] if a == "dev" && (b == "cli" || KNOWN_BIJUX_TOOL_NAMESPACES.contains(&b.as_str()))
-    ) || matches!(
-        command_path.as_slice(),
         [a, ..] if KNOWN_BIJUX_TOOL_NAMESPACES.contains(&a.as_str())
     );
 
@@ -449,9 +415,8 @@ mod tests {
     use super::root_command;
 
     #[test]
-    fn dev_cli_help_lists_registered_subcommands() {
-        let argv =
-            vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "--help".to_string()];
+    fn cli_help_lists_registered_subcommands() {
+        let argv = vec!["bijux".to_string(), "cli".to_string(), "--help".to_string()];
         let help = match root_command().try_get_matches_from(argv) {
             Err(error) if matches!(error.kind(), clap::error::ErrorKind::DisplayHelp) => {
                 error.to_string()
@@ -460,7 +425,7 @@ mod tests {
         };
 
         assert!(help.contains("Commands:"));
-        assert!(help.contains("maintenance"));
-        assert!(help.contains("runtime-identity"));
+        assert!(help.contains("status"));
+        assert!(help.contains("plugins"));
     }
 }

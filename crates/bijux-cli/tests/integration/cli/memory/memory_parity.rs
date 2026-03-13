@@ -104,35 +104,6 @@ fn memory_missing_state_is_empty_and_quiet_mode_suppresses_output() {
 }
 
 #[test]
-fn memory_wrong_type_state_and_missing_state_file_behaviors_are_stable() {
-    let temp = make_temp_dir("wrong-type-and-missing");
-    let home = temp.join("home");
-    let memory_file = home.join(".bijux").join(".memory.json");
-    fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
-    fs::write(&memory_file, "{\"alpha\":1,\"beta\":{\"nested\":1}}")
-        .expect("write wrong-type memory");
-
-    let out_wrong_type = run_with_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
-        &[("HOME", home.display().to_string())],
-    );
-    assert_eq!(out_wrong_type.status.code(), Some(0));
-    let doctor_payload = parse_json(&out_wrong_type.stdout);
-    assert_eq!(doctor_payload["doctor"]["status"], "degraded");
-    assert!(doctor_payload["doctor"]["issues"].as_array().is_some_and(|rows| !rows.is_empty()));
-
-    fs::remove_file(&memory_file).expect("remove memory");
-    let out_missing = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty"],
-        &[("HOME", home.display().to_string())],
-    );
-    assert_eq!(out_missing.status.code(), Some(0));
-    let missing_payload = parse_json(&out_missing.stdout);
-    assert_eq!(missing_payload["status"], "ok");
-    assert_eq!(missing_payload["count"], 0);
-}
-
-#[test]
 fn memory_non_object_json_state_fails_with_error_envelope() {
     let temp = make_temp_dir("non-object");
     let home = temp.join("home");

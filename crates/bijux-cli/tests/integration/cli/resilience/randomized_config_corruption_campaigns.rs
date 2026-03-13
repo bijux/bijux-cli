@@ -7,7 +7,6 @@ use std::process::{Command, Output};
 
 use bijux_cli as _;
 use libc as _;
-use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
@@ -284,28 +283,6 @@ fn failed_config_load_rolls_back_and_preserves_coherent_state() {
 }
 
 #[test]
-fn state_doctor_reports_corruption_introduced_by_campaign_harness() {
-    let root = temp_dir("doctor-detects");
-    let config = root.join("active.env");
-    fs::write(&config, "BROKEN_LINE\n").expect("write broken");
-
-    let out = run(&[
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        config.to_str().expect("utf-8"),
-    ]);
-    assert_known_status(&out, "state doctor");
-    let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
-    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
-    assert!(issues.iter().any(|i| i["area"] == "config"));
-}
-
-#[test]
 fn repeated_run_corruption_inputs_are_deterministic_for_config_command_set() {
     let root = temp_dir("repeat-determinism");
     let config = root.join("active.env");
@@ -315,7 +292,7 @@ fn repeated_run_corruption_inputs_are_deterministic_for_config_command_set() {
 
     let cfg = config.to_str().expect("utf-8");
     let src = source.to_str().expect("utf-8");
-    let cases: [&[&str]; 8] = [
+    let cases: [&[&str]; 7] = [
         &["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg],
         &["cli", "config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", cfg],
         &["cli", "config", "set", "delta=1", "--config-path", cfg],
@@ -333,7 +310,6 @@ fn repeated_run_corruption_inputs_are_deterministic_for_config_command_set() {
         &["cli", "config", "clear", "--format", "json", "--no-pretty", "--config-path", cfg],
         &["cli", "config", "export", src, "--format", "json", "--no-pretty", "--config-path", cfg],
         &["cli", "config", "load", src, "--config-path", cfg],
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty", "--config-path", cfg],
     ];
 
     for args in cases {

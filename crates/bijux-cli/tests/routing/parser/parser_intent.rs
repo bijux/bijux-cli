@@ -42,9 +42,8 @@ fn conflicting_output_and_pretty_flags_normalize_deterministically() {
         "yaml".to_string(),
         "--pretty".to_string(),
         "--no-pretty".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "routes".to_string(),
+        "atlas".to_string(),
+        "status".to_string(),
     ];
     let two = vec![
         "bijux".to_string(),
@@ -54,9 +53,8 @@ fn conflicting_output_and_pretty_flags_normalize_deterministically() {
         "yaml".to_string(),
         "--format".to_string(),
         "json".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "routes".to_string(),
+        "atlas".to_string(),
+        "status".to_string(),
     ];
     let left = parse_intent(&one).expect("parse should succeed");
     let right = parse_intent(&two).expect("parse should succeed");

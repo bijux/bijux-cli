@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Route-law consistency checks across root, cli/dev cli, and plugin dispatch.
+//! Route-law consistency checks across root, cli, and plugin dispatch.
 
 use bijux_cli::api::routing::catalog::{is_known_route, normalize_command_path};
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry, RouteTarget};
@@ -14,7 +14,7 @@ use semver as _;
 use thiserror as _;
 
 #[test]
-fn root_cli_and_dev_cli_paths_follow_one_route_law() {
+fn root_and_cli_paths_follow_one_route_law() {
     let registry = RouteRegistry::default();
     let cases = [
         (vec!["status".to_string()], vec!["status".to_string()]),
@@ -22,24 +22,13 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
             vec!["cli".to_string(), "status".to_string()],
             vec!["cli".to_string(), "status".to_string()],
         ),
-        (
-            vec!["dev".to_string(), "cli".to_string(), "routes".to_string()],
-            vec!["dev".to_string(), "cli".to_string(), "routes".to_string()],
-        ),
     ];
 
     for (input, expected) in cases {
         let normalized = normalize_command_path(&input);
         assert_eq!(normalized, expected);
-        if matches!(normalized.as_slice(), [a, b, ..] if a == "dev" && b == "cli") {
-            assert!(is_known_route(&normalized), "delegated dev cli routes must stay known");
-            let resolved =
-                registry.resolve(&normalized).expect_err("runtime registry must delegate dev cli");
-            assert!(matches!(resolved, RouteError::Unknown(_)));
-        } else {
-            let resolved = registry.resolve(&normalized).expect("normalized route should resolve");
-            assert!(matches!(resolved, RouteTarget::BuiltIn));
-        }
+        let resolved = registry.resolve(&normalized).expect("normalized route should resolve");
+        assert!(matches!(resolved, RouteTarget::BuiltIn));
     }
 }
 
@@ -53,10 +42,10 @@ fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
         .expect("plugin route should resolve");
     assert!(matches!(plugin, RouteTarget::Plugin(ns) if ns == "community"));
 
-    let delegated = registry
-        .resolve(&["dev".to_string(), "cli".to_string(), "routes".to_string()])
-        .expect_err("dev cli routes must be delegated outside runtime registry");
-    assert!(matches!(delegated, RouteError::Unknown(_)));
+    let external = registry
+        .resolve(&["atlas".to_string(), "status".to_string()])
+        .expect_err("external product routes must stay outside runtime registry");
+    assert!(matches!(external, RouteError::Unknown(_)));
 }
 
 #[test]
@@ -65,7 +54,9 @@ fn route_tree_marks_official_product_namespaces_as_reserved() {
     let tree = registry.route_tree();
     for namespace in OFFICIAL_PRODUCT_NAMESPACES {
         assert!(tree.iter().any(|item| {
-            item.name.0 == *namespace && item.reserved && item.owner == "bijux-cli"
+            item.name.0 == *namespace
+                && item.reserved
+                && item.owner == format!("bijux-{namespace}")
         }));
     }
 }
@@ -82,17 +73,10 @@ fn official_product_namespace_registry_drives_routing_rejections() {
 }
 
 #[test]
-fn delegated_dev_routes_are_known_but_resolve_outside_runtime_registry() {
+fn maintainer_namespace_is_reserved_but_not_known_as_runtime_route() {
     let registry = RouteRegistry::default();
 
-    let legacy_routes = registry.resolve(&["dev".to_string(), "routes".to_string()]);
-    assert!(legacy_routes.is_err());
-
-    let legacy_registry = registry.resolve(&["dev".to_string(), "registry".to_string()]);
-    assert!(legacy_registry.is_err());
-
-    assert!(is_known_route(&["dev".to_string(), "routes".to_string()]));
-    assert!(is_known_route(&["dev".to_string(), "registry".to_string()]));
-    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "routes".to_string()]));
-    assert!(is_known_route(&["dev".to_string(), "cli".to_string(), "registry".to_string()]));
+    let maintainer = registry.resolve(&["dev".to_string(), "routes".to_string()]);
+    assert!(maintainer.is_err());
+    assert!(!is_known_route(&["dev".to_string(), "routes".to_string()]));
 }

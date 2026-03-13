@@ -32,15 +32,6 @@ fn temp_dir(name: &str) -> PathBuf {
     root
 }
 
-fn executable_name() -> String {
-    let extension = std::env::consts::EXE_EXTENSION;
-    if extension.is_empty() {
-        "bijux".to_string()
-    } else {
-        format!("bijux.{extension}")
-    }
-}
-
 fn write_executable(path: &Path) {
     fs::write(path, "#!/bin/sh\n").expect("write binary");
     #[cfg(unix)]
@@ -248,91 +239,6 @@ fn conflicting_plugin_installs_fail_deterministically() {
     assert_eq!(first.stderr, second.stderr);
 }
 
-#[test]
-fn path_shadowing_diagnostics_are_stable_across_runs() {
-    let root = temp_dir("hostile-state");
-    let first_dir = root.join("first");
-    let second_dir = root.join("second");
-    fs::create_dir_all(&first_dir).expect("mkdir first");
-    fs::create_dir_all(&second_dir).expect("mkdir second");
-    let executable = executable_name();
-    write_executable(&first_dir.join(&executable));
-    write_executable(&second_dir.join(&executable));
-
-    let joined = std::env::join_paths([&first_dir, &second_dir]).expect("join PATH");
-    let path = joined.to_str().expect("utf-8");
-    let envs = [("PATH", path)];
-
-    let first = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
-    let second = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
-    assert_eq!(first.status.code(), Some(0));
-    assert_eq!(second.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout);
-}
-
-#[test]
-fn runtime_identity_output_is_stable_under_same_ambiguous_state() {
-    let root = temp_dir("hostile-state");
-    let first_dir = root.join("one");
-    let second_dir = root.join("two");
-    fs::create_dir_all(&first_dir).expect("mkdir one");
-    fs::create_dir_all(&second_dir).expect("mkdir two");
-    let executable = executable_name();
-    write_executable(&first_dir.join(&executable));
-    write_executable(&second_dir.join(&executable));
-    let path = std::env::join_paths([&first_dir, &second_dir]).expect("join PATH");
-    let path_str = path.to_str().expect("utf-8");
-
-    let envs = [("PATH", path_str), ("BIJUX_WHEEL_VERSION", "9.9.9")];
-    let first = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
-    let second = run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], &envs);
-    assert_eq!(first.status.code(), Some(0));
-    assert_eq!(second.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout);
-}
-
-#[test]
-fn state_doctor_json_is_stable_under_same_corrupted_state() {
-    let root = temp_dir("hostile-state");
-    let config = root.join("corrupt.env");
-    fs::write(&config, "BROKEN_LINE\n").expect("write corrupt config");
-    let args = [
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "json",
-        "--no-pretty",
-        "--config-path",
-        config.to_str().expect("utf-8"),
-    ];
-
-    let first = run(&args, &[]);
-    let second = run(&args, &[]);
-    assert_eq!(first.status.code(), second.status.code());
-    assert_eq!(first.stdout, second.stdout);
-}
-
-#[test]
-fn state_doctor_text_is_stable_under_same_corrupted_state() {
-    let root = temp_dir("hostile-state");
-    let config = root.join("corrupt.env");
-    fs::write(&config, "BROKEN_LINE\n").expect("write corrupt config");
-    let args = [
-        "dev",
-        "cli",
-        "state-doctor",
-        "--format",
-        "text",
-        "--config-path",
-        config.to_str().expect("utf-8"),
-    ];
-
-    let first = run(&args, &[]);
-    let second = run(&args, &[]);
-    assert_eq!(first.status.code(), second.status.code());
-    assert_eq!(first.stdout, second.stdout);
-}
 
 #[test]
 fn plugin_doctor_json_is_stable_under_same_corrupted_state() {

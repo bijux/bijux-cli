@@ -127,8 +127,8 @@ fn hidden_alias_paths_remain_builtin_when_namespace_resembles_alias_tail() {
     registry.register_plugin_namespace("registry").expect("namespace is allowed");
 
     let resolved = registry
-        .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
-        .expect_err("runtime registry delegates dev cli subcommands");
+        .resolve(&["atlas".to_string(), "registry".to_string()])
+        .expect_err("external product runtime remains outside the local registry");
     assert!(matches!(resolved, RouteError::Unknown(_)));
 }
 

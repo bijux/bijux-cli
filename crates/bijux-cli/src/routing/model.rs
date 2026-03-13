@@ -27,105 +27,6 @@ pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "explain",
     "schema",
 ];
-pub const DEV_CLI_VISIBLE_SUBCOMMANDS: &[&str] = &[
-    "maintenance",
-    "rustdoc",
-    "release",
-    "evidence",
-    "config",
-    "python",
-    "repo",
-    "contracts",
-    "dashboard",
-    "quickcheck",
-    "truth",
-    "blockers",
-    "next",
-    "inventory",
-    "routes",
-    "registry",
-    "parity",
-    "docs",
-    "docs-audit",
-    "plugin-health",
-    "status",
-    "maintenance-audit",
-    "snapshots-audit",
-    "fixture-audit",
-    "crate-health",
-    "package-health",
-    "route-audit",
-    "env",
-    "doctor",
-    "runtime-identity",
-    "docs-prune-plan",
-    "state-audit",
-    "state-doctor",
-];
-pub const DEV_CLI_NESTED_SUBCOMMANDS: &[&str] =
-    &["maintenance", "rustdoc", "release", "evidence", "config", "python", "repo"];
-pub const DEV_CLI_HIDDEN_SUBCOMMANDS: &[&str] = &["atlas", "di", "list-products", "list-plugins"];
-pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
-    "remaining",
-    "migrated",
-    "diff",
-    "audit",
-    "generators",
-    "generate",
-    "generate-all",
-    "requirements",
-    "flaky-tests",
-    "status",
-    "package-metadata",
-    "e2e-contract",
-    "pip-audit",
-    "provenance-statement",
-];
-pub const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];
-pub const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
-    "audit",
-    "coverage",
-    "broken-links",
-    "public-api",
-    "examples",
-    "migrate-website-api-docs",
-    "build-proof",
-    "workspace-coverage-proof",
-    "python-link-proof",
-];
-pub const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
-    "status",
-    "evidence",
-    "readiness",
-    "diff",
-    "gaps",
-    "summary",
-    "manifest",
-    "notes",
-    "behavior-changes",
-    "intentional-differences",
-    "unresolved-gaps",
-    "compatibility-leftovers",
-];
-pub const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
-    "list",
-    "show",
-    "audit",
-    "stale",
-    "matrix",
-    "website-export",
-    "ci-export",
-    "release-export",
-    "command-map",
-    "parity-map",
-];
-pub const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
-pub const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
-    &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
-pub const DEV_CLI_REPO_SUBCOMMANDS: &[&str] =
-    &["health", "drift", "inventories", "generated", "stale"];
-
 pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     "status",
     "doctor",
@@ -230,10 +131,6 @@ pub fn alias_rewrites() -> &'static [(&'static str, &'static str)] {
 pub fn is_known_route(path: &[String]) -> bool {
     if path.is_empty() {
         return false;
-    }
-
-    if path.first().is_some_and(|segment| segment == "dev") {
-        return path.len() >= 2;
     }
 
     let key = path.join(" ");
