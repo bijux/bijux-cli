@@ -16,7 +16,7 @@ bijux cli config load ./bijux.env
 ## References
 
 - [Config schema](../reference/config-schema.md)
-- [Config parity report](../architecture/config-parity-report.md)
+- [Configuration and state architecture](../10-architecture/configuration-and-state.md)
 
 ## Notes
 

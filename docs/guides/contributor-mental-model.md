@@ -26,4 +26,4 @@ This document does not define coding style rules or release procedures.
 
 ## References
 - [Concepts overview](../concepts/index.md)
-- [Architecture walk-through](../architecture/walkthrough.md)
+- [System overview](../10-architecture/system-overview.md)

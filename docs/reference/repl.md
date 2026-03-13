@@ -39,6 +39,6 @@ REPL sessions expose diagnostics dump and startup budget checks for latency and 
 
 ## Related Pages
 
-- [REPL parity report](../architecture/repl-parity-report.md)
-- [REPL baseline](../architecture/repl-baseline.md)
+- [Routing and surfaces architecture](../10-architecture/routing-and-surfaces.md)
+- [Execution pipeline](../10-architecture/execution-pipeline.md)
 - [Current Python behavior inventory](current-python/index.md)

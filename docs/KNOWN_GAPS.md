@@ -52,6 +52,7 @@ Review these commands before publishing status:
 - `bijux dev cli parity --format json --no-pretty`
 - `bijux dev cli docs-audit --format json --no-pretty`
 
-For configuration-specific parity gaps and deferred changes, use
-`docs/architecture/config-parity-report.md` together with the generated parity
-artifacts rather than older hand-maintained gap lists.
+For configuration-specific parity gaps and deferred changes, use the
+[Configuration and state architecture](10-architecture/configuration-and-state.md)
+together with generated parity evidence rather than older hand-maintained gap
+lists.

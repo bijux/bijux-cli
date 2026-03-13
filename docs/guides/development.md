@@ -79,4 +79,4 @@ BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-
 
 ## References
 - [Contributor mental model](contributor-mental-model.md)
-- [Architecture walk-through](../architecture/walkthrough.md)
+- [System overview](../10-architecture/system-overview.md)

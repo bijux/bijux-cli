@@ -18,7 +18,7 @@ bijux cli plugins schema
 - [Plugin examples](../examples/plugins.md)
 - [Concepts overview](../concepts/index.md)
 - [Plugin state](../plugin_state.md)
-- [Plugin write-path parity report](../architecture/plugin-write-path-parity-report.md)
+- [Plugin system architecture](../10-architecture/plugin-system.md)
 
 ## Notes
 
