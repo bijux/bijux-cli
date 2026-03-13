@@ -18,7 +18,7 @@ mindmap
   root((Development))
     Setup
       workspace tools
-      artifact-scoped venv
+      repo-managed virtualenv
     Change model
       routing
       policy

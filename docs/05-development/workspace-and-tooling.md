@@ -8,7 +8,7 @@ on one machine.
 ```mermaid
 flowchart LR
     A[Clone repository] --> B[Bootstrap local tools]
-    B --> C[Use artifact-scoped outputs]
+    B --> C[Use repository-managed generated outputs]
     C --> D[Run build and tests]
 ```
 
@@ -18,7 +18,7 @@ sequenceDiagram
     participant M as Make targets
     participant W as Workspace
     U->>M: make install
-    M->>W: create artifacts/python/.venv
+    M->>W: create the repo-managed virtualenv under artifacts/
     U->>M: make test
     M->>W: run repository checks
 ```
@@ -27,6 +27,8 @@ sequenceDiagram
 
 - prefer repository-local tooling over mutable global host state
 - keep generated outputs under `artifacts/`
+- treat the `artifacts/` virtualenv as the current repository tooling default,
+  not as a public installation contract
 - treat the workspace as a mixed Rust and Python repository, not as two
   unrelated projects
 - use the repository entrypoints before inventing local shell shortcuts
