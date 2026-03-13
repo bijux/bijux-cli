@@ -45,6 +45,9 @@ jobs:
       - name: Ensure tags are available
         run: git fetch --tags --force --prune
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Determine tagged release version
         id: release
         shell: bash
@@ -107,10 +110,6 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: crates/bijux-cli-python/pyproject.toml
-
-      - name: Set up Rust
-        if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}
-        uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ steps.release.outputs.publish == 'true' && steps.exists.outputs.published != 'true' }}

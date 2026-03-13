@@ -41,6 +41,9 @@ jobs:
       - name: Ensure tags are available
         run: git fetch --tags --force --prune
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Determine tagged release version
         id: release
         shell: bash
@@ -80,10 +83,6 @@ jobs:
             echo "::error::Missing CARGO_REGISTRY_TOKEN secret"
             exit 1
           fi
-
-      - name: Set up Rust
-        if: ${{ steps.release.outputs.publish == 'true' }}
-        uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ steps.release.outputs.publish == 'true' }}
