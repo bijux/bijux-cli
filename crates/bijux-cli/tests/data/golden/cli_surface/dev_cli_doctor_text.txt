@@ -1,5 +1,14 @@
 issues:
   config: []
+  history: []
+  memory:
+    -
+      area: memory
+      keys:
+        - int_test_key
+      message: memory entries with wrong-type values detected
+      path: <HOME>/.bijux/.memory.json
+      severity: warning
   paths:
     -
       category: paths
