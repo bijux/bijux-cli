@@ -51,7 +51,10 @@ pub(crate) struct DefaultConfigService<P, R> {
 impl<P, R> DefaultConfigService<P, R> {
     #[must_use]
     pub(crate) fn new(path_provider: P, repository: R) -> Self {
-        Self { path_provider, repository }
+        Self {
+            path_provider,
+            repository,
+        }
     }
 }
 
@@ -62,7 +65,9 @@ where
 {
     fn parse_set_pair(&self, raw_pair: &str) -> Result<(String, String), ConfigError> {
         if !raw_pair.contains('=') {
-            return Err(ConfigError::validation("Invalid argument: KEY=VALUE required"));
+            return Err(ConfigError::validation(
+                "Invalid argument: KEY=VALUE required",
+            ));
         }
         let (raw_key, raw_value) = raw_pair.split_once('=').expect("contains checked");
         let key = normalize_key(raw_key)?;
@@ -126,7 +131,8 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
         let (key, value) = self.parse_set_pair(raw_pair)?;
         let mut values = self.load_map()?;
         values.insert(key.clone(), value.clone());
-        self.repository.save(self.path_provider.config_path(), &values)?;
+        self.repository
+            .save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "updated",
             "key": key,
@@ -139,7 +145,8 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
         let key = normalize_key(raw_key)?;
         let mut values = self.load_map()?;
         let removed = values.remove(&key).is_some();
-        self.repository.save(self.path_provider.config_path(), &values)?;
+        self.repository
+            .save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "deleted",
             "key": key,
@@ -184,8 +191,21 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
                 ConfigError::persistence(err.to_string())
             },
         )?;
+        if !source_path.exists() {
+            return Err(ConfigError::not_found(format!(
+                "Config source file not found: {}",
+                source_path.display()
+            )));
+        }
+        if !source_path.is_file() {
+            return Err(ConfigError::validation(format!(
+                "Config source path must be a file: {}",
+                source_path.display()
+            )));
+        }
         let values = self.repository.load(source_path)?;
-        self.repository.save(self.path_provider.config_path(), &values)?;
+        self.repository
+            .save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "loaded",
             "file": source_path,

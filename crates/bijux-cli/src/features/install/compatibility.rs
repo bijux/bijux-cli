@@ -65,6 +65,14 @@ pub enum CompatibilityError {
         /// Original line content.
         content: String,
     },
+    /// Config file contains duplicate keys.
+    #[error("duplicate config key `{key}` at line {line}")]
+    DuplicateConfigKey {
+        /// Duplicate key.
+        key: String,
+        /// 1-based line number where duplicate was detected.
+        line: usize,
+    },
     /// Lock file already exists for mutable state operation.
     #[error("state lock is already held at {0}")]
     LockHeld(PathBuf),
@@ -106,7 +114,11 @@ pub fn discover_compatibility_paths(
         home,
     );
 
-    Ok(CompatibilityPaths { config_file, history_file, plugins_dir })
+    Ok(CompatibilityPaths {
+        config_file,
+        history_file,
+        plugins_dir,
+    })
 }
 
 /// Default compatibility paths anchored in the user home directory.
@@ -142,10 +154,18 @@ pub fn parse_compatibility_config(text: &str) -> Result<CompatibilityConfig, Com
         let trimmed_value = value.trim();
         match trimmed_key {
             ENV_CONFIG_PATH | ENV_HISTORY_PATH | ENV_PLUGINS_PATH => {
+                if values.contains_key(trimmed_key) {
+                    return Err(CompatibilityError::DuplicateConfigKey {
+                        key: trimmed_key.to_string(),
+                        line: line_no,
+                    });
+                }
                 values.insert(trimmed_key.to_string(), trimmed_value.to_string());
             }
             _ => {
-                return Err(CompatibilityError::UnsupportedConfigKey(trimmed_key.to_string()));
+                return Err(CompatibilityError::UnsupportedConfigKey(
+                    trimmed_key.to_string(),
+                ));
             }
         }
     }
@@ -227,4 +247,53 @@ fn normalize_path(path: &Path, home_dir: &Path) -> PathBuf {
     }
 
     home_dir.join(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        parse_compatibility_config, CompatibilityError, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
+        ENV_PLUGINS_PATH,
+    };
+
+    #[test]
+    fn parser_rejects_duplicate_keys() {
+        let source = format!(
+            "{ENV_CONFIG_PATH}=a.env\n{ENV_HISTORY_PATH}=a.history\n{ENV_CONFIG_PATH}=b.env\n"
+        );
+
+        let err = parse_compatibility_config(&source).expect_err("duplicate key should fail");
+        assert!(matches!(
+            err,
+            CompatibilityError::DuplicateConfigKey { key, line }
+            if key == ENV_CONFIG_PATH && line == 3
+        ));
+    }
+
+    #[test]
+    fn parser_rejects_unknown_keys() {
+        let source = "UNKNOWN=/tmp/path\n";
+        let err = parse_compatibility_config(source).expect_err("unknown key should fail");
+        assert!(matches!(err, CompatibilityError::UnsupportedConfigKey(key) if key == "UNKNOWN"));
+    }
+
+    #[test]
+    fn parser_accepts_known_keys_once() {
+        let source = format!(
+            "{ENV_CONFIG_PATH}=cfg.env\n{ENV_HISTORY_PATH}=history.log\n{ENV_PLUGINS_PATH}=plugins\n"
+        );
+        let parsed = parse_compatibility_config(&source).expect("parse should pass");
+        assert_eq!(
+            parsed.config_file.as_deref(),
+            Some(std::path::Path::new("cfg.env"))
+        );
+        assert_eq!(
+            parsed.history_file.as_deref(),
+            Some(std::path::Path::new("history.log"))
+        );
+        assert_eq!(
+            parsed.plugins_dir.as_deref(),
+            Some(std::path::Path::new("plugins"))
+        );
+    }
 }
