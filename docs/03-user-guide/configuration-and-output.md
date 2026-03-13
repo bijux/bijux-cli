@@ -55,6 +55,13 @@ For interactive reading, YAML can be useful:
 bijux status --format yaml
 ```
 
+Plain text is also a supported format when you want human-readable output
+without JSON or YAML structure:
+
+```bash
+bijux status --format text
+```
+
 ## Practical Guidance
 
 - use `config list` to see the current effective state quickly
