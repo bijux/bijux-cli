@@ -52,10 +52,7 @@ fn state_environment_reference_lists_only_supported_public_variables() {
 fn routed_runtime_reference_matches_current_binary_resolution_contract() {
     let doc = read_doc("docs/06-reference/integrations-and-routed-runtimes.md");
 
-    assert!(
-        doc.contains("bijux-dev-cli"),
-        "maintainer binary documentation must stay explicit"
-    );
+    assert!(doc.contains("bijux-dev-cli"), "maintainer binary documentation must stay explicit");
     assert!(
         doc.contains("`bijux-dev-<tool>`"),
         "product control-plane binaries must remain documented explicitly"

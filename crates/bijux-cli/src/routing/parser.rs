@@ -3,7 +3,9 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
-use crate::contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES};
+use crate::contracts::{
+    ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES,
+};
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]

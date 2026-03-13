@@ -136,11 +136,9 @@ fn empty_grouped_commands_are_detected() {
 
 #[test]
 fn help_attached_at_multiple_levels_returns_help_intent_shape() {
-    for argv in [
-        vec!["bijux", "--help"],
-        vec!["bijux", "cli", "--help"],
-        vec!["bijux", "atlas", "--help"],
-    ] {
+    for argv in
+        [vec!["bijux", "--help"], vec!["bijux", "cli", "--help"], vec!["bijux", "atlas", "--help"]]
+    {
         let intent = parse_intent(&argv.iter().map(|x| x.to_string()).collect::<Vec<_>>())
             .expect("help parse should not error");
         assert!(intent.normalized_path.is_empty() || !intent.command_path.is_empty());

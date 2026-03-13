@@ -268,9 +268,7 @@ fn binary_and_bridge_use_same_command_registry_contract() {
     assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
     assert!(
-        !surface
-            .iter()
-            .any(|item| item == "dev" || item.starts_with("bijux-dev-cli ")),
+        !surface.iter().any(|item| item == "dev" || item.starts_with("bijux-dev-cli ")),
         "command registry must keep maintainer command surfaces outside runtime ownership"
     );
 }
@@ -318,11 +316,8 @@ fn binary_and_bridge_use_same_plugin_registry_logic_for_listing() {
 
 #[test]
 fn maintainer_runtime_identity_stays_outside_runtime_bridge() {
-    let argv = vec![
-        "bijux".to_string(),
-        "bijux-dev-cli".to_string(),
-        "runtime-identity".to_string(),
-    ];
+    let argv =
+        vec!["bijux".to_string(), "bijux-dev-cli".to_string(), "runtime-identity".to_string()];
     let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
     let core = run_app(&argv).expect("core");
     assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));

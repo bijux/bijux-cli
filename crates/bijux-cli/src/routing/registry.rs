@@ -159,11 +159,7 @@ impl RouteRegistry {
             } else {
                 "bijux-cli".to_string()
             };
-            rows.push(NamespaceMetadata {
-                name: Namespace(ns.clone()),
-                reserved: true,
-                owner,
-            });
+            rows.push(NamespaceMetadata { name: Namespace(ns.clone()), reserved: true, owner });
         }
 
         for ns in &self.plugin_namespaces {

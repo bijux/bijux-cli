@@ -239,7 +239,6 @@ fn conflicting_plugin_installs_fail_deterministically() {
     assert_eq!(first.stderr, second.stderr);
 }
 
-
 #[test]
 fn plugin_doctor_json_is_stable_under_same_corrupted_state() {
     let root_a = temp_dir("hostile-state-a");

@@ -383,7 +383,8 @@ pub(crate) fn run_bijux_json_env(
     for (key, value) in envs {
         cmd.env(key, value);
     }
-    let output = cmd.output().map_err(|err| format!("failed to run bijux-dev-cli command: {err}"))?;
+    let output =
+        cmd.output().map_err(|err| format!("failed to run bijux-dev-cli command: {err}"))?;
     if !output.status.success() {
         return Err(format!("command failed: {}", String::from_utf8_lossy(&output.stderr).trim()));
     }

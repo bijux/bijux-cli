@@ -159,7 +159,6 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
     );
 }
 
-
 #[test]
 #[cfg(unix)]
 fn config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof() {

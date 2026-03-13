@@ -86,7 +86,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
-            let commands = ["bijux-dev-cli env", "bijux-dev-cli contracts", "bijux-dev-cli parity", "bijux-dev-cli status"];
+            let commands = [
+                "bijux-dev-cli env",
+                "bijux-dev-cli contracts",
+                "bijux-dev-cli parity",
+                "bijux-dev-cli status",
+            ];
             let mut input_map = BTreeMap::<&str, Vec<&str>>::new();
             input_map.insert(
                 "bijux-dev-cli env",

@@ -114,7 +114,6 @@ fn memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safel
     assert_eq!(list.status.code(), Some(0));
     let list_payload = parse_json(&list.stdout);
     assert_eq!(list_payload["count"], 3);
-
 }
 
 #[test]

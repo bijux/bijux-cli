@@ -34,8 +34,7 @@ fn path_has_generated_or_hidden_component(path: &Path, workspace_root: &Path) ->
     relative.components().any(|component| match component {
         Component::Normal(name) => {
             let text = name.to_string_lossy();
-            text.starts_with('.')
-                || matches!(text.as_ref(), "__pycache__" | "artifacts" | "target")
+            text.starts_with('.') || matches!(text.as_ref(), "__pycache__" | "artifacts" | "target")
         }
         _ => false,
     })
@@ -184,11 +183,8 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
         .filter(|p| !path_has_generated_or_hidden_component(p, workspace_root))
         .map(|p| relative_to_root(&p, workspace_root))
         .collect();
-    let reference_docs: Vec<String> = docs_files
-        .iter()
-        .filter(|p| p.starts_with("docs/06-reference/"))
-        .cloned()
-        .collect();
+    let reference_docs: Vec<String> =
+        docs_files.iter().filter(|p| p.starts_with("docs/06-reference/")).cloned().collect();
 
     json!({
         "coverage": coverage,
@@ -211,11 +207,12 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
 /// `bijux-dev-cli rustdoc migrate-website-api-docs`
 #[must_use]
 pub fn build_migration_report(workspace_root: &Path) -> Value {
-    let candidates: Vec<String> = collect_files_recursive(&workspace_root.join("docs/06-reference"))
-        .into_iter()
-        .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-        .map(|p| relative_to_root(&p, workspace_root))
-        .collect();
+    let candidates: Vec<String> =
+        collect_files_recursive(&workspace_root.join("docs/06-reference"))
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
+            .map(|p| relative_to_root(&p, workspace_root))
+            .collect();
     json!({
         "delete_candidates": candidates,
         "safe_mode": true,
@@ -268,17 +265,12 @@ mod tests {
 
     use serde_json::Value;
 
-    use super::{
-        build_audit_report, build_migration_report, build_python_link_proof_report,
-    };
+    use super::{build_audit_report, build_migration_report, build_python_link_proof_report};
 
     fn temp_root(prefix: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
             "bijux-rustdoc-{prefix}-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
         ));
         fs::create_dir_all(&root).expect("mkdir");
         root
@@ -289,12 +281,10 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_migration_report(&root);
         let candidates = report["delete_candidates"].as_array().expect("candidates");
-        assert!(
-            candidates
-                .iter()
-                .filter_map(Value::as_str)
-                .any(|path| path == "docs/06-reference/index.md")
-        );
+        assert!(candidates
+            .iter()
+            .filter_map(Value::as_str)
+            .any(|path| path == "docs/06-reference/index.md"));
     }
 
     #[test]
@@ -317,9 +307,8 @@ mod tests {
             .expect("write hidden readme");
 
         let report = build_audit_report(&root);
-        let readmes = report["reports"]["readme_sections_to_link_into_rustdoc"]
-            .as_array()
-            .expect("readmes");
+        let readmes =
+            report["reports"]["readme_sections_to_link_into_rustdoc"].as_array().expect("readmes");
         let paths = readmes.iter().filter_map(Value::as_str).collect::<Vec<_>>();
         assert!(paths.contains(&"crates/example/README.md"));
         assert!(!paths.contains(&"crates/example/.pytest_cache/README.md"));

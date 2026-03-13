@@ -14,12 +14,7 @@ fn template_compatibility_min_inclusive() -> String {
     let runtime = Version::parse(runtime_semver()).expect("runtime semver");
     let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
     if !runtime.pre.is_empty() {
-        let channel = runtime
-            .pre
-            .as_str()
-            .split('.')
-            .next()
-            .expect("runtime prerelease channel");
+        let channel = runtime.pre.as_str().split('.').next().expect("runtime prerelease channel");
         min.pre = Prerelease::new(channel).expect("prerelease channel");
     }
     min.to_string()
@@ -228,11 +223,13 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
         assert_eq!(payload["plugin_version"], "0.1.0", "{path} must default new plugins to 0.1.0");
         assert_eq!(
-            payload["cli_min"], template_compatibility_min_inclusive(),
+            payload["cli_min"],
+            template_compatibility_min_inclusive(),
             "{path} must require the first post-0.2.0 Bijux host line"
         );
         assert_eq!(
-            payload["cli_max"], template_compatibility_max_exclusive(),
+            payload["cli_max"],
+            template_compatibility_max_exclusive(),
             "{path} must keep future compatibility open until the next major host boundary"
         );
         assert_eq!(

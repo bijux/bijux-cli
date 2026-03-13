@@ -54,9 +54,7 @@ fn route_tree_marks_official_product_namespaces_as_reserved() {
     let tree = registry.route_tree();
     for namespace in OFFICIAL_PRODUCT_NAMESPACES {
         assert!(tree.iter().any(|item| {
-            item.name.0 == *namespace
-                && item.reserved
-                && item.owner == format!("bijux-{namespace}")
+            item.name.0 == *namespace && item.reserved && item.owner == format!("bijux-{namespace}")
         }));
     }
 }

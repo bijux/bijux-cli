@@ -63,12 +63,8 @@ fn run_bridge(argv: &[&str]) -> (i32, String, String) {
 
 #[test]
 fn binary_and_python_bridge_parity_report_is_generated() {
-    let cases: Vec<Vec<&str>> = vec![
-        vec!["status"],
-        vec!["doctor"],
-        vec!["cli", "plugins", "list"],
-        vec!["history"],
-    ];
+    let cases: Vec<Vec<&str>> =
+        vec![vec!["status"], vec!["doctor"], vec!["cli", "plugins", "list"], vec!["history"]];
 
     let mut report_rows: Vec<Value> = Vec::new();
 
