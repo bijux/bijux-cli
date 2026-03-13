@@ -132,7 +132,7 @@ pub(crate) fn try_handle(
             let hint =
                 install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
                     || {
-                        "Run `bijux version` and `bijux cli doctor` to verify your environment."
+                        "Run `bijux version` and `bijux doctor` to verify your environment."
                             .to_string()
                     },
                 );

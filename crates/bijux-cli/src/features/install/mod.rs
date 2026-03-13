@@ -240,7 +240,7 @@ mod tests {
     fn post_install_hint_handles_missing_binary_path_without_dropping_guidance() {
         let hint = post_install_hint("");
         assert!(hint.contains("bijux version"));
-        assert!(hint.contains("bijux cli doctor"));
+        assert!(hint.contains("bijux doctor"));
         assert!(hint.contains("Installed `bijux` at "));
     }
 

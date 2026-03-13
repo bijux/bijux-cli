@@ -9,7 +9,7 @@ use super::paths::{
     resolve_active_binary,
 };
 
-/// Installation diagnostics report used by `bijux cli paths` and `bijux cli doctor`.
+/// Installation diagnostics report used by `bijux cli paths` and `bijux doctor`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct InstallHealthReport {

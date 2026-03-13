@@ -43,7 +43,7 @@ pub(crate) fn completion_script(shell: CompletionShell) -> String {
 #[must_use]
 pub fn post_install_hint(binary_path: &str) -> String {
     format!(
-        "Installed `bijux` at {binary_path}. Run `bijux version` and `bijux cli doctor` to verify your environment."
+        "Installed `bijux` at {binary_path}. Run `bijux version` and `bijux doctor` to verify your environment."
     )
 }
 
