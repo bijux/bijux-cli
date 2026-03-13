@@ -4,10 +4,15 @@
 GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
 GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
 GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
+GH_RELEASE_CI_WORKFLOW_FILE ?= ci.yml
+GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS ?= 1800
+GH_RELEASE_CI_POLL_INTERVAL_SECONDS ?= 15
+GH_RELEASE_CI_LOOKBACK_SECONDS ?= 120
+GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS ?= 20
 
 .PHONY: gh-fmt gh-lint gh-security gh-test \
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-export-release-tag gh-docs-configure-git \
-	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token
+	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token gh-release-wait-for-ci
 
 ##@ GitHub
 gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without mutating files
@@ -167,3 +172,15 @@ gh-release-plan-crates: ## Determine whether a tagged green commit should publis
 
 gh-release-require-cargo-token: ## Fail with a clear message when crates.io credentials are missing
 	@$(call require_var,CARGO_REGISTRY_TOKEN)
+
+gh-release-wait-for-ci: ## Wait for the newest CI workflow run on the release SHA to complete successfully
+	@$(call require_var,GITHUB_TOKEN)
+	@$(call require_var,GITHUB_REPOSITORY)
+	@$(call require_var,TARGET_SHA)
+	@$(call require_var,CI_WAIT_STARTED_AT)
+	@GH_RELEASE_CI_WORKFLOW_FILE="$(GH_RELEASE_CI_WORKFLOW_FILE)" \
+	GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS="$(GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS)" \
+	GH_RELEASE_CI_POLL_INTERVAL_SECONDS="$(GH_RELEASE_CI_POLL_INTERVAL_SECONDS)" \
+	GH_RELEASE_CI_LOOKBACK_SECONDS="$(GH_RELEASE_CI_LOOKBACK_SECONDS)" \
+	GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS="$(GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS)" \
+	python3 .github/scripts/wait_for_ci.py
