@@ -188,16 +188,18 @@ bijux plugins scaffold python my-plugin --path ./my-plugin --force
 bijux plugins scaffold delegated my-rust-plugin --path ./my-rust-plugin --force
 
 # Install and explore
-bijux plugins install ./my-plugin/plugin.manifest.json --source local
+bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
-bijux my-plugin --help
+bijux plugins inspect my-plugin
+bijux plugins explain my-plugin
 
 # Validate and remove
 bijux plugins check my-plugin
 bijux plugins uninstall my-plugin
 ```
 
-Plugins dynamically add **top-level commands** without modifying the core.
+Plugins provide a managed install, inspection, and diagnostics surface without
+changing the core runtime command inventory.
 
 ---
 
@@ -231,16 +233,13 @@ bijux status -f yaml --pretty
 
 ## Developer Introspection
 
-Requires the maintainer control-plane package:
+Maintainer diagnostics run through `bijux dev cli ...` from a workspace build
+or checkout:
 
 ```bash
-pipx install bijux-dev-cli
-```
-
-```bash
-bijux dev cli status --format json --no-pretty
-bijux dev cli parity --format json --no-pretty
-bijux dev cli state-doctor --text
+cargo run -q -p bijux-cli -- dev cli status --format json --no-pretty
+cargo run -q -p bijux-cli -- dev cli parity --format json --no-pretty
+cargo run -q -p bijux-cli -- dev cli state-doctor --text
 ```
 
 ---
