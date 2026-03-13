@@ -35,7 +35,6 @@ fn run_once(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
                 last_not_found = Some(err);
                 if attempt < 7 {
                     std::thread::sleep(Duration::from_millis(20));
-                    continue;
                 }
             }
             Err(err) => panic!("binary should execute for args {args:?}: {err}"),

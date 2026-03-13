@@ -62,7 +62,8 @@ fn run_with_env_result(args: &[&str], envs: &[(&str, String)]) -> io::Result<Out
         }
     }
 
-    Err(last_not_found.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
+    Err(last_not_found
+        .unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
 }
 
 fn assert_known_status(out: &Output, context: &str) {

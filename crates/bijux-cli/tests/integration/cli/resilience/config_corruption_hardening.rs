@@ -42,7 +42,8 @@ fn run_result(args: &[&str]) -> io::Result<Output> {
         }
     }
 
-    Err(last_not_found.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
+    Err(last_not_found
+        .unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
