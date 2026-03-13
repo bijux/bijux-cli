@@ -1,5 +1,5 @@
 {
-  "dev cli repo drift": "dead_command_references:",
+  "dev cli repo drift": "dead_command_references: []",
   "dev cli repo generated": "orphan_generated_outputs:",
   "dev cli repo health": "repo_health:",
   "dev cli repo inventories": "stale_inventories:",
