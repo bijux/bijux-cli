@@ -46,8 +46,10 @@ fn minimized_scaffold_cases_replay_with_deterministic_exit_codes() {
             .filter(|l| !l.is_empty() && !l.starts_with('#'))
             .map(str::to_string)
             .collect();
-        if let Some(idx) = args.iter().position(|a| a == "{ROOT}") {
-            args[idx] = root.display().to_string();
+        for arg in &mut args {
+            if arg.contains("{ROOT}") {
+                *arg = arg.replace("{ROOT}", root.to_string_lossy().as_ref());
+            }
         }
 
         let a = run(&args, &plugins_dir);
