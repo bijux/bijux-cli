@@ -47,3 +47,17 @@ Release truth for maintainer workflows comes from `dev cli release *`.
 - `artifacts/status/dev_cli_dispatch_ownership_report.json`
 - `artifacts/status/bin_entrypoint_responsibility_diff.json`
 - `artifacts/status/runtime_dev_leakage_report.json`
+
+## Automation Preference
+
+Maintainer automation is expected to run through `bijux dev cli` first.
+
+Primary evidence:
+
+- `artifacts/status/dev_cli_inventory.json`
+- `artifacts/status/script_only_behaviors.json`
+- `artifacts/status/make_target_only_behaviors.txt`
+
+Contributor and reviewer guidance should prefer `bijux dev cli` over one-off
+script growth, and CI should fail when maintainer automation claims are not
+backed by generated artifacts.

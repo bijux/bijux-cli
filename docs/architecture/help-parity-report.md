@@ -45,7 +45,7 @@ Compared current Rust root help content against Python command capture data.
 - `297`: complete (line-wrap stability test)
 - `298`: complete (no-color snapshot test)
 - `299`: complete (this report)
-- `300`: complete (rules frozen in `docs/architecture/help-rendering-rules.md`)
+- `300`: complete (rules summarized in this report)
 
 ## Historical Capture Notes
 
@@ -54,3 +54,21 @@ useful conclusion was simple: help output was still structurally different
 between the legacy Python captures and the current Rust runtime, even where
 command coverage already existed. The generated parity artifacts remain the
 current source of truth.
+
+## Rendering Rules
+
+Help rendering follows these rules:
+
+1. Help output is plain text, even when machine-output flags are present.
+2. Root and subcommand help must stay deterministic for identical inputs.
+3. `--color never` must remove ANSI escapes.
+4. Width-constrained rendering must remain readable when `COLUMNS` is set.
+5. Unknown-command handling must keep a stable non-zero failure shape.
+
+Ordering and compatibility rules:
+
+1. Root help order follows the routed Rust command registry order.
+2. Grouped command help follows subcommand declaration order.
+3. Alias forms that normalize to canonical routes must expose equivalent help.
+4. Python-vs-Rust help differences are only acceptable when parity reports
+   document them.

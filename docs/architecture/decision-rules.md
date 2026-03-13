@@ -38,6 +38,16 @@ Config mutation hardening must remain evidenced by:
 ## Parity Report Freeze
 Every release candidate must include command-level parity matrix and diff artifacts.
 
+Parity governance remains artifact-backed:
+
+- `artifacts/parity/command_parity_matrix.json`
+- `artifacts/parity/command_parity_diffs.json`
+- `artifacts/parity/parity_regression_diffs.json`
+- `docs/architecture/parity/intentional_differences.json`
+
+No parity-covered command may regress from `complete` to `partial` or `missing`
+without updating the matrix and diffs in the same change.
+
 ## Plugin V1 Freeze
 Plugin v1 behavior is frozen before introducing new plugin command complexity beyond parity-backed scope.
 Write-path hardening evidence must remain green:
@@ -92,6 +102,29 @@ Compatibility shims and aliases require generated inventory with justification a
 `artifacts/status/compatibility_shim_inventory.json` and
 `artifacts/status/compatibility_alias_inventory.json`.
 Permanent compatibility shims are rejected by policy gate unless evidence explicitly justifies them.
+
+## Parser Hardening Freeze
+
+Parser and routing behavior must stay deterministic under malformed argv,
+ambiguity, alias pressure, and registration-order variation.
+Reserved and built-in namespaces must not be hijacked by plugin namespaces.
+
+Evidence:
+
+- `crates/bijux-cli/tests/routing/parser/parser_abuse.rs`
+- `artifacts/status/parser_abuse_report.json`
+
+## Rustdoc Ownership Freeze
+
+Rustdoc is the primary code documentation path for `bijux-cli`.
+
+- public Rust APIs must be documented in Rust source
+- website and API docs should link to Rustdoc-owned truth instead of duplicating
+  API semantics
+- `bijux dev cli rustdoc audit` is the maintainer-facing authority for Rustdoc
+  health
+- release claims must not describe code documentation as complete without
+  matching Rustdoc audit artifacts
 
 ## Truth Before Polish Freeze
 Truth-reporting and parity evidence gates are frozen as release requirements before polish-only work.

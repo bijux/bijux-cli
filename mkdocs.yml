@@ -119,6 +119,15 @@ plugins:
         architecture/rust-baseline-parity-v1.md: architecture/config-parity-report.md
         architecture/rust-config-baseline-parity-status.md: architecture/config-parity-report.md
         rust-config-parity.md: architecture/config-parity-report.md
+        architecture/rustdoc_primary_code_docs_policy.md: guides/development.md
+        architecture/parity-decision-log.md: architecture/decision-rules.md
+        architecture/parser-abuse-hardening.md: architecture/decision-rules.md
+        architecture/script-automation-reduction-status.md: architecture/dev_cli_control_plane_boundary.md
+        architecture/state-management-rules.md: architecture/STATE_MODEL.md
+        architecture/test-quality-priorities.md: architecture/test-policy.md
+        architecture/test-review-checklist.md: architecture/test-policy.md
+        architecture/help-rendering-rules.md: architecture/help-parity-report.md
+        architecture/parity_release_candidate_rule.md: architecture/decision-rules.md
   - tags
   - minify:
       minify_html: true

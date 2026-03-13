@@ -35,6 +35,22 @@ The canonical inventory is generated in:
 - `bijux dev cli state-doctor --format json --no-pretty`
 - `bijux dev cli status --format json --no-pretty` (reports bundle includes unified state artifacts)
 
+## State Law
+
+State behavior is accepted only when these commands and artifacts agree:
+
+- `bijux dev cli state-audit --json --no-pretty`
+- `bijux dev cli state-doctor --json --no-pretty`
+- `artifacts/status/state_doctor_report.json`
+- `artifacts/status/status_state_corruption_health_report.json`
+- `artifacts/parity/state_behavior_parity_matrix.json`
+
+Required properties:
+
+- malformed-input resilience for stateful readers
+- rollback or non-corruption proof for stateful mutations
+- shared path resolution across command surfaces
+
 ## Policy Gate
 
 `bijux dev cli scripts status run --id STATUS-CONTRACT-ENFORCE-STATE-LAW-POLICY` fails CI when:

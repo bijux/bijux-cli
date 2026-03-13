@@ -18,6 +18,10 @@ Run unit and regression tests for the areas you touched, and confirm that core i
 ## Tooling Notes
 The project enforces linting, quality checks, and security scans. These checks are not optional; they preserve the guarantees documented in the concepts section.
 
+Rustdoc remains the primary code documentation path for public Rust APIs. Use
+website docs for behavior and workflows, and use Rustdoc plus `bijux dev cli
+rustdoc audit` for code-level API truth.
+
 ## Build And Release Discipline
 
 Prefer deterministic, repository-local workflows:
