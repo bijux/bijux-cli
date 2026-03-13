@@ -341,11 +341,23 @@ pub(crate) fn execute_pipeline(
                 id: "kernel_cancelled_before_dispatch".to_string(),
                 severity: "warning".to_string(),
                 message: "execution cancelled before dispatch".to_string(),
-                fields: BTreeMap::new(),
+                fields: BTreeMap::from([(
+                    "command".to_string(),
+                    json!(ctx.intent.command_path.join(" ")),
+                )]),
             });
         }
         return Err(KernelError::Cancelled);
     }
+
+    trace_events.push(InvocationEvent {
+        timestamp: event_timestamp(),
+        name: "bootstrap".to_string(),
+        payload: BTreeMap::from([(
+            "command".to_string(),
+            json!(ctx.intent.command_path.join(" ")),
+        )]),
+    });
 
     if is_fast_path(&ctx.intent) {
         // PARITY-PARTIAL: fast-path currently emits a generic payload; full parity requires
@@ -364,6 +376,18 @@ pub(crate) fn execute_pipeline(
             OutputStream::Stdout => "stdout",
             OutputStream::Stderr => "stderr",
         });
+        for hook in diagnostics {
+            hook.record(DiagnosticRecord {
+                id: "kernel_dispatch_fast_path_completed".to_string(),
+                severity: "info".to_string(),
+                message: "fast-path command completed".to_string(),
+                fields: BTreeMap::from([
+                    ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                    ("exit_code".to_string(), json!(exit_code as i32)),
+                    ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
+                ]),
+            });
+        }
         return Ok(ExecutionResult {
             exit_code,
             emission,
@@ -453,7 +477,21 @@ pub(crate) fn execute_pipeline(
         Handler::Sync(sync_handler) => match catch_unwind_silent(|| sync_handler.execute(ctx)) {
             Ok(Ok(payload)) => HandlerOutcome::Success(payload),
             Ok(Err(err)) => HandlerOutcome::Error(err),
-            Err(payload) => internal_kernel_error(ctx, panic_message(payload)),
+            Err(payload) => {
+                let panic_text = panic_message(payload);
+                for hook in diagnostics {
+                    hook.record(DiagnosticRecord {
+                        id: "kernel_handler_panic".to_string(),
+                        severity: "error".to_string(),
+                        message: "sync handler panicked during dispatch".to_string(),
+                        fields: BTreeMap::from([
+                            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                            ("panic_message".to_string(), json!(panic_text.clone())),
+                        ]),
+                    });
+                }
+                internal_kernel_error(ctx, panic_text)
+            }
         },
         Handler::Async(async_handler) => {
             match catch_unwind_silent(|| {
@@ -461,7 +499,21 @@ pub(crate) fn execute_pipeline(
             }) {
                 Ok(Ok(payload)) => HandlerOutcome::Success(payload),
                 Ok(Err(err)) => HandlerOutcome::Error(err),
-                Err(payload) => internal_kernel_error(ctx, panic_message(payload)),
+                Err(payload) => {
+                    let panic_text = panic_message(payload);
+                    for hook in diagnostics {
+                        hook.record(DiagnosticRecord {
+                            id: "kernel_handler_panic".to_string(),
+                            severity: "error".to_string(),
+                            message: "async handler panicked during dispatch".to_string(),
+                            fields: BTreeMap::from([
+                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                                ("panic_message".to_string(), json!(panic_text.clone())),
+                            ]),
+                        });
+                    }
+                    internal_kernel_error(ctx, panic_text)
+                }
             }
         }
     };
@@ -490,7 +542,10 @@ pub(crate) fn execute_pipeline(
                         "execution exceeded timeout budget of {}ms",
                         limit.as_millis()
                     ),
-                    fields: BTreeMap::new(),
+                    fields: BTreeMap::from([
+                        ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                        ("timeout_ms".to_string(), json!(limit.as_millis())),
+                    ]),
                 });
             }
             return Err(KernelError::Timeout);
@@ -503,10 +558,43 @@ pub(crate) fn execute_pipeline(
                 id: "kernel_cancelled_after_dispatch".to_string(),
                 severity: "warning".to_string(),
                 message: "execution cancelled after dispatch".to_string(),
-                fields: BTreeMap::new(),
+                fields: BTreeMap::from([(
+                    "command".to_string(),
+                    json!(ctx.intent.command_path.join(" ")),
+                )]),
             });
         }
         return Err(KernelError::Cancelled);
+    }
+
+    match &outcome {
+        HandlerOutcome::Success(_) => {
+            for hook in diagnostics {
+                hook.record(DiagnosticRecord {
+                    id: "kernel_handler_outcome_success".to_string(),
+                    severity: "info".to_string(),
+                    message: "handler returned success payload".to_string(),
+                    fields: BTreeMap::from([(
+                        "command".to_string(),
+                        json!(ctx.intent.command_path.join(" ")),
+                    )]),
+                });
+            }
+        }
+        HandlerOutcome::Error(err) => {
+            for hook in diagnostics {
+                hook.record(DiagnosticRecord {
+                    id: "kernel_handler_outcome_error".to_string(),
+                    severity: "warning".to_string(),
+                    message: "handler returned error payload".to_string(),
+                    fields: BTreeMap::from([
+                        ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                        ("error_category".to_string(), json!(err.error.category.clone())),
+                        ("error_code".to_string(), json!(err.error.code.clone())),
+                    ]),
+                });
+            }
+        }
     }
 
     let exit_code = map_outcome_to_exit(&outcome);
@@ -539,6 +627,20 @@ pub(crate) fn execute_pipeline(
             ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
         ]),
     });
+
+    for hook in diagnostics {
+        hook.record(DiagnosticRecord {
+            id: "kernel_dispatch_completed".to_string(),
+            severity: "info".to_string(),
+            message: "kernel dispatch finished".to_string(),
+            fields: BTreeMap::from([
+                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                ("exit_code".to_string(), json!(exit_code as i32)),
+                ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
+                ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
+            ]),
+        });
+    }
 
     Ok(ExecutionResult {
         exit_code,
