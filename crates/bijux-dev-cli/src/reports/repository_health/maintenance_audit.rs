@@ -87,7 +87,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         })
         .collect();
 
-    let remaining_task_runner_only_behaviors: Vec<String> = makes
+    let remaining_make_only_behaviors: Vec<String> = makes
         .iter()
         .flat_map(|mk| mk.get("targets").and_then(Value::as_array).cloned().unwrap_or_default())
         .filter_map(|target| {
@@ -119,7 +119,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         },
         "maintainer_maintenance_replacements": maintainer_maintenance_replacements,
         "remaining_legacy_only_behaviors": remaining_legacy_only_behaviors,
-        "remaining_task_runner_only_behaviors": remaining_task_runner_only_behaviors,
+        "remaining_make_only_behaviors": remaining_make_only_behaviors,
         "rule": "new maintainer automation defaults to bijux dev cli commands",
     })
 }
@@ -134,8 +134,8 @@ pub fn build_report(inventory: Value) -> Value {
             .get("remaining_legacy_only_behaviors")
             .cloned()
             .unwrap_or_else(|| json!([])),
-        "remaining_task_runner_only_behaviors": inventory
-            .get("remaining_task_runner_only_behaviors")
+        "remaining_make_only_behaviors": inventory
+            .get("remaining_make_only_behaviors")
             .cloned()
             .unwrap_or_else(|| json!([])),
         "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
