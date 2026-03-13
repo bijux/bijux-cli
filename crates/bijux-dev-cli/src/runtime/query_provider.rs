@@ -97,11 +97,27 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     }
 
     fn plugin_list(&self) -> Vec<Value> {
-        list_plugins(self.plugin_registry_path)
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|plugin| serde_json::to_value(plugin).ok())
-            .collect()
+        match list_plugins(self.plugin_registry_path) {
+            Ok(plugins) => {
+                let mut rows = Vec::new();
+                for plugin in plugins {
+                    match serde_json::to_value(plugin) {
+                        Ok(value) => rows.push(value),
+                        Err(error) => rows.push(json!({
+                            "_integrity_error": true,
+                            "source": "plugin-serialization",
+                            "message": error.to_string(),
+                        })),
+                    }
+                }
+                rows
+            }
+            Err(error) => vec![json!({
+                "_integrity_error": true,
+                "source": "plugin-registry",
+                "message": error.to_string(),
+            })],
+        }
     }
 
     fn product_contracts(&self) -> Vec<ProductContractRow> {
@@ -143,8 +159,20 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
             runtime_semver(),
         );
+        let mut plugin_issues = Vec::<Value>::new();
         let plugin_diagnostics =
-            load_time_diagnostics(self.plugin_registry_path, runtime_semver()).unwrap_or_default();
+            match load_time_diagnostics(self.plugin_registry_path, runtime_semver()) {
+                Ok(diagnostics) => diagnostics,
+                Err(error) => {
+                    plugin_issues.push(json!({
+                        "category": "plugins",
+                        "severity": "error",
+                        "message": format!("failed to load plugin diagnostics: {error}"),
+                        "path": self.plugin_registry_path,
+                    }));
+                    Vec::new()
+                }
+            };
 
         let config_issues = validate_config_file(&self.paths.config_file)
             .err()
@@ -172,17 +200,14 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
                 Vec::new()
             };
 
-        let plugin_issues: Vec<Value> = plugin_diagnostics
-            .into_iter()
-            .map(|diagnostic| {
-                json!({
-                    "category": "plugins",
-                    "namespace": diagnostic.namespace,
-                    "severity": diagnostic.severity,
-                    "message": diagnostic.message,
-                })
+        plugin_issues.extend(plugin_diagnostics.into_iter().map(|diagnostic| {
+            json!({
+                "category": "plugins",
+                "namespace": diagnostic.namespace,
+                "severity": diagnostic.severity,
+                "message": diagnostic.message,
             })
-            .collect();
+        }));
 
         DoctorReportInput {
             config_issues,

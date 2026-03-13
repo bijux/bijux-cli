@@ -52,7 +52,23 @@ pub fn build_product_list_report(products: &[ProductContractRow]) -> Value {
 /// Builds hidden `dev cli list-plugins` report payload.
 #[must_use]
 pub fn build_plugin_list_report(plugins: Vec<Value>) -> Value {
-    json!({"status": "ok", "plugins": plugins})
+    let mut visible_plugins = Vec::new();
+    let mut integrity_issues = Vec::new();
+
+    for plugin in plugins {
+        if plugin.get("_integrity_error") == Some(&Value::Bool(true)) {
+            integrity_issues.push(plugin);
+            continue;
+        }
+        visible_plugins.push(plugin);
+    }
+
+    json!({
+        "status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "plugins": visible_plugins,
+        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_issues": integrity_issues,
+    })
 }
 
 /// Builds hidden `dev cli list-plugins` report payload from structured plugin rows.
@@ -170,4 +186,42 @@ pub fn build_command_ownership_report(generated_at: &str) -> Value {
             .collect::<Vec<_>>(),
         "grouped_commands": grouped,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::build_plugin_list_report;
+
+    #[test]
+    fn plugin_list_report_is_ok_when_no_integrity_errors_exist() {
+        let payload = build_plugin_list_report(vec![json!({"manifest":{"namespace":"alpha"}})]);
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["integrity_status"], "ok");
+        assert_eq!(payload["plugins"].as_array().map(Vec::len), Some(1));
+        assert_eq!(
+            payload["integrity_issues"].as_array().map(Vec::len),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn plugin_list_report_is_degraded_when_integrity_errors_exist() {
+        let payload = build_plugin_list_report(vec![
+            json!({"manifest":{"namespace":"alpha"}}),
+            json!({
+                "_integrity_error": true,
+                "source": "plugin-registry",
+                "message": "registry corrupted",
+            }),
+        ]);
+        assert_eq!(payload["status"], "degraded");
+        assert_eq!(payload["integrity_status"], "degraded");
+        assert_eq!(payload["plugins"].as_array().map(Vec::len), Some(1));
+        assert_eq!(
+            payload["integrity_issues"].as_array().map(Vec::len),
+            Some(1)
+        );
+    }
 }
