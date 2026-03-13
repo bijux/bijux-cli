@@ -149,8 +149,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
 
     if argv.len() == 2 && matches!(argv[1].as_str(), "--version" | "-V") {
         let (flag, flag_truncated) = bounded_command(&argv[1]);
-        telemetry
-            .record("dispatch.version.alias", json!({"flag": flag, "flag_truncated": flag_truncated}));
+        telemetry.record(
+            "dispatch.version.alias",
+            json!({"flag": flag, "flag_truncated": flag_truncated}),
+        );
         let normalized = vec![argv[0].clone(), "version".to_string()];
         return run_app_inner(&normalized, telemetry);
     }

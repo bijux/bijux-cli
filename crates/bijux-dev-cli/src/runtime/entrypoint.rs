@@ -506,9 +506,9 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let route_exit_code = payload_route_exit_code(&expanded_path, &payload);
     let command_joined = expanded_path.join(" ");
     let (command, command_truncated) = bounded_command(&command_joined);
-        telemetry.record(
-            "dispatch.route.completed",
-            json!({
+    telemetry.record(
+        "dispatch.route.completed",
+        json!({
                 "command": command.clone(),
                 "command_truncated": command_truncated,
                 "status": payload.get("status").and_then(Value::as_str),
@@ -573,8 +573,8 @@ mod tests {
 
     use super::{
         classify_error_exit_code, expanded_dev_cli_path, no_color_enabled,
-        normalize_process_exit_code, payload_route_exit_code, run_app, MAX_PATH_SEGMENT_CHARS,
-        synthetic_dev_cli_parse_argv,
+        normalize_process_exit_code, payload_route_exit_code, run_app,
+        synthetic_dev_cli_parse_argv, MAX_PATH_SEGMENT_CHARS,
     };
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
@@ -772,9 +772,7 @@ mod tests {
             .expect("intent parsed event");
         let segments = parsed["payload"]["normalized_path"].as_array().expect("segments");
         let has_bounded_segment = segments.iter().any(|value| {
-            value
-                .as_str()
-                .is_some_and(|segment| segment.chars().count() == MAX_PATH_SEGMENT_CHARS)
+            value.as_str().is_some_and(|segment| segment.chars().count() == MAX_PATH_SEGMENT_CHARS)
         });
         assert!(has_bounded_segment, "normalized path should contain a bounded segment");
         assert_eq!(parsed["payload"]["normalized_path_truncated_segment_count"], 1);

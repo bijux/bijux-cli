@@ -70,12 +70,7 @@ pub fn truncate_chars(input: &str, limit: usize) -> (String, bool) {
 }
 
 fn emit_telemetry_write_warning_once(path: &Path, error: &std::io::Error) {
-    let key = format!(
-        "{}|{:?}|{:?}",
-        path.to_string_lossy(),
-        error.kind(),
-        error.raw_os_error()
-    );
+    let key = format!("{}|{:?}|{:?}", path.to_string_lossy(), error.kind(), error.raw_os_error());
     let cache = TELEMETRY_WRITE_WARNING_KEYS.get_or_init(|| Mutex::new(HashSet::new()));
     let should_emit = match cache.lock() {
         Ok(mut seen) => seen.insert(key),
@@ -474,7 +469,8 @@ mod tests {
         let body = std::fs::read_to_string(&sink).expect("telemetry body");
         let rows: Vec<Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json line")).collect();
-        let oversized = rows.iter().find(|row| row["payload"]["ok"] == true).expect("oversized row");
+        let oversized =
+            rows.iter().find(|row| row["payload"]["ok"] == true).expect("oversized row");
         let stage = oversized["stage"].as_str().expect("stage");
         assert_eq!(stage.chars().count(), MAX_STAGE_FIELD_CHARS);
         assert_eq!(oversized["stage_truncated"], true);
