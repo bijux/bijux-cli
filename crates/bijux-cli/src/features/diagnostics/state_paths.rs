@@ -86,7 +86,7 @@ fn merge_warnings(primary: Option<String>, secondary: Option<String>) -> Option<
 pub fn env_map() -> HashMap<String, String> {
     [ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH]
         .iter()
-        .filter_map(|key| env::var(key).ok().map(|value| ((*key).to_string(), value)))
+        .filter_map(|key| non_empty_env_value(key).map(|value| ((*key).to_string(), value)))
         .collect()
 }
 
@@ -120,7 +120,8 @@ pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePat
             Ok(config) => (config, None),
             Err(error @ CompatibilityError::UnsupportedConfigKey(_))
             | Err(error @ CompatibilityError::MalformedConfigLine { .. })
-            | Err(error @ CompatibilityError::DuplicateConfigKey { .. }) => (
+            | Err(error @ CompatibilityError::DuplicateConfigKey { .. })
+            | Err(error @ CompatibilityError::EmptyConfigValue { .. }) => (
                 CompatibilityConfig::default(),
                 Some(format!(
                     "compatibility override parsing failed for {}: {error}",
@@ -238,6 +239,8 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
                     "severity": "warning",
                     "message": "history file contains invalid entries that were ignored",
                     "dropped_invalid_entries": history_report.dropped_invalid_entries,
+                    "accepted_entries": history_report.total_entries,
+                    "observed_entries": history_report.observed_entries,
                     "path": paths.history_file,
                 }));
             }
@@ -247,6 +250,8 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
                     "severity": "warning",
                     "message": "history file contains commands that exceeded the command size budget",
                     "truncated_command_entries": history_report.truncated_command_entries,
+                    "accepted_entries": history_report.total_entries,
+                    "observed_entries": history_report.observed_entries,
                     "path": paths.history_file,
                 }));
             }
@@ -256,6 +261,8 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
                     "severity": "warning",
                     "message": "history file uses legacy layout; rewrite as a JSON array for deterministic behavior",
                     "source_format": history_report.source_format,
+                    "accepted_entries": history_report.total_entries,
+                    "observed_entries": history_report.observed_entries,
                     "path": paths.history_file,
                 }));
             }

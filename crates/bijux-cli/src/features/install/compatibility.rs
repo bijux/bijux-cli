@@ -73,6 +73,14 @@ pub enum CompatibilityError {
         /// 1-based line number where duplicate was detected.
         line: usize,
     },
+    /// Config file contains an empty path value.
+    #[error("empty config value for `{key}` at line {line}")]
+    EmptyConfigValue {
+        /// Config key.
+        key: String,
+        /// 1-based line number where empty value was detected.
+        line: usize,
+    },
     /// Lock file already exists for mutable state operation.
     #[error("state lock is already held at {0}")]
     LockHeld(PathBuf),
@@ -150,6 +158,12 @@ pub fn parse_compatibility_config(text: &str) -> Result<CompatibilityConfig, Com
         let trimmed_value = value.trim();
         match trimmed_key {
             ENV_CONFIG_PATH | ENV_HISTORY_PATH | ENV_PLUGINS_PATH => {
+                if trimmed_value.is_empty() {
+                    return Err(CompatibilityError::EmptyConfigValue {
+                        key: trimmed_key.to_string(),
+                        line: line_no,
+                    });
+                }
                 if values.contains_key(trimmed_key) {
                     return Err(CompatibilityError::DuplicateConfigKey {
                         key: trimmed_key.to_string(),
@@ -217,12 +231,17 @@ fn select_path(
     home_dir: &Path,
 ) -> PathBuf {
     let candidate = cli_value
+        .filter(|value| !path_is_empty(value))
         .cloned()
-        .or_else(|| env_value.map(PathBuf::from))
-        .or_else(|| config_value.cloned())
+        .or_else(|| env_value.filter(|value| !value.trim().is_empty()).map(PathBuf::from))
+        .or_else(|| config_value.filter(|value| !path_is_empty(value)).cloned())
         .unwrap_or_else(|| default_value.to_path_buf());
 
     normalize_path(&candidate, home_dir)
+}
+
+fn path_is_empty(path: &Path) -> bool {
+    path.to_str().is_some_and(|value| value.trim().is_empty())
 }
 
 fn normalize_path(path: &Path, home_dir: &Path) -> PathBuf {
@@ -245,9 +264,12 @@ fn normalize_path(path: &Path, home_dir: &Path) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
     use super::{
-        parse_compatibility_config, CompatibilityError, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
-        ENV_PLUGINS_PATH,
+        discover_compatibility_paths, parse_compatibility_config, CompatibilityConfig,
+        CompatibilityError, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
     };
 
     #[test]
@@ -280,5 +302,41 @@ mod tests {
         assert_eq!(parsed.config_file.as_deref(), Some(std::path::Path::new("cfg.env")));
         assert_eq!(parsed.history_file.as_deref(), Some(std::path::Path::new("history.log")));
         assert_eq!(parsed.plugins_dir.as_deref(), Some(std::path::Path::new("plugins")));
+    }
+
+    #[test]
+    fn parser_rejects_empty_values() {
+        let source = format!("{ENV_HISTORY_PATH}=\n");
+        let err = parse_compatibility_config(&source).expect_err("empty value should fail");
+        assert!(matches!(
+            err,
+            CompatibilityError::EmptyConfigValue { key, line } if key == ENV_HISTORY_PATH && line == 1
+        ));
+    }
+
+    #[test]
+    fn discover_paths_ignores_empty_overrides_and_uses_defaults() {
+        let home = PathBuf::from("/tmp/bijux-compat-home");
+        let overrides = PathOverrides {
+            config_file: Some(PathBuf::from("")),
+            history_file: Some(PathBuf::from("   ")),
+            plugins_dir: None,
+        };
+        let mut env_map = HashMap::new();
+        env_map.insert(ENV_CONFIG_PATH.to_string(), " ".to_string());
+        env_map.insert(ENV_HISTORY_PATH.to_string(), "".to_string());
+        env_map.insert(ENV_PLUGINS_PATH.to_string(), "\t".to_string());
+
+        let resolved = discover_compatibility_paths(
+            Some(home.as_path()),
+            &overrides,
+            &env_map,
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+
+        assert_eq!(resolved.config_file, home.join(".bijux/.env"));
+        assert_eq!(resolved.history_file, home.join(".bijux/.history"));
+        assert_eq!(resolved.plugins_dir, home.join(".bijux/.plugins"));
     }
 }
