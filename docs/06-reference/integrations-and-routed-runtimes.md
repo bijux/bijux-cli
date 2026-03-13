@@ -83,7 +83,6 @@ their binaries are discoverable.
 Typical local setup:
 
 ```bash
-export BIJUX_DEV_MODE=1
 export BIJUXCLI_PRODUCT_BIN_DIR="/path/to/product/artifacts/bin"
 ```
 

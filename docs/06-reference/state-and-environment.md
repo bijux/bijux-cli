@@ -59,6 +59,15 @@ uppercase `BIJUXCLI_` prefix when materialized in environment form.
 
 `NO_COLOR=1` also affects color resolution.
 
+## Bridge And Routing Environment Variables
+
+These variables are public because documented workflows depend on them, but
+they do not behave like normal config/env precedence inputs:
+
+| Variable | Purpose |
+| --- | --- |
+| `BIJUX_BIN` | Force the Python package or install diagnostics to use a specific runtime binary |
+
 ## Effective Precedence
 
 For documented runtime behavior, precedence is:

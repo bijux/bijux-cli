@@ -51,6 +51,17 @@ These pages are intentionally normative:
 - they should be smaller and more stable than guides or architecture docs
 - unsupported behavior should be named as unsupported, not implied as stable
 
+## Machine-Readable Contract Assets
+
+These files are part of the kept contract surface and should be reviewed
+alongside the markdown pages when a contract changes:
+
+- `docs/07-contracts/schemas/output-envelope-v1.schema.json`
+- `docs/07-contracts/schemas/error-envelope-v1.schema.json`
+- `docs/07-contracts/schemas/plugin-manifest-v2.schema.json`
+- `docs/07-contracts/official_product_namespace_registry.json`
+- `docs/07-contracts/product_mount_metadata_contract.json`
+
 ## Next Step
 
 If you need implementation shape, go to [Architecture](../04-architecture/index.md).

@@ -51,7 +51,6 @@ The supported global flags are:
 - `--quiet`
 - `--log-level`
 - `--color`
-- `--no-color`
 
 Precedence is stable and resolves as:
 
@@ -61,6 +60,7 @@ Precedence is stable and resolves as:
 4. defaults
 
 `--help` and `--version` are short-circuit flags.
+`NO_COLOR=1` remains the documented color-suppression environment rule.
 
 ## Stable Exit-Code Meanings
 

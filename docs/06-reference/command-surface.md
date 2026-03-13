@@ -57,11 +57,11 @@ flowchart LR
 
 ### `history`
 
-`clear`, `service`
+`clear`
 
 ### `memory`
 
-`clear`, `delete`, `get`, `list`, `set`, `service`
+`clear`, `delete`, `get`, `list`, `set`
 
 ## Routed Namespaces
 
