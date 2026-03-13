@@ -32,7 +32,7 @@ fn runtime_dispatch_only_delegates_runtime_product_namespaces() {
 }
 
 #[test]
-fn bijux_cli_tests_do_not_require_bijux_dev_cli_source_layout() {
+fn runtime_tests_do_not_require_maintainer_crate_source_layout() {
     let tests_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
     let mut stack = vec![tests_root];
     let forbidden =

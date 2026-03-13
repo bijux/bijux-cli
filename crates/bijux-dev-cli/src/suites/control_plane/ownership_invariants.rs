@@ -79,7 +79,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "canonical_entrypoint_core_dispatch": true,
                 "shared_report_envelope_path": core_source.contains("render_value("),
                 "shared_exit_mapping_path": core_source.contains("AppRunResult"),
-                "runtime_law_not_in_dev_cli": lib_text.contains("Runtime command law remains in runtime crates"),
+                "runtime_law_not_in_control_plane": lib_text.contains("Runtime command law remains in runtime crates"),
                 "command_registry_single_source": true,
                 "command_metadata_inspectable": true,
                 "command_names_stable": unique,
@@ -150,8 +150,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     has(&routing_module, "pub fn routes_report") || has(&routing_module, "pub fn registry_report"),
             });
             let after = json!({
-                "core_delegates_routes_to_dev_cli": has(&core_app, "dev_routes::build_report_from_query"),
-                "core_delegates_registry_to_dev_cli": has(&core_app, "dev_registry::build_report_from_query"),
+                "core_delegates_routes_to_maintainer": has(&core_app, "dev_routes::build_report_from_query"),
+                "core_delegates_registry_to_maintainer": has(&core_app, "dev_registry::build_report_from_query"),
                 "maintainer_owns_routes_presentation": has(&dev_routes, "pub fn build_report_from_query"),
                 "maintainer_owns_registry_presentation": has(&dev_registry, "pub fn build_report_from_query"),
                 "routing_exposes_read_only_route_inventory": has(&inventory, "pub fn route_inventory"),
@@ -161,8 +161,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "ownership_shift_complete":
                     before["core_owned_routes_registry_presentation"] == false
                     && before["routing_owned_routes_registry_presentation"] == false
-                    && after["core_delegates_routes_to_dev_cli"] == true
-                    && after["core_delegates_registry_to_dev_cli"] == true
+                    && after["core_delegates_routes_to_maintainer"] == true
+                    && after["core_delegates_registry_to_maintainer"] == true
                     && after["maintainer_owns_routes_presentation"] == true
                     && after["maintainer_owns_registry_presentation"] == true,
             });
@@ -188,7 +188,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let payload = json!({
                 "generated_at": generated_at_utc(),
                 "generator": "bijux-dev-cli",
-                "scope": "dev-cli diagnostics source map",
+                "scope": "maintainer diagnostics source map",
                 "commands": [
                     {
                         "command": "bijux-dev-cli runtime-identity",

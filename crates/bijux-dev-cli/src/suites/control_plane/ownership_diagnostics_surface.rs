@@ -203,12 +203,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_owned_behaviors_inventory.json", &json!({
                                 "generated_at": generated_at_utc(),
                                 "generator": "bijux-dev-cli",
-                                "scope": "dev-cli maintainer-owned behavior inventory",
+                                "scope": "maintainer-owned behavior inventory",
                                 "commands": dev_rows,
                                 "maintainer_only_commands_implemented_in_runtime_crates": dev_rows.iter().filter(|row| row.get("leaks_through_runtime").and_then(Value::as_bool)==Some(true)).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                                 "maintainer_only_diagnostics_exposed_from_bin": maintainer_diag,
-                                "maintenance_replacements_already_covered_by_dev_cli": Value::Array(vec![]),
-                                "remaining_maintenance_to_move_into_dev_cli": Value::Array(vec![]),
+                                "maintenance_replacements_already_covered_by_control_plane": Value::Array(vec![]),
+                                "remaining_maintenance_to_move_into_control_plane": Value::Array(vec![]),
                                 "boundary_rules": {
                                     "control_plane_owner": "bijux-dev-cli owns maintainer automation and report assembly",
                                     "runtime_scope": "runtime crates own runtime law and structured-data services, not maintainer workflows",
@@ -253,8 +253,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "bijux-dev-cli inventory","bijux-dev-cli maintenance-audit","bijux-dev-cli docs-audit","bijux-dev-cli crate-health",
                                     "bijux-dev-cli package-health","bijux-dev-cli runtime-identity","bijux-dev-cli state-audit","bijux-dev-cli state-doctor"
                                 ],
-                                "owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_some_and(|s| s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
-                                "not_yet_owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
+                                "owned_by_maintainer_control_plane": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_some_and(|s| s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
+                                "not_yet_owned_by_maintainer_control_plane": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                             })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/maintainer_owned_behaviors_inventory.json",
@@ -384,7 +384,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"remaining bijux-dev-cli subcommands not proven complete in rust","remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_value_ranking.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli maintainer-value ranking for closure execution","ranked_remaining_commands":remaining,"count":remaining.len()
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"maintainer value ranking for closure execution","ranked_remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_completion_report.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command closure execution","remaining_count":remaining.len(),"coverage_checks":coverage_checks,
@@ -409,7 +409,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let combined = json!({
                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"cli and bijux-dev-cli command closure",
                 "cli":{"remaining_count":cli_remaining,"closure_status":cli_completion.get("closure_status").cloned().unwrap_or_else(|| json!("open")),"top_targets":cli_completion.get("top_targets").cloned().unwrap_or_else(|| json!([]))},
-                "dev_cli":{"remaining_count":remaining.len(),"closure_status":if dev_green {"green"} else {"open"},"top_targets":remaining.iter().take(2).cloned().collect::<Vec<_>>()},
+                "maintainer":{"remaining_count":remaining.len(),"closure_status":if dev_green {"green"} else {"open"},"top_targets":remaining.iter().take(2).cloned().collect::<Vec<_>>()},
                 "cross_command_consistency":{"inspect_routes_registry":coverage_checks["consistency_inspect_routes_registry"],"config_env_resolution":coverage_checks["consistency_config_env_resolution"],"plugin_registry_state":coverage_checks["consistency_plugin_registry_state"]},
                 "closure_status": if cli_green && dev_green {"green"} else {"open"},
                 "complete_language_allowed": cli_green && dev_green
@@ -493,7 +493,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "rules":[
                                     "bin must remain entrypoint-only",
                                     "routing must remain command identity only",
-                                    "bijux-dev-cli maintainer workflows must be implemented in bijux-dev-cli"
+                                    "maintainer workflows must be implemented in bijux-dev-cli"
                                 ]
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/bin_entrypoint_responsibility_diff.json", &json!({

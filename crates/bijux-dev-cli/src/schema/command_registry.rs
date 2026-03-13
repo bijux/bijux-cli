@@ -1,4 +1,4 @@
-//! Shared types for dev-cli maintainer report modules.
+//! Shared types for maintainer report modules.
 
 use serde::{Deserialize, Serialize};
 
@@ -34,7 +34,7 @@ impl DevCliCommandGroup {
     }
 }
 
-/// Canonical dev-cli command identity used by maintainer report modules.
+/// Canonical maintainer command identity used by maintainer report modules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DevCliCommand {
     /// `bijux-dev-cli status`
