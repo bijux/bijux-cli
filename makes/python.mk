@@ -45,7 +45,7 @@ TWINE_REPOSITORY     ?= pypi
 PUBLISH_SKIP_EXISTING ?= 1
 PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 
-.PHONY: python-env python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py test-unit-py test-nightly-py security-py build-py publish-py
+.PHONY: python-env fmt-py fmt-check-py lint-py lint-check-py test-py test-unit-py test-nightly-py security-py build-py publish-py
 
 define run_pytest
 	@echo "→ Running Python tests on $(PYTHON_TEST_DIR)"
@@ -83,8 +83,6 @@ endef
 ##@ Python
 python-env: install ## Prepare the repo-managed Python virtualenv and tools
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
-
-python-env-py: python-env ## Run the legacy alias for python-env
 
 fmt-py: python-env ## Run Python formatting with Ruff
 	@echo "→ Ruff format"
