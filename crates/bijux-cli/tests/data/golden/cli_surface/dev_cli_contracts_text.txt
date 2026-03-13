@@ -11,5 +11,5 @@ contracts:
     name: plugin-manifest
     schema: plugin-manifest-v2
     version: 1.0.0
-runtime_version: 0.3.0
+runtime_version: <RUNTIME_VERSION>
 schema_version: v2

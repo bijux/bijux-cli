@@ -7,6 +7,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use bijux_cli as _;
+use bijux_cli::api::version::{runtime_semver, runtime_version};
 use libc as _;
 use serde_json as _;
 use shlex as _;
@@ -41,7 +42,16 @@ fn snapshot_home() -> PathBuf {
 
 fn normalize_output(output: String, home: &std::path::Path) -> String {
     let home_text = home.display().to_string();
-    output.replace(&home_text, "<HOME>")
+    output
+        .replace(&home_text, "<HOME>")
+        .replace(
+            &format!("runtime_version: {}", runtime_semver()),
+            "runtime_version: <RUNTIME_VERSION>",
+        )
+        .replace(
+            &format!("runtime_version: {}", runtime_version()),
+            "runtime_version: <RUNTIME_VERSION>",
+        )
 }
 
 #[test]

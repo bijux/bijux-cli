@@ -10,7 +10,7 @@ const BUILD_GIT_DIRTY: Option<&str> = option_env!("BIJUX_BUILD_GIT_DIRTY");
 
 const VERSION_SOURCE_OVERRIDE: &str = "override";
 const VERSION_SOURCE_GIT_TAG: &str = "git-tag";
-const VERSION_SOURCE_GIT_DESCRIBE: &str = "git-describe";
+const VERSION_SOURCE_GIT_TAG_DERIVED: &str = "git-tag-derived";
 const VERSION_SOURCE_PACKAGE_FALLBACK: &str = "package-fallback";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,7 +42,7 @@ pub(crate) fn runtime_version_source() -> &'static str {
     match BUILD_VERSION_SOURCE {
         Some(VERSION_SOURCE_OVERRIDE) => VERSION_SOURCE_OVERRIDE,
         Some(VERSION_SOURCE_GIT_TAG) => VERSION_SOURCE_GIT_TAG,
-        Some(VERSION_SOURCE_GIT_DESCRIBE) => VERSION_SOURCE_GIT_DESCRIBE,
+        Some(VERSION_SOURCE_GIT_TAG_DERIVED) => VERSION_SOURCE_GIT_TAG_DERIVED,
         Some(VERSION_SOURCE_PACKAGE_FALLBACK) => VERSION_SOURCE_PACKAGE_FALLBACK,
         Some(_) | None => VERSION_SOURCE_PACKAGE_FALLBACK,
     }
@@ -83,11 +83,13 @@ pub(crate) fn runtime_version_info() -> RuntimeVersionInfo {
 pub(crate) fn runtime_version_line() -> String {
     let info = runtime_version_info();
     let mut line = format!("{} version {} ({})", info.name, info.version, info.source);
-    if let Some(commit) = info.git_commit {
-        line.push_str(", build ");
-        line.push_str(commit);
-        if info.git_dirty == Some(true) {
-            line.push_str("-dirty");
+    if info.source != VERSION_SOURCE_GIT_TAG_DERIVED {
+        if let Some(commit) = info.git_commit {
+            line.push_str(", build ");
+            line.push_str(commit);
+            if info.git_dirty == Some(true) {
+                line.push_str("-dirty");
+            }
         }
     }
     line
@@ -116,8 +118,13 @@ mod tests {
     fn runtime_version_source_is_known_value() {
         assert!(matches!(
             runtime_version_source(),
-            "override" | "git-tag" | "git-describe" | "package-fallback"
+            "override" | "git-tag" | "git-tag-derived" | "package-fallback"
         ));
+    }
+
+    #[test]
+    fn runtime_version_uses_tag_style_prefix() {
+        assert!(runtime_version().starts_with('v'));
     }
 
     #[test]

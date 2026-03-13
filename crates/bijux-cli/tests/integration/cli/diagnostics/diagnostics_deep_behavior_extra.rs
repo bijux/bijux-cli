@@ -8,6 +8,7 @@ use std::process::{Command, Output};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
+use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -109,8 +110,10 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
     let contracts_snapshot: Value =
         serde_json::from_str(include_str!("../../../data/golden/ported/dev_cli_contracts.json"))
             .expect("contracts snapshot json");
+    assert_eq!(contracts_snapshot["runtime_version"], "<RUNTIME_VERSION>");
     assert_eq!(contracts["schema_version"], contracts_snapshot["schema_version"]);
     assert_eq!(contracts["contracts"], contracts_snapshot["contracts"]);
+    assert_eq!(contracts["runtime_version"], runtime_semver());
 
     let routes =
         parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);

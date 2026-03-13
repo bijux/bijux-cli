@@ -118,6 +118,15 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let mut last_error = String::new();
     let mut fallback_usage: Option<AppRunResult> = None;
 
+    if !explicit_override {
+        if let Some(result) = try_delegate_dev_cli_via_cargo(forwarded_args) {
+            match result {
+                Ok(output) => return output,
+                Err(error) => last_error = error,
+            }
+        }
+    }
+
     for (index, binary) in candidates.iter().enumerate() {
         match Command::new(binary).args(forwarded_args).output() {
             Ok(output) => {
@@ -145,15 +154,6 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
             }
             Err(error) => {
                 last_error = format!("{binary}: {error}");
-            }
-        }
-    }
-
-    if !explicit_override {
-        if let Some(result) = try_delegate_dev_cli_via_cargo(forwarded_args) {
-            match result {
-                Ok(output) => return output,
-                Err(error) => last_error = error,
             }
         }
     }

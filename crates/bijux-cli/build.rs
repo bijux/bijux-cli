@@ -5,11 +5,11 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use semver::{BuildMetadata, Prerelease, Version};
+use semver::Version;
 
 const VERSION_SOURCE_OVERRIDE: &str = "override";
 const VERSION_SOURCE_GIT_TAG: &str = "git-tag";
-const VERSION_SOURCE_GIT_DESCRIBE: &str = "git-describe";
+const VERSION_SOURCE_GIT_TAG_DERIVED: &str = "git-tag-derived";
 const VERSION_SOURCE_PACKAGE_FALLBACK: &str = "package-fallback";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -22,7 +22,7 @@ struct RuntimeBuildVersion {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct GitDescribeVersion {
+struct GitDerivedVersion {
     base_semver: String,
     commits_since_tag: u64,
     commit_abbrev: String,
@@ -73,38 +73,46 @@ fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> Run
         };
     }
 
-    if let Some(version) = describe_tag_version(workspace_root) {
-        return RuntimeBuildVersion {
-            semver_version: version.clone(),
-            display_version: version,
-            source: VERSION_SOURCE_GIT_TAG,
-            git_commit,
-            git_dirty,
-        };
+    if git_dirty != Some(true) {
+        if let Some(version) = describe_exact_tag_version(workspace_root) {
+            return RuntimeBuildVersion {
+                semver_version: version.clone(),
+                display_version: tagged_display_version(&version),
+                source: VERSION_SOURCE_GIT_TAG,
+                git_commit,
+                git_dirty,
+            };
+        }
     }
 
-    if let Some(describe) = describe_git_version(workspace_root) {
-        let semver_version = semver_from_git_describe(&describe).unwrap_or(describe.base_semver);
+    if let Some(derived) =
+        describe_git_version(workspace_root).or_else(|| latest_tag_baseline_version(workspace_root))
+    {
         return RuntimeBuildVersion {
-            semver_version: semver_version.clone(),
-            display_version: semver_version,
-            source: VERSION_SOURCE_GIT_DESCRIBE,
-            git_commit: Some(describe.commit_abbrev),
-            git_dirty: Some(describe.dirty),
+            semver_version: derived.base_semver.clone(),
+            display_version: derived_display_version(
+                &derived.base_semver,
+                derived.commits_since_tag,
+                &derived.commit_abbrev,
+                derived.dirty,
+            ),
+            source: VERSION_SOURCE_GIT_TAG_DERIVED,
+            git_commit: Some(derived.commit_abbrev),
+            git_dirty: Some(derived.dirty),
         };
     }
 
     let fallback = fallback_package_version(package_version);
     RuntimeBuildVersion {
         semver_version: fallback.clone(),
-        display_version: fallback,
+        display_version: tagged_display_version(&fallback),
         source: VERSION_SOURCE_PACKAGE_FALLBACK,
         git_commit,
         git_dirty,
     }
 }
 
-fn describe_tag_version(workspace_root: &Path) -> Option<String> {
+fn describe_exact_tag_version(workspace_root: &Path) -> Option<String> {
     let output = Command::new("git")
         .args(["-C", workspace_root.to_string_lossy().as_ref()])
         .args(["describe", "--tags", "--match", "v[0-9]*", "--exact-match"])
@@ -117,7 +125,7 @@ fn describe_tag_version(workspace_root: &Path) -> Option<String> {
     normalize_version_string(tag.trim())
 }
 
-fn describe_git_version(workspace_root: &Path) -> Option<GitDescribeVersion> {
+fn describe_git_version(workspace_root: &Path) -> Option<GitDerivedVersion> {
     let output = Command::new("git")
         .args(["-C", workspace_root.to_string_lossy().as_ref()])
         .args(["describe", "--tags", "--match", "v[0-9]*", "--long", "--dirty", "--abbrev=12"])
@@ -130,7 +138,7 @@ fn describe_git_version(workspace_root: &Path) -> Option<GitDescribeVersion> {
     parse_git_describe(describe.trim())
 }
 
-fn parse_git_describe(raw: &str) -> Option<GitDescribeVersion> {
+fn parse_git_describe(raw: &str) -> Option<GitDerivedVersion> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return None;
@@ -149,7 +157,7 @@ fn parse_git_describe(raw: &str) -> Option<GitDescribeVersion> {
     let (tag, count_raw) = tag_and_count.rsplit_once('-')?;
     let commits_since_tag = count_raw.parse::<u64>().ok()?;
     let base_semver = normalize_version_string(tag)?;
-    Some(GitDescribeVersion {
+    Some(GitDerivedVersion {
         base_semver,
         commits_since_tag,
         commit_abbrev: commit_abbrev.trim().to_string(),
@@ -157,20 +165,63 @@ fn parse_git_describe(raw: &str) -> Option<GitDescribeVersion> {
     })
 }
 
-fn semver_from_git_describe(describe: &GitDescribeVersion) -> Option<String> {
-    let mut version = Version::parse(&describe.base_semver).ok()?;
+fn latest_tag_baseline_version(workspace_root: &Path) -> Option<GitDerivedVersion> {
+    let tag = latest_version_tag(workspace_root)?;
+    let base_semver = normalize_version_string(&tag)?;
+    let commit_abbrev = git_commit_abbrev(workspace_root)?;
+    let dirty = git_dirty_state(workspace_root)?;
+    let commits_since_tag = commits_since_tag(workspace_root, &tag)?;
+    Some(GitDerivedVersion { base_semver, commits_since_tag, commit_abbrev, dirty })
+}
 
-    if describe.commits_since_tag > 0 {
-        version.pre = Prerelease::new(&format!("dev.{}", describe.commits_since_tag)).ok()?;
+fn latest_version_tag(workspace_root: &Path) -> Option<String> {
+    let output = Command::new("git")
+        .args(["-C", workspace_root.to_string_lossy().as_ref()])
+        .args(["tag", "--list", "v[0-9]*", "--sort=-version:refname"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
     }
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+}
 
-    let build_tag = if describe.dirty {
-        format!("g{}.dirty", describe.commit_abbrev)
-    } else {
-        format!("g{}", describe.commit_abbrev)
-    };
-    version.build = BuildMetadata::new(&build_tag).ok()?;
-    Some(version.to_string())
+fn commits_since_tag(workspace_root: &Path, tag: &str) -> Option<u64> {
+    let output = Command::new("git")
+        .args(["-C", workspace_root.to_string_lossy().as_ref()])
+        .args(["rev-list", "--count", &format!("{tag}..HEAD")])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    String::from_utf8_lossy(&output.stdout).trim().parse::<u64>().ok()
+}
+
+fn tagged_display_version(version: &str) -> String {
+    format!("v{version}")
+}
+
+fn derived_display_version(
+    base_semver: &str,
+    commits_since_tag: u64,
+    commit_abbrev: &str,
+    dirty: bool,
+) -> String {
+    let mut version = format!(
+        "{}+dev.{}.g{}",
+        tagged_display_version(base_semver),
+        commits_since_tag,
+        commit_abbrev
+    );
+    if dirty {
+        version.push_str(".dirty");
+    }
+    version
 }
 
 fn fallback_package_version(package_version: &str) -> String {

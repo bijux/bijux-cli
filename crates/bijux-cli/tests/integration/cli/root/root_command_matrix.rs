@@ -19,6 +19,21 @@ fn run_ok_json(args: &[&str]) -> Value {
     serde_json::from_slice(&out.stdout).expect("stdout should be valid json")
 }
 
+fn latest_version_tag() -> Option<String> {
+    let output = Command::new("git")
+        .args(["tag", "--list", "v[0-9]*", "--sort=-version:refname"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+}
+
 #[test]
 fn parity_version_against_current_expected_behavior() {
     let out = run(&["version"]);
@@ -55,6 +70,21 @@ fn version_json_contract_exposes_provenance_fields() {
     assert!(payload["build_profile"].is_string());
     assert!(payload["git_commit"].is_null() || payload["git_commit"].is_string());
     assert!(payload["git_dirty"].is_null() || payload["git_dirty"].is_boolean());
+}
+
+#[test]
+fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
+    let Some(tag) = latest_version_tag() else {
+        return;
+    };
+
+    let payload = run_ok_json(&["version", "--format", "json", "--no-pretty"]);
+    let expected_semver = tag.trim_start_matches('v');
+    assert_eq!(payload["semver"], expected_semver);
+
+    let version = payload["version"].as_str().expect("display version");
+    assert!(version.starts_with(&tag), "display version should start with {tag}, got {version}");
+    assert_ne!(payload["source"], "package-fallback");
 }
 
 #[test]

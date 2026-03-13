@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli as _;
+use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -58,6 +59,10 @@ fn dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable() {
     let contracts_snapshot: Value =
         serde_json::from_str(include_str!("../../../data/golden/ported/dev_cli_contracts.json"))
             .expect("contracts snapshot");
+    assert_eq!(contracts_snapshot["runtime_version"], "<RUNTIME_VERSION>");
+    assert_eq!(contracts_live["runtime_version"], runtime_semver());
+    let mut contracts_live = contracts_live;
+    contracts_live["runtime_version"] = Value::String("<RUNTIME_VERSION>".to_string());
     assert_eq!(contracts_live, contracts_snapshot);
 
     let routes_live = parse_json(&routes_a.stdout);
