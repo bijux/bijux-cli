@@ -4,7 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV1};
+use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV2};
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -148,11 +148,11 @@ fn template_manifests_match_current_plugin_contract() {
             PluginKind::Delegated,
         ),
     ] {
-        let manifest: PluginManifestV1 =
+        let manifest: PluginManifestV2 =
             serde_json::from_str(&render_template(&read_repo_file(path)))
                 .expect("valid manifest json");
-        assert_eq!(manifest.schema_version, "v1");
-        assert_eq!(manifest.manifest_version, "v1");
+        assert_eq!(manifest.schema_version, "v2");
+        assert_eq!(manifest.manifest_version, "v2");
         assert_eq!(manifest.kind, expected_kind);
         assert_eq!(manifest.entrypoint, "plugin:main");
         assert!(manifest.aliases.is_empty());

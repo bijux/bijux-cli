@@ -9,9 +9,9 @@ Define versioning rules for contract schema evolution.
 - Incompatible changes require a new versioned schema identifier.
 
 ## Versioning rules
-- Current baseline: `v1` envelopes and `plugin manifest v1`.
+- Current baseline: `v1` envelopes and `plugin manifest v2`.
 - Minor releases may add optional fields and definitions.
-- Major releases may introduce `v2` and deprecate `v1` with notice.
+- Future major releases may introduce `v2` envelopes or `v3` plugin manifests with notice.
 
 ## Compatibility requirements
 - Existing required fields in `v1` remain required for the lifetime of `v1` support.

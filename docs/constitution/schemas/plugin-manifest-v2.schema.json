@@ -1,17 +1,27 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PluginManifestV1",
-  "description": "Stable plugin manifest contract.",
+  "title": "PluginManifestV2",
+  "description": "Current plugin manifest contract.",
   "type": "object",
   "required": [
     "capabilities",
     "compatibility",
+    "entrypoint",
+    "manifest_version",
     "name",
     "namespace",
     "schema_version",
     "version"
   ],
   "properties": {
+    "aliases": {
+      "description": "Declared command aliases.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "capabilities": {
       "description": "Declared capabilities.",
       "type": "array",
@@ -26,6 +36,23 @@
           "$ref": "#/definitions/CompatibilityRange"
         }
       ]
+    },
+    "entrypoint": {
+      "description": "Plugin entrypoint (binary path or module symbol).",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Plugin execution kind.",
+      "default": "delegated",
+      "allOf": [
+        {
+          "$ref": "#/definitions/PluginKind"
+        }
+      ]
+    },
+    "manifest_version": {
+      "description": "Manifest contract version.",
+      "type": "string"
     },
     "name": {
       "description": "Plugin name.",
@@ -92,6 +119,39 @@
           ]
         }
       }
+    },
+    "PluginKind": {
+      "description": "Stable plugin kind declaration.",
+      "oneOf": [
+        {
+          "description": "Future in-process plugin ABI.",
+          "type": "string",
+          "enum": [
+            "native"
+          ]
+        },
+        {
+          "description": "Delegated plugin loaded through host contract bridge.",
+          "type": "string",
+          "enum": [
+            "delegated"
+          ]
+        },
+        {
+          "description": "Python delegated plugin runtime.",
+          "type": "string",
+          "enum": [
+            "python"
+          ]
+        },
+        {
+          "description": "External executable plugin.",
+          "type": "string",
+          "enum": [
+            "external-exec"
+          ]
+        }
+      ]
     }
   }
 }

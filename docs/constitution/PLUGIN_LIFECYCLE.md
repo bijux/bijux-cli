@@ -17,19 +17,19 @@ These states are stable contract terms for registry persistence and diagnostics.
 ## Manifest Versioning Policy
 
 - Manifest schema uses explicit semantic versioning at `manifest_version`.
-- `v1` manifests are parsed by `PluginManifestV1`.
+- `v2` manifests are parsed by `PluginManifestV2`.
 - `bijux-cli` must reject unknown major manifest versions.
-- Minor/patch additions in `v1` must remain backward compatible through optional fields.
+- Minor/patch additions in `v2` must remain backward compatible through optional fields.
 
 ## Plugin Kind Policy
 
-Supported plugin kinds in v1:
+Supported plugin kinds in v2:
 
 - `delegated`
 - `python`
 - `external-exec`
 
-Reserved but not yet executable in v1:
+Reserved but not yet executable in v2:
 
 - `native`
 

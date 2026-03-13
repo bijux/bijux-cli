@@ -1,8 +1,8 @@
 {
   "name": "{{cookiecutter.project_name}}",
   "version": "{{cookiecutter.plugin_version}}",
-  "schema_version": "v1",
-  "manifest_version": "v1",
+  "schema_version": "v2",
+  "manifest_version": "v2",
   "compatibility": {
     "min_inclusive": "{{cookiecutter.cli_min}}",
     "max_exclusive": "{{cookiecutter.cli_max}}"
