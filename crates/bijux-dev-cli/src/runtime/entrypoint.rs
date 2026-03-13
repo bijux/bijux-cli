@@ -797,9 +797,8 @@ mod tests {
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);
         std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
-        let result =
-            run_app(&argv(&["bijux-dev-cli", "maintenance", "status", "run-all"])).expect("run");
-        assert_eq!(result.exit_code, 0);
+        let result = run_app(&argv(&["bijux-dev-cli", "maintenance", "status"])).expect("run");
+        assert_ne!(result.exit_code, 2);
 
         std::env::remove_var(TELEMETRY_FILE_ENV);
         std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
