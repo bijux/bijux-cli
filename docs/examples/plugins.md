@@ -38,8 +38,9 @@ Install it:
 bijux plugins install ./my-plugin/plugin.manifest.json
 ```
 
-The manifest path is kept as plugin provenance, which lets later health checks validate the
-delegated entrypoint against the installed source tree.
+If you install without overriding `--source`, the manifest path is used as the displayed source
+label. Regardless of the displayed label, local manifest installs keep a manifest anchor so later
+health checks can validate delegated entrypoints against the installed source tree.
 
 ## Example 2: Inspect and Check Installed Plugins
 

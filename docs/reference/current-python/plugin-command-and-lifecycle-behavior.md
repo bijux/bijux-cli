@@ -23,6 +23,7 @@ declared entrypoint module, not the older `plugin.json` metadata file.
 ## Current local plugin behavior
 - Local installs consume `plugin.manifest.json`.
 - Delegated and Python plugins resolve `plugin:main`-style entrypoints from the installed manifest
-  directory when provenance is available.
+  directory when a local manifest anchor is available, even if the displayed source label was
+  overridden during install.
 - Compatibility is validated from `compatibility.min_inclusive` and `compatibility.max_exclusive`.
 - Duplicate namespaces and alias conflicts are rejected during install.
