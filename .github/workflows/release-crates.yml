@@ -1,36 +1,45 @@
 name: Release Crates
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:
-  group: release-crates-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: release-crates-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   publish-crates:
     name: publish-crates
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
+      - name: Wait for CI on tagged release commit
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          CI_WAIT_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export CI_WAIT_STARTED_AT
+          make gh-release-wait-for-ci
+
       - name: Checkout release commit
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Plan crates release
         id: release
         env:
-          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          TARGET_SHA: ${{ github.sha }}
         run: make gh-release-plan-crates
 
       - name: Set up Rust
