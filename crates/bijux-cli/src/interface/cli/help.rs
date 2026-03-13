@@ -67,6 +67,11 @@ pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
 
 pub(crate) fn decorate_help_text(mut rendered: String, path: &[&str]) -> String {
     append_help_sections(&mut rendered, path);
+    if path == ["history"] {
+        rendered.push_str(
+            "\nHistory integrity:\n  malformed JSON payloads fail closed\n  use `bijux history clear --force` to reset corrupted history files\n",
+        );
+    }
     if path == ["version"] {
         rendered.push_str(
             "\nVersion output:\n  text: one-line summary (`bijux version <value>`)\n  json/yaml: includes semver, source, commit, and build profile fields\n",
@@ -255,7 +260,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ["completion"] => {
             vec!["bijux completion".to_string(), "bijux completion --format json".to_string()]
         }
-        ["history"] => vec!["bijux history".to_string(), "bijux history clear".to_string()],
+        ["history"] => vec![
+            "bijux history".to_string(),
+            "bijux history clear".to_string(),
+            "bijux history clear --force".to_string(),
+        ],
         ["memory"] => vec![
             "bijux memory list".to_string(),
             "bijux memory set session.id=abc123".to_string(),

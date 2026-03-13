@@ -20,3 +20,8 @@ Options:
 Examples:
   bijux history
   bijux history clear
+  bijux history clear --force
+
+History integrity:
+  malformed JSON payloads fail closed
+  use `bijux history clear --force` to reset corrupted history files
