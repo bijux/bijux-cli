@@ -1,8 +1,0 @@
-{
-  "name": "{{cookiecutter.project_slug}}",
-  "desc": "A Rust-backed plugin for {{cookiecutter.project_slug}}.",
-  "version": "{{cookiecutter.plugin_version}}",
-  "schema_version": "1",
-  "bijux_cli_version": ">={{cookiecutter.cli_min}},<{{cookiecutter.cli_max}}",
-  "runtime": "rust"
-}
