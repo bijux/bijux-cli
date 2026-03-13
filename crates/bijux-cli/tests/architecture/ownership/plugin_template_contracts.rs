@@ -60,6 +60,34 @@ fn render_template(text: &str) -> String {
         .replace("{{cookiecutter.rust_edition}}", "2021")
 }
 
+fn assert_rendered_project_readme(path: &str) {
+    let rendered = render_template(&read_repo_file(path));
+    assert!(
+        rendered.contains("bijux plugins install ./plugin.manifest.json"),
+        "{path} should document local install with the current manifest contract"
+    );
+    assert!(
+        rendered.contains("bijux plugins list"),
+        "{path} should document list verification after install"
+    );
+    assert!(
+        rendered.contains("bijux plugins check testplug"),
+        "{path} should document health checks for the rendered namespace"
+    );
+    assert!(
+        rendered.contains("bijux plugins explain testplug"),
+        "{path} should document diagnostic explanation for the rendered namespace"
+    );
+    assert!(
+        rendered.contains("compatibility range"),
+        "{path} should explain compatibility maintenance"
+    );
+    assert!(
+        rendered.to_ascii_lowercase().contains("reserved"),
+        "{path} should warn about reserved Bijux namespaces"
+    );
+}
+
 #[test]
 fn template_docs_reference_current_rendering_and_install_flow() {
     for path in
@@ -74,6 +102,12 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             text.contains("plugin.manifest.json"),
             "{path} should reference plugin.manifest.json"
         );
+        for required in ["plugins explain", "reserved", "compatibility"] {
+            assert!(
+                text.to_ascii_lowercase().contains(required),
+                "{path} should document current plugin guidance: {required}"
+            );
+        }
         for forbidden in [
             "--template",
             "plugin.json",
@@ -90,6 +124,16 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             );
         }
     }
+}
+
+#[test]
+fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
+    assert_rendered_project_readme(
+        "templates/plugins-py/{{cookiecutter.plugin_namespace}}/README.md",
+    );
+    assert_rendered_project_readme(
+        "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
+    );
 }
 
 #[test]

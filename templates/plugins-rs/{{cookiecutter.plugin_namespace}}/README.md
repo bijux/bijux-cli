@@ -10,4 +10,11 @@ Install locally with:
 
 ```bash
 bijux plugins install ./plugin.manifest.json
+bijux plugins list
+bijux plugins check {{cookiecutter.plugin_namespace}}
+bijux plugins explain {{cookiecutter.plugin_namespace}}
 ```
+
+Keep `plugin.py` aligned with the Rust bridge, keep `plugin_namespace` stable after release,
+update the compatibility range in `plugin.manifest.json` when supported Bijux host versions
+change, and avoid reserved Bijux namespaces when renaming the plugin.

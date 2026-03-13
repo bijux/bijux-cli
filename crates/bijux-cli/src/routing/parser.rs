@@ -282,7 +282,13 @@ pub fn root_command() -> Command {
         .subcommand(
             Command::new("install")
                 .arg(Arg::new("manifest").num_args(1))
-                .arg(Arg::new("source").long("source").num_args(1))
+                .arg(
+                    Arg::new("source")
+                        .long("source")
+                        .num_args(1)
+                        .value_name("LABEL")
+                        .help("Override the displayed provenance label without changing local manifest resolution"),
+                )
                 .arg(Arg::new("trust").long("trust").num_args(1)),
         )
         .subcommand(Command::new("uninstall").arg(Arg::new("namespace").num_args(1)))

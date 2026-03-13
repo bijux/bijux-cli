@@ -251,6 +251,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux plugins check sample".to_string(),
             "bijux plugins install ./plugin.manifest.json".to_string(),
         ],
+        ["plugins", "install"] => vec![
+            "bijux plugins install ./plugin.manifest.json".to_string(),
+            "bijux plugins install ./plugin.manifest.json --format json".to_string(),
+            "bijux plugins install ./plugin.manifest.json --source community-catalog".to_string(),
+        ],
         ["plugins", "inspect"] | ["cli", "plugins", "inspect"] => vec![
             "bijux cli plugins inspect".to_string(),
             "bijux cli plugins inspect --format json".to_string(),
@@ -279,6 +284,12 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli plugins list".to_string(),
             "bijux cli plugins inspect".to_string(),
             "bijux cli plugins check sample".to_string(),
+        ],
+        ["cli", "plugins", "install"] => vec![
+            "bijux cli plugins install ./plugin.manifest.json".to_string(),
+            "bijux cli plugins install ./plugin.manifest.json --format json".to_string(),
+            "bijux cli plugins install ./plugin.manifest.json --source community-catalog"
+                .to_string(),
         ],
         _ => default_examples(path),
     }

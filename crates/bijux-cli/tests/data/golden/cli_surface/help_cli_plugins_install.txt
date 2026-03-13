@@ -5,7 +5,7 @@ Arguments:
 
 Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
-      --source <source>
+      --source <LABEL>      Override the displayed provenance label without changing local manifest resolution
   -q, --quiet               Suppress command output
       --trust <trust>
       --log-level <LEVEL>   Log verbosity level
@@ -16,6 +16,6 @@ Options:
   -h, --help                Print help
 
 Examples:
-  bijux cli plugins install
-  bijux cli plugins install --format json
-  bijux help cli plugins install
+  bijux cli plugins install ./plugin.manifest.json
+  bijux cli plugins install ./plugin.manifest.json --format json
+  bijux cli plugins install ./plugin.manifest.json --source community-catalog

@@ -11,14 +11,21 @@ more than the built-in `bijux plugins scaffold` minimal layout.
 ```bash
 python3 -m cookiecutter ./templates/plugins-py project_name="My Plugin" plugin_namespace=my-plugin
 bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins list
 bijux plugins check my-plugin
+bijux plugins explain my-plugin
 ```
 
 ```bash
 python3 -m cookiecutter ./templates/plugins-rs project_name="My Plugin" plugin_namespace=my-plugin
 bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins list
 bijux plugins check my-plugin
+bijux plugins explain my-plugin
 ```
 
 These templates are rendered with Cookiecutter. The built-in `bijux plugins scaffold` command does
 not load custom templates.
+
+Keep the rendered plugin namespace stable after release, update the compatibility window when host
+support changes, and avoid namespaces reserved by `bijux-cli` or official Bijux tools.
