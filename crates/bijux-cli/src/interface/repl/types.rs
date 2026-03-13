@@ -32,6 +32,8 @@ pub const REPL_STARTUP_DIAGNOSTIC_MAX_ENTRIES: usize = 128;
 pub const REPL_LAST_ERROR_MAX_CHARS: usize = 2_048;
 /// Max characters retained in pending multiline REPL buffers.
 pub const REPL_MULTILINE_BUFFER_MAX_CHARS: usize = 64 * 1024;
+/// Max characters accepted for a fully assembled REPL command.
+pub const REPL_COMMAND_MAX_CHARS: usize = 64 * 1024;
 
 /// Stable REPL startup contract.
 #[derive(Debug, Clone, PartialEq, Eq)]

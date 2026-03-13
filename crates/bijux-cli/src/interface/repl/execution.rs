@@ -5,12 +5,21 @@ use crate::routing::parser::root_command;
 use super::history::push_history;
 use super::types::{
     ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream, META_PREFIX,
-    REPL_LAST_ERROR_MAX_CHARS, REPL_MULTILINE_BUFFER_MAX_CHARS,
+    REPL_COMMAND_MAX_CHARS, REPL_LAST_ERROR_MAX_CHARS, REPL_MULTILINE_BUFFER_MAX_CHARS,
 };
 
 fn parse_shell_tokens_lossy(input: &str) -> Vec<String> {
-    shlex::split(input)
-        .unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
+    match shlex::split(input) {
+        Some(tokens) => tokens,
+        None => {
+            let trimmed = input.trim();
+            if trimmed.is_empty() {
+                Vec::new()
+            } else {
+                vec![trimmed.to_string()]
+            }
+        }
+    }
 }
 
 fn bounded_error_message(message: &str) -> String {
@@ -50,6 +59,10 @@ fn output_format_name(format: OutputFormat) -> &'static str {
 pub fn repl_argv_from_line(line: &str) -> Vec<String> {
     let tokenized = parse_shell_tokens_lossy(line);
     std::iter::once("bijux".to_string()).chain(tokenized).collect()
+}
+
+fn command_exceeds_limit(command: &str) -> bool {
+    command.chars().count() > REPL_COMMAND_MAX_CHARS
 }
 
 fn needs_multiline_continuation(line: &str) -> bool {
@@ -200,6 +213,17 @@ pub fn execute_repl_input(
             if trimmed.is_empty() {
                 return Ok(ReplEvent::Continue(None));
             }
+            if command_exceeds_limit(trimmed) {
+                session.commands_executed += 1;
+                session.last_exit_code = 2;
+                set_last_error(
+                    session,
+                    &format!("command exceeded {} characters", REPL_COMMAND_MAX_CHARS),
+                );
+                return Err(ReplError::InvalidCommandInput(
+                    "command length limit exceeded".to_string(),
+                ));
+            }
 
             if needs_multiline_continuation(trimmed) {
                 let chunk = strip_single_continuation_backslash(trimmed).trim_end();
@@ -230,6 +254,17 @@ pub fn execute_repl_input(
             } else {
                 trimmed.to_string()
             };
+            if command_exceeds_limit(&final_line) {
+                session.commands_executed += 1;
+                session.last_exit_code = 2;
+                set_last_error(
+                    session,
+                    &format!("command exceeded {} characters", REPL_COMMAND_MAX_CHARS),
+                );
+                return Err(ReplError::InvalidCommandInput(
+                    "command length limit exceeded".to_string(),
+                ));
+            }
 
             if final_line.starts_with(META_PREFIX) {
                 let outcome = handle_meta_command(session, &final_line);
@@ -286,6 +321,11 @@ pub fn execute_repl_input(
             } else if !result.stdout.is_empty() {
                 if result.exit_code == 0 {
                     session.last_error = None;
+                } else {
+                    set_last_error(
+                        session,
+                        &format!("command failed with exit code {}", result.exit_code),
+                    );
                 }
                 Some(ReplFrame { stream: ReplStream::Stdout, content: result.stdout })
             } else if !result.stderr.is_empty() {
@@ -326,9 +366,13 @@ pub fn execute_repl_line(
 
 #[cfg(test)]
 mod tests {
-    use super::{execute_repl_input, execute_repl_line, needs_multiline_continuation};
+    use super::{
+        execute_repl_input, execute_repl_line, needs_multiline_continuation, repl_argv_from_line,
+    };
     use crate::interface::repl::session::startup_repl;
-    use crate::interface::repl::types::{ReplError, ReplInput, REPL_MULTILINE_BUFFER_MAX_CHARS};
+    use crate::interface::repl::types::{
+        ReplError, ReplInput, REPL_COMMAND_MAX_CHARS, REPL_MULTILINE_BUFFER_MAX_CHARS,
+    };
 
     #[test]
     fn malformed_shell_input_returns_deterministic_invalid_input_error() {
@@ -415,5 +459,24 @@ mod tests {
         let result = execute_repl_line(&mut session, &oversized);
         assert!(matches!(result, Err(ReplError::InvalidCommandInput(_))));
         assert_eq!(session.last_exit_code, 2);
+    }
+
+    #[test]
+    fn single_line_command_length_limit_is_enforced() {
+        let (mut session, _) = startup_repl("", None);
+        let oversized = format!("status {}", "x".repeat(REPL_COMMAND_MAX_CHARS + 1));
+        let result = execute_repl_line(&mut session, &oversized);
+        assert!(matches!(result, Err(ReplError::InvalidCommandInput(_))));
+        assert_eq!(session.last_exit_code, 2);
+        assert_eq!(session.commands_executed, 1);
+    }
+
+    #[test]
+    fn argv_helper_keeps_unmatched_quote_input_atomic() {
+        let argv = repl_argv_from_line("status --config-path \"unterminated");
+        assert_eq!(
+            argv,
+            vec!["bijux".to_string(), "status --config-path \"unterminated".to_string()]
+        );
     }
 }
