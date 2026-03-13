@@ -1,0 +1,123 @@
+name: Release Crates
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: release-crates-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish-crates:
+    name: publish-crates
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Resolve release SHA
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.target.outputs.sha }}
+
+      - name: Ensure tags are available
+        run: git fetch --tags --force --prune
+
+      - name: Determine tagged release version
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="${{ steps.target.outputs.sha }}"
+          tags="$(git tag --points-at "$sha" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
+          if [ -z "$tags" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tag="$(printf '%s\n' "$tags" | head -n1)"
+          version="${tag#v}"
+          package_versions="$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name=="bijux-cli" or .name=="bijux-cli-python" or .name=="bijux-dev-cli") | [.name,.version] | @tsv')"
+          while IFS=$'\t' read -r package_name package_version; do
+            [ -n "$package_name" ] || continue
+            if [ "$package_version" != "$version" ]; then
+              echo "::error::Tag version $version does not match $package_name version $package_version"
+              exit 1
+            fi
+          done <<< "$package_versions"
+          {
+            echo "publish=true"
+            echo "tag=$tag"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Stop when commit is not a release tag
+        if: ${{ steps.release.outputs.publish != 'true' }}
+        run: echo "No semver tag points at this green CI commit; skipping crates publish."
+
+      - name: Ensure crates.io token is configured
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "::error::Missing CARGO_REGISTRY_TOKEN secret"
+            exit 1
+          fi
+
+      - name: Set up Rust
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        if: ${{ steps.release.outputs.publish == 'true' }}
+
+      - name: Determine unpublished crates
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.release.outputs.version }}"
+          packages=(bijux-cli bijux-cli-python bijux-dev-cli)
+          unpublished=()
+          for package in "${packages[@]}"; do
+            status="$(curl -s -o /dev/null -w '%{http_code}' "https://crates.io/api/v1/crates/${package}/${version}" || true)"
+            if [ "$status" != "200" ]; then
+              unpublished+=("$package")
+            fi
+          done
+          if [ "${#unpublished[@]}" -eq 0 ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          {
+            echo "publish=true"
+            echo "packages=${unpublished[*]}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Stop when crates are already published
+        if: ${{ steps.release.outputs.publish == 'true' && steps.plan.outputs.publish != 'true' }}
+        run: echo "All crate versions for ${{ steps.release.outputs.version }} are already available on crates.io; skipping publish."
+
+      - name: Publish crates.io packages
+        if: ${{ steps.release.outputs.publish == 'true' && steps.plan.outputs.publish == 'true' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: make publish-rs RUST_PUBLISH_DRY_RUN=0 RUST_PUBLISH_PACKAGES="${{ steps.plan.outputs.packages }}"
