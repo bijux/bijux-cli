@@ -1,12 +1,13 @@
 #![forbid(unsafe_code)]
 //! Best-effort structured telemetry sink for local diagnostics and observability.
 
+use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Value};
@@ -18,11 +19,16 @@ pub const TELEMETRY_INCLUDE_ARGS_ENV: &str = "BIJUX_TELEMETRY_INCLUDE_ARGS";
 
 static TELEMETRY_COUNTER: AtomicU64 = AtomicU64::new(1);
 static TELEMETRY_CONFIG_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
+static TELEMETRY_CONFIG_WARNING_KEYS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 static TELEMETRY_WRITE_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
+static TELEMETRY_WRITE_WARNING_KEYS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 const MAX_COMMAND_PREVIEW_CHARS: usize = 128;
 const MAX_ARG_CHARS: usize = 256;
 const MAX_CAPTURED_ARGS: usize = 64;
-const MAX_ERROR_MESSAGE_CHARS: usize = 2048;
+/// Max number of chars retained for telemetry message-like fields.
+pub const MAX_TEXT_FIELD_CHARS: usize = 2048;
+/// Max number of chars retained for telemetry command-like fields.
+pub const MAX_COMMAND_FIELD_CHARS: usize = 512;
 
 fn unix_timestamp_millis() -> u128 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
@@ -41,17 +47,37 @@ fn append_json_line(path: &Path, value: &Value) -> std::io::Result<()> {
 }
 
 fn emit_telemetry_config_warning_once(message: &str) {
-    if !TELEMETRY_CONFIG_WARNING_EMITTED.swap(true, Ordering::Relaxed) {
+    let key = message.to_string();
+    let cache = TELEMETRY_CONFIG_WARNING_KEYS.get_or_init(|| Mutex::new(HashSet::new()));
+    let should_emit = match cache.lock() {
+        Ok(mut seen) => seen.insert(key),
+        Err(_) => !TELEMETRY_CONFIG_WARNING_EMITTED.swap(true, Ordering::Relaxed),
+    };
+    if should_emit {
         eprintln!("{message}");
     }
 }
 
-fn truncate_chars(input: &str, limit: usize) -> (String, bool) {
+/// Truncate a text field to a stable char budget.
+#[must_use]
+pub fn truncate_chars(input: &str, limit: usize) -> (String, bool) {
     let total = input.chars().count();
     if total <= limit {
         return (input.to_string(), false);
     }
     (input.chars().take(limit).collect(), true)
+}
+
+fn emit_telemetry_write_warning_once(path: &Path, error: &std::io::Error) {
+    let key = path.to_string_lossy().to_string();
+    let cache = TELEMETRY_WRITE_WARNING_KEYS.get_or_init(|| Mutex::new(HashSet::new()));
+    let should_emit = match cache.lock() {
+        Ok(mut seen) => seen.insert(key),
+        Err(_) => !TELEMETRY_WRITE_WARNING_EMITTED.swap(true, Ordering::Relaxed),
+    };
+    if should_emit {
+        eprintln!("telemetry write failed for {}: {error}", path.to_string_lossy());
+    }
 }
 
 fn sanitize_argv(argv: &[String]) -> Value {
@@ -191,9 +217,7 @@ impl TelemetrySpan {
         });
 
         if let Err(error) = append_json_line(path, &event) {
-            if !TELEMETRY_WRITE_WARNING_EMITTED.swap(true, Ordering::Relaxed) {
-                eprintln!("telemetry write failed for {}: {error}", path.to_string_lossy());
-            }
+            emit_telemetry_write_warning_once(path, &error);
         }
     }
 
@@ -214,7 +238,7 @@ impl TelemetrySpan {
 
     /// Record invocation failure caused by internal runtime errors.
     pub fn finish_internal_error(&self, error_message: &str, exit_code: i32) {
-        let (message, message_truncated) = truncate_chars(error_message, MAX_ERROR_MESSAGE_CHARS);
+        let (message, message_truncated) = truncate_chars(error_message, MAX_TEXT_FIELD_CHARS);
         self.record(
             "invocation.finish",
             json!({
@@ -232,7 +256,7 @@ impl TelemetrySpan {
 #[cfg(test)]
 mod tests {
     use super::{
-        exit_code_kind, TelemetrySpan, MAX_CAPTURED_ARGS, MAX_ERROR_MESSAGE_CHARS,
+        exit_code_kind, truncate_chars, TelemetrySpan, MAX_CAPTURED_ARGS, MAX_TEXT_FIELD_CHARS,
         TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV,
     };
     use serde_json::Value;
@@ -393,7 +417,7 @@ mod tests {
         std::env::set_var(TELEMETRY_FILE_ENV, &sink);
         std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
 
-        let message = "e".repeat(MAX_ERROR_MESSAGE_CHARS + 100);
+        let message = "e".repeat(MAX_TEXT_FIELD_CHARS + 100);
         let span = TelemetrySpan::start("bijux-cli", &["bijux".to_string()]);
         span.finish_internal_error(&message, 1);
 
@@ -404,7 +428,19 @@ mod tests {
         let finish: Value =
             serde_json::from_str(body.lines().nth(1).expect("finish line")).expect("json line");
         let rendered = finish["payload"]["error_message"].as_str().unwrap_or_default();
-        assert_eq!(rendered.chars().count(), MAX_ERROR_MESSAGE_CHARS);
+        assert_eq!(rendered.chars().count(), MAX_TEXT_FIELD_CHARS);
         assert_eq!(finish["payload"]["error_message_truncated"], true);
+    }
+
+    #[test]
+    fn truncate_chars_reports_when_input_is_trimmed() {
+        let input = "abcde";
+        let (value, truncated) = truncate_chars(input, 3);
+        assert_eq!(value, "abc");
+        assert!(truncated);
+
+        let (value, truncated) = truncate_chars(input, 5);
+        assert_eq!(value, "abcde");
+        assert!(!truncated);
     }
 }
