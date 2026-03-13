@@ -8,7 +8,6 @@ PYTHON_CONFIG_DIR     ?= configs/python
 PYTHON_PYPROJECT      ?= $(PYTHON_PACKAGE_DIR)/pyproject.toml
 CARGO_MANIFEST_PY     ?= $(PYTHON_PACKAGE_DIR)/Cargo.toml
 
-PYTHON_BOOTSTRAP ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
 VENV_PYTHON      ?= $(VENV)/bin/python
 
 RUFF       ?= $(ACT)/ruff
@@ -25,13 +24,16 @@ BUILD_ARTIFACTS_DIR     ?= artifacts/build
 LINT_PATHS              ?= $(PYTHON_SRC_DIR)/bijux_cli_py
 RUFF_CACHE_DIR          ?= $(abspath $(LINT_ARTIFACTS_DIR)/.ruff_cache)
 PYTEST_BENCHMARK_DIR    ?= $(abspath $(TEST_ARTIFACTS_DIR)/benchmarks)
+PYTEST_CACHE_DIR        ?= $(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)
 
 PYTEST_INI := $(abspath $(PYTHON_CONFIG_DIR)/pytest.ini)
 COVCFG_INI := $(abspath $(PYTHON_CONFIG_DIR)/coveragerc.ini)
 
 PY_RUNTIME_BIN ?= artifacts/rust/target/debug/bijux
 
-PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short -m "not nightly and not slow" --cov=bijux_cli_py --cov-branch --cov-config=$(COVCFG_INI) --cov-report=term-missing:skip-covered --cov-report=html:$(abspath $(TEST_ARTIFACTS_DIR)/htmlcov) --cov-report=xml:$(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml) --cov-fail-under=60
+PYTEST_DEFAULT_MARKER_EXPR ?= not nightly and not slow
+PYTEST_MARKER_EXPR         ?= $(PYTEST_DEFAULT_MARKER_EXPR)
+PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short --cov=bijux_cli_py --cov-branch --cov-config=$(COVCFG_INI) --cov-report=term-missing:skip-covered --cov-report=html:$(abspath $(TEST_ARTIFACTS_DIR)/htmlcov) --cov-report=xml:$(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml) --cov-fail-under=60
 
 # Mirrors [tool.security.pip_audit_ignore] in crates/bijux-cli-python/pyproject.toml.
 PIP_AUDIT_IGNORE_IDS ?= \
@@ -42,61 +44,48 @@ TWINE_REPOSITORY     ?= pypi
 PUBLISH_SKIP_EXISTING ?= 1
 PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 
-PYTHON_DEV_TOOLS ?= \
-	pytest pytest-cov pytest-asyncio pytest-timeout pytest-rerunfailures pytest-benchmark pytest-mock \
-	hypothesis hypothesis-jsonschema pexpect \
-	ruff bandit pip-audit \
-	build twine maturin
-
 PY_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(PYTHON_PYPROJECT)" 2>/dev/null)
 RUST_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(CARGO_MANIFEST_PY)" 2>/dev/null)
 PY_VERSION := $(if $(strip $(PY_VERSION_RAW)),$(strip $(PY_VERSION_RAW)),0.0.0)
 RUST_VERSION := $(if $(strip $(RUST_VERSION_RAW)),$(strip $(RUST_VERSION_RAW)),0.0.0)
 
-.PHONY: python-env python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py security-py build-py publish-py
+.PHONY: python-env python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py test-unit-py test-nightly-py security-py build-py publish-py
+
+define run_pytest
+	@echo "→ Running Python tests on $(PYTHON_TEST_DIR)"
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis" "$(PYTEST_BENCHMARK_DIR)"
+	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
+	  echo "→ Building Rust runtime binary for Python parity tests"; \
+	  cargo build -q -p bijux-cli --bin bijux; \
+	fi
+	@echo "   • JUnit XML → $(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)"
+	@echo "   • Hypothesis DB → $(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)"
+	@echo "   • Using pytest → $(PYTEST)"
+	@set -euo pipefail; \
+	BENCH_FLAGS=""; \
+	if "$(PYTEST)" -q --help 2>/dev/null | grep -q -- '--benchmark-storage'; then \
+	  BENCH_FLAGS="--benchmark-storage=file://$(PYTEST_BENCHMARK_DIR)"; \
+	fi; \
+	extra_addopts="$(strip $(3))"; \
+	status=0; \
+	PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
+	HYPOTHESIS_DATABASE_DIRECTORY="$(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)" \
+	BIJUX_BIN="$(abspath $(PY_RUNTIME_BIN))" \
+	$(PYTEST) -c "$(PYTEST_INI)" "$(abspath $(PYTHON_TEST_DIR))" \
+	  --junitxml "$(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)" \
+	  -o cache_dir="$(PYTEST_CACHE_DIR)" \
+	  -o addopts='$(PYTEST_ADDOPTS) -m "$(1)" '$${extra_addopts} \
+	  $$BENCH_FLAGS || status=$$?; \
+	if [ "$$status" -eq 5 ] && [ "$(2)" = "allow-empty" ]; then \
+	  echo "→ No tests matched marker expression: $(1)"; \
+	  exit 0; \
+	fi; \
+	exit $$status
+	@rm -rf .benchmarks .benchmark .ruff_cache || true
+endef
 
 ##@ Python
-python-env: ## Prepare the artifact-scoped Python virtualenv and developer tools
-	@set -euo pipefail; \
-	bootstrap="$(PYTHON_BOOTSTRAP)"; \
-	if [ -z "$$bootstrap" ]; then \
-	  echo "✘ Python 3.11+ is required but no Python interpreter was found"; \
-	  exit 1; \
-	fi; \
-	if [ -d ".venv" ] && [ "$(VENV)" != ".venv" ]; then \
-	  if [ -d "$(VENV)" ]; then \
-	    echo "→ Removing legacy root .venv (using $(VENV))"; \
-	    rm -rf ".venv"; \
-	  else \
-	    echo "→ Migrating legacy .venv to $(VENV)"; \
-	    mkdir -p "$(dir $(VENV))"; \
-	    mv ".venv" "$(VENV)"; \
-	  fi; \
-	fi; \
-	if [ ! -x "$(VENV)/bin/python" ]; then \
-	  echo "→ Creating virtualenv with '$$bootstrap' ..."; \
-	  mkdir -p "$(dir $(VENV))"; \
-	  "$$bootstrap" -m venv "$(VENV)"; \
-	fi; \
-	if ! "$(VENV)/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then \
-	  old_ver="$$("$(VENV)/bin/python" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || echo unknown)"; \
-	  echo "→ Recreating $(VENV) with Python >=3.11 (found $$old_ver)"; \
-	  rm -rf "$(VENV)"; \
-	  "$$bootstrap" -m venv "$(VENV)"; \
-	fi; \
-	"$(VENV)/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' || { \
-	  echo "✘ Active virtualenv is not Python 3.11+"; \
-	  exit 1; \
-	}; \
-	need_install=0; \
-	for tool in "$(RUFF)" "$(PYTEST)" "$(BANDIT)" "$(PIP_AUDIT)"; do \
-	  [ -x "$$tool" ] || need_install=1; \
-	done; \
-	if [ $$need_install -eq 1 ]; then \
-	  echo "→ Installing Python dev dependencies into $(VENV)"; \
-	  "$(VENV)/bin/python" -m pip install --upgrade pip setuptools wheel; \
-	  "$(VENV)/bin/python" -m pip install $(PYTHON_DEV_TOOLS); \
-	fi
+python-env: install ## Prepare the artifact-scoped Python virtualenv and developer tools
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
 
 python-env-py: python-env ## Backward-compatible alias for python-env
@@ -133,29 +122,13 @@ lint-check-py: python-env ## Run Python lint checks without modifying files
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
 test-py: python-env ## Run the default Python test suite
-	@echo "→ Running Python test suite on $(PYTHON_TEST_DIR)"
-	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis" "$(PYTEST_BENCHMARK_DIR)"
-	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
-	  echo "→ Building Rust runtime binary for Python parity tests"; \
-	  cargo build -q -p bijux-cli --bin bijux; \
-	fi
-	@echo "   • JUnit XML → $(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)"
-	@echo "   • Hypothesis DB → $(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)"
-	@echo "   • Using pytest → $(PYTEST)"
-	@set -euo pipefail; \
-	BENCH_FLAGS=""; \
-	if "$(PYTEST)" -q --help 2>/dev/null | grep -q -- '--benchmark-storage'; then \
-	  BENCH_FLAGS="--benchmark-storage=file://$(PYTEST_BENCHMARK_DIR)"; \
-	fi; \
-	PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
-	HYPOTHESIS_DATABASE_DIRECTORY="$(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)" \
-	BIJUX_BIN="$(abspath $(PY_RUNTIME_BIN))" \
-	$(PYTEST) -c "$(PYTEST_INI)" "$(abspath $(PYTHON_TEST_DIR))" \
-	  --junitxml "$(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)" \
-	  -o cache_dir="$(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)" \
-	  -o addopts='$(PYTEST_ADDOPTS)' \
-	  $$BENCH_FLAGS
-	@rm -rf .benchmarks .benchmark .ruff_cache || true
+	$(call run_pytest,$(PYTEST_MARKER_EXPR),strict,)
+
+test-unit-py: python-env ## Run Python tests marked unit
+	$(call run_pytest,unit,allow-empty,--no-cov)
+
+test-nightly-py: python-env ## Run Python tests marked nightly
+	$(call run_pytest,nightly,allow-empty,--no-cov)
 
 security-py: python-env ## Run Python security checks
 	@echo "→ Bandit (medium/high severity)"

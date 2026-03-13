@@ -13,6 +13,7 @@ RM                    := rm -rf
 PROFRAW_DIR           := artifacts/rust/coverage/profraw
 LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 BIJUX_RUNTIME_BIN     ?= bijux
+PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[dev]
 
 .NOTPARALLEL: all clean
 
@@ -41,9 +42,9 @@ install: $(VENV) ## Install project in editable mode into artifact-scoped virtua
 	fi
 	@echo "→ Installing dependencies..."
 	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
-	@$(VENV_PYTHON) -m pip install -e "./crates/bijux-cli-python[dev]"
+	@$(VENV_PYTHON) -m pip install -e "$(PYTHON_EDITABLE_SPEC)"
 
-bootstrap: $(VENV) ## Setup environment
+bootstrap: install ## Setup environment
 .PHONY: bootstrap
 
 clean: ## Remove virtualenv, caches, build, and artifacts
@@ -87,9 +88,7 @@ security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution artifacts
 .PHONY: fmt
 
-# Run independent checks in parallel
 fmt lint test security docs build: | bootstrap
-.NOTPARALLEL:
 
 dev-cli-status: ## Show maintainer status report via bijux dev cli
 	@mkdir -p "$(PROFRAW_DIR)"
@@ -102,6 +101,15 @@ dev-cli-crate-health: ## Show crate health and duplication report via bijux dev 
 dev-cli-parity: ## Show parity summary via bijux dev cli
 	@mkdir -p "$(PROFRAW_DIR)"
 	@LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" cargo run -q -p bijux-cli --bin "$(BIJUX_RUNTIME_BIN)" -- dev cli parity --text
+
+env: ## Show the effective core make environment
+	@printf '%s\n' \
+	  "PYTHON=$(PYTHON)" \
+	  "VENV=$(VENV)" \
+	  "VENV_PYTHON=$(VENV_PYTHON)" \
+	  "ACT=$(ACT)" \
+	  "BIJUX_RUNTIME_BIN=$(BIJUX_RUNTIME_BIN)" \
+	  "PYTHON_EDITABLE_SPEC=$(PYTHON_EDITABLE_SPEC)"
 
 help: ## Show this help
 	@awk 'BEGIN{FS=":.*##"; OFS="";} \

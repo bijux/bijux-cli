@@ -331,6 +331,7 @@ Bijux quality claims are evidence-backed through generated artifacts and CI gate
 Run locally:
 
 ```bash
+make env
 make test-py
 make test-unit-py
 make test-nightly-py
