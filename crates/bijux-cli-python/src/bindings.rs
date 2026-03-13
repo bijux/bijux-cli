@@ -300,5 +300,8 @@ fn command_execution_error(result: &AppRunResult) -> CompatibilityError {
     } else {
         format!("command exited with status {}", result.exit_code)
     };
-    CompatibilityError::Io(io::Error::other(format!("{exception_tag}: {details}")))
+    CompatibilityError::Io(io::Error::other(format!(
+        "{exception_tag}: exit_code={}; {details}",
+        result.exit_code
+    )))
 }

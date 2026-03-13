@@ -122,6 +122,7 @@ fn execution_facade_returns_error_for_non_zero_exit() {
     let err =
         execution_facade_api(&["bijux".to_string(), "ghost".to_string()]).expect_err("must fail");
     assert!(err.to_string().contains("UsageError"));
+    assert!(err.to_string().contains("exit_code=2"));
 }
 
 #[test]
