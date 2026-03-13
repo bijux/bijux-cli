@@ -2,7 +2,7 @@
   "project_name": "testplug",
   "plugin_namespace": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
   "plugin_version": "0.1.0",
-  "cli_min": "0.1.0",
-  "cli_max": "0.2.0",
+  "cli_min": "0.3.0",
+  "cli_max": "0.4.0",
   "_template_version": "0.1.0"
 }

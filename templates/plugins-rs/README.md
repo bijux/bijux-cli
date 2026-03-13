@@ -22,4 +22,5 @@ Generated files:
 - `Cargo.toml` and `src/lib.rs`: Rust baseline for the durable implementation behind the bridge.
 
 Keep `plugin.py` aligned with your Rust bridge, keep the manifest namespace stable after release,
-and update the compatibility range when the supported Bijux host versions change.
+and update the compatibility range when the supported Bijux host versions change. The default
+compatibility window tracks the current Bijux runtime series.
