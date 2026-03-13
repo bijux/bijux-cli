@@ -1,8 +1,7 @@
 # Python vs Rust Parse Corpus
 
 This corpus is derived from:
-- `docs/reference/current-python/top-level-commands.md`
-- `docs/reference/current-python/dev-commands.md`
+- `docs/reference/current-python/index.md`
 - `docs/reference/current-python/plugin-command-and-lifecycle-behavior.md`
 - existing Rust routing tests and snapshots.
 

@@ -94,6 +94,11 @@ plugins:
         guides/python/plugin-delegation.md: guides/plugins.md
         guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
         guides/python/virtualenv-installs.md: guides/installation.md
+        reference/current-python/top-level-commands.md: reference/current-python/index.md
+        reference/current-python/dev-commands.md: reference/current-python/index.md
+        reference/current-python/repl-commands-and-shortcuts.md: reference/current-python/index.md
+        reference/current-python/shell-completion-behavior.md: reference/current-python/index.md
+        reference/current-python/exit-codes-used-in-tests.md: reference/current-python/index.md
   - tags
   - minify:
       minify_html: true
