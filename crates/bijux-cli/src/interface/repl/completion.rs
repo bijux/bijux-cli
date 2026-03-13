@@ -1,6 +1,11 @@
 use super::types::ReplSession;
+use super::types::{
+    REPL_COMPLETION_ENTRY_MAX_CHARS, REPL_COMPLETION_MAX_CANDIDATES,
+    REPL_COMPLETION_REGISTRY_MAX_ENTRIES,
+};
+use crate::routing::model::built_in_route_paths;
 
-const CORE_BUILTIN_COMPLETIONS: &[&str] = &[
+const STATIC_REPL_COMPLETIONS: &[&str] = &[
     "help",
     "version",
     "doctor",
@@ -33,7 +38,38 @@ const CORE_BUILTIN_COMPLETIONS: &[&str] = &[
     "memory set",
     "memory delete",
     "memory clear",
+    ":help",
+    ":set",
+    ":set trace",
+    ":set quiet",
+    ":set format",
+    ":exit",
+    ":quit",
 ];
+
+fn normalize_completion_value(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let mut normalized = trimmed
+        .chars()
+        .filter(|ch| !ch.is_control())
+        .take(REPL_COMPLETION_ENTRY_MAX_CHARS)
+        .collect::<String>();
+    normalized = normalized.trim().to_string();
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized)
+    }
+}
+
+fn core_completion_candidates() -> Vec<String> {
+    let mut values = built_in_route_paths().to_vec();
+    values.extend(STATIC_REPL_COMPLETIONS.iter().map(|entry| entry.to_string()));
+    values.into_iter().filter_map(|entry| normalize_completion_value(&entry)).collect()
+}
 
 /// Provide command completion candidates for built-ins and plugin hooks.
 #[must_use]
@@ -59,17 +95,16 @@ pub fn completion_candidates(session: &ReplSession, prefix: &str) -> Vec<String>
     };
 
     let mut push_candidate = |value: &str| {
-        let candidate = value.trim();
-        if candidate.is_empty() {
+        let Some(candidate) = normalize_completion_value(value) else {
             return;
-        }
-        if matches_prefix(candidate) {
-            suggestions.push(candidate.to_string());
+        };
+        if matches_prefix(&candidate) {
+            suggestions.push(candidate);
         }
     };
 
-    for builtin in CORE_BUILTIN_COMPLETIONS {
-        push_candidate(builtin);
+    for builtin in core_completion_candidates() {
+        push_candidate(&builtin);
     }
 
     for values in session.completion_registries.values() {
@@ -90,6 +125,7 @@ pub fn completion_candidates(session: &ReplSession, prefix: &str) -> Vec<String>
 
     suggestions.sort();
     suggestions.dedup();
+    suggestions.truncate(REPL_COMPLETION_MAX_CANDIDATES);
     suggestions
 }
 
@@ -99,20 +135,19 @@ pub fn register_plugin_completion_hook(
     namespace: &str,
     suggestions: Vec<String>,
 ) {
-    let normalized_namespace = namespace.trim();
-    if normalized_namespace.is_empty() {
+    let Some(normalized_namespace) = normalize_completion_value(namespace) else {
         return;
-    }
+    };
 
     let mut normalized = suggestions
         .into_iter()
-        .map(|entry| entry.trim().to_string())
-        .filter(|entry| !entry.is_empty())
+        .filter_map(|entry| normalize_completion_value(&entry))
         .collect::<Vec<_>>();
     normalized.sort();
     normalized.dedup();
+    normalized.truncate(REPL_COMPLETION_REGISTRY_MAX_ENTRIES);
 
-    session.plugin_completion_hooks.insert(normalized_namespace.to_string(), normalized);
+    session.plugin_completion_hooks.insert(normalized_namespace, normalized);
 }
 
 /// Register extension completion registry entries under an owner key.
@@ -121,20 +156,19 @@ pub fn register_completion_registry(
     owner: &str,
     suggestions: Vec<String>,
 ) {
-    let normalized_owner = owner.trim();
-    if normalized_owner.is_empty() {
+    let Some(normalized_owner) = normalize_completion_value(owner) else {
         return;
-    }
+    };
 
     let mut normalized = suggestions
         .into_iter()
-        .map(|entry| entry.trim().to_string())
-        .filter(|entry| !entry.is_empty())
+        .filter_map(|entry| normalize_completion_value(&entry))
         .collect::<Vec<_>>();
     normalized.sort();
     normalized.dedup();
+    normalized.truncate(REPL_COMPLETION_REGISTRY_MAX_ENTRIES);
 
-    session.completion_registries.insert(normalized_owner.to_string(), normalized);
+    session.completion_registries.insert(normalized_owner, normalized);
 }
 
 #[cfg(test)]
@@ -143,6 +177,10 @@ mod tests {
         completion_candidates, register_completion_registry, register_plugin_completion_hook,
     };
     use crate::interface::repl::session::startup_repl;
+    use crate::interface::repl::types::{
+        REPL_COMPLETION_ENTRY_MAX_CHARS, REPL_COMPLETION_MAX_CANDIDATES,
+        REPL_COMPLETION_REGISTRY_MAX_ENTRIES,
+    };
 
     #[test]
     fn completion_matches_are_case_insensitive_and_last_token_aware() {
@@ -179,5 +217,33 @@ mod tests {
         assert_eq!(session.completion_registries["owner"], vec!["status".to_string()]);
         assert!(session.plugin_completion_hooks.contains_key("plugin.ns"));
         assert_eq!(session.plugin_completion_hooks["plugin.ns"], vec!["plugin.ns cmd".to_string()]);
+    }
+
+    #[test]
+    fn completion_registry_caps_entry_count_and_entry_size() {
+        let (mut session, _) = startup_repl("", None);
+        let oversized = "x".repeat(REPL_COMPLETION_ENTRY_MAX_CHARS + 64);
+        let values = (0..(REPL_COMPLETION_REGISTRY_MAX_ENTRIES + 20))
+            .map(|idx| format!("item-{idx:04}-{oversized}"))
+            .collect::<Vec<_>>();
+        register_completion_registry(&mut session, "owner", values);
+        assert_eq!(
+            session.completion_registries["owner"].len(),
+            REPL_COMPLETION_REGISTRY_MAX_ENTRIES
+        );
+        assert!(session.completion_registries["owner"]
+            .iter()
+            .all(|entry| entry.chars().count() <= REPL_COMPLETION_ENTRY_MAX_CHARS));
+    }
+
+    #[test]
+    fn completion_candidates_are_bounded() {
+        let (mut session, _) = startup_repl("", None);
+        let values = (0..(REPL_COMPLETION_MAX_CANDIDATES + 32))
+            .map(|idx| format!("status item-{idx}"))
+            .collect::<Vec<_>>();
+        register_completion_registry(&mut session, "owner", values);
+        let candidates = completion_candidates(&session, "");
+        assert!(candidates.len() <= REPL_COMPLETION_MAX_CANDIDATES);
     }
 }
