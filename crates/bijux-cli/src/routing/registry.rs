@@ -54,7 +54,6 @@ impl Default for RouteRegistry {
 
         let mut reserved = BTreeSet::from([
             "cli".to_string(),
-            "dev".to_string(),
             "help".to_string(),
             "version".to_string(),
             "doctor".to_string(),
@@ -155,9 +154,7 @@ impl RouteRegistry {
         let mut rows = Vec::new();
 
         for ns in &self.reserved {
-            let owner = if ns == "dev" {
-                "bijux-dev-cli".to_string()
-            } else if let Some(tool) = known_bijux_tool(ns) {
+            let owner = if let Some(tool) = known_bijux_tool(ns) {
                 tool.runtime_binary()
             } else {
                 "bijux-cli".to_string()

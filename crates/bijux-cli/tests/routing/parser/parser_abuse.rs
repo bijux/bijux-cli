@@ -23,20 +23,11 @@ fn pick<'a>(values: &'a [&'a str], seed: &mut u64) -> &'a str {
 }
 
 #[test]
-fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
+fn randomized_malformed_argv_corpus_covers_root_cli_external_and_plugin_entry() {
     let roots = ["status", "audit", "docs", "doctor", "version", "history", "memory"];
     let cli_sub = ["status", "paths", "self-test", "config", "plugins"];
-    let dev_sub = [
-        "routes",
-        "registry",
-        "status",
-        "doctor",
-        "state-audit",
-        "state-doctor",
-        "runtime-identity",
-        "parity",
-        "custom-command",
-    ];
+    let external_namespaces = ["atlas", "rag", "vex"];
+    let external_sub = ["status", "doctor", "config", "custom-command"];
     let plugin_sub = ["list", "inspect", "check", "install", "uninstall", "doctor"];
     let junk = ["--unknown", "--format", "???", "", "###", "--log-level", "noise", "--color"];
 
@@ -58,9 +49,8 @@ fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
                 }
             }
             2 => {
-                argv.push("dev".to_string());
-                argv.push("cli".to_string());
-                argv.push(pick(&dev_sub, &mut seed).to_string());
+                argv.push(pick(&external_namespaces, &mut seed).to_string());
+                argv.push(pick(&external_sub, &mut seed).to_string());
             }
             _ => {
                 argv.push("plugins".to_string());
@@ -137,12 +127,6 @@ fn parser_shell_hostile_and_confusable_namespace_tokens_do_not_hijack_reserved_p
         .expect("parse");
     assert!(hostile.normalized_path.is_empty());
 
-    let confusable_dev =
-        parse_intent(&["bijux".into(), "dеv".into(), "cli".into(), "status".into()])
-            .expect("parse");
-    // Cyrillic 'е' must not resolve to reserved `dev`.
-    assert_ne!(confusable_dev.normalized_path, vec!["dev", "cli", "status"]);
-
     let confusable_help =
         parse_intent(&["bijux".into(), "hеlp".into(), "status".into()]).expect("parse");
     assert_ne!(confusable_help.normalized_path, vec!["help", "status"]);
@@ -167,7 +151,7 @@ fn unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguit
 #[test]
 fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
     let mut registry = RouteRegistry::default();
-    for blocked in ["help", "version", "dev", "cli", "doctor"] {
+    for blocked in ["help", "version", "cli", "doctor"] {
         let err =
             registry.register_plugin_namespace(blocked).expect_err("blocked namespace should fail");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
@@ -181,10 +165,10 @@ fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
         .expect("plugin route should resolve");
     assert!(matches!(resolved, RouteTarget::Plugin(ns) if ns == "community"));
 
-    let dev_registry = registry
-        .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
-        .expect_err("runtime registry no longer owns delegated dev-cli subcommands");
-    assert!(matches!(dev_registry, RouteError::Unknown(_)));
+    let external_namespace = registry
+        .resolve(&["atlas".to_string(), "registry".to_string()])
+        .expect_err("external product namespaces must stay outside runtime routing");
+    assert!(matches!(external_namespace, RouteError::Unknown(_)));
 }
 
 #[test]

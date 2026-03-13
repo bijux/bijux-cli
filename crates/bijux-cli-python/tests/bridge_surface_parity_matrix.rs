@@ -51,7 +51,7 @@ fn bridge_and_core_agree_on_exit_codes_for_representative_matrix() {
         vec!["doctor", "--format", "json", "--no-pretty"],
         vec!["config", "get"],
         vec!["plugins", "uninstall"],
-        vec!["dev", "cli", "does-not-exist"],
+        vec!["atlas", "does-not-exist"],
     ];
 
     for args in cases {

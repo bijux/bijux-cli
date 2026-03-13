@@ -4,4 +4,4 @@
 #
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
-cc e61628d9c6aec5c02a92b878b12a03a3c351794a14f692bfec518662e9bb6543 # shrinks to path = ["dev", "cli", "routes"]
+cc e61628d9c6aec5c02a92b878b12a03a3c351794a14f692bfec518662e9bb6543 # legacy minimized case retained for deterministic parser replay

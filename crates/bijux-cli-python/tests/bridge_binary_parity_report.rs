@@ -67,7 +67,7 @@ fn binary_and_python_bridge_parity_report_is_generated() {
         vec!["status"],
         vec!["doctor"],
         vec!["cli", "plugins", "list"],
-        vec!["dev", "cli", "runtime-identity"],
+        vec!["history"],
     ];
 
     let mut report_rows: Vec<Value> = Vec::new();

@@ -306,7 +306,7 @@ fn fuzz_namespace_normalization_and_reserved_rejection_stays_safe() {
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
     }
 
-    for built_in in ["cli", "dev", "help", "version", "doctor", "plugins", "inspect"] {
+    for built_in in ["cli", "help", "version", "doctor", "plugins", "inspect"] {
         let err = reserved
             .register_plugin_namespace(built_in)
             .expect_err("built-in namespace must reject");
@@ -317,7 +317,7 @@ fn fuzz_namespace_normalization_and_reserved_rejection_stays_safe() {
 #[test]
 fn fuzz_reserved_name_rejection_and_normalization_are_deterministic() {
     let mut seed = 0xA11C_E009_u64;
-    let candidates = ["cli", "dev", "help", "version", "doctor", "plugins", "status", "config"];
+    let candidates = ["cli", "help", "version", "doctor", "plugins", "status", "config"];
 
     for _ in 0..160 {
         let mut registry = RouteRegistry::default();

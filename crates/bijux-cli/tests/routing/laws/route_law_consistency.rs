@@ -73,10 +73,11 @@ fn official_product_namespace_registry_drives_routing_rejections() {
 }
 
 #[test]
-fn maintainer_namespace_is_reserved_but_not_known_as_runtime_route() {
+fn runtime_route_inventory_stays_free_of_maintainer_namespaces() {
     let registry = RouteRegistry::default();
+    let tree = registry.route_tree();
 
-    let maintainer = registry.resolve(&["dev".to_string(), "routes".to_string()]);
-    assert!(maintainer.is_err());
+    assert!(tree.iter().all(|entry| entry.name.0 != "dev"));
+    assert!(tree.iter().all(|entry| entry.owner != "bijux-dev-cli"));
     assert!(!is_known_route(&["dev".to_string(), "routes".to_string()]));
 }

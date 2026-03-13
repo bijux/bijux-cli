@@ -53,12 +53,3 @@ fn external_runtime_mounts_stay_outside_runtime_registry() {
         registry.resolve(&direct).expect_err("external product runtime should be unknown locally");
     assert!(matches!(direct_err, bijux_cli::api::routing::registry::RouteError::Unknown(_)));
 }
-
-#[test]
-fn maintainer_only_namespaces_are_reserved_but_not_routed_locally() {
-    let registry = RouteRegistry::default();
-    let err = registry
-        .resolve(&["dev".to_string(), "doctor".to_string()])
-        .expect_err("maintainer command namespace must stay outside runtime routing");
-    assert!(matches!(err, bijux_cli::api::routing::registry::RouteError::Unknown(_)));
-}

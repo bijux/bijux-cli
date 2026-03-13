@@ -19,9 +19,7 @@ use thiserror as _;
 #[test]
 fn official_reserved_namespaces_take_precedence() {
     let mut registry = RouteRegistry::default();
-    for ns in
-        ["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"]
-    {
+    for ns in ["cli", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"] {
         let result = registry.register_plugin_namespace(ns);
         assert!(
             matches!(result, Err(RouteError::Reserved(_))),
