@@ -334,6 +334,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         let mut help_argv = synthetic_argv.clone();
         help_argv.push("--help".to_string());
         if let Some(help) = try_render_clap_help(&help_argv) {
+            telemetry.record("dispatch.help.rendered", json!({"topic":"root", "exit_code": 0}));
             return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
         }
     }
@@ -423,13 +424,6 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
     };
 
-    telemetry.record(
-        "dispatch.route.success",
-        json!({
-            "command": expanded_path.join(" "),
-            "status": payload.get("status").and_then(Value::as_str),
-        }),
-    );
     let rendered = match render_value(&payload, emitter_config(&intent.global_flags)) {
         Ok(value) => value,
         Err(error) => {
@@ -445,12 +439,25 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     if is_unknown {
         telemetry.record(
             "dispatch.route.unknown",
-            json!({"command": expanded_path.join(" "), "exit_code": 2}),
+            json!({
+                "command": expanded_path.join(" "),
+                "exit_code": 2,
+                "status": payload.get("status").and_then(Value::as_str),
+            }),
         );
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
     let route_exit_code = payload_route_exit_code(&expanded_path, &payload);
+    telemetry.record(
+        "dispatch.route.completed",
+        json!({
+            "command": expanded_path.join(" "),
+            "status": payload.get("status").and_then(Value::as_str),
+            "exit_code": route_exit_code,
+            "exit_kind": telemetry_exit_code_kind(route_exit_code),
+        }),
+    );
 
     if intent.global_flags.quiet {
         telemetry.record(
@@ -657,5 +664,29 @@ mod tests {
         assert!(body.lines().any(|line| line.contains("\"stage\":\"invocation.start\"")));
         assert!(body.lines().any(|line| line.contains("\"stage\":\"invocation.finish\"")));
         assert!(body.lines().all(|line| line.contains("\"runtime\":\"bijux-dev-cli\"")));
+    }
+
+    #[test]
+    fn run_app_unknown_route_emits_unknown_stage_without_completed_stage() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("telemetry").join("events.jsonl");
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let result = run_app(&argv(&["bijux-dev-cli", "definitely-not-a-command"])).expect("run");
+        assert_eq!(result.exit_code, 2);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry output");
+        let rows: Vec<serde_json::Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+        assert!(rows.iter().any(|row| row["stage"] == "dispatch.route.unknown"));
+        assert!(
+            !rows.iter().any(|row| row["stage"] == "dispatch.route.completed"),
+            "unknown routes must not be reported as completed"
+        );
     }
 }
