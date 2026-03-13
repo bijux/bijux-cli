@@ -27,7 +27,7 @@ Machine-readable success responses use this shape:
 
 - `status`: fixed string `ok`
 - `data`: command-specific payload object or array
-- `meta.command`: canonical command path
+- `meta.command.segments`: ordered canonical command namespace segments
 - `meta.timestamp`: RFC 3339 timestamp
 - `meta.version`: envelope version identifier
 
@@ -42,6 +42,8 @@ Machine-readable error responses use this shape:
 - `error.message`: user-readable summary
 - `error.category`: one of `usage`, `validation`, `plugin`, `internal`
 - `error.details`: optional structured context
+- `meta.command.segments`: ordered canonical command namespace segments
+- `meta.timestamp`: RFC 3339 timestamp
 - `meta.version`: envelope version identifier
 
 Exact message wording is not frozen, but the envelope semantics are.

@@ -24,20 +24,21 @@ flowchart TD
 ### Cargo
 
 - canonical crate identity: `bijux-cli`
-- compatibility alias channel: `bijux`
-- both install channels must resolve to the same executable: `bijux`
+- compatibility alias metadata may exist for `bijux`
+- the documented and preferred install channel is `bijux-cli`
 
 ### Python
 
 - canonical distribution: `bijux-cli`
-- compatibility or meta distribution: `bijux`
-- both install names must resolve to the same user-facing `bijux` semantics
+- compatibility metadata may still refer to `bijux`
+- the documented and preferred install channel is `bijux-cli`
 
 ## Binary Ownership Rule
 
 `bijux-cli` is the sole owner of the public `bijux` command contract.
-Compatibility package names may exist, but they must delegate to the same
-runtime behavior and must not publish divergent public executables.
+Compatibility package names may exist, but they are optional and must delegate
+to the same runtime behavior when present. They must not publish divergent
+public executables.
 
 ## Routed Product Naming
 
@@ -54,6 +55,7 @@ The machine-readable routed product registry is
 
 - the Python distribution is Rust-backed
 - existing `pip install bijux-cli` users retain command-line compatibility
+- `bijux-cli` is the only documented Python distribution name
 - wrappers must delegate to the same Rust command engine
 - Python API changes require additive compatibility shims or explicit
   deprecation messaging

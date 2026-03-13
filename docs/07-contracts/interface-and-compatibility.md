@@ -35,7 +35,7 @@ The reserved root namespaces are:
 
 `agent`, `atlas`, `audit`, `cli`, `config`, `dag`, `dev`, `dna`, `doctor`,
 `docs`, `gnss`, `help`, `history`, `memory`, `plugins`, `rag`, `rar`, `repl`,
-`sleep`, `status`, `version`, `vex`
+`sleep`, `status`, `version`, `completion`, `vex`
 
 Plugins must not claim these namespaces.
 
@@ -51,6 +51,7 @@ The supported global flags are:
 - `--quiet`
 - `--log-level`
 - `--color`
+- `--config-path`
 
 Precedence is stable and resolves as:
 
