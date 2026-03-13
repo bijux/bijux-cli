@@ -39,6 +39,8 @@ pub(crate) fn try_handle(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 runtime_semver(),
             );
+            let has_legacy_installer_conflicts =
+                !install_report.legacy_installer_conflicts.is_empty();
             Some(json!({
                 "status": "healthy",
                 "checks": ["routing", "output", "config", "install"],
@@ -46,7 +48,8 @@ pub(crate) fn try_handle(
                     "has_path_shadowing": install_report.has_path_shadowing,
                     "has_duplicate_installs": install_report.has_duplicate_installs,
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
-                    "legacy_installer_conflicts": !install_report.legacy_installer_conflicts.is_empty(),
+                    "legacy_installer_conflicts": has_legacy_installer_conflicts,
+                    "legacy_installer_conflict_paths": install_report.legacy_installer_conflicts,
                     "has_mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
                 }
             }))

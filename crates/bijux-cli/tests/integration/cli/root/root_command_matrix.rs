@@ -87,7 +87,9 @@ fn parity_doctor_against_current_expected_behavior() {
     assert!(out.status.success());
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert!(payload.get("status").is_some());
-    assert!(payload.get("install").is_some());
+    let install = payload.get("install").expect("install report");
+    assert!(install.get("legacy_installer_conflicts").is_some());
+    assert!(install.get("legacy_installer_conflict_paths").and_then(Value::as_array).is_some());
 
     let core = run_app(&["bijux".to_string(), "doctor".to_string()]).expect("core");
     assert_eq!(out.status.code(), Some(core.exit_code));
