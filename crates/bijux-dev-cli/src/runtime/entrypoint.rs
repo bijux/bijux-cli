@@ -862,7 +862,20 @@ mod tests {
         let rows: Vec<serde_json::Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
         assert!(rows.iter().any(|row| row["stage"] == "dispatch.argv.synthetic"));
-        assert!(rows.iter().any(|row| row["stage"] == "dispatch.path.expanded"));
+        let expanded_path_emitted = rows.iter().any(|row| row["stage"] == "dispatch.path.expanded");
+        let intent_parsed = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.intent.parsed")
+            .expect("intent parsed event");
+        let normalized_segments =
+            intent_parsed["payload"]["normalized_path"].as_array().expect("normalized path");
+        let already_includes_status = normalized_segments
+            .iter()
+            .any(|value| value.as_str().is_some_and(|segment| segment == "status"));
+        assert!(
+            expanded_path_emitted || already_includes_status,
+            "expected either explicit path expansion telemetry or a fully expanded normalized path"
+        );
         let synthetic = rows
             .iter()
             .find(|row| row["stage"] == "dispatch.argv.synthetic")

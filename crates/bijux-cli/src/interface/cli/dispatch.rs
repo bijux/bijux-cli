@@ -139,9 +139,17 @@ fn known_help_topics() -> Vec<String> {
         DEV_CLI_PYTHON_SUBCOMMANDS.iter().map(|command| format!("dev cli python {command}")),
     );
     topics.extend(DEV_CLI_REPO_SUBCOMMANDS.iter().map(|command| format!("dev cli repo {command}")));
-    topics.sort();
-    topics.dedup();
-    topics
+    let mut expanded = Vec::new();
+    for topic in topics {
+        let mut prefix = Vec::new();
+        for segment in topic.split_whitespace() {
+            prefix.push(segment);
+            expanded.push(prefix.join(" "));
+        }
+    }
+    expanded.sort();
+    expanded.dedup();
+    expanded
 }
 
 fn is_known_help_topic(path: &[String]) -> bool {

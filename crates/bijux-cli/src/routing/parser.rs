@@ -173,7 +173,7 @@ fn delegated_command(name: &'static str, hidden: bool) -> Command {
 }
 
 fn build_dev_group() -> Command {
-    let mut dev_cli = Command::new("cli");
+    let mut dev_cli = Command::new("cli").allow_external_subcommands(true);
     for command in crate::routing::model::DEV_CLI_VISIBLE_SUBCOMMANDS {
         let entry = if crate::routing::model::DEV_CLI_NESTED_SUBCOMMANDS.contains(command) {
             delegated_command(command, false)
