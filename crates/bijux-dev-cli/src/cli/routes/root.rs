@@ -104,6 +104,8 @@ pub(super) fn try_handle(
                 input.config_issues,
                 input.path_issues,
                 input.plugin_issues,
+                input.history_issues,
+                input.memory_issues,
             )
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-prune-plan" => {

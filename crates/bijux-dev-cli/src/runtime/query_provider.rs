@@ -71,6 +71,20 @@ pub struct RuntimeQueryAdapter<'a> {
     plugin_registry_path: &'a Path,
 }
 
+fn state_area_issues(report: &Value, area: &str) -> Vec<Value> {
+    report
+        .get("issues")
+        .and_then(Value::as_array)
+        .map(|issues| {
+            issues
+                .iter()
+                .filter(|issue| issue.get("area").and_then(Value::as_str) == Some(area))
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     fn route_inventory(&self) -> RouteInventoryQuery {
         let inventory = route_inventory(self.registry);
@@ -152,6 +166,9 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
             runtime_semver(),
         );
+        let state_report = state_diagnostics(self.paths);
+        let history_issues = state_area_issues(&state_report, "history");
+        let memory_issues = state_area_issues(&state_report, "memory");
         let mut plugin_issues = Vec::<Value>::new();
         let plugin_diagnostics =
             match load_time_diagnostics(self.plugin_registry_path, runtime_semver()) {
@@ -201,7 +218,13 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             })
         }));
 
-        DoctorReportInput { config_issues, path_issues, plugin_issues }
+        DoctorReportInput {
+            config_issues,
+            path_issues,
+            plugin_issues,
+            history_issues,
+            memory_issues,
+        }
     }
 
     fn state_audit_input(&self) -> StateAuditInput {

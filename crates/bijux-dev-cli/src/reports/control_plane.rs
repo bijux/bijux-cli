@@ -138,8 +138,15 @@ pub fn build_doctor_report(
     config_issues: Vec<Value>,
     path_issues: Vec<Value>,
     plugin_issues: Vec<Value>,
+    history_issues: Vec<Value>,
+    memory_issues: Vec<Value>,
 ) -> Value {
-    let status = if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
+    let status = if config_issues.is_empty()
+        && path_issues.is_empty()
+        && plugin_issues.is_empty()
+        && history_issues.is_empty()
+        && memory_issues.is_empty()
+    {
         "healthy"
     } else {
         "degraded"
@@ -151,6 +158,8 @@ pub fn build_doctor_report(
             "config": config_issues,
             "paths": path_issues,
             "plugins": plugin_issues,
+            "history": history_issues,
+            "memory": memory_issues,
         },
     })
 }

@@ -234,6 +234,8 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
                 assert!(payload["issues"]["config"].is_array());
                 assert!(payload["issues"]["paths"].is_array());
                 assert!(payload["issues"]["plugins"].is_array());
+                assert!(payload["issues"]["history"].is_array());
+                assert!(payload["issues"]["memory"].is_array());
             }
             "contracts" => {
                 assert!(payload["contracts"].is_array());

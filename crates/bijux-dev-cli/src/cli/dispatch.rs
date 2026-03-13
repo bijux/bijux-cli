@@ -43,6 +43,10 @@ pub struct DoctorReportInput {
     pub path_issues: Vec<Value>,
     /// Plugin diagnostics surfaced at load time.
     pub plugin_issues: Vec<Value>,
+    /// History state diagnostics surfaced from runtime state checks.
+    pub history_issues: Vec<Value>,
+    /// Memory state diagnostics surfaced from runtime state checks.
+    pub memory_issues: Vec<Value>,
 }
 
 /// Runtime-derived input for `dev cli state-audit` report assembly.

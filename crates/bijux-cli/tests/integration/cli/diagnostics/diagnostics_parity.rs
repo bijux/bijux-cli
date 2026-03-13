@@ -145,6 +145,8 @@ fn dev_diagnostics_payloads_expose_metadata_contracts() {
     assert!(doctor["issues"]["config"].is_array());
     assert!(doctor["issues"]["paths"].is_array());
     assert!(doctor["issues"]["plugins"].is_array());
+    assert!(doctor["issues"]["history"].is_array());
+    assert!(doctor["issues"]["memory"].is_array());
 
     let contracts =
         parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);

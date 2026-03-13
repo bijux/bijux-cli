@@ -52,7 +52,13 @@ impl RuntimeQueryProvider for StubRuntime {
     }
 
     fn doctor_report_input(&self) -> DoctorReportInput {
-        DoctorReportInput { config_issues: vec![], path_issues: vec![], plugin_issues: vec![] }
+        DoctorReportInput {
+            config_issues: vec![],
+            path_issues: vec![],
+            plugin_issues: vec![],
+            history_issues: vec![],
+            memory_issues: vec![],
+        }
     }
 
     fn state_audit_input(&self) -> StateAuditInput {
