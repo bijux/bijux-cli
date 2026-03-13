@@ -124,6 +124,25 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
 }
 
 #[test]
+fn template_hooks_guard_namespace_and_crate_identifier_rules() {
+    let py_hook = read_repo_file("templates/plugins-py/hooks/pre_gen_project.py");
+    assert!(
+        py_hook.contains("plugin_namespace must be lowercase kebab-case"),
+        "python template hook should reject invalid plugin namespaces"
+    );
+
+    let rs_hook = read_repo_file("templates/plugins-rs/hooks/pre_gen_project.py");
+    assert!(
+        rs_hook.contains("plugin_namespace must be lowercase kebab-case"),
+        "rust template hook should reject invalid plugin namespaces"
+    );
+    assert!(
+        rs_hook.contains("crate_name must be lowercase snake_case"),
+        "rust template hook should reject invalid crate identifiers"
+    );
+}
+
+#[test]
 fn template_tree_does_not_ship_legacy_plugin_json_files() {
     let template_root = repo_root().join("templates");
     for path in walk_files(&template_root) {
