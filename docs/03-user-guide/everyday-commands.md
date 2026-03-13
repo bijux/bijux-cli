@@ -1,0 +1,54 @@
+# Everyday Commands
+
+## Goal
+
+Use a small set of commands that answer the most common daily questions: what
+version am I running, is the runtime healthy, and what command surface is
+available right now?
+
+```mermaid
+flowchart LR
+    A[version] --> D[Identity]
+    B[status] --> E[Current runtime state]
+    C[doctor] --> F[Health and conflicts]
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as CLI
+    U->>C: bijux version
+    C-->>U: runtime identity
+    U->>C: bijux status
+    C-->>U: status output
+    U->>C: bijux doctor
+    C-->>U: diagnostics
+```
+
+## Core Commands
+
+```bash
+bijux version
+bijux --help
+bijux status
+bijux doctor
+bijux cli paths
+```
+
+## When To Use Each One
+
+- `version` when you need to know which runtime you are actually invoking
+- `--help` when you need to inspect the current command surface
+- `status` for a lightweight runtime snapshot
+- `doctor` when you suspect install or environment problems
+- `cli paths` when you need to know which binary and state directories are in
+  play
+
+## Honest Limit
+
+None of these commands replace the reference docs. They are operational checks,
+not a complete interface contract.
+
+## Read Next
+
+Continue to [Configuration And Output](configuration-and-output.md).
