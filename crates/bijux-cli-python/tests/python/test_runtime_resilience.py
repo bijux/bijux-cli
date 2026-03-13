@@ -168,6 +168,62 @@ def test_config_resolution_helpers_apply_env_overrides_without_native(
     assert paths["history_file"] == str(home / "env-history.log")
 
 
+def test_config_resolution_helpers_reject_malformed_compatibility_file_without_native(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    home = tmp_path / "home"
+    state = home / ".bijux"
+    state.mkdir(parents=True)
+    (state / ".env").write_text("BROKEN\n", encoding="utf-8")
+
+    monkeypatch.setattr(facade, "NATIVE_AVAILABLE", False)
+    with pytest.raises(InternalError):
+        _ = config_resolution_helpers(str(home))
+
+
+def test_subprocess_environment_strips_python_runtime_injection_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setenv("PYTHONPATH", "/tmp/poison")
+    monkeypatch.setenv("LD_PRELOAD", "/tmp/evil.so")
+    monkeypatch.setenv("PATH", os.environ.get("PATH", ""))
+    env = facade._sanitized_subprocess_env()
+    assert "PYTHONPATH" not in env
+    assert "LD_PRELOAD" not in env
+    assert "PATH" in env
+
+
+def test_loader_oserror_is_not_silently_hidden_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.delenv("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", raising=False)
+    assert not facade._allow_native_import_fallback(OSError("bad dynamic loader"))
+
+
+def test_loader_oserror_fallback_can_be_enabled_explicitly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setenv("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", "1")
+    assert facade._allow_native_import_fallback(OSError("bad dynamic loader"))
+
+
+def test_runtime_binary_filenames_include_windows_executable(monkeypatch: pytest.MonkeyPatch) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.setattr(facade.os, "name", "nt", raising=False)
+    names = facade._runtime_binary_filenames()
+    assert "bijux.exe" in names
+    assert "bijux" in names
+
+
 def test_version_api_delegates_to_runtime_outcome(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

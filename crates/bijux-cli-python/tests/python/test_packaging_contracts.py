@@ -29,17 +29,21 @@ def _runtime_binary() -> str:
         return override
 
     workspace_root = _project_root().parents[1]
-    workspace_candidates = [
-        workspace_root / "artifacts" / "rust" / "target" / "debug" / "bijux",
-        workspace_root / "artifacts" / "rust" / "target" / "release" / "bijux",
-        workspace_root / "target" / "debug" / "bijux",
-        workspace_root / "target" / "release" / "bijux",
-    ]
+    runtime_names = ("bijux.exe", "bijux") if os.name == "nt" else ("bijux",)
+    workspace_candidates: list[Path] = []
+    for base in (
+        workspace_root / "artifacts" / "rust" / "target" / "debug",
+        workspace_root / "artifacts" / "rust" / "target" / "release",
+        workspace_root / "target" / "debug",
+        workspace_root / "target" / "release",
+    ):
+        for runtime_name in runtime_names:
+            workspace_candidates.append(base / runtime_name)
     for candidate in workspace_candidates:
         if candidate.is_file() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    for name in ("bijux",):
+    for name in runtime_names:
         resolved = shutil.which(name)
         if resolved:
             return resolved

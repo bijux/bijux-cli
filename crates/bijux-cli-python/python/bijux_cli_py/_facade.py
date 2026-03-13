@@ -44,13 +44,57 @@ _COMPAT_CONFIG_ENV_KEYS = {
     "BIJUXCLI_HISTORY_FILE",
     "BIJUXCLI_PLUGINS_DIR",
 }
+_SUBPROCESS_ENV_STRIP_KEYS = frozenset(
+    {
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PYTHONSTARTUP",
+        "LD_PRELOAD",
+        "DYLD_INSERT_LIBRARIES",
+    }
+)
+
+
+def _is_missing_native_module(exc: ImportError | ModuleNotFoundError) -> bool:
+    name = getattr(exc, "name", None)
+    if isinstance(name, str) and (name == "bijux_cli_py._native" or name.endswith("._native")):
+        return True
+    message = str(exc)
+    if "No module named" in message and "bijux_cli_py._native" in message:
+        return True
+    return "cannot import name '_native'" in message and "bijux_cli_py" in message
+
+
+def _allow_native_import_fallback(exc: Exception) -> bool:
+    if isinstance(exc, ModuleNotFoundError):
+        return _is_missing_native_module(exc)
+    if isinstance(exc, ImportError):
+        return _is_missing_native_module(exc)
+    if isinstance(exc, OSError):
+        configured = os.environ.get("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", "")
+        return configured.strip().lower() in {"1", "true", "yes", "on"}
+    return False
+
+
+def _runtime_binary_filenames() -> tuple[str, ...]:
+    if os.name == "nt":
+        return ("bijux.exe", "bijux")
+    return ("bijux",)
+
+
+def _sanitized_subprocess_env() -> dict[str, str]:
+    return {
+        key: value
+        for key, value in os.environ.items()
+        if key not in _SUBPROCESS_ENV_STRIP_KEYS
+    }
 
 try:
     from . import _native as native
 
     NATIVE_AVAILABLE = True
 except (ImportError, ModuleNotFoundError, OSError) as exc:  # pragma: no cover
-    if _STRICT_NATIVE_IMPORT:
+    if _STRICT_NATIVE_IMPORT or not _allow_native_import_fallback(exc):
         raise
     native = None
     NATIVE_AVAILABLE = False
@@ -114,12 +158,15 @@ def _workspace_runtime_binaries() -> list[str]:
     if workspace_root is None:
         return []
 
-    candidates = [
-        workspace_root / "artifacts" / "rust" / "target" / "debug" / "bijux",
-        workspace_root / "artifacts" / "rust" / "target" / "release" / "bijux",
-        workspace_root / "target" / "debug" / "bijux",
-        workspace_root / "target" / "release" / "bijux",
-    ]
+    candidates: list[Path] = []
+    for base in (
+        workspace_root / "artifacts" / "rust" / "target" / "debug",
+        workspace_root / "artifacts" / "rust" / "target" / "release",
+        workspace_root / "target" / "debug",
+        workspace_root / "target" / "release",
+    ):
+        for binary_name in _runtime_binary_filenames():
+            candidates.append(base / binary_name)
     return [str(path) for path in candidates]
 
 
@@ -219,6 +266,7 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
             text=True,
             check=False,
             timeout=_runtime_timeout_seconds(),
+            env=_sanitized_subprocess_env(),
         )
     except subprocess.TimeoutExpired as exc:
         timeout_seconds = _runtime_timeout_seconds()
@@ -276,7 +324,7 @@ def config_resolution_helpers(home_dir: str) -> dict[str, str]:
         }
     try:
         return _resolve_config_paths_without_native(home_dir)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
         raise InternalError(f"failed to resolve config paths: {exc}") from exc
 
 
@@ -461,16 +509,22 @@ def _load_compatibility_overrides(path: Path) -> dict[str, str]:
         return {}
     text = path.read_text(encoding="utf-8")
     parsed: dict[str, str] = {}
-    for raw_line in text.splitlines():
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
         if "=" not in line:
-            return {}
+            raise ValueError(
+                f"malformed compatibility config line {line_number} in {path}: {line!r}"
+            )
         key, value = line.split("=", 1)
         normalized_key = key.strip()
         if normalized_key not in _COMPAT_CONFIG_ENV_KEYS:
-            return {}
+            raise ValueError(
+                "unsupported compatibility config key "
+                f"{normalized_key!r} in {path}; expected one of "
+                f"{sorted(_COMPAT_CONFIG_ENV_KEYS)}"
+            )
         parsed[normalized_key] = value.strip()
     return parsed
 
