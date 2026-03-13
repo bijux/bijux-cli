@@ -7,9 +7,16 @@ use super::types::{
     ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream, META_PREFIX,
 };
 
-fn parse_shell_tokens(input: &str) -> Vec<String> {
+fn parse_shell_tokens_lossy(input: &str) -> Vec<String> {
     shlex::split(input)
         .unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
+}
+
+fn parse_shell_tokens_strict(input: &str) -> Result<Vec<String>, ReplError> {
+    shlex::split(input).ok_or_else(|| {
+        let snippet = input.chars().take(256).collect::<String>();
+        ReplError::InvalidCommandInput(format!("shell tokenization failed: {snippet}"))
+    })
 }
 
 fn output_format_from_name(name: &str) -> Option<OutputFormat> {
@@ -32,7 +39,7 @@ fn output_format_name(format: OutputFormat) -> &'static str {
 /// Build argv using the same tokenization path REPL execution uses.
 #[must_use]
 pub fn repl_argv_from_line(line: &str) -> Vec<String> {
-    let tokenized = parse_shell_tokens(line);
+    let tokenized = parse_shell_tokens_lossy(line);
     std::iter::once("bijux".to_string()).chain(tokenized).collect()
 }
 
@@ -62,7 +69,7 @@ fn render_meta_help(path: &[String]) -> String {
 
 fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEvent, ReplError> {
     let raw = line.trim_start_matches(META_PREFIX).trim();
-    let tokens = parse_shell_tokens(raw);
+    let tokens = parse_shell_tokens_strict(raw)?;
     if tokens.is_empty() {
         return Err(ReplError::InvalidMetaCommand(line.to_string()));
     }
@@ -75,7 +82,7 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
                 content: if body.ends_with('\n') { body } else { format!("{body}\n") },
             })))
         }
-        "set" if tokens.len() >= 3 => {
+        "set" if tokens.len() == 3 => {
             match (tokens[1].as_str(), tokens[2].as_str()) {
                 ("trace", "on") => session.trace_mode = true,
                 ("trace", "off") => session.trace_mode = false,
@@ -186,15 +193,29 @@ pub fn execute_repl_input(
 
             if final_line.starts_with(META_PREFIX) {
                 let outcome = handle_meta_command(session, &final_line);
-                if let Err(error) = &outcome {
-                    session.last_error = Some(error.to_string());
+                match &outcome {
+                    Ok(ReplEvent::Continue(_)) | Ok(ReplEvent::Exit(_)) => {
+                        session.commands_executed += 1;
+                        session.last_exit_code = 0;
+                        session.last_error = None;
+                    }
+                    Ok(ReplEvent::Interrupted(_)) => {
+                        session.commands_executed += 1;
+                        session.last_exit_code = 130;
+                        session.last_error = Some("Interrupted".to_string());
+                    }
+                    Err(error) => {
+                        session.last_exit_code = 2;
+                        session.last_error = Some(error.to_string());
+                    }
                 }
                 return outcome;
             }
 
             push_history(session, &final_line);
 
-            let argv = repl_argv_from_line(&final_line);
+            let tokenized = parse_shell_tokens_strict(&final_line)?;
+            let argv = std::iter::once("bijux".to_string()).chain(tokenized).collect::<Vec<_>>();
 
             let effective_argv = apply_session_policy_to_argv(session, &argv);
             let result = run_app(&effective_argv).map_err(|error| {
@@ -205,12 +226,28 @@ pub fn execute_repl_input(
             session.commands_executed += 1;
             session.last_exit_code = result.exit_code;
 
-            let frame = if !result.stdout.is_empty() {
-                Some(ReplFrame { stream: ReplStream::Stdout, content: result.stdout })
-            } else if !result.stderr.is_empty() {
+            let frame = if result.exit_code != 0 && !result.stderr.is_empty() {
                 session.last_error = Some(result.stderr.clone());
                 Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
+            } else if !result.stdout.is_empty() {
+                if result.exit_code == 0 {
+                    session.last_error = None;
+                }
+                Some(ReplFrame { stream: ReplStream::Stdout, content: result.stdout })
+            } else if !result.stderr.is_empty() {
+                if result.exit_code == 0 {
+                    session.last_error = None;
+                } else {
+                    session.last_error = Some(result.stderr.clone());
+                }
+                Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
             } else {
+                if result.exit_code == 0 {
+                    session.last_error = None;
+                } else {
+                    session.last_error =
+                        Some(format!("command failed with exit code {}", result.exit_code));
+                }
                 None
             };
 
@@ -228,5 +265,42 @@ pub fn execute_repl_line(
         ReplEvent::Continue(frame) => Ok(frame),
         ReplEvent::Exit(frame) => Ok(frame),
         ReplEvent::Interrupted(frame) => Ok(Some(frame)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::execute_repl_line;
+    use crate::interface::repl::session::startup_repl;
+    use crate::interface::repl::types::ReplError;
+
+    #[test]
+    fn malformed_shell_input_returns_deterministic_invalid_input_error() {
+        let (mut session, _) = startup_repl("", None);
+        let result = execute_repl_line(&mut session, "status --config-path \"unterminated");
+        assert!(matches!(result, Err(ReplError::InvalidCommandInput(_))));
+    }
+
+    #[test]
+    fn meta_set_requires_exact_arity_and_sets_usage_exit_code() {
+        let (mut session, _) = startup_repl("", None);
+        let result = execute_repl_line(&mut session, ":set format json extra");
+        assert!(matches!(result, Err(ReplError::InvalidMetaCommand(_))));
+        assert_eq!(session.last_exit_code, 2);
+        assert!(session.last_error.as_deref().unwrap_or_default().contains("invalid repl command"));
+    }
+
+    #[test]
+    fn successful_command_clears_previous_error_state() {
+        let (mut session, _) = startup_repl("", None);
+
+        let _ = execute_repl_line(&mut session, "config get");
+        assert!(session.last_error.is_some());
+
+        let result = execute_repl_line(&mut session, "status --format json --no-pretty")
+            .expect("status command should execute");
+        assert!(result.is_some());
+        assert_eq!(session.last_exit_code, 0);
+        assert!(session.last_error.is_none());
     }
 }
