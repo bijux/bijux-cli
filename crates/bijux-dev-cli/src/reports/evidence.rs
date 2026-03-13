@@ -5,20 +5,35 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use crate::infra::artifacts::{read_json_if_exists, relative_to_root};
+use crate::infra::artifacts::{json_artifact_state, read_json_if_exists, relative_to_root};
 use crate::schema::command_registry::command_registry;
 use crate::schema::evidence::{
     valid_evidence_id, EvidenceRecord, EvidenceStatus, EvidenceStrength,
 };
 
-fn evidence_ids_for_command(command: &str) -> Vec<&'static str> {
-    match command {
-        "dev cli release" => vec!["EVIDENCE-1001-RELEASE-TRUTH"],
-        "dev cli parity" => vec!["EVIDENCE-1002-PARITY-COVERAGE"],
-        "dev cli package-health" => vec!["EVIDENCE-1003-INSTALL-NEUTRALITY"],
-        "dev cli runtime-identity" => vec!["EVIDENCE-1004-RUNTIME-IDENTITY"],
-        _ => Vec::new(),
+fn source_command_hint(source: &str) -> Option<String> {
+    let source = source.trim();
+    command_registry()
+        .iter()
+        .map(|entry| entry.command.as_str())
+        .filter(|command| source == *command || source.starts_with(&format!("{command} ")))
+        .max_by_key(|command| command.len())
+        .map(ToString::to_string)
+}
+
+fn evidence_ids_by_command(records: &[EvidenceRecord]) -> BTreeMap<String, Vec<String>> {
+    let mut out = BTreeMap::<String, Vec<String>>::new();
+    for record in records {
+        let Some(command) = source_command_hint(&record.source) else {
+            continue;
+        };
+        out.entry(command).or_default().push(record.id.clone());
     }
+    for ids in out.values_mut() {
+        ids.sort();
+        ids.dedup();
+    }
+    out
 }
 
 fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
@@ -54,8 +69,16 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             source: "dev cli parity".to_string(),
             proof_kind: "matrix".to_string(),
             artifact_links: vec![relative_to_root(&parity, workspace_root)],
-            freshness: if parity.exists() { "fresh".to_string() } else { "stale".to_string() },
-            status: if parity.exists() { EvidenceStatus::Proven } else { EvidenceStatus::Blocked },
+            freshness: if parity.exists() {
+                "fresh".to_string()
+            } else {
+                "stale".to_string()
+            },
+            status: if parity.exists() {
+                EvidenceStatus::Proven
+            } else {
+                EvidenceStatus::Blocked
+            },
             strength: EvidenceStrength::Strong,
         },
         EvidenceRecord {
@@ -108,7 +131,10 @@ fn records_json(workspace_root: &Path) -> Vec<Value> {
 
 fn artifacts_exist(record: &EvidenceRecord, workspace_root: &Path) -> bool {
     !record.artifact_links.is_empty()
-        && record.artifact_links.iter().all(|artifact| workspace_root.join(artifact).exists())
+        && record
+            .artifact_links
+            .iter()
+            .all(|artifact| workspace_root.join(artifact).exists())
 }
 
 fn audit_records(records: &[EvidenceRecord], workspace_root: &Path) -> Value {
@@ -149,8 +175,9 @@ pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
     }
 
     let records = records_json(workspace_root);
-    let record =
-        records.into_iter().find(|item| item.get("id").and_then(Value::as_str) == Some(id));
+    let record = records
+        .into_iter()
+        .find(|item| item.get("id").and_then(Value::as_str) == Some(id));
     json!({
         "record": record,
         "found": record.is_some(),
@@ -212,7 +239,11 @@ pub fn build_matrix_report(workspace_root: &Path) -> Value {
     let by_status = records_json(workspace_root).into_iter().fold(
         BTreeMap::<String, usize>::new(),
         |mut acc, row| {
-            let key = row.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
+            let key = row
+                .get("status")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown")
+                .to_string();
             *acc.entry(key).or_insert(0) += 1;
             acc
         },
@@ -246,26 +277,39 @@ pub fn build_release_export_report(workspace_root: &Path) -> Value {
 /// `dev cli evidence command-map`
 #[must_use]
 pub fn build_command_map_report(workspace_root: &Path) -> Value {
-    let available_ids: std::collections::BTreeSet<String> = records_json(workspace_root)
-        .iter()
-        .filter_map(|row| row.get("id").and_then(Value::as_str).map(ToString::to_string))
-        .collect();
+    let records = evidence_records(workspace_root);
+    let mapping_by_command = evidence_ids_by_command(&records);
+    let mut mapped = 0usize;
+    let mut unmapped = 0usize;
     let mapping: Vec<Value> = command_registry()
         .iter()
         .map(|entry| {
-            let evidence_ids: Vec<&str> = evidence_ids_for_command(entry.command.as_str())
-                .into_iter()
-                .filter(|id| available_ids.contains(*id))
-                .collect();
+            let command = entry.command.as_str().to_string();
+            let evidence_ids = mapping_by_command
+                .get(&command)
+                .cloned()
+                .unwrap_or_default();
+            let mapping_status = if evidence_ids.is_empty() {
+                unmapped += 1;
+                "unmapped"
+            } else {
+                mapped += 1;
+                "mapped"
+            };
             json!({
-                "command": entry.command.as_str(),
+                "command": command,
                 "evidence_ids": evidence_ids,
+                "mapping_status": mapping_status,
             })
         })
         .collect();
     json!({
         "command_map": mapping,
         "mapping_basis": "explicit command-to-evidence ownership",
+        "summary": {
+            "mapped_commands": mapped,
+            "unmapped_commands": unmapped,
+        },
     })
 }
 
@@ -274,30 +318,53 @@ pub fn build_command_map_report(workspace_root: &Path) -> Value {
 pub fn build_parity_map_report(workspace_root: &Path) -> Value {
     let matrix =
         read_json_if_exists(&workspace_root.join("artifacts/status/command_migration_matrix.json"));
-    let rows = matrix.get("commands").and_then(Value::as_array).cloned().unwrap_or_default();
-    let available_ids: std::collections::BTreeSet<String> = records_json(workspace_root)
-        .iter()
-        .filter_map(|row| row.get("id").and_then(Value::as_str).map(ToString::to_string))
-        .collect();
-    let mapped: Vec<Value> = rows
+    let matrix_state = json_artifact_state(&matrix).to_string();
+    let rows = matrix
+        .get("commands")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mapping_by_command = evidence_ids_by_command(&evidence_records(workspace_root));
+    let mut mapped_count = 0usize;
+    let mut unmapped_count = 0usize;
+    let parity_rows: Vec<Value> = rows
         .into_iter()
         .map(|row| {
-            let command = row.get("command").cloned().unwrap_or_else(|| json!("unknown"));
-            let command_key = command.as_str().unwrap_or_default().trim();
-            let evidence_ids: Vec<&str> = evidence_ids_for_command(command_key)
-                .into_iter()
-                .filter(|id| available_ids.contains(*id))
-                .collect();
+            let command = row
+                .get("command")
+                .and_then(Value::as_str)
+                .or_else(|| row.as_str())
+                .unwrap_or("unknown")
+                .trim()
+                .to_string();
+            let evidence_ids = mapping_by_command
+                .get(&command)
+                .cloned()
+                .unwrap_or_default();
+            let mapping_status = if evidence_ids.is_empty() {
+                unmapped_count += 1;
+                "unmapped"
+            } else {
+                mapped_count += 1;
+                "mapped"
+            };
             json!({
                 "command": command,
                 "evidence_ids": evidence_ids,
-                "mapping_status": if evidence_ids.is_empty() { "unmapped" } else { "mapped" },
+                "mapping_status": mapping_status,
             })
         })
         .collect();
     json!({
-        "parity_map": mapped,
+        "parity_map": parity_rows,
         "mapping_basis": "explicit command-to-evidence ownership",
+        "source_artifact_integrity": {
+            "command_migration_matrix": matrix_state,
+        },
+        "summary": {
+            "mapped_commands": mapped_count,
+            "unmapped_commands": unmapped_count,
+        },
     })
 }
 
@@ -363,14 +430,22 @@ mod tests {
                 row.get("command").and_then(Value::as_str) == Some("dev cli package-health")
             })
             .expect("package health row");
-        assert_eq!(package_health["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
+        assert_eq!(
+            package_health["evidence_ids"]
+                .as_array()
+                .map(|rows| rows.len()),
+            Some(1)
+        );
     }
 
     #[test]
     fn parity_map_does_not_assign_blanket_evidence() {
         let root = std::env::temp_dir().join(format!(
             "bijux-evidence-parity-map-{}",
-            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
         ));
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         fs::write(
@@ -380,7 +455,9 @@ mod tests {
         .expect("write matrix");
 
         let parity_map = build_parity_map_report(&root);
-        let rows = parity_map["parity_map"].as_array().expect("parity map rows");
+        let rows = parity_map["parity_map"]
+            .as_array()
+            .expect("parity map rows");
         let unknown = rows
             .iter()
             .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli unknown"))
@@ -389,7 +466,13 @@ mod tests {
             .iter()
             .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli parity"))
             .expect("parity row");
-        assert_eq!(unknown["evidence_ids"].as_array().map(|rows| rows.len()), Some(0));
-        assert_eq!(parity["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
+        assert_eq!(
+            unknown["evidence_ids"].as_array().map(|rows| rows.len()),
+            Some(0)
+        );
+        assert_eq!(
+            parity["evidence_ids"].as_array().map(|rows| rows.len()),
+            Some(1)
+        );
     }
 }
