@@ -7,7 +7,7 @@
 - Own command parsing, normalization, registry lookup, and execution.
 - Own runtime-facing state behavior for config, history, memory, install diagnostics, plugins, and the REPL.
 - Expose read-only query APIs used by maintainer tooling.
-- Do not assemble maintainer reports; `bijux-dev-cli` does that through process delegation.
+- Do not assemble maintainer reports; `bijux-dev-cli` owns that surface directly.
 
 ## Source Layout
 
@@ -25,7 +25,7 @@
 
 - Commands are parsed and normalized before execution.
 - Help, envelopes, and output formatting stay deterministic across repeated runs.
-- Maintainer routes delegate to `bijux-dev-cli`; this crate does not build maintainer report payloads itself.
+- Maintainer commands stay outside the runtime binary; this crate does not parse or execute `bijux-dev-cli` surfaces.
 - The process entrypoint stays thin: decode argv, call the runtime, write streams, map exit codes.
 
 ## Tests

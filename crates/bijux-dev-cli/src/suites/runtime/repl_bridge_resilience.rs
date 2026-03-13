@@ -324,7 +324,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/python_surface_direction_contract.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT" => {
+        "STATUS-CONTRACT-GENERATE-RUNTIME-MAINTAINER-LEAKAGE-REPORT" => {
             let runtime_crate_srcs = [
                 ("bijux-cli", "crates/bijux-cli/src"),
                 ("bijux-cli::routing", "crates/bijux-cli/src/routing"),
@@ -373,9 +373,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .sum();
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/runtime_dev_leakage_report.json",
+                "artifacts/status/runtime_maintainer_leakage_report.json",
                 &json!({
-                    "scope": "runtime dev leakage",
+                    "scope": "runtime maintainer leakage",
                     "status": if total_leakage_score == 0 { "ok" } else { "degraded" },
                     "total_leakage_score": total_leakage_score,
                     "crates": rows,
@@ -388,7 +388,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/runtime_dev_leakage_report.json"
+                "artifacts/status/runtime_maintainer_leakage_report.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {

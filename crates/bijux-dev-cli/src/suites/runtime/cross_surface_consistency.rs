@@ -117,11 +117,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 })
                 .collect();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                                (381, "inspect_and_dev_routes_agree_on_route_ownership"),
-                                (382, "inspect_and_dev_registry_agree_on_plugin_ownership_model"),
-                                (383, "config_get_and_dev_env_agree_on_source_precedence"),
+                                (381, "inspect_and_maintainer_routes_agree_on_route_ownership"),
+                                (382, "inspect_and_maintainer_registry_agree_on_plugin_ownership_model"),
+                                (383, "config_get_and_maintainer_env_agree_on_source_precedence"),
                                 (384, "doctor_and_state_audit_agree_on_corruption_detection_when_applicable"),
-                                (385, "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules"),
+                                (385, "plugins_list_and_maintainer_registry_agree_on_installed_plugin_namespace_rules"),
                                 (386, "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"),
                                 (387, "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"),
                                 (388, "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status"),
@@ -370,9 +370,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({"rows":[]}));
             let required: Vec<(i64, &str, &str, Vec<&str>)> = vec![
-                                (141, "inspect_and_dev_routes_agree_on_route_ownership", "inspect/dev routes ownership agreement", vec!["inspect", "bijux-dev-cli routes"]),
-                                (142, "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules", "plugins list/dev registry installed set agreement", vec!["plugins list", "bijux-dev-cli registry"]),
-                                (143, "config_get_and_dev_env_agree_on_source_precedence", "config get/dev env precedence agreement", vec!["config get", "bijux-dev-cli env"]),
+                                (141, "inspect_and_maintainer_routes_agree_on_route_ownership", "inspect/maintainer routes ownership agreement", vec!["inspect", "bijux-dev-cli routes"]),
+                                (142, "plugins_list_and_maintainer_registry_agree_on_installed_plugin_namespace_rules", "plugins list/maintainer registry installed set agreement", vec!["plugins list", "bijux-dev-cli registry"]),
+                                (143, "config_get_and_maintainer_env_agree_on_source_precedence", "config get/maintainer env precedence agreement", vec!["config get", "bijux-dev-cli env"]),
                                 (144, "doctor_and_state_audit_agree_on_corruption_detection_when_applicable", "doctor/state-audit corruption agreement", vec!["doctor", "bijux-dev-cli state-audit"]),
                                 (145, "binary_and_direct_core_agree_on_same_command_results", "binary/direct-core agreement for covered roots", vec!["status"]),
                                 (146, "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs", "binary/python-bridge agreement for covered roots", vec!["config", "history", "memory list", "doctor"]),

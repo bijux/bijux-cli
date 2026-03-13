@@ -265,8 +265,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "optional_fields": ["path", "action", "next_step"],
                     },
                     "removed_low_value_diagnostics": [
-                        "legacy dev routes hidden alias diagnostics",
-                        "legacy dev registry hidden alias diagnostics",
+                        "legacy maintainer routes hidden alias diagnostics",
+                        "legacy maintainer registry hidden alias diagnostics",
                         "duplicate route special-case counters not tied to canonical paths",
                     ],
                     "consistency_targets": {

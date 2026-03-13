@@ -207,7 +207,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
                     .unwrap_or_else(|| json!({}))
             };
-            let runtime_leakage = read_json("artifacts/status/runtime_dev_leakage_report.json");
+            let runtime_leakage =
+                read_json("artifacts/status/runtime_maintainer_leakage_report.json");
             let interface_bridge =
                 read_json("artifacts/status/maintainer_interface_bridge_report.json");
             let dispatch = read_json("artifacts/status/maintainer_dispatch_ownership_report.json");
@@ -235,9 +236,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "status": if violations.is_empty() {"ok"} else {"degraded"},
                 "violations": violations,
                 "decision": if violations.is_empty() {
-                    "no remaining runtime responsibilities violate the current dev-cli control-plane standard"
+                    "no remaining runtime responsibilities violate the current maintainer control-plane standard"
                 } else {
-                    "runtime responsibilities still violate control-plane standard"
+                    "runtime responsibilities still violate the maintainer control-plane standard"
                 }
             });
             write_status_artifact_json(

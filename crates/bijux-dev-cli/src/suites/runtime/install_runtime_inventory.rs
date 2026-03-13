@@ -148,14 +148,14 @@ pub(super) fn rows() -> Vec<Value> {
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
         }),
         json!({
-            "contract_id": "STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
+            "contract_id": "STATUS-CONTRACT-GENERATE-RUNTIME-MAINTAINER-LEAKAGE-REPORT",
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/runtime_dev_leakage_report.json"
+                "artifacts/status/runtime_maintainer_leakage_report.json"
             ],
-            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-MAINTAINER-LEAKAGE-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",

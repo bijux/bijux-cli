@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Ownership boundary contracts for dev-cli command registry and runtime law separation.
+//! Ownership boundary contracts for the maintainer command registry and runtime law separation.
 
 use std::collections::BTreeSet;
 
@@ -57,6 +57,9 @@ fn crate_scope_rejects_runtime_command_law_and_root_alias_reexports() {
             || include_str!("../../src/reports/runtime_surface/parity.rs").contains(signature)
             || include_str!("../../src/reports/runtime_surface/runtime_identity.rs")
                 .contains(signature);
-        assert!(!present, "runtime law signature leaked into dev-cli crate: {signature}");
+        assert!(
+            !present,
+            "runtime law signature leaked into maintainer control-plane crate: {signature}"
+        );
     }
 }

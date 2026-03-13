@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Architecture boundaries for runtime query providers used by dev-cli.
+//! Architecture boundaries for runtime query providers used by the maintainer control-plane.
 
 use std::fs;
 use std::path::{Path, PathBuf};
