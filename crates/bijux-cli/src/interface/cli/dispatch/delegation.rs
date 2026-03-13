@@ -11,6 +11,10 @@ use super::AppRunResult;
 const DEV_CLI_BINARY: &str = "bijux-dev-cli";
 const DEV_CLI_PACKAGE: &str = "bijux-dev-cli";
 
+fn dev_cli_install_guidance() -> &'static str {
+    "build the workspace with `cargo build -p bijux-dev-cli --bin bijux-dev-cli`, run through `cargo run -p bijux-cli -- dev cli ...`, or set `BIJUX_DEV_CLI_BIN` to an explicit delegate binary\n"
+}
+
 fn delegate_to_external_binary(
     binary: &str,
     package_name: &str,
@@ -77,8 +81,8 @@ fn try_delegate_dev_cli_via_cargo(
     })
 }
 
-fn dev_cli_command_requires_workspace_source_sync(forwarded_args: &[String]) -> bool {
-    matches!(forwarded_args.first().map(String::as_str), Some("contracts"))
+fn should_prefer_workspace_dev_cli_source() -> bool {
+    workspace_root().is_some()
 }
 
 fn dev_cli_binary_candidates() -> Vec<String> {
@@ -122,7 +126,7 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
     let mut last_error = String::new();
     let mut fallback_usage: Option<AppRunResult> = None;
 
-    if !explicit_override && dev_cli_command_requires_workspace_source_sync(forwarded_args) {
+    if !explicit_override && should_prefer_workspace_dev_cli_source() {
         if let Some(result) = try_delegate_dev_cli_via_cargo(forwarded_args) {
             match result {
                 Ok(output) => return output,
@@ -168,7 +172,8 @@ fn delegate_dev_cli(forwarded_args: &[String]) -> AppRunResult {
 
     let attempted = candidates.join(", ");
     let message = format!(
-        "failed to run `bijux dev cli`: {last_error}\nattempted binaries: {attempted}\ninstall with `cargo install {DEV_CLI_PACKAGE}` or `pip install {DEV_CLI_PACKAGE}`\n"
+        "failed to run `bijux dev cli`: {last_error}\nattempted binaries: {attempted}\n{}",
+        dev_cli_install_guidance()
     );
     AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
 }

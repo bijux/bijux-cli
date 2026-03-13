@@ -99,7 +99,8 @@ fn missing_delegate_binary_returns_actionable_error() {
     let stderr = String::from_utf8(output.stderr).expect("utf-8 stderr");
     assert!(stderr.contains("failed to run `bijux dev cli`"));
     assert!(stderr.contains("attempted binaries:"));
-    assert!(stderr.contains("install with `cargo install bijux-dev-cli`"));
+    assert!(stderr.contains("cargo build -p bijux-dev-cli --bin bijux-dev-cli"));
+    assert!(stderr.contains("BIJUX_DEV_CLI_BIN"));
 }
 
 #[test]
@@ -126,4 +127,30 @@ fn workspace_source_wins_over_stale_path_delegate_without_explicit_override() {
     let payload: Value = serde_json::from_slice(&output.stdout).expect("json payload");
     assert!(payload["contracts"].is_array());
     assert!(payload["runtime_version"].is_string());
+}
+
+#[test]
+fn workspace_source_wins_over_stale_path_delegate_for_maintenance_audit() {
+    let root = tmp_dir("maintenance-audit-shadow");
+    let delegate = root.join(if cfg!(windows) { "bijux-dev-cli.cmd" } else { "bijux-dev-cli" });
+    write_mock_delegate(&delegate);
+
+    let original_path = env::var("PATH").unwrap_or_default();
+    let separator = if cfg!(windows) { ";" } else { ":" };
+    let combined_path = if original_path.is_empty() {
+        root.to_string_lossy().to_string()
+    } else {
+        format!("{}{}{}", root.display(), separator, original_path)
+    };
+
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(["dev", "cli", "maintenance-audit", "--format", "json", "--no-pretty"])
+        .env("PATH", combined_path)
+        .output()
+        .expect("run");
+
+    assert_eq!(output.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&output.stdout).expect("json payload");
+    assert!(payload["maintenance"].is_array());
+    assert!(payload.get("remaining_make_only_behaviors").is_some());
 }
