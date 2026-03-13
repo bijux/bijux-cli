@@ -79,7 +79,6 @@ pub const DEV_CLI_MAINTENANCE_SUBCOMMANDS: &[&str] = &[
     "package-metadata",
     "e2e-contract",
     "pip-audit",
-    "capture-python-behavior",
     "provenance-statement",
 ];
 pub const DEV_CLI_MAINTENANCE_STATUS_SUBCOMMANDS: &[&str] = &["inventory", "run", "run-all"];

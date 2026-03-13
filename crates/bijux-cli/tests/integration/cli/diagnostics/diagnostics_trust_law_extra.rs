@@ -117,7 +117,8 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
 
     let parity =
         parse_json(&run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]).stdout);
-    assert!(parity["binary_bridge"]["cases"].as_array().is_some_and(|v| !v.is_empty()));
+    assert!(parity["automation_gates"]["binary_bridge"]["status"].is_string());
+    assert!(parity["automation_gates"]["binary_bridge"]["failures"].is_array());
 
     let crate_health =
         parse_json(&run(&["dev", "cli", "crate-health", "--format", "json", "--no-pretty"]).stdout);

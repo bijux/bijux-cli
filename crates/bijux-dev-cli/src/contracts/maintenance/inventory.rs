@@ -208,54 +208,6 @@ pub fn build_pip_audit_report(workspace_root: &Path, report_path: Option<&str>) 
     })
 }
 
-/// Builds runtime-behavior capture report from lock artifact.
-#[must_use]
-pub fn build_python_capture_report(workspace_root: &Path) -> Value {
-    let lock_path = workspace_root.join("artifacts/current-runtime-behavior-lock.json");
-    let lock = match fs::read_to_string(&lock_path) {
-        Ok(text) => match serde_json::from_str::<Value>(&text) {
-            Ok(value) => value,
-            Err(error) => {
-                return json!({
-                    "status": "fail",
-                    "lock_path": lock_path,
-                    "capture_count": 0,
-                    "integrity_status": "degraded",
-                    "integrity_error": format!("invalid lock JSON: {error}"),
-                });
-            }
-        },
-        Err(error) => {
-            return json!({
-                "status": "fail",
-                "lock_path": lock_path,
-                "capture_count": 0,
-                "integrity_status": "degraded",
-                "integrity_error": format!("failed to read lock file: {error}"),
-            });
-        }
-    };
-    let captures = match lock.get("captures").and_then(Value::as_object) {
-        Some(captures) => captures,
-        None => {
-            return json!({
-                "status": "fail",
-                "lock_path": lock_path,
-                "capture_count": 0,
-                "integrity_status": "degraded",
-                "integrity_error": "missing or invalid `captures` object",
-            });
-        }
-    };
-    let capture_count = captures.len();
-    json!({
-        "status": if capture_count > 0 { "pass" } else { "fail" },
-        "lock_path": lock_path,
-        "capture_count": capture_count,
-        "integrity_status": "ok",
-    })
-}
-
 /// Builds provenance statement report.
 #[must_use]
 pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value {

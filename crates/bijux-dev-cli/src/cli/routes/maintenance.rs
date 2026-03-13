@@ -123,11 +123,6 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
             )
         }
         [a, b, c, d]
-            if a == "dev" && b == "cli" && c == "maintenance" && d == "capture-python-behavior" =>
-        {
-            dev_maintenance::build_python_capture_report(&workspace_root())
-        }
-        [a, b, c, d]
             if a == "dev" && b == "cli" && c == "maintenance" && d == "provenance-statement" =>
         {
             let tag = command_option_value(

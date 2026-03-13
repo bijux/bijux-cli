@@ -25,7 +25,7 @@ pub use compliance::{
 pub use generators::{build_generators_report, run_all_generators, run_generator};
 pub use inventory::{
     build_e2e_contract_report, build_package_metadata_report, build_pip_audit_report,
-    build_provenance_statement_report, build_python_capture_report,
+    build_provenance_statement_report,
 };
 
 pub(crate) use crate::suites::{native_status_contract_rows, run_native_status_contract};

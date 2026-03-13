@@ -207,10 +207,6 @@ fn executes_dev_cli_namespace_commands() {
         ),
         (vec!["dev", "cli", "maintenance", "e2e-contract"], "status"),
         (vec!["dev", "cli", "maintenance", "pip-audit"], "status"),
-        (
-            vec!["dev", "cli", "maintenance", "capture-python-behavior"],
-            "status",
-        ),
         (vec!["dev", "cli", "rustdoc", "audit"], "coverage"),
         (vec!["dev", "cli", "rustdoc", "coverage"], "coverage"),
         (
