@@ -4,6 +4,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
@@ -79,22 +80,86 @@ fn lock_path(path: &Path) -> PathBuf {
     path.with_extension("lock")
 }
 
+fn stale_lock_timeout() -> Duration {
+    let seconds = std::env::var("BIJUX_PLUGIN_REGISTRY_LOCK_STALE_AFTER_SECONDS")
+        .ok()
+        .and_then(|raw| raw.parse::<u64>().ok())
+        .unwrap_or(300);
+    Duration::from_secs(seconds)
+}
+
+fn lock_owner_pid(lock: &Path) -> Option<u32> {
+    let content = fs::read_to_string(lock).ok()?;
+    content
+        .lines()
+        .find_map(|line| line.strip_prefix("pid="))
+        .and_then(|raw| raw.trim().parse::<u32>().ok())
+}
+
+#[cfg(unix)]
+fn process_is_alive(pid: u32) -> bool {
+    std::process::Command::new("kill")
+        .args(["-0", &pid.to_string()])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+#[cfg(not(unix))]
+fn process_is_alive(_pid: u32) -> bool {
+    true
+}
+
+fn lock_is_stale(lock: &Path) -> bool {
+    if let Some(pid) = lock_owner_pid(lock) {
+        if !process_is_alive(pid) {
+            return true;
+        }
+    }
+
+    let Ok(metadata) = fs::metadata(lock) else {
+        return false;
+    };
+    let Ok(modified) = metadata.modified() else {
+        return false;
+    };
+    modified.elapsed().is_ok_and(|elapsed| elapsed > stale_lock_timeout())
+}
+
 fn acquire_registry_lock(path: &Path) -> Result<RegistryLockGuard, PluginError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
     let lock = lock_path(path);
-    match fs::OpenOptions::new().create_new(true).write(true).open(&lock) {
-        Ok(mut file) => {
-            let _ = writeln!(file, "pid={}", std::process::id());
-            let _ = file.sync_all();
-            Ok(RegistryLockGuard { path: lock })
+    for attempt in 0..2 {
+        match fs::OpenOptions::new().create_new(true).write(true).open(&lock) {
+            Ok(mut file) => {
+                let _ = writeln!(file, "pid={}", std::process::id());
+                let _ = file.sync_all();
+                return Ok(RegistryLockGuard { path: lock });
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && attempt == 0 => {
+                if lock_is_stale(&lock) {
+                    match fs::remove_file(&lock) {
+                        Ok(()) => continue,
+                        Err(remove_error)
+                            if remove_error.kind() == std::io::ErrorKind::NotFound =>
+                        {
+                            continue
+                        }
+                        Err(remove_error) => return Err(remove_error.into()),
+                    }
+                }
+                return Err(PluginError::RegistryLocked(lock));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                return Err(PluginError::RegistryLocked(lock));
+            }
+            Err(error) => return Err(error.into()),
         }
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-            Err(PluginError::RegistryLocked(lock))
-        }
-        Err(error) => Err(error.into()),
     }
+    Err(PluginError::RegistryLocked(lock))
 }
 
 fn restore_registry(path: &Path, backup: Option<PathBuf>) -> Result<(), PluginError> {
@@ -480,5 +545,19 @@ mod tests {
 
         let err = update_registry(path.as_path(), |_| Ok(())).expect_err("lock should block write");
         assert!(matches!(err, PluginError::RegistryLocked(_)));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn update_registry_recovers_from_stale_dead_pid_lock() {
+        let temp = TempDir::new().expect("tempdir");
+        let path = temp.path().join("registry.json");
+        save_registry(path.as_path(), &PluginRegistry::default()).expect("seed");
+
+        let lock = lock_path(path.as_path());
+        fs::write(&lock, "pid=999999\n").expect("seed stale lock");
+
+        update_registry(path.as_path(), |_| Ok(())).expect("stale lock should be reclaimed");
+        assert!(!lock.exists(), "stale lock should be removed after successful update");
     }
 }

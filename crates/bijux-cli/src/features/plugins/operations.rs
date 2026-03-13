@@ -8,6 +8,7 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::api::version::runtime_semver;
+use crate::contracts::plugin_manifest_v2_schema;
 use crate::contracts::PluginLifecycleState;
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
@@ -414,18 +415,9 @@ pub(crate) fn explain_plugin_report(
 }
 
 pub(crate) fn plugin_schema_report() -> Value {
+    let schema = plugin_manifest_v2_schema();
     json!({
         "schema": "plugin-manifest-v2",
-        "required_fields": [
-            "name",
-            "version",
-            "schema_version",
-            "manifest_version",
-            "compatibility",
-            "namespace",
-            "kind",
-            "entrypoint",
-        ],
-        "optional_fields": ["aliases", "capabilities"],
+        "schema_json": schema,
     })
 }

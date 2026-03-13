@@ -296,6 +296,22 @@ fn scaffold_requires_kind_and_namespace_arguments() {
 }
 
 #[test]
+fn plugins_schema_returns_the_current_manifest_json_schema() {
+    let root = tmp_dir("schema-report");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let schema = run_ok_json(&["cli", "plugins", "schema"], &plugins_dir);
+    assert_eq!(schema["schema"], "plugin-manifest-v2");
+
+    let expected: Value = serde_json::from_str(include_str!(
+        "../../../routing/snapshots/plugin_manifest_v2.schema.json"
+    ))
+    .expect("expected schema json");
+    assert_eq!(schema["schema_json"], expected);
+}
+
+#[test]
 fn python_scaffold_broken_manifest_fails_install() {
     let root = tmp_dir("python-scaffold-broken");
     let plugins_dir = root.join("plugins");
