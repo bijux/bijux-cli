@@ -45,12 +45,12 @@ fn sanitize_history_command(raw: &str) -> Option<(String, bool)> {
 }
 
 fn parse_history_entries(text: &str) -> HistoryParseReport {
-    let trimmed = text.trim();
+    let trimmed = text.trim_start_matches('\u{feff}').trim();
     if trimmed.is_empty() {
         return HistoryParseReport::default();
     }
     if trimmed.starts_with('[') {
-        if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {
+        if let Ok(entries) = serde_json::from_str::<Vec<String>>(trimmed) {
             let mut report = HistoryParseReport::default();
             for entry in entries {
                 match sanitize_history_command(&entry) {
@@ -66,7 +66,7 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
             }
             return report;
         }
-        if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
+        if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(trimmed) {
             let mut report = HistoryParseReport::default();
             for entry in entries {
                 let normalized = match entry {
@@ -105,7 +105,7 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
     }
 
     let mut report = HistoryParseReport::default();
-    for line in text.lines() {
+    for line in trimmed.lines() {
         let line = line.trim();
         if line.is_empty() {
             continue;
@@ -399,6 +399,13 @@ mod tests {
         assert_eq!(report.entries, vec!["status".to_string(), "plugins list".to_string()]);
         assert!(report.malformed);
         assert_eq!(report.dropped_entries, 1);
+    }
+
+    #[test]
+    fn parse_history_accepts_utf8_bom_prefixed_json_arrays() {
+        let report = parse_history_entries("\u{feff}[\"status\",\"doctor\"]");
+        assert_eq!(report.entries, vec!["status".to_string(), "doctor".to_string()]);
+        assert!(!report.malformed);
     }
 
     #[test]
