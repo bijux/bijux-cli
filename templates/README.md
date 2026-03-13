@@ -1,18 +1,24 @@
 # Plugin Templates
 
-Repository-supported plugin scaffolds live under this directory.
+Repository-maintained Cookiecutter templates live under this directory for plugin authors who want
+more than the built-in `bijux plugins scaffold` minimal layout.
 
-- `plugins-py`: Python-first plugin scaffold for `bijux plugins scaffold --template ...`.
-- `plugins-rs`: Rust-backed scaffold with a Python host shim and Rust crate baseline.
+- `plugins-py`: Python delegated plugin template with the current `plugin.manifest.json` contract.
+- `plugins-rs`: Rust-backed delegated plugin template with a Python shim and Cargo crate baseline.
 
 ## Usage
 
 ```bash
-# Python plugin template
-bijux plugins scaffold my_python_plugin --template ./templates/plugins-py --force
-
-# Rust-backed plugin template
-bijux plugins scaffold my_rust_plugin --template ./templates/plugins-rs --force
+python3 -m cookiecutter ./templates/plugins-py project_name=my-plugin
+bijux plugins install ./my-plugin/plugin.manifest.json --source local
+bijux plugins check my-plugin
 ```
 
-Both templates are cookiecutter-compatible and produce a plugin directory with valid `plugin.json` metadata.
+```bash
+python3 -m cookiecutter ./templates/plugins-rs project_name=my-plugin
+bijux plugins install ./my-plugin/plugin.manifest.json --source local
+bijux plugins check my-plugin
+```
+
+These templates are rendered with Cookiecutter. The built-in `bijux plugins scaffold` command does
+not load custom templates.

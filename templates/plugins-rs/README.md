@@ -1,29 +1,25 @@
-# {{cookiecutter.project_name}}
+# Rust Plugin Template
 
-A cookiecutter template for a Bijux plugin with a Rust codebase and a Python host shim.
-
-## Quick start
+Render this template with Cookiecutter from the repository root:
 
 ```bash
-# Scaffold from your workspace root
-mkdir -p ./tmp && cd ./tmp
-bijux plugins scaffold my_rust_plugin --template=../templates/plugins-rs --force
-
-# Install and inspect
-cd ..
-bijux plugins install ./tmp/my_rust_plugin --force
-bijux plugins info my_rust_plugin
-bijux plugins check my_rust_plugin
+python3 -m cookiecutter ./templates/plugins-rs project_name=my-plugin
 ```
 
-## Generated structure
+The rendered project installs with the current plugin manifest contract:
 
-- `plugin.json`: plugin metadata consumed by Bijux plugin discovery.
-- `plugin.py`: Python runtime shim used by the current plugin host.
-- `Cargo.toml` and `src/lib.rs`: Rust crate scaffold for native logic.
+```bash
+bijux plugins install ./my-plugin/plugin.manifest.json --source local
+bijux plugins list
+bijux plugins check my-plugin
+bijux plugins explain my-plugin
+```
 
-## Development notes
+Generated files:
 
-- Implement your core logic in Rust and expose it through your preferred bridge.
-- Keep `plugin.py` as the stable host entry for current plugin lifecycle commands.
-- Update `bijux_cli_version` in `plugin.json` when you bump host compatibility.
+- `plugin.manifest.json`: current plugin contract consumed by install and diagnostics commands.
+- `plugin.py`: delegated entrypoint referenced by `plugin.manifest.json`.
+- `Cargo.toml` and `src/lib.rs`: Rust baseline for the durable implementation behind the bridge.
+
+Keep `plugin.py` aligned with your Rust bridge, keep the manifest namespace stable after release,
+and update the compatibility range when the supported Bijux host versions change.
