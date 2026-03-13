@@ -1,67 +1,66 @@
 # Plugin Examples
 
 ## Purpose
-These examples demonstrate how plugin operations behave in practice. They are designed to show how installation, inspection, and removal interact with the registry and filesystem.
+These examples show the current plugin lifecycle contract used by `bijux-cli`.
 
-## Scope
-The examples assume a local plugin directory with minimal metadata. They do not cover plugin authoring or complex dependency resolution.
+## Example 1: Install a Local Plugin Manifest
 
-## Example 1: Install a Local Plugin
-This example shows a basic local install workflow.
-
-### Setup
-Create a minimal plugin directory with metadata and a module file.
+Create a minimal local plugin directory:
 
 ```bash
-mkdir -p ./my_plugin
-cat > ./my_plugin/plugin.json <<'JSON'
+mkdir -p ./my-plugin
+cat > ./my-plugin/plugin.manifest.json <<'JSON'
 {
-  "name": "my_plugin",
-  "version": "1.0.0",
-  "bijux_cli_version": ">=0",
-  "schema_version": "1"
+  "name": "my-plugin",
+  "version": "0.3.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {
+    "min_inclusive": "0.3.0",
+    "max_exclusive": "1.0.0"
+  },
+  "namespace": "my-plugin",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
 }
 JSON
-printf '# plugin\n' > ./my_plugin/plugin.py
+cat > ./my-plugin/plugin.py <<'PY'
+def main(argv: list[str]) -> dict[str, object]:
+    return {"status": "ok", "argv": argv}
+PY
 ```
 
-### Command
+Install it:
+
 ```bash
-bijux plugin install ./my_plugin
+bijux plugins install ./my-plugin/plugin.manifest.json
 ```
 
-### Expected Output
-The command reports a successful install and exits with code 0. The plugin is added to the registry and becomes available to the CLI.
+The manifest path is kept as plugin provenance, which lets later health checks validate the
+delegated entrypoint against the installed source tree.
 
-### Why This Matters
-Install validates metadata before activation, which prevents partial or broken plugins from entering the registry.
+## Example 2: Inspect and Check Installed Plugins
 
-## Example 2: Inspect Installed Plugins
-This example verifies that the registry reflects the installed plugin.
-
-### Command
 ```bash
-bijux plugin list
-bijux plugin info my_plugin
+bijux plugins list
+bijux plugins inspect
+bijux plugins check my-plugin
+bijux plugins explain my-plugin
 ```
 
-### Expected Output
-`list` includes `my_plugin`, and `info` prints metadata about the plugin. If the plugin is not present, the command fails with a stable error.
-
-### Why This Matters
-The registry is the single source of truth for installed plugins. Listing and inspecting confirm consistency with filesystem state.
+Expected behavior:
+- `list` includes `my-plugin`
+- `inspect` shows manifest, source, and trust metadata
+- `check` verifies manifest validity and current entrypoint presence
+- `explain` shows compatibility or load-time diagnostics for the namespace
 
 ## Example 3: Uninstall and Verify Cleanup
-This example shows removal and validation that the registry is clean.
 
-### Command
 ```bash
-bijux plugin uninstall my_plugin
-bijux plugin list
+bijux plugins uninstall my-plugin
+bijux plugins list
 ```
 
-### Expected Output
-Uninstall succeeds and `list` no longer shows the plugin. If removal fails, the CLI emits a structured error and preserves registry integrity.
-
-### Why This Matters
-Uninstall must be symmetric with install. Consistent cleanup prevents registry drift and avoids manual cleanup work.
+After uninstall, `list` no longer reports the namespace and the registry stays consistent.

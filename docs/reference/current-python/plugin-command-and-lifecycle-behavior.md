@@ -1,29 +1,28 @@
 # Plugin Command and Lifecycle Behavior
 
-## Source of truth
-- `src/bijux_cli/cli/plugins/commands/__init__.py`
-- `src/bijux_cli/cli/plugins/commands/*.py`
-- `src/bijux_cli/plugins/metadata.py`
-- `src/bijux_cli/plugins/__init__.py`
-- `docs/concepts/plugin-lifecycle.md`
+This page records the current plugin command surface that was previously owned by the Python
+runtime lineage. The durable local plugin contract is now based on `plugin.manifest.json` plus the
+declared entrypoint module, not the older `plugin.json` metadata file.
 
-## Plugin command inventory
-- `plugins scaffold`
-- `plugins install`
-- `plugins uninstall`
+## Current command inventory
 - `plugins list`
 - `plugins info`
+- `plugins inspect`
 - `plugins check`
+- `plugins enable`
+- `plugins disable`
+- `plugins install`
+- `plugins uninstall`
+- `plugins scaffold`
+- `plugins doctor`
+- `plugins reserved-names`
+- `plugins where`
+- `plugins explain`
+- `plugins schema`
 
-## Discovery and metadata behavior
-- Discovers entry-point plugins from group `bijux_cli.plugins`.
-- Discovers local plugins from plugins directory entries containing `plugin.py` and `plugin.json`.
-- Validates metadata fields including name, schema version, and host compatibility requirement.
-- Rejects duplicate plugin names across discovery sources.
-
-## Lifecycle behavior inventory
-- Install: supports local directory source and package install path.
-- Uninstall: removes installed plugin (filesystem or pip uninstall for entry-point package origin).
-- Check: imports plugin health hook and maps health result to status and exit code.
-- List/info: surface plugin metadata and registration state.
-- Cache invalidation occurs during lifecycle mutations to ensure fresh metadata resolution.
+## Current local plugin behavior
+- Local installs consume `plugin.manifest.json`.
+- Delegated and Python plugins resolve `plugin:main`-style entrypoints from the installed manifest
+  directory when provenance is available.
+- Compatibility is validated from `compatibility.min_inclusive` and `compatibility.max_exclusive`.
+- Duplicate namespaces and alias conflicts are rejected during install.
