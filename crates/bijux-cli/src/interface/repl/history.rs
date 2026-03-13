@@ -45,26 +45,73 @@ fn sanitize_history_command(raw: &str) -> Option<(String, bool)> {
 }
 
 fn parse_history_entries(text: &str) -> HistoryParseReport {
-    if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {
-        let mut report = HistoryParseReport::default();
-        for entry in entries {
-            match sanitize_history_command(&entry) {
-                Some((sanitized, truncated)) => {
-                    report.entries.push(sanitized);
-                    report.truncated_entries += usize::from(truncated);
-                }
-                None => report.dropped_entries += 1,
-            }
-        }
-        if report.dropped_entries > 0 {
-            report.malformed = true;
-        }
-        return report;
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return HistoryParseReport::default();
     }
-    if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
-        let mut report = HistoryParseReport::default();
-        for entry in entries {
-            let normalized = match entry {
+    if trimmed.starts_with('[') {
+        if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {
+            let mut report = HistoryParseReport::default();
+            for entry in entries {
+                match sanitize_history_command(&entry) {
+                    Some((sanitized, truncated)) => {
+                        report.entries.push(sanitized);
+                        report.truncated_entries += usize::from(truncated);
+                    }
+                    None => report.dropped_entries += 1,
+                }
+            }
+            if report.dropped_entries > 0 {
+                report.malformed = true;
+            }
+            return report;
+        }
+        if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
+            let mut report = HistoryParseReport::default();
+            for entry in entries {
+                let normalized = match entry {
+                    serde_json::Value::String(value) => sanitize_history_command(&value),
+                    serde_json::Value::Object(object) => object
+                        .get("command")
+                        .and_then(serde_json::Value::as_str)
+                        .and_then(sanitize_history_command),
+                    _ => None,
+                };
+                match normalized {
+                    Some((sanitized, truncated)) => {
+                        report.entries.push(sanitized);
+                        report.truncated_entries += usize::from(truncated);
+                    }
+                    None => report.dropped_entries += 1,
+                }
+            }
+            if report.dropped_entries > 0 {
+                report.malformed = true;
+            }
+            return report;
+        }
+        return HistoryParseReport {
+            malformed: true,
+            dropped_entries: 1,
+            ..HistoryParseReport::default()
+        };
+    }
+    if matches!(trimmed.chars().next(), Some('{' | '}' | ']')) {
+        return HistoryParseReport {
+            malformed: true,
+            dropped_entries: 1,
+            ..HistoryParseReport::default()
+        };
+    }
+
+    let mut report = HistoryParseReport::default();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(line) {
+            let normalized = match value {
                 serde_json::Value::String(value) => sanitize_history_command(&value),
                 serde_json::Value::Object(object) => object
                     .get("command")
@@ -77,30 +124,30 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
                     report.entries.push(sanitized);
                     report.truncated_entries += usize::from(truncated);
                 }
-                None => report.dropped_entries += 1,
+                None => {
+                    report.dropped_entries += 1;
+                    report.malformed = true;
+                }
             }
+            continue;
         }
-        if report.dropped_entries > 0 {
+        if matches!(line.chars().next(), Some('[' | ']' | '{' | '}')) {
+            report.dropped_entries += 1;
             report.malformed = true;
+            continue;
         }
-        return report;
-    }
-
-    let mut report = HistoryParseReport::default();
-    for line in text.lines() {
         match sanitize_history_command(line) {
             Some((sanitized, truncated)) => {
                 report.entries.push(sanitized);
                 report.truncated_entries += usize::from(truncated);
             }
-            None if !line.trim().is_empty() => {
+            None => {
                 report.dropped_entries += 1;
                 report.malformed = true;
             }
-            None => {}
         }
     }
-    if report.entries.is_empty() && !text.trim().is_empty() {
+    if report.entries.is_empty() && !trimmed.is_empty() {
         report.malformed = true;
     }
     report
@@ -336,6 +383,22 @@ mod tests {
         assert_eq!(report.entries, vec!["status".to_string(), "doctor".to_string()]);
         assert!(report.malformed);
         assert_eq!(report.dropped_entries, 2);
+    }
+
+    #[test]
+    fn parse_history_fail_closes_on_malformed_structured_payloads() {
+        let report = parse_history_entries("{\"command\":\"status\"");
+        assert!(report.entries.is_empty());
+        assert!(report.malformed);
+        assert!(report.dropped_entries > 0);
+    }
+
+    #[test]
+    fn parse_history_drops_json_shaped_noise_in_line_layout() {
+        let report = parse_history_entries("status\n{oops:true}\nplugins list\n");
+        assert_eq!(report.entries, vec!["status".to_string(), "plugins list".to_string()]);
+        assert!(report.malformed);
+        assert_eq!(report.dropped_entries, 1);
     }
 
     #[test]
