@@ -94,8 +94,8 @@ fn roundtrip_for_all_contract_types() {
     let plugin_manifest = PluginManifestV1 {
         name: "sample".to_string(),
         version: "1.2.3".to_string(),
-        schema_version: "1".to_string(),
-        manifest_version: "1".to_string(),
+        schema_version: "v1".to_string(),
+        manifest_version: "v1".to_string(),
         compatibility: CompatibilityRange {
             min_inclusive: "1.0.0".to_string(),
             max_exclusive: Some("2.0.0".to_string()),
@@ -200,8 +200,8 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
     let bad_manifest = json!({
         "name": "sample",
         "version": "1.2.3",
-        "schema_version": "1",
-        "manifest_version": "1",
+        "schema_version": "v1",
+        "manifest_version": "v1",
         "compatibility": {
             "min_inclusive": "1.0.0",
             "max_exclusive": "2.0.0"

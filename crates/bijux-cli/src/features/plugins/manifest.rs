@@ -42,7 +42,13 @@ fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginErr
     if manifest.schema_version.trim().is_empty() {
         return Err(PluginError::InvalidField("schema_version".to_string()));
     }
+    if manifest.schema_version != "v1" {
+        return Err(PluginError::InvalidField("schema_version".to_string()));
+    }
     if manifest.manifest_version.trim().is_empty() {
+        return Err(PluginError::InvalidField("manifest_version".to_string()));
+    }
+    if manifest.manifest_version != "v1" {
         return Err(PluginError::InvalidField("manifest_version".to_string()));
     }
     Ok(())
@@ -65,6 +71,46 @@ fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_manifest;
+    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+
+    fn sample_manifest() -> PluginManifestV1 {
+        PluginManifestV1 {
+            name: "sample".to_string(),
+            version: "0.3.0".to_string(),
+            schema_version: "v1".to_string(),
+            manifest_version: "v1".to_string(),
+            compatibility: CompatibilityRange {
+                min_inclusive: "0.3.0".to_string(),
+                max_exclusive: Some("1.0.0".to_string()),
+            },
+            namespace: Namespace::new("sample").expect("namespace"),
+            kind: PluginKind::Python,
+            aliases: Vec::new(),
+            entrypoint: "plugin:main".to_string(),
+            capabilities: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn validate_manifest_rejects_non_v1_schema_versions() {
+        let mut manifest = sample_manifest();
+        manifest.schema_version = "1".to_string();
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("schema version");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: schema_version");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_non_v1_manifest_versions() {
+        let mut manifest = sample_manifest();
+        manifest.manifest_version = "1".to_string();
+        let error = validate_manifest(manifest, "0.3.0", &[]).expect_err("manifest version");
+        assert_eq!(error.to_string(), "plugin manifest field invalid: manifest_version");
+    }
 }
 
 fn reject_reserved_namespace(namespace: &Namespace, reserved: &[&str]) -> Result<(), PluginError> {

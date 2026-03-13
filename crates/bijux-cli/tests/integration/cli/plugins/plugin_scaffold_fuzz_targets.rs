@@ -8,7 +8,6 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli as _;
-use bijux_cli::api::version::runtime_semver;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
@@ -89,7 +88,9 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     .expect("parse py manifest");
     assert_eq!(py_manifest["kind"], "python");
     assert_eq!(py_manifest["entrypoint"], "plugin:main");
-    assert_eq!(py_manifest["compatibility"]["min_inclusive"], runtime_semver());
+    assert_eq!(py_manifest["version"], "0.3.0");
+    assert_eq!(py_manifest["compatibility"]["min_inclusive"], "0.3.0");
+    assert_eq!(py_manifest["compatibility"]["max_exclusive"], "1.0.0");
 
     let rs_dir = root.join("rust-plugin");
     run_ok_json(
@@ -110,7 +111,9 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     .expect("parse rs manifest");
     assert_eq!(rs_manifest["kind"], "delegated");
     assert_eq!(rs_manifest["entrypoint"], "plugin:main");
-    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], runtime_semver());
+    assert_eq!(rs_manifest["version"], "0.3.0");
+    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], "0.3.0");
+    assert_eq!(rs_manifest["compatibility"]["max_exclusive"], "1.0.0");
     assert!(rs_dir.join("plugin.py").exists(), "rust scaffold must emit delegated shim");
 }
 
@@ -179,8 +182,8 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
         r#"{
   "name": "extcheck",
   "version": "1.0.0",
-  "schema_version": "1",
-  "manifest_version": "1",
+  "schema_version": "v1",
+  "manifest_version": "v1",
   "compatibility": { "min_inclusive": "0.1.0", "max_exclusive": "2.0.0" },
   "namespace": "extcheck",
   "kind": "external-exec",

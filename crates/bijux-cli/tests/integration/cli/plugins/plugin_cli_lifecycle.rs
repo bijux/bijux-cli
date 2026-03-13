@@ -203,6 +203,36 @@ fn rust_scaffold_broken_manifest_fails_install() {
 }
 
 #[test]
+fn install_rejects_stale_manifest_version_markers() {
+    let root = tmp_dir("stale-manifest-markers");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let manifest = root.join("stale.manifest.json");
+    fs::write(
+        &manifest,
+        r#"{
+  "name": "staleplug",
+  "version": "0.3.0",
+  "schema_version": "1",
+  "manifest_version": "1",
+  "compatibility": {"min_inclusive":"0.3.0", "max_exclusive": "1.0.0"},
+  "namespace": "staleplug",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}"#,
+    )
+    .expect("write stale manifest");
+
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
+    assert!(stderr.contains("schema_version") || stderr.contains("manifest_version"));
+}
+
+#[test]
 fn scaffold_rejects_unsafe_path_reserved_namespace_and_existing_path_without_force() {
     let root = tmp_dir("scaffold-failures");
     let plugins_dir = root.join("plugins");

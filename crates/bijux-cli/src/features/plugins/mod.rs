@@ -4,6 +4,7 @@
 mod constants;
 mod diagnostics;
 mod discovery;
+mod entrypoint;
 mod errors;
 mod manifest;
 mod models;
@@ -25,6 +26,9 @@ pub use diagnostics::{
 #[allow(unused_imports)]
 pub use discovery::{
     discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir,
+};
+pub use entrypoint::{
+    delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
 };
 pub use errors::PluginError;
 pub use manifest::{parse_manifest_v1, validate_manifest};

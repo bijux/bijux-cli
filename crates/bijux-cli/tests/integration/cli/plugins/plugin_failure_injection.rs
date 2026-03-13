@@ -179,6 +179,41 @@ fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
 }
 
 #[test]
+fn delegated_plugin_check_accepts_package_init_entrypoint() {
+    let root = tmp_dir("delegated-package-entrypoint");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let manifest = root.join("package.manifest.json");
+    fs::create_dir_all(root.join("plugin")).expect("mkdir package");
+    fs::write(
+        root.join("plugin").join("__init__.py"),
+        "def main(argv):\n    return {'status': 'ok'}\n",
+    )
+    .expect("write package entrypoint");
+    fs::write(
+        &manifest,
+        r#"{
+  "name": "packageplug",
+  "version": "0.3.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {"min_inclusive":"0.3.0", "max_exclusive": "1.0.0"},
+  "namespace": "packageplug",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}"#,
+    )
+    .expect("write package manifest");
+    install(&plugins_dir, &manifest);
+
+    let check = run_ok_json(&["cli", "plugins", "check", "packageplug"], &plugins_dir);
+    assert_eq!(check["status"], "healthy");
+}
+
+#[test]
 fn plugin_check_fails_when_manifest_mutates_after_install() {
     let root = tmp_dir("manifest-mutates");
     let plugins_dir = root.join("plugins");

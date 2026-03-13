@@ -12,50 +12,24 @@ use crate::contracts::{PluginKind, PluginLifecycleState};
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
-    load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
-    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
-    KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
+    load_time_diagnostics, plugin_doctor, resolve_delegated_entrypoint,
+    scaffold::scaffold_plugin_layout, self_repair_registry, uninstall_plugin, validate_manifest,
+    InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES,
+    RESERVED_NAMESPACES,
 };
-
-fn installed_manifest_root(source: &str) -> Option<PathBuf> {
-    let path = Path::new(source);
-    if !path.is_file() {
-        return None;
-    }
-    if path.file_name().and_then(|name| name.to_str()) != Some("plugin.manifest.json") {
-        return None;
-    }
-    path.parent().map(Path::to_path_buf)
-}
-
-fn delegated_entrypoint_file(manifest_root: &Path, entrypoint: &str) -> Option<PathBuf> {
-    let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
-    if module.trim().is_empty() {
-        return None;
-    }
-
-    let mut path = manifest_root.to_path_buf();
-    for segment in module.split('.') {
-        if segment.trim().is_empty() {
-            return None;
-        }
-        path.push(segment);
-    }
-    if path.extension().is_none() {
-        path.set_extension("py");
-    }
-    Some(path)
-}
 
 fn missing_delegated_entrypoint(
     record: &crate::features::plugins::PluginRecord,
 ) -> Option<PathBuf> {
-    let manifest_root = installed_manifest_root(&record.source)?;
-    let entrypoint_path = delegated_entrypoint_file(&manifest_root, &record.manifest.entrypoint)?;
-    if entrypoint_path.exists() {
+    if resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint).is_some() {
         return None;
     }
-    Some(entrypoint_path)
+    crate::features::plugins::delegated_entrypoint_candidates(
+        crate::features::plugins::installed_manifest_root(&record.source)?,
+        &record.manifest.entrypoint,
+    )
+    .into_iter()
+    .next()
 }
 
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {

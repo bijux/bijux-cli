@@ -6,40 +6,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::contracts::PluginKind;
 
+use super::entrypoint::{
+    delegated_entrypoint_candidates, installed_manifest_root, resolve_delegated_entrypoint,
+};
 use super::errors::PluginError;
 use super::manifest::is_version_compatible;
 use super::models::PluginLoadDiagnostic;
 use super::registry::{load_registry, save_registry};
-
-fn installed_manifest_root(source: &str) -> Option<&Path> {
-    let path = Path::new(source);
-    if !path.is_file() {
-        return None;
-    }
-    if path.file_name().and_then(|name| name.to_str()) != Some("plugin.manifest.json") {
-        return None;
-    }
-    path.parent()
-}
-
-fn delegated_entrypoint_file(manifest_root: &Path, entrypoint: &str) -> Option<std::path::PathBuf> {
-    let module = entrypoint.split_once(':').map_or(entrypoint, |(module, _)| module);
-    if module.trim().is_empty() {
-        return None;
-    }
-
-    let mut path = manifest_root.to_path_buf();
-    for segment in module.split('.') {
-        if segment.trim().is_empty() {
-            return None;
-        }
-        path.push(segment);
-    }
-    if path.extension().is_none() {
-        path.set_extension("py");
-    }
-    Some(path)
-}
 
 /// Generate load-time diagnostics for broken or incompatible plugins.
 pub fn load_time_diagnostics(
@@ -78,9 +51,10 @@ pub fn load_time_diagnostics(
         }
 
         if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
-            && installed_manifest_root(&record.source)
-                .and_then(|root| delegated_entrypoint_file(root, &record.manifest.entrypoint))
-                .is_some_and(|entrypoint| !entrypoint.exists())
+            && resolve_delegated_entrypoint(&record.source, &record.manifest.entrypoint).is_none()
+            && installed_manifest_root(&record.source).is_some_and(|root| {
+                !delegated_entrypoint_candidates(root, &record.manifest.entrypoint).is_empty()
+            })
         {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),
