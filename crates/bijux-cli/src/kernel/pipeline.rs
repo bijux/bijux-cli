@@ -4,10 +4,10 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::contracts::diagnostics::{DiagnosticRecord, InvocationEvent, InvocationTrace};
 use crate::contracts::{
@@ -15,6 +15,8 @@ use crate::contracts::{
     Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use serde_json::{json, Value};
+
+static INVOCATION_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 /// Lifecycle stages executed by the kernel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -207,7 +209,7 @@ fn success_meta(ctx: &ExecutionContext) -> OutputEnvelopeMetaV1 {
         command: CommandPath {
             segments: ctx.intent.command_path.iter().map(|v| Namespace(v.clone())).collect(),
         },
-        timestamp: "1970-01-01T00:00:00Z".to_string(),
+        timestamp: event_timestamp(),
     }
 }
 
@@ -281,6 +283,19 @@ pub fn map_error_category_to_exit(category: &str) -> ExitCode {
     }
 }
 
+fn unix_timestamp_millis() -> u128 {
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
+}
+
+fn event_timestamp() -> String {
+    unix_timestamp_millis().to_string()
+}
+
+fn next_invocation_id() -> String {
+    let seq = INVOCATION_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("kernel-{}-{}-{seq}", std::process::id(), unix_timestamp_millis())
+}
+
 #[allow(dead_code)]
 fn is_fast_path(intent: &ExecutionIntent) -> bool {
     matches!(
@@ -332,7 +347,7 @@ pub(crate) fn execute_pipeline(
             emission,
             trace: if ctx.trace_mode {
                 Some(InvocationTrace {
-                    invocation_id: "trace-fast-path".to_string(),
+                    invocation_id: next_invocation_id(),
                     command: CommandPath {
                         segments: ctx
                             .intent
@@ -342,11 +357,29 @@ pub(crate) fn execute_pipeline(
                             .collect(),
                     },
                     policy: ctx.policy.clone(),
-                    events: vec![InvocationEvent {
-                        timestamp: "1970-01-01T00:00:00Z".to_string(),
-                        name: "fast-path".to_string(),
-                        payload: BTreeMap::new(),
-                    }],
+                    events: vec![
+                        InvocationEvent {
+                            timestamp: event_timestamp(),
+                            name: "dispatch.start".to_string(),
+                            payload: BTreeMap::from([
+                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                                ("mode".to_string(), json!("fast-path")),
+                            ]),
+                        },
+                        InvocationEvent {
+                            timestamp: event_timestamp(),
+                            name: "dispatch.finish".to_string(),
+                            payload: BTreeMap::from([
+                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                                ("mode".to_string(), json!("fast-path")),
+                                ("exit_code".to_string(), json!(exit_code as i32)),
+                                (
+                                    "duration_ms".to_string(),
+                                    json!(started_at.elapsed().as_millis()),
+                                ),
+                            ]),
+                        },
+                    ],
                 })
             } else {
                 None
@@ -365,6 +398,15 @@ pub(crate) fn execute_pipeline(
             hook.on_repl_start();
         }
     }
+
+    trace_events.push(InvocationEvent {
+        timestamp: event_timestamp(),
+        name: "dispatch.start".to_string(),
+        payload: BTreeMap::from([
+            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+            ("mode".to_string(), json!("standard")),
+        ]),
+    });
 
     let outcome = match handler {
         Handler::Sync(sync_handler) => match catch_unwind_silent(|| sync_handler.execute(ctx)) {
@@ -399,24 +441,34 @@ pub(crate) fn execute_pipeline(
         return Err(KernelError::Cancelled);
     }
 
-    trace_events.push(InvocationEvent {
-        timestamp: "1970-01-01T00:00:00Z".to_string(),
-        name: "dispatch".to_string(),
-        payload: BTreeMap::from([
-            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
-            ("emission".to_string(), json!("mapped")),
-        ]),
-    });
-
     let exit_code = map_outcome_to_exit(&outcome);
     let emission = map_outcome_to_emission(outcome, ctx.policy.quiet);
+
+    trace_events.push(InvocationEvent {
+        timestamp: event_timestamp(),
+        name: "dispatch.finish".to_string(),
+        payload: BTreeMap::from([
+            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+            ("mode".to_string(), json!("standard")),
+            ("exit_code".to_string(), json!(exit_code as i32)),
+            ("quiet".to_string(), json!(ctx.policy.quiet)),
+            (
+                "emission".to_string(),
+                json!(emission.as_ref().map(|item| match item.stream {
+                    OutputStream::Stdout => "stdout",
+                    OutputStream::Stderr => "stderr",
+                })),
+            ),
+            ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
+        ]),
+    });
 
     Ok(ExecutionResult {
         exit_code,
         emission,
         trace: if ctx.trace_mode {
             Some(InvocationTrace {
-                invocation_id: "trace-1".to_string(),
+                invocation_id: next_invocation_id(),
                 command: CommandPath {
                     segments: ctx
                         .intent
