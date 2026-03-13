@@ -6,9 +6,6 @@ use std::path::{Path, PathBuf};
 /// `plugin.manifest.json`.
 pub fn installed_manifest_root(source: &str) -> Option<&Path> {
     let path = Path::new(source);
-    if !path.is_file() {
-        return None;
-    }
     if path.file_name().and_then(|name| name.to_str()) != Some("plugin.manifest.json") {
         return None;
     }
