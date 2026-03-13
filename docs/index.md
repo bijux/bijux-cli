@@ -12,7 +12,7 @@ High-value documents only. Everything else is supporting detail.
 - [Architecture index](04-architecture/index.md)
 - [Quality and change management](04-architecture/quality-and-change-management.md)
 - [Runtime and distribution](04-architecture/runtime-and-distribution.md)
-- [Constitution index](constitution/index.md)
+- [Contracts index](07-contracts/index.md)
 
 ## Usage
 - [Introduction](01-introduction/index.md)

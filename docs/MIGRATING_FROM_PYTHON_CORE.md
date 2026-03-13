@@ -7,7 +7,7 @@ Define the migration path from the Python implementation to the Rust foundation 
 The `bijux` command is the product surface. Migration work must preserve documented contracts for command grammar, flags, output envelopes, errors, stream routing, and exit codes.
 
 ## Current baseline inputs
-- Constitution and compatibility contracts under `docs/constitution/`.
+- Contracts and compatibility guarantees under `docs/07-contracts/`.
 - Python-facing compatibility baseline under `docs/06-reference/integrations-and-routed-runtimes.md`.
 - Current Rust vs current Python parity tests.
 - Stable-release compatibility checks against the published PyPI baseline.

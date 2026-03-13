@@ -55,7 +55,7 @@ Bijux is a weak fit when you need:
 
 Use these sources, in this order:
 
-1. [Constitution index](../constitution/index.md)
+1. [Contracts index](../07-contracts/index.md)
 2. [Status and gaps](../KNOWN_GAPS.md)
 3. [Quality and change management](../04-architecture/quality-and-change-management.md)
 

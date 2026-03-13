@@ -77,7 +77,7 @@ struct OfficialProductRegistryEntry {
 #[test]
 fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
     let registry_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/constitution/official_product_namespace_registry.json");
+        .join("../../docs/07-contracts/official_product_namespace_registry.json");
     let registry_text = fs::read_to_string(&registry_path).expect("read official product registry");
     let registry: OfficialProductRegistry =
         serde_json::from_str(&registry_text).expect("parse official product registry json");

@@ -128,6 +128,23 @@ plugins:
         reference/current-python/global-flags-and-precedence.md: 06-reference/state-and-environment.md
         reference/current-python/golden-and-behavior-captures.md: 06-reference/integrations-and-routed-runtimes.md
         reference/current-python/plugin-command-and-lifecycle-behavior.md: 06-reference/integrations-and-routed-runtimes.md
+        constitution/index.md: 07-contracts/index.md
+        constitution/CLI_CONSTITUTION.md: 07-contracts/interface-and-compatibility.md
+        constitution/COMPATIBILITY_PROMISE.md: 07-contracts/interface-and-compatibility.md
+        constitution/GLOBAL_FLAGS.md: 07-contracts/interface-and-compatibility.md
+        constitution/EXIT_CODES.md: 07-contracts/interface-and-compatibility.md
+        constitution/DEPRECATION_POLICY.md: 07-contracts/interface-and-compatibility.md
+        constitution/SCHEMA_EVOLUTION.md: 07-contracts/interface-and-compatibility.md
+        constitution/FORWARD_COMPATIBILITY_ENVELOPE_V2.md: 07-contracts/interface-and-compatibility.md
+        constitution/ERROR_ENVELOPE.md: 07-contracts/output-and-stream-contracts.md
+        constitution/OUTPUT_ENVELOPE.md: 07-contracts/output-and-stream-contracts.md
+        constitution/STDOUT_STDERR_RULES.md: 07-contracts/output-and-stream-contracts.md
+        constitution/REPL_PARITY.md: 07-contracts/output-and-stream-contracts.md
+        constitution/PLUGIN_LIFECYCLE.md: 07-contracts/plugin-contracts.md
+        constitution/PLUGIN_NAMESPACE_POLICY.md: 07-contracts/plugin-contracts.md
+        constitution/PLUGIN_SANDBOXING_POLICY.md: 07-contracts/plugin-contracts.md
+        constitution/BINARY_OWNERSHIP_AND_INSTALL_POLICY.md: 07-contracts/distribution-and-ownership.md
+        constitution/PYTHON_DISTRIBUTION_POLICY.md: 07-contracts/distribution-and-ownership.md
         concepts/architecture.md: concepts/index.md
         concepts/execution-model.md: concepts/index.md
         concepts/exit-policy.md: concepts/index.md

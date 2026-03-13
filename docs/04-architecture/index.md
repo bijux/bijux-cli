@@ -72,7 +72,7 @@ These documents are explanatory, not normative by themselves.
 The deeper sources of truth are:
 
 - the Rust source tree under `crates/`
-- the contract documents under `docs/constitution/`
+- the contract documents under `docs/07-contracts/`
 - the executable tests
 - the published package surfaces
 

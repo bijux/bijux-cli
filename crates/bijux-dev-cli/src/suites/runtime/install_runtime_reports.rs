@@ -20,7 +20,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 fs::read_to_string(workspace_root.join("crates/bijux-cli-plugin/src/constants.rs"))
                     .unwrap_or_default();
             let product_registry = fs::read_to_string(
-                workspace_root.join("docs/constitution/official_product_namespace_registry.json"),
+                workspace_root.join("docs/07-contracts/official_product_namespace_registry.json"),
             )
             .ok()
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
