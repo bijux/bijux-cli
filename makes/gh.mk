@@ -1,0 +1,175 @@
+# GitHub Actions entrypoints.
+# Keep workflow YAML thin by routing shell logic through make.
+
+GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
+GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
+GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
+
+.PHONY: gh-fmt gh-lint gh-security gh-test \
+	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-export-release-tag gh-docs-configure-git \
+	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token
+
+gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without mutating files
+
+gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without mutating files
+
+gh-security: install security ## Run GitHub security checks
+
+gh-test: install test ## Run GitHub test suites
+
+gh-docs-install: install ## Install documentation build dependencies for GitHub Actions
+	@$(call require_tool,$(ACT)/mkdocs)
+	@"$(ACT)/mkdocs" --version
+
+gh-docs-export-release-tag: ## Export release tag for docs builds
+	@$(call require_var,GITHUB_ENV)
+	@set -euo pipefail; \
+	tag="main"; \
+	if [[ "$${GITHUB_REF:-}" == refs/tags/* ]]; then \
+		tag="$${GITHUB_REF_NAME}"; \
+	fi; \
+	echo "RELEASE_TAG=$${tag}" >> "$${GITHUB_ENV}"
+
+docs-artifact-pages: ## Generate stable docs pages that summarize release artifact directories
+	@set -euo pipefail; \
+	pages_dir="$(GH_DOCS_PAGES_DIR)"; \
+	mkdir -p "$${pages_dir}"; \
+	{ \
+		echo "# Generated Artifact Snapshot"; \
+		echo; \
+		echo "This release site summarizes the artifact directories available at docs build time."; \
+		echo; \
+		echo "- [Test artifacts](test.md)"; \
+		echo "- [Lint artifacts](lint.md)"; \
+		echo "- [Quality artifacts](quality.md)"; \
+		echo "- [Security artifacts](security.md)"; \
+		echo "- [SBOM artifacts](sbom.md)"; \
+		echo "- [Citation artifacts](citation.md)"; \
+	} > "$${pages_dir}/index.md"; \
+	for page in test lint quality security sbom citation; do \
+		case "$${page}" in \
+			test) source_dir="artifacts/test" ;; \
+			lint) source_dir="artifacts/lint" ;; \
+			quality) source_dir="artifacts/quality" ;; \
+			security) source_dir="artifacts/security" ;; \
+			sbom) source_dir="artifacts/sbom" ;; \
+			citation) source_dir="artifacts/citation" ;; \
+		esac; \
+		title="$$(printf '%s' "$${page}" | tr '[:lower:]' '[:upper:]' | sed 's/^/Artifact Snapshot: /')"; \
+		{ \
+			printf '# %s\n\n' "$${title}"; \
+			printf 'Source directory: `%s`\n\n' "$${source_dir}"; \
+			if [ -d "$${source_dir}" ]; then \
+				echo "Status: available"; \
+				echo; \
+				echo '```text'; \
+				find "$${source_dir}" -mindepth 1 -maxdepth 4 | sort; \
+				echo '```'; \
+			else \
+				echo "Status: not generated for this workflow run."; \
+				echo; \
+				echo "No files were present under \`$${source_dir}\`."; \
+			fi; \
+		} > "$${pages_dir}/$${page}.md"; \
+	done
+
+docs-artifact-pages-check: ## Ensure generated docs artifact summary pages exist
+	@set -euo pipefail; \
+	pages_dir="$(GH_DOCS_PAGES_DIR)"; \
+	for page in index test lint quality security sbom citation; do \
+		file="$${pages_dir}/$${page}.md"; \
+		if [ ! -s "$${file}" ]; then \
+			echo "missing generated docs page: $${file}" >&2; \
+			exit 1; \
+		fi; \
+	done
+
+gh-docs-configure-git: ## Configure Git author identity for docs deployment
+	@git config user.name "github-actions[bot]"
+	@git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+gh-release-plan-pypi: ## Determine whether a tagged green commit should publish to PyPI
+	@$(call require_var,GITHUB_OUTPUT)
+	@$(call require_var,TARGET_SHA)
+	@set -euo pipefail; \
+	git fetch --tags --force --prune >/dev/null 2>&1; \
+	tags="$$(git tag --points-at "$(TARGET_SHA)" | grep -E "$(GH_RELEASE_TAG_PATTERN)" || true)"; \
+	if [ -z "$${tags}" ]; then \
+		{ \
+			echo "publish=false"; \
+			echo "already_published=false"; \
+		} >> "$${GITHUB_OUTPUT}"; \
+		exit 0; \
+	fi; \
+	tag="$$(printf '%s\n' "$${tags}" | head -n 1)"; \
+	version="$${tag#v}"; \
+	package_version="$$(awk -F'\"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*\"/ { print $$2; exit }' crates/bijux-cli-python/pyproject.toml)"; \
+	if [ "$${package_version}" != "$${version}" ]; then \
+		echo "tag version $${version} does not match bijux-cli-python version $${package_version}" >&2; \
+		exit 1; \
+	fi; \
+	status="$$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/bijux-cli/$${version}/json" || true)"; \
+	already_published=false; \
+	publish=true; \
+	if [ "$${status}" = "200" ]; then \
+		already_published=true; \
+		publish=false; \
+	fi; \
+	{ \
+		echo "publish=$${publish}"; \
+		echo "already_published=$${already_published}"; \
+		echo "tag=$${tag}"; \
+		echo "version=$${version}"; \
+	} >> "$${GITHUB_OUTPUT}"
+
+gh-release-plan-crates: ## Determine whether a tagged green commit should publish workspace crates
+	@$(call require_var,GITHUB_OUTPUT)
+	@$(call require_var,TARGET_SHA)
+	@set -euo pipefail; \
+	git fetch --tags --force --prune >/dev/null 2>&1; \
+	tags="$$(git tag --points-at "$(TARGET_SHA)" | grep -E "$(GH_RELEASE_TAG_PATTERN)" || true)"; \
+	if [ -z "$${tags}" ]; then \
+		echo "publish=false" >> "$${GITHUB_OUTPUT}"; \
+		exit 0; \
+	fi; \
+	tag="$$(printf '%s\n' "$${tags}" | head -n 1)"; \
+	version="$${tag#v}"; \
+	for package in $(GH_CRATES_RELEASE_PACKAGES); do \
+		case "$${package}" in \
+			bijux-cli) manifest="crates/bijux-cli/Cargo.toml" ;; \
+			bijux-cli-python) manifest="crates/bijux-cli-python/Cargo.toml" ;; \
+			bijux-dev-cli) manifest="crates/bijux-dev-cli/Cargo.toml" ;; \
+			*) echo "unknown release package: $${package}" >&2; exit 1 ;; \
+		esac; \
+		package_version="$$(awk -F'\"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*\"/ { print $$2; exit }' "$${manifest}")"; \
+		if [ "$${package_version}" != "$${version}" ]; then \
+			echo "tag version $${version} does not match $${package} version $${package_version}" >&2; \
+			exit 1; \
+		fi; \
+	done; \
+	unpublished=""; \
+	for package in $(GH_CRATES_RELEASE_PACKAGES); do \
+		status="$$(curl -s -o /dev/null -w '%{http_code}' "https://crates.io/api/v1/crates/$${package}/$${version}" || true)"; \
+		if [ "$${status}" != "200" ]; then \
+			if [ -n "$${unpublished}" ]; then unpublished="$${unpublished} "; fi; \
+			unpublished="$${unpublished}$${package}"; \
+		fi; \
+	done; \
+	if [ -z "$${unpublished}" ]; then \
+		{ \
+			echo "publish=false"; \
+			echo "packages="; \
+			echo "tag=$${tag}"; \
+			echo "version=$${version}"; \
+		} >> "$${GITHUB_OUTPUT}"; \
+		exit 0; \
+	fi; \
+	{ \
+		echo "publish=true"; \
+		echo "packages=$${unpublished}"; \
+		echo "tag=$${tag}"; \
+		echo "version=$${version}"; \
+	} >> "$${GITHUB_OUTPUT}"
+
+gh-release-require-cargo-token: ## Fail with a clear message when crates.io credentials are missing
+	@$(call require_var,CARGO_REGISTRY_TOKEN)
