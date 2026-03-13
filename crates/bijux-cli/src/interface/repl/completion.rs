@@ -1,3 +1,5 @@
+use std::sync::OnceLock;
+
 use super::types::ReplSession;
 use super::types::{
     REPL_COMPLETION_ENTRY_MAX_CHARS, REPL_COMPLETION_MAX_CANDIDATES,
@@ -46,6 +48,7 @@ const STATIC_REPL_COMPLETIONS: &[&str] = &[
     ":exit",
     ":quit",
 ];
+static CORE_COMPLETION_CACHE: OnceLock<Vec<String>> = OnceLock::new();
 
 fn normalize_completion_value(value: &str) -> Option<String> {
     let trimmed = value.trim();
@@ -65,10 +68,12 @@ fn normalize_completion_value(value: &str) -> Option<String> {
     }
 }
 
-fn core_completion_candidates() -> Vec<String> {
-    let mut values = built_in_route_paths().to_vec();
-    values.extend(STATIC_REPL_COMPLETIONS.iter().map(|entry| entry.to_string()));
-    values.into_iter().filter_map(|entry| normalize_completion_value(&entry)).collect()
+fn core_completion_candidates() -> &'static [String] {
+    CORE_COMPLETION_CACHE.get_or_init(|| {
+        let mut values = built_in_route_paths().to_vec();
+        values.extend(STATIC_REPL_COMPLETIONS.iter().map(|entry| entry.to_string()));
+        values.into_iter().filter_map(|entry| normalize_completion_value(&entry)).collect()
+    })
 }
 
 /// Provide command completion candidates for built-ins and plugin hooks.
@@ -104,7 +109,7 @@ pub fn completion_candidates(session: &ReplSession, prefix: &str) -> Vec<String>
     };
 
     for builtin in core_completion_candidates() {
-        push_candidate(&builtin);
+        push_candidate(builtin);
     }
 
     for values in session.completion_registries.values() {
