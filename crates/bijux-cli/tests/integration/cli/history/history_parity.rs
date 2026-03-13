@@ -263,6 +263,43 @@ fn history_reads_repl_line_layout_for_cli_interop() {
 }
 
 #[test]
+fn history_reads_repl_json_string_array_layout_for_cli_interop() {
+    let temp = make_temp_dir("repl-json-array-interop");
+    let history_path = temp.join("repl.history.json");
+    fs::write(&history_path, "[\"status\",\"plugins list\",\"history\"]\n").expect("write");
+
+    let out = run_with_env(
+        &["history", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", history_path.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    let loaded = payload["entries"].as_array().expect("entries");
+    assert_eq!(loaded.len(), 3);
+    assert_eq!(loaded[0]["command"], "status");
+    assert_eq!(loaded[1]["command"], "plugins list");
+    assert_eq!(loaded[2]["command"], "history");
+    assert_eq!(payload["summary"]["source_format"], "json-array");
+}
+
+#[test]
+fn history_reads_utf8_bom_prefixed_json_arrays() {
+    let temp = make_temp_dir("utf8-bom");
+    let history_path = temp.join("utf8-bom.history.json");
+    fs::write(&history_path, "\u{feff}[{\"command\":\"status\"}]").expect("write");
+
+    let out = run_with_env(
+        &["history", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", history_path.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    let loaded = payload["entries"].as_array().expect("entries");
+    assert_eq!(loaded.len(), 1);
+    assert_eq!(loaded[0]["command"], "status");
+}
+
+#[test]
 fn history_oversized_file_stays_within_budget() {
     let temp = make_temp_dir("budget");
     let history_path = temp.join("budget.json");

@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 use crate::infrastructure::fs_store::atomic_write_text;
 
 const MAX_HISTORY_FILE_BYTES: u64 = 16 * 1024 * 1024;
-const MAX_HISTORY_COMMAND_CHARS: usize = 4096;
+const MAX_HISTORY_COMMAND_CHARS: usize = 8 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct HistoryReadReport {
@@ -20,6 +20,7 @@ pub(crate) struct HistoryReadReport {
     pub(crate) source_format: &'static str,
     pub(crate) dropped_invalid_entries: usize,
     pub(crate) truncated_command_entries: usize,
+    pub(crate) observed_entries: usize,
     pub(crate) total_entries: usize,
     pub(crate) file_bytes: u64,
 }
@@ -55,6 +56,43 @@ fn normalize_history_object(mut value: Value) -> Option<(Value, bool)> {
     let (normalized, truncated) = normalize_history_command(command)?;
     object.insert("command".to_string(), Value::String(normalized));
     Some((value, truncated))
+}
+
+fn normalize_history_value(value: Value) -> Option<(Value, bool)> {
+    match value {
+        Value::String(command) => history_entry_from_command(&command),
+        Value::Object(_) => normalize_history_object(value),
+        _ => None,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum HistoryArrayLayout {
+    Objects,
+    Strings,
+}
+
+fn normalize_history_array_value(
+    value: Value,
+    layout: &mut Option<HistoryArrayLayout>,
+) -> Option<(Value, bool)> {
+    match value {
+        Value::String(command) => {
+            if matches!(layout, Some(HistoryArrayLayout::Objects)) {
+                return None;
+            }
+            *layout = Some(HistoryArrayLayout::Strings);
+            history_entry_from_command(&command)
+        }
+        Value::Object(_) => {
+            if matches!(layout, Some(HistoryArrayLayout::Strings)) {
+                return None;
+            }
+            *layout = Some(HistoryArrayLayout::Objects);
+            normalize_history_object(value)
+        }
+        _ => None,
+    }
 }
 
 fn push_history_entry(entries: &mut VecDeque<Value>, entry: Value, limit: usize) {
@@ -93,6 +131,7 @@ struct ParsedHistoryEntries {
     entries: Vec<Value>,
     dropped_invalid_entries: usize,
     truncated_command_entries: usize,
+    observed_entries: usize,
     total_entries: usize,
 }
 
@@ -110,9 +149,13 @@ impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
         let mut entries = VecDeque::<Value>::new();
         let mut dropped_invalid_entries = 0usize;
         let mut truncated_command_entries = 0usize;
+        let mut observed_entries = 0usize;
         let mut total_entries = 0usize;
+        let mut layout = None::<HistoryArrayLayout>;
         while let Some(value) = seq.next_element::<Value>()? {
-            if let Some((normalized, truncated)) = normalize_history_object(value) {
+            observed_entries += 1;
+            if let Some((normalized, truncated)) = normalize_history_array_value(value, &mut layout)
+            {
                 push_history_entry(&mut entries, normalized, self.limit);
                 total_entries += 1;
                 truncated_command_entries += usize::from(truncated);
@@ -124,6 +167,7 @@ impl<'de> Visitor<'de> for LimitedHistoryArrayVisitor {
             entries: entries.into_iter().collect(),
             dropped_invalid_entries,
             truncated_command_entries,
+            observed_entries,
             total_entries,
         })
     }
@@ -139,13 +183,14 @@ fn parse_history_array_entries(text: &str, limit: usize) -> Result<ParsedHistory
 }
 
 fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> {
-    let trimmed = text.trim();
+    let trimmed = text.trim_start_matches('\u{feff}').trim();
     if trimmed.is_empty() {
         return Ok(HistoryReadReport {
             entries: Vec::new(),
             source_format: "empty",
             dropped_invalid_entries: 0,
             truncated_command_entries: 0,
+            observed_entries: 0,
             total_entries: 0,
             file_bytes: 0,
         });
@@ -160,6 +205,7 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
             source_format: "json-array",
             dropped_invalid_entries: parsed.dropped_invalid_entries,
             truncated_command_entries: parsed.truncated_command_entries,
+            observed_entries: parsed.observed_entries,
             total_entries: parsed.total_entries,
             file_bytes: 0,
         });
@@ -180,6 +226,7 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
     let mut out = VecDeque::<Value>::new();
     let mut dropped_invalid_entries = 0usize;
     let mut truncated_command_entries = 0usize;
+    let mut observed_entries = 0usize;
     let mut total_entries = 0usize;
     let mut saw_json_line = false;
     for raw_line in text.lines() {
@@ -189,7 +236,8 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
         }
         if let Ok(value) = serde_json::from_str::<Value>(line) {
             saw_json_line = true;
-            if let Some((normalized, truncated)) = normalize_history_object(value) {
+            observed_entries += 1;
+            if let Some((normalized, truncated)) = normalize_history_value(value) {
                 push_history_entry(&mut out, normalized, limit);
                 total_entries += 1;
                 truncated_command_entries += usize::from(truncated);
@@ -199,9 +247,11 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
             continue;
         }
         if matches!(line.chars().next(), Some('[' | ']' | '{' | '}')) {
+            observed_entries += 1;
             dropped_invalid_entries += 1;
             continue;
         }
+        observed_entries += 1;
         if let Some((entry, truncated)) = history_entry_from_command(line) {
             push_history_entry(&mut out, entry, limit);
             total_entries += 1;
@@ -215,6 +265,7 @@ fn parse_history_entries(text: &str, limit: usize) -> Result<HistoryReadReport> 
         source_format: if saw_json_line { "legacy-json-lines" } else { "legacy-lines" },
         dropped_invalid_entries,
         truncated_command_entries,
+        observed_entries,
         total_entries,
         file_bytes: 0,
     })
@@ -229,6 +280,7 @@ pub(crate) fn read_history_report(path: &Path, limit: usize) -> Result<HistoryRe
                 source_format: "missing",
                 dropped_invalid_entries: 0,
                 truncated_command_entries: 0,
+                observed_entries: 0,
                 total_entries: 0,
                 file_bytes: 0,
             });
@@ -294,7 +346,10 @@ pub(crate) fn write_json_document(path: &Path, value: &Value) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_history_entries, read_history_report, MAX_HISTORY_FILE_BYTES};
+    use super::{
+        parse_history_entries, read_history_report, MAX_HISTORY_COMMAND_CHARS,
+        MAX_HISTORY_FILE_BYTES,
+    };
 
     fn temp_path(name: &str) -> std::path::PathBuf {
         let nanos = std::time::SystemTime::now()
@@ -327,6 +382,7 @@ mod tests {
         assert_eq!(report.entries[0]["command"], "status");
         assert_eq!(report.entries[1]["command"], "doctor");
         assert_eq!(report.dropped_invalid_entries, 2);
+        assert_eq!(report.observed_entries, 4);
     }
 
     #[test]
@@ -335,12 +391,13 @@ mod tests {
             parse_history_entries("[{\"command\":\"status\"},{\"command\":\"doctor\"}]", 0)
                 .expect("must parse");
         assert!(report.entries.is_empty());
+        assert_eq!(report.observed_entries, 2);
         assert_eq!(report.total_entries, 2);
     }
 
     #[test]
     fn parse_history_entries_tracks_truncated_commands_and_total_entries() {
-        let very_long = "x".repeat(5_000);
+        let very_long = "x".repeat(MAX_HISTORY_COMMAND_CHARS + 512);
         let payload = format!(
             "[{{\"command\":\"status\"}},{{\"command\":\"{very_long}\"}},{{\"oops\":true}}]"
         );
@@ -348,6 +405,7 @@ mod tests {
         assert_eq!(report.total_entries, 2);
         assert_eq!(report.truncated_command_entries, 1);
         assert_eq!(report.dropped_invalid_entries, 1);
+        assert_eq!(report.observed_entries, 3);
     }
 
     #[test]
@@ -358,6 +416,48 @@ mod tests {
         assert_eq!(report.entries[0]["command"], "status");
         assert_eq!(report.entries[1]["command"], "plugins list");
         assert_eq!(report.dropped_invalid_entries, 1);
+        assert_eq!(report.observed_entries, 3);
+    }
+
+    #[test]
+    fn parse_history_entries_accepts_string_entries_inside_json_arrays() {
+        let report = parse_history_entries("[\"status\",\"doctor\",42]", 20).expect("must parse");
+        assert_eq!(report.entries.len(), 2);
+        assert_eq!(report.entries[0]["command"], "status");
+        assert_eq!(report.entries[1]["command"], "doctor");
+        assert_eq!(report.dropped_invalid_entries, 1);
+        assert_eq!(report.observed_entries, 3);
+    }
+
+    #[test]
+    fn parse_history_entries_rejects_mixed_object_and_string_json_array_layouts() {
+        let report = parse_history_entries(
+            "[{\"command\":\"status\"},\"doctor\",{\"command\":\"audit\"}]",
+            20,
+        )
+        .expect("must parse");
+        assert_eq!(report.entries.len(), 2);
+        assert_eq!(report.entries[0]["command"], "status");
+        assert_eq!(report.entries[1]["command"], "audit");
+        assert_eq!(report.dropped_invalid_entries, 1);
+    }
+
+    #[test]
+    fn parse_history_entries_accepts_json_string_lines_in_legacy_layout() {
+        let report = parse_history_entries("\"status\"\n{\"command\":\"doctor\"}\n", 20)
+            .expect("must parse");
+        assert_eq!(report.entries.len(), 2);
+        assert_eq!(report.entries[0]["command"], "status");
+        assert_eq!(report.entries[1]["command"], "doctor");
+        assert_eq!(report.source_format, "legacy-json-lines");
+    }
+
+    #[test]
+    fn parse_history_entries_accepts_utf8_bom_prefixed_json_arrays() {
+        let report =
+            parse_history_entries("\u{feff}[{\"command\":\"status\"}]", 20).expect("must parse");
+        assert_eq!(report.entries.len(), 1);
+        assert_eq!(report.entries[0]["command"], "status");
     }
 
     #[test]
