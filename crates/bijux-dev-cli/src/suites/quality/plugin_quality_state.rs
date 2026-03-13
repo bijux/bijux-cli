@@ -131,18 +131,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         }),
                                     )
                                     .ok()?;
-            let mut snapshots = Vec::<String>::new();
-            for name in [
-                "dev_cli_state_doctor_text.txt",
-                "dev_cli_state_doctor_no_color.txt",
-                "dev_cli_state_audit_text.txt",
-                "dev_cli_state_audit_no_color.txt",
-            ] {
-                let p = workspace_root.join("crates/bijux-cli/tests/snapshots").join(name);
-                if p.exists() {
-                    snapshots.push(format!("crates/bijux-cli/tests/snapshots/{name}"));
-                }
-            }
+            let snapshot_root =
+                workspace_root.join("crates/bijux-cli/tests/data/golden/cli_surface");
+            let snapshots = collect_files(&snapshot_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("txt"))
+                .filter(|path| {
+                    path.file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.contains("doctor") || name.contains("audit"))
+                })
+                .map(|path| rel(&path, workspace_root))
+                .collect::<Vec<_>>();
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/unified_state_doctor_snapshots.json",
@@ -184,7 +184,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEEP-TEST-QUALITY-REPORTS" => {
-            let test_root = workspace_root.join("crates/bijux-cli/tests/bin_surface");
+            let test_root = workspace_root.join("crates/bijux-cli/tests");
             let mut rows = Vec::<(String, String, i64, i64)>::new();
             for path in collect_files(&test_root) {
                 if path.extension().and_then(|e| e.to_str()) != Some("rs") {
@@ -224,7 +224,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ("history", |rel| rel.contains("history")),
                 ("memory", |rel| rel.contains("memory")),
                 ("diagnostics", |rel| {
-                    ["diagnostics", "doctor", "inspect", "dev_cli_output_contracts"]
+                    ["diagnostics", "doctor", "inspect", "audit", "route_inspection_output"]
                         .iter()
                         .any(|k| rel.contains(k))
                 }),

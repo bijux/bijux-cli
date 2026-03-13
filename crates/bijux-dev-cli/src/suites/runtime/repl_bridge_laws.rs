@@ -86,14 +86,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-HELP-TREE-LAW-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (341, "root_help_lists_commands_in_stable_order"),
                 (342, "cli_help_lists_subcommands_in_stable_order"),
-                (343, "dev_cli_help_lists_subcommands_in_stable_order"),
+                (343, "maintainer_help_lists_subcommands_in_stable_order"),
                 (344, "plugin_installed_help_keeps_builtin_order_stable"),
                 (345, "no_color_root_help_and_grouped_help_are_stable"),
                 (346, "no_color_root_help_and_grouped_help_are_stable"),
@@ -110,12 +114,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let coverage_rows: Vec<Value> = required
                 .iter()
                 .map(|(coverage_id, test_name)| {
-                    let covered = source.contains(&format!("fn {test_name}("));
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {test_name}(")))
+                        .map(|(path, _)| path.clone());
                     json!({
                         "coverage_id": coverage_id,
                         "test": test_name,
-                        "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli/tests/bin_surface/help_tree_law_extra.rs",
+                        "status": if evidence.is_some() { "covered" } else { "missing" },
+                        "evidence": evidence,
                     })
                 })
                 .collect();

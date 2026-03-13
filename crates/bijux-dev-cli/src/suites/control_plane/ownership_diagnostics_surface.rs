@@ -267,15 +267,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let fixture = workspace_root.join(
                 "crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
             );
-            let test_file = workspace_root
-                .join("crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs");
-            let test_dir = workspace_root.join("crates/bijux-cli/tests/bin_surface");
-            let source = fs::read_to_string(&test_file).unwrap_or_default();
-            let test_sources: BTreeMap<String, String> = collect_files(&test_dir)
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let test_sources: BTreeMap<String, String> = collect_files(&tests_root)
                 .into_iter()
                 .filter(|p| p.extension().is_some_and(|ext| ext == "rs"))
                 .map(|p| (rel(&p, workspace_root), fs::read_to_string(p).unwrap_or_default()))
                 .collect();
+            let source = test_sources.values().cloned().collect::<Vec<_>>().join("\n");
             let commands: Vec<String> = fs::read_to_string(&fixture)
                 .unwrap_or_default()
                 .lines()
@@ -319,7 +317,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "command": command,
                                     "status": status,
                                     "status_model": ["complete","partial","shim","missing"],
-                                    "evidence": evidence_links.first().cloned().unwrap_or_else(|| "crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs".to_string()),
+                                    "evidence": evidence_links.first().cloned().unwrap_or_else(|| rel(&fixture, workspace_root)),
                                     "evidence_links": evidence_links,
                                     "maintainer_value": dev_values.get(&command).copied().unwrap_or(75),
                                 }));
@@ -373,11 +371,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_matrix_artifact.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command matrix",
-                                "coverage_rows": req.into_iter().map(|(id,name)| json!({"coverage_id":id,"test":name,"status": if source.contains(&format!("fn {name}(")) {"complete"} else {"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs"})).collect::<Vec<_>>(),
+                                "coverage_rows": req.into_iter().map(|(id,name)| {
+                                    let evidence = test_sources.iter().find(|(_, src)| src.contains(&format!("fn {name}("))).map(|(path, _)| path.clone());
+                                    json!({"coverage_id":id,"test":name,"status": if evidence.is_some() {"complete"} else {"missing"},"evidence":evidence})
+                                }).collect::<Vec<_>>(),
                                 "commands": rows
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_surface_domain_contract.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","domain":"dev-cli-command-surface","status":"frozen",
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","domain":"maintainer-command-surface","status":"frozen",
                                 "rule":"bijux-dev-cli commands are the maintainer control surface and must keep parity, diagnostics, and deterministic output law."
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_remaining_inventory.json", &json!({

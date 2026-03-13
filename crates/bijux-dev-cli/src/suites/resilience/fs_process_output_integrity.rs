@@ -4,11 +4,14 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DETERMINISTIC-OUTPUT-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let rows: Vec<(i64, &str)> = vec![
                 (121, "status_json_is_byte_stable_across_runs"),
                 (122, "plugins_list_json_is_byte_stable_across_runs"),
@@ -29,16 +32,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (137, "exit_codes_are_stable_for_identical_failures"),
             ];
             let report_rows: Vec<Value> = rows
-                                .iter()
-                                .map(|(coverage_id, name)| {
-                                    json!({
-                                        "coverage_id": coverage_id,
-                                        "test_name": name,
-                                        "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",
-                                    })
-                                })
-                                .collect();
+                .iter()
+                .map(|(coverage_id, name)| {
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {name}(")))
+                        .map(|(path, _)| path.clone());
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": name,
+                        "status": if evidence.is_some() { "complete" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect();
             let complete = report_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
@@ -75,7 +82,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "bijux-dev-cli state-doctor --format json --no-pretty",
                     ],
                     "evidence": [
-                        "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",
+                        "crates/bijux-cli/tests",
                         "artifacts/status/deterministic_output_report.json",
                     ],
                     "covers_todo": 139,

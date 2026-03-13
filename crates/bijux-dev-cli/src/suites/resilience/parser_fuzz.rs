@@ -22,7 +22,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let required: BTreeMap<i64, (PathBuf, &str)> = BTreeMap::from([
                 (1, (routing_test.clone(), "fuzz_root_argv_parsing_does_not_panic")),
                 (2, (routing_test.clone(), "fuzz_cli_argv_parsing_does_not_panic")),
-                (3, (routing_test.clone(), "fuzz_dev_cli_argv_parsing_does_not_panic")),
+                (3, (routing_test.clone(), "fuzz_maintainer_argv_parsing_does_not_panic")),
                 (4, (routing_test.clone(), "fuzz_plugin_command_argv_parsing_does_not_panic")),
                 (5, (routing_test.clone(), "fuzz_config_command_argv_parsing_does_not_panic")),
                 (6, (routing_test.clone(), "fuzz_diagnostics_command_argv_parsing_does_not_panic")),
