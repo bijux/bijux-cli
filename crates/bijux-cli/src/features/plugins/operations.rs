@@ -18,40 +18,103 @@ use crate::features::plugins::{
 };
 
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
-    let plugins = list_plugins(plugin_registry_path).unwrap_or_default();
-    json!({
-        "status": "ok",
-        "count": plugins.len(),
-        "plugins": plugins,
-        "directory": plugins_dir,
-    })
+    match list_plugins(plugin_registry_path) {
+        Ok(plugins) => json!({
+            "status": "ok",
+            "count": plugins.len(),
+            "plugins": plugins,
+            "directory": plugins_dir,
+            "integrity_status": "ok",
+        }),
+        Err(error) => json!({
+            "status": "degraded",
+            "count": 0,
+            "plugins": [],
+            "directory": plugins_dir,
+            "integrity_status": "degraded",
+            "integrity_error": error.to_string(),
+        }),
+    }
 }
 
 pub(crate) fn plugins_list(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
-    json!({
-        "plugins": list_plugins(plugin_registry_path).unwrap_or_default(),
-        "directory": plugins_dir,
-    })
+    match list_plugins(plugin_registry_path) {
+        Ok(plugins) => json!({
+            "plugins": plugins,
+            "directory": plugins_dir,
+            "integrity_status": "ok",
+        }),
+        Err(error) => json!({
+            "plugins": [],
+            "directory": plugins_dir,
+            "integrity_status": "degraded",
+            "integrity_error": error.to_string(),
+        }),
+    }
 }
 
 pub(crate) fn plugins_info(plugin_registry_path: &Path) -> Value {
-    let plugins = list_plugins(plugin_registry_path).unwrap_or_default();
-    let warnings =
-        compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default();
+    let mut integrity_issues = Vec::<Value>::new();
+    let plugins = match list_plugins(plugin_registry_path) {
+        Ok(plugins) => plugins,
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "registry",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
+    let warnings = match compatibility_warnings(plugin_registry_path, runtime_semver()) {
+        Ok(warnings) => warnings,
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "compatibility",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
 
     json!({
-        "status": "ok",
+        "status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
         "plugins": plugins,
         "compatibility_warnings": warnings,
         "registry_file": plugin_registry_path,
+        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_issues": integrity_issues,
     })
 }
 
 pub(crate) fn plugins_inspect(plugin_registry_path: &Path) -> Value {
+    let mut integrity_issues = Vec::<Value>::new();
+    let plugins = match list_plugins(plugin_registry_path) {
+        Ok(plugins) => plugins,
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "registry",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
+    let compatibility = match compatibility_warnings(plugin_registry_path, runtime_semver()) {
+        Ok(warnings) => warnings,
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "compatibility",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
+
     json!({
-        "plugins": list_plugins(plugin_registry_path).unwrap_or_default(),
-        "status": "loaded",
-        "compatibility_warnings": compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default(),
+        "plugins": plugins,
+        "status": if integrity_issues.is_empty() { "loaded" } else { "degraded" },
+        "compatibility_warnings": compatibility,
+        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_issues": integrity_issues,
     })
 }
 
@@ -196,9 +259,27 @@ pub(crate) fn plugin_locations_report(plugins_dir: &Path, plugin_registry_path: 
 }
 
 pub(crate) fn explain_plugin_report(plugin_registry_path: &Path, plugin: Option<&str>) -> Value {
-    let diagnostics =
-        load_time_diagnostics(plugin_registry_path, runtime_semver()).unwrap_or_default();
-    let report = plugin_doctor(plugin_registry_path).ok();
+    let mut integrity_issues = Vec::<Value>::new();
+    let diagnostics = match load_time_diagnostics(plugin_registry_path, runtime_semver()) {
+        Ok(diagnostics) => diagnostics,
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "load-time-diagnostics",
+                "error": error.to_string(),
+            }));
+            Vec::new()
+        }
+    };
+    let report = match plugin_doctor(plugin_registry_path) {
+        Ok(report) => Some(report),
+        Err(error) => {
+            integrity_issues.push(json!({
+                "source": "plugin-doctor",
+                "error": error.to_string(),
+            }));
+            None
+        }
+    };
 
     let mut filtered: Vec<Value> = diagnostics
         .into_iter()
@@ -236,6 +317,8 @@ pub(crate) fn explain_plugin_report(plugin_registry_path: &Path, plugin: Option<
         "plugin": plugin,
         "diagnostics": filtered,
         "summary": summary,
+        "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+        "integrity_issues": integrity_issues,
     })
 }
 

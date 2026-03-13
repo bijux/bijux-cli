@@ -47,6 +47,28 @@ pub(crate) fn try_handle(
             Some(json!({"shells": ["bash", "zsh", "fish", "powershell"]}))
         }
         [a, b] if a == "cli" && b == "inspect" => {
+            let mut integrity_issues = Vec::<Value>::new();
+            let plugin_origins = match plugin_origin_metadata(plugin_registry_path) {
+                Ok(origins) => origins,
+                Err(error) => {
+                    integrity_issues.push(json!({
+                        "source": "plugin-origin-metadata",
+                        "error": error.to_string(),
+                    }));
+                    Vec::new()
+                }
+            };
+            let compatibility = match compatibility_warnings(plugin_registry_path, runtime_semver())
+            {
+                Ok(warnings) => warnings,
+                Err(error) => {
+                    integrity_issues.push(json!({
+                        "source": "compatibility-warnings",
+                        "error": error.to_string(),
+                    }));
+                    Vec::new()
+                }
+            };
             let route_sources: Vec<Value> = registry
                 .built_in_paths()
                 .into_iter()
@@ -73,8 +95,10 @@ pub(crate) fn try_handle(
                         "source": "compatibility-alias",
                     })
                 }).collect::<Vec<_>>(),
-                "plugin_origins": plugin_origin_metadata(plugin_registry_path).unwrap_or_default(),
-                "compatibility_warnings": compatibility_warnings(plugin_registry_path, runtime_semver()).unwrap_or_default(),
+                "plugin_origins": plugin_origins,
+                "compatibility_warnings": compatibility,
+                "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
+                "integrity_issues": integrity_issues,
                 "contracts": {
                     "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"],
                     "version": "v1",

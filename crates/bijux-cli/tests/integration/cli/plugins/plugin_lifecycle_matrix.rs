@@ -214,7 +214,9 @@ fn inspect_broken_registry_returns_stable_diagnostics() {
     let out = run(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
-    assert_eq!(payload["status"], "loaded");
+    assert_eq!(payload["status"], "degraded");
+    assert_eq!(payload["integrity_status"], "degraded");
+    assert!(payload["integrity_issues"].as_array().is_some_and(|rows| !rows.is_empty()));
     assert!(payload["plugins"].as_array().expect("plugins array").is_empty());
     assert!(out.stderr.is_empty());
 }
