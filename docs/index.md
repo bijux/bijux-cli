@@ -16,21 +16,21 @@ High-value documents only. Everything else is supporting detail.
 - [Architecture index](architecture/index.md)
 - [Decision rules](architecture/decision-rules.md)
 - [Runtime identity law](architecture/runtime_identity_law.md)
-- [Constitution command tree](constitution/COMMAND_TREE.md)
+- [Constitution index](constitution/index.md)
 
 ## Usage
 - [Getting started](getting-started/index.md)
-- [Installation](guides/installation-unified.md)
+- [Installation](guides/installation.md)
 - [Quickstart](getting-started/quickstart.md)
 - [Commands reference](reference/commands.md)
 - [Exit codes](reference/exit-codes.md)
 
-## Consolidated Guides
+## Guides
 - [Unified compatibility guide](guides/compatibility-unified.md)
-- [Unified installation guide](guides/installation-unified.md)
-- [Unified plugin guide](guides/plugin-unified.md)
-- [Unified config guide](guides/config-unified.md)
-- [Unified REPL guide](guides/repl-unified.md)
+- [Installation guide](guides/installation.md)
+- [Plugin guide](guides/plugins.md)
+- [Configuration guide](guides/configuration.md)
+- [REPL reference](reference/repl.md)
 
 ## Generated Evidence
 - `artifacts/status/current_rust_state.json`

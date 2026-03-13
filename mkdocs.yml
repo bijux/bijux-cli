@@ -69,7 +69,24 @@ plugins:
       enabled: !ENV [ENABLE_SOCIAL_CARDS, false]
       cache_dir: artifacts/docs/.cache/social
   - autorefs
-  - redirects: {}
+  - redirects:
+      redirect_maps:
+        getting-started/installation.md: guides/installation.md
+        guides/installation-unified.md: guides/installation.md
+        guides/install-method-parity.md: guides/installation.md
+        guides/install-channels.md: guides/installation.md
+        guides/install-ci-containers.md: guides/installation.md
+        guides/install-linux.md: guides/installation.md
+        guides/install-macos.md: guides/installation.md
+        guides/install-windows.md: guides/installation.md
+        guides/uninstall-cargo.md: guides/installation.md
+        guides/uninstall-pip.md: guides/installation.md
+        guides/dual-install-behavior.md: guides/installation.md
+        guides/upgrade-pypi-users.md: guides/installation.md
+        guides/config-unified.md: guides/configuration.md
+        guides/plugin-unified.md: guides/plugins.md
+        guides/repl-unified.md: reference/repl.md
+        reference/repl-command-reference.md: reference/repl.md
   - tags
   - minify:
       minify_html: true

@@ -11,3 +11,7 @@ Engineers who want to get bijux-cli running quickly, including CI or local devel
 
 ## What You Will Do
 You will install the CLI, confirm the binary is reachable, and run a first command that demonstrates successful execution and output routing.
+
+## Start Here
+- [Installation guide](../guides/installation.md)
+- [Quickstart](quickstart.md)
