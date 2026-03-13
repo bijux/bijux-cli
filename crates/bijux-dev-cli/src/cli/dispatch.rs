@@ -67,7 +67,7 @@ pub struct ContractsSchemaInput {
     pub schema_version: String,
 }
 
-/// Runtime-owned query adapter used by dev-cli command dispatch.
+/// Runtime-owned query adapter used by maintainer command dispatch.
 pub trait RuntimeQueryProvider {
     /// Return route inventory rows from runtime routing services.
     fn route_inventory(&self) -> RouteInventoryQuery;
@@ -107,62 +107,52 @@ pub trait RuntimeQueryProvider {
 #[must_use]
 pub fn owns_path(normalized_path: &[String]) -> bool {
     match normalized_path {
-        [a, b, c]
-            if a == "dev"
-                && b == "cli"
-                && matches!(
-                    c.as_str(),
-                    "routes"
-                        | "atlas"
-                        | "di"
-                        | "list-products"
-                        | "list-plugins"
-                        | "route-audit"
-                        | "inventory"
-                        | "registry"
-                        | "parity"
-                        | "docs"
-                        | "status"
-                        | "maintenance-audit"
-                        | "snapshots-audit"
-                        | "fixture-audit"
-                        | "crate-health"
-                        | "package-health"
-                        | "env"
-                        | "doctor"
-                        | "docs-prune-plan"
-                        | "state-audit"
-                        | "state-doctor"
-                        | "dashboard"
-                        | "quickcheck"
-                        | "truth"
-                        | "blockers"
-                        | "next"
-                        | "docs-audit"
-                        | "plugin-health"
-                        | "contracts"
-                        | "runtime-identity"
-                ) =>
+        [command]
+            if matches!(
+                command.as_str(),
+                "routes"
+                    | "atlas"
+                    | "di"
+                    | "list-products"
+                    | "list-plugins"
+                    | "route-audit"
+                    | "inventory"
+                    | "registry"
+                    | "parity"
+                    | "docs"
+                    | "status"
+                    | "maintenance-audit"
+                    | "snapshots-audit"
+                    | "fixture-audit"
+                    | "crate-health"
+                    | "package-health"
+                    | "env"
+                    | "doctor"
+                    | "docs-prune-plan"
+                    | "state-audit"
+                    | "state-doctor"
+                    | "dashboard"
+                    | "quickcheck"
+                    | "truth"
+                    | "blockers"
+                    | "next"
+                    | "docs-audit"
+                    | "plugin-health"
+                    | "contracts"
+                    | "runtime-identity"
+            ) =>
         {
             true
         }
-        [a, b, c, _]
-            if a == "dev"
-                && b == "cli"
-                && matches!(
-                    c.as_str(),
-                    "maintenance"
-                        | "rustdoc"
-                        | "release"
-                        | "evidence"
-                        | "config"
-                        | "python"
-                        | "repo"
-                ) =>
+        [group, _]
+            if matches!(
+                group.as_str(),
+                "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+            ) =>
         {
             true
         }
-        [a, b, c, d, _] if a == "dev" && b == "cli" && c == "maintenance" && d == "status" => true,
+        [group, subcommand, _] if group == "maintenance" && subcommand == "status" => true,
         _ => false,
     }
 }
@@ -202,14 +192,13 @@ mod tests {
     use super::owns_path;
 
     #[test]
-    fn owns_path_matches_dev_cli_dispatch_surface() {
-        assert!(owns_path(&["dev".into(), "cli".into(), "status".into()]));
-        assert!(owns_path(&["dev".into(), "cli".into(), "maintenance".into(), "audit".into()]));
-        assert!(owns_path(&["dev".into(), "cli".into(), "release".into(), "status".into()]));
+    fn owns_path_matches_maintainer_dispatch_surface() {
+        assert!(owns_path(&["status".into()]));
+        assert!(owns_path(&["maintenance".into(), "audit".into()]));
+        assert!(owns_path(&["release".into(), "status".into()]));
 
-        assert!(!owns_path(&["dev".into(), "status".into()]));
         assert!(!owns_path(&["cli".into(), "status".into()]));
-        assert!(!owns_path(&["dev".into(), "cli".into(), "not-a-command".into()]));
-        assert!(!owns_path(&["dev".into(), "cli".into(), "unknown".into(), "leaf".into()]));
+        assert!(!owns_path(&["not-a-command".into()]));
+        assert!(!owns_path(&["unknown".into(), "leaf".into()]));
     }
 }

@@ -1,4 +1,4 @@
-//! CLI argument extraction helpers for dev-cli routing.
+//! CLI argument extraction helpers for maintainer routing.
 
 fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String] {
     fn match_tokens(argv: &[String], start: usize, tokens: &[&str]) -> Option<usize> {
@@ -43,7 +43,15 @@ fn extras_window<'a>(argv: &'a [String], command_tokens: &[&str]) -> &'a [String
         break;
     }
 
-    let Some(extra_start) = match_tokens(argv, command_start, command_tokens) else {
+    if let Some(extra_start) = match_tokens(argv, command_start, command_tokens) {
+        return &argv[extra_start..];
+    }
+
+    let mut legacy_tokens = Vec::with_capacity(command_tokens.len() + 2);
+    legacy_tokens.extend(["dev", "cli"]);
+    legacy_tokens.extend(command_tokens.iter().copied());
+
+    let Some(extra_start) = match_tokens(argv, command_start, &legacy_tokens) else {
         return &[];
     };
     &argv[extra_start..]
@@ -163,34 +171,32 @@ mod tests {
 
     #[test]
     fn command_option_value_reads_equals_form() {
-        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id=EVIDENCE-1001-TEST"]);
+        let args = argv(&["bijux-dev-cli", "evidence", "show", "--id=EVIDENCE-1001-TEST"]);
         assert_eq!(
-            command_option_value(&args, &["dev", "cli", "evidence", "show"], "--id").as_deref(),
+            command_option_value(&args, &["evidence", "show"], "--id").as_deref(),
             Some("EVIDENCE-1001-TEST")
         );
     }
 
     #[test]
     fn command_option_value_reads_separate_token_form() {
-        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-TEST"]);
+        let args = argv(&["bijux-dev-cli", "evidence", "show", "--id", "EVIDENCE-1001-TEST"]);
         assert_eq!(
-            command_option_value(&args, &["dev", "cli", "evidence", "show"], "--id").as_deref(),
+            command_option_value(&args, &["evidence", "show"], "--id").as_deref(),
             Some("EVIDENCE-1001-TEST")
         );
     }
 
     #[test]
     fn command_option_value_rejects_next_flag_as_value() {
-        let args = argv(&["bijux", "dev", "cli", "evidence", "show", "--id", "--kind", "runtime"]);
-        assert_eq!(command_option_value(&args, &["dev", "cli", "evidence", "show"], "--id"), None);
+        let args = argv(&["bijux-dev-cli", "evidence", "show", "--id", "--kind", "runtime"]);
+        assert_eq!(command_option_value(&args, &["evidence", "show"], "--id"), None);
     }
 
     #[test]
     fn command_option_value_uses_last_occurrence_before_passthrough_marker() {
         let args = argv(&[
-            "bijux",
-            "dev",
-            "cli",
+            "bijux-dev-cli",
             "contracts",
             "--all",
             "--kind",
@@ -201,7 +207,7 @@ mod tests {
             "ignored",
         ]);
         assert_eq!(
-            command_option_value(&args, &["dev", "cli", "contracts"], "--kind").as_deref(),
+            command_option_value(&args, &["contracts"], "--kind").as_deref(),
             Some("second")
         );
     }

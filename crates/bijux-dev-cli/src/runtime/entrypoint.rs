@@ -60,15 +60,6 @@ fn emit_run_result(result: &AppRunResult) {
     }
 }
 
-fn synthetic_dev_cli_argv(argv: &[String]) -> Vec<String> {
-    let mut synthetic = Vec::with_capacity(argv.len().saturating_add(2).max(4));
-    synthetic.push("bijux".to_string());
-    synthetic.push("dev".to_string());
-    synthetic.push("cli".to_string());
-    synthetic.extend(argv.iter().skip(1).cloned());
-    synthetic
-}
-
 fn is_global_flag_without_value(token: &str) -> bool {
     matches!(token, "--quiet" | "-q" | "--pretty" | "--no-pretty" | "--json" | "--text")
 }
@@ -82,46 +73,6 @@ fn is_global_flag_with_equals(token: &str) -> bool {
         || token.starts_with("--log-level=")
         || token.starts_with("--color=")
         || token.starts_with("--config-path=")
-}
-
-fn synthetic_dev_cli_parse_argv(argv: &[String]) -> Vec<String> {
-    let mut globals = Vec::new();
-    let mut command_tail = Vec::new();
-
-    let mut idx = 1;
-    while idx < argv.len() {
-        let token = argv[idx].as_str();
-        if token == "--" {
-            command_tail.extend(argv.iter().skip(idx).cloned());
-            break;
-        }
-        if is_global_flag_without_value(token) || is_global_flag_with_equals(token) {
-            globals.push(argv[idx].clone());
-            idx += 1;
-            continue;
-        }
-        if is_global_flag_with_value(token) {
-            globals.push(argv[idx].clone());
-            if let Some(value) = argv.get(idx + 1) {
-                globals.push(value.clone());
-                idx += 2;
-            } else {
-                idx += 1;
-            }
-            continue;
-        }
-
-        command_tail.push(argv[idx].clone());
-        idx += 1;
-    }
-
-    let mut synthetic = Vec::with_capacity(1 + globals.len() + 2 + command_tail.len());
-    synthetic.push("bijux".to_string());
-    synthetic.extend(globals);
-    synthetic.push("dev".to_string());
-    synthetic.push("cli".to_string());
-    synthetic.extend(command_tail);
-    synthetic
 }
 
 fn emitter_config(flags: &ParsedGlobalFlags) -> EmitterConfig {
@@ -173,20 +124,6 @@ fn bounded_segments(path: &[String]) -> (Vec<String>, usize, usize) {
     (bounded, truncated_segment_count, clipped_segment_count)
 }
 
-fn first_difference_index(left: &[String], right: &[String]) -> Option<usize> {
-    let shared = left.len().min(right.len());
-    for idx in 0..shared {
-        if left[idx] != right[idx] {
-            return Some(idx);
-        }
-    }
-    if left.len() == right.len() {
-        None
-    } else {
-        Some(shared)
-    }
-}
-
 fn classify_error_exit_code(message: &str) -> i32 {
     let lower = message.to_ascii_lowercase();
     if lower.contains("missing argument")
@@ -218,15 +155,6 @@ fn strip_legacy_dev_cli_prefix(path: &[String]) -> Vec<String> {
         [a, b, rest @ ..] if a == "dev" && b == "cli" => rest.to_vec(),
         _ => path.to_vec(),
     }
-}
-
-fn canonical_dispatch_path(path: &[String]) -> Vec<String> {
-    let trimmed = strip_legacy_dev_cli_prefix(path);
-    let mut canonical = Vec::with_capacity(trimmed.len() + 2);
-    canonical.push("dev".to_string());
-    canonical.push("cli".to_string());
-    canonical.extend(trimmed);
-    canonical
 }
 
 fn parse_output_format(raw: Option<&str>) -> Result<Option<OutputFormat>, ParseError> {
@@ -389,15 +317,17 @@ fn parse_maintainer_intent(argv: &[String]) -> Result<MaintainerIntent, ParseErr
 }
 
 fn help_requested(argv: &[String]) -> bool {
-    argv.iter().skip(1).take_while(|token| token.as_str() != "--").any(|token| {
-        matches!(token.as_str(), "--help" | "-h")
-    })
+    argv.iter()
+        .skip(1)
+        .take_while(|token| token.as_str() != "--")
+        .any(|token| matches!(token.as_str(), "--help" | "-h"))
 }
 
 fn version_requested(argv: &[String]) -> bool {
-    argv.iter().skip(1).take_while(|token| token.as_str() != "--").any(|token| {
-        matches!(token.as_str(), "--version" | "-V")
-    })
+    argv.iter()
+        .skip(1)
+        .take_while(|token| token.as_str() != "--")
+        .any(|token| matches!(token.as_str(), "--version" | "-V"))
 }
 
 fn root_help_text() -> String {
@@ -468,54 +398,15 @@ fn route_response(
     argv: &[String],
     global_flags: &ParsedGlobalFlags,
 ) -> Result<Value> {
-    let dispatch_path = canonical_dispatch_path(normalized_path);
-
-    if !dev_dispatch::owns_path(&dispatch_path) {
+    if !dev_dispatch::owns_path(normalized_path) {
         return Ok(json!({"status": "error", "message": "unknown route"}));
     }
 
     let context = RuntimeQueryContext::from_flags(global_flags)?;
     let runtime = context.provider();
-    let payload = dev_dispatch::try_handle(&dispatch_path, argv, &runtime)?;
+    let payload = dev_dispatch::try_handle(normalized_path, argv, &runtime)?;
 
     Ok(payload.unwrap_or_else(|| json!({"status": "error", "message": "unknown route"})))
-}
-
-fn expanded_dev_cli_path(normalized_path: &[String], argv: &[String]) -> Vec<String> {
-    let [a, b, c] = normalized_path else {
-        return normalized_path.to_vec();
-    };
-    if a != "dev" || b != "cli" {
-        return normalized_path.to_vec();
-    }
-    if !matches!(
-        c.as_str(),
-        "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
-    ) {
-        return normalized_path.to_vec();
-    }
-
-    let Some(start) = argv
-        .windows(2)
-        .position(|window| window[0] == "dev" && window[1] == "cli")
-        .map(|idx| idx + 2)
-    else {
-        return normalized_path.to_vec();
-    };
-
-    let mut expanded = vec!["dev".to_string(), "cli".to_string()];
-    for token in argv.iter().skip(start) {
-        if token == "--" || token.starts_with('-') {
-            break;
-        }
-        expanded.push(token.clone());
-    }
-
-    if expanded.len() < 3 {
-        return normalized_path.to_vec();
-    }
-
-    expanded
 }
 
 fn maintenance_route_exit_code(normalized_path: &[String], payload: &Value) -> Option<i32> {
@@ -591,36 +482,6 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 }
 
 fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunResult> {
-    let synthetic_argv = synthetic_dev_cli_argv(argv);
-    let synthetic_parse_argv = synthetic_dev_cli_parse_argv(argv);
-    let first_rewrite_difference = first_difference_index(&synthetic_argv, &synthetic_parse_argv);
-    let (rewrite_source_arg, rewrite_source_arg_truncated) = first_rewrite_difference
-        .and_then(|idx| synthetic_argv.get(idx))
-        .map_or((None, false), |value| {
-            let (bounded, truncated) = bounded_command(value);
-            (Some(bounded), truncated)
-        });
-    let (rewrite_parse_arg, rewrite_parse_arg_truncated) = first_rewrite_difference
-        .and_then(|idx| synthetic_parse_argv.get(idx))
-        .map_or((None, false), |value| {
-            let (bounded, truncated) = bounded_command(value);
-            (Some(bounded), truncated)
-        });
-    telemetry.record(
-        "dispatch.argv.synthetic",
-        json!({
-            "source_argc": argv.len(),
-            "synthetic_argc": synthetic_argv.len(),
-            "synthetic_parse_argc": synthetic_parse_argv.len(),
-            "parse_rewrite_applied": synthetic_argv != synthetic_parse_argv,
-            "parse_rewrite_first_difference_index": first_rewrite_difference,
-            "parse_rewrite_source_arg": rewrite_source_arg,
-            "parse_rewrite_source_arg_truncated": rewrite_source_arg_truncated,
-            "parse_rewrite_parse_arg": rewrite_parse_arg,
-            "parse_rewrite_parse_arg_truncated": rewrite_parse_arg_truncated,
-        }),
-    );
-
     if argv.len() == 1 {
         telemetry.record("dispatch.help.default", json!({"reason":"no_args"}));
         telemetry.record("dispatch.help.rendered", json!({"topic":"root", "exit_code": 0}));
@@ -679,33 +540,15 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr });
     }
 
-    let expanded_path = expanded_dev_cli_path(&intent.normalized_path, argv);
-    if expanded_path != intent.normalized_path {
-        let (from_path, from_truncated_segment_count, from_clipped_segment_count) =
-            bounded_segments(&intent.normalized_path);
-        let (to_path, to_truncated_segment_count, to_clipped_segment_count) =
-            bounded_segments(&expanded_path);
-        telemetry.record(
-            "dispatch.path.expanded",
-            json!({
-                "from_path": from_path,
-                "from_path_truncated_segment_count": from_truncated_segment_count,
-                "from_path_clipped_segment_count": from_clipped_segment_count,
-                "to_path": to_path,
-                "to_path_truncated_segment_count": to_truncated_segment_count,
-                "to_path_clipped_segment_count": to_clipped_segment_count,
-            }),
-        );
-    }
-    let is_unknown = !dev_dispatch::owns_path(&canonical_dispatch_path(&expanded_path));
+    let is_unknown = !dev_dispatch::owns_path(&intent.normalized_path);
 
-    let response = route_response(&expanded_path, argv, &intent.global_flags);
+    let response = route_response(&intent.normalized_path, argv, &intent.global_flags);
     let payload = match response {
         Ok(value) => value,
         Err(error) => {
             let message = error.to_string();
             let code = classify_error_exit_code(&message);
-            let command_joined = expanded_path.join(" ");
+            let command_joined = intent.normalized_path.join(" ");
             let (command, command_truncated) = bounded_command(&command_joined);
             let (message_bounded, message_truncated) = bounded_message(&message);
             telemetry.record(
@@ -725,7 +568,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                     "status": "error",
                     "code": code,
                     "message": message,
-                    "command": expanded_path.join(" "),
+                    "command": intent.normalized_path.join(" "),
                 }),
                 emitter_config(&intent.global_flags),
             ) {
@@ -766,7 +609,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
-        let command_joined = expanded_path.join(" ");
+        let command_joined = intent.normalized_path.join(" ");
         let (command, command_truncated) = bounded_command(&command_joined);
         let (status, status_truncated) =
             bounded_status(payload.get("status").and_then(Value::as_str));
@@ -785,8 +628,8 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
-    let route_exit_code = payload_route_exit_code(&expanded_path, &payload);
-    let command_joined = expanded_path.join(" ");
+    let route_exit_code = payload_route_exit_code(&intent.normalized_path, &payload);
+    let command_joined = intent.normalized_path.join(" ");
     let (command, command_truncated) = bounded_command(&command_joined);
     let (status, status_truncated) = bounded_status(payload.get("status").and_then(Value::as_str));
     telemetry.record(
@@ -862,83 +705,14 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        classify_error_exit_code, expanded_dev_cli_path, first_difference_index, no_color_enabled,
-        normalize_process_exit_code, payload_route_exit_code, run_app,
-        synthetic_dev_cli_parse_argv, MAX_PATH_SEGMENT_CHARS,
+        classify_error_exit_code, no_color_enabled, normalize_process_exit_code,
+        payload_route_exit_code, run_app, MAX_PATH_SEGMENT_CHARS,
     };
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn argv(items: &[&str]) -> Vec<String> {
         items.iter().map(|item| (*item).to_string()).collect()
-    }
-
-    #[test]
-    fn parse_argv_lifts_global_flags_before_dev_cli_path() {
-        let input = argv(&[
-            "bijux-dev-cli",
-            "state-audit",
-            "--format",
-            "text",
-            "--config-path",
-            "/tmp/config.env",
-            "--no-pretty",
-        ]);
-        let synthetic = synthetic_dev_cli_parse_argv(&input);
-        assert_eq!(
-            synthetic,
-            argv(&[
-                "bijux",
-                "--format",
-                "text",
-                "--config-path",
-                "/tmp/config.env",
-                "--no-pretty",
-                "dev",
-                "cli",
-                "state-audit",
-            ])
-        );
-    }
-
-    #[test]
-    fn parse_argv_keeps_command_options_in_tail() {
-        let input = argv(&[
-            "bijux-dev-cli",
-            "maintenance",
-            "status",
-            "run",
-            "--id",
-            "STATUS-001",
-            "--",
-            "--native-flag",
-        ]);
-        let synthetic = synthetic_dev_cli_parse_argv(&input);
-        assert_eq!(
-            synthetic,
-            argv(&[
-                "bijux",
-                "dev",
-                "cli",
-                "maintenance",
-                "status",
-                "run",
-                "--id",
-                "STATUS-001",
-                "--",
-                "--native-flag",
-            ])
-        );
-    }
-
-    #[test]
-    fn first_difference_index_detects_value_and_length_mismatches() {
-        assert_eq!(
-            first_difference_index(&argv(&["a", "b", "c"]), &argv(&["a", "x", "c"])),
-            Some(1)
-        );
-        assert_eq!(first_difference_index(&argv(&["a", "b"]), &argv(&["a", "b", "c"])), Some(2));
-        assert_eq!(first_difference_index(&argv(&["a", "b"]), &argv(&["a", "b"])), None);
     }
 
     #[test]
@@ -950,36 +724,9 @@ mod tests {
     }
 
     #[test]
-    fn expanded_path_lifts_nested_dev_cli_routes_from_argv() {
-        let normalized = argv(&["dev", "cli", "maintenance"]);
-        let full_argv = argv(&[
-            "bijux",
-            "--format",
-            "json",
-            "dev",
-            "cli",
-            "maintenance",
-            "status",
-            "run",
-            "--id",
-            "STATUS-001",
-        ]);
-        let expanded = expanded_dev_cli_path(&normalized, &full_argv);
-        assert_eq!(expanded, argv(&["dev", "cli", "maintenance", "status", "run"]));
-    }
-
-    #[test]
-    fn expanded_path_keeps_non_nested_routes_stable() {
-        let normalized = argv(&["dev", "cli", "state-doctor"]);
-        let full_argv = argv(&["bijux", "dev", "cli", "state-doctor", "unexpected"]);
-        let expanded = expanded_dev_cli_path(&normalized, &full_argv);
-        assert_eq!(expanded, normalized);
-    }
-
-    #[test]
     fn payload_error_code_maps_to_non_zero_exit() {
         let code = payload_route_exit_code(
-            &argv(&["dev", "cli", "state-doctor"]),
+            &argv(&["state-doctor"]),
             &json!({"status": "error", "code": 2}),
         );
         assert_eq!(code, 2);
@@ -1054,7 +801,7 @@ mod tests {
     }
 
     #[test]
-    fn run_app_emits_synthetic_and_expanded_path_telemetry() {
+    fn run_app_records_direct_command_path_telemetry() {
         let _guard = ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
@@ -1070,34 +817,29 @@ mod tests {
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<serde_json::Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
-        assert!(rows.iter().any(|row| row["stage"] == "dispatch.argv.synthetic"));
-        let expanded_path_emitted = rows.iter().any(|row| row["stage"] == "dispatch.path.expanded");
         let intent_parsed = rows
             .iter()
             .find(|row| row["stage"] == "dispatch.intent.parsed")
             .expect("intent parsed event");
         let normalized_segments =
             intent_parsed["payload"]["normalized_path"].as_array().expect("normalized path");
-        let already_includes_status = normalized_segments
-            .iter()
-            .any(|value| value.as_str().is_some_and(|segment| segment == "status"));
         assert!(
-            expanded_path_emitted || already_includes_status,
-            "expected either explicit path expansion telemetry or a fully expanded normalized path"
+            normalized_segments.iter().filter_map(serde_json::Value::as_str).eq([
+                "maintenance",
+                "status"
+            ]
+            .into_iter()),
+            "expected normalized maintainer path segments to stay direct"
         );
-        let synthetic = rows
+        let completed = rows
             .iter()
-            .find(|row| row["stage"] == "dispatch.argv.synthetic")
-            .expect("synthetic event");
-        assert!(synthetic["payload"]["parse_rewrite_applied"].is_boolean());
-        assert!(
-            synthetic["payload"]["parse_rewrite_first_difference_index"].is_number()
-                || synthetic["payload"]["parse_rewrite_first_difference_index"].is_null()
-        );
+            .find(|row| row["stage"] == "dispatch.route.completed")
+            .expect("completed event");
+        assert_eq!(completed["payload"]["command"], "maintenance status");
     }
 
     #[test]
-    fn run_app_emits_parse_rewrite_difference_telemetry_for_late_global_flags() {
+    fn run_app_keeps_late_global_flags_outside_command_path_telemetry() {
         let _guard = ENV_LOCK.lock().expect("env lock");
         let temp = tempfile::tempdir().expect("temp dir");
         let sink = temp.path().join("telemetry").join("events.jsonl");
@@ -1114,14 +856,16 @@ mod tests {
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<serde_json::Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
-        let synthetic = rows
+        let intent_parsed = rows
             .iter()
-            .find(|row| row["stage"] == "dispatch.argv.synthetic")
-            .expect("synthetic event");
-        assert_eq!(synthetic["payload"]["parse_rewrite_applied"], true);
-        assert_eq!(synthetic["payload"]["parse_rewrite_first_difference_index"], 1);
-        assert_eq!(synthetic["payload"]["parse_rewrite_source_arg"], "dev");
-        assert_eq!(synthetic["payload"]["parse_rewrite_parse_arg"], "--format");
+            .find(|row| row["stage"] == "dispatch.intent.parsed")
+            .expect("intent parsed event");
+        let normalized_segments =
+            intent_parsed["payload"]["normalized_path"].as_array().expect("normalized path");
+        assert!(normalized_segments
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .eq(["state-audit"].into_iter()));
     }
 
     #[test]

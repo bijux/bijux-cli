@@ -7,39 +7,37 @@ use crate::reports::evidence as dev_evidence;
 
 pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<Option<Value>> {
     let payload = match normalized_path {
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "list" => {
+        [group, command] if group == "evidence" && command == "list" => {
             dev_evidence::build_list_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "show" => {
-            let id = command_option_value(argv, &["dev", "cli", "evidence", "show"], "--id")
-                .or_else(|| {
-                    command_positionals(argv, &["dev", "cli", "evidence", "show"]).first().cloned()
-                })
+        [group, command] if group == "evidence" && command == "show" => {
+            let id = command_option_value(argv, &["evidence", "show"], "--id")
+                .or_else(|| command_positionals(argv, &["evidence", "show"]).first().cloned())
                 .ok_or_else(|| anyhow!("Missing argument: --id required"))?;
             dev_evidence::build_show_report(&workspace_root(), &id)
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "audit" => {
+        [group, command] if group == "evidence" && command == "audit" => {
             dev_evidence::build_audit_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "stale" => {
+        [group, command] if group == "evidence" && command == "stale" => {
             dev_evidence::build_stale_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "matrix" => {
+        [group, command] if group == "evidence" && command == "matrix" => {
             dev_evidence::build_matrix_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "website-export" => {
+        [group, command] if group == "evidence" && command == "website-export" => {
             dev_evidence::build_website_export_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "ci-export" => {
+        [group, command] if group == "evidence" && command == "ci-export" => {
             dev_evidence::build_ci_export_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "release-export" => {
+        [group, command] if group == "evidence" && command == "release-export" => {
             dev_evidence::build_release_export_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "command-map" => {
+        [group, command] if group == "evidence" && command == "command-map" => {
             dev_evidence::build_command_map_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "parity-map" => {
+        [group, command] if group == "evidence" && command == "parity-map" => {
             dev_evidence::build_parity_map_report(&workspace_root())
         }
         _ => return Ok(None),

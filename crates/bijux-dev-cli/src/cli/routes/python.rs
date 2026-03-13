@@ -5,19 +5,19 @@ use crate::reports::python as dev_python;
 
 pub(super) fn try_handle(normalized_path: &[String]) -> Option<Value> {
     let payload = match normalized_path {
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "bridge-status" => {
+        [group, command] if group == "python" && command == "bridge-status" => {
             dev_python::build_bridge_status_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "surface-status" => {
+        [group, command] if group == "python" && command == "surface-status" => {
             dev_python::build_surface_status_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "sovereignty-audit" => {
+        [group, command] if group == "python" && command == "sovereignty-audit" => {
             dev_python::build_sovereignty_audit_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "drift" => {
+        [group, command] if group == "python" && command == "drift" => {
             dev_python::build_drift_report(&workspace_root())
         }
-        [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "packaging" => {
+        [group, command] if group == "python" && command == "packaging" => {
             dev_python::build_packaging_report(&workspace_root())
         }
         _ => return None,
