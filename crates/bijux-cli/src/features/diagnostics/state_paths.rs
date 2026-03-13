@@ -22,8 +22,65 @@ use crate::features::plugins::{
 use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
 use crate::routing::parser::ParsedGlobalFlags;
 
-fn home_dir() -> Option<PathBuf> {
-    env::var_os("HOME").map(PathBuf::from)
+fn non_empty_env_value(name: &str) -> Option<String> {
+    env::var(name).ok().map(|value| value.trim().to_string()).filter(|value| !value.is_empty())
+}
+
+fn home_dir_from_env(
+    home: Option<&str>,
+    user_profile: Option<&str>,
+    home_drive: Option<&str>,
+    home_path: Option<&str>,
+    fallback_current_dir: PathBuf,
+) -> (PathBuf, Option<String>) {
+    if let Some(value) = home {
+        return (PathBuf::from(value), None);
+    }
+    if let Some(value) = user_profile {
+        return (
+            PathBuf::from(value),
+            Some(format!(
+                "HOME is unset; resolved state paths from USERPROFILE ({value})"
+            )),
+        );
+    }
+    if let (Some(drive), Some(path)) = (home_drive, home_path) {
+        let resolved = PathBuf::from(format!("{drive}{path}"));
+        return (
+            resolved.clone(),
+            Some(format!(
+                "HOME and USERPROFILE are unset; resolved state paths from HOMEDRIVE/HOMEPATH ({})",
+                resolved.display()
+            )),
+        );
+    }
+    (
+        fallback_current_dir.clone(),
+        Some(format!(
+            "HOME, USERPROFILE, and HOMEDRIVE/HOMEPATH are unset; resolved state paths from current directory ({})",
+            fallback_current_dir.display()
+        )),
+    )
+}
+
+fn resolved_home_dir() -> (PathBuf, Option<String>) {
+    let fallback_current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    home_dir_from_env(
+        non_empty_env_value("HOME").as_deref(),
+        non_empty_env_value("USERPROFILE").as_deref(),
+        non_empty_env_value("HOMEDRIVE").as_deref(),
+        non_empty_env_value("HOMEPATH").as_deref(),
+        fallback_current_dir,
+    )
+}
+
+fn merge_warnings(primary: Option<String>, secondary: Option<String>) -> Option<String> {
+    match (primary, secondary) {
+        (Some(first), Some(second)) => Some(format!("{first}; {second}")),
+        (Some(first), None) => Some(first),
+        (None, Some(second)) => Some(second),
+        (None, None) => None,
+    }
 }
 
 /// Collect runtime path override environment variables.
@@ -56,17 +113,16 @@ pub struct ResolvedStatePaths {
 
 /// Resolve runtime state file paths from defaults, compatibility config, env, and flags.
 pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> {
-    let effective_home = home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let (effective_home, home_resolution_warning) = resolved_home_dir();
     let defaults = default_compatibility_paths(&effective_home);
 
     let compatibility_config_file = defaults.config_file.clone();
-    let (config, compatibility_config_warning) =
+    let (config, compatibility_parse_warning) =
         match load_compatibility_config(&compatibility_config_file) {
             Ok(config) => (config, None),
-            Err(CompatibilityError::UnsupportedConfigKey(_)) => {
-                (CompatibilityConfig::default(), None)
-            }
-            Err(error @ CompatibilityError::MalformedConfigLine { .. }) => (
+            Err(error @ CompatibilityError::UnsupportedConfigKey(_))
+            | Err(error @ CompatibilityError::MalformedConfigLine { .. })
+            | Err(error @ CompatibilityError::DuplicateConfigKey { .. }) => (
                 CompatibilityConfig::default(),
                 Some(format!(
                     "compatibility override parsing failed for {}: {error}",
@@ -75,6 +131,8 @@ pub fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePat
             ),
             Err(error) => return Err(error.into()),
         };
+    let compatibility_config_warning =
+        merge_warnings(home_resolution_warning, compatibility_parse_warning);
     let mut overrides = PathOverrides::default();
     if let Some(path) = &flags.config_path {
         overrides.config_file = Some(path.into());
@@ -244,4 +302,64 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         "issues": issues,
         "repairs": repairs,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::home_dir_from_env;
+
+    #[test]
+    fn home_resolution_prefers_home_without_warning() {
+        let (path, warning) = home_dir_from_env(
+            Some("/tmp/home"),
+            Some("/tmp/profile"),
+            Some("C:"),
+            Some("\\Users\\profile"),
+            PathBuf::from("/tmp/fallback"),
+        );
+        assert_eq!(path, PathBuf::from("/tmp/home"));
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn home_resolution_uses_userprofile_when_home_is_missing() {
+        let (path, warning) = home_dir_from_env(
+            None,
+            Some(r"C:\Users\profile"),
+            Some("C:"),
+            Some("\\Users\\profile"),
+            PathBuf::from("."),
+        );
+        assert_eq!(path, PathBuf::from(r"C:\Users\profile"));
+        assert!(warning
+            .as_deref()
+            .is_some_and(|value| value.contains("USERPROFILE")));
+    }
+
+    #[test]
+    fn home_resolution_uses_homedrive_and_homepath_when_others_are_missing() {
+        let (path, warning) = home_dir_from_env(
+            None,
+            None,
+            Some("D:"),
+            Some("\\Work\\User"),
+            PathBuf::from("."),
+        );
+        assert_eq!(path, PathBuf::from(r"D:\Work\User"));
+        assert!(warning
+            .as_deref()
+            .is_some_and(|value| value.contains("HOMEDRIVE/HOMEPATH")));
+    }
+
+    #[test]
+    fn home_resolution_falls_back_to_current_directory_with_warning() {
+        let fallback = PathBuf::from("/tmp/fallback");
+        let (path, warning) = home_dir_from_env(None, None, None, None, fallback.clone());
+        assert_eq!(path, fallback);
+        assert!(warning
+            .as_deref()
+            .is_some_and(|value| value.contains("current directory")));
+    }
 }

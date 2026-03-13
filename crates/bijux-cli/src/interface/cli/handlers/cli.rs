@@ -103,6 +103,7 @@ pub(crate) fn try_handle(
                 "config": paths.config_file,
                 "history": paths.history_file,
                 "plugins": paths.plugins_dir,
+                "path_resolution_warning": paths.compatibility_config_warning,
                 "active_binary": install_report.active_binary,
                 "path_binaries": install_report.path_binaries,
                 "post_install_hint": hint
