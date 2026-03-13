@@ -1,45 +1,36 @@
 # bijux-cli
 
-`bijux-cli` is the core runtime crate for the `bijux` command surface.
+`bijux-cli` is the Rust runtime crate behind the `bijux` executable.
 
-It owns command law, routing, runtime state behavior, and process-facing execution
-for the Rust runtime.
+## Scope
 
-## What This Crate Owns
+- Own command parsing, normalization, registry lookup, and execution.
+- Own runtime-facing state behavior for config, history, memory, install diagnostics, plugins, and the REPL.
+- Expose read-only query APIs used by maintainer tooling.
+- Do not assemble maintainer reports; `bijux-dev-cli` does that through process delegation.
 
-- Canonical command routing and normalization (`src/routing`).
-- Runtime command execution behavior (`src/app.rs`).
-- CLI process entrypoint helpers (`src/bootstrap/run.rs` and `src/bin/bijux.rs`).
-- Execution-kernel primitives and exit mapping (`src/kernel.rs`).
-- Runtime state behavior for config/history/memory/plugin command paths.
-- Runtime query interfaces used by maintainer commands (`src/contracts/query.rs`, `src/features/diagnostics/routing_inventory.rs`, `src/features/install/query.rs`, and diagnostics query modules).
+## Source Layout
 
-## What This Crate Does Not Own
-
-- Maintainer control-plane report assembly and maintainer workflow orchestration.
-  Those live in `bijux-dev-cli` and are invoked through external binary delegation.
-
-## Module Map
-
+- `src/api`: stable entrypoints used by the binary, tests, and the Python bridge.
+- `src/bootstrap`: process wiring and exit-code handling.
+- `src/contracts`: durable command, envelope, config, plugin, and query types.
+- `src/features`: domain implementations for config, diagnostics, history, install, memory, and plugins.
+- `src/infrastructure`: filesystem, process, environment, and state-store adapters.
+- `src/interface`: CLI and REPL surfaces.
+- `src/kernel`: execution pipeline and policy resolution.
 - `src/routing`: command catalog, parser, and registry.
-- `src/contracts`: durable command/runtime/plugin/config contracts plus schema helpers and schema inventory query.
-- `src/config`: config domain validation, parsing/serialization, storage, and command service helpers.
-- `src/plugin`: plugin discovery, manifest validation, registry operations, and diagnostics.
-- `src/install`: compatibility paths, completion scripts, install diagnostics, and runtime identity query helpers.
-- `src/repl`: session, completion, history, execution, and diagnostics for interactive mode.
-- `src/query.rs`: state and parity/status query interfaces for maintainer delegation.
-- `src/app.rs`: top-level route dispatch and command behavior glue.
-- `src/kernel.rs`: execution-kernel contracts and lifecycle/exit mapping primitives.
+- `src/shared`: small cross-cutting helpers.
 
-## Runtime Invariants
+## Runtime Rules
 
-- All command behavior must resolve through routing normalization before execution.
-- Help, error envelopes, and output formatting must stay deterministic across repeated runs.
-- Dev CLI runtime commands must delegate to the `bijux-dev-cli` executable, not assemble maintainer report payloads inside runtime routing internals.
-- Process entrypoint remains thin: decode argv, call runtime, write streams, map exit code.
+- Commands are parsed and normalized before execution.
+- Help, envelopes, and output formatting stay deterministic across repeated runs.
+- Maintainer routes delegate to `bijux-dev-cli`; this crate does not build maintainer report payloads itself.
+- The process entrypoint stays thin: decode argv, call the runtime, write streams, map exit codes.
 
-## Testing Shape
+## Tests
 
-- Integration coverage lives under `crates/bijux-cli/tests`.
-- Routing law coverage is consolidated under `crates/bijux-cli/tests/routing.rs` with fixtures in `crates/bijux-cli/tests/data/fixtures/routing`.
-- Command-surface and parity behavior is enforced through `tests/bin_surface.rs`.
+- `tests/architecture.rs`: boundary and ownership checks.
+- `tests/integration.rs`: command behavior, parity, resilience, and REPL coverage.
+- `tests/routing.rs`: parser, registry, schema, and routing law coverage.
+- `tests/data/fixtures` and `tests/data/golden`: stable fixtures and snapshots.

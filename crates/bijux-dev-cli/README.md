@@ -1,55 +1,37 @@
 # bijux-dev-cli
 
-`bijux-dev-cli` is the maintainer control-plane crate for `bijux dev cli ...` command workflows.
+`bijux-dev-cli` is the maintainer control-plane crate for `bijux dev cli ...`.
 
 ## Scope
 
-- Owns maintainer-facing automation orchestration.
-- Owns maintainer-facing report assembly.
-- Keeps runtime command law and runtime state mutation rules in runtime crates.
+- Own maintainer automation, report assembly, and release/docs support commands.
+- Keep runtime command law and runtime state mutation rules in runtime crates.
+- Ship a separate maintainer binary that the runtime can delegate to when needed.
 
 ## Non-Goals
 
-- Defining runtime command law.
-- Becoming a second executable.
+- Defining end-user runtime command behavior.
 - Replacing the canonical `bijux` binary entrypoint.
+- Reimplementing runtime state rules that already live in `bijux-cli`.
 
 ## Source Layout
 
-`src/` is organized by stable ownership boundaries:
+- `src/cli`: argument parsing, workspace discovery, dispatch, and route handlers.
+- `src/contracts`: maintenance and status inventories, models, and runners.
+- `src/infra`: filesystem, process, and clock adapters.
+- `src/reports`: structured maintainer reports grouped by domain.
+- `src/runtime`: maintainer entrypoint and execution helpers.
+- `src/schema`: report and registry data types.
+- `src/suites`: composed control-plane, quality, resilience, and runtime checks.
 
-- `cli/`: argument parsing, workspace discovery, command dispatch, and route handlers.
-- `contracts/`: status inventories/runners and maintenance inventories/compliance/generators.
-- `suites/`: control-plane/runtime/quality/resilience execution suites for status contracts.
-- `reports/`: maintainer report builders grouped by business domain.
-- `infra/`: filesystem/process/clock adapters used by reports and contracts.
-- `schema/`: command registry and report envelope schema primitives.
+## Tests
 
-`cli/routes/` is split by command families:
+- `tests/architecture`: layout, depth, and ownership boundaries.
+- `tests/contracts`: status inventory and suite catalog contracts.
+- `tests/e2e`: route-level maintainer behavior.
 
-- `root.rs`
-- `maintenance.rs`
-- `release.rs`
-- `evidence.rs`
-- `config.rs`
-- `python.rs`
-- `rustdoc.rs`
+## Constraints
 
-`contracts/status/` uses a stable split:
-
-- `model.rs`
-- `inventory.rs`
-- `run.rs`
-
-## Architecture Rules
-
-- `crates/*/src` path depth must stay `<= 7`.
-- workspace root legacy shell directory is forbidden.
-- suites must not contain `*_executor.rs` or `*_spec.rs` file names.
-- legacy `app`, `platform`, `infrastructure`, `status_contracts`, and `contracts/native` namespaces are removed.
-
-Enforcement is in:
-
-- [`tests/architecture/layout_contracts.rs`](./tests/architecture/layout_contracts.rs)
-- [`tests/architecture/ownership_boundaries.rs`](./tests/architecture/ownership_boundaries.rs)
-- [`tests/architecture/depth_limit.rs`](./tests/architecture/depth_limit.rs)
+- `crates/*/src` path depth stays `<= 7`.
+- legacy namespace patterns removed by architecture checks stay removed.
+- suites do not use `*_executor.rs` or `*_spec.rs` names.
