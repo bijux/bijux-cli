@@ -10,15 +10,24 @@ from pathlib import Path
 WORKSPACE_PACKAGES = {"bijux-cli", "bijux-cli-python", "bijux-dev-cli"}
 IGNORE_NAMES = {
     ".git",
+    ".DS_Store",
+    ".direnv",
     "artifacts",
-    "target",
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
+    "build",
+    "dist",
+    "htmlcov",
     ".hypothesis",
     ".idea",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    "target",
+    "venv",
+    ".venv",
 }
+IGNORE_PREFIXES = (".coverage",)
+IGNORE_SUFFIXES = (".egg-info", ".dSYM")
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,13 +46,21 @@ def ensure_clean_output_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def should_ignore(name: str) -> bool:
+    return (
+        name in IGNORE_NAMES
+        or name.startswith(IGNORE_PREFIXES)
+        or name.endswith(IGNORE_SUFFIXES)
+    )
+
+
 def ignore_entries(_dir: str, names: list[str]) -> set[str]:
-    return {name for name in names if name in IGNORE_NAMES}
+    return {name for name in names if should_ignore(name)}
 
 
 def copy_workspace(workspace_root: Path, output_dir: Path) -> None:
     for entry in workspace_root.iterdir():
-        if entry.name in IGNORE_NAMES:
+        if should_ignore(entry.name):
             continue
         destination = output_dir / entry.name
         if entry.is_dir():
