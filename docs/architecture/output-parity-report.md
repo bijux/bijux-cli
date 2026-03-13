@@ -15,3 +15,18 @@ Compared commands with Python captures:
 ## Action status
 - Captured as known parity gaps pending command-depth convergence.
 - Covered commands remain under parity regression tests for exit-code and stream behavior.
+
+## Historical Capture Notes
+
+Older side-by-side appendix pages were reduced into this summary because they
+duplicated generated capture artifacts and had become harder to maintain than
+the underlying evidence.
+
+The archived Python-vs-Rust captures showed these durable conclusions:
+
+- stdout payloads still differed for `status`, `doctor`, `plugins list`, `config`,
+  `history`, and `dev --help`
+- stderr parity was mostly clean, but plugin failure cases and some config error
+  paths still differed
+- sample timing captures existed for Rust, but they were not a complete
+  cross-runtime benchmark and should not be treated as current performance truth

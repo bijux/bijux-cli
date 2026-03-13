@@ -46,3 +46,11 @@ Compared current Rust root help content against Python command capture data.
 - `298`: complete (no-color snapshot test)
 - `299`: complete (this report)
 - `300`: complete (rules frozen in `docs/architecture/help-rendering-rules.md`)
+
+## Historical Capture Notes
+
+Earlier side-by-side help appendix pages were merged into this report. Their
+useful conclusion was simple: help output was still structurally different
+between the legacy Python captures and the current Rust runtime, even where
+command coverage already existed. The generated parity artifacts remain the
+current source of truth.

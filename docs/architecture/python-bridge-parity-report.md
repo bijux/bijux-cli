@@ -38,3 +38,11 @@ Test file:
 1. Add typed Python exception wrappers around bridge `error_kind` tags.
 2. Expand covered command set to include config and diagnostics flows.
 3. Add packaged-runtime parity job in CI.
+
+## Historical Exit-Code Notes
+
+Older exit-code appendix pages were merged into this report. Their retained
+value was that the covered bridge commands matched on exit code, while some
+legacy Python config flows still diverged from the Rust runtime. Current bridge
+parity decisions should come from the test suite and generated parity artifacts,
+not the removed appendix tables.
