@@ -33,7 +33,7 @@ pub fn run_cli_from_env() -> ExitCode {
                 "argv.decode.error",
                 serde_json::json!({"message":"invalid UTF-8 argument in argv"}),
             );
-            telemetry.finish_success(2, 0, "invalid UTF-8 argument in argv\n".len());
+            telemetry.finish_exit(2, 0, "invalid UTF-8 argument in argv\n".len());
             let _ = writeln!(io::stderr(), "invalid UTF-8 argument in argv");
             return ExitCode::from(map_error_category_to_exit("usage") as u8);
         }

@@ -90,10 +90,8 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     telemetry.record("dispatch.entry", json!({"argv_count": argv.len()}));
     let result = run_app_inner(argv, &telemetry);
     match &result {
-        Ok(value) => {
-            telemetry.finish_success(value.exit_code, value.stdout.len(), value.stderr.len())
-        }
-        Err(error) => telemetry.finish_error(&error.to_string()),
+        Ok(value) => telemetry.finish_exit(value.exit_code, value.stdout.len(), value.stderr.len()),
+        Err(error) => telemetry.finish_internal_error(&error.to_string(), 1),
     }
     result
 }
