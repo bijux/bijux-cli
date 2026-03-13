@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use crate::infrastructure::fs_store::atomic_write_text;
 
 use super::execution::execute_repl_line;
-use super::types::{ReplError, ReplFrame, ReplSession, REPL_HISTORY_ENTRY_MAX_CHARS};
+use super::types::{
+    ReplError, ReplFrame, ReplSession, REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES,
+};
 
 #[derive(Debug, Default)]
 struct HistoryParseReport {
@@ -44,6 +46,9 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
                 None => report.dropped_entries += 1,
             }
         }
+        if report.dropped_entries > 0 {
+            report.malformed = true;
+        }
         return report;
     }
     if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
@@ -61,6 +66,9 @@ fn parse_history_entries(text: &str) -> HistoryParseReport {
                 }
                 None => report.dropped_entries += 1,
             }
+        }
+        if report.dropped_entries > 0 {
+            report.malformed = true;
         }
         return report;
     }
@@ -108,6 +116,20 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
     if !path.exists() {
         return Ok(());
     }
+    let metadata = fs::metadata(path)?;
+    if !metadata.is_file() {
+        session.history.clear();
+        session.last_error = Some("history path is not a regular file; history reset".to_string());
+        return Ok(());
+    }
+    if metadata.len() > REPL_HISTORY_FILE_MAX_BYTES {
+        session.history.clear();
+        session.last_error = Some(format!(
+            "history file exceeds {} bytes and was ignored",
+            REPL_HISTORY_FILE_MAX_BYTES
+        ));
+        return Ok(());
+    }
 
     let text = fs::read_to_string(path)?;
     let report = parse_history_entries(&text);
@@ -123,6 +145,8 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
             "history normalized: dropped={}, truncated={}",
             report.dropped_entries, report.truncated_entries
         ));
+    } else {
+        session.last_error = None;
     }
     Ok(())
 }
@@ -139,7 +163,16 @@ pub fn flush_history(session: &ReplSession) -> Result<(), ReplError> {
         fs::create_dir_all(parent)?;
     }
 
-    let data = serde_json::to_string_pretty(&session.history)?;
+    let mut persisted = session
+        .history
+        .iter()
+        .filter_map(|entry| sanitize_history_command(entry).map(|(sanitized, _)| sanitized))
+        .collect::<Vec<_>>();
+    if persisted.len() > session.history_limit {
+        persisted = persisted.split_off(persisted.len() - session.history_limit);
+    }
+
+    let data = serde_json::to_string_pretty(&persisted)?;
     atomic_write_text(path, &(data + "\n"))
         .map_err(|err| std::io::Error::other(err.to_string()))?;
     Ok(())
@@ -181,7 +214,7 @@ mod tests {
 
     use super::{
         configure_history, load_history, parse_history_entries, push_history,
-        REPL_HISTORY_ENTRY_MAX_CHARS,
+        REPL_HISTORY_ENTRY_MAX_CHARS, REPL_HISTORY_FILE_MAX_BYTES,
     };
     use crate::interface::repl::session::startup_repl;
 
@@ -213,6 +246,16 @@ mod tests {
     }
 
     #[test]
+    fn parse_history_marks_json_entries_with_invalid_commands_as_malformed() {
+        let payload = serde_json::to_string(&vec!["status".to_string(), "bad\u{0001}".to_string()])
+            .expect("json serialization");
+        let report = parse_history_entries(&payload);
+        assert_eq!(report.entries, vec!["status".to_string()]);
+        assert!(report.malformed);
+        assert_eq!(report.dropped_entries, 1);
+    }
+
+    #[test]
     fn load_history_reports_normalization_diagnostics() {
         let path = temp_history_file("normalize");
         std::fs::write(&path, "status\nbad\u{0007}\n").expect("history write should succeed");
@@ -241,5 +284,38 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("history command exceeded"));
+    }
+
+    #[test]
+    fn load_history_ignores_oversized_files() {
+        let path = temp_history_file("oversized");
+        let oversized = vec![b'x'; (REPL_HISTORY_FILE_MAX_BYTES + 1024) as usize];
+        std::fs::write(&path, oversized).expect("history write should succeed");
+
+        let (mut session, _) = startup_repl("", None);
+        session.last_error = Some("stale".to_string());
+        configure_history(&mut session, Some(path.clone()), true, 50);
+        load_history(&mut session).expect("history load should succeed");
+
+        assert!(session.history.is_empty());
+        assert!(session.last_error.as_deref().unwrap_or_default().contains("exceeds"));
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn load_history_clears_previous_error_after_clean_read() {
+        let path = temp_history_file("clean-read");
+        std::fs::write(&path, "status\n").expect("history write should succeed");
+
+        let (mut session, _) = startup_repl("", None);
+        session.last_error = Some("stale".to_string());
+        configure_history(&mut session, Some(path.clone()), true, 50);
+        load_history(&mut session).expect("history load should succeed");
+
+        assert_eq!(session.history, vec!["status".to_string()]);
+        assert!(session.last_error.is_none());
+
+        let _ = std::fs::remove_file(path);
     }
 }
