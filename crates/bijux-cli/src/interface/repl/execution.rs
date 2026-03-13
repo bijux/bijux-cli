@@ -48,22 +48,25 @@ fn needs_multiline_continuation(line: &str) -> bool {
     trimmed.ends_with('\\')
 }
 
-fn render_meta_help(path: &[String]) -> String {
+fn render_meta_help(path: &[String]) -> Result<String, ReplError> {
     let mut command = root_command();
     let mut curr = &mut command;
     for segment in path {
         if let Some(next) = curr.find_subcommand_mut(segment) {
             curr = next;
         } else {
-            return format!("Unknown command for help: {}\n", path.join(" "));
+            return Err(ReplError::InvalidMetaCommand(format!(
+                "unknown help topic: {}",
+                path.join(" ")
+            )));
         }
     }
 
     let mut bytes = Vec::new();
     if curr.write_long_help(&mut bytes).is_ok() {
-        String::from_utf8(bytes).unwrap_or_else(|_| "Unable to render help\n".to_string())
+        Ok(String::from_utf8(bytes).unwrap_or_else(|_| "Unable to render help\n".to_string()))
     } else {
-        "Unable to render help\n".to_string()
+        Ok("Unable to render help\n".to_string())
     }
 }
 
@@ -76,7 +79,7 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
 
     match tokens[0].as_str() {
         "help" => {
-            let body = render_meta_help(&tokens[1..]);
+            let body = render_meta_help(&tokens[1..])?;
             Ok(ReplEvent::Continue(Some(ReplFrame {
                 stream: ReplStream::Stdout,
                 content: if body.ends_with('\n') { body } else { format!("{body}\n") },
@@ -148,7 +151,9 @@ fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> 
         .to_string()
     });
 
-    argv.extend_from_slice(&line_argv[1..]);
+    if line_argv.len() > 1 {
+        argv.extend_from_slice(&line_argv[1..]);
+    }
     argv
 }
 
@@ -160,7 +165,9 @@ pub fn execute_repl_input(
     match input {
         ReplInput::Interrupt => {
             session.pending_multiline = None;
+            session.commands_executed += 1;
             session.last_exit_code = 130;
+            session.last_error = Some("Interrupted".to_string());
             Ok(ReplEvent::Interrupted(ReplFrame {
                 stream: ReplStream::Stderr,
                 content: "Interrupted\n".to_string(),
@@ -205,6 +212,7 @@ pub fn execute_repl_input(
                         session.last_error = Some("Interrupted".to_string());
                     }
                     Err(error) => {
+                        session.commands_executed += 1;
                         session.last_exit_code = 2;
                         session.last_error = Some(error.to_string());
                     }
@@ -212,16 +220,28 @@ pub fn execute_repl_input(
                 return outcome;
             }
 
+            let tokenized = match parse_shell_tokens_strict(&final_line) {
+                Ok(value) => value,
+                Err(error) => {
+                    session.commands_executed += 1;
+                    session.last_exit_code = 2;
+                    session.last_error = Some(error.to_string());
+                    return Err(error);
+                }
+            };
+            let argv = std::iter::once("bijux".to_string()).chain(tokenized).collect::<Vec<_>>();
             push_history(session, &final_line);
 
-            let tokenized = parse_shell_tokens_strict(&final_line)?;
-            let argv = std::iter::once("bijux".to_string()).chain(tokenized).collect::<Vec<_>>();
-
             let effective_argv = apply_session_policy_to_argv(session, &argv);
-            let result = run_app(&effective_argv).map_err(|error| {
-                session.last_error = Some(error.to_string());
-                ReplError::Core(error.to_string())
-            })?;
+            let result = match run_app(&effective_argv) {
+                Ok(value) => value,
+                Err(error) => {
+                    session.commands_executed += 1;
+                    session.last_exit_code = 1;
+                    session.last_error = Some(error.to_string());
+                    return Err(ReplError::Core(error.to_string()));
+                }
+            };
 
             session.commands_executed += 1;
             session.last_exit_code = result.exit_code;
@@ -279,6 +299,9 @@ mod tests {
         let (mut session, _) = startup_repl("", None);
         let result = execute_repl_line(&mut session, "status --config-path \"unterminated");
         assert!(matches!(result, Err(ReplError::InvalidCommandInput(_))));
+        assert_eq!(session.last_exit_code, 2);
+        assert_eq!(session.commands_executed, 1);
+        assert!(session.last_error.is_some());
     }
 
     #[test]
@@ -302,5 +325,28 @@ mod tests {
         assert!(result.is_some());
         assert_eq!(session.last_exit_code, 0);
         assert!(session.last_error.is_none());
+    }
+
+    #[test]
+    fn meta_help_unknown_topic_is_usage_error() {
+        let (mut session, _) = startup_repl("", None);
+        let result = execute_repl_line(&mut session, ":help definitely-missing-command");
+        assert!(matches!(result, Err(ReplError::InvalidMetaCommand(_))));
+        assert_eq!(session.last_exit_code, 2);
+        assert_eq!(session.commands_executed, 1);
+    }
+
+    #[test]
+    fn interrupt_updates_last_error_and_counter() {
+        let (mut session, _) = startup_repl("", None);
+        let event = super::execute_repl_input(
+            &mut session,
+            crate::interface::repl::types::ReplInput::Interrupt,
+        )
+        .expect("interrupt should return event");
+        assert!(matches!(event, crate::interface::repl::types::ReplEvent::Interrupted(_)));
+        assert_eq!(session.last_exit_code, 130);
+        assert_eq!(session.commands_executed, 1);
+        assert_eq!(session.last_error.as_deref(), Some("Interrupted"));
     }
 }
