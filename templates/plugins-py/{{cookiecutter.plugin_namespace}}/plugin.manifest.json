@@ -1,0 +1,15 @@
+{
+  "name": "{{cookiecutter.project_name}}",
+  "version": "{{cookiecutter.plugin_version}}",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {
+    "min_inclusive": "{{cookiecutter.cli_min}}",
+    "max_exclusive": "{{cookiecutter.cli_max}}"
+  },
+  "namespace": "{{cookiecutter.plugin_namespace}}",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}
