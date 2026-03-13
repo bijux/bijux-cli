@@ -49,6 +49,10 @@ The stable lifecycle state terms are:
 
 These terms are stable for registry persistence and diagnostics.
 
+Lifecycle transitions are expected to validate metadata first, keep registry and
+filesystem state aligned, and avoid leaving ambiguous partial installs behind on
+failure.
+
 ## Manifest And Kind Policy
 
 - the durable local plugin contract is based on `plugin.manifest.json`

@@ -34,6 +34,19 @@ flowchart TD
 - output formatting belongs to the shared emission layer, not to each command
 - CLI and REPL should describe the same command world
 
+## Execution Rules
+
+Each run follows a small set of rules that keep behavior predictable:
+
+- parsing should stay pure and build the command request without side effects
+- policy should be resolved once and not mutated later
+- fast paths such as `--help` and `--version` should not initialize the full
+  runtime
+- output routing should be decided once and enforced consistently
+
+When one of those rules leaks, the usual symptoms are nondeterministic output,
+CLI and Python parity drift, or inconsistent exit behavior.
+
 ## Practical Consequence
 
 If you are debugging behavior, ask these questions in order:

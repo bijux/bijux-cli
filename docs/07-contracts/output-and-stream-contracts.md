@@ -55,6 +55,14 @@ Exact message wording is not frozen, but the envelope semantics are.
 - `--quiet` may suppress non-essential informational text, but not required
   machine-readable output
 
+## Logging Semantics
+
+- logging is diagnostic output, not command result data
+- output-format flags affect payload rendering, not log policy
+- log-level changes verbosity, not command semantics
+- logging failures must not suppress command payloads or rewrite exit-code
+  meanings
+
 ## Serialization Rule
 
 If the requested structured format cannot be emitted, the command must fail with
