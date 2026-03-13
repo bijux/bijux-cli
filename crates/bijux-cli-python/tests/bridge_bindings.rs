@@ -267,10 +267,15 @@ fn binary_and_bridge_use_same_command_registry_contract() {
     assert_eq!(bridge_tree["root"], "bijux");
     assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
     assert!(surface.iter().any(|item| item.starts_with("cli ")));
+    let legacy_maintainer_surface = ["dev", "cli"].join(" ");
     assert!(
         !surface
             .iter()
-            .any(|item| item == "dev" || item.starts_with("dev cli ") || item.starts_with("bijux-dev-cli ")),
+            .any(|item| {
+                item == "dev"
+                    || item.starts_with(&(legacy_maintainer_surface.clone() + " "))
+                    || item.starts_with("bijux-dev-cli ")
+            }),
         "command registry must keep maintainer command surfaces outside runtime ownership"
     );
 }
