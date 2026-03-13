@@ -15,12 +15,12 @@ permissions:
 
 jobs:
   publish-crates:
-    name: publish-crates
+    name: Publish crates.io packages
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Wait for CI on tagged release commit
+      - name: Wait for CI to pass on the tagged commit
         if: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.sha }}
 
-      - name: Plan crates release
+      - name: Decide whether to publish crates.io packages
         id: release
         env:
           TARGET_SHA: ${{ github.sha }}
@@ -46,10 +46,11 @@ jobs:
         if: ${{ steps.release.outputs.publish == 'true' }}
         uses: dtolnay/rust-toolchain@stable
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@v2
         if: ${{ steps.release.outputs.publish == 'true' }}
 
-      - name: Check crates.io credentials
+      - name: Verify crates.io credentials
         if: ${{ steps.release.outputs.publish == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

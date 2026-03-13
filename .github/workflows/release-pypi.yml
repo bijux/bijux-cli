@@ -19,12 +19,12 @@ env:
 
 jobs:
   publish-pypi:
-    name: publish-pypi
+    name: Publish PyPI distributions
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Wait for CI on tagged release commit
+      - name: Wait for CI to pass on the tagged commit
         if: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.sha }}
 
-      - name: Plan PyPI release
+      - name: Decide whether to publish PyPI distributions
         id: release
         env:
           TARGET_SHA: ${{ github.sha }}
@@ -58,10 +58,11 @@ jobs:
         if: ${{ steps.release.outputs.publish == 'true' }}
         uses: dtolnay/rust-toolchain@stable
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@v2
         if: ${{ steps.release.outputs.publish == 'true' }}
 
-      - name: Publish to PyPI
+      - name: Publish PyPI distributions
         if: ${{ steps.release.outputs.publish == 'true' }}
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}

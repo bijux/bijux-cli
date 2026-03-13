@@ -14,12 +14,13 @@ concurrency:
 
 jobs:
   build-deploy:
+    name: Build and deploy documentation
     runs-on: ubuntu-latest
     env:
       ENABLE_SOCIAL_CARDS: "true"
 
     steps:
-      - name: Checkout (full history for revision-date plugin)
+      - name: Check out the repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,7 +37,8 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Install documentation toolchain
         run: make gh-docs-install
@@ -44,17 +46,17 @@ jobs:
       - name: Export release tag
         run: make gh-docs-export-release-tag
 
-      - name: Generate artifact summary pages
+      - name: Generate release artifact summary pages
         run: make docs-artifact-pages
 
-      - name: Check generated artifact pages
+      - name: Verify release artifact summary pages
         run: make docs-artifact-pages-check
 
-      - name: Check docs (make docs-check)
+      - name: Run documentation checks
         run: make docs-check
 
-      - name: Configure Git author
+      - name: Configure the Git author
         run: make gh-docs-configure-git
 
-      - name: Deploy docs (make docs-deploy)
+      - name: Deploy documentation
         run: make docs-deploy
