@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Value};
 
@@ -26,6 +26,7 @@ const MAX_COMMAND_PREVIEW_CHARS: usize = 128;
 const MAX_ARG_CHARS: usize = 256;
 const MAX_CAPTURED_ARGS: usize = 64;
 const MAX_STAGE_FIELD_CHARS: usize = 128;
+const MAX_PAYLOAD_JSON_BYTES: usize = 32 * 1024;
 /// Max number of chars retained for telemetry message-like fields.
 pub const MAX_TEXT_FIELD_CHARS: usize = 2048;
 /// Max number of chars retained for telemetry command-like fields.
@@ -171,6 +172,53 @@ fn command_preview(argv: &[String]) -> (String, bool, Option<usize>, &'static st
     )
 }
 
+fn runtime_build_profile() -> &'static str {
+    if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
+    }
+}
+
+fn bounded_cwd() -> (Option<String>, bool, Option<String>, bool) {
+    match std::env::current_dir() {
+        Ok(path) => {
+            let rendered = path.to_string_lossy().to_string();
+            let (cwd, cwd_truncated) = truncate_chars(&rendered, MAX_TEXT_FIELD_CHARS);
+            (Some(cwd), cwd_truncated, None, false)
+        }
+        Err(error) => {
+            let (message, message_truncated) =
+                truncate_chars(&error.to_string(), MAX_TEXT_FIELD_CHARS);
+            (None, false, Some(message), message_truncated)
+        }
+    }
+}
+
+fn normalized_stage_name(stage: &str) -> (String, bool, bool) {
+    let stage_was_empty = stage.trim().is_empty();
+    let source = if stage_was_empty { "unknown_stage" } else { stage };
+    let (name, truncated) = truncate_chars(source, MAX_STAGE_FIELD_CHARS);
+    (name, truncated, stage_was_empty)
+}
+
+fn normalize_payload(payload: Value) -> (Value, usize, bool) {
+    let payload_bytes = serde_json::to_vec(&payload).map_or(0, |bytes| bytes.len());
+    if payload_bytes <= MAX_PAYLOAD_JSON_BYTES {
+        return (payload, payload_bytes, false);
+    }
+
+    (
+        json!({
+            "truncated_payload": true,
+            "original_payload_bytes": payload_bytes,
+            "max_payload_bytes": MAX_PAYLOAD_JSON_BYTES,
+        }),
+        payload_bytes,
+        true,
+    )
+}
+
 fn resolve_sink_path() -> Option<PathBuf> {
     let raw = std::env::var_os(TELEMETRY_FILE_ENV)?;
     let raw_path = PathBuf::from(raw);
@@ -232,6 +280,7 @@ pub struct TelemetrySpan {
     invocation_id: String,
     sink_path: Option<PathBuf>,
     started_at_ms: u128,
+    started_at_instant: Instant,
     event_seq: Arc<AtomicU64>,
 }
 
@@ -245,6 +294,7 @@ impl TelemetrySpan {
             invocation_id: next_invocation_id(runtime),
             sink_path,
             started_at_ms: unix_timestamp_millis(),
+            started_at_instant: Instant::now(),
             event_seq: Arc::new(AtomicU64::new(1)),
         };
 
@@ -252,6 +302,7 @@ impl TelemetrySpan {
         let (program, program_truncated) =
             truncate_chars(argv.first().map_or("", String::as_str), MAX_COMMAND_FIELD_CHARS);
         let (preview, preview_truncated, preview_index, preview_source) = command_preview(argv);
+        let (cwd, cwd_truncated, cwd_error, cwd_error_truncated) = bounded_cwd();
         let argv_payload = if include_args {
             let mut payload = sanitize_argv(argv);
             if let Some(map) = payload.as_object_mut() {
@@ -262,6 +313,13 @@ impl TelemetrySpan {
                 map.insert("command_preview_truncated".to_string(), json!(preview_truncated));
                 map.insert("command_preview_index".to_string(), json!(preview_index));
                 map.insert("command_preview_source".to_string(), json!(preview_source));
+                map.insert("runtime_version".to_string(), json!(super::version::runtime_version()));
+                map.insert("runtime_semver".to_string(), json!(super::version::runtime_semver()));
+                map.insert("build_profile".to_string(), json!(runtime_build_profile()));
+                map.insert("cwd".to_string(), json!(cwd));
+                map.insert("cwd_truncated".to_string(), json!(cwd_truncated));
+                map.insert("cwd_error".to_string(), json!(cwd_error));
+                map.insert("cwd_error_truncated".to_string(), json!(cwd_error_truncated));
             }
             payload
         } else {
@@ -274,6 +332,13 @@ impl TelemetrySpan {
                 "command_preview_truncated": preview_truncated,
                 "command_preview_index": preview_index,
                 "command_preview_source": preview_source,
+                "runtime_version": super::version::runtime_version(),
+                "runtime_semver": super::version::runtime_semver(),
+                "build_profile": runtime_build_profile(),
+                "cwd": cwd,
+                "cwd_truncated": cwd_truncated,
+                "cwd_error": cwd_error,
+                "cwd_error_truncated": cwd_error_truncated,
             })
         };
         span.record("invocation.start", argv_payload);
@@ -287,7 +352,11 @@ impl TelemetrySpan {
         };
 
         let seq = self.event_seq.fetch_add(1, Ordering::Relaxed);
-        let (stage_name, stage_truncated) = truncate_chars(stage, MAX_STAGE_FIELD_CHARS);
+        let (stage_name, stage_truncated, stage_was_empty) = normalized_stage_name(stage);
+        let (payload, payload_bytes, payload_truncated) = normalize_payload(payload);
+        let timestamp_ms = unix_timestamp_millis();
+        let elapsed_ms = timestamp_ms.saturating_sub(self.started_at_ms);
+        let elapsed_monotonic_ms = self.started_at_instant.elapsed().as_millis();
         let event = json!({
             "schema": "bijux-telemetry-event-v1",
             "runtime": self.runtime,
@@ -296,8 +365,12 @@ impl TelemetrySpan {
             "sequence": seq,
             "stage": stage_name,
             "stage_truncated": stage_truncated,
-            "timestamp_ms": unix_timestamp_millis(),
-            "elapsed_ms": unix_timestamp_millis().saturating_sub(self.started_at_ms),
+            "stage_was_empty": stage_was_empty,
+            "timestamp_ms": timestamp_ms,
+            "elapsed_ms": elapsed_ms,
+            "elapsed_monotonic_ms": elapsed_monotonic_ms,
+            "payload_bytes": payload_bytes,
+            "payload_truncated": payload_truncated,
             "payload": payload,
         });
 
@@ -308,6 +381,8 @@ impl TelemetrySpan {
 
     /// Record invocation completion based on final process exit.
     pub fn finish_exit(&self, exit_code: i32, stdout_bytes: usize, stderr_bytes: usize) {
+        let duration_ms = self.started_at_instant.elapsed().as_millis();
+        let duration_ms_wall_clock = unix_timestamp_millis().saturating_sub(self.started_at_ms);
         self.record(
             "invocation.finish",
             json!({
@@ -316,7 +391,8 @@ impl TelemetrySpan {
                 "exit_kind": exit_code_kind(exit_code),
                 "stdout_bytes": stdout_bytes,
                 "stderr_bytes": stderr_bytes,
-                "duration_ms": unix_timestamp_millis().saturating_sub(self.started_at_ms),
+                "duration_ms": duration_ms,
+                "duration_ms_wall_clock": duration_ms_wall_clock,
             }),
         );
     }
@@ -324,13 +400,16 @@ impl TelemetrySpan {
     /// Record invocation failure caused by internal runtime errors.
     pub fn finish_internal_error(&self, error_message: &str, exit_code: i32) {
         let (message, message_truncated) = truncate_chars(error_message, MAX_TEXT_FIELD_CHARS);
+        let duration_ms = self.started_at_instant.elapsed().as_millis();
+        let duration_ms_wall_clock = unix_timestamp_millis().saturating_sub(self.started_at_ms);
         self.record(
             "invocation.finish",
             json!({
                 "result": "internal_error",
                 "exit_code": exit_code,
                 "exit_kind": exit_code_kind(exit_code),
-                "duration_ms": unix_timestamp_millis().saturating_sub(self.started_at_ms),
+                "duration_ms": duration_ms,
+                "duration_ms_wall_clock": duration_ms_wall_clock,
                 "error_message": message,
                 "error_message_truncated": message_truncated,
             }),
@@ -341,8 +420,9 @@ impl TelemetrySpan {
 #[cfg(test)]
 mod tests {
     use super::{
-        exit_code_kind, truncate_chars, TelemetrySpan, MAX_CAPTURED_ARGS, MAX_STAGE_FIELD_CHARS,
-        MAX_TEXT_FIELD_CHARS, TELEMETRY_FILE_ENV, TELEMETRY_INCLUDE_ARGS_ENV,
+        exit_code_kind, truncate_chars, TelemetrySpan, MAX_CAPTURED_ARGS, MAX_PAYLOAD_JSON_BYTES,
+        MAX_STAGE_FIELD_CHARS, MAX_TEXT_FIELD_CHARS, TELEMETRY_FILE_ENV,
+        TELEMETRY_INCLUDE_ARGS_ENV,
     };
     use serde_json::{json, Value};
     use std::sync::Mutex;
@@ -390,9 +470,15 @@ mod tests {
         assert_eq!(rows[1]["sequence"], 2);
         assert_eq!(rows[2]["sequence"], 3);
         assert!(rows.iter().all(|row| row["elapsed_ms"].is_number()));
+        assert!(rows.iter().all(|row| row["elapsed_monotonic_ms"].is_number()));
         assert!(rows.iter().all(|row| row["stage_truncated"].is_boolean()));
+        assert!(rows.iter().all(|row| row["payload_bytes"].is_u64()));
+        assert!(rows.iter().all(|row| row["payload_truncated"].is_boolean()));
         assert_eq!(rows[0]["payload"]["arg_capture_mode"], "preview");
         assert_eq!(rows[0]["payload"]["command_preview"], "status");
+        assert_eq!(rows[0]["payload"]["runtime_semver"], super::super::version::runtime_semver());
+        assert_eq!(rows[0]["payload"]["runtime_version"], super::super::version::runtime_version());
+        assert!(rows[0]["payload"]["build_profile"].is_string());
     }
 
     #[test]
@@ -618,5 +704,61 @@ mod tests {
         assert_eq!(first["payload"]["command_preview"], "plugins");
         assert_eq!(first["payload"]["command_preview_index"], 3);
         assert_eq!(first["payload"]["command_preview_source"], "passthrough");
+    }
+
+    #[test]
+    fn span_normalizes_empty_stage_names() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("events.jsonl");
+
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let span = TelemetrySpan::start("bijux-cli", &["bijux".to_string(), "status".to_string()]);
+        span.record("   ", json!({"ok": true}));
+        span.finish_exit(0, 0, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry body");
+        let rows: Vec<Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json line")).collect();
+        let row =
+            rows.iter().find(|entry| entry["payload"]["ok"] == true).expect("normalized stage row");
+        assert_eq!(row["stage"], "unknown_stage");
+        assert_eq!(row["stage_was_empty"], true);
+    }
+
+    #[test]
+    fn span_truncates_oversized_payloads() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("events.jsonl");
+
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let span = TelemetrySpan::start("bijux-cli", &["bijux".to_string(), "status".to_string()]);
+        let oversized = json!({
+            "blob": "x".repeat(MAX_PAYLOAD_JSON_BYTES + 1024),
+        });
+        span.record("oversized", oversized);
+        span.finish_exit(0, 0, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry body");
+        let rows: Vec<Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json line")).collect();
+        let row = rows.iter().find(|entry| entry["stage"] == "oversized").expect("oversized row");
+        assert_eq!(row["payload_truncated"], true);
+        assert!(row["payload"]["truncated_payload"].as_bool().unwrap_or(false));
+        assert!(
+            row["payload"]["original_payload_bytes"].as_u64().unwrap_or_default()
+                > MAX_PAYLOAD_JSON_BYTES as u64
+        );
     }
 }
