@@ -5,7 +5,7 @@ High-value documents only. Everything else is supporting detail.
 ## Current Status
 - [Status and gaps](KNOWN_GAPS.md)
 - [Plugin runtime law](PLUGIN_RUNTIME_LAW.md)
-- [Contributor engineering rules](CONTRIBUTOR_ENGINEERING_RULES.md)
+- [Development guide](05-development/index.md)
 - [Plugin state](plugin_state.md)
 
 ## Core Law
@@ -27,7 +27,7 @@ High-value documents only. Everything else is supporting detail.
 - [Configuration and output](03-user-guide/configuration-and-output.md)
 - [Plugins and extensions](03-user-guide/plugins-and-extensions.md)
 - [Installation guide](guides/installation.md)
-- [Development guide](guides/development.md)
+- [Development guide](05-development/index.md)
 - [REPL reference](reference/repl.md)
 
 ## Live Checks

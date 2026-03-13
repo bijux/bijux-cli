@@ -100,11 +100,11 @@ plugins:
         getting-started/index.md: 02-getting-started/index.md
         getting-started/quickstart.md: 02-getting-started/run-your-first-commands.md
         examples/index.md: examples/workflows.md
-        guides/hermetic-builds.md: guides/development.md
-        guides/reproducible-releases.md: guides/development.md
-        guides/release-checklist.md: guides/development.md
-        guides/upgrade-rollback-plan.md: guides/development.md
-        guides/compatibility-unified.md: guides/development.md
+        guides/hermetic-builds.md: 05-development/release-and-compatibility.md
+        guides/reproducible-releases.md: 05-development/release-and-compatibility.md
+        guides/release-checklist.md: 05-development/release-and-compatibility.md
+        guides/upgrade-rollback-plan.md: 05-development/release-and-compatibility.md
+        guides/compatibility-unified.md: 05-development/release-and-compatibility.md
         reference/current-python/top-level-commands.md: reference/current-python/index.md
         reference/current-python/dev-commands.md: reference/current-python/index.md
         reference/current-python/repl-commands-and-shortcuts.md: reference/current-python/index.md
@@ -176,7 +176,10 @@ plugins:
         architecture/rust-baseline-parity-v1.md: 10-architecture/configuration-and-state.md
         architecture/rust-config-baseline-parity-status.md: 10-architecture/configuration-and-state.md
         rust-config-parity.md: 10-architecture/configuration-and-state.md
-        architecture/rustdoc_primary_code_docs_policy.md: guides/development.md
+        architecture/rustdoc_primary_code_docs_policy.md: 05-development/index.md
+        guides/development.md: 05-development/index.md
+        guides/contributor-mental-model.md: 05-development/change-model.md
+        CONTRIBUTOR_ENGINEERING_RULES.md: 05-development/testing-and-evidence.md
         architecture/parity-decision-log.md: 10-architecture/quality-and-change-management.md
         architecture/parser-abuse-hardening.md: 10-architecture/routing-and-surfaces.md
         architecture/script-automation-reduction-status.md: 10-architecture/maintainer-control-plane.md

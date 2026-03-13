@@ -25,7 +25,5 @@ Each guide explains a single workflow, its prerequisites, the exact commands to 
 ## Index
 - [Installation](installation.md)
 - [API usage](api-usage.md)
-- [Development](development.md)
 - [Atlas local routing](atlas-local-routing.md)
-- [Contributor mental model](contributor-mental-model.md)
 - [Python runtime migration](python/runtime-migration.md)
