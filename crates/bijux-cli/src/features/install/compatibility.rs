@@ -97,30 +97,29 @@ pub fn discover_compatibility_paths(
     env_map: &std::collections::HashMap<String, String, impl BuildHasher>,
     file_config: &CompatibilityConfig,
 ) -> Result<CompatibilityPaths, CompatibilityError> {
-    let home = home_dir.ok_or(CompatibilityError::MissingHome)?;
-    let defaults = default_compatibility_paths(home);
+    let defaults = home_dir.map(default_compatibility_paths);
 
     let config_file = select_path(
         cli_overrides.config_file.as_ref(),
         env_map.get(ENV_CONFIG_PATH),
         file_config.config_file.as_ref(),
-        &defaults.config_file,
-        home,
-    );
+        defaults.as_ref().map(|paths| paths.config_file.as_path()),
+        home_dir,
+    )?;
     let history_file = select_path(
         cli_overrides.history_file.as_ref(),
         env_map.get(ENV_HISTORY_PATH),
         file_config.history_file.as_ref(),
-        &defaults.history_file,
-        home,
-    );
+        defaults.as_ref().map(|paths| paths.history_file.as_path()),
+        home_dir,
+    )?;
     let plugins_dir = select_path(
         cli_overrides.plugins_dir.as_ref(),
         env_map.get(ENV_PLUGINS_PATH),
         file_config.plugins_dir.as_ref(),
-        &defaults.plugins_dir,
-        home,
-    );
+        defaults.as_ref().map(|paths| paths.plugins_dir.as_path()),
+        home_dir,
+    )?;
 
     Ok(CompatibilityPaths { config_file, history_file, plugins_dir })
 }
@@ -227,15 +226,16 @@ fn select_path(
     cli_value: Option<&PathBuf>,
     env_value: Option<&String>,
     config_value: Option<&PathBuf>,
-    default_value: &Path,
-    home_dir: &Path,
-) -> PathBuf {
+    default_value: Option<&Path>,
+    home_dir: Option<&Path>,
+) -> Result<PathBuf, CompatibilityError> {
     let candidate = cli_value
         .filter(|value| !path_is_empty(value))
         .cloned()
         .or_else(|| env_value.filter(|value| !value.trim().is_empty()).map(PathBuf::from))
         .or_else(|| config_value.filter(|value| !path_is_empty(value)).cloned())
-        .unwrap_or_else(|| default_value.to_path_buf());
+        .or_else(|| default_value.map(Path::to_path_buf))
+        .ok_or(CompatibilityError::MissingHome)?;
 
     normalize_path(&candidate, home_dir)
 }
@@ -244,22 +244,24 @@ fn path_is_empty(path: &Path) -> bool {
     path.to_str().is_some_and(|value| value.trim().is_empty())
 }
 
-fn normalize_path(path: &Path, home_dir: &Path) -> PathBuf {
+fn normalize_path(path: &Path, home_dir: Option<&Path>) -> Result<PathBuf, CompatibilityError> {
     let Some(raw) = path.to_str() else {
-        return path.to_path_buf();
+        return Ok(path.to_path_buf());
     };
 
     if raw == "~" {
-        return home_dir.to_path_buf();
+        return home_dir.map(Path::to_path_buf).ok_or(CompatibilityError::MissingHome);
     }
     if let Some(tail) = raw.strip_prefix("~/") {
-        return home_dir.join(tail);
+        let home = home_dir.ok_or(CompatibilityError::MissingHome)?;
+        return Ok(home.join(tail));
     }
     if path.is_absolute() {
-        return path.to_path_buf();
+        return Ok(path.to_path_buf());
     }
 
-    home_dir.join(path)
+    let home = home_dir.ok_or(CompatibilityError::MissingHome)?;
+    Ok(home.join(path))
 }
 
 #[cfg(test)]
@@ -338,5 +340,56 @@ mod tests {
         assert_eq!(resolved.config_file, home.join(".bijux/.env"));
         assert_eq!(resolved.history_file, home.join(".bijux/.history"));
         assert_eq!(resolved.plugins_dir, home.join(".bijux/.plugins"));
+    }
+
+    #[test]
+    fn discover_paths_without_home_supports_absolute_overrides() {
+        let overrides = PathOverrides {
+            config_file: Some(PathBuf::from("/tmp/bijux/config.env")),
+            history_file: Some(PathBuf::from("/tmp/bijux/history.log")),
+            plugins_dir: Some(PathBuf::from("/tmp/bijux/plugins")),
+        };
+
+        let resolved = discover_compatibility_paths(
+            None,
+            &overrides,
+            &HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect("absolute overrides should not require home");
+
+        assert_eq!(resolved.config_file, PathBuf::from("/tmp/bijux/config.env"));
+        assert_eq!(resolved.history_file, PathBuf::from("/tmp/bijux/history.log"));
+        assert_eq!(resolved.plugins_dir, PathBuf::from("/tmp/bijux/plugins"));
+    }
+
+    #[test]
+    fn discover_paths_without_home_rejects_defaults() {
+        let error = discover_compatibility_paths(
+            None,
+            &PathOverrides::default(),
+            &HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect_err("missing home should fail when defaults are required");
+        assert!(matches!(error, CompatibilityError::MissingHome));
+    }
+
+    #[test]
+    fn discover_paths_without_home_rejects_relative_overrides() {
+        let overrides = PathOverrides {
+            config_file: Some(PathBuf::from("config.env")),
+            history_file: Some(PathBuf::from("/tmp/bijux/history.log")),
+            plugins_dir: Some(PathBuf::from("/tmp/bijux/plugins")),
+        };
+
+        let error = discover_compatibility_paths(
+            None,
+            &overrides,
+            &HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect_err("relative overrides still need home to normalize");
+        assert!(matches!(error, CompatibilityError::MissingHome));
     }
 }
