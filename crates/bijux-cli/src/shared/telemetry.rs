@@ -106,6 +106,71 @@ fn sanitize_argv(argv: &[String]) -> Value {
     })
 }
 
+fn global_flag_without_value(token: &str) -> bool {
+    matches!(
+        token,
+        "--help"
+            | "-h"
+            | "--version"
+            | "-V"
+            | "--quiet"
+            | "-q"
+            | "--pretty"
+            | "--no-pretty"
+            | "--json"
+            | "--text"
+    )
+}
+
+fn global_flag_with_value(token: &str) -> bool {
+    matches!(token, "--format" | "-f" | "--log-level" | "--color" | "--config-path")
+}
+
+fn global_flag_with_equals(token: &str) -> bool {
+    token.starts_with("--format=")
+        || token.starts_with("--log-level=")
+        || token.starts_with("--color=")
+        || token.starts_with("--config-path=")
+}
+
+fn command_preview(argv: &[String]) -> (String, bool, Option<usize>, &'static str) {
+    let mut consume_next = false;
+    for (idx, token) in argv.iter().enumerate().skip(1) {
+        if consume_next {
+            consume_next = false;
+            continue;
+        }
+        if token == "--" {
+            if let Some(next) = argv.get(idx + 1) {
+                let (preview, truncated) = truncate_chars(next, MAX_COMMAND_PREVIEW_CHARS);
+                return (preview, truncated, Some(idx + 1), "passthrough");
+            }
+            break;
+        }
+        if global_flag_with_value(token) {
+            consume_next = true;
+            continue;
+        }
+        if global_flag_without_value(token) || global_flag_with_equals(token) {
+            continue;
+        }
+        if token.starts_with('-') {
+            continue;
+        }
+        let (preview, truncated) = truncate_chars(token, MAX_COMMAND_PREVIEW_CHARS);
+        return (preview, truncated, Some(idx), "first_non_flag");
+    }
+
+    let fallback = argv.get(1).map_or("", String::as_str);
+    let (preview, truncated) = truncate_chars(fallback, MAX_COMMAND_PREVIEW_CHARS);
+    (
+        preview,
+        truncated,
+        if argv.len() > 1 { Some(1) } else { None },
+        if argv.len() > 1 { "fallback_first_arg" } else { "missing" },
+    )
+}
+
 fn resolve_sink_path() -> Option<PathBuf> {
     let raw = std::env::var_os(TELEMETRY_FILE_ENV)?;
     let raw_path = PathBuf::from(raw);
@@ -184,15 +249,31 @@ impl TelemetrySpan {
         };
 
         let include_args = std::env::var_os(TELEMETRY_INCLUDE_ARGS_ENV).is_some();
+        let (program, program_truncated) =
+            truncate_chars(argv.first().map_or("", String::as_str), MAX_COMMAND_FIELD_CHARS);
+        let (preview, preview_truncated, preview_index, preview_source) = command_preview(argv);
         let argv_payload = if include_args {
-            sanitize_argv(argv)
+            let mut payload = sanitize_argv(argv);
+            if let Some(map) = payload.as_object_mut() {
+                map.insert("arg_capture_mode".to_string(), json!("full"));
+                map.insert("program".to_string(), json!(program));
+                map.insert("program_truncated".to_string(), json!(program_truncated));
+                map.insert("command_preview".to_string(), json!(preview));
+                map.insert("command_preview_truncated".to_string(), json!(preview_truncated));
+                map.insert("command_preview_index".to_string(), json!(preview_index));
+                map.insert("command_preview_source".to_string(), json!(preview_source));
+            }
+            payload
         } else {
-            let (command_preview, truncated) =
-                truncate_chars(argv.get(1).map_or("", String::as_str), MAX_COMMAND_PREVIEW_CHARS);
             json!({
+                "arg_capture_mode": "preview",
+                "program": program,
+                "program_truncated": program_truncated,
                 "argv_count": argv.len(),
-                "command_preview": command_preview,
-                "command_preview_truncated": truncated,
+                "command_preview": preview,
+                "command_preview_truncated": preview_truncated,
+                "command_preview_index": preview_index,
+                "command_preview_source": preview_source,
             })
         };
         span.record("invocation.start", argv_payload);
@@ -310,6 +391,8 @@ mod tests {
         assert_eq!(rows[2]["sequence"], 3);
         assert!(rows.iter().all(|row| row["elapsed_ms"].is_number()));
         assert!(rows.iter().all(|row| row["stage_truncated"].is_boolean()));
+        assert_eq!(rows[0]["payload"]["arg_capture_mode"], "preview");
+        assert_eq!(rows[0]["payload"]["command_preview"], "status");
     }
 
     #[test]
@@ -358,6 +441,8 @@ mod tests {
         assert_eq!(first["payload"]["argv"][2], "list");
         assert_eq!(first["payload"]["argv_total_count"], 3);
         assert_eq!(first["payload"]["argv_clipped_count"], 0);
+        assert_eq!(first["payload"]["arg_capture_mode"], "full");
+        assert_eq!(first["payload"]["command_preview"], "config");
     }
 
     #[test]
@@ -474,5 +559,64 @@ mod tests {
         let stage = oversized["stage"].as_str().expect("stage");
         assert_eq!(stage.chars().count(), MAX_STAGE_FIELD_CHARS);
         assert_eq!(oversized["stage_truncated"], true);
+    }
+
+    #[test]
+    fn start_preview_resolves_first_non_flag_command() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("events.jsonl");
+
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let argv = vec![
+            "bijux".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+            "status".to_string(),
+        ];
+        let span = TelemetrySpan::start("bijux-cli", &argv);
+        span.finish_exit(0, 0, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry body");
+        let first: Value =
+            serde_json::from_str(body.lines().next().expect("first line")).expect("json line");
+        assert_eq!(first["payload"]["command_preview"], "status");
+        assert_eq!(first["payload"]["command_preview_index"], 3);
+        assert_eq!(first["payload"]["command_preview_source"], "first_non_flag");
+    }
+
+    #[test]
+    fn start_preview_uses_passthrough_after_double_dash() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("events.jsonl");
+
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let argv = vec![
+            "bijux".to_string(),
+            "--format=json".to_string(),
+            "--".to_string(),
+            "plugins".to_string(),
+            "list".to_string(),
+        ];
+        let span = TelemetrySpan::start("bijux-cli", &argv);
+        span.finish_exit(0, 0, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry body");
+        let first: Value =
+            serde_json::from_str(body.lines().next().expect("first line")).expect("json line");
+        assert_eq!(first["payload"]["command_preview"], "plugins");
+        assert_eq!(first["payload"]["command_preview_index"], 3);
+        assert_eq!(first["payload"]["command_preview_source"], "passthrough");
     }
 }
