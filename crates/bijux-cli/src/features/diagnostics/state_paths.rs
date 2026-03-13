@@ -19,7 +19,7 @@ use crate::features::plugins::{
     plugin_doctor, prune_registry_backup, registry_path_from_plugins_dir, self_repair_registry,
     PluginError,
 };
-use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
+use crate::infrastructure::state_store::{read_history_report, read_memory_map};
 use crate::routing::parser::ParsedGlobalFlags;
 
 fn non_empty_env_value(name: &str) -> Option<String> {
@@ -230,13 +230,44 @@ pub fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         }));
     }
 
-    if let Err(err) = read_history_entries(&paths.history_file, 20) {
-        issues.push(json!({
-            "area": "history",
-            "severity": "error",
-            "message": err.to_string(),
-            "path": paths.history_file,
-        }));
+    match read_history_report(&paths.history_file, 20) {
+        Ok(history_report) => {
+            if history_report.dropped_invalid_entries > 0 {
+                issues.push(json!({
+                    "area": "history",
+                    "severity": "warning",
+                    "message": "history file contains invalid entries that were ignored",
+                    "dropped_invalid_entries": history_report.dropped_invalid_entries,
+                    "path": paths.history_file,
+                }));
+            }
+            if history_report.truncated_command_entries > 0 {
+                issues.push(json!({
+                    "area": "history",
+                    "severity": "warning",
+                    "message": "history file contains commands that exceeded the command size budget",
+                    "truncated_command_entries": history_report.truncated_command_entries,
+                    "path": paths.history_file,
+                }));
+            }
+            if matches!(history_report.source_format, "legacy-lines" | "legacy-json-lines") {
+                issues.push(json!({
+                    "area": "history",
+                    "severity": "warning",
+                    "message": "history file uses legacy layout; rewrite as a JSON array for deterministic behavior",
+                    "source_format": history_report.source_format,
+                    "path": paths.history_file,
+                }));
+            }
+        }
+        Err(err) => {
+            issues.push(json!({
+                "area": "history",
+                "severity": "error",
+                "message": err.to_string(),
+                "path": paths.history_file,
+            }));
+        }
     }
 
     match read_memory_map(&paths.memory_file) {
