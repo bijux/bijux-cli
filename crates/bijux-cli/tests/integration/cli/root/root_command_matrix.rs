@@ -46,6 +46,29 @@ fn parity_version_flag_matches_version_command() {
 }
 
 #[test]
+fn version_json_contract_exposes_provenance_fields() {
+    let payload = run_ok_json(&["version", "--format", "json", "--no-pretty"]);
+    assert_eq!(payload["name"], "bijux");
+    assert!(payload["version"].is_string());
+    assert!(payload["semver"].is_string());
+    assert!(payload["source"].is_string());
+    assert!(payload["build_profile"].is_string());
+    assert!(payload["git_commit"].is_null() || payload["git_commit"].is_string());
+    assert!(payload["git_dirty"].is_null() || payload["git_dirty"].is_boolean());
+}
+
+#[test]
+fn version_text_mode_is_docker_style_one_line() {
+    let out = run(&["version", "--format", "text"]);
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stderr.is_empty());
+    let text = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(text.starts_with("bijux version "));
+    assert!(!text.contains("version: "));
+    assert_eq!(text.lines().count(), 1);
+}
+
+#[test]
 fn parity_status_against_current_expected_behavior() {
     let out = run(&["status"]);
     assert!(out.status.success());

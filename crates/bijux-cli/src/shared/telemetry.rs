@@ -488,6 +488,18 @@ mod tests {
         assert_eq!(rows[0]["payload"]["command_preview"], "status");
         assert_eq!(rows[0]["payload"]["runtime_semver"], super::super::version::runtime_semver());
         assert_eq!(rows[0]["payload"]["runtime_version"], super::super::version::runtime_version());
+        assert_eq!(
+            rows[0]["payload"]["runtime_version_source"],
+            super::super::version::runtime_version_source()
+        );
+        assert_eq!(
+            rows[0]["payload"]["runtime_git_commit"],
+            serde_json::json!(super::super::version::runtime_git_commit())
+        );
+        assert_eq!(
+            rows[0]["payload"]["runtime_git_dirty"],
+            serde_json::json!(super::super::version::runtime_git_dirty())
+        );
         assert!(rows[0]["payload"]["build_profile"].is_string());
     }
 

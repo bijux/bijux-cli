@@ -37,7 +37,13 @@ fn run_success_json(args: &[&str], label: &str) -> Value {
 #[test]
 fn direct_core_invocation_version() {
     let payload = run_success_json(&["bijux", "version"], "version");
+    assert_eq!(payload["name"], "bijux");
     assert!(payload.get("version").is_some());
+    assert!(payload["semver"].is_string());
+    assert!(payload["source"].is_string());
+    assert!(payload["build_profile"].is_string());
+    assert!(payload["git_commit"].is_null() || payload["git_commit"].is_string());
+    assert!(payload["git_dirty"].is_null() || payload["git_dirty"].is_boolean());
 }
 
 #[test]

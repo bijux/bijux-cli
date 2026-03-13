@@ -10,6 +10,7 @@ use anyhow::Result;
 use serde_json::json;
 
 use crate::contracts::known_bijux_tool;
+use crate::contracts::OutputFormat;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
@@ -400,6 +401,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             "quiet": intent.global_flags.quiet,
         }),
     );
+    let emitter_config = policy::emitter_config(&intent.global_flags);
     if intent.normalized_path.is_empty() {
         telemetry.record("dispatch.intent.empty", json!({}));
         let usage = match root_usage_help_text() {
@@ -492,10 +494,7 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                     }),
                 );
             }
-            let rendered_error = match render_value(
-                &error_payload,
-                policy::emitter_config(&intent.global_flags),
-            ) {
+            let rendered_error = match render_value(&error_payload, emitter_config) {
                 Ok(value) => value,
                 Err(error) => {
                     let (message, message_truncated) = bounded_message(&error.to_string());
@@ -519,15 +518,21 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
     };
 
-    let rendered = match render_value(&payload, policy::emitter_config(&intent.global_flags)) {
-        Ok(value) => value,
-        Err(error) => {
-            let (message, message_truncated) = bounded_message(&error.to_string());
-            telemetry.record(
-                "dispatch.render.error",
-                json!({"stream":"stdout","message": message, "message_truncated": message_truncated}),
-            );
-            return Err(error.into());
+    let rendered = if matches!(intent.normalized_path.as_slice(), [a, b] if a == "cli" && b == "version")
+        && emitter_config.format == OutputFormat::Text
+    {
+        crate::api::version::runtime_version_line()
+    } else {
+        match render_value(&payload, emitter_config) {
+            Ok(value) => value,
+            Err(error) => {
+                let (message, message_truncated) = bounded_message(&error.to_string());
+                telemetry.record(
+                    "dispatch.render.error",
+                    json!({"stream":"stdout","message": message, "message_truncated": message_truncated}),
+                );
+                return Err(error.into());
+            }
         }
     };
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
