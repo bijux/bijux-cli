@@ -211,16 +211,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517],
                                     "evidence_tests": [
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::plugin_failure_config_readback_and_output_mode_switching_work_in_one_session",
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::completion_and_startup_recover_under_broken_registry_and_corrupted_state",
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::repl_and_core_obey_same_command_result_law_for_shared_commands",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::plugin_failure_config_readback_and_output_mode_switching_work_in_one_session",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::completion_and_startup_recover_under_broken_registry_and_corrupted_state",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::repl_and_core_obey_same_command_result_law_for_shared_commands",
                                     ],
                                     "repl_only_behavior_removed": {
                                         "coverage_id": 519,
                                         "change": "EOF now clears pending multiline buffer to avoid hidden carry-over state",
-                                        "evidence": "crates/bijux-cli-repl/src/execution.rs",
+                                        "evidence": "crates/bijux-cli/src/interface/repl/execution.rs",
                                     },
                                 }),
                             )
@@ -241,9 +241,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "History load corruption is non-fatal and completion stays available.",
                                     ],
                                     "evidence_tests": [
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
-                                        "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
-                                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::extremely_long_input_and_repeated_malformed_commands_recover",
+                                        "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs::quiet_trace_interrupt_and_eof_edge_cases_are_stable",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
                                     ],
                                 }),
                             )

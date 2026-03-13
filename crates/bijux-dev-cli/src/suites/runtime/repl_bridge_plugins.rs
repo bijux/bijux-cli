@@ -286,7 +286,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "explicit plugin schema command",
                                     ],
                                     "overlap_parity_tests": [
-                                        "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs",
                                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs",
                                     ],
                                     "remaining_gaps": [

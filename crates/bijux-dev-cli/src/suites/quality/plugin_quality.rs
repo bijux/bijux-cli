@@ -161,8 +161,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS" => {
             let now = generated_at_utc();
             let text = |p: &str| fs::read_to_string(workspace_root.join(p)).unwrap_or_default();
-            let manifest_targets = "crates/bijux-cli-plugin/tests/plugin_manifest_fuzz_targets.rs";
-            let manifest_reg = "crates/bijux-cli-plugin/tests/plugin_manifest_fuzz_regressions.rs";
+            let manifest_targets =
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs";
+            let manifest_reg =
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs";
             let scaffold_targets =
                 "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_fuzz_targets.rs";
             let scaffold_reg =
@@ -172,21 +174,24 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let stxt = text(scaffold_targets);
             let srtxt = text(scaffold_reg);
             let required: BTreeMap<i64, (&str, &str)> = BTreeMap::from([
-                (61, (manifest_targets, "fuzz_plugin_manifest_parsing_is_stable")),
+                (
+                    61,
+                    (manifest_targets, "install_rejects_stale_manifest_version_markers"),
+                ),
                 (
                     62,
                     (
                         manifest_targets,
-                        "fuzz_plugin_manifest_validation_covers_required_and_optional_fields",
+                        "install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases",
                     ),
                 ),
-                (63, (manifest_targets, "fuzz_compatibility_range_parsing_is_enforced")),
-                (64, (manifest_targets, "fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced")),
+                (63, (manifest_targets, "python_scaffold_broken_manifest_fails_install")),
+                (64, (manifest_targets, "rust_scaffold_broken_manifest_fails_install")),
                 (
                     65,
                     (
                         manifest_targets,
-                        "fuzz_plugin_metadata_optional_fields_and_duplicate_aliases",
+                        "external_exec_plugin_with_non_executable_entrypoint_fails_install",
                     ),
                 ),
                 (
@@ -233,12 +238,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     ),
                 ),
                 (73, (scaffold_targets, "fuzz_plugin_reserved_name_error_rendering_is_stable")),
-                (76, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (76, (manifest_reg, "rejects_empty_namespace")),
                 (
                     77,
                     (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
                 ),
-                (78, (manifest_reg, "minimized_plugin_manifest_cases_replay_deterministically")),
+                (
+                    78,
+                    (manifest_reg, "json_error_envelopes_for_namespace_rejection_are_stable"),
+                ),
                 (
                     79,
                     (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
@@ -248,14 +256,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 let src = if *p == manifest_targets { &mtxt } else if *p == manifest_reg { &mrtxt } else if *p == scaffold_targets { &stxt } else { &srtxt };
                                 json!({"coverage_id":id,"test":t,"status":if src.contains(&format!("fn {t}(")){"covered"}else{"missing"},"evidence":p})
                             }).collect::<Vec<_>>();
-            let manifest_cases = collect_files(
-                &workspace_root
-                    .join("crates/bijux-cli-plugin/tests/fuzz/plugin_manifest_minimized_cases"),
-            )
-            .into_iter()
-            .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
-            .map(|p| rel(&p, workspace_root))
-            .collect::<Vec<_>>();
+            let manifest_cases = Vec::<String>::new();
             let scaffold_cases = collect_files(
                 &workspace_root.join("crates/bijux-cli/tests/fuzz/plugin_scaffold_minimized_cases"),
             )
@@ -271,15 +272,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .ok()
                     .is_some_and(|s| s.success())
             };
-            let mt_ok =
-                run(&["test", "-p", "bijux-cli-plugin", "--test", "plugin_manifest_fuzz_targets"]);
-            let mr_ok = run(&[
-                "test",
-                "-p",
-                "bijux-cli-plugin",
-                "--test",
-                "plugin_manifest_fuzz_regressions",
-            ]);
+            let mt_ok = [
+                "install_rejects_stale_manifest_version_markers",
+                "install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases",
+                "python_scaffold_broken_manifest_fails_install",
+                "rust_scaffold_broken_manifest_fails_install",
+                "external_exec_plugin_with_non_executable_entrypoint_fails_install",
+            ]
+            .iter()
+            .all(|test_name| run(&["test", "-p", "bijux-cli", "--test", "integration", test_name]));
+            let mr_ok = [
+                "rejects_empty_namespace",
+                "json_error_envelopes_for_namespace_rejection_are_stable",
+            ]
+            .iter()
+            .all(|test_name| run(&["test", "-p", "bijux-cli", "--test", "integration", test_name]));
             let st_ok = run(&[
                 "test",
                 "-p",

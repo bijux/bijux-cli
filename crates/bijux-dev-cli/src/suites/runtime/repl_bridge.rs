@@ -201,7 +201,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-repl/tests/repl_completion_extra.rs"),
+                workspace_root.join("crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -229,7 +229,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli-repl/tests/repl_completion_extra.rs",
+                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs",
                     })
                 })
                 .collect();
@@ -328,21 +328,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             "category": "meta-command",
                             "justification": "interactive help navigation for command discovery",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
                         },
                         {
                             "name": ":set trace|quiet|format",
                             "category": "meta-command",
                             "justification": "session-level output policy toggles",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
                         },
                         {
                             "name": ":exit",
                             "category": "meta-command",
                             "justification": "interactive shutdown convenience",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli-repl/tests/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
                         },
                     ],
                     "removed_repl_only_behaviors": [
@@ -363,8 +363,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "scope": "repl-vs-cli",
                                     "evidence": {
                                         "tests": [
-                                            "crates/bijux-cli-repl/tests/transcript_cases.rs::repl_output_parity_with_non_interactive_cli_for_status",
-                                            "crates/bijux-cli-repl/tests/transcript_cases.rs::repl_does_not_define_separate_semantics_for_common_commands",
+                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_output_parity_with_non_interactive_cli_for_status",
+                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_does_not_define_separate_semantics_for_common_commands",
                                         ]
                                     },
                                     "commands": [
@@ -502,8 +502,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
-                "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs",
-                "crates/bijux-cli-repl/tests/repl_hostile_session_extra.rs",
+                "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs",
+                "crates/bijux-cli/tests/integration/repl/repl_hostile_session_extra.rs",
             ];
             let sources: Vec<(String, String)> = test_paths
                 .iter()

@@ -64,8 +64,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "plugin lifecycle guardrails remain independent from product runtime binaries",
                                     ],
                                     "evidence": [
-                                        "crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs",
-                                        "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs",
+                                        "crates/bijux-cli/tests/routing/registry/registry_namespace_policy.rs",
                                         "crates/bijux-cli/tests/routing/route_law_consistency.rs",
                                         "contracts/official_product_namespace_registry.json",
                                         "contracts/product_mount_metadata_contract.json",

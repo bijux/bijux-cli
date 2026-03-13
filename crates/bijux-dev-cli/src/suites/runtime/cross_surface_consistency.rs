@@ -85,8 +85,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [486, 487, 495, 497],
                                     "evidence_tests": [
-                                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_exit_flush_reports_write_interruption_without_crashing_session",
-                                        "crates/bijux-cli-repl/tests/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_write_resilience.rs::repl_exit_flush_reports_write_interruption_without_crashing_session",
+                                        "crates/bijux-cli/tests/integration/cli/resilience/history_write_resilience.rs::repl_command_recording_survives_flush_failure_and_recovers_on_retry",
                                         "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::history_truncated_mixed_invalid_and_duplicate_records_remain_recoverable",
                                         "crates/bijux-cli/tests/integration/cli/resilience/history_memory_resilience_hardening.rs::memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safely",
                                     ],

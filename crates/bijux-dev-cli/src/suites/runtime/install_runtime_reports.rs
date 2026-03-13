@@ -9,7 +9,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let plugin_text = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs"),
+                workspace_root.join("crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs"),
             )
             .unwrap_or_default();
             let cli_text = fs::read_to_string(
@@ -18,7 +18,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let constants =
-                fs::read_to_string(workspace_root.join("crates/bijux-cli-plugin/src/constants.rs"))
+                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/features/plugins/constants.rs"))
                     .unwrap_or_default();
             let product_registry = fs::read_to_string(
                 workspace_root.join("contracts/official_product_namespace_registry.json"),

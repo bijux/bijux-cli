@@ -421,7 +421,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "evidence_tests":[
                         "crates/bijux-cli/tests/integration/cli/resilience/performance_realism_hardening.rs",
                         "crates/bijux-cli-output/tests/output_rendering_performance.rs",
-                        "crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs"
+                        "crates/bijux-cli/tests/integration/repl/repl_startup_performance_budget.rs"
                     ],
                 }),
             )
