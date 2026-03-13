@@ -19,7 +19,7 @@ pub struct StatePathStatusInput {
 #[must_use]
 pub fn build_report(paths: StatePathStatusInput, corruption_health: Value) -> Value {
     json!({
-        "state_truth_default": "bijux dev cli state-audit",
+        "state_truth_default": "bijux-dev-cli state-audit",
         "evidence_ids": [
             "EVIDENCE-1104-CONFIG-CORRUPTION",
             "EVIDENCE-1105-HISTORY-RESILIENCE",
@@ -41,7 +41,7 @@ pub fn build_report(paths: StatePathStatusInput, corruption_health: Value) -> Va
 pub fn build_doctor_report(diagnosis: Value) -> Value {
     json!({
         "runtime": "dev-cli",
-        "state_truth_default": "bijux dev cli state-audit",
+        "state_truth_default": "bijux-dev-cli state-audit",
         "doctor": diagnosis,
     })
 }

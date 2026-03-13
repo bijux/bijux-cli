@@ -29,7 +29,7 @@ pub(super) fn try_handle(
                 "status": "error",
                 "code": 2,
                 "message": "Invalid argument: state-doctor does not accept positional arguments",
-                "command": "dev cli state-doctor"
+                "command": "bijux-dev-cli state-doctor"
             }));
         }
     }

@@ -138,7 +138,7 @@ fn docs_refs_in_token(token: &str) -> Vec<String> {
     out
 }
 
-/// `dev cli repo generated`
+/// `bijux-dev-cli repo generated`
 #[must_use]
 pub fn build_generated_report(workspace_root: &Path) -> Value {
     let stale_generated = stale_generated_artifacts(workspace_root);
@@ -158,7 +158,7 @@ pub fn build_generated_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli repo inventories`
+/// `bijux-dev-cli repo inventories`
 #[must_use]
 pub fn build_inventories_report(workspace_root: &Path) -> Value {
     json!({
@@ -171,7 +171,7 @@ pub fn build_inventories_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli repo stale`
+/// `bijux-dev-cli repo stale`
 #[must_use]
 pub fn build_stale_report(workspace_root: &Path) -> Value {
     json!({
@@ -181,7 +181,7 @@ pub fn build_stale_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli repo drift`
+/// `bijux-dev-cli repo drift`
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
     let dead_maintenance = dead_maintenance_references(workspace_root);
@@ -197,7 +197,7 @@ pub fn build_drift_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli repo health`
+/// `bijux-dev-cli repo health`
 #[must_use]
 pub fn build_health_report(workspace_root: &Path) -> Value {
     let generated = build_generated_report(workspace_root);
@@ -294,8 +294,8 @@ mod tests {
             root.join("artifacts/status/maintainer_control_plane_commands.json"),
             r#"{
                 "commands": [
-                    {"command":"dev cli status","owner":"wrong-owner"},
-                    {"command":"dev cli unknown"},
+                    {"command":"bijux-dev-cli status","owner":"wrong-owner"},
+                    {"command":"bijux-dev-cli unknown"},
                     {"broken": true}
                 ]
             }"#,

@@ -13,7 +13,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/cross_surface_state_drift_artifact.json",
                 "artifacts/status/cross_surface_state_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-STATE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-STATE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
@@ -24,7 +24,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_discovery_determinism_report.json",
                 "artifacts/status/plugin_ordering_law.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
@@ -35,7 +35,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_lifecycle_failure_injection_report.json",
                 "artifacts/status/plugin_rollback_proof_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-FAILURE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
@@ -48,7 +48,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/package_health_report.json",
                 "artifacts/status/package_health_report.txt"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PACKAGING-AMBIGUITY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-STATE-RESILIENCE-REPORTS",
@@ -62,7 +62,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/state_recovery_guidance.txt",
                 "artifacts/status/state_resilience_summary.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-STATE-RESILIENCE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-STATE-RESILIENCE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS",
@@ -74,7 +74,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/command_surface_consistency_drift_artifact.json",
                 "artifacts/status/command_surface_consistency_summary.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS",
@@ -87,7 +87,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/shared_law_proof_artifact.json",
                 "artifacts/status/command_family_consistency_requirement.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
@@ -99,7 +99,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/cross_surface_drift_artifact.json",
                 "artifacts/status/cross_surface_consistency_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS",
         }),
     ]
 }

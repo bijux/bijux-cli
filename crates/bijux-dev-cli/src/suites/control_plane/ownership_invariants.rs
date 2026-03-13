@@ -86,7 +86,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "json_outputs_parseable": json_parseable,
                 "text_outputs_non_empty": text_non_empty,
                 "quiet_mode_exit_semantics_stable": quiet_exit_same,
-                "bin_entrypoint_is_thin_dispatcher": !bin_source.contains("dev cli"),
+                "bin_entrypoint_is_thin_dispatcher": !bin_source.contains("bijux-dev-cli"),
             });
             let drift_checks: Vec<String> = checks
                 .as_object()
@@ -99,14 +99,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default();
             let report = json!({
                 "generator": "bijux-dev-cli",
-                "scope": "dev cli invariants",
+                "scope": "bijux-dev-cli invariants",
                 "status": if drift_checks.is_empty() { "complete" } else { "partial" },
                 "checks": checks,
                 "failures": failures,
             });
             let drift = json!({
                 "generator": "bijux-dev-cli",
-                "scope": "dev cli invariants drift",
+                "scope": "bijux-dev-cli invariants drift",
                 "status": if drift_checks.is_empty() { "clean" } else { "drift" },
                 "drift_count": drift_checks.len(),
                 "drift_checks": drift_checks,
@@ -190,7 +190,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "scope": "dev-cli diagnostics source map",
                 "commands": [
                     {
-                        "command": "dev cli runtime-identity",
+                        "command": "bijux-dev-cli runtime-identity",
                         "presentation_owner": "bijux-dev-cli",
                         "runtime_data_sources": [
                             "bijux-cli::install::install_health_report",
@@ -199,12 +199,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         ],
                     },
                     {
-                        "command": "dev cli package-health",
+                        "command": "bijux-dev-cli package-health",
                         "presentation_owner": "bijux-dev-cli",
                         "runtime_data_sources": ["artifacts/status/current_rust_state.json"],
                     },
                     {
-                        "command": "dev cli state-audit",
+                        "command": "bijux-dev-cli state-audit",
                         "presentation_owner": "bijux-dev-cli",
                         "runtime_data_sources": [
                             "bijux-cli::state_path_status",
@@ -212,7 +212,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         ],
                     },
                     {
-                        "command": "dev cli state-doctor",
+                        "command": "bijux-dev-cli state-doctor",
                         "presentation_owner": "bijux-dev-cli",
                         "runtime_data_sources": ["bijux-cli::state_diagnostics"],
                     },
@@ -283,34 +283,34 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-OWNERSHIP-REPORT" => {
             let command_rows = vec![
-                json!({"command":"dev cli status","group":"dashboard","visible":true}),
-                json!({"command":"dev cli parity","group":"dashboard","visible":true}),
-                json!({"command":"dev cli doctor","group":"dashboard","visible":true}),
-                json!({"command":"dev cli routes","group":"routing","visible":true}),
-                json!({"command":"dev cli registry","group":"routing","visible":true}),
-                json!({"command":"dev cli route-audit","group":"routing","visible":true}),
-                json!({"command":"dev cli env","group":"runtime","visible":true}),
-                json!({"command":"dev cli contracts","group":"runtime","visible":true}),
-                json!({"command":"dev cli runtime-identity","group":"runtime","visible":true}),
-                json!({"command":"dev cli package-health","group":"runtime","visible":true}),
-                json!({"command":"dev cli state-audit","group":"runtime","visible":true}),
-                json!({"command":"dev cli state-doctor","group":"runtime","visible":true}),
-                json!({"command":"dev cli plugin-health","group":"runtime","visible":true}),
-                json!({"command":"dev cli docs-audit","group":"audit","visible":true}),
-                json!({"command":"dev cli maintenance","group":"audit","visible":true}),
-                json!({"command":"dev cli rustdoc","group":"audit","visible":true}),
-                json!({"command":"dev cli release","group":"audit","visible":true}),
-                json!({"command":"dev cli maintenance-audit","group":"audit","visible":true}),
-                json!({"command":"dev cli crate-health","group":"audit","visible":true}),
-                json!({"command":"dev cli snapshots-audit","group":"audit","visible":true}),
-                json!({"command":"dev cli fixture-audit","group":"audit","visible":true}),
-                json!({"command":"dev cli docs","group":"audit","visible":false}),
-                json!({"command":"dev cli docs-prune-plan","group":"audit","visible":false}),
-                json!({"command":"dev cli inventory","group":"internal","visible":false}),
-                json!({"command":"dev cli atlas","group":"internal","visible":false}),
-                json!({"command":"dev cli di","group":"internal","visible":false}),
-                json!({"command":"dev cli list-products","group":"internal","visible":false}),
-                json!({"command":"dev cli list-plugins","group":"internal","visible":false}),
+                json!({"command":"bijux-dev-cli status","group":"dashboard","visible":true}),
+                json!({"command":"bijux-dev-cli parity","group":"dashboard","visible":true}),
+                json!({"command":"bijux-dev-cli doctor","group":"dashboard","visible":true}),
+                json!({"command":"bijux-dev-cli routes","group":"routing","visible":true}),
+                json!({"command":"bijux-dev-cli registry","group":"routing","visible":true}),
+                json!({"command":"bijux-dev-cli route-audit","group":"routing","visible":true}),
+                json!({"command":"bijux-dev-cli env","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli contracts","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli runtime-identity","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli package-health","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli state-audit","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli state-doctor","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli plugin-health","group":"runtime","visible":true}),
+                json!({"command":"bijux-dev-cli docs-audit","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli maintenance","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli rustdoc","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli release","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli maintenance-audit","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli crate-health","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli snapshots-audit","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli fixture-audit","group":"audit","visible":true}),
+                json!({"command":"bijux-dev-cli docs","group":"audit","visible":false}),
+                json!({"command":"bijux-dev-cli docs-prune-plan","group":"audit","visible":false}),
+                json!({"command":"bijux-dev-cli inventory","group":"internal","visible":false}),
+                json!({"command":"bijux-dev-cli atlas","group":"internal","visible":false}),
+                json!({"command":"bijux-dev-cli di","group":"internal","visible":false}),
+                json!({"command":"bijux-dev-cli list-products","group":"internal","visible":false}),
+                json!({"command":"bijux-dev-cli list-plugins","group":"internal","visible":false}),
             ];
             let visible = command_rows
                 .iter()
@@ -321,7 +321,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter_map(|row| row.get("group").and_then(Value::as_str).map(ToString::to_string))
                 .collect();
             let report = json!({
-                "namespace": "dev cli",
+                "namespace": "bijux-dev-cli",
                 "owner": "bijux-dev-cli",
                 "commands": command_rows
                     .iter()

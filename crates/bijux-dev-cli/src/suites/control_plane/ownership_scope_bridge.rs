@@ -181,19 +181,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 })
                 .unwrap_or_default();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_control_plane_resilience_artifact.json", &json!({
-                                "scope":"dev cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,"side_effect_run_errors":side_effect_run_errors,
+                                "scope":"bijux-dev-cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,"side_effect_run_errors":side_effect_run_errors,
                                 "status": if drift_checks.is_empty() {"complete"} else {"partial"}
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_determinism_artifact.json", &json!({
-                                "scope":"dev cli determinism","generator":"bijux-dev-cli","rows":determinism_rows,
+                                "scope":"bijux-dev-cli determinism","generator":"bijux-dev-cli","rows":determinism_rows,
                                 "status": if determinism_rows.iter().all(|r| r.get("stable").and_then(Value::as_bool)==Some(true)) {"clean"} else {"drift"}
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_side_effect_audit_artifact.json", &json!({
-                                "scope":"dev cli side-effect audit","generator":"bijux-dev-cli","before":before,"after":after,
+                                "scope":"bijux-dev-cli side-effect audit","generator":"bijux-dev-cli","before":before,"after":after,
                                 "status": if before == after {"clean"} else {"drift"}
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_resilience_drift_artifact.json", &json!({
-                                "scope":"dev cli resilience drift","generator":"bijux-dev-cli","drift_checks":drift_checks,"drift_count":drift_checks.len(),
+                                "scope":"bijux-dev-cli resilience drift","generator":"bijux-dev-cli","drift_checks":drift_checks,"drift_count":drift_checks.len(),
                                 "status": if drift_checks.is_empty() {"clean"} else {"drift"}
                             })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[

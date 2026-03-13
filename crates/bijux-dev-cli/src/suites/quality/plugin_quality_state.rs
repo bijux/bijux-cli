@@ -387,7 +387,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "doctor",
                 "plugins list",
                 "cli config get",
-                "dev cli status",
+                "bijux-dev-cli status",
                 "plugins list (broken registry)",
                 "plugins list (large registry)",
                 "cli config get (large config)",
@@ -404,7 +404,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let thresholds = json!({
                 "mode":"critical-path-only",
                 "why":"guard user-visible regressions first; avoid vanity microbenchmarks",
-                "startup_ms":{"version":120,"status":250,"doctor":500,"plugins list":400,"cli config get":200,"dev cli status":900,"plugins list (broken registry)":500,"plugins list (large registry)":900,"cli config get (large config)":650,"history (large history)":1200},
+                "startup_ms":{"version":120,"status":250,"doctor":500,"plugins list":400,"cli config get":200,"bijux-dev-cli status":900,"plugins list (broken registry)":500,"plugins list (large registry)":900,"cli config get (large config)":650,"history (large history)":1200},
                 "payload_bytes":{"version":4096,"status":24576,"plugins list":32768,"repl startup memory estimate":524288},
                 "rendering_budget_ms":{"json_large_payload_total":3000,"yaml_large_payload_total":3000}
             });

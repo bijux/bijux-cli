@@ -40,70 +40,70 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let specs = vec![
                 (
                     "evidence_deleted_before_evidence_audit",
-                    "dev cli evidence audit",
+                    "bijux-dev-cli evidence audit",
                     "artifacts/status/evidence_integrity_artifact.json",
                     "critical",
                     "Detect missing evidence artifact before evidence audit.",
                 ),
                 (
                     "evidence_stale_before_evidence_stale",
-                    "dev cli evidence stale",
+                    "bijux-dev-cli evidence stale",
                     "artifacts/status/evidence_integrity_artifact.json",
                     "critical",
                     "Detect stale evidence artifact before evidence stale command.",
                 ),
                 (
                     "parity_stale_before_status",
-                    "dev cli status",
+                    "bijux-dev-cli status",
                     "artifacts/status/parity_drift_artifact.json",
                     "critical",
                     "Detect stale parity artifact before status command.",
                 ),
                 (
                     "migration_stale_before_truth",
-                    "dev cli truth",
+                    "bijux-dev-cli truth",
                     "artifacts/status/migration_truth_artifact.json",
                     "critical",
                     "Detect stale migration artifact before truth command.",
                 ),
                 (
                     "package_health_stale_before_dashboard",
-                    "dev cli dashboard",
+                    "bijux-dev-cli dashboard",
                     "artifacts/status/package_health_diagnostics_artifact.json",
                     "critical",
                     "Detect stale package health artifact before dashboard command.",
                 ),
                 (
                     "state_audit_stale_before_blockers",
-                    "dev cli blockers",
+                    "bijux-dev-cli blockers",
                     "artifacts/status/state_audit_truth_artifact.json",
                     "critical",
                     "Detect stale state audit artifact before blockers command.",
                 ),
                 (
                     "docs_audit_stale_before_repo_health",
-                    "dev cli repo health",
+                    "bijux-dev-cli repo health",
                     "artifacts/status/docs_audit.json",
                     "critical",
                     "Detect stale docs-audit artifact before repo health command.",
                 ),
                 (
                     "maintenance_audit_stale_before_repo_health",
-                    "dev cli repo health",
+                    "bijux-dev-cli repo health",
                     "artifacts/status/maintenance_gap_behaviors.json",
                     "critical",
                     "Detect stale maintenance-audit artifact before repo health command.",
                 ),
                 (
                     "crate_health_stale_before_crate_health",
-                    "dev cli crate-health",
+                    "bijux-dev-cli crate-health",
                     "artifacts/status/duplication_hotspots.json",
                     "critical",
                     "Detect stale crate-health artifact before crate-health command.",
                 ),
                 (
                     "optional_next_report_stale_warning",
-                    "dev cli next",
+                    "bijux-dev-cli next",
                     "artifacts/status/dev_cli_next_report.json",
                     "warning",
                     "Stale optional report is tolerated with warning.",
@@ -189,12 +189,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "generator": "bijux-dev-cli",
                     "checks": checks.iter().filter(|row| {
                         row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
-                            cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                            cmd == "bijux-dev-cli evidence audit" || cmd == "bijux-dev-cli evidence stale"
                         })
                     }).cloned().collect::<Vec<_>>(),
                     "status": if checks.iter().any(|row| {
                         row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
-                            cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                            cmd == "bijux-dev-cli evidence audit" || cmd == "bijux-dev-cli evidence stale"
                     }) && row.get("state").and_then(Value::as_str).is_some_and(|state| state == "stale" || state == "missing")
                     }) { "drift" } else { "clean" },
                 }),
@@ -206,7 +206,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "generator": "bijux-dev-cli",
                     "checks": checks.iter().filter(|row| {
                         !row.get("command").and_then(Value::as_str).is_some_and(|cmd| {
-                            cmd == "dev cli evidence audit" || cmd == "dev cli evidence stale"
+                            cmd == "bijux-dev-cli evidence audit" || cmd == "bijux-dev-cli evidence stale"
                         })
                     }).cloned().collect::<Vec<_>>(),
                     "status": status_value,

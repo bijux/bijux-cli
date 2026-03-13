@@ -40,7 +40,7 @@ fn with_artifact_integrity(mut payload: Value, key: &str, state: &str) -> Value 
     payload
 }
 
-/// `dev cli release status`
+/// `bijux-dev-cli release status`
 #[must_use]
 pub fn build_status_report(workspace_root: &Path) -> Value {
     let manifest =
@@ -61,11 +61,11 @@ pub fn build_status_report(workspace_root: &Path) -> Value {
             "release_truth_report": truth_state,
             "release_evidence_bundle": bundle_state,
         },
-        "source_of_truth": "dev cli release *",
+        "source_of_truth": "bijux-dev-cli release *",
     })
 }
 
-/// `dev cli release evidence`
+/// `bijux-dev-cli release evidence`
 #[must_use]
 pub fn build_evidence_report(workspace_root: &Path) -> Value {
     let bundle =
@@ -87,7 +87,7 @@ pub fn build_evidence_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release readiness`
+/// `bijux-dev-cli release readiness`
 #[must_use]
 pub fn build_readiness_report(workspace_root: &Path) -> Value {
     let manifest =
@@ -105,7 +105,7 @@ pub fn build_readiness_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release diff`
+/// `bijux-dev-cli release diff`
 #[must_use]
 pub fn build_diff_report(workspace_root: &Path) -> Value {
     let done = read_json_if_exists(&workspace_root.join("artifacts/status/what_is_done.json"));
@@ -133,7 +133,7 @@ pub fn build_diff_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release gaps`
+/// `bijux-dev-cli release gaps`
 #[must_use]
 pub fn build_gaps_report(workspace_root: &Path) -> Value {
     let manifest =
@@ -158,7 +158,7 @@ pub fn build_gaps_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release summary`
+/// `bijux-dev-cli release summary`
 #[must_use]
 pub fn build_summary_report(workspace_root: &Path) -> Value {
     let readiness = build_readiness_report(workspace_root);
@@ -183,7 +183,7 @@ pub fn build_summary_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release manifest`
+/// `bijux-dev-cli release manifest`
 #[must_use]
 pub fn build_manifest_report(workspace_root: &Path) -> Value {
     let manifest =
@@ -192,7 +192,7 @@ pub fn build_manifest_report(workspace_root: &Path) -> Value {
     with_artifact_integrity(manifest, "release_status_manifest", &state)
 }
 
-/// `dev cli release notes`
+/// `bijux-dev-cli release notes`
 #[must_use]
 pub fn build_notes_report(workspace_root: &Path) -> Value {
     let truth =
@@ -209,7 +209,7 @@ pub fn build_notes_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli release behavior-changes`
+/// `bijux-dev-cli release behavior-changes`
 #[must_use]
 pub fn build_behavior_changes_report(workspace_root: &Path) -> Value {
     let payload =
@@ -219,7 +219,7 @@ pub fn build_behavior_changes_report(workspace_root: &Path) -> Value {
     with_artifact_integrity(payload, "command_migration_matrix", &state)
 }
 
-/// `dev cli release intentional-differences`
+/// `bijux-dev-cli release intentional-differences`
 #[must_use]
 pub fn build_intentional_differences_report(workspace_root: &Path) -> Value {
     let payload = read_json_if_exists(
@@ -230,7 +230,7 @@ pub fn build_intentional_differences_report(workspace_root: &Path) -> Value {
     with_artifact_integrity(payload, "what_is_intentionally_different", &state)
 }
 
-/// `dev cli release unresolved-gaps`
+/// `bijux-dev-cli release unresolved-gaps`
 #[must_use]
 pub fn build_unresolved_gaps_report(workspace_root: &Path) -> Value {
     let payload = read_json_if_exists(&workspace_root.join("artifacts/status/what_is_left.json"));
@@ -239,7 +239,7 @@ pub fn build_unresolved_gaps_report(workspace_root: &Path) -> Value {
     with_artifact_integrity(payload, "what_is_left", &state)
 }
 
-/// `dev cli release compatibility-leftovers`
+/// `bijux-dev-cli release compatibility-leftovers`
 #[must_use]
 pub fn build_compatibility_leftovers_report(workspace_root: &Path) -> Value {
     let payload = read_json_if_exists(

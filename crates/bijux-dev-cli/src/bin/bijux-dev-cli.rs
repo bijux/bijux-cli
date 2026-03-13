@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Binary entrypoint for maintainer `dev cli` process delegation.
+//! Binary entrypoint for maintainer `bijux-dev-cli` process delegation.
 
 use std::process::ExitCode;
 

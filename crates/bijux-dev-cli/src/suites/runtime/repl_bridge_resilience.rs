@@ -347,7 +347,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .collect::<Vec<_>>()
                     .join("\n");
                 let mut bijux_dev_cli_imports = source.matches("bijux_dev_cli").count();
-                let mut dev_cli_literals = source.matches("dev cli").count();
+                let mut dev_cli_literals = source.matches("bijux-dev-cli").count();
                 let route_audit_assembly_calls = source.matches("route_audit_report(").count();
                 let mut report_builder_calls = source.matches("build_report(").count();
                 if crate_name == "bijux-cli" {

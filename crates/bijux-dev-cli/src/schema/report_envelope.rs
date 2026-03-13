@@ -9,7 +9,7 @@ pub const DEV_CLI_TEXT_REPORT_STYLE: &str = "dev-cli-v1";
 #[must_use]
 pub fn machine_report_envelope(command: &str, payload: Value) -> Value {
     json!({
-        "namespace": "dev cli",
+        "namespace": "bijux-dev-cli",
         "command": command,
         "style": DEV_CLI_TEXT_REPORT_STYLE,
         "payload": payload,

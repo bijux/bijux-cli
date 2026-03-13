@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use serde_json::{json, Value};
 
-/// Runtime-resolved active paths consumed by `dev cli env`.
+/// Runtime-resolved active paths consumed by `bijux-dev-cli env`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActivePaths {
     /// Active config file path.

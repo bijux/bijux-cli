@@ -7,13 +7,13 @@ use serde_json::{json, Value};
 
 use crate::schema::command_registry::{command_registry, DevCliCommandGroup};
 
-/// Builds hidden `dev cli atlas` report payload.
+/// Builds hidden `bijux-dev-cli atlas` report payload.
 #[must_use]
 pub fn build_atlas_report() -> Value {
     json!({"status": "ok", "mount": "atlas", "entry_surface": "dev-cli"})
 }
 
-/// Builds hidden `dev cli di` report payload.
+/// Builds hidden `bijux-dev-cli di` report payload.
 #[must_use]
 pub fn build_dependency_injection_report() -> Value {
     json!({"status": "ok", "container": "built-in", "entry_surface": "dev-cli"})
@@ -43,13 +43,13 @@ pub struct ProductContractRow {
     pub control: ProductSurfaceRow,
 }
 
-/// Builds hidden `dev cli list-products` report payload.
+/// Builds hidden `bijux-dev-cli list-products` report payload.
 #[must_use]
 pub fn build_product_list_report(products: &[ProductContractRow]) -> Value {
     json!({"status": "ok", "products": products})
 }
 
-/// Builds hidden `dev cli list-plugins` report payload.
+/// Builds hidden `bijux-dev-cli list-plugins` report payload.
 #[must_use]
 pub fn build_plugin_list_report(plugins: Vec<Value>) -> Value {
     let mut visible_plugins = Vec::new();
@@ -71,13 +71,13 @@ pub fn build_plugin_list_report(plugins: Vec<Value>) -> Value {
     })
 }
 
-/// Builds hidden `dev cli list-plugins` report payload from structured plugin rows.
+/// Builds hidden `bijux-dev-cli list-plugins` report payload from structured plugin rows.
 #[must_use]
 pub fn build_plugin_list_report_from<T: Serialize>(plugins: T) -> Value {
     json!({"status": "ok", "plugins": plugins})
 }
 
-/// Builds `dev cli docs` report payload.
+/// Builds `bijux-dev-cli docs` report payload.
 #[must_use]
 pub fn build_docs_inventory_report(docs: Vec<String>) -> Value {
     json!({
@@ -87,7 +87,7 @@ pub fn build_docs_inventory_report(docs: Vec<String>) -> Value {
     })
 }
 
-/// Builds `dev cli docs-prune-plan` report payload.
+/// Builds `bijux-dev-cli docs-prune-plan` report payload.
 #[must_use]
 pub fn build_docs_prune_plan_report(docs_count: usize) -> Value {
     json!({
@@ -102,7 +102,7 @@ pub fn build_docs_prune_plan_report(docs_count: usize) -> Value {
     })
 }
 
-/// Builds `dev cli snapshots-audit` report payload.
+/// Builds `bijux-dev-cli snapshots-audit` report payload.
 #[must_use]
 pub fn build_snapshots_audit_report(snapshots: Vec<String>) -> Value {
     json!({
@@ -111,7 +111,7 @@ pub fn build_snapshots_audit_report(snapshots: Vec<String>) -> Value {
     })
 }
 
-/// Builds `dev cli fixture-audit` report payload.
+/// Builds `bijux-dev-cli fixture-audit` report payload.
 #[must_use]
 pub fn build_fixture_audit_report(
     parity_fixtures: Vec<String>,
@@ -123,7 +123,7 @@ pub fn build_fixture_audit_report(
     })
 }
 
-/// Builds `dev cli plugin-health` report payload.
+/// Builds `bijux-dev-cli plugin-health` report payload.
 #[must_use]
 pub fn build_plugin_health_report(machine_report: Value, text_report: String) -> Value {
     json!({
@@ -132,7 +132,7 @@ pub fn build_plugin_health_report(machine_report: Value, text_report: String) ->
     })
 }
 
-/// Builds `dev cli doctor` report payload.
+/// Builds `bijux-dev-cli doctor` report payload.
 #[must_use]
 pub fn build_doctor_report(
     config_issues: Vec<Value>,
@@ -183,7 +183,7 @@ pub fn build_command_ownership_report(generated_at: &str) -> Value {
     json!({
         "generated_at": generated_at,
         "owner": "bijux-dev-cli",
-        "namespace": "dev cli",
+        "namespace": "bijux-dev-cli",
         "commands": command_registry()
             .iter()
             .map(|entry| json!({

@@ -12,7 +12,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/compatibility_debt_trend_report.json",
                 "artifacts/status/compatibility_debt_trend_report.txt"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-COMPATIBILITY-DEBT-TREND-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS",
@@ -24,7 +24,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/failure_class_stability_report.json",
                 "artifacts/status/deterministic_failure_quality_bar.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-HOSTILE-STATE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS",
@@ -36,7 +36,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/parity/command_precedence_report.json",
                 "artifacts/status/precedence_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
@@ -47,7 +47,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/namespace_abuse_report.json",
                 "artifacts/status/reserved_namespace_inventory.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-NAMESPACE-RESERVATION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS",
@@ -61,7 +61,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/install_health_report.txt",
                 "artifacts/status/remaining_install_ambiguities.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-TRUTH-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-INSTALL-NEUTRALITY-REPORTS",
@@ -72,7 +72,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/install_neutrality_report.json",
                 "artifacts/status/active_runtime_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-NEUTRALITY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-NEUTRALITY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
@@ -86,7 +86,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/install_runtime_identity_drift_artifact.json",
                 "artifacts/status/install_runtime_identity_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-INSTALL-RUNTIME-IDENTITY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-REPORTS",
@@ -97,7 +97,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/config_corruption_matrix.json",
                 "artifacts/status/config_rollback_proof.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-DOCS-DUPLICATION-REPORT",
@@ -107,7 +107,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/docs_duplication_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-DOCS-DUPLICATION-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DOCS-DUPLICATION-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PARSER-ABUSE-REPORT",
@@ -117,7 +117,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/parser_abuse_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PARSER-ABUSE-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PARSER-ABUSE-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-REPL-RECOVERY-REPORTS",
@@ -128,7 +128,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/repl_hostile_session_report.json",
                 "artifacts/status/repl_recovery_behavior_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-RECOVERY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-REPL-RECOVERY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
@@ -145,7 +145,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/python_packaging_direction_report.json",
                 "artifacts/status/python_surface_direction_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PYTHON-SOVEREIGNTY-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
@@ -155,7 +155,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/runtime_dev_leakage_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-DEV-LEAKAGE-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
@@ -165,7 +165,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/flag_normalization_matrix.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
@@ -175,7 +175,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/plugin_lifecycle_test_matrix.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
@@ -185,7 +185,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/plugin_failure_rollback_test_matrix.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
@@ -195,7 +195,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/reserved_namespace_test_matrix.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT",
@@ -205,7 +205,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/bridge_duplicate_law_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-BRIDGE-DUPLICATE-LAW-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-REPORT",
@@ -215,7 +215,7 @@ pub(super) fn rows() -> Vec<Value> {
             "outputs": [
                 "artifacts/status/plugin_state_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-STATE-REPORT",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-STATE-REPORT",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS",
@@ -228,7 +228,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/install_ambiguity_diagnostics_artifact.json",
                 "artifacts/status/runtime_package_diagnostics_drift_artifact.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RUNTIME-PACKAGE-DIAGNOSTICS-REPORTS",
         }),
     ]
 }

@@ -12,7 +12,7 @@ const MIGRATION_CONTROLS: [(&str, &str, &str, usize); 4] = [
     (
         "CTRL-ROOT-MAINTENANCE-DIRECTORY-REMOVED",
         "maintenance",
-        "bijux dev cli maintenance audit",
+        "bijux-dev-cli maintenance audit",
         100,
     ),
     (
@@ -24,7 +24,7 @@ const MIGRATION_CONTROLS: [(&str, &str, &str, usize); 4] = [
     (
         "CTRL-GITHUB-LEGACY-MAINTENANCE-FILE-REMOVED",
         ".github/maintenance_additions_allowlist.txt",
-        "bijux dev cli maintenance compliance hard-rules",
+        "bijux-dev-cli maintenance compliance hard-rules",
         90,
     ),
     (
@@ -271,13 +271,13 @@ fn build_requirement_catalog(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance requirements` report payload.
+/// Builds `bijux-dev-cli maintenance requirements` report payload.
 #[must_use]
 pub fn build_requirement_catalog_report(workspace_root: &Path) -> Value {
     build_requirement_catalog(workspace_root)
 }
 
-/// Builds `dev cli maintenance flaky-tests` report payload.
+/// Builds `bijux-dev-cli maintenance flaky-tests` report payload.
 #[must_use]
 pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     let mut tests = Vec::<Value>::new();
@@ -330,7 +330,7 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance migrated` report payload.
+/// Builds `bijux-dev-cli maintenance migrated` report payload.
 #[must_use]
 pub fn build_migrated_report(workspace_root: &Path) -> Value {
     let controls = migration_controls(workspace_root);
@@ -376,7 +376,7 @@ pub fn build_migrated_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance remaining` report payload.
+/// Builds `bijux-dev-cli maintenance remaining` report payload.
 #[must_use]
 pub fn build_remaining_report(workspace_root: &Path) -> Value {
     let controls = migration_controls(workspace_root);
@@ -415,7 +415,7 @@ pub fn build_remaining_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance diff` report payload.
+/// Builds `bijux-dev-cli maintenance diff` report payload.
 #[must_use]
 pub fn build_diff_report(workspace_root: &Path) -> Value {
     let migrated = build_migrated_report(workspace_root);
@@ -449,7 +449,7 @@ pub fn build_diff_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance audit` report payload.
+/// Builds `bijux-dev-cli maintenance audit` report payload.
 #[must_use]
 pub fn build_audit_report(workspace_root: &Path) -> Value {
     json!({

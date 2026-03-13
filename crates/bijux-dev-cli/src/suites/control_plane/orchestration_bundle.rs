@@ -28,7 +28,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root,
                 "artifacts/status/dev_cli_release_truth_bundle.json",
                 &json!({
-                    "source": "dev cli release *",
+                    "source": "bijux-dev-cli release *",
                     "reports": reports,
                     "summary": {
                         "unresolved_gaps": unresolved,
@@ -43,16 +43,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
             let commands = [
-                "dev cli status",
-                "dev cli parity",
-                "dev cli runtime-identity",
-                "dev cli state-audit",
-                "dev cli package-health",
-                "dev cli maintenance-audit",
-                "dev cli rustdoc audit",
-                "dev cli release status",
-                "dev cli docs-audit",
-                "dev cli crate-health",
+                "bijux-dev-cli status",
+                "bijux-dev-cli parity",
+                "bijux-dev-cli runtime-identity",
+                "bijux-dev-cli state-audit",
+                "bijux-dev-cli package-health",
+                "bijux-dev-cli maintenance-audit",
+                "bijux-dev-cli rustdoc audit",
+                "bijux-dev-cli release status",
+                "bijux-dev-cli docs-audit",
+                "bijux-dev-cli crate-health",
             ];
             let mut payload = serde_json::Map::new();
             for command in commands {
@@ -86,22 +86,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
-            let commands = ["dev cli env", "dev cli contracts", "dev cli parity", "dev cli status"];
+            let commands = ["bijux-dev-cli env", "bijux-dev-cli contracts", "bijux-dev-cli parity", "bijux-dev-cli status"];
             let mut input_map = BTreeMap::<&str, Vec<&str>>::new();
             input_map.insert(
-                "dev cli env",
+                "bijux-dev-cli env",
                 vec!["process environment", "resolved config/history/plugins paths"],
             );
             input_map.insert(
-                "dev cli contracts",
+                "bijux-dev-cli contracts",
                 vec!["static schema contract declarations", "runtime version"],
             );
             input_map.insert(
-                "dev cli parity",
+                "bijux-dev-cli parity",
                 vec!["artifacts/parity/*.json", "artifacts/parity/*.txt"],
             );
             input_map.insert(
-                "dev cli status",
+                "bijux-dev-cli status",
                 vec![
                     "artifacts/status/*.json",
                     "artifacts/status/*.txt",

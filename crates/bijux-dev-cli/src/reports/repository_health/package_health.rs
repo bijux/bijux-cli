@@ -117,7 +117,7 @@ pub fn build_report(workspace_root: &Path, runtime_identity_report: Value) -> Va
         "package_entrypoints": package_entrypoints(&runtime_identity_report, workspace_root),
         "runtime_identity_rules": runtime_identity_rules(&runtime_identity_report, workspace_root),
         "install_state_assumptions": assumptions,
-        "install_state_assumption_help": "Use `bijux dev cli package-health --format json` to audit install-state assumptions and entrypoint contracts.",
+        "install_state_assumption_help": "Use `bijux-dev-cli package-health --format json` to audit install-state assumptions and entrypoint contracts.",
     })
 }
 

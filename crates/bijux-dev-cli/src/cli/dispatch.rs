@@ -1,4 +1,4 @@
-//! Maintainer command dispatch for `bijux dev cli ...`.
+//! Maintainer command dispatch for `bijux-dev-cli ...`.
 
 use std::collections::BTreeMap;
 
@@ -34,7 +34,7 @@ pub struct RouteInventoryQuery {
     pub aliases: Vec<(Vec<String>, Vec<String>)>,
 }
 
-/// Runtime-derived input for `dev cli doctor` report assembly.
+/// Runtime-derived input for `bijux-dev-cli doctor` report assembly.
 #[derive(Debug, Clone)]
 pub struct DoctorReportInput {
     /// Configuration loading and shape issues.
@@ -49,7 +49,7 @@ pub struct DoctorReportInput {
     pub memory_issues: Vec<Value>,
 }
 
-/// Runtime-derived input for `dev cli state-audit` report assembly.
+/// Runtime-derived input for `bijux-dev-cli state-audit` report assembly.
 #[derive(Debug, Clone)]
 pub struct StateAuditInput {
     /// Structured path status data.
@@ -103,7 +103,7 @@ pub trait RuntimeQueryProvider {
     fn runtime_identity_input(&self) -> dev_runtime_identity::RuntimeIdentityInput;
 }
 
-/// Return true when the normalized path belongs to `dev cli` dispatch ownership.
+/// Return true when the normalized path belongs to `bijux-dev-cli` dispatch ownership.
 #[must_use]
 pub fn owns_path(normalized_path: &[String]) -> bool {
     match normalized_path {
@@ -167,7 +167,7 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
     }
 }
 
-/// Dispatch `dev cli` command paths and return report payloads.
+/// Dispatch `bijux-dev-cli` command paths and return report payloads.
 pub fn try_handle(
     normalized_path: &[String],
     argv: &[String],

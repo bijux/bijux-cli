@@ -12,7 +12,7 @@ pub fn build_report(workspace_root: &Path, inventory: Value) -> Value {
     let inputs = inputs::load_status_inputs(workspace_root);
 
     json!({
-        "maintainer_dashboard_default": "bijux dev cli status",
+        "maintainer_dashboard_default": "bijux-dev-cli status",
         "control_plane_crate": "bijux-dev-cli",
         "status_report": inputs.status_report,
         "reports": Value::Object(inputs.reports),

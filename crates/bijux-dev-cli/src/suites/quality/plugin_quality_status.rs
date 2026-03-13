@@ -85,7 +85,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let dev_cli_commands = command_rows
                 .iter()
                 .filter_map(|r| r.get("command").and_then(Value::as_str))
-                .filter(|c| c.starts_with("dev cli "))
+                .filter(|c| c.starts_with("bijux-dev-cli "))
                 .map(|c| c.split_whitespace().take(4).collect::<Vec<_>>().join(" "))
                 .collect::<BTreeSet<_>>()
                 .into_iter()

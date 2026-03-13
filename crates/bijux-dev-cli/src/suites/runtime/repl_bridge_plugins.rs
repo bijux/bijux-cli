@@ -359,7 +359,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "package_output_deterministic": package_payload == package_second,
             });
             let ambiguity_checks = json!({
-                "runtime_identity_operator_truth": runtime_payload.get("runtime_truth_default").and_then(Value::as_str) == Some("bijux dev cli runtime-identity"),
+                "runtime_identity_operator_truth": runtime_payload.get("runtime_truth_default").and_then(Value::as_str) == Some("bijux-dev-cli runtime-identity"),
                 "package_health_reports_assumptions": package_payload.get("install_state_assumptions").and_then(Value::as_array).map(|v| !v.is_empty()).unwrap_or(false),
                 "python_runtime_relevance_present": package_payload.get("runtime_identity_rules").map(Value::is_object).unwrap_or(false),
             });

@@ -29,7 +29,7 @@ fn ownership_report(workspace_root: &Path) -> Value {
     }
 }
 
-/// `dev cli config rust-owner`
+/// `bijux-dev-cli config rust-owner`
 #[must_use]
 pub fn build_rust_owner_report(workspace_root: &Path) -> Value {
     let report = ownership_report(workspace_root);
@@ -39,7 +39,7 @@ pub fn build_rust_owner_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli config python-owner`
+/// `bijux-dev-cli config python-owner`
 #[must_use]
 pub fn build_python_owner_report(workspace_root: &Path) -> Value {
     let report = ownership_report(workspace_root);
@@ -49,13 +49,13 @@ pub fn build_python_owner_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli config ownership`
+/// `bijux-dev-cli config ownership`
 #[must_use]
 pub fn build_ownership_report(workspace_root: &Path) -> Value {
     ownership_report(workspace_root)
 }
 
-/// `dev cli config drift`
+/// `bijux-dev-cli config drift`
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
     let report = ownership_report(workspace_root);
@@ -82,7 +82,7 @@ pub fn build_drift_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli config shape`
+/// `bijux-dev-cli config shape`
 #[must_use]
 pub fn build_shape_report(workspace_root: &Path) -> Value {
     let report = ownership_report(workspace_root);
@@ -96,7 +96,7 @@ pub fn build_shape_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli config evidence-map`
+/// `bijux-dev-cli config evidence-map`
 #[must_use]
 pub fn build_evidence_map_report(workspace_root: &Path) -> Value {
     let report = ownership_report(workspace_root);

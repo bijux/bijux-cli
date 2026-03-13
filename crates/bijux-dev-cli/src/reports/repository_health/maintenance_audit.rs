@@ -17,9 +17,9 @@ fn classify_maintenance_path(path: &str) -> &'static str {
 
 fn replacement_command(path: &str) -> Option<String> {
     if path.starts_with("maintenance/status/") {
-        Some("bijux dev cli maintenance status inventory".to_string())
+        Some("bijux-dev-cli maintenance status inventory".to_string())
     } else if path.starts_with("maintenance/") {
-        Some("bijux dev cli maintenance audit".to_string())
+        Some("bijux-dev-cli maintenance audit".to_string())
     } else {
         None
     }
@@ -108,7 +108,7 @@ pub fn build_inventory_report(workspace_root: &Path) -> Value {
         },
         "maintainer_maintenance_replacements": maintainer_maintenance_replacements,
         "remaining_make_only_behaviors": remaining_make_only_behaviors,
-        "rule": "new maintainer automation defaults to bijux dev cli commands",
+        "rule": "new maintainer automation defaults to bijux-dev-cli commands",
     })
 }
 

@@ -41,7 +41,7 @@ fn path_has_generated_or_hidden_component(path: &Path, workspace_root: &Path) ->
     })
 }
 
-/// `dev cli rustdoc coverage`
+/// `bijux-dev-cli rustdoc coverage`
 #[must_use]
 pub fn build_coverage_report(workspace_root: &Path) -> Value {
     let mut rows = Vec::new();
@@ -80,7 +80,7 @@ pub fn build_coverage_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli rustdoc broken-links`
+/// `bijux-dev-cli rustdoc broken-links`
 #[must_use]
 pub fn build_broken_links_report(workspace_root: &Path) -> Value {
     let mut missing = Vec::new();
@@ -111,7 +111,7 @@ pub fn build_broken_links_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli rustdoc public-api`
+/// `bijux-dev-cli rustdoc public-api`
 #[must_use]
 pub fn build_public_api_report(workspace_root: &Path) -> Value {
     let mut missing_docs = Vec::new();
@@ -144,7 +144,7 @@ pub fn build_public_api_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli rustdoc examples`
+/// `bijux-dev-cli rustdoc examples`
 #[must_use]
 pub fn build_examples_report(workspace_root: &Path) -> Value {
     let mut rows = Vec::new();
@@ -165,7 +165,7 @@ pub fn build_examples_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli rustdoc audit`
+/// `bijux-dev-cli rustdoc audit`
 #[must_use]
 pub fn build_audit_report(workspace_root: &Path) -> Value {
     let coverage = build_coverage_report(workspace_root);
@@ -208,7 +208,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli rustdoc migrate-website-api-docs`
+/// `bijux-dev-cli rustdoc migrate-website-api-docs`
 #[must_use]
 pub fn build_migration_report(workspace_root: &Path) -> Value {
     let candidates: Vec<String> = collect_files_recursive(&workspace_root.join("docs/06-reference"))
@@ -219,11 +219,11 @@ pub fn build_migration_report(workspace_root: &Path) -> Value {
     json!({
         "delete_candidates": candidates,
         "safe_mode": true,
-        "command": "bijux dev cli rustdoc migrate-website-api-docs",
+        "command": "bijux-dev-cli rustdoc migrate-website-api-docs",
     })
 }
 
-/// `dev cli rustdoc build-proof`
+/// `bijux-dev-cli rustdoc build-proof`
 #[must_use]
 pub fn build_build_proof_report(workspace_root: &Path) -> Value {
     let result = Command::new("cargo")
@@ -241,7 +241,7 @@ pub fn build_build_proof_report(workspace_root: &Path) -> Value {
     json!({"status": if status == 0 {"pass"} else {"fail"}, "exit_code": status, "stdout": stdout, "stderr": stderr})
 }
 
-/// `dev cli rustdoc workspace-coverage-proof`
+/// `bijux-dev-cli rustdoc workspace-coverage-proof`
 #[must_use]
 pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
     let cargo_tomls: Vec<String> = collect_files_recursive(&workspace_root.join("crates"))
@@ -252,7 +252,7 @@ pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
     json!({"documented_crates": cargo_tomls, "status": "pass"})
 }
 
-/// `dev cli rustdoc python-link-proof`
+/// `bijux-dev-cli rustdoc python-link-proof`
 #[must_use]
 pub fn build_python_link_proof_report(workspace_root: &Path) -> Value {
     let docs = read(&workspace_root.join("docs/06-reference/integrations-and-routed-runtimes.md"));

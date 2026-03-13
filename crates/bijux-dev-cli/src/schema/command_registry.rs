@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Canonical maintainer command namespace.
-pub const MAINTAINER_COMMAND_NAMESPACE: &str = "dev cli";
+pub const MAINTAINER_COMMAND_NAMESPACE: &str = "bijux-dev-cli";
 
 /// Canonical maintainer command grouping model.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,79 +37,79 @@ impl DevCliCommandGroup {
 /// Canonical dev-cli command identity used by maintainer report modules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DevCliCommand {
-    /// `bijux dev cli status`
+    /// `bijux-dev-cli status`
     Status,
-    /// `bijux dev cli parity`
+    /// `bijux-dev-cli parity`
     Parity,
-    /// `bijux dev cli routes`
+    /// `bijux-dev-cli routes`
     Routes,
-    /// `bijux dev cli registry`
+    /// `bijux-dev-cli registry`
     Registry,
-    /// `bijux dev cli env`
+    /// `bijux-dev-cli env`
     Env,
-    /// `bijux dev cli contracts`
+    /// `bijux-dev-cli contracts`
     Contracts,
-    /// `bijux dev cli config`
+    /// `bijux-dev-cli config`
     Config,
-    /// `bijux dev cli runtime-identity`
+    /// `bijux-dev-cli runtime-identity`
     RuntimeIdentity,
-    /// `bijux dev cli package-health`
+    /// `bijux-dev-cli package-health`
     PackageHealth,
-    /// `bijux dev cli state-audit`
+    /// `bijux-dev-cli state-audit`
     StateAudit,
-    /// `bijux dev cli state-doctor`
+    /// `bijux-dev-cli state-doctor`
     StateDoctor,
-    /// `bijux dev cli docs-audit`
+    /// `bijux-dev-cli docs-audit`
     DocsAudit,
-    /// `bijux dev cli maintenance`
+    /// `bijux-dev-cli maintenance`
     Maintenance,
-    /// `bijux dev cli maintenance-audit`
+    /// `bijux-dev-cli maintenance-audit`
     MaintenanceAudit,
-    /// `bijux dev cli rustdoc`
+    /// `bijux-dev-cli rustdoc`
     Rustdoc,
-    /// `bijux dev cli release`
+    /// `bijux-dev-cli release`
     Release,
-    /// `bijux dev cli evidence`
+    /// `bijux-dev-cli evidence`
     Evidence,
-    /// `bijux dev cli python`
+    /// `bijux-dev-cli python`
     Python,
-    /// `bijux dev cli repo`
+    /// `bijux-dev-cli repo`
     Repo,
-    /// `bijux dev cli crate-health`
+    /// `bijux-dev-cli crate-health`
     CrateHealth,
-    /// `bijux dev cli route-audit`
+    /// `bijux-dev-cli route-audit`
     RouteAudit,
-    /// `bijux dev cli doctor`
+    /// `bijux-dev-cli doctor`
     Doctor,
-    /// `bijux dev cli plugin-health`
+    /// `bijux-dev-cli plugin-health`
     PluginHealth,
-    /// `bijux dev cli snapshots-audit`
+    /// `bijux-dev-cli snapshots-audit`
     SnapshotsAudit,
-    /// `bijux dev cli fixture-audit`
+    /// `bijux-dev-cli fixture-audit`
     FixtureAudit,
-    /// `bijux dev cli inventory`
+    /// `bijux-dev-cli inventory`
     Inventory,
-    /// `bijux dev cli docs`
+    /// `bijux-dev-cli docs`
     Docs,
-    /// `bijux dev cli docs-prune-plan`
+    /// `bijux-dev-cli docs-prune-plan`
     DocsPrunePlan,
-    /// `bijux dev cli atlas`
+    /// `bijux-dev-cli atlas`
     Atlas,
-    /// `bijux dev cli di`
+    /// `bijux-dev-cli di`
     Di,
-    /// `bijux dev cli list-products`
+    /// `bijux-dev-cli list-products`
     ListProducts,
-    /// `bijux dev cli list-plugins`
+    /// `bijux-dev-cli list-plugins`
     ListPlugins,
-    /// `bijux dev cli dashboard`
+    /// `bijux-dev-cli dashboard`
     Dashboard,
-    /// `bijux dev cli quickcheck`
+    /// `bijux-dev-cli quickcheck`
     Quickcheck,
-    /// `bijux dev cli truth`
+    /// `bijux-dev-cli truth`
     Truth,
-    /// `bijux dev cli blockers`
+    /// `bijux-dev-cli blockers`
     Blockers,
-    /// `bijux dev cli next`
+    /// `bijux-dev-cli next`
     Next,
 }
 
@@ -118,43 +118,43 @@ impl DevCliCommand {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::Status => "dev cli status",
-            Self::Parity => "dev cli parity",
-            Self::Routes => "dev cli routes",
-            Self::Registry => "dev cli registry",
-            Self::Env => "dev cli env",
-            Self::Contracts => "dev cli contracts",
-            Self::Config => "dev cli config",
-            Self::RuntimeIdentity => "dev cli runtime-identity",
-            Self::PackageHealth => "dev cli package-health",
-            Self::StateAudit => "dev cli state-audit",
-            Self::StateDoctor => "dev cli state-doctor",
-            Self::DocsAudit => "dev cli docs-audit",
-            Self::Maintenance => "dev cli maintenance",
-            Self::MaintenanceAudit => "dev cli maintenance-audit",
-            Self::Rustdoc => "dev cli rustdoc",
-            Self::Release => "dev cli release",
-            Self::Evidence => "dev cli evidence",
-            Self::Python => "dev cli python",
-            Self::Repo => "dev cli repo",
-            Self::CrateHealth => "dev cli crate-health",
-            Self::RouteAudit => "dev cli route-audit",
-            Self::Doctor => "dev cli doctor",
-            Self::PluginHealth => "dev cli plugin-health",
-            Self::SnapshotsAudit => "dev cli snapshots-audit",
-            Self::FixtureAudit => "dev cli fixture-audit",
-            Self::Inventory => "dev cli inventory",
-            Self::Docs => "dev cli docs",
-            Self::DocsPrunePlan => "dev cli docs-prune-plan",
-            Self::Atlas => "dev cli atlas",
-            Self::Di => "dev cli di",
-            Self::ListProducts => "dev cli list-products",
-            Self::ListPlugins => "dev cli list-plugins",
-            Self::Dashboard => "dev cli dashboard",
-            Self::Quickcheck => "dev cli quickcheck",
-            Self::Truth => "dev cli truth",
-            Self::Blockers => "dev cli blockers",
-            Self::Next => "dev cli next",
+            Self::Status => "bijux-dev-cli status",
+            Self::Parity => "bijux-dev-cli parity",
+            Self::Routes => "bijux-dev-cli routes",
+            Self::Registry => "bijux-dev-cli registry",
+            Self::Env => "bijux-dev-cli env",
+            Self::Contracts => "bijux-dev-cli contracts",
+            Self::Config => "bijux-dev-cli config",
+            Self::RuntimeIdentity => "bijux-dev-cli runtime-identity",
+            Self::PackageHealth => "bijux-dev-cli package-health",
+            Self::StateAudit => "bijux-dev-cli state-audit",
+            Self::StateDoctor => "bijux-dev-cli state-doctor",
+            Self::DocsAudit => "bijux-dev-cli docs-audit",
+            Self::Maintenance => "bijux-dev-cli maintenance",
+            Self::MaintenanceAudit => "bijux-dev-cli maintenance-audit",
+            Self::Rustdoc => "bijux-dev-cli rustdoc",
+            Self::Release => "bijux-dev-cli release",
+            Self::Evidence => "bijux-dev-cli evidence",
+            Self::Python => "bijux-dev-cli python",
+            Self::Repo => "bijux-dev-cli repo",
+            Self::CrateHealth => "bijux-dev-cli crate-health",
+            Self::RouteAudit => "bijux-dev-cli route-audit",
+            Self::Doctor => "bijux-dev-cli doctor",
+            Self::PluginHealth => "bijux-dev-cli plugin-health",
+            Self::SnapshotsAudit => "bijux-dev-cli snapshots-audit",
+            Self::FixtureAudit => "bijux-dev-cli fixture-audit",
+            Self::Inventory => "bijux-dev-cli inventory",
+            Self::Docs => "bijux-dev-cli docs",
+            Self::DocsPrunePlan => "bijux-dev-cli docs-prune-plan",
+            Self::Atlas => "bijux-dev-cli atlas",
+            Self::Di => "bijux-dev-cli di",
+            Self::ListProducts => "bijux-dev-cli list-products",
+            Self::ListPlugins => "bijux-dev-cli list-plugins",
+            Self::Dashboard => "bijux-dev-cli dashboard",
+            Self::Quickcheck => "bijux-dev-cli quickcheck",
+            Self::Truth => "bijux-dev-cli truth",
+            Self::Blockers => "bijux-dev-cli blockers",
+            Self::Next => "bijux-dev-cli next",
         }
     }
 

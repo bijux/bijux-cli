@@ -1,6 +1,6 @@
 # bijux-dev-cli
 
-`bijux-dev-cli` is the maintainer control-plane crate for `bijux dev cli ...`.
+`bijux-dev-cli` is the maintainer control-plane crate for `bijux-dev-cli ...`.
 
 ## Scope
 

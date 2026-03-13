@@ -47,7 +47,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             id: "EVIDENCE-1001-RELEASE-TRUTH".to_string(),
             claim: "release truth is generated from artifacts".to_string(),
             ownership: "bijux-dev-cli".to_string(),
-            source: "dev cli release evidence".to_string(),
+            source: "bijux-dev-cli release evidence".to_string(),
             proof_kind: "report".to_string(),
             artifact_links: vec![relative_to_root(&release_truth, workspace_root)],
             freshness: if release_truth.exists() {
@@ -66,7 +66,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             id: "EVIDENCE-1002-PARITY-COVERAGE".to_string(),
             claim: "command parity matrix is maintained".to_string(),
             ownership: "bijux-dev-cli".to_string(),
-            source: "dev cli parity".to_string(),
+            source: "bijux-dev-cli parity".to_string(),
             proof_kind: "matrix".to_string(),
             artifact_links: vec![relative_to_root(&parity, workspace_root)],
             freshness: if parity.exists() { "fresh".to_string() } else { "stale".to_string() },
@@ -77,7 +77,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             id: "EVIDENCE-1003-INSTALL-NEUTRALITY".to_string(),
             claim: "install neutrality checks exist".to_string(),
             ownership: "bijux-dev-cli".to_string(),
-            source: "dev cli package-health".to_string(),
+            source: "bijux-dev-cli package-health".to_string(),
             proof_kind: "report".to_string(),
             artifact_links: vec![relative_to_root(&install_neutrality, workspace_root)],
             freshness: if install_neutrality.exists() {
@@ -96,7 +96,7 @@ fn evidence_records(workspace_root: &Path) -> Vec<EvidenceRecord> {
             id: "EVIDENCE-1004-RUNTIME-IDENTITY".to_string(),
             claim: "runtime identity evidence exists".to_string(),
             ownership: "bijux-dev-cli".to_string(),
-            source: "dev cli runtime-identity".to_string(),
+            source: "bijux-dev-cli runtime-identity".to_string(),
             proof_kind: "report".to_string(),
             artifact_links: vec![relative_to_root(&runtime_identity, workspace_root)],
             freshness: if runtime_identity.exists() {
@@ -144,14 +144,14 @@ fn audit_records(records: &[EvidenceRecord], workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli evidence list`
+/// `bijux-dev-cli evidence list`
 #[must_use]
 pub fn build_list_report(workspace_root: &Path) -> Value {
     let records = records_json(workspace_root);
     json!({"records": records, "count": records.len()})
 }
 
-/// `dev cli evidence show --id <id>`
+/// `bijux-dev-cli evidence show --id <id>`
 #[must_use]
 pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
     if !valid_evidence_id(id) {
@@ -173,7 +173,7 @@ pub fn build_show_report(workspace_root: &Path, id: &str) -> Value {
     })
 }
 
-/// `dev cli evidence audit`
+/// `bijux-dev-cli evidence audit`
 #[must_use]
 pub fn build_audit_report(workspace_root: &Path) -> Value {
     let records = evidence_records(workspace_root);
@@ -208,7 +208,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli evidence stale`
+/// `bijux-dev-cli evidence stale`
 #[must_use]
 pub fn build_stale_report(workspace_root: &Path) -> Value {
     let stale: Vec<Value> = records_json(workspace_root)
@@ -221,7 +221,7 @@ pub fn build_stale_report(workspace_root: &Path) -> Value {
     json!({"stale": stale, "count": stale.len()})
 }
 
-/// `dev cli evidence matrix`
+/// `bijux-dev-cli evidence matrix`
 #[must_use]
 pub fn build_matrix_report(workspace_root: &Path) -> Value {
     let by_status = records_json(workspace_root).into_iter().fold(
@@ -235,7 +235,7 @@ pub fn build_matrix_report(workspace_root: &Path) -> Value {
     json!({"status_matrix": by_status, "records": records_json(workspace_root)})
 }
 
-/// `dev cli evidence website-export`
+/// `bijux-dev-cli evidence website-export`
 #[must_use]
 pub fn build_website_export_report(workspace_root: &Path) -> Value {
     let records: Vec<Value> = evidence_records(workspace_root)
@@ -246,19 +246,19 @@ pub fn build_website_export_report(workspace_root: &Path) -> Value {
     json!({"website_export": records, "filter": "backed-claims-only"})
 }
 
-/// `dev cli evidence ci-export`
+/// `bijux-dev-cli evidence ci-export`
 #[must_use]
 pub fn build_ci_export_report(workspace_root: &Path) -> Value {
     json!({"ci_export": records_json(workspace_root)})
 }
 
-/// `dev cli evidence release-export`
+/// `bijux-dev-cli evidence release-export`
 #[must_use]
 pub fn build_release_export_report(workspace_root: &Path) -> Value {
     json!({"release_export": records_json(workspace_root)})
 }
 
-/// `dev cli evidence command-map`
+/// `bijux-dev-cli evidence command-map`
 #[must_use]
 pub fn build_command_map_report(workspace_root: &Path) -> Value {
     let records = evidence_records(workspace_root);
@@ -294,7 +294,7 @@ pub fn build_command_map_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli evidence parity-map`
+/// `bijux-dev-cli evidence parity-map`
 #[must_use]
 pub fn build_parity_map_report(workspace_root: &Path) -> Value {
     let matrix =
@@ -401,7 +401,7 @@ mod tests {
         let package_health = rows
             .iter()
             .find(|row| {
-                row.get("command").and_then(Value::as_str) == Some("dev cli package-health")
+                row.get("command").and_then(Value::as_str) == Some("bijux-dev-cli package-health")
             })
             .expect("package health row");
         assert_eq!(package_health["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));
@@ -416,7 +416,7 @@ mod tests {
         fs::create_dir_all(root.join("artifacts/status")).expect("mkdir");
         fs::write(
             root.join("artifacts/status/command_migration_matrix.json"),
-            r#"{"commands":[{"command":"dev cli unknown"},{"command":"dev cli parity"}]}"#,
+            r#"{"commands":[{"command":"bijux-dev-cli unknown"},{"command":"bijux-dev-cli parity"}]}"#,
         )
         .expect("write matrix");
 
@@ -424,11 +424,11 @@ mod tests {
         let rows = parity_map["parity_map"].as_array().expect("parity map rows");
         let unknown = rows
             .iter()
-            .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli unknown"))
+            .find(|row| row.get("command").and_then(Value::as_str) == Some("bijux-dev-cli unknown"))
             .expect("unknown row");
         let parity = rows
             .iter()
-            .find(|row| row.get("command").and_then(Value::as_str) == Some("dev cli parity"))
+            .find(|row| row.get("command").and_then(Value::as_str) == Some("bijux-dev-cli parity"))
             .expect("parity row");
         assert_eq!(unknown["evidence_ids"].as_array().map(|rows| rows.len()), Some(0));
         assert_eq!(parity["evidence_ids"].as_array().map(|rows| rows.len()), Some(1));

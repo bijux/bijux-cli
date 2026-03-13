@@ -67,7 +67,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         .iter()
                                         .map(|(alias, canonical)| {
                                             if alias.starts_with("dev ") {
-                                                json!({"alias":alias,"canonical":canonical,"classification":"temporary","justification":"legacy developer shortcut remains for compatibility contract","removal_condition":"remove when canonical dev cli path has stable parity coverage","evidence_links":["artifacts/status/command_migration_matrix.json","artifacts/parity/command_parity_matrix.json"]})
+                                                json!({"alias":alias,"canonical":canonical,"classification":"temporary","justification":"legacy developer shortcut remains for compatibility contract","removal_condition":"remove when canonical bijux-dev-cli path has stable parity coverage","evidence_links":["artifacts/status/command_migration_matrix.json","artifacts/parity/command_parity_matrix.json"]})
                                             } else if alias.starts_with("config ") || alias.starts_with("plugins ") {
                                                 json!({"alias":alias,"canonical":canonical,"classification":"needed","justification":"legacy compatibility for core operator workflows","removal_condition":"remove when compatibility policy no longer requires shorthand","evidence_links":["artifacts/status/compatibility_alias_inventory.json","artifacts/status/status_known_parity_gaps.json"]})
                                             } else {

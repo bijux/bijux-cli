@@ -11,7 +11,7 @@ fn status_generator_rows() -> Vec<Value> {
         "source_ref": Value::Null,
         "implementation": "rust",
         "outputs": ["artifacts/status/flaky_tests.json"],
-        "command": "bijux dev cli maintenance generate --id GEN-STATUS-FLAKY-TEST-LABELS",
+        "command": "bijux-dev-cli maintenance generate --id GEN-STATUS-FLAKY-TEST-LABELS",
     })]
 }
 
@@ -61,7 +61,7 @@ fn run_status_generator_entry(workspace_root: &Path, row: &Value) -> Value {
     })
 }
 
-/// Builds `dev cli maintenance generators` report payload.
+/// Builds `bijux-dev-cli maintenance generators` report payload.
 #[must_use]
 pub fn build_generators_report(_workspace_root: &Path) -> Value {
     build_status_generators_report()

@@ -72,7 +72,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "cli config get alpha --format json --no-pretty",
                         "inspect --format json --no-pretty",
                         "help cli plugins",
-                        "dev cli state-doctor --format json --no-pretty",
+                        "bijux-dev-cli state-doctor --format json --no-pretty",
                     ],
                     "evidence": [
                         "crates/bijux-cli/tests/bin_surface/deterministic_output_matrix.rs",

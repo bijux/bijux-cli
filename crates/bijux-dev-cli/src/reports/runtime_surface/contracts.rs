@@ -137,7 +137,7 @@ pub fn build_report_from_query(
     })
 }
 
-/// Builds full status-contract execution report for `dev cli contracts --all`.
+/// Builds full status-contract execution report for `bijux-dev-cli contracts --all`.
 #[must_use]
 pub fn build_all_report(
     workspace_root: &Path,

@@ -96,7 +96,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let diagnostics_consistency = json!({"generator":"bijux-dev-cli","scope":"diagnostics consistency","coverage_ids":[145,146,149,150,151,152,154],"status":if inspect.is_object()&&doctor_a.is_object()&&env.is_object()&&routes.is_object()&&registry.is_object()&&package_health.is_object()&&runtime_identity.is_object(){"complete"}else{"partial"},"sample":{"inspect_status":inspect.get("status"),"doctor_status":doctor_a.get("status"),"env_keys":env.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default()}});
             let doctor_determinism = json!({"generator":"bijux-dev-cli","scope":"doctor determinism","coverage_ids":[141,142,143,144,155,158],"status":if doctor_a==doctor_b && state_doctor_a==state_doctor_b && state_doctor_a.get("doctor").and_then(|d| d.get("issues"))==state_doctor_b.get("doctor").and_then(|d| d.get("issues")){"complete"}else{"partial"},"byte_stable":doctor_a==doctor_b && state_doctor_a==state_doctor_b});
             let schema_drift = json!({"generator":"bijux-dev-cli","scope":"diagnostics schema drift","coverage_ids":[147,148,156],"status":if contracts==expected_contracts && expected_route_set.is_subset(&current_route_set){"complete"}else{"partial"},"contracts_matches_snapshot":contracts==expected_contracts,"routes_matches_snapshot":expected_route_set.is_subset(&current_route_set)});
-            let source_of_truth = json!({"generator":"bijux-dev-cli","scope":"diagnostics source of truth","coverage_ids":[146,147,148,149,157],"status":if env.is_object()&&contracts.is_object()&&routes.is_object()&&registry.is_object(){"complete"}else{"partial"},"source_commands":["dev cli env","dev cli contracts","dev cli routes","dev cli registry"]});
+            let source_of_truth = json!({"generator":"bijux-dev-cli","scope":"diagnostics source of truth","coverage_ids":[146,147,148,149,157],"status":if env.is_object()&&contracts.is_object()&&routes.is_object()&&registry.is_object(){"complete"}else{"partial"},"source_commands":["bijux-dev-cli env","bijux-dev-cli contracts","bijux-dev-cli routes","bijux-dev-cli registry"]});
             let findings_order = json!({"generator":"bijux-dev-cli","scope":"findings order","coverage_ids":[141,142,150,158],"status":if state_doctor_a.get("doctor").and_then(|d| d.get("issues"))==state_doctor_b.get("doctor").and_then(|d| d.get("issues")){"complete"}else{"partial"},"stable_order":state_doctor_a.get("doctor").and_then(|d| d.get("issues"))==state_doctor_b.get("doctor").and_then(|d| d.get("issues"))});
             let contract = json!({"generator":"bijux-dev-cli","scope":"diagnostics contract","coverage_ids":[143,144,145,152,153,159],"status":if doctor_a.is_object()&&plugin_health.is_object()&&package_health.is_object()&&runtime_identity.is_object(){"complete"}else{"partial"},"contract_keys":{"doctor":doctor_a.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"plugin_health":plugin_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"package_health":package_health.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default(),"runtime_identity":runtime_identity.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default()}});
             let mut drift = Vec::<Value>::new();
@@ -191,12 +191,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter_map(|r| r.get("coverage_id").and_then(Value::as_i64))
                 .collect::<Vec<_>>();
             let expected_keys: BTreeMap<&str, Vec<&str>> = BTreeMap::from([
-                ("dev cli contracts", vec!["contracts", "runtime_version", "schema_version"]),
-                ("dev cli routes", vec!["aliases", "routes"]),
-                ("dev cli registry", vec!["ownership", "precedence", "registry"]),
-                ("dev cli env", vec!["active", "env", "source_precedence"]),
+                ("bijux-dev-cli contracts", vec!["contracts", "runtime_version", "schema_version"]),
+                ("bijux-dev-cli routes", vec!["aliases", "routes"]),
+                ("bijux-dev-cli registry", vec!["ownership", "precedence", "registry"]),
+                ("bijux-dev-cli env", vec!["active", "env", "source_precedence"]),
                 (
-                    "dev cli parity",
+                    "bijux-dev-cli parity",
                     vec![
                         "binary_bridge",
                         "command_matrix",
@@ -225,7 +225,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     ],
                 ),
                 (
-                    "dev cli crate-health",
+                    "bijux-dev-cli crate-health",
                     vec![
                         "crate_metrics",
                         "crate_report",
@@ -237,10 +237,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "public_api_counts",
                     ],
                 ),
-                ("dev cli docs-audit", vec!["docs", "docs_audit", "docs_count"]),
-                ("dev cli doctor", vec!["issues", "runtime", "status"]),
+                ("bijux-dev-cli docs-audit", vec!["docs", "docs_audit", "docs_count"]),
+                ("bijux-dev-cli doctor", vec!["issues", "runtime", "status"]),
                 (
-                    "dev cli runtime-identity",
+                    "bijux-dev-cli runtime-identity",
                     vec![
                         "active_binary",
                         "active_binary_selection_is_ambiguous",
@@ -282,7 +282,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let plugin_health = run_bijux_json(workspace_root, &["dev", "cli", "plugin-health"])
                 .unwrap_or_else(|_| json!({}));
             let trust = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust","coverage_ids":[361,362,363,364,365,366,367,374,375],"status":if missing.is_empty(){"complete"}else{"partial"},"coverage_rows":coverage});
-            let actionable = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"actionable diagnostics","coverage_ids":[368,369,370,371,376],"status":if missing.is_empty(){"complete"}else{"partial"},"checks":{"plugin_health_has_guidance":serde_json::to_string(&plugin_health).unwrap_or_default().contains("Use `bijux dev cli plugin-health --format json`"),"doctor_payload_present":run_bijux_json(workspace_root,&["dev","cli","doctor"]).map(|v|v.is_object()).unwrap_or(false),"runtime_identity_payload_present":run_bijux_json(workspace_root,&["dev","cli","runtime-identity"]).map(|v|v.is_object()).unwrap_or(false)}});
+            let actionable = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"actionable diagnostics","coverage_ids":[368,369,370,371,376],"status":if missing.is_empty(){"complete"}else{"partial"},"checks":{"plugin_health_has_guidance":serde_json::to_string(&plugin_health).unwrap_or_default().contains("Use `bijux-dev-cli plugin-health --format json`"),"doctor_payload_present":run_bijux_json(workspace_root,&["dev","cli","doctor"]).map(|v|v.is_object()).unwrap_or(false),"runtime_identity_payload_present":run_bijux_json(workspace_root,&["dev","cli","runtime-identity"]).map(|v|v.is_object()).unwrap_or(false)}});
             let minimalism = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics minimalism","coverage_ids":[372,373,377],"status":if missing.is_empty(){"complete"}else{"partial"},"json_commands_checked":expected_keys.keys().collect::<Vec<_>>(),"json_schema_drift_count":schema_drift});
             let schema = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust schema drift","coverage_ids":[378],"status":if schema_drift==0 && missing.is_empty(){"clean"}else{"drift"},"drift_count":schema_drift + missing.len(),"schema_rows":schema_rows,"missing_coverage_ids":missing});
             let contract = json!({"generated_at":generated_at_utc(),"generator":"bijux-dev-cli","scope":"diagnostics trust contract","coverage_ids":[380],"status":if schema_drift==0 && missing.is_empty(){"frozen"}else{"not-frozen"},"law":"diagnostics are credible operator output"});

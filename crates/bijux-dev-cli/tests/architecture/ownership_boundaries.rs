@@ -27,10 +27,10 @@ fn command_registry_entries_are_canonical_and_unique() {
     let mut seen = BTreeSet::<&'static str>::new();
     for entry in command_registry() {
         assert_eq!(entry.owner, "bijux-dev-cli");
-        assert!(entry.command.as_str().starts_with("dev cli "));
+        assert!(entry.command.as_str().starts_with("bijux-dev-cli "));
         assert!(seen.insert(entry.command.as_str()));
     }
-    assert_eq!(MAINTAINER_COMMAND_NAMESPACE, "dev cli");
+    assert_eq!(MAINTAINER_COMMAND_NAMESPACE, "bijux-dev-cli");
     assert!(command_registry().iter().any(|entry| matches!(entry.command, DevCliCommand::Status)));
 }
 

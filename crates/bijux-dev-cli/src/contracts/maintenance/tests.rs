@@ -136,7 +136,7 @@ fn status_inventory_commands_use_canonical_maintenance_route() {
             .unwrap_or("<missing-contract-id>");
         let command = row.get("command").and_then(serde_json::Value::as_str).unwrap_or("");
         assert!(
-            command.contains("dev cli maintenance status run --id"),
+            command.contains("bijux-dev-cli maintenance status run --id"),
             "{contract_id} must use canonical maintenance status route: {command}"
         );
     }

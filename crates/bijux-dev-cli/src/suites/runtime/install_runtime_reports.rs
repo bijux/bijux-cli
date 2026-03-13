@@ -94,7 +94,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let install_source_payload = json!({
                 "generated_at": generated_at,
                 "generator": "bijux-dev-cli",
-                "source_command": "bijux dev cli runtime-identity --json --no-pretty",
+                "source_command": "bijux-dev-cli runtime-identity --json --no-pretty",
                 "active_binary": runtime_identity.get("active_binary").cloned().unwrap_or(Value::Null),
                 "install_source": runtime_identity.get("install_source").cloned().unwrap_or(Value::Null),
                 "path_binaries": runtime_identity.get("path_binaries").cloned().unwrap_or_else(|| json!([])),
@@ -109,7 +109,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let ambiguous_payload = json!({
                 "generated_at": generated_at,
                 "generator": "bijux-dev-cli",
-                "source_command": "bijux dev cli runtime-identity --json --no-pretty",
+                "source_command": "bijux-dev-cli runtime-identity --json --no-pretty",
                 "active_binary_selection_is_ambiguous": runtime_identity.get("active_binary_selection_is_ambiguous").cloned().unwrap_or(json!(false)),
                 "active_path_is_shadowed": runtime_identity.get("active_path_is_shadowed").cloned().unwrap_or(json!(false)),
                 "duplicate_install_detected": diagnostics.get("duplicate_install_detected").cloned().unwrap_or(json!(false)),
@@ -129,8 +129,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "generated_at": generated_at,
                 "generator": "bijux-dev-cli",
                 "source_commands": [
-                    "bijux dev cli runtime-identity --json --no-pretty",
-                    "bijux dev cli package-health --json --no-pretty"
+                    "bijux-dev-cli runtime-identity --json --no-pretty",
+                    "bijux-dev-cli package-health --json --no-pretty"
                 ],
                 "runtime_identity": runtime_identity,
                 "install_state_assumptions": package_health.get("install_state_assumptions").cloned().unwrap_or_else(|| json!([])),

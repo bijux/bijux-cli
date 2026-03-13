@@ -41,7 +41,7 @@ fn bridge_duplicate_area(payload: &Value, area: &str) -> Vec<Value> {
         .unwrap_or_default()
 }
 
-/// `dev cli python bridge-status`
+/// `bijux-dev-cli python bridge-status`
 #[must_use]
 pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
     let execution_payload = read_json_if_exists(
@@ -79,7 +79,7 @@ pub fn build_bridge_status_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli python surface-status`
+/// `bijux-dev-cli python surface-status`
 #[must_use]
 pub fn build_surface_status_report(workspace_root: &Path) -> Value {
     let command_surface_payload = read_json_if_exists(
@@ -99,7 +99,7 @@ pub fn build_surface_status_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli python sovereignty-audit`
+/// `bijux-dev-cli python sovereignty-audit`
 #[must_use]
 pub fn build_sovereignty_audit_report(workspace_root: &Path) -> Value {
     let duplication = read_json_if_exists(
@@ -170,7 +170,7 @@ pub fn build_sovereignty_audit_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli python drift`
+/// `bijux-dev-cli python drift`
 #[must_use]
 pub fn build_drift_report(workspace_root: &Path) -> Value {
     let sovereignty = build_sovereignty_audit_report(workspace_root);
@@ -184,7 +184,7 @@ pub fn build_drift_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli python packaging`
+/// `bijux-dev-cli python packaging`
 #[must_use]
 pub fn build_packaging_report(workspace_root: &Path) -> Value {
     let runtime_identity = read_json_if_exists(

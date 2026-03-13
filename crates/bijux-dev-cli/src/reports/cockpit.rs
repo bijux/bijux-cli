@@ -1,4 +1,4 @@
-//! Top-level maintainer cockpit commands for `bijux dev cli`.
+//! Top-level maintainer cockpit commands for `bijux-dev-cli`.
 
 use std::path::Path;
 
@@ -157,7 +157,7 @@ fn status_summary_counts(workspace_root: &Path, rows: &[Value]) -> (u64, u64, u6
     (complete, missing, partial, shim)
 }
 
-/// `dev cli dashboard`
+/// `bijux-dev-cli dashboard`
 #[must_use]
 pub fn build_dashboard_report(workspace_root: &Path) -> Value {
     let status = read_json_if_exists(&workspace_root.join("artifacts/status/status.json"));
@@ -197,11 +197,11 @@ pub fn build_dashboard_report(workspace_root: &Path) -> Value {
             "package_health": package_health_state,
             "state_health": state_health_state,
         },
-        "command_center": "bijux dev cli",
+        "command_center": "bijux-dev-cli",
     })
 }
 
-/// `dev cli quickcheck`
+/// `bijux-dev-cli quickcheck`
 #[must_use]
 pub fn build_quickcheck_report(workspace_root: &Path) -> Value {
     let release =
@@ -227,7 +227,7 @@ pub fn build_quickcheck_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli truth`
+/// `bijux-dev-cli truth`
 #[must_use]
 pub fn build_truth_report(workspace_root: &Path) -> Value {
     let rows = truth_rows_from_status(workspace_root);
@@ -280,7 +280,7 @@ pub fn build_truth_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli blockers`
+/// `bijux-dev-cli blockers`
 #[must_use]
 pub fn build_blockers_report(workspace_root: &Path) -> Value {
     let release = read_json_if_exists(
@@ -296,7 +296,7 @@ pub fn build_blockers_report(workspace_root: &Path) -> Value {
     })
 }
 
-/// `dev cli next`
+/// `bijux-dev-cli next`
 #[must_use]
 pub fn build_next_report(workspace_root: &Path) -> Value {
     let priorities = ensure_evidence_first_policy(

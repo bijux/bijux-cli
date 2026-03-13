@@ -136,7 +136,7 @@ fn ensure_command_matrix(workspace_root: &Path) -> Value {
                 "diff_links": {}
             }),
             json!({
-                "command": "dev cli parity",
+                "command": "bijux-dev-cli parity",
                 "group": "dev-cli",
                 "status": "partial",
                 "reason": "",
@@ -911,7 +911,7 @@ pub fn build_report(workspace_root: &Path) -> Value {
         read_json_if_exists(&workspace_root.join("artifacts/parity/memory_parity_report.json"));
 
     json!({
-        "migration_dashboard_default": "bijux dev cli parity",
+        "migration_dashboard_default": "bijux-dev-cli parity",
         "evidence_ids": [
             "EVIDENCE-1002-PARITY-COVERAGE",
             "EVIDENCE-1103-PLUGIN-LIFECYCLE",

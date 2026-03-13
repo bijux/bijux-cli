@@ -105,62 +105,62 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let commands: Vec<String> = read(&dev_fixture)
                 .lines()
                 .map(str::trim)
-                .filter(|line| line.starts_with("dev cli "))
+                .filter(|line| line.starts_with("bijux-dev-cli "))
                 .map(ToString::to_string)
                 .collect::<BTreeSet<_>>()
                 .into_iter()
                 .collect();
             let maintainer_diag = BTreeSet::from([
-                "dev cli routes",
-                "dev cli route-audit",
-                "dev cli registry",
-                "dev cli parity",
-                "dev cli status",
-                "dev cli maintenance-audit",
-                "dev cli crate-health",
-                "dev cli package-health",
-                "dev cli env",
-                "dev cli doctor",
-                "dev cli contracts",
-                "dev cli runtime-identity",
-                "dev cli state-audit",
-                "dev cli state-doctor",
-                "dev cli docs-audit",
+                "bijux-dev-cli routes",
+                "bijux-dev-cli route-audit",
+                "bijux-dev-cli registry",
+                "bijux-dev-cli parity",
+                "bijux-dev-cli status",
+                "bijux-dev-cli maintenance-audit",
+                "bijux-dev-cli crate-health",
+                "bijux-dev-cli package-health",
+                "bijux-dev-cli env",
+                "bijux-dev-cli doctor",
+                "bijux-dev-cli contracts",
+                "bijux-dev-cli runtime-identity",
+                "bijux-dev-cli state-audit",
+                "bijux-dev-cli state-doctor",
+                "bijux-dev-cli docs-audit",
             ]);
             let mut dev_rows = Vec::<Value>::new();
             let mut misplaced = Vec::<Value>::new();
             let mut missing_impl = Vec::<String>::new();
             for command in commands {
                 let mut owner = "bijux-cli".to_string();
-                if command == "dev cli route-audit" {
+                if command == "bijux-dev-cli route-audit" {
                     owner = "bijux-cli::routing + bijux-cli".to_string();
                 }
                 if [
-                    "dev cli runtime-identity",
-                    "dev cli package-health",
-                    "dev cli state-audit",
-                    "dev cli state-doctor",
+                    "bijux-dev-cli runtime-identity",
+                    "bijux-dev-cli package-health",
+                    "bijux-dev-cli state-audit",
+                    "bijux-dev-cli state-doctor",
                 ]
                 .contains(&command.as_str())
                 {
                     owner = "bijux-cli + bijux-cli::install + bijux-cli-plugin".to_string();
                 }
                 let delegated = [
-                    ("dev cli routes", "dev_routes::build_report_from_query"),
-                    ("dev cli registry", "dev_registry::build_report_from_query"),
-                    ("dev cli route-audit", "dev_route_audit::build_report_from_query"),
-                    ("dev cli env", "dev_env::build_report("),
-                    ("dev cli contracts", "dev_contracts::build_report("),
-                    ("dev cli parity", "dev_parity::build_report("),
-                    ("dev cli status", "dev_status::build_report("),
-                    ("dev cli runtime-identity", "dev_runtime_identity::build_report("),
-                    ("dev cli package-health", "dev_package_health::build_report("),
-                    ("dev cli state-audit", "dev_state_audit::build_report("),
-                    ("dev cli state-doctor", "dev_state_audit::build_doctor_report("),
-                    ("dev cli maintenance-audit", "dev_maintenance_audit::build_report("),
-                    ("dev cli docs-audit", "dev_docs_audit::build_report("),
-                    ("dev cli crate-health", "dev_crate_health::build_report("),
-                    ("dev cli inventory", "dev_maintenance_audit::build_inventory_report("),
+                    ("bijux-dev-cli routes", "dev_routes::build_report_from_query"),
+                    ("bijux-dev-cli registry", "dev_registry::build_report_from_query"),
+                    ("bijux-dev-cli route-audit", "dev_route_audit::build_report_from_query"),
+                    ("bijux-dev-cli env", "dev_env::build_report("),
+                    ("bijux-dev-cli contracts", "dev_contracts::build_report("),
+                    ("bijux-dev-cli parity", "dev_parity::build_report("),
+                    ("bijux-dev-cli status", "dev_status::build_report("),
+                    ("bijux-dev-cli runtime-identity", "dev_runtime_identity::build_report("),
+                    ("bijux-dev-cli package-health", "dev_package_health::build_report("),
+                    ("bijux-dev-cli state-audit", "dev_state_audit::build_report("),
+                    ("bijux-dev-cli state-doctor", "dev_state_audit::build_doctor_report("),
+                    ("bijux-dev-cli maintenance-audit", "dev_maintenance_audit::build_report("),
+                    ("bijux-dev-cli docs-audit", "dev_docs_audit::build_report("),
+                    ("bijux-dev-cli crate-health", "dev_crate_health::build_report("),
+                    ("bijux-dev-cli inventory", "dev_maintenance_audit::build_inventory_report("),
                 ];
                 if delegated
                     .iter()
@@ -211,7 +211,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "boundary_rules": {
                                     "control_plane_owner": "bijux-dev-cli owns maintainer automation and report assembly",
                                     "runtime_scope": "runtime crates own runtime law and structured-data services, not maintainer workflows",
-                                    "canonical_surface": "bijux dev cli remains the canonical maintainer command surface",
+                                    "canonical_surface": "bijux-dev-cli remains the canonical maintainer command surface",
                                     "distribution": "bijux-dev-cli is a workspace crate, not a second public binary package",
                                     "binary_identity": "bijux remains the only canonical executable",
                                     "law_center": "bijux-dev-cli does not become a second runtime law center"
@@ -249,8 +249,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "generator": "bijux-dev-cli",
                                 "scope": "maintainer inventory command ownership",
                                 "maintainer_inventory_commands": [
-                                    "dev cli inventory","dev cli maintenance-audit","dev cli docs-audit","dev cli crate-health",
-                                    "dev cli package-health","dev cli runtime-identity","dev cli state-audit","dev cli state-doctor"
+                                    "bijux-dev-cli inventory","bijux-dev-cli maintenance-audit","bijux-dev-cli docs-audit","bijux-dev-cli crate-health",
+                                    "bijux-dev-cli package-health","bijux-dev-cli runtime-identity","bijux-dev-cli state-audit","bijux-dev-cli state-doctor"
                                 ],
                                 "owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_some_and(|s| s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                                 "not_yet_owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
@@ -278,20 +278,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default()
                 .lines()
                 .map(str::trim)
-                .filter(|line| line.starts_with("dev cli "))
+                .filter(|line| line.starts_with("bijux-dev-cli "))
                 .map(ToString::to_string)
                 .collect();
             let dev_values: BTreeMap<String, i64> = BTreeMap::from([
-                ("dev cli status".to_string(), 100),
-                ("dev cli routes".to_string(), 98),
-                ("dev cli registry".to_string(), 98),
-                ("dev cli env".to_string(), 96),
-                ("dev cli doctor".to_string(), 95),
-                ("dev cli contracts".to_string(), 93),
-                ("dev cli parity".to_string(), 91),
-                ("dev cli runtime-identity".to_string(), 90),
-                ("dev cli state-audit".to_string(), 90),
-                ("dev cli state-doctor".to_string(), 90),
+                ("bijux-dev-cli status".to_string(), 100),
+                ("bijux-dev-cli routes".to_string(), 98),
+                ("bijux-dev-cli registry".to_string(), 98),
+                ("bijux-dev-cli env".to_string(), 96),
+                ("bijux-dev-cli doctor".to_string(), 95),
+                ("bijux-dev-cli contracts".to_string(), 93),
+                ("bijux-dev-cli parity".to_string(), 91),
+                ("bijux-dev-cli runtime-identity".to_string(), 90),
+                ("bijux-dev-cli state-audit".to_string(), 90),
+                ("bijux-dev-cli state-doctor".to_string(), 90),
             ]);
             let mut rows = Vec::<Value>::new();
             for command in commands {
@@ -367,30 +367,30 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .cloned()
                 .collect();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_coverage_report.json", &json!({
-                                "generated_at": generated_at_utc(), "generator":"bijux-dev-cli","scope":"dev cli command coverage","commands":rows,"summary":summary
+                                "generated_at": generated_at_utc(), "generator":"bijux-dev-cli","scope":"bijux-dev-cli command coverage","commands":rows,"summary":summary
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_matrix_artifact.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"dev cli command matrix",
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command matrix",
                                 "coverage_rows": req.into_iter().map(|(id,name)| json!({"coverage_id":id,"test":name,"status": if source.contains(&format!("fn {name}(")) {"complete"} else {"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs"})).collect::<Vec<_>>(),
                                 "commands": rows
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_surface_domain_contract.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","domain":"dev-cli-command-surface","status":"frozen",
-                                "rule":"dev cli commands are the maintainer control surface and must keep parity, diagnostics, and deterministic output law."
+                                "rule":"bijux-dev-cli commands are the maintainer control surface and must keep parity, diagnostics, and deterministic output law."
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_remaining_inventory.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"remaining dev cli subcommands not proven complete in rust","remaining_commands":remaining,"count":remaining.len()
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"remaining bijux-dev-cli subcommands not proven complete in rust","remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_value_ranking.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"dev cli maintainer-value ranking for closure execution","ranked_remaining_commands":remaining,"count":remaining.len()
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli maintainer-value ranking for closure execution","ranked_remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_completion_report.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"dev cli command closure execution","remaining_count":remaining.len(),"coverage_checks":coverage_checks,
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command closure execution","remaining_count":remaining.len(),"coverage_checks":coverage_checks,
                                 "closure_status": if remaining.is_empty() && all_required {"green"} else {"open"},
                                 "top_targets": remaining.iter().take(2).cloned().collect::<Vec<_>>()
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_closure_set.json", &json!({
-                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"tracked dev cli closure set","tracked_commands":rows.iter().filter_map(|r| r.get("command").cloned()).collect::<Vec<_>>(),
+                                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"tracked bijux-dev-cli closure set","tracked_commands":rows.iter().filter_map(|r| r.get("command").cloned()).collect::<Vec<_>>(),
                                 "coverage_checks":coverage_checks,"status":"frozen"
                             })).ok()?;
             let cli_completion = fs::read_to_string(
@@ -405,7 +405,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 cli_completion.get("closure_status").and_then(Value::as_str) == Some("green");
             let dev_green = remaining.is_empty() && all_required;
             let combined = json!({
-                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"cli and dev cli command closure",
+                "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"cli and bijux-dev-cli command closure",
                 "cli":{"remaining_count":cli_remaining,"closure_status":cli_completion.get("closure_status").cloned().unwrap_or_else(|| json!("open")),"top_targets":cli_completion.get("top_targets").cloned().unwrap_or_else(|| json!([]))},
                 "dev_cli":{"remaining_count":remaining.len(),"closure_status":if dev_green {"green"} else {"open"},"top_targets":remaining.iter().take(2).cloned().collect::<Vec<_>>()},
                 "cross_command_consistency":{"inspect_routes_registry":coverage_checks["consistency_inspect_routes_registry"],"config_env_resolution":coverage_checks["consistency_config_env_resolution"],"plugin_registry_state":coverage_checks["consistency_plugin_registry_state"]},
@@ -419,7 +419,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             let txt = format!(
-                                "CLI and DEV CLI Closure Report\noverall: {}\ncomplete language allowed: {}\n\ncli remaining: {}\ndev cli remaining: {}\n",
+                                "CLI and DEV CLI Closure Report\noverall: {}\ncomplete language allowed: {}\n\ncli remaining: {}\nbijux-dev-cli remaining: {}\n",
                                 combined.get("closure_status").and_then(Value::as_str).unwrap_or("open"),
                                 combined.get("complete_language_allowed").and_then(Value::as_bool).unwrap_or(false),
                                 cli_remaining,
@@ -476,14 +476,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .map(|token| core_app.matches(token).count())
             .sum::<usize>();
             write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_dispatch_ownership_report.json", &json!({
-                                "scope":"dev cli dispatch ownership","status":"ok",
+                                "scope":"bijux-dev-cli dispatch ownership","status":"ok",
                                 "dispatch_chain":[
                                     {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux.rs delegates to bijux_cli::api::runtime::run_cli_from_env"},
-                                    {"crate":"bijux-cli","role":"dispatch-only-for-maintainer-surface","evidence":"src/app.rs routes dev cli commands into bijux-dev-cli report builders"},
+                                    {"crate":"bijux-cli","role":"dispatch-only-for-maintainer-surface","evidence":"src/app.rs routes bijux-dev-cli commands into bijux-dev-cli report builders"},
                                     {"crate":"bijux-dev-cli","role":"maintainer-workflow-implementation-owner","evidence":"src/*.rs report builders provide maintainer payload assembly"}
                                 ],
                                 "checks":{
-                                    "bin_mentions_dev_cli_literals": main_rs.contains("dev cli"),
+                                    "bin_mentions_dev_cli_literals": main_rs.contains("bijux-dev-cli"),
                                     "bin_has_direct_dispatch_match_arms": main_rs.contains("match normalized_path"),
                                     "core_dev_cli_dispatch_arm_count": dev_cli_dispatch_arm_count,
                                     "core_dev_cli_builder_call_count": core_dev_cli_builder_call_count
@@ -491,7 +491,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "rules":[
                                     "bin must remain entrypoint-only",
                                     "routing must remain command identity only",
-                                    "dev cli maintainer workflows must be implemented in bijux-dev-cli"
+                                    "bijux-dev-cli maintainer workflows must be implemented in bijux-dev-cli"
                                 ]
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/bin_entrypoint_responsibility_diff.json", &json!({
@@ -499,7 +499,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "current":{
                                     "file":"crates/bijux-cli/src/bin/bijux.rs",
                                     "line_count": main_rs.lines().count(),
-                                    "dev_cli_literal_mentions": main_rs.matches("dev cli").count(),
+                                    "dev_cli_literal_mentions": main_rs.matches("bijux-dev-cli").count(),
                                     "core_entrypoint_calls": main_rs.matches("run_cli_from_env").count(),
                                     "direct_dispatch_match_mentions": main_rs.matches("match normalized_path").count(),
                                     "parser_dependency_mentions": main_rs.matches("bijux_cli::routing::parser").count()

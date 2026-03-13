@@ -41,7 +41,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "artifacts/status/evidence_coverage_report.json",
                                 &json!({
                                     "records": evidence_audit.get("coverage_report").cloned().unwrap_or_else(|| json!([])),
-                                    "source": "dev cli evidence audit",
+                                    "source": "bijux-dev-cli evidence audit",
                                 }),
                             )
                             .ok()?;
@@ -66,7 +66,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/orphan_evidence_report.json",
                 &json!({
                     "records": orphan_report,
-                    "source": "dev cli evidence audit",
+                    "source": "bijux-dev-cli evidence audit",
                 }),
             )
             .ok()?;
@@ -87,7 +87,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/claim_without_evidence_report.json",
                 &json!({
                     "records": claims_without,
-                    "source": "dev cli evidence audit",
+                    "source": "bijux-dev-cli evidence audit",
                 }),
             )
             .ok()?;

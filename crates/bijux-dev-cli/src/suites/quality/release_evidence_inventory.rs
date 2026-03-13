@@ -17,7 +17,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/reproducible_build_assumptions.json",
                 "artifacts/status/release_artifact_manifest.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-RELEASE-BUILD-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RELEASE-BUILD-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-RELEASE-EVIDENCE-REPORTS",
@@ -30,7 +30,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/release_truth_report.json",
                 "artifacts/status/release_truth_report.txt"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-RELEASE-EVIDENCE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-RELEASE-EVIDENCE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-SCAFFOLD-REPORTS",
@@ -45,7 +45,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_scaffold_file_justification.json",
                 "artifacts/status/plugin_scaffold_minimalism_summary.txt"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-SCAFFOLD-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-SCAFFOLD-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS",
@@ -63,7 +63,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_command_set_status.json",
                 "artifacts/status/plugin_migration_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-MIGRATION-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS",
@@ -77,7 +77,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_scaffold_fuzz_regression_artifact.json",
                 "artifacts/status/plugin_manifest_scaffold_fuzz_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-MANIFEST-SCAFFOLD-FUZZ-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS",
@@ -92,7 +92,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/plugin_state_corruption_severity_classification.json",
                 "artifacts/status/plugin_state_corruption_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-STATE-CORRUPTION-CAMPAIGN-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS",
@@ -106,7 +106,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/config_corruption_recovery_artifact.json",
                 "artifacts/status/config_deep_behavior_drift_artifact.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS",
@@ -124,7 +124,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/config_corruption_determinism_artifact.json",
                 "artifacts/status/config_corruption_release_blocking_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-CORRUPTION-CAMPAIGN-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS",
@@ -140,7 +140,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/diagnostics_contract_artifact.json",
                 "artifacts/status/diagnostics_deep_behavior_drift_artifact.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
@@ -154,7 +154,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/diagnostics_trust_schema_drift_artifact.json",
                 "artifacts/status/diagnostics_trust_contract.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-STATUS-REPORTS",
@@ -182,7 +182,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/status_intentional_differences.json",
                 "artifacts/status/status_unowned_maintenance.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-STATUS-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-STATUS-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
@@ -195,7 +195,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/maintainer_control_plane_text_report.txt",
                 "artifacts/status/maintainer_control_plane_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-CRATE-BOUNDARY-METRICS",
@@ -206,7 +206,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/crate_boundary_metrics.json",
                 "artifacts/status/crate_boundary_report.json"
             ],
-            "command": "bijux dev cli maintenance status run --id STATUS-CONTRACT-GENERATE-CRATE-BOUNDARY-METRICS",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CRATE-BOUNDARY-METRICS",
         }),
     ]
 }

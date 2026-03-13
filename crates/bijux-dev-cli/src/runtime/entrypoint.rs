@@ -414,7 +414,7 @@ fn root_help_text() -> String {
             entry
                 .command
                 .as_str()
-                .strip_prefix("dev cli ")
+                .strip_prefix("bijux-dev-cli ")
                 .unwrap_or(entry.command.as_str())
                 .to_string()
         })

@@ -355,16 +355,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .and_then(|txt| serde_json::from_str::<Value>(&txt).ok())
             .unwrap_or_else(|| json!({"rows":[]}));
             let required: Vec<(i64, &str, &str, Vec<&str>)> = vec![
-                                (141, "inspect_and_dev_routes_agree_on_route_ownership", "inspect/dev routes ownership agreement", vec!["inspect", "dev cli routes"]),
-                                (142, "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules", "plugins list/dev registry installed set agreement", vec!["plugins list", "dev cli registry"]),
-                                (143, "config_get_and_dev_env_agree_on_source_precedence", "config get/dev env precedence agreement", vec!["config get", "dev cli env"]),
-                                (144, "doctor_and_state_audit_agree_on_corruption_detection_when_applicable", "doctor/state-audit corruption agreement", vec!["doctor", "dev cli state-audit"]),
+                                (141, "inspect_and_dev_routes_agree_on_route_ownership", "inspect/dev routes ownership agreement", vec!["inspect", "bijux-dev-cli routes"]),
+                                (142, "plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules", "plugins list/dev registry installed set agreement", vec!["plugins list", "bijux-dev-cli registry"]),
+                                (143, "config_get_and_dev_env_agree_on_source_precedence", "config get/dev env precedence agreement", vec!["config get", "bijux-dev-cli env"]),
+                                (144, "doctor_and_state_audit_agree_on_corruption_detection_when_applicable", "doctor/state-audit corruption agreement", vec!["doctor", "bijux-dev-cli state-audit"]),
                                 (145, "binary_and_direct_core_agree_on_same_command_results", "binary/direct-core agreement for covered roots", vec!["status"]),
                                 (146, "binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs", "binary/python-bridge agreement for covered roots", vec!["config", "history", "memory list", "doctor"]),
                                 (147, "repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status", "binary/repl agreement for shared commands", vec!["config get", "plugins list", "status"]),
                                 (148, "plugin_command_help_integrates_into_root_help_tree_deterministically", "plugin help integration is deterministic", vec!["plugins"]),
-                                (149, "command_tree_export_is_identical_across_binary_and_bridge", "command-tree export identical across binary and bridge", vec!["dev cli routes"]),
-                                (150, "route_ownership_is_stable_across_repeated_runs", "route ownership stable across repeated runs", vec!["dev cli routes"]),
+                                (149, "command_tree_export_is_identical_across_binary_and_bridge", "command-tree export identical across binary and bridge", vec!["bijux-dev-cli routes"]),
+                                (150, "route_ownership_is_stable_across_repeated_runs", "route ownership stable across repeated runs", vec!["bijux-dev-cli routes"]),
                                 (151, "command_metadata_is_stable_across_repeated_runs", "command metadata stable across repeated runs", vec!["inspect"]),
                                 (152, "diagnostics_payloads_do_not_drift_across_surfaces", "diagnostics payloads stable across surfaces", vec!["doctor"]),
                                 (153, "output_envelopes_do_not_drift_across_surfaces", "output envelopes stable across surfaces", vec!["unknown-command"]),
@@ -453,7 +453,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "scope": "cross-surface consistency contract",
                                     "release_review_rule": "cross-surface consistency artifacts are mandatory release evidence",
                                     "freeze_rule": "one command law is frozen only when covered drift remains zero",
-                                    "gate": "bijux dev cli maintenance status run --id STATUS-CONTRACT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
+                                    "gate": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-ENFORCE-CROSS-SURFACE-CONSISTENCY-LAW",
                                     "evidence": [
                                         "artifacts/status/cross_surface_consistency_artifact.json",
                                         "artifacts/status/cross_surface_drift_artifact.json",

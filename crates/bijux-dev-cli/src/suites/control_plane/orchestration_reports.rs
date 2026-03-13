@@ -5,27 +5,27 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     let report_writers: [(&str, &str, [&str; 4]); 5] = [
         (
             "artifacts/status/repo_health_report.json",
-            "dev cli repo health",
+            "bijux-dev-cli repo health",
             ["dev", "cli", "repo", "health"],
         ),
         (
             "artifacts/status/repo_drift_report.json",
-            "dev cli repo drift",
+            "bijux-dev-cli repo drift",
             ["dev", "cli", "repo", "drift"],
         ),
         (
             "artifacts/status/repo_inventories_report.json",
-            "dev cli repo inventories",
+            "bijux-dev-cli repo inventories",
             ["dev", "cli", "repo", "inventories"],
         ),
         (
             "artifacts/status/repo_generated_report.json",
-            "dev cli repo generated",
+            "bijux-dev-cli repo generated",
             ["dev", "cli", "repo", "generated"],
         ),
         (
             "artifacts/status/repo_stale_report.json",
-            "dev cli repo stale",
+            "bijux-dev-cli repo stale",
             ["dev", "cli", "repo", "stale"],
         ),
     ];
@@ -335,7 +335,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "dashboard_matches_standalone_status_summary": dashboard_status_match,
             });
             let summary_artifact = json!({
-                "scope": "dev cli summary surface",
+                "scope": "bijux-dev-cli summary surface",
                 "generator": "bijux-dev-cli",
                 "checks": summary_checks,
                 "status": if summary_checks.as_object().is_some_and(|obj| obj.values().all(|v| v.as_bool() == Some(true))) { "complete" } else { "partial" },
@@ -350,7 +350,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 })
                 .unwrap_or_default();
             let drift_artifact = json!({
-                "scope": "dev cli summary surface drift",
+                "scope": "bijux-dev-cli summary surface drift",
                 "generator": "bijux-dev-cli",
                 "drift_checks": drift_checks,
                 "drift_count": drift_checks.len(),

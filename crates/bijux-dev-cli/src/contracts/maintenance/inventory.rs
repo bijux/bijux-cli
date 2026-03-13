@@ -230,7 +230,7 @@ pub fn build_provenance_statement_report(tag: &str, output_dir: &Path) -> Value 
     let payload = json!({
       "tag": tag,
       "generated_at_utc": generated_at,
-      "generator": "bijux dev cli maintenance provenance-statement",
+      "generator": "bijux-dev-cli maintenance provenance-statement",
       "note": "Provenance hook scaffold. Replace with signed attestation workflow when enabled."
     });
     let serialized = match serde_json::to_string_pretty(&payload) {

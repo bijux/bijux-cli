@@ -278,7 +278,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "generator": "bijux-dev-cli",
                                     "domain": "config-source-precedence",
                                     "status": "frozen",
-                                    "rule": "Config precedence truth must be observable, deterministic, and consistent across config get and dev cli env.",
+                                    "rule": "Config precedence truth must be observable, deterministic, and consistent across config get and bijux-dev-cli env.",
                                     "evidence": [
                                         "crates/bijux-cli/tests/bin_surface/config_source_precedence_matrix.rs",
                                         "artifacts/status/config_source_parity_artifact.json",

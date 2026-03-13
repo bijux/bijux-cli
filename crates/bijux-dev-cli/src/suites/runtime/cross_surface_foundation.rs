@@ -132,7 +132,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "status": if missing.is_empty() { "clean" } else { "drift-detected" },
                     "drift_count": missing.len(),
                     "drift_items": missing,
-                    "gate": "bijux dev cli parity --format json --no-pretty",
+                    "gate": "bijux-dev-cli parity --format json --no-pretty",
                 }),
             )
             .ok()?;

@@ -6,14 +6,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-REPORTS" => {
             let generated_at = generated_at_utc();
             let required_commands = vec![
-                "dev cli status",
-                "dev cli parity",
-                "dev cli route-audit",
-                "dev cli state-audit",
-                "dev cli maintenance-audit",
-                "dev cli crate-health",
-                "dev cli package-health",
-                "dev cli docs-audit",
+                "bijux-dev-cli status",
+                "bijux-dev-cli parity",
+                "bijux-dev-cli route-audit",
+                "bijux-dev-cli state-audit",
+                "bijux-dev-cli maintenance-audit",
+                "bijux-dev-cli crate-health",
+                "bijux-dev-cli package-health",
+                "bijux-dev-cli docs-audit",
             ];
             let replacements: BTreeMap<&str, &str> = BTreeMap::new();
             let command_samples = fs::read_to_string(
@@ -58,7 +58,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     if keys.is_empty() { "(none)" } else { &keys }
                 ));
             }
-            text.push_str("\nDefault maintainer command: bijux dev cli status\nPolicy: use dev cli command surfaces before creating new ad-hoc maintenance.\n");
+            text.push_str("\nDefault maintainer command: bijux-dev-cli status\nPolicy: use bijux-dev-cli command surfaces before creating new ad-hoc maintenance.\n");
             fs::write(
                 workspace_root.join("artifacts/status/maintainer_control_plane_text_report.txt"),
                 text,
