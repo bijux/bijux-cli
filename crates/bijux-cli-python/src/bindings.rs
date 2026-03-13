@@ -243,12 +243,7 @@ pub fn install_path_helpers_api(home_dir: &Path) -> String {
 /// Resolve config/history/plugins using runtime precedence without CLI overrides.
 pub fn config_resolution_helpers_api(home_dir: &Path) -> Result<String, CompatibilityError> {
     let defaults = default_compatibility_paths(home_dir);
-    let file_config = match load_compatibility_config(&defaults.config_file) {
-        Ok(config) => config,
-        Err(CompatibilityError::UnsupportedConfigKey(_))
-        | Err(CompatibilityError::MalformedConfigLine { .. }) => CompatibilityConfig::default(),
-        Err(error) => return Err(error),
-    };
+    let file_config = load_compatibility_config(&defaults.config_file)?;
     let env_map: HashMap<String, String> = std::env::vars().collect();
     let resolved = discover_compatibility_paths(
         Some(home_dir),

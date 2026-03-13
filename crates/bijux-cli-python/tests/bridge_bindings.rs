@@ -148,6 +148,23 @@ fn config_resolution_helpers_apply_file_overrides_without_cli_args() {
 }
 
 #[test]
+fn config_resolution_helpers_surfaces_malformed_config_errors() {
+    let root = std::env::temp_dir().join(format!(
+        "bijux-bridge-config-resolution-malformed-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    let state_root = root.join(".bijux");
+    std::fs::create_dir_all(&state_root).expect("create state dir");
+    std::fs::write(state_root.join(".env"), "BROKEN\n").expect("write malformed config");
+
+    let err = config_resolution_helpers_api(&root).expect_err("malformed config must fail");
+    assert!(err.to_string().contains("malformed config line"));
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
 fn plugin_namespace_rejection_returns_usage_error_kind() {
     let payload = parse_json(
         &execution_outcome_api(&[

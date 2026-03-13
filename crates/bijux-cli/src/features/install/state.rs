@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use super::compatibility::CompatibilityError;
+use super::io::atomic_write_text;
 
 /// Acquire process lock for mutable state operations.
 pub fn acquire_state_lock(lock_path: &Path) -> Result<StateLockGuard, CompatibilityError> {
@@ -59,11 +60,28 @@ pub fn ensure_plugins_dir(path: &Path) -> Result<(), CompatibilityError> {
     Ok(())
 }
 
-/// Placeholder migration entrypoint for forward config evolution.
+/// Apply deterministic compatibility migrations to config text.
 pub fn run_config_migrations(
-    _config_path: &Path,
-    _current_version: u32,
+    config_path: &Path,
+    current_version: u32,
 ) -> Result<(), CompatibilityError> {
+    if current_version == 0 || !config_path.exists() {
+        return Ok(());
+    }
+
+    let text = fs::read_to_string(config_path)?;
+    let mut migrated = text.clone();
+
+    // Normalize UTF-8 BOM and mixed line endings to keep parser behavior stable.
+    if let Some(stripped) = migrated.strip_prefix('\u{feff}') {
+        migrated = stripped.to_string();
+    }
+    migrated = migrated.replace("\r\n", "\n").replace('\r', "\n");
+
+    if migrated != text {
+        atomic_write_text(config_path, &migrated)?;
+    }
+
     Ok(())
 }
 
@@ -74,7 +92,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::super::compatibility::CompatibilityError;
-    use super::acquire_state_lock;
+    use super::{acquire_state_lock, run_config_migrations};
 
     fn make_temp_dir(name: &str) -> PathBuf {
         let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -99,5 +117,17 @@ mod tests {
         assert!(!lock_path.exists(), "lock file should be removed on drop");
 
         let _guard2 = acquire_state_lock(&lock_path).expect("lock should be reusable after drop");
+    }
+
+    #[test]
+    fn config_migrations_normalize_line_endings_and_bom() {
+        let temp = make_temp_dir("config-migrations");
+        let path = temp.join("config.env");
+        fs::write(&path, "\u{feff}BIJUXCLI_ALPHA=1\r\nBIJUXCLI_BETA=2\r").expect("seed");
+
+        run_config_migrations(&path, 1).expect("migrate");
+
+        let migrated = fs::read_to_string(&path).expect("read migrated");
+        assert_eq!(migrated, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n");
     }
 }
