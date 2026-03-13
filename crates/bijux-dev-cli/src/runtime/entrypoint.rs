@@ -165,6 +165,20 @@ fn bounded_segments(path: &[String]) -> (Vec<String>, usize, usize) {
     (bounded, truncated_segment_count, clipped_segment_count)
 }
 
+fn first_difference_index(left: &[String], right: &[String]) -> Option<usize> {
+    let shared = left.len().min(right.len());
+    for idx in 0..shared {
+        if left[idx] != right[idx] {
+            return Some(idx);
+        }
+    }
+    if left.len() == right.len() {
+        None
+    } else {
+        Some(shared)
+    }
+}
+
 fn classify_error_exit_code(message: &str) -> i32 {
     let lower = message.to_ascii_lowercase();
     if lower.contains("missing argument")
@@ -368,6 +382,19 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunResult> {
     let synthetic_argv = synthetic_dev_cli_argv(argv);
     let synthetic_parse_argv = synthetic_dev_cli_parse_argv(argv);
+    let first_rewrite_difference = first_difference_index(&synthetic_argv, &synthetic_parse_argv);
+    let (rewrite_source_arg, rewrite_source_arg_truncated) = first_rewrite_difference
+        .and_then(|idx| synthetic_argv.get(idx))
+        .map_or((None, false), |value| {
+            let (bounded, truncated) = bounded_command(value);
+            (Some(bounded), truncated)
+        });
+    let (rewrite_parse_arg, rewrite_parse_arg_truncated) = first_rewrite_difference
+        .and_then(|idx| synthetic_parse_argv.get(idx))
+        .map_or((None, false), |value| {
+            let (bounded, truncated) = bounded_command(value);
+            (Some(bounded), truncated)
+        });
     telemetry.record(
         "dispatch.argv.synthetic",
         json!({
@@ -375,6 +402,11 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             "synthetic_argc": synthetic_argv.len(),
             "synthetic_parse_argc": synthetic_parse_argv.len(),
             "parse_rewrite_applied": synthetic_argv != synthetic_parse_argv,
+            "parse_rewrite_first_difference_index": first_rewrite_difference,
+            "parse_rewrite_source_arg": rewrite_source_arg,
+            "parse_rewrite_source_arg_truncated": rewrite_source_arg_truncated,
+            "parse_rewrite_parse_arg": rewrite_parse_arg,
+            "parse_rewrite_parse_arg_truncated": rewrite_parse_arg_truncated,
         }),
     );
 
@@ -535,8 +567,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
                 "command": command,
                 "command_truncated": command_truncated,
                 "exit_code": 2,
+                "exit_kind": telemetry_exit_code_kind(2),
                 "status": status,
                 "status_truncated": status_truncated,
+                "source": "payload_path",
             }),
         );
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
@@ -561,7 +595,13 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     if intent.global_flags.quiet {
         telemetry.record(
             "dispatch.quiet.suppressed",
-            json!({"command": command, "command_truncated": command_truncated, "exit_code": route_exit_code}),
+            json!({
+                "command": command,
+                "command_truncated": command_truncated,
+                "exit_code": route_exit_code,
+                "suppressed_stdout_bytes": content.len(),
+                "suppressed_stderr_bytes": 0,
+            }),
         );
         return Ok(AppRunResult {
             exit_code: route_exit_code,
@@ -613,7 +653,7 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        classify_error_exit_code, expanded_dev_cli_path, no_color_enabled,
+        classify_error_exit_code, expanded_dev_cli_path, first_difference_index, no_color_enabled,
         normalize_process_exit_code, payload_route_exit_code, run_app,
         synthetic_dev_cli_parse_argv, MAX_PATH_SEGMENT_CHARS,
     };
@@ -680,6 +720,16 @@ mod tests {
                 "--native-flag",
             ])
         );
+    }
+
+    #[test]
+    fn first_difference_index_detects_value_and_length_mismatches() {
+        assert_eq!(
+            first_difference_index(&argv(&["a", "b", "c"]), &argv(&["a", "x", "c"])),
+            Some(1)
+        );
+        assert_eq!(first_difference_index(&argv(&["a", "b"]), &argv(&["a", "b", "c"])), Some(2));
+        assert_eq!(first_difference_index(&argv(&["a", "b"]), &argv(&["a", "b"])), None);
     }
 
     #[test]
@@ -782,7 +832,12 @@ mod tests {
         let body = std::fs::read_to_string(&sink).expect("telemetry output");
         let rows: Vec<serde_json::Value> =
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
-        assert!(rows.iter().any(|row| row["stage"] == "dispatch.route.unknown"));
+        let unknown = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.route.unknown")
+            .expect("unknown route event");
+        assert_eq!(unknown["payload"]["exit_kind"], "usage");
+        assert_eq!(unknown["payload"]["source"], "payload_path");
         assert!(
             !rows.iter().any(|row| row["stage"] == "dispatch.route.completed"),
             "unknown routes must not be reported as completed"
@@ -808,6 +863,72 @@ mod tests {
             body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
         assert!(rows.iter().any(|row| row["stage"] == "dispatch.argv.synthetic"));
         assert!(rows.iter().any(|row| row["stage"] == "dispatch.path.expanded"));
+        let synthetic = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.argv.synthetic")
+            .expect("synthetic event");
+        assert!(synthetic["payload"]["parse_rewrite_applied"].is_boolean());
+        assert!(
+            synthetic["payload"]["parse_rewrite_first_difference_index"].is_number()
+                || synthetic["payload"]["parse_rewrite_first_difference_index"].is_null()
+        );
+    }
+
+    #[test]
+    fn run_app_emits_parse_rewrite_difference_telemetry_for_late_global_flags() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("telemetry").join("events.jsonl");
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let result =
+            run_app(&argv(&["bijux-dev-cli", "state-audit", "--format", "json"])).expect("run");
+        assert_eq!(result.exit_code, 0);
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry output");
+        let rows: Vec<serde_json::Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+        let synthetic = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.argv.synthetic")
+            .expect("synthetic event");
+        assert_eq!(synthetic["payload"]["parse_rewrite_applied"], true);
+        assert_eq!(synthetic["payload"]["parse_rewrite_first_difference_index"], 1);
+        assert_eq!(synthetic["payload"]["parse_rewrite_source_arg"], "dev");
+        assert_eq!(synthetic["payload"]["parse_rewrite_parse_arg"], "--format");
+    }
+
+    #[test]
+    fn run_app_quiet_mode_records_suppressed_byte_metrics() {
+        let _guard = ENV_LOCK.lock().expect("env lock");
+        let temp = tempfile::tempdir().expect("temp dir");
+        let sink = temp.path().join("telemetry").join("events.jsonl");
+        std::env::set_var(TELEMETRY_FILE_ENV, &sink);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let result =
+            run_app(&argv(&["bijux-dev-cli", "state-audit", "--quiet", "--format", "json"]))
+                .expect("run");
+        assert_eq!(result.exit_code, 0);
+        assert!(result.stdout.is_empty());
+        assert!(result.stderr.is_empty());
+
+        std::env::remove_var(TELEMETRY_FILE_ENV);
+        std::env::remove_var(TELEMETRY_INCLUDE_ARGS_ENV);
+
+        let body = std::fs::read_to_string(&sink).expect("telemetry output");
+        let rows: Vec<serde_json::Value> =
+            body.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+        let suppressed = rows
+            .iter()
+            .find(|row| row["stage"] == "dispatch.quiet.suppressed")
+            .expect("quiet suppressed event");
+        assert!(suppressed["payload"]["suppressed_stdout_bytes"].as_u64().unwrap_or_default() > 0);
+        assert_eq!(suppressed["payload"]["suppressed_stderr_bytes"], 0);
     }
 
     #[test]
