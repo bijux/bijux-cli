@@ -52,6 +52,25 @@ Expected result:
 Scripts should pair structured output with exit-code checks rather than parsing
 human-readable text.
 
+## Script-Safe Version Check
+
+When you need the runtime identity in automation, prefer the structured version
+surface:
+
+```bash
+bijux version --format json --no-pretty
+```
+
+The JSON payload includes:
+
+- `name`
+- `version`
+- `semver`
+- `source`
+- `git_commit`
+- `git_dirty`
+- `build_profile`
+
 ## When To Use Each One
 
 - `version` when you need to know which runtime you are actually invoking

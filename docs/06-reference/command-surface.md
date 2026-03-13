@@ -57,7 +57,9 @@ flowchart LR
 
 ### `history`
 
-`clear`
+Root options: `--limit`, `--filter`, `--sort timestamp`
+
+Subcommands: `clear`
 
 ### `memory`
 
@@ -86,6 +88,26 @@ When using `bijux repl`, the documented session controls are:
 - `:set format json|yaml|text`
 - `:plugin reload`
 - `:exit`
+
+## Structured Output Notes
+
+### `completion`
+
+- text output emits shell completion content for the selected shell workflow
+- JSON or YAML output returns the supported shell inventory
+- current structured shell list: `bash`, `zsh`, `fish`, `powershell`
+
+### `version`
+
+- text output is a single-line summary
+- JSON or YAML output includes `name`, `version`, `semver`, `source`,
+  `git_commit`, `git_dirty`, and `build_profile`
+
+### `history`
+
+- structured output returns `entries` and `summary`
+- the summary records filter state, sort mode, returned-entry count, and file
+  integrity counters
 
 ## Stable Exit Codes
 

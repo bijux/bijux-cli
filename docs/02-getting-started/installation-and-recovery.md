@@ -47,11 +47,12 @@ appears to work on Windows as part of the supported contract.
 ## Virtual Environments
 
 Use a virtual environment when the Python package should stay isolated from the
-system interpreter:
+system interpreter. For a local checkout, prefer a normal project-local `.venv`
+rather than a repo-specific artifact path:
 
 ```bash
-python -m venv artifacts/python/.venv
-source artifacts/python/.venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade bijux-cli
 ```
 

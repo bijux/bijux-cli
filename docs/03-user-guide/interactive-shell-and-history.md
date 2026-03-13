@@ -3,7 +3,8 @@
 ## Goal
 
 Use the REPL when interactive exploration is faster than retyping commands in a
-new shell process every time.
+new shell process every time, and use `bijux history` when you need to inspect
+or reset the persisted command log outside the REPL.
 
 ```mermaid
 flowchart TD
@@ -42,17 +43,39 @@ Useful session controls:
 
 ## History And Repetition
 
+For persisted command history, use the dedicated CLI surface:
+
+```bash
+bijux history
+bijux history --limit 50
+bijux history --filter status
+bijux history --sort timestamp
+bijux history clear --force
+```
+
+`bijux history` returns the stored command entries plus a summary object when
+you request structured output. The summary tells you whether a filter was
+applied, which sort mode was used, how many entries were returned, and whether
+invalid entries were dropped while reading the file.
+
 The REPL is useful when:
 
 - you are exploring several related commands
 - you want consistent session-local formatting
 - you want command history without rebuilding shell pipelines repeatedly
 
+The history command is useful when:
+
+- you want to inspect recent commands without opening the REPL
+- you need a script-safe JSON or YAML record of recent command activity
+- you need to reset a corrupted history file with `bijux history clear --force`
+
 ## Honest Limit
 
 The REPL follows the same command law as the CLI, but it is still an
 interactive shell. For automation, use normal CLI invocations with explicit
-output formats.
+output formats. The history log is operational state, not an audit ledger or a
+durable event store.
 
 ## Where To Go Deeper
 

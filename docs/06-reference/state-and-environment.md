@@ -29,8 +29,8 @@ flowchart LR
 | `log_level` | string | Log level such as `trace`, `debug`, or `info` |
 | `color` | string | Color mode: `auto`, `always`, or `never` |
 
-Config keys are stored in a dotenv-style file and are represented with an
-uppercase `BIJUXCLI_` prefix when materialized in environment form.
+These keys are ordinary runtime settings. They follow the documented
+flags -> environment -> config -> defaults precedence chain.
 
 ## Default State Paths
 
@@ -41,16 +41,13 @@ uppercase `BIJUXCLI_` prefix when materialized in environment form.
 | Memory store | `~/.bijux/.memory.json` |
 | Plugin directory | `~/.bijux/.plugins/` |
 
-## Public Environment Variables
+## Runtime Environment Variables
 
 | Variable | Purpose |
 | --- | --- |
 | `BIJUXCLI_FORMAT` | Output format override |
 | `BIJUXCLI_LOG_LEVEL` | Log level override |
 | `BIJUXCLI_COLOR` | Color mode override |
-| `BIJUXCLI_CONFIG` | Config file path override |
-| `BIJUXCLI_HISTORY_FILE` | History file path override |
-| `BIJUXCLI_PLUGINS_DIR` | Plugin directory override |
 | `BIJUXCLI_ALLOWED_PRODUCT_BINS` | Allowlist for routed product binaries |
 | `BIJUXCLI_PRODUCT_BIN_DIR` | Additional product binary directory |
 | `BIJUXCLI_PRODUCT_BIN_DIRS` | Comma-separated additional binary directories |
@@ -59,7 +56,21 @@ uppercase `BIJUXCLI_` prefix when materialized in environment form.
 
 `NO_COLOR=1` also affects color resolution.
 
-## Bridge And Routing Environment Variables
+## Compatibility Path Variables
+
+These documented variables override filesystem paths, not ordinary runtime
+settings:
+
+| Variable | Purpose |
+| --- | --- |
+| `BIJUXCLI_CONFIG` | Config file path override |
+| `BIJUXCLI_HISTORY_FILE` | History file path override |
+| `BIJUXCLI_PLUGINS_DIR` | Plugin directory override |
+
+These same keys are also the supported file-backed keys when the compatibility
+config file stores path overrides.
+
+## Bridge And Routing Variables
 
 These variables are public because documented workflows depend on them, but
 they do not behave like normal config/env precedence inputs:
@@ -78,6 +89,8 @@ For documented runtime behavior, precedence is:
 4. defaults
 
 `quiet=true` forces the effective log level to `error`.
+Compatibility path variables participate in the same precedence chain, but only
+for path discovery.
 
 ## Honest Limit
 
