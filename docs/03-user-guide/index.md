@@ -45,7 +45,7 @@ mindmap
 These pages are intentionally practical:
 
 - they describe the workflows users can rely on today
-- they avoid repeating architecture and constitution material
+- they avoid repeating architecture and contract material
 - they are narrower than the full reference pages
 
 ## Next Step

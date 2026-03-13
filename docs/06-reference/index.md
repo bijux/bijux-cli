@@ -33,7 +33,7 @@ mindmap
     Compatibility
       pre-1.0 limits
       glossary
-      current Python baseline
+      Python compatibility baseline
 ```
 
 ## Read This Set By Need

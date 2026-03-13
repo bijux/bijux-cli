@@ -44,7 +44,7 @@ These pages are intentionally narrow:
 
 - they describe the current contributor workflow
 - they prefer enforceable rules over broad aspiration
-- they point to architecture and constitutions only when deeper detail is needed
+- they point to architecture and contracts only when deeper detail is needed
 
 ## Collaboration Standard
 

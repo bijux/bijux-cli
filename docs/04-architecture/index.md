@@ -2,7 +2,8 @@
 
 This directory is the current architecture canon for `bijux-cli`.
 
-It replaces the older `docs/architecture/` collection, which had grown into a mix of durable design, migration notes, parity reports, and temporary status writing. The goal here is narrower: keep the smallest set of documents that explains the system accurately.
+The goal here is narrow: keep the smallest set of documents that explains the
+current system accurately.
 
 ## What This Set Is
 
@@ -76,7 +77,8 @@ The deeper sources of truth are:
 - the executable tests
 - the published package surfaces
 
-If one of these pages conflicts with the running code or the constitution, the page is wrong and should be corrected.
+If one of these pages conflicts with the running code or the contracts, the
+page is wrong and should be corrected.
 
 ## Current Architectural Claim
 

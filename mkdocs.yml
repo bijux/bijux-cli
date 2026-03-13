@@ -1,10 +1,61 @@
 site_name: Bijux CLI
-site_description: A modern, predictable Python CLI framework with plugins, DI, strict flag precedence, and an interactive REPL.
+site_description: A predictable Rust-owned CLI with Python distribution compatibility, explicit contracts, and local plugin support.
 site_url: !ENV [SITE_URL, https://bijux.github.io/bijux-cli/]
 site_author: Bijan Mousavi
 repo_url: https://github.com/bijux/bijux-cli
 repo_name: bijux/bijux-cli
 edit_uri: ""
+
+nav:
+  - Home: index.md
+  - Introduction:
+      - Overview: 01-introduction/index.md
+      - What Bijux Is: 01-introduction/what-bijux-is.md
+      - First Run: 01-introduction/first-run.md
+      - Command Model: 01-introduction/command-model.md
+      - Limits And Guarantees: 01-introduction/limits-and-guarantees.md
+  - Getting Started:
+      - Overview: 02-getting-started/index.md
+      - Install And Verify: 02-getting-started/install-and-verify.md
+      - Installation And Recovery: 02-getting-started/installation-and-recovery.md
+      - Run Your First Commands: 02-getting-started/run-your-first-commands.md
+      - Use Structured Output: 02-getting-started/use-structured-output.md
+      - Troubleshoot Early Problems: 02-getting-started/troubleshoot-early-problems.md
+  - User Guide:
+      - Overview: 03-user-guide/index.md
+      - Everyday Commands: 03-user-guide/everyday-commands.md
+      - Configuration And Output: 03-user-guide/configuration-and-output.md
+      - Plugins And Extensions: 03-user-guide/plugins-and-extensions.md
+      - Interactive Shell And History: 03-user-guide/interactive-shell-and-history.md
+  - Architecture:
+      - Overview: 04-architecture/index.md
+      - System Overview: 04-architecture/system-overview.md
+      - Workspace Map: 04-architecture/workspace-map.md
+      - Execution Pipeline: 04-architecture/execution-pipeline.md
+      - Routing And Surfaces: 04-architecture/routing-and-surfaces.md
+      - Configuration And State: 04-architecture/configuration-and-state.md
+      - Plugin System: 04-architecture/plugin-system.md
+      - Runtime And Distribution: 04-architecture/runtime-and-distribution.md
+      - Maintainer Control-Plane: 04-architecture/maintainer-control-plane.md
+      - Quality And Change Management: 04-architecture/quality-and-change-management.md
+  - Development:
+      - Overview: 05-development/index.md
+      - Workspace And Tooling: 05-development/workspace-and-tooling.md
+      - Change Model: 05-development/change-model.md
+      - Testing And Evidence: 05-development/testing-and-evidence.md
+      - Release And Compatibility: 05-development/release-and-compatibility.md
+  - Reference:
+      - Overview: 06-reference/index.md
+      - Command Surface: 06-reference/command-surface.md
+      - State And Environment: 06-reference/state-and-environment.md
+      - Integrations And Routed Runtimes: 06-reference/integrations-and-routed-runtimes.md
+      - Compatibility And Terms: 06-reference/compatibility-and-terms.md
+  - Contracts:
+      - Overview: 07-contracts/index.md
+      - Interface And Compatibility: 07-contracts/interface-and-compatibility.md
+      - Output And Stream Contracts: 07-contracts/output-and-stream-contracts.md
+      - Plugin Contracts: 07-contracts/plugin-contracts.md
+      - Distribution And Ownership: 07-contracts/distribution-and-ownership.md
 
 strict: true
 use_directory_urls: true

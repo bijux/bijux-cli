@@ -7,7 +7,7 @@ what is merely current behavior.
 
 ```mermaid
 flowchart LR
-    A[Documented constitutions] --> D[Claims we can stand behind]
+    A[Documented contracts] --> D[Claims we can stand behind]
     B[Current tests and parity checks] --> D
     C[Maintainer review] --> D
 ```
