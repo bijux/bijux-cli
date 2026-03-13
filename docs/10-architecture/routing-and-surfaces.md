@@ -1,0 +1,99 @@
+# Routing And Surfaces
+
+The runtime exposes more than one user-facing surface, but they share a common routing model.
+
+## Surfaces
+
+```mermaid
+graph TD
+    A[Root CLI]
+    B[Canonical cli namespace]
+    C[REPL]
+    D[Python package facade]
+    E[Maintainer control-plane]
+
+    A --> R[Shared route model]
+    B --> R
+    C --> R
+    D --> R
+    E --> R
+```
+
+```mermaid
+flowchart LR
+    RootAlias[Root aliases like plugins inspect] --> Canonical[cli plugins inspect]
+    Canonical --> Handler[command handler]
+    Handler --> Output[result]
+```
+
+## Current Surfaces
+
+### Root CLI
+
+This is the shortest user-facing surface, for example:
+
+- `bijux status`
+- `bijux plugins list`
+
+### Canonical `cli` Namespace
+
+This is the explicit runtime namespace:
+
+- `bijux cli status`
+- `bijux cli plugins inspect`
+
+The canonical namespace matters because it keeps routing explicit even when root aliases exist.
+
+### REPL
+
+The REPL is an interface, not a separate architecture.
+
+It uses the same routing and execution model as the CLI as far as practical.
+
+### Python Package Facade
+
+The Python package is a distribution surface that calls into the Rust runtime or its bridge layer. It is not the authoritative source of routing rules.
+
+## Alias Policy
+
+```mermaid
+flowchart TD
+    A[User input] --> B{Known compatibility alias?}
+    B -->|yes| C[Rewrite to canonical route]
+    B -->|no| D[Keep parsed route]
+    C --> E[Dispatch]
+    D --> E
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Parser
+    participant N as Normalizer
+    participant H as Handler
+
+    U->>P: plugins inspect sample
+    P->>N: parsed path
+    N->>H: cli/plugins/inspect
+    H-->>U: plugin inspection payload
+```
+
+## Help Surface
+
+Help is part of the routed surface, not an afterthought.
+
+The project treats help output as a contract because:
+
+- users rely on it as the first explanation of the command surface
+- snapshot tests catch accidental drift
+- bad examples in help become real usability defects
+
+## Honest Boundary
+
+The route model is shared, but not every route is equal:
+
+- some routes are public runtime behavior
+- some routes are compatibility aliases
+- some routes are maintainer-only
+
+The architecture works because those categories are kept separate in code and documentation.
