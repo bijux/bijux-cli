@@ -87,6 +87,13 @@ plugins:
         guides/plugin-unified.md: guides/plugins.md
         guides/repl-unified.md: reference/repl.md
         reference/repl-command-reference.md: reference/repl.md
+        guides/python/internal-differences.md: guides/python/runtime-migration.md
+        guides/python/library-wrapper.md: guides/api-usage.md
+        guides/python/packaging-maintainers.md: guides/installation.md
+        guides/python/pipx-installs.md: guides/installation.md
+        guides/python/plugin-delegation.md: guides/plugins.md
+        guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
+        guides/python/virtualenv-installs.md: guides/installation.md
   - tags
   - minify:
       minify_html: true

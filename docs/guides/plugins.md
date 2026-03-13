@@ -24,3 +24,15 @@ bijux cli plugins check NAMESPACE
 - Keep the manifest file as the installation source of truth.
 - Use `inspect` and `check` before assuming a plugin is healthy.
 - Use the examples page for scaffold and install walkthroughs.
+
+## Python And Delegated Plugins
+
+For local delegated execution:
+
+- declare plugin kind as `python` or `delegated`
+- keep the manifest compatibility window current
+- use a stable `module:function` entrypoint
+
+Compatibility and trust metadata appear in plugin inspection output. Local
+installs should keep the manifest file available so the runtime can resolve the
+entrypoint from the installed manifest anchor.

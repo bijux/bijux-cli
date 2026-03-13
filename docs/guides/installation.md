@@ -44,6 +44,12 @@ Pip:
 python -m pip install --upgrade bijux-cli
 ```
 
+Pipx:
+
+```bash
+pipx install bijux-cli
+```
+
 ### macOS
 
 Cargo:
@@ -58,6 +64,12 @@ Pip:
 python3 -m pip install --upgrade bijux-cli
 ```
 
+Pipx:
+
+```bash
+pipx install bijux-cli
+```
+
 ### Windows
 
 Cargo:
@@ -70,6 +82,30 @@ Pip:
 
 ```powershell
 py -m pip install --upgrade bijux-cli
+```
+
+Pipx:
+
+```powershell
+pipx install bijux-cli
+```
+
+### Virtual Environments
+
+Use a virtual environment when the Python package should stay isolated from the
+system interpreter:
+
+```bash
+python -m venv artifacts/python/.venv
+source artifacts/python/.venv/bin/activate
+python -m pip install --upgrade bijux-cli
+```
+
+Validate the install with:
+
+```bash
+bijux version
+python -m bijux_cli_py version
 ```
 
 ## CI And Containers
@@ -89,6 +125,20 @@ Python-based jobs:
 python -m pip install --upgrade pip
 python -m pip install --upgrade bijux-cli
 bijux version
+```
+
+Python packaging and release maintainers can build wheels from
+`crates/bijux-cli-python` with:
+
+```bash
+cd crates/bijux-cli-python
+maturin build --release
+```
+
+Validate the wrapper against a local Rust binary with:
+
+```bash
+PYTHONPATH=python BIJUX_BIN=../../target/debug/bijux python -m pytest -c ../../configs/python/pytest.ini -q tests/python
 ```
 
 ## Multiple Installs
@@ -146,3 +196,11 @@ python -m pip uninstall -y bijux
 
 After uninstall, run `bijux cli doctor`. If `bijux` still resolves, another
 channel still owns the command.
+
+## Python Runtime Notes
+
+- The Python package is a wrapper around the Rust runtime.
+- `BIJUX_BIN` can pin the runtime binary when automation must avoid `PATH`
+  ambiguity.
+- If no usable runtime binary is found, Python entrypoints fail instead of
+  silently falling back to a different implementation.

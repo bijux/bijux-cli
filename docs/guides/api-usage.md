@@ -1,27 +1,50 @@
 # API Usage
 
 ## Purpose
-This guide explains how to use the bijux-cli Python API in a way that preserves the same guarantees as the CLI. It exists to prevent accidental side effects when embedding bijux-cli in applications.
+
+This guide explains the supported Python embedding surface without implying a
+larger in-process API than the project currently guarantees.
 
 ## Scope
-It covers the core API entry points and expected behavior. It does not describe the HTTP API or the CLI command syntax.
 
-## Using the API
-The API returns data structures and does not perform output routing or process exits. This keeps the API usable in headless environments.
+It covers the Python wrapper package and the small facade exported by
+`bijux_cli_py`. It does not describe HTTP APIs or re-document the CLI command
+syntax.
+
+## Supported Python Surface
+
+Use the Python package when you need to inspect version information, query
+runtime metadata, or execute CLI argv from Python code.
+
+Common entrypoints include:
+
+- `version()`
+- `command_tree_introspection()`
+- `execution_facade(argv)`
+- `execution_facade_with_status(argv)`
 
 ## Example
-Use the API to run a command and inspect the result directly.
 
 ```python
-from bijux_cli.api.facade import BijuxAPI
+from bijux_cli_py import execution_facade_with_status
 
-api = BijuxAPI()
-result = api.run_sync("status")
-print(result)
+result = execution_facade_with_status(["status", "--format", "json"])
+if result.exit_code == 0:
+    print(result.stdout)
+else:
+    print(result.stderr)
 ```
 
-## Why This Matters
-Keeping the API side-effect free ensures that calling code remains in control of output, logging, and exit behavior. This is critical for embedding in servers or long-running processes.
+## Behavior Notes
+
+- The Python facade targets the Rust runtime.
+- Runtime discovery follows the same rules documented in the installation and
+  migration guides.
+- Callers stay responsible for interpreting stdout, stderr, and exit codes.
+- Use the CLI when you need shell-oriented behavior such as output routing or
+  process exit handling.
 
 ## References
-- API facade: `src/bijux_cli/api/facade.py`
+
+- [Python bindings reference](../reference/python-bindings.md)
+- [Python runtime migration](python/runtime-migration.md)
