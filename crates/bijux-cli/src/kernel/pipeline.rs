@@ -315,6 +315,16 @@ fn bounded_message(message: &str) -> (String, bool) {
     truncate_chars(message, MAX_TEXT_FIELD_CHARS)
 }
 
+fn bounded_optional_message(value: Option<&str>) -> (Option<String>, bool) {
+    match value {
+        Some(text) => {
+            let (bounded, truncated) = bounded_message(text);
+            (Some(bounded), truncated)
+        }
+        None => (None, false),
+    }
+}
+
 fn bounded_trace_command(path: &[String]) -> (String, bool) {
     bounded_command(&path.join(" "))
 }
@@ -657,14 +667,16 @@ pub(crate) fn execute_pipeline(
     }
 
     let exit_code = map_outcome_to_exit(&outcome);
-    let outcome_error_category = match &outcome {
-        HandlerOutcome::Success(_) => None::<String>,
-        HandlerOutcome::Error(err) => Some(err.error.category.clone()),
-    };
-    let outcome_error_code = match &outcome {
-        HandlerOutcome::Success(_) => None::<String>,
-        HandlerOutcome::Error(err) => Some(err.error.code.clone()),
-    };
+    let (outcome_error_category, outcome_error_category_truncated) =
+        bounded_optional_message(match &outcome {
+            HandlerOutcome::Success(_) => None,
+            HandlerOutcome::Error(err) => Some(err.error.category.as_str()),
+        });
+    let (outcome_error_code, outcome_error_code_truncated) =
+        bounded_optional_message(match &outcome {
+            HandlerOutcome::Success(_) => None,
+            HandlerOutcome::Error(err) => Some(err.error.code.as_str()),
+        });
     let emission = map_outcome_to_emission(outcome, ctx.policy.quiet);
     let emission_stream = emission.as_ref().map(|item| match item.stream {
         OutputStream::Stdout => "stdout",
@@ -682,7 +694,9 @@ pub(crate) fn execute_pipeline(
             ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
             ("quiet".to_string(), json!(ctx.policy.quiet)),
             ("error_category".to_string(), json!(outcome_error_category)),
+            ("error_category_truncated".to_string(), json!(outcome_error_category_truncated)),
             ("error_code".to_string(), json!(outcome_error_code)),
+            ("error_code_truncated".to_string(), json!(outcome_error_code_truncated)),
             ("emission".to_string(), json!(emission_stream)),
             ("duration_ms".to_string(), json!(started_at.elapsed().as_millis())),
         ]),

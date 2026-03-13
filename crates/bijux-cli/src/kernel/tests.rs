@@ -93,6 +93,26 @@ impl SyncHandler for SyncErrorDeterministic {
     }
 }
 
+struct SyncLongErrorFields;
+impl SyncHandler for SyncLongErrorFields {
+    fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
+        Err(ErrorEnvelopeV1 {
+            status: "error".to_string(),
+            error: crate::contracts::ErrorPayloadV1 {
+                category: "c".repeat(3000),
+                code: "e".repeat(3000),
+                message: "simulated plugin failure".to_string(),
+                details: None,
+            },
+            meta: crate::contracts::OutputEnvelopeMetaV1 {
+                version: "v1".to_string(),
+                command: crate::contracts::CommandPath { segments: vec![] },
+                timestamp: "1970-01-01T00:00:00Z".to_string(),
+            },
+        })
+    }
+}
+
 struct AsyncErrorDeterministic;
 impl AsyncHandler for AsyncErrorDeterministic {
     fn execute_async(
@@ -917,6 +937,41 @@ fn trace_events_bound_oversized_command_payloads() {
     assert!(trace.events.iter().any(|event| {
         event.payload.get("command_truncated").and_then(serde_json::Value::as_bool).unwrap_or(false)
     }));
+}
+
+#[test]
+fn trace_events_bound_oversized_error_fields() {
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Pretty,
+        color_mode: ColorMode::Auto,
+        log_level: LogLevel::Info,
+        quiet: false,
+        include_runtime: false,
+    };
+    let ctx = assemble_context(
+        build_intent_from_argv(&["bijux".to_string(), "status".to_string()]),
+        policy,
+        Some(Duration::from_secs(5)),
+        Arc::new(AtomicBool::new(false)),
+        true,
+    );
+    let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncLongErrorFields)), &[], &[])
+        .expect("run");
+    let trace = result.trace.expect("trace payload");
+    let finish = trace.events.iter().find(|event| event.name == "dispatch.finish").expect("finish");
+    let category = finish
+        .payload
+        .get("error_category")
+        .and_then(serde_json::Value::as_str)
+        .expect("error category");
+    let code =
+        finish.payload.get("error_code").and_then(serde_json::Value::as_str).expect("error code");
+
+    assert!(category.chars().count() <= crate::shared::telemetry::MAX_TEXT_FIELD_CHARS);
+    assert!(code.chars().count() <= crate::shared::telemetry::MAX_TEXT_FIELD_CHARS);
+    assert_eq!(finish.payload["error_category_truncated"], true);
+    assert_eq!(finish.payload["error_code_truncated"], true);
 }
 
 #[test]
