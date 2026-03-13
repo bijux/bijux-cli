@@ -29,7 +29,10 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
         "artifacts/status/maintainer_command_completion_report.json",
     ),
     ("maintainer_command_closure_set", "artifacts/status/maintainer_command_closure_set.json"),
-    ("cli_dev_command_closure_report", "artifacts/status/cli_dev_command_closure_report.json"),
+    (
+        "cli_maintainer_command_closure_report",
+        "artifacts/status/cli_maintainer_command_closure_report.json",
+    ),
     ("plugin_commands", "artifacts/status/status_plugin_commands.json"),
     ("repl_parity_coverage", "artifacts/status/status_repl_parity_coverage.json"),
     ("python_bridge_parity_coverage", "artifacts/status/status_python_bridge_parity_coverage.json"),
@@ -126,7 +129,10 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
 
 const REPORT_TEXT_ITEMS: &[(&str, &str)] = &[
     ("root_command_completion_report_text", "artifacts/status/root_command_completion_report.txt"),
-    ("cli_dev_command_closure_report_text", "artifacts/status/cli_dev_command_closure_report.txt"),
+    (
+        "cli_maintainer_command_closure_report_text",
+        "artifacts/status/cli_maintainer_command_closure_report.txt",
+    ),
     (
         "maintainer_control_plane_text_report",
         "artifacts/status/maintainer_control_plane_text_report.txt",

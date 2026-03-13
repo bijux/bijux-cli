@@ -211,7 +211,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let owner_rows = builtins
                                         .iter()
                                         .map(|command| {
-                                            json!({"command":command,"owner_crate":"bijux-cli","source":"crates/bijux-cli/src/app.rs"})
+                                            json!({"command":command,"owner_crate":"bijux-cli","source":"crates/bijux-cli/src/routing/registry.rs"})
                                         })
                                         .collect::<Vec<_>>();
             let mut test_files = collect_files(&workspace_root.join("crates"));

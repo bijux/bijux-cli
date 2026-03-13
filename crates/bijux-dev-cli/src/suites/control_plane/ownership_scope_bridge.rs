@@ -3,7 +3,7 @@ use crate::contracts::maintenance::*;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-RESILIENCE-REPORTS" => {
             let run_cmd =
                 |args: &[&str], envs: &[(&str, String)]| -> Result<std::process::Output, String> {
                     let normalized_args: Vec<&str> = args.to_vec();
@@ -200,7 +200,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/maintainer_resilience_drift_artifact.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-SCOPE-REASSESSMENT" => {
             let read_json = |name: &str| -> Value {
                 fs::read_to_string(workspace_root.join(name))
                     .ok()
@@ -225,11 +225,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             if dispatch
                 .get("checks")
-                .and_then(|v| v.get("bin_has_direct_dispatch_match_arms"))
+                .and_then(|v| v.get("runtime_dispatch_is_free_of_maintainer_literals"))
                 .and_then(Value::as_bool)
-                == Some(true)
+                == Some(false)
             {
-                violations.push("bin owns direct dispatch match arms".to_string());
+                violations.push("runtime dispatch still mentions maintainer literals".to_string());
             }
             let payload = json!({
                 "scope":"runtime responsibility reassessment",

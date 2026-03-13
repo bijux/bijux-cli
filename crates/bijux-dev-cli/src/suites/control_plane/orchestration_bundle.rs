@@ -3,7 +3,7 @@ use crate::contracts::maintenance::*;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-RELEASE-TRUTH-BUNDLE" => {
             let commands = [
                 ("status", ["release", "status"]),
                 ("evidence", ["release", "evidence"]),
@@ -41,7 +41,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_release_truth_bundle.json"]}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-CONTROL-PLANE-BUNDLE" => {
             let commands = [
                 "bijux-dev-cli status",
                 "bijux-dev-cli parity",
@@ -85,7 +85,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_control_plane_bundle.json"]}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-REPORT-IO-MAP" => {
             let commands = [
                 "bijux-dev-cli env",
                 "bijux-dev-cli contracts",
@@ -145,7 +145,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_report_io_map.json"]}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-PARITY-CONSISTENCY-REPORTS" => {
             let parity_first = run_bijux_json(workspace_root, &["parity"]).ok()?;
             let parity_second = run_bijux_json(workspace_root, &["parity"]).ok()?;
             let status_payload = run_bijux_json(workspace_root, &["status"]).ok()?;

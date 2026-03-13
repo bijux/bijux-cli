@@ -155,33 +155,33 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "generated_at": generated_at,
                 "generator":"bijux-dev-cli",
                 "guarantees": [
-                    {"name":"core config writes are atomic","evidence":"crates/bijux-cli/src/config/storage.rs uses atomic_write_text"},
-                    {"name":"compatibility config writes are atomic","evidence":"crates/bijux-cli/src/install/compatibility.rs uses atomic_write_text"},
-                    {"name":"plugin registry writes use temp+rename","evidence":"crates/bijux-cli-plugin/src/registry.rs::save_registry"},
-                    {"name":"repl history writes are atomic","evidence":"crates/bijux-cli-repl/src/history.rs::flush_history uses atomic_write_text"},
-                    {"name":"core history and memory writes are atomic","evidence":"crates/bijux-cli/src/app.rs::write_json_document uses atomic_write_text"},
+                    {"name":"core config writes are atomic","evidence":"crates/bijux-cli/src/features/config/storage.rs uses atomic_write_text"},
+                    {"name":"compatibility config writes are atomic","evidence":"crates/bijux-cli/src/features/install/compatibility.rs uses atomic_write_text"},
+                    {"name":"plugin registry writes use temp+rename","evidence":"crates/bijux-cli/src/features/plugins/registry.rs::save_registry"},
+                    {"name":"repl history writes are atomic","evidence":"crates/bijux-cli/src/interface/repl/history.rs::flush_history uses atomic_write_text"},
+                    {"name":"core history and memory writes are atomic","evidence":"crates/bijux-cli/src/infrastructure/state_store.rs::write_json_document uses atomic_write_text"},
                 ],
             });
             let recovery_guarantees = json!({
                 "generated_at": generated_at,
                 "generator":"bijux-dev-cli",
                 "guarantees": [
-                    {"name":"plugin registry rollback on mutation failure","evidence":"crates/bijux-cli-plugin/src/registry.rs::update_registry"},
-                    {"name":"state doctor surfaces degraded state with issues","evidence":"crates/bijux-cli/src/app.rs::state_diagnostics"},
-                    {"name":"history corruption is tolerated with fallback parser","evidence":"crates/bijux-cli/src/app.rs::parse_history_entries"},
+                    {"name":"plugin registry rollback on mutation failure","evidence":"crates/bijux-cli/src/features/plugins/registry.rs::update_registry"},
+                    {"name":"state doctor surfaces degraded state with issues","evidence":"crates/bijux-cli/src/features/diagnostics/state_paths.rs::state_diagnostics"},
+                    {"name":"history corruption is tolerated with fallback parser","evidence":"crates/bijux-cli/src/infrastructure/state_store.rs::parse_history_entries"},
                 ],
             });
             let complexity = json!({
                 "generated_at": generated_at,
                 "generator":"bijux-dev-cli",
                 "canonical_services":[
-                    "crates/bijux-cli/src/app.rs::resolve_state_paths",
-                    "crates/bijux-cli/src/install/io.rs::atomic_write_text",
+                    "crates/bijux-cli/src/features/diagnostics/state_paths.rs::resolve_state_paths",
+                    "crates/bijux-cli/src/features/install/io.rs::atomic_write_text",
                 ],
                 "hotspots":[
-                    "crates/bijux-cli/src/app.rs",
-                    "crates/bijux-cli-plugin/src/registry.rs",
-                    "crates/bijux-cli-repl/src/history.rs",
+                    "crates/bijux-cli/src/infrastructure/state_store.rs",
+                    "crates/bijux-cli/src/features/plugins/registry.rs",
+                    "crates/bijux-cli/src/interface/repl/history.rs",
                 ],
                 "summary":{
                     "inventory_count": inventory.get("state_files").and_then(Value::as_array).map_or(0, Vec::len),

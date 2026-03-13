@@ -3,8 +3,8 @@ use crate::contracts::maintenance::*;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-STALE-ARTIFACT-REPORTS" => {
-            let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-STALE-ARTIFACT-REPORTS" => {
+            let stale_root = std::env::var("MAINTAINER_STALE_ARTIFACT_ROOT")
                 .ok()
                 .map(|raw| raw.trim().to_string())
                 .filter(|raw| !raw.is_empty())
@@ -14,7 +14,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let path = stale_root.join(artifact);
                 write_json(&path, payload).ok()
             };
-            let now_epoch = std::env::var("DEV_CLI_STALE_NOW_EPOCH")
+            let now_epoch = std::env::var("MAINTAINER_STALE_NOW_EPOCH")
                 .ok()
                 .and_then(|raw| raw.parse::<u64>().ok())
                 .unwrap_or_else(|| {
@@ -23,18 +23,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .map(|dur| dur.as_secs())
                         .unwrap_or(0)
                 });
-            let max_age_seconds = std::env::var("DEV_CLI_STALE_MAX_SECONDS")
+            let max_age_seconds = std::env::var("MAINTAINER_STALE_MAX_SECONDS")
                 .ok()
                 .and_then(|raw| raw.parse::<u64>().ok())
                 .unwrap_or(86_400);
-            let forced_raw = std::env::var("DEV_CLI_FORCE_STALE_FILES").unwrap_or_default();
+            let forced_raw = std::env::var("MAINTAINER_FORCE_STALE_FILES").unwrap_or_default();
             let mut forced: BTreeSet<String> = forced_raw
                 .split(',')
                 .map(str::trim)
                 .filter(|item| !item.is_empty())
                 .map(ToString::to_string)
                 .collect();
-            if std::env::var("DEV_CLI_INJECT_STALE_ARTIFACT").is_ok_and(|raw| raw == "1") {
+            if std::env::var("MAINTAINER_INJECT_STALE_ARTIFACT").is_ok_and(|raw| raw == "1") {
                 forced.insert("artifacts/status/parity_drift_artifact.json".to_string());
             }
             let specs = vec![
@@ -171,7 +171,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "critical_stale_count": critical_stale_count,
                 "warning_stale_count": warning_stale_count,
                 "status": status_value,
-                "injection_mode": std::env::var("DEV_CLI_INJECT_STALE_ARTIFACT").is_ok_and(|raw| raw == "1"),
+                "injection_mode": std::env::var("MAINTAINER_INJECT_STALE_ARTIFACT").is_ok_and(|raw| raw == "1"),
             });
             stale_write(
                 "artifacts/status/stale_artifact_artifact.json",
@@ -235,8 +235,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/stale_detection_regression_suite.json"
             ]}))
         }
-        "STATUS-CONTRACT-ENFORCE-DEV-CLI-STALE-ARTIFACT-GATE" => {
-            let stale_root = std::env::var("DEV_CLI_STALE_ARTIFACT_ROOT")
+        "STATUS-CONTRACT-ENFORCE-MAINTAINER-STALE-ARTIFACT-GATE" => {
+            let stale_root = std::env::var("MAINTAINER_STALE_ARTIFACT_ROOT")
                 .ok()
                 .map(PathBuf::from)
                 .unwrap_or_else(|| workspace_root.to_path_buf());
@@ -254,7 +254,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let injection_mode =
                 summary.get("injection_mode").and_then(Value::as_bool).unwrap_or(false);
             let allow_injection_drift =
-                std::env::var("DEV_CLI_ALLOW_INJECTION_DRIFT").ok().as_deref() == Some("1");
+                std::env::var("MAINTAINER_ALLOW_INJECTION_DRIFT").ok().as_deref() == Some("1");
             if critical_stale > 0 && !(injection_mode && allow_injection_drift) {
                 return Some(json!({
                     "status":"failed",

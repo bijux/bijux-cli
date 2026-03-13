@@ -44,7 +44,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-EVIDENCE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-EVIDENCE-REPORTS" => {
             let rows = [
                 ("artifacts/status/maintainer_evidence_list_report.json", ["evidence", "list"]),
                 ("artifacts/status/maintainer_evidence_audit_report.json", ["evidence", "audit"]),
@@ -92,7 +92,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-RELEASE-REPORTS" => {
             let rows = [
                 ("artifacts/status/maintainer_release_status_report.json", ["release", "status"]),
                 (
@@ -149,7 +149,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-COCKPIT-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-COCKPIT-REPORTS" => {
             let rows = [
                 ("maintainer_status_report.json", ["status"]),
                 ("maintainer_dashboard_report.json", ["dashboard"]),
@@ -348,7 +348,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTENANCE-MIGRATION-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-MAINTENANCE-MIGRATION-REPORTS" => {
             let remaining = run_bijux_json(workspace_root, &["maintenance", "remaining"]).ok()?;
             let migrated = run_bijux_json(workspace_root, &["maintenance", "migrated"]).ok()?;
             let diff = run_bijux_json(workspace_root, &["maintenance", "diff"]).ok()?;
@@ -417,7 +417,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/maintainer_make_target_inventory.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
             let repo = run_bijux_json(workspace_root, &["repo", "health"]).ok()?;
             let docs = run_bijux_json(workspace_root, &["docs-audit"]).ok()?;
             let maintenance = run_bijux_json(workspace_root, &["maintenance-audit"]).ok()?;
@@ -472,7 +472,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/repo_docs_maintenance_crate_health_drift_artifact.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
             let routes = run_bijux_json(workspace_root, &["routes"]).ok()?;
             let registry = run_bijux_json(workspace_root, &["registry"]).ok()?;
             let env = run_bijux_json(workspace_root, &["env"]).ok()?;
@@ -553,7 +553,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/route_registry_env_contracts_drift_artifact.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
+        "STATUS-CONTRACT-GENERATE-MAINTAINER-RUSTDOC-REPORTS" => {
             let audit = run_bijux_json(workspace_root, &["rustdoc", "audit"]).ok()?;
             let coverage = run_bijux_json(workspace_root, &["rustdoc", "coverage"]).ok()?;
             let audit_text = run_bijux_text(workspace_root, &["rustdoc", "audit"]).ok()?;
