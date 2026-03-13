@@ -16,8 +16,8 @@ High-value documents only. Everything else is supporting detail.
 
 ## Usage
 - [Introduction](01-introduction/index.md)
-- [Installation](guides/installation.md)
-- [First run](01-introduction/first-run.md)
+- [Getting started](02-getting-started/index.md)
+- [Install and verify](02-getting-started/install-and-verify.md)
 - [Commands reference](reference/commands.md)
 - [Exit codes](reference/exit-codes.md)
 

@@ -56,10 +56,12 @@ These commands do not prove:
 
 Go to:
 
+- [Install and verify](../02-getting-started/install-and-verify.md)
 - [Installation guide](../guides/installation.md)
 - [Commands reference](../reference/commands.md)
 - [Status and gaps](../KNOWN_GAPS.md)
 
 ## Read Next
 
-If the runtime works, continue to [Command Model](command-model.md).
+If the runtime works, continue to [Getting started](../02-getting-started/index.md)
+or return to [Command Model](command-model.md).

@@ -71,7 +71,7 @@ plugins:
   - autorefs
   - redirects:
       redirect_maps:
-        getting-started/installation.md: guides/installation.md
+        getting-started/installation.md: 02-getting-started/install-and-verify.md
         guides/installation-unified.md: guides/installation.md
         guides/install-method-parity.md: guides/installation.md
         guides/install-channels.md: guides/installation.md
@@ -94,8 +94,8 @@ plugins:
         guides/python/plugin-delegation.md: guides/plugins.md
         guides/python/rust-engine-invocation.md: guides/python/runtime-migration.md
         guides/python/virtualenv-installs.md: guides/installation.md
-        getting-started/index.md: 01-introduction/index.md
-        getting-started/quickstart.md: 01-introduction/first-run.md
+        getting-started/index.md: 02-getting-started/index.md
+        getting-started/quickstart.md: 02-getting-started/run-your-first-commands.md
         examples/index.md: examples/workflows.md
         guides/hermetic-builds.md: guides/development.md
         guides/reproducible-releases.md: guides/development.md

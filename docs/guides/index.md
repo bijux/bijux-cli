@@ -9,6 +9,9 @@ This section focuses on doing things: using commands, configuring the CLI, insta
 ## Audience
 Engineers who want to accomplish a concrete coverage_id quickly should start here. Each guide is written as a focused path from goal to result.
 
+If you are still setting up the runtime, start with
+[Getting started](../02-getting-started/index.md) before using these guides.
+
 ## What You Will Find
 Each guide explains a single workflow, its prerequisites, the exact commands to run, and the expected outcomes. The goal is to keep each guide short, precise, and actionable.
 
