@@ -2,6 +2,7 @@ Usage: bijux [OPTIONS] [COMMAND]
 
 Commands:
   cli
+  dev
   status
   audit
   docs
@@ -26,28 +27,22 @@ Options:
       --config-path <PATH>  Use explicit config file path
   -h, --help                Print help
 
-Command groups:
-Runtime:
-status      Runtime status summary
-audit       Runtime audit report
-docs        Documentation audit and links
-sleep       Controlled sleep helper for diagnostics
-doctor      Runtime health diagnostics
-version     Runtime version report
+Management Commands:
+runtime      status, audit, docs, sleep, doctor, version
+config       config
+plugins      plugins
+state        history, memory
+interaction  repl, completion, cli
 
-Configuration & Plugins:
-config      Configuration management commands
-plugins     Plugin lifecycle and diagnostics commands
+Routed Namespaces:
+dev          maintainer control-plane namespace (`bijux dev cli ...`)
+<tool>       adjacent Bijux product runtime namespace when an owned binary is available
 
-State & Interaction:
-history     History state management
-memory      Memory state management
-repl        Interactive shell
-completion  Shell completion generation
-cli         Canonical runtime command namespace
+Use `bijux help <command>` for command-specific help.
 
 Examples:
   bijux status
   bijux config get foo
   bijux config set foo=bar
   bijux plugins list
+  bijux dev cli status --format json --no-pretty
