@@ -22,5 +22,5 @@ Generated files:
 - `pyproject.toml`: optional local packaging metadata for the rendered project.
 
 Keep the plugin namespace stable after release, update the compatibility range when supported host
-versions change, and add tests before sharing the plugin. The default compatibility window tracks
-the current Bijux runtime series.
+versions change, and add tests before sharing the plugin. The default template values target
+plugin version `0.3.0` with host compatibility from `0.3.0` up to, but not including, `1.0.0`.

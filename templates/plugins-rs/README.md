@@ -23,4 +23,5 @@ Generated files:
 
 Keep `plugin.py` aligned with your Rust bridge, keep the manifest namespace stable after release,
 and update the compatibility range when the supported Bijux host versions change. The default
-compatibility window tracks the current Bijux runtime series.
+template values target plugin version `0.3.0` with host compatibility from `0.3.0` up to, but
+not including, `1.0.0`.

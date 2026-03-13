@@ -4,9 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use bijux_cli::api::version::runtime_semver;
 use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV1};
-use semver::Version;
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -37,20 +35,11 @@ fn walk_files(root: &Path) -> Vec<PathBuf> {
 fn render_template(text: &str) -> String {
     text.replace("{{cookiecutter.project_name}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
-        .replace("{{cookiecutter.plugin_version}}", "0.1.0")
-        .replace("{{cookiecutter.cli_min}}", runtime_semver())
-        .replace("{{cookiecutter.cli_max}}", &next_breaking_version())
+        .replace("{{cookiecutter.plugin_version}}", "0.3.0")
+        .replace("{{cookiecutter.cli_min}}", "0.3.0")
+        .replace("{{cookiecutter.cli_max}}", "1.0.0")
         .replace("{{cookiecutter.crate_name}}", "testplug_rs")
         .replace("{{cookiecutter.rust_edition}}", "2021")
-}
-
-fn next_breaking_version() -> String {
-    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
-    if runtime.major == 0 {
-        format!("0.{}.0", runtime.minor + 1)
-    } else {
-        format!("{}.0.0", runtime.major + 1)
-    }
 }
 
 #[test]
@@ -107,25 +96,23 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(manifest.capabilities.is_empty());
         assert_eq!(manifest.namespace, Namespace::new("testplug").expect("valid namespace"));
         assert!(
-            manifest.compatibility.supports_host(runtime_semver()).expect("valid compatibility"),
-            "{path} should support the current runtime compatibility floor"
+            manifest.compatibility.supports_host("0.3.0").expect("valid compatibility"),
+            "{path} should support the planned 0.3.0 release floor"
         );
     }
 }
 
 #[test]
-fn template_default_compatibility_window_tracks_current_runtime_series() {
-    let runtime = runtime_semver();
-    let expected_max = next_breaking_version();
-
+fn template_default_release_window_matches_planned_plugin_publish_range() {
     for path in ["templates/plugins-py/cookiecutter.json", "templates/plugins-rs/cookiecutter.json"]
     {
         let payload: serde_json::Value =
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
-        assert_eq!(payload["cli_min"], runtime, "{path} must track current runtime floor");
+        assert_eq!(payload["plugin_version"], "0.3.0", "{path} must default new plugins to 0.3.0");
+        assert_eq!(payload["cli_min"], "0.3.0", "{path} must require bijux-cli >=0.3.0");
         assert_eq!(
-            payload["cli_max"], expected_max,
-            "{path} must track the next breaking runtime boundary"
+            payload["cli_max"], "1.0.0",
+            "{path} must keep future compatibility open until the 1.0.0 boundary"
         );
     }
 }
