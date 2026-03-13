@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
-//! Ensures routing crate stays command-identity-only for dev-cli surfaces.
+//! Ensures routing crate stays command-identity-only for maintainer surfaces.
 
 #[test]
-fn parser_and_registry_do_not_assemble_dev_cli_reports() {
+fn parser_and_registry_do_not_assemble_maintainer_reports() {
     let routing_root =
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../bijux-cli/src/routing");
     let parser = std::fs::read_to_string(routing_root.join("parser.rs")).expect("read parser.rs");

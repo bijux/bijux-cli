@@ -165,7 +165,7 @@ pub(super) fn rows() -> Vec<Value> {
                 "artifacts/status/status.json",
                 "artifacts/status/status_root_commands.json",
                 "artifacts/status/status_cli_subcommands.json",
-                "artifacts/status/status_dev_cli_subcommands.json",
+                "artifacts/status/status_maintainer_subcommands.json",
                 "artifacts/status/status_plugin_commands.json",
                 "artifacts/status/status_repl_parity_coverage.json",
                 "artifacts/status/status_python_bridge_parity_coverage.json",

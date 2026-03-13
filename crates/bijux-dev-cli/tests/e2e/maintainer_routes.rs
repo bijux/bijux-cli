@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Dev-cli route dispatch e2e contracts.
+//! Maintainer route dispatch e2e contracts.
 
 use std::collections::BTreeMap;
 
@@ -17,15 +17,12 @@ struct StubRuntime;
 
 impl RuntimeQueryProvider for StubRuntime {
     fn route_inventory(&self) -> RouteInventoryQuery {
-        RouteInventoryQuery {
-            routes: vec![vec!["dev".into(), "cli".into(), "registry".into()]],
-            aliases: vec![],
-        }
+        RouteInventoryQuery { routes: vec![vec!["registry".into()]], aliases: vec![] }
     }
 
     fn registry_inventory(&self) -> Vec<registry::NamespaceInventoryRow> {
         vec![registry::NamespaceInventoryRow {
-            name: "dev".into(),
+            name: "cli".into(),
             reserved: true,
             owner: "bijux-cli".into(),
         }]
@@ -105,13 +102,13 @@ impl RuntimeQueryProvider for StubRuntime {
 #[test]
 fn known_route_returns_payload_and_unknown_route_returns_none() {
     let runtime = StubRuntime;
-    let payload = try_handle(&["dev".into(), "cli".into(), "registry".into()], &[], &runtime)
+    let payload = try_handle(&["registry".into()], &[], &runtime)
         .expect("dispatch should succeed")
         .expect("known route should return payload");
 
     assert!(payload.get("registry").is_some());
 
-    let none_payload = try_handle(&["dev".into(), "cli".into(), "unknown".into()], &[], &runtime)
+    let none_payload = try_handle(&["unknown".into()], &[], &runtime)
         .expect("dispatch should succeed for unknown paths");
     assert!(none_payload.is_none());
 }

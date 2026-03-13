@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
-//! Prevents dev-cli route/registry/route-audit presentation assembly from living in routing.
+//! Prevents maintainer route, registry, and route-audit presentation assembly from living in routing.
 
 #[test]
-fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
+fn routing_keeps_only_query_interfaces_for_maintainer_views() {
     let source =
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/routing/mod.rs"))
             .expect("read routing module source");

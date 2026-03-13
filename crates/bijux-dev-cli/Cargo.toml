@@ -42,8 +42,8 @@ name = "contracts_suite_catalog_contracts"
 path = "tests/contracts/suite_catalog_contracts.rs"
 
 [[test]]
-name = "e2e_dev_cli_routes"
-path = "tests/e2e/dev_cli_routes.rs"
+name = "e2e_maintainer_routes"
+path = "tests/e2e/maintainer_routes.rs"
 
 [[test]]
 name = "e2e_contract_run_all"

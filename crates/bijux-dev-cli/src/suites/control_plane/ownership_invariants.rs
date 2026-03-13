@@ -5,7 +5,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-INVARIANTS-REPORTS" => {
             let fixture = workspace_root
-                .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
             let bin_main = workspace_root.join("crates/bijux-cli/src/bin/bijux.rs");
             let lib_source = workspace_root.join("crates/bijux-dev-cli/src/lib.rs");

@@ -22,7 +22,7 @@
       "coverage_level": "better",
       "rust_test_files": [
         "crates/bijux-cli-python/tests/config_compatibility.rs",
-        "crates/bijux-cli-python/tests/dev_leakage_boundaries.rs",
+        "crates/bijux-cli-python/tests/maintainer_leakage_boundaries.rs",
         "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs"
       ]
     },

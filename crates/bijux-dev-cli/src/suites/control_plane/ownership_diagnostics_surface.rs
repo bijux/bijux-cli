@@ -98,7 +98,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-BOUNDARY-REPORTS" => {
             let dev_fixture = workspace_root
-                .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
             let read = |path: &Path| fs::read_to_string(path).unwrap_or_default();
             let core_source = read(&core_app);
@@ -185,7 +185,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "leaks_through_runtime": leaks,
                     "exposed_through_binary": true,
                     "evidence": [
-                        "crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt",
+                        "crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
                         "crates/bijux-cli/src/app.rs"
                     ],
                 }));
@@ -264,7 +264,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
             let fixture = workspace_root
-                .join("crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
             let test_file =
                 workspace_root.join("crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs");
             let test_dir = workspace_root.join("crates/bijux-cli/tests/bin_surface");

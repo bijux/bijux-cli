@@ -8,8 +8,8 @@ use bijux_dev_cli::schema::command_registry::{
 };
 
 #[test]
-fn command_registry_covers_all_known_dev_cli_subcommands() {
-    let fixture = include_str!("../data/fixtures/routing/dev_cli_subcommands.txt");
+fn command_registry_covers_all_known_maintainer_subcommands() {
+    let fixture = include_str!("../data/fixtures/routing/maintainer_subcommands.txt");
     let known: BTreeSet<String> = fixture
         .lines()
         .map(str::trim)

@@ -14,7 +14,7 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
     ("root_command_completion_report", "artifacts/status/root_command_completion_report.json"),
     ("root_command_closure_set", "artifacts/status/root_command_closure_set.json"),
     ("cli_subcommands", "artifacts/status/status_cli_subcommands.json"),
-    ("dev_cli_subcommands", "artifacts/status/status_dev_cli_subcommands.json"),
+    ("maintainer_subcommands", "artifacts/status/status_maintainer_subcommands.json"),
     ("cli_command_remaining_inventory", "artifacts/status/cli_command_remaining_inventory.json"),
     ("cli_command_value_ranking", "artifacts/status/cli_command_value_ranking.json"),
     ("cli_command_completion_report", "artifacts/status/cli_command_completion_report.json"),
