@@ -9,11 +9,18 @@ It is designed for CLIs that grow over time and need stable command behavior.
 Bijux focuses on deterministic flags, explicit plugin lifecycle behavior, structured output, and shared CLI/REPL command law.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
+[![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
+[![docs.rs](https://img.shields.io/docsrs/bijux-cli)](https://docs.rs/bijux-cli/latest/bijux_cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
 [![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
+
+Python package: [PyPI](https://pypi.org/project/bijux-cli/)
+Rust crate: [crates.io](https://crates.io/crates/bijux-cli)
+Rust API docs: [docs.rs](https://docs.rs/bijux-cli/latest/bijux_cli/)
+Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source/)
 
 > **At a glance**
 > Plugin-driven · Deterministic flags · Dependency Injection · Sync + Async · REPL · JSON/YAML output
