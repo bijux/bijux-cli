@@ -32,6 +32,23 @@ fn walk_files(root: &Path) -> Vec<PathBuf> {
     files
 }
 
+fn walk_dirs(root: &Path) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        dirs.push(dir.clone());
+        for entry in fs::read_dir(&dir).expect("read dir") {
+            let entry = entry.expect("dir entry");
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            }
+        }
+    }
+    dirs.sort();
+    dirs
+}
+
 fn render_template(text: &str) -> String {
     text.replace("{{cookiecutter.project_name}}", "testplug")
         .replace("{{cookiecutter.project_slug}}", "testplug")
@@ -130,11 +147,19 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
         py_hook.contains("plugin_namespace must be lowercase kebab-case"),
         "python template hook should reject invalid plugin namespaces"
     );
+    assert!(
+        py_hook.contains("plugin_namespace is reserved by bijux-cli or an official Bijux tool"),
+        "python template hook should reject reserved plugin namespaces"
+    );
 
     let rs_hook = read_repo_file("templates/plugins-rs/hooks/pre_gen_project.py");
     assert!(
         rs_hook.contains("plugin_namespace must be lowercase kebab-case"),
         "rust template hook should reject invalid plugin namespaces"
+    );
+    assert!(
+        rs_hook.contains("plugin_namespace is reserved by bijux-cli or an official Bijux tool"),
+        "rust template hook should reject reserved plugin namespaces"
     );
     assert!(
         rs_hook.contains("crate_name must be lowercase snake_case"),
@@ -150,6 +175,22 @@ fn template_tree_does_not_ship_legacy_plugin_json_files() {
             path.file_name().and_then(|name| name.to_str()),
             Some("plugin.json"),
             "template tree still contains legacy plugin.json: {}",
+            path.display()
+        );
+    }
+}
+
+#[test]
+fn template_tree_does_not_ship_empty_directories() {
+    let template_root = repo_root().join("templates");
+    for path in walk_dirs(&template_root) {
+        if path == template_root {
+            continue;
+        }
+        let mut entries = fs::read_dir(&path).expect("read dir");
+        assert!(
+            entries.next().is_some(),
+            "template tree still contains empty directory: {}",
             path.display()
         );
     }

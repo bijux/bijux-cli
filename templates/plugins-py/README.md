@@ -26,4 +26,4 @@ versions change, and add tests before sharing the plugin. The default template v
 plugin version `0.3.0` with host compatibility from `0.3.0` up to, but not including, `1.0.0`.
 Use `plugin_namespace` for the durable CLI name even when `project_name` is a human-readable title.
 Cookiecutter validation rejects namespaces that do not start with a letter or that contain repeated
-hyphens.
+hyphens, and it blocks namespaces reserved by `bijux-cli` or official Bijux tools.

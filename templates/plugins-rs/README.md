@@ -28,4 +28,5 @@ not including, `1.0.0`.
 Use `plugin_namespace` for the durable CLI name and `crate_name` for the Cargo identifier when
 `project_name` contains presentation-only punctuation.
 Cookiecutter validation rejects namespaces that do not start with a letter and crate names that are
-not lowercase snake_case.
+not lowercase snake_case. It also blocks namespaces reserved by `bijux-cli` or official Bijux
+tools.
