@@ -23,7 +23,7 @@ pub struct DiagnosticRecord {
 /// Stable invocation event used by trace logs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct InvocationEvent {
-    /// Event timestamp in RFC3339.
+    /// Event timestamp as unix milliseconds encoded as string.
     pub timestamp: String,
     /// Event name.
     pub name: String,

@@ -315,6 +315,10 @@ fn bounded_message(message: &str) -> (String, bool) {
     truncate_chars(message, MAX_TEXT_FIELD_CHARS)
 }
 
+fn bounded_trace_command(path: &[String]) -> (String, bool) {
+    bounded_command(&path.join(" "))
+}
+
 #[allow(dead_code)]
 fn is_fast_path(intent: &ExecutionIntent) -> bool {
     matches!(
@@ -361,14 +365,15 @@ pub(crate) fn execute_pipeline(
         return Err(KernelError::Cancelled);
     }
 
+    let (trace_command, trace_command_truncated) = bounded_trace_command(&ctx.intent.command_path);
     trace_events.push(InvocationEvent {
         // Trace remains human-readable; diagnostics carry truncated metadata separately.
         timestamp: event_timestamp(),
         name: "bootstrap".to_string(),
-        payload: BTreeMap::from([(
-            "command".to_string(),
-            json!(ctx.intent.command_path.join(" ")),
-        )]),
+        payload: BTreeMap::from([
+            ("command".to_string(), json!(trace_command)),
+            ("command_truncated".to_string(), json!(trace_command_truncated)),
+        ]),
     });
 
     if is_fast_path(&ctx.intent) {
@@ -423,7 +428,8 @@ pub(crate) fn execute_pipeline(
                             timestamp: event_timestamp(),
                             name: "dispatch.start".to_string(),
                             payload: BTreeMap::from([
-                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                                ("command".to_string(), json!(trace_command.clone())),
+                                ("command_truncated".to_string(), json!(trace_command_truncated)),
                                 ("mode".to_string(), json!("fast-path")),
                             ]),
                         },
@@ -431,7 +437,8 @@ pub(crate) fn execute_pipeline(
                             timestamp: event_timestamp(),
                             name: "dispatch.finish".to_string(),
                             payload: BTreeMap::from([
-                                ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+                                ("command".to_string(), json!(trace_command)),
+                                ("command_truncated".to_string(), json!(trace_command_truncated)),
                                 ("mode".to_string(), json!("fast-path")),
                                 ("exit_code".to_string(), json!(exit_code as i32)),
                                 ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),
@@ -452,13 +459,15 @@ pub(crate) fn execute_pipeline(
     }
 
     if ctx.intent.command_path.first().is_some_and(|v| v == "plugins") {
+        let (trace_command, trace_command_truncated) =
+            bounded_trace_command(&ctx.intent.command_path);
         trace_events.push(InvocationEvent {
             timestamp: event_timestamp(),
             name: "lifecycle.plugin.load".to_string(),
-            payload: BTreeMap::from([(
-                "command".to_string(),
-                json!(ctx.intent.command_path.join(" ")),
-            )]),
+            payload: BTreeMap::from([
+                ("command".to_string(), json!(trace_command)),
+                ("command_truncated".to_string(), json!(trace_command_truncated)),
+            ]),
         });
         for hook in lifecycle {
             hook.on_plugin_load();
@@ -466,24 +475,28 @@ pub(crate) fn execute_pipeline(
     }
     let is_repl_command = ctx.intent.command_path.first().is_some_and(|v| v == "repl");
     if is_repl_command {
+        let (trace_command, trace_command_truncated) =
+            bounded_trace_command(&ctx.intent.command_path);
         trace_events.push(InvocationEvent {
             timestamp: event_timestamp(),
             name: "lifecycle.repl.start".to_string(),
-            payload: BTreeMap::from([(
-                "command".to_string(),
-                json!(ctx.intent.command_path.join(" ")),
-            )]),
+            payload: BTreeMap::from([
+                ("command".to_string(), json!(trace_command)),
+                ("command_truncated".to_string(), json!(trace_command_truncated)),
+            ]),
         });
         for hook in lifecycle {
             hook.on_repl_start();
         }
     }
 
+    let (trace_command, trace_command_truncated) = bounded_trace_command(&ctx.intent.command_path);
     trace_events.push(InvocationEvent {
         timestamp: event_timestamp(),
         name: "dispatch.start".to_string(),
         payload: BTreeMap::from([
-            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+            ("command".to_string(), json!(trace_command.clone())),
+            ("command_truncated".to_string(), json!(trace_command_truncated)),
             ("mode".to_string(), json!("standard")),
         ]),
     });
@@ -548,13 +561,15 @@ pub(crate) fn execute_pipeline(
     };
 
     if is_repl_command {
+        let (trace_command, trace_command_truncated) =
+            bounded_trace_command(&ctx.intent.command_path);
         trace_events.push(InvocationEvent {
             timestamp: event_timestamp(),
             name: "lifecycle.repl.shutdown".to_string(),
-            payload: BTreeMap::from([(
-                "command".to_string(),
-                json!(ctx.intent.command_path.join(" ")),
-            )]),
+            payload: BTreeMap::from([
+                ("command".to_string(), json!(trace_command)),
+                ("command_truncated".to_string(), json!(trace_command_truncated)),
+            ]),
         });
         for hook in lifecycle {
             hook.on_repl_shutdown();
@@ -660,7 +675,8 @@ pub(crate) fn execute_pipeline(
         timestamp: event_timestamp(),
         name: "dispatch.finish".to_string(),
         payload: BTreeMap::from([
-            ("command".to_string(), json!(ctx.intent.command_path.join(" "))),
+            ("command".to_string(), json!(trace_command)),
+            ("command_truncated".to_string(), json!(trace_command_truncated)),
             ("mode".to_string(), json!("standard")),
             ("exit_code".to_string(), json!(exit_code as i32)),
             ("exit_kind".to_string(), json!(exit_code_kind(exit_code))),

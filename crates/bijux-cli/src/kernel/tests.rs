@@ -9,6 +9,7 @@ use crate::contracts::{
     ColorMode, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat,
     PrettyMode,
 };
+use crate::shared::telemetry::MAX_COMMAND_FIELD_CHARS;
 use futures::future;
 use serde_json::json;
 
@@ -881,6 +882,41 @@ fn trace_mode_adds_diagnostics_without_changing_payload_shape() {
     assert!(plain.trace.is_none());
     assert!(traced.trace.is_some());
     assert!(!events.lock().expect("events lock").is_empty());
+}
+
+#[test]
+fn trace_events_bound_oversized_command_payloads() {
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Pretty,
+        color_mode: ColorMode::Auto,
+        log_level: LogLevel::Info,
+        quiet: false,
+        include_runtime: false,
+    };
+    let oversized = "x".repeat(MAX_COMMAND_FIELD_CHARS + 96);
+    let ctx = assemble_context(
+        build_intent_from_argv(&["bijux".to_string(), oversized]),
+        policy,
+        Some(Duration::from_secs(5)),
+        Arc::new(AtomicBool::new(false)),
+        true,
+    );
+    let result =
+        execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[]).expect("run");
+    let trace = result.trace.expect("trace payload");
+
+    assert!(!trace.events.is_empty());
+    assert!(trace.events.iter().all(|event| {
+        event
+            .payload
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|command| command.chars().count() <= MAX_COMMAND_FIELD_CHARS)
+    }));
+    assert!(trace.events.iter().any(|event| {
+        event.payload.get("command_truncated").and_then(serde_json::Value::as_bool).unwrap_or(false)
+    }));
 }
 
 #[test]
