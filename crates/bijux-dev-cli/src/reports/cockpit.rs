@@ -164,7 +164,7 @@ pub fn build_dashboard_report(workspace_root: &Path) -> Value {
     let parity =
         read_json_if_exists(&workspace_root.join("artifacts/parity/parity_dashboard.json"));
     let evidence = read_json_if_exists(
-        &workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json"),
+        &workspace_root.join("artifacts/status/maintainer_evidence_audit_report.json"),
     );
     let runtime_identity = read_json_if_exists(
         &workspace_root.join("artifacts/status/install_runtime_identity_report.json"),
@@ -207,7 +207,7 @@ pub fn build_quickcheck_report(workspace_root: &Path) -> Value {
     let release =
         read_json_if_exists(&workspace_root.join("artifacts/status/release_status_manifest.json"));
     let evidence = read_json_if_exists(
-        &workspace_root.join("artifacts/status/dev_cli_evidence_audit_report.json"),
+        &workspace_root.join("artifacts/status/maintainer_evidence_audit_report.json"),
     );
     let python = read_json_if_exists(
         &workspace_root.join("artifacts/status/python_sovereignty_audit_report.json"),
@@ -284,7 +284,7 @@ pub fn build_truth_report(workspace_root: &Path) -> Value {
 #[must_use]
 pub fn build_blockers_report(workspace_root: &Path) -> Value {
     let release = read_json_if_exists(
-        &workspace_root.join("artifacts/status/dev_cli_release_gaps_report.json"),
+        &workspace_root.join("artifacts/status/maintainer_release_gaps_report.json"),
     );
     let unresolved = release.get("unresolved_gaps").cloned().unwrap_or_else(|| json!([]));
     json!({

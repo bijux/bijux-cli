@@ -103,7 +103,7 @@ fn dead_docs_references(root: &Path) -> Vec<String> {
 }
 
 fn dead_evidence_references(root: &Path) -> Vec<String> {
-    let evidence = root.join("artifacts/status/dev_cli_evidence_audit_report.json");
+    let evidence = root.join("artifacts/status/maintainer_evidence_audit_report.json");
     let payload = fs::read_to_string(evidence)
         .ok()
         .and_then(|text| serde_json::from_str::<Value>(&text).ok())

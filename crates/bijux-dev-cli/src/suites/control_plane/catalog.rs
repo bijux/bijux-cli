@@ -23,15 +23,15 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_evidence_list_report.json",
-                "artifacts/status/dev_cli_evidence_audit_report.json",
-                "artifacts/status/dev_cli_evidence_stale_report.json",
-                "artifacts/status/dev_cli_evidence_matrix_report.json",
-                "artifacts/status/dev_cli_evidence_website_export_report.json",
-                "artifacts/status/dev_cli_evidence_ci_export_report.json",
-                "artifacts/status/dev_cli_evidence_release_export_report.json",
-                "artifacts/status/dev_cli_evidence_command_map_report.json",
-                "artifacts/status/dev_cli_evidence_parity_map_report.json"
+                "artifacts/status/maintainer_evidence_list_report.json",
+                "artifacts/status/maintainer_evidence_audit_report.json",
+                "artifacts/status/maintainer_evidence_stale_report.json",
+                "artifacts/status/maintainer_evidence_matrix_report.json",
+                "artifacts/status/maintainer_evidence_website_export_report.json",
+                "artifacts/status/maintainer_evidence_ci_export_report.json",
+                "artifacts/status/maintainer_evidence_release_export_report.json",
+                "artifacts/status/maintainer_evidence_command_map_report.json",
+                "artifacts/status/maintainer_evidence_parity_map_report.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-EVIDENCE-REPORTS",
         }),
@@ -41,15 +41,15 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_status_report.json",
-                "artifacts/status/dev_cli_dashboard_report.json",
-                "artifacts/status/dev_cli_quickcheck_report.json",
-                "artifacts/status/dev_cli_truth_report.json",
-                "artifacts/status/dev_cli_blockers_report.json",
-                "artifacts/status/dev_cli_next_report.json",
-                "artifacts/status/dev_cli_cockpit_text_heads.json",
-                "artifacts/status/dev_cli_summary_surface_artifact.json",
-                "artifacts/status/dev_cli_summary_surface_drift_artifact.json"
+                "artifacts/status/maintainer_status_report.json",
+                "artifacts/status/maintainer_dashboard_report.json",
+                "artifacts/status/maintainer_quickcheck_report.json",
+                "artifacts/status/maintainer_truth_report.json",
+                "artifacts/status/maintainer_blockers_report.json",
+                "artifacts/status/maintainer_next_report.json",
+                "artifacts/status/maintainer_cockpit_text_heads.json",
+                "artifacts/status/maintainer_summary_surface_artifact.json",
+                "artifacts/status/maintainer_summary_surface_drift_artifact.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-COCKPIT-REPORTS",
         }),
@@ -59,18 +59,18 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_release_status_report.json",
-                "artifacts/status/dev_cli_release_evidence_report.json",
-                "artifacts/status/dev_cli_release_readiness_report.json",
-                "artifacts/status/dev_cli_release_diff_report.json",
-                "artifacts/status/dev_cli_release_gaps_report.json",
-                "artifacts/status/dev_cli_release_summary_report.json",
-                "artifacts/status/dev_cli_release_manifest_report.json",
-                "artifacts/status/dev_cli_release_notes_report.json",
-                "artifacts/status/dev_cli_release_behavior_changes_report.json",
-                "artifacts/status/dev_cli_release_intentional_differences_report.json",
-                "artifacts/status/dev_cli_release_unresolved_gaps_report.json",
-                "artifacts/status/dev_cli_release_compatibility_leftovers_report.json"
+                "artifacts/status/maintainer_release_status_report.json",
+                "artifacts/status/maintainer_release_evidence_report.json",
+                "artifacts/status/maintainer_release_readiness_report.json",
+                "artifacts/status/maintainer_release_diff_report.json",
+                "artifacts/status/maintainer_release_gaps_report.json",
+                "artifacts/status/maintainer_release_summary_report.json",
+                "artifacts/status/maintainer_release_manifest_report.json",
+                "artifacts/status/maintainer_release_notes_report.json",
+                "artifacts/status/maintainer_release_behavior_changes_report.json",
+                "artifacts/status/maintainer_release_intentional_differences_report.json",
+                "artifacts/status/maintainer_release_unresolved_gaps_report.json",
+                "artifacts/status/maintainer_release_compatibility_leftovers_report.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-REPORTS",
         }),
@@ -80,11 +80,11 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_maintenance_remaining_report.json",
-                "artifacts/status/dev_cli_maintenance_migrated_report.json",
-                "artifacts/status/dev_cli_maintenance_diff_report.json",
-                "artifacts/status/dev_cli_maintenance_value_ranking.json",
-                "artifacts/status/dev_cli_make_target_inventory.json"
+                "artifacts/status/maintainer_maintenance_remaining_report.json",
+                "artifacts/status/maintainer_maintenance_migrated_report.json",
+                "artifacts/status/maintainer_maintenance_diff_report.json",
+                "artifacts/status/maintainer_maintenance_value_ranking.json",
+                "artifacts/status/maintainer_make_target_inventory.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTENANCE-MIGRATION-REPORTS",
         }),
@@ -127,7 +127,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_release_truth_bundle.json"],
+            "outputs": ["artifacts/status/maintainer_release_truth_bundle.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE",
         }),
         json!({
@@ -135,7 +135,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_control_plane_bundle.json"],
+            "outputs": ["artifacts/status/maintainer_control_plane_bundle.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE",
         }),
         json!({
@@ -143,7 +143,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_maintainer_report_io_map.json"],
+            "outputs": ["artifacts/status/maintainer_report_io_map.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP",
         }),
         json!({
@@ -164,8 +164,8 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_invariants_artifact.json",
-                "artifacts/status/dev_cli_invariants_drift_artifact.json"
+                "artifacts/status/maintainer_invariants_artifact.json",
+                "artifacts/status/maintainer_invariants_drift_artifact.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-INVARIANTS-REPORTS",
         }),
@@ -174,7 +174,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_route_registry_ownership_diff.json"],
+            "outputs": ["artifacts/status/maintainer_route_registry_ownership_diff.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-OWNERSHIP-DIFF",
         }),
         json!({
@@ -182,7 +182,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_diagnostics_source_map.json"],
+            "outputs": ["artifacts/status/maintainer_diagnostics_source_map.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP",
         }),
         json!({
@@ -190,7 +190,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
-            "outputs": ["artifacts/status/dev_cli_interface_bridge_report.json"],
+            "outputs": ["artifacts/status/maintainer_interface_bridge_report.json"],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT",
         }),
         json!({
@@ -199,8 +199,8 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_ownership_report.json",
-                "artifacts/status/dev_cli_ownership_report.txt"
+                "artifacts/status/maintainer_ownership_report.json",
+                "artifacts/status/maintainer_ownership_report.txt"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-OWNERSHIP-REPORT",
         }),
@@ -236,10 +236,10 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_owned_behaviors_inventory.json",
+                "artifacts/status/maintainer_owned_behaviors_inventory.json",
                 "artifacts/status/runtime_owned_behaviors_inventory.json",
                 "artifacts/status/misplaced_dev_behaviors_report.json",
-                "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
+                "artifacts/status/maintainer_command_ownership_report.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-BOUNDARY-REPORTS",
         }),
@@ -249,13 +249,13 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_command_coverage_report.json",
-                "artifacts/status/dev_cli_command_matrix_artifact.json",
-                "artifacts/status/dev_cli_command_surface_domain_contract.json",
-                "artifacts/status/dev_cli_command_remaining_inventory.json",
-                "artifacts/status/dev_cli_command_value_ranking.json",
-                "artifacts/status/dev_cli_command_completion_report.json",
-                "artifacts/status/dev_cli_command_closure_set.json",
+                "artifacts/status/maintainer_command_coverage_report.json",
+                "artifacts/status/maintainer_command_matrix_artifact.json",
+                "artifacts/status/maintainer_command_surface_domain_contract.json",
+                "artifacts/status/maintainer_command_remaining_inventory.json",
+                "artifacts/status/maintainer_command_value_ranking.json",
+                "artifacts/status/maintainer_command_completion_report.json",
+                "artifacts/status/maintainer_command_closure_set.json",
                 "artifacts/status/cli_dev_command_closure_report.json",
                 "artifacts/status/cli_dev_command_closure_report.txt"
             ],
@@ -267,7 +267,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_dispatch_ownership_report.json",
+                "artifacts/status/maintainer_dispatch_ownership_report.json",
                 "artifacts/status/bin_entrypoint_responsibility_diff.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-DISPATCH-OWNERSHIP-REPORTS",
@@ -278,10 +278,10 @@ pub(crate) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
-                "artifacts/status/dev_cli_determinism_artifact.json",
-                "artifacts/status/dev_cli_side_effect_audit_artifact.json",
-                "artifacts/status/dev_cli_resilience_drift_artifact.json"
+                "artifacts/status/maintainer_control_plane_resilience_artifact.json",
+                "artifacts/status/maintainer_determinism_artifact.json",
+                "artifacts/status/maintainer_side_effect_audit_artifact.json",
+                "artifacts/status/maintainer_resilience_drift_artifact.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS",
         }),

@@ -4,8 +4,9 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-INVARIANTS-REPORTS" => {
-            let fixture = workspace_root
-                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
+            let fixture = workspace_root.join(
+                "crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+            );
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
             let bin_main = workspace_root.join("crates/bijux-cli/src/bin/bijux.rs");
             let lib_source = workspace_root.join("crates/bijux-dev-cli/src/lib.rs");
@@ -67,8 +68,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     failures.push(format!("help output drift: {}", help_args.join(" ")));
                 }
             }
-            let status_base = run_bijux_json(workspace_root, &["dev", "cli", "status"]);
-            let status_quiet = run_bijux_json(workspace_root, &["dev", "cli", "status", "--quiet"]);
+            let status_base = run_bijux_json(workspace_root, &["status"]);
+            let status_quiet = run_bijux_json(workspace_root, &["status", "--quiet"]);
             let quiet_exit_same = status_base.is_ok() == status_quiet.is_ok();
 
             let core_source = fs::read_to_string(core_app).unwrap_or_default();
@@ -113,13 +114,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_invariants_artifact.json",
+                "artifacts/status/maintainer_invariants_artifact.json",
                 &report,
             )
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_invariants_drift_artifact.json",
+                "artifacts/status/maintainer_invariants_drift_artifact.json",
                 &drift,
             )
             .ok()?;
@@ -128,8 +129,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "contract_id":contract_id,
                 "implementation":"rust",
                 "outputs":[
-                    "artifacts/status/dev_cli_invariants_artifact.json",
-                    "artifacts/status/dev_cli_invariants_drift_artifact.json"
+                    "artifacts/status/maintainer_invariants_artifact.json",
+                    "artifacts/status/maintainer_invariants_drift_artifact.json"
                 ]
             }))
         }
@@ -151,8 +152,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let after = json!({
                 "core_delegates_routes_to_dev_cli": has(&core_app, "dev_routes::build_report_from_query"),
                 "core_delegates_registry_to_dev_cli": has(&core_app, "dev_registry::build_report_from_query"),
-                "dev_cli_owns_routes_presentation": has(&dev_routes, "pub fn build_report_from_query"),
-                "dev_cli_owns_registry_presentation": has(&dev_registry, "pub fn build_report_from_query"),
+                "maintainer_owns_routes_presentation": has(&dev_routes, "pub fn build_report_from_query"),
+                "maintainer_owns_registry_presentation": has(&dev_registry, "pub fn build_report_from_query"),
                 "routing_exposes_read_only_route_inventory": has(&inventory, "pub fn route_inventory"),
                 "routing_exposes_read_only_registry_inventory": has(&inventory, "pub fn registry_inventory"),
             });
@@ -162,8 +163,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     && before["routing_owned_routes_registry_presentation"] == false
                     && after["core_delegates_routes_to_dev_cli"] == true
                     && after["core_delegates_registry_to_dev_cli"] == true
-                    && after["dev_cli_owns_routes_presentation"] == true
-                    && after["dev_cli_owns_registry_presentation"] == true,
+                    && after["maintainer_owns_routes_presentation"] == true
+                    && after["maintainer_owns_registry_presentation"] == true,
             });
             let payload = json!({
                 "generated_at": generated_at_utc(),
@@ -175,12 +176,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_route_registry_ownership_diff.json",
+                "artifacts/status/maintainer_route_registry_ownership_diff.json",
                 &payload,
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_route_registry_ownership_diff.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_route_registry_ownership_diff.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-DIAGNOSTICS-SOURCE-MAP" => {
@@ -220,12 +221,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_diagnostics_source_map.json",
+                "artifacts/status/maintainer_diagnostics_source_map.json",
                 &payload,
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_diagnostics_source_map.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_diagnostics_source_map.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-INTERFACE-BRIDGE-REPORT" => {
@@ -273,12 +274,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_interface_bridge_report.json",
+                "artifacts/status/maintainer_interface_bridge_report.json",
                 &report,
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_interface_bridge_report.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_interface_bridge_report.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-OWNERSHIP-REPORT" => {
@@ -340,14 +341,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_ownership_report.json",
+                "artifacts/status/maintainer_ownership_report.json",
                 &report,
             )
             .ok()?;
             let mut lines = vec![
                 "Dev CLI ownership report".to_string(),
                 "owner: bijux-dev-cli".to_string(),
-                "namespace: dev cli".to_string(),
+                "namespace: bijux-dev-cli".to_string(),
                 String::new(),
             ];
             for row in &command_rows {
@@ -361,12 +362,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 lines.push(format!("- {command} [{group}, {visibility}]"));
             }
             fs::write(
-                workspace_root.join("artifacts/status/dev_cli_ownership_report.txt"),
+                workspace_root.join("artifacts/status/maintainer_ownership_report.txt"),
                 lines.join("\n") + "\n",
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_ownership_report.json","artifacts/status/dev_cli_ownership_report.txt"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_ownership_report.json","artifacts/status/maintainer_ownership_report.txt"]}),
             )
         }
         _ => None,

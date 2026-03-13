@@ -5,15 +5,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-TRUTH-BUNDLE" => {
             let commands = [
-                ("status", ["dev", "cli", "release", "status"]),
-                ("evidence", ["dev", "cli", "release", "evidence"]),
-                ("readiness", ["dev", "cli", "release", "readiness"]),
-                ("diff", ["dev", "cli", "release", "diff"]),
-                ("gaps", ["dev", "cli", "release", "gaps"]),
-                ("behavior_changes", ["dev", "cli", "release", "behavior-changes"]),
-                ("intentional_differences", ["dev", "cli", "release", "intentional-differences"]),
-                ("unresolved_gaps", ["dev", "cli", "release", "unresolved-gaps"]),
-                ("compatibility_leftovers", ["dev", "cli", "release", "compatibility-leftovers"]),
+                ("status", ["release", "status"]),
+                ("evidence", ["release", "evidence"]),
+                ("readiness", ["release", "readiness"]),
+                ("diff", ["release", "diff"]),
+                ("gaps", ["release", "gaps"]),
+                ("behavior_changes", ["release", "behavior-changes"]),
+                ("intentional_differences", ["release", "intentional-differences"]),
+                ("unresolved_gaps", ["release", "unresolved-gaps"]),
+                ("compatibility_leftovers", ["release", "compatibility-leftovers"]),
             ];
             let mut reports = serde_json::Map::new();
             for (name, cmd) in commands {
@@ -26,7 +26,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 gaps.get("missing_evidence").and_then(Value::as_array).map_or(0, Vec::len);
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_release_truth_bundle.json",
+                "artifacts/status/maintainer_release_truth_bundle.json",
                 &json!({
                     "source": "bijux-dev-cli release *",
                     "reports": reports,
@@ -38,7 +38,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_release_truth_bundle.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_release_truth_bundle.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-CONTROL-PLANE-BUNDLE" => {
@@ -64,7 +64,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }));
             }
             let ownership_path =
-                workspace_root.join("artifacts/status/dev_cli_ownership_report.json");
+                workspace_root.join("artifacts/status/maintainer_ownership_report.json");
             let ownership = fs::read_to_string(&ownership_path)
                 .ok()
                 .and_then(|text| serde_json::from_str::<Value>(&text).ok());
@@ -77,12 +77,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_control_plane_bundle.json",
+                "artifacts/status/maintainer_control_plane_bundle.json",
                 &out,
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_control_plane_bundle.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_control_plane_bundle.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTAINER-REPORT-IO-MAP" => {
@@ -132,27 +132,25 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let payload = json!({
                 "generated_at": generated_at_utc(),
                 "generator": "bijux-dev-cli",
-                "scope": "dev-cli maintainer report inputs vs outputs",
+                "scope": "maintainer report inputs vs outputs",
                 "reports": reports,
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_maintainer_report_io_map.json",
+                "artifacts/status/maintainer_report_io_map.json",
                 &payload,
             )
             .ok()?;
             Some(
-                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/dev_cli_maintainer_report_io_map.json"]}),
+                json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":["artifacts/status/maintainer_report_io_map.json"]}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-PARITY-CONSISTENCY-REPORTS" => {
-            let parity_first = run_bijux_json(workspace_root, &["dev", "cli", "parity"]).ok()?;
-            let parity_second = run_bijux_json(workspace_root, &["dev", "cli", "parity"]).ok()?;
-            let status_payload = run_bijux_json(workspace_root, &["dev", "cli", "status"]).ok()?;
-            let parity_text_first =
-                run_bijux_text(workspace_root, &["dev", "cli", "parity"]).ok()?;
-            let parity_text_second =
-                run_bijux_text(workspace_root, &["dev", "cli", "parity"]).ok()?;
+            let parity_first = run_bijux_json(workspace_root, &["parity"]).ok()?;
+            let parity_second = run_bijux_json(workspace_root, &["parity"]).ok()?;
+            let status_payload = run_bijux_json(workspace_root, &["status"]).ok()?;
+            let parity_text_first = run_bijux_text(workspace_root, &["parity"]).ok()?;
+            let parity_text_second = run_bijux_text(workspace_root, &["parity"]).ok()?;
 
             let valid_statuses = BTreeSet::from([
                 "rust-complete",

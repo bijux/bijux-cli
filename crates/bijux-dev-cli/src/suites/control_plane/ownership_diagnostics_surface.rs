@@ -97,8 +97,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-BOUNDARY-REPORTS" => {
-            let dev_fixture = workspace_root
-                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
+            let dev_fixture = workspace_root.join(
+                "crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+            );
             let core_app = workspace_root.join("crates/bijux-cli/src/app.rs");
             let read = |path: &Path| fs::read_to_string(path).unwrap_or_default();
             let core_source = read(&core_app);
@@ -199,7 +200,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     }));
                 }
             }
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_owned_behaviors_inventory.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_owned_behaviors_inventory.json", &json!({
                                 "generated_at": generated_at_utc(),
                                 "generator": "bijux-dev-cli",
                                 "scope": "dev-cli maintainer-owned behavior inventory",
@@ -241,10 +242,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "generator": "bijux-dev-cli",
                                 "scope": "misplaced maintainer behavior still implemented in runtime crates",
                                 "misplaced_behaviors": misplaced,
-                                "summary": {"total_dev_cli_commands": dev_rows.len(), "misplaced_count": misplaced.len()},
+                                "summary": {"total_maintainer_commands": dev_rows.len(), "misplaced_count": misplaced.len()},
                                 "boundary_freeze": {"status":"frozen-before-extraction","rule":"boundary inventory must be generated and reviewed before moving implementation"},
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_maintainer_command_ownership_report.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_ownership_report.json", &json!({
                                 "generated_at": generated_at_utc(),
                                 "generator": "bijux-dev-cli",
                                 "scope": "maintainer inventory command ownership",
@@ -256,17 +257,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "not_yet_owned_by_bijux_dev_cli": dev_rows.iter().filter(|row| row.get("current_owner").and_then(Value::as_str).is_none_or(|s| !s.starts_with("bijux-dev-cli"))).filter_map(|row| row.get("command").cloned()).collect::<Vec<_>>(),
                             })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_owned_behaviors_inventory.json",
+                "artifacts/status/maintainer_owned_behaviors_inventory.json",
                 "artifacts/status/runtime_owned_behaviors_inventory.json",
                 "artifacts/status/misplaced_dev_behaviors_report.json",
-                "artifacts/status/dev_cli_maintainer_command_ownership_report.json"
+                "artifacts/status/maintainer_command_ownership_report.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-COMMAND-SURFACE-REPORTS" => {
-            let fixture = workspace_root
-                .join("crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt");
-            let test_file =
-                workspace_root.join("crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs");
+            let fixture = workspace_root.join(
+                "crates/bijux-dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+            );
+            let test_file = workspace_root
+                .join("crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs");
             let test_dir = workspace_root.join("crates/bijux-cli/tests/bin_surface");
             let source = fs::read_to_string(&test_file).unwrap_or_default();
             let test_sources: BTreeMap<String, String> = collect_files(&test_dir)
@@ -317,7 +319,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "command": command,
                                     "status": status,
                                     "status_model": ["complete","partial","shim","missing"],
-                                    "evidence": evidence_links.first().cloned().unwrap_or_else(|| "crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs".to_string()),
+                                    "evidence": evidence_links.first().cloned().unwrap_or_else(|| "crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs".to_string()),
                                     "evidence_links": evidence_links,
                                     "maintainer_value": dev_values.get(&command).copied().unwrap_or(75),
                                 }));
@@ -332,25 +334,25 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 })
             });
             let req: BTreeMap<i64, &str> = BTreeMap::from([
-                                (243,"parity_for_key_dev_cli_commands_against_current_behavior"),
-                                (250,"help_snapshots_exist_for_all_dev_cli_subcommands"),
-                                (251,"json_and_text_outputs_are_available_for_machine_and_text_heavy_dev_cli_commands"),
-                                (253,"stderr_stdout_and_exit_code_discipline_for_dev_cli_commands"),
-                                (255,"malformed_input_is_rejected_for_dev_cli_subcommands"),
-                                (256,"repeated_run_determinism_for_machine_readable_dev_cli_commands"),
-                                (257,"consistency_across_dev_cli_routes_inspect_and_registry_state"),
-                                (258,"consistency_across_dev_cli_env_and_config_resolution_paths"),
+                                (243,"parity_for_key_maintainer_commands_against_current_behavior"),
+                                (250,"help_snapshots_exist_for_all_maintainer_subcommands"),
+                                (251,"json_and_text_outputs_are_available_for_machine_and_text_heavy_maintainer_commands"),
+                                (253,"stderr_stdout_and_exit_code_discipline_for_maintainer_commands"),
+                                (255,"malformed_input_is_rejected_for_maintainer_subcommands"),
+                                (256,"repeated_run_determinism_for_machine_readable_maintainer_commands"),
+                                (257,"consistency_across_maintainer_routes_inspect_and_registry_state"),
+                                (258,"consistency_across_maintainer_env_and_config_resolution_paths"),
                             ]);
             let coverage_checks = json!({
-                "parity": source.contains("fn parity_for_key_dev_cli_commands_against_current_behavior("),
-                "contract_shape": source.contains("fn json_and_text_outputs_are_available_for_machine_and_text_heavy_dev_cli_commands("),
-                "help_snapshots": source.contains("fn help_snapshots_exist_for_all_dev_cli_subcommands("),
-                "stderr_stdout_exit_code": source.contains("fn stderr_stdout_and_exit_code_discipline_for_dev_cli_commands("),
-                "malformed_input": source.contains("fn malformed_input_is_rejected_for_dev_cli_subcommands("),
-                "determinism": source.contains("fn repeated_run_determinism_for_machine_readable_dev_cli_commands("),
-                "consistency_inspect_routes_registry": source.contains("fn consistency_across_dev_cli_routes_inspect_and_registry_state("),
-                "consistency_config_env_resolution": source.contains("fn consistency_across_dev_cli_env_and_config_resolution_paths("),
-                "consistency_plugin_registry_state": source.contains("fn consistency_across_dev_cli_routes_inspect_and_registry_state("),
+                "parity": source.contains("fn parity_for_key_maintainer_commands_against_current_behavior("),
+                "contract_shape": source.contains("fn json_and_text_outputs_are_available_for_machine_and_text_heavy_maintainer_commands("),
+                "help_snapshots": source.contains("fn help_snapshots_exist_for_all_maintainer_subcommands("),
+                "stderr_stdout_exit_code": source.contains("fn stderr_stdout_and_exit_code_discipline_for_maintainer_commands("),
+                "malformed_input": source.contains("fn malformed_input_is_rejected_for_maintainer_subcommands("),
+                "determinism": source.contains("fn repeated_run_determinism_for_machine_readable_maintainer_commands("),
+                "consistency_inspect_routes_registry": source.contains("fn consistency_across_maintainer_routes_inspect_and_registry_state("),
+                "consistency_config_env_resolution": source.contains("fn consistency_across_maintainer_env_and_config_resolution_paths("),
+                "consistency_plugin_registry_state": source.contains("fn consistency_across_maintainer_routes_inspect_and_registry_state("),
             });
             let all_required = coverage_checks
                 .as_object()
@@ -366,30 +368,30 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter(|r| r.get("status").and_then(Value::as_str) != Some("complete"))
                 .cloned()
                 .collect();
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_coverage_report.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_coverage_report.json", &json!({
                                 "generated_at": generated_at_utc(), "generator":"bijux-dev-cli","scope":"bijux-dev-cli command coverage","commands":rows,"summary":summary
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_matrix_artifact.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_matrix_artifact.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command matrix",
-                                "coverage_rows": req.into_iter().map(|(id,name)| json!({"coverage_id":id,"test":name,"status": if source.contains(&format!("fn {name}(")) {"complete"} else {"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs"})).collect::<Vec<_>>(),
+                                "coverage_rows": req.into_iter().map(|(id,name)| json!({"coverage_id":id,"test":name,"status": if source.contains(&format!("fn {name}(")) {"complete"} else {"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/maintainer_command_matrix.rs"})).collect::<Vec<_>>(),
                                 "commands": rows
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_surface_domain_contract.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_surface_domain_contract.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","domain":"dev-cli-command-surface","status":"frozen",
                                 "rule":"bijux-dev-cli commands are the maintainer control surface and must keep parity, diagnostics, and deterministic output law."
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_remaining_inventory.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_remaining_inventory.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"remaining bijux-dev-cli subcommands not proven complete in rust","remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_value_ranking.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_value_ranking.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli maintainer-value ranking for closure execution","ranked_remaining_commands":remaining,"count":remaining.len()
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_completion_report.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_completion_report.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"bijux-dev-cli command closure execution","remaining_count":remaining.len(),"coverage_checks":coverage_checks,
                                 "closure_status": if remaining.is_empty() && all_required {"green"} else {"open"},
                                 "top_targets": remaining.iter().take(2).cloned().collect::<Vec<_>>()
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_command_closure_set.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_command_closure_set.json", &json!({
                                 "generated_at": generated_at_utc(),"generator":"bijux-dev-cli","scope":"tracked bijux-dev-cli closure set","tracked_commands":rows.iter().filter_map(|r| r.get("command").cloned()).collect::<Vec<_>>(),
                                 "coverage_checks":coverage_checks,"status":"frozen"
                             })).ok()?;
@@ -431,13 +433,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_command_coverage_report.json",
-                "artifacts/status/dev_cli_command_matrix_artifact.json",
-                "artifacts/status/dev_cli_command_surface_domain_contract.json",
-                "artifacts/status/dev_cli_command_remaining_inventory.json",
-                "artifacts/status/dev_cli_command_value_ranking.json",
-                "artifacts/status/dev_cli_command_completion_report.json",
-                "artifacts/status/dev_cli_command_closure_set.json",
+                "artifacts/status/maintainer_command_coverage_report.json",
+                "artifacts/status/maintainer_command_matrix_artifact.json",
+                "artifacts/status/maintainer_command_surface_domain_contract.json",
+                "artifacts/status/maintainer_command_remaining_inventory.json",
+                "artifacts/status/maintainer_command_value_ranking.json",
+                "artifacts/status/maintainer_command_completion_report.json",
+                "artifacts/status/maintainer_command_closure_set.json",
                 "artifacts/status/cli_dev_command_closure_report.json",
                 "artifacts/status/cli_dev_command_closure_report.txt"
             ]}))
@@ -454,9 +456,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let registry_rs =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/routing/registry.rs"))
                     .unwrap_or_default();
-            let dev_cli_dispatch_arm_count =
+            let maintainer_dispatch_arm_count =
                 core_app.matches("a == \"dev\" && b == \"cli\"").count();
-            let core_dev_cli_builder_call_count = [
+            let core_maintainer_builder_call_count = [
                 "dev_routes::build_report(",
                 "dev_registry::build_report(",
                 "dev_env::build_report(",
@@ -475,7 +477,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .iter()
             .map(|token| core_app.matches(token).count())
             .sum::<usize>();
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_dispatch_ownership_report.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_dispatch_ownership_report.json", &json!({
                                 "scope":"bijux-dev-cli dispatch ownership","status":"ok",
                                 "dispatch_chain":[
                                     {"crate":"bijux-cli","role":"entrypoint-only","evidence":"src/bin/bijux.rs delegates to bijux_cli::api::runtime::run_cli_from_env"},
@@ -483,10 +485,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     {"crate":"bijux-dev-cli","role":"maintainer-workflow-implementation-owner","evidence":"src/*.rs report builders provide maintainer payload assembly"}
                                 ],
                                 "checks":{
-                                    "bin_mentions_dev_cli_literals": main_rs.contains("bijux-dev-cli"),
+                                    "bin_mentions_maintainer_literals": main_rs.contains("bijux-dev-cli"),
                                     "bin_has_direct_dispatch_match_arms": main_rs.contains("match normalized_path"),
-                                    "core_dev_cli_dispatch_arm_count": dev_cli_dispatch_arm_count,
-                                    "core_dev_cli_builder_call_count": core_dev_cli_builder_call_count
+                                    "core_maintainer_dispatch_arm_count": maintainer_dispatch_arm_count,
+                                    "core_maintainer_builder_call_count": core_maintainer_builder_call_count
                                 },
                                 "rules":[
                                     "bin must remain entrypoint-only",
@@ -499,7 +501,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 "current":{
                                     "file":"crates/bijux-cli/src/bin/bijux.rs",
                                     "line_count": main_rs.lines().count(),
-                                    "dev_cli_literal_mentions": main_rs.matches("bijux-dev-cli").count(),
+                                    "maintainer_literal_mentions": main_rs.matches("bijux-dev-cli").count(),
                                     "core_entrypoint_calls": main_rs.matches("run_cli_from_env").count(),
                                     "direct_dispatch_match_mentions": main_rs.matches("match normalized_path").count(),
                                     "parser_dependency_mentions": main_rs.matches("bijux_cli::routing::parser").count()
@@ -512,7 +514,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 }
                             })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_dispatch_ownership_report.json",
+                "artifacts/status/maintainer_dispatch_ownership_report.json",
                 "artifacts/status/bin_entrypoint_responsibility_diff.json"
             ]}))
         }

@@ -2,32 +2,24 @@
 use crate::contracts::maintenance::*;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
-    let report_writers: [(&str, &str, [&str; 4]); 5] = [
+    let report_writers: [(&str, &str, &[&str]); 5] = [
         (
             "artifacts/status/repo_health_report.json",
             "bijux-dev-cli repo health",
-            ["dev", "cli", "repo", "health"],
+            &["repo", "health"],
         ),
-        (
-            "artifacts/status/repo_drift_report.json",
-            "bijux-dev-cli repo drift",
-            ["dev", "cli", "repo", "drift"],
-        ),
+        ("artifacts/status/repo_drift_report.json", "bijux-dev-cli repo drift", &["repo", "drift"]),
         (
             "artifacts/status/repo_inventories_report.json",
             "bijux-dev-cli repo inventories",
-            ["dev", "cli", "repo", "inventories"],
+            &["repo", "inventories"],
         ),
         (
             "artifacts/status/repo_generated_report.json",
             "bijux-dev-cli repo generated",
-            ["dev", "cli", "repo", "generated"],
+            &["repo", "generated"],
         ),
-        (
-            "artifacts/status/repo_stale_report.json",
-            "bijux-dev-cli repo stale",
-            ["dev", "cli", "repo", "stale"],
-        ),
+        ("artifacts/status/repo_stale_report.json", "bijux-dev-cli repo stale", &["repo", "stale"]),
     ];
     match contract_id {
         "STATUS-CONTRACT-GENERATE-REPO-HEALTH-REPORTS" => {
@@ -54,41 +46,29 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-EVIDENCE-REPORTS" => {
             let rows = [
+                ("artifacts/status/maintainer_evidence_list_report.json", ["evidence", "list"]),
+                ("artifacts/status/maintainer_evidence_audit_report.json", ["evidence", "audit"]),
+                ("artifacts/status/maintainer_evidence_stale_report.json", ["evidence", "stale"]),
+                ("artifacts/status/maintainer_evidence_matrix_report.json", ["evidence", "matrix"]),
                 (
-                    "artifacts/status/dev_cli_evidence_list_report.json",
-                    ["dev", "cli", "evidence", "list"],
+                    "artifacts/status/maintainer_evidence_website_export_report.json",
+                    ["evidence", "website-export"],
                 ),
                 (
-                    "artifacts/status/dev_cli_evidence_audit_report.json",
-                    ["dev", "cli", "evidence", "audit"],
+                    "artifacts/status/maintainer_evidence_ci_export_report.json",
+                    ["evidence", "ci-export"],
                 ),
                 (
-                    "artifacts/status/dev_cli_evidence_stale_report.json",
-                    ["dev", "cli", "evidence", "stale"],
+                    "artifacts/status/maintainer_evidence_release_export_report.json",
+                    ["evidence", "release-export"],
                 ),
                 (
-                    "artifacts/status/dev_cli_evidence_matrix_report.json",
-                    ["dev", "cli", "evidence", "matrix"],
+                    "artifacts/status/maintainer_evidence_command_map_report.json",
+                    ["evidence", "command-map"],
                 ),
                 (
-                    "artifacts/status/dev_cli_evidence_website_export_report.json",
-                    ["dev", "cli", "evidence", "website-export"],
-                ),
-                (
-                    "artifacts/status/dev_cli_evidence_ci_export_report.json",
-                    ["dev", "cli", "evidence", "ci-export"],
-                ),
-                (
-                    "artifacts/status/dev_cli_evidence_release_export_report.json",
-                    ["dev", "cli", "evidence", "release-export"],
-                ),
-                (
-                    "artifacts/status/dev_cli_evidence_command_map_report.json",
-                    ["dev", "cli", "evidence", "command-map"],
-                ),
-                (
-                    "artifacts/status/dev_cli_evidence_parity_map_report.json",
-                    ["dev", "cli", "evidence", "parity-map"],
+                    "artifacts/status/maintainer_evidence_parity_map_report.json",
+                    ["evidence", "parity-map"],
                 ),
             ];
             let mut outputs = Vec::<String>::new();
@@ -114,53 +94,38 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RELEASE-REPORTS" => {
             let rows = [
+                ("artifacts/status/maintainer_release_status_report.json", ["release", "status"]),
                 (
-                    "artifacts/status/dev_cli_release_status_report.json",
-                    ["dev", "cli", "release", "status"],
+                    "artifacts/status/maintainer_release_evidence_report.json",
+                    ["release", "evidence"],
                 ),
                 (
-                    "artifacts/status/dev_cli_release_evidence_report.json",
-                    ["dev", "cli", "release", "evidence"],
+                    "artifacts/status/maintainer_release_readiness_report.json",
+                    ["release", "readiness"],
+                ),
+                ("artifacts/status/maintainer_release_diff_report.json", ["release", "diff"]),
+                ("artifacts/status/maintainer_release_gaps_report.json", ["release", "gaps"]),
+                ("artifacts/status/maintainer_release_summary_report.json", ["release", "summary"]),
+                (
+                    "artifacts/status/maintainer_release_manifest_report.json",
+                    ["release", "manifest"],
+                ),
+                ("artifacts/status/maintainer_release_notes_report.json", ["release", "notes"]),
+                (
+                    "artifacts/status/maintainer_release_behavior_changes_report.json",
+                    ["release", "behavior-changes"],
                 ),
                 (
-                    "artifacts/status/dev_cli_release_readiness_report.json",
-                    ["dev", "cli", "release", "readiness"],
+                    "artifacts/status/maintainer_release_intentional_differences_report.json",
+                    ["release", "intentional-differences"],
                 ),
                 (
-                    "artifacts/status/dev_cli_release_diff_report.json",
-                    ["dev", "cli", "release", "diff"],
+                    "artifacts/status/maintainer_release_unresolved_gaps_report.json",
+                    ["release", "unresolved-gaps"],
                 ),
                 (
-                    "artifacts/status/dev_cli_release_gaps_report.json",
-                    ["dev", "cli", "release", "gaps"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_summary_report.json",
-                    ["dev", "cli", "release", "summary"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_manifest_report.json",
-                    ["dev", "cli", "release", "manifest"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_notes_report.json",
-                    ["dev", "cli", "release", "notes"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_behavior_changes_report.json",
-                    ["dev", "cli", "release", "behavior-changes"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_intentional_differences_report.json",
-                    ["dev", "cli", "release", "intentional-differences"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_unresolved_gaps_report.json",
-                    ["dev", "cli", "release", "unresolved-gaps"],
-                ),
-                (
-                    "artifacts/status/dev_cli_release_compatibility_leftovers_report.json",
-                    ["dev", "cli", "release", "compatibility-leftovers"],
+                    "artifacts/status/maintainer_release_compatibility_leftovers_report.json",
+                    ["release", "compatibility-leftovers"],
                 ),
             ];
             let mut outputs = Vec::<String>::new();
@@ -186,12 +151,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-COCKPIT-REPORTS" => {
             let rows = [
-                ("dev_cli_status_report.json", ["dev", "cli", "status"]),
-                ("dev_cli_dashboard_report.json", ["dev", "cli", "dashboard"]),
-                ("dev_cli_quickcheck_report.json", ["dev", "cli", "quickcheck"]),
-                ("dev_cli_truth_report.json", ["dev", "cli", "truth"]),
-                ("dev_cli_blockers_report.json", ["dev", "cli", "blockers"]),
-                ("dev_cli_next_report.json", ["dev", "cli", "next"]),
+                ("maintainer_status_report.json", ["status"]),
+                ("maintainer_dashboard_report.json", ["dashboard"]),
+                ("maintainer_quickcheck_report.json", ["quickcheck"]),
+                ("maintainer_truth_report.json", ["truth"]),
+                ("maintainer_blockers_report.json", ["blockers"]),
+                ("maintainer_next_report.json", ["next"]),
             ];
             let mut payloads = BTreeMap::<String, Value>::new();
             let mut text_heads = BTreeMap::<String, String>::new();
@@ -228,7 +193,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             if let Err(err) = write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_cockpit_text_heads.json",
+                "artifacts/status/maintainer_cockpit_text_heads.json",
                 &json!(text_heads),
             ) {
                 return Some(
@@ -236,13 +201,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 );
             }
             let status_summary = payloads
-                .get("dev_cli_status_report.json")
+                .get("maintainer_status_report.json")
                 .and_then(|v| v.get("status_report"))
                 .and_then(|v| v.get("summary"))
                 .cloned()
                 .unwrap_or_else(|| json!({}));
             let truth_payload = payloads
-                .get("dev_cli_truth_report.json")
+                .get("maintainer_truth_report.json")
                 .and_then(|v| v.get("truth"))
                 .cloned()
                 .unwrap_or_else(|| json!({}));
@@ -271,12 +236,12 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .and_then(Value::as_i64)
                 .unwrap_or(0);
             let blockers = payloads
-                .get("dev_cli_blockers_report.json")
+                .get("maintainer_blockers_report.json")
                 .and_then(Value::as_array)
                 .cloned()
                 .unwrap_or_default();
             let unresolved: BTreeSet<String> = payloads
-                .get("dev_cli_status_report.json")
+                .get("maintainer_status_report.json")
                 .and_then(|v| v.get("status_report"))
                 .and_then(|v| v.get("commands"))
                 .and_then(Value::as_array)
@@ -300,7 +265,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let blocker_subset_ok =
                 blocker_commands.iter().all(|command| unresolved.contains(command));
             let next_policy = payloads
-                .get("dev_cli_next_report.json")
+                .get("maintainer_next_report.json")
                 .and_then(|v| v.get("next"))
                 .and_then(|v| v.get("minimalism"))
                 .and_then(|v| v.get("evidence_first_policy"))
@@ -317,7 +282,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .and_then(Value::as_array)
                     .is_some_and(|items| !items.is_empty());
             let dashboard_status_match = payloads
-                .get("dev_cli_dashboard_report.json")
+                .get("maintainer_dashboard_report.json")
                 .and_then(|v| v.get("dashboard"))
                 .and_then(|v| v.get("status"))
                 .and_then(|v| v.get("summary"))
@@ -358,7 +323,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             if let Err(err) = write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_summary_surface_artifact.json",
+                "artifacts/status/maintainer_summary_surface_artifact.json",
                 &summary_artifact,
             ) {
                 return Some(
@@ -367,43 +332,41 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             }
             if let Err(err) = write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_summary_surface_drift_artifact.json",
+                "artifacts/status/maintainer_summary_surface_drift_artifact.json",
                 &drift_artifact,
             ) {
                 return Some(
                     json!({"status":"failed","contract_id":contract_id,"implementation":"rust","error":err}),
                 );
             }
-            outputs.push("artifacts/status/dev_cli_cockpit_text_heads.json".to_string());
-            outputs.push("artifacts/status/dev_cli_summary_surface_artifact.json".to_string());
-            outputs
-                .push("artifacts/status/dev_cli_summary_surface_drift_artifact.json".to_string());
+            outputs.push("artifacts/status/maintainer_cockpit_text_heads.json".to_string());
+            outputs.push("artifacts/status/maintainer_summary_surface_artifact.json".to_string());
+            outputs.push(
+                "artifacts/status/maintainer_summary_surface_drift_artifact.json".to_string(),
+            );
             Some(
                 json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":outputs}),
             )
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-MAINTENANCE-MIGRATION-REPORTS" => {
-            let remaining =
-                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "remaining"]).ok()?;
-            let migrated =
-                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "migrated"]).ok()?;
-            let diff =
-                run_bijux_json(workspace_root, &["dev", "cli", "maintenance", "diff"]).ok()?;
+            let remaining = run_bijux_json(workspace_root, &["maintenance", "remaining"]).ok()?;
+            let migrated = run_bijux_json(workspace_root, &["maintenance", "migrated"]).ok()?;
+            let diff = run_bijux_json(workspace_root, &["maintenance", "diff"]).ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_maintenance_remaining_report.json",
+                "artifacts/status/maintainer_maintenance_remaining_report.json",
                 &remaining,
             )
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_maintenance_migrated_report.json",
+                "artifacts/status/maintainer_maintenance_migrated_report.json",
                 &migrated,
             )
             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_maintenance_diff_report.json",
+                "artifacts/status/maintainer_maintenance_diff_report.json",
                 &diff,
             )
             .ok()?;
@@ -428,7 +391,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             });
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_maintenance_value_ranking.json",
+                "artifacts/status/maintainer_maintenance_value_ranking.json",
                 &json!({"ranking": ranking}),
             )
             .ok()?;
@@ -439,7 +402,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .unwrap_or_default();
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/dev_cli_make_target_inventory.json",
+                "artifacts/status/maintainer_make_target_inventory.json",
                 &json!({
                     "make_targets": make_targets,
                     "count": make_targets.len(),
@@ -447,20 +410,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_maintenance_remaining_report.json",
-                "artifacts/status/dev_cli_maintenance_migrated_report.json",
-                "artifacts/status/dev_cli_maintenance_diff_report.json",
-                "artifacts/status/dev_cli_maintenance_value_ranking.json",
-                "artifacts/status/dev_cli_make_target_inventory.json"
+                "artifacts/status/maintainer_maintenance_remaining_report.json",
+                "artifacts/status/maintainer_maintenance_migrated_report.json",
+                "artifacts/status/maintainer_maintenance_diff_report.json",
+                "artifacts/status/maintainer_maintenance_value_ranking.json",
+                "artifacts/status/maintainer_make_target_inventory.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-REPO-DOCS-MAINTENANCE-CRATE-HEALTH-REPORTS" => {
-            let repo = run_bijux_json(workspace_root, &["dev", "cli", "repo", "health"]).ok()?;
-            let docs = run_bijux_json(workspace_root, &["dev", "cli", "docs-audit"]).ok()?;
-            let maintenance =
-                run_bijux_json(workspace_root, &["dev", "cli", "maintenance-audit"]).ok()?;
-            let crate_health =
-                run_bijux_json(workspace_root, &["dev", "cli", "crate-health"]).ok()?;
+            let repo = run_bijux_json(workspace_root, &["repo", "health"]).ok()?;
+            let docs = run_bijux_json(workspace_root, &["docs-audit"]).ok()?;
+            let maintenance = run_bijux_json(workspace_root, &["maintenance-audit"]).ok()?;
+            let crate_health = run_bijux_json(workspace_root, &["crate-health"]).ok()?;
             let checks = json!({
                 "repo_health_payload_present": repo.get("repo_health").is_some_and(Value::is_object),
                 "docs_payload_present": docs.get("docs").is_some_and(Value::is_array),
@@ -512,10 +473,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-ROUTE-REGISTRY-ENV-CONTRACTS-REPORTS" => {
-            let routes = run_bijux_json(workspace_root, &["dev", "cli", "routes"]).ok()?;
-            let registry = run_bijux_json(workspace_root, &["dev", "cli", "registry"]).ok()?;
-            let env = run_bijux_json(workspace_root, &["dev", "cli", "env"]).ok()?;
-            let contracts = run_bijux_json(workspace_root, &["dev", "cli", "contracts"]).ok()?;
+            let routes = run_bijux_json(workspace_root, &["routes"]).ok()?;
+            let registry = run_bijux_json(workspace_root, &["registry"]).ok()?;
+            let env = run_bijux_json(workspace_root, &["env"]).ok()?;
+            let contracts = run_bijux_json(workspace_root, &["contracts"]).ok()?;
             let inspect = run_bijux_json(workspace_root, &["inspect"]).ok()?;
             let route_roots: BTreeSet<String> = routes
                 .get("routes")
@@ -593,11 +554,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RUSTDOC-REPORTS" => {
-            let audit = run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
-            let coverage =
-                run_bijux_json(workspace_root, &["dev", "cli", "rustdoc", "coverage"]).ok()?;
-            let audit_text =
-                run_bijux_text(workspace_root, &["dev", "cli", "rustdoc", "audit"]).ok()?;
+            let audit = run_bijux_json(workspace_root, &["rustdoc", "audit"]).ok()?;
+            let coverage = run_bijux_json(workspace_root, &["rustdoc", "coverage"]).ok()?;
+            let audit_text = run_bijux_text(workspace_root, &["rustdoc", "audit"]).ok()?;
             write_status_artifact_json(
                 workspace_root,
                 "artifacts/status/rustdoc_audit_report.json",

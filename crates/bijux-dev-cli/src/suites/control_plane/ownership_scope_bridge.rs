@@ -6,10 +6,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-DEV-CLI-RESILIENCE-REPORTS" => {
             let run_cmd =
                 |args: &[&str], envs: &[(&str, String)]| -> Result<std::process::Output, String> {
-                    let normalized_args: Vec<&str> = match args {
-                        ["dev", "cli", rest @ ..] => rest.to_vec(),
-                        _ => args.to_vec(),
-                    };
+                    let normalized_args: Vec<&str> = args.to_vec();
                     let mut cmd = Command::new("cargo");
                     cmd.args(["run", "-q", "-p", "bijux-dev-cli", "--bin", "bijux-dev-cli", "--"])
                         .args(&normalized_args)
@@ -22,23 +19,23 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     })
                 };
             let summary_commands: Vec<Vec<&str>> = vec![
-                vec!["dev", "cli", "status"],
-                vec!["dev", "cli", "dashboard"],
-                vec!["dev", "cli", "truth"],
-                vec!["dev", "cli", "blockers"],
-                vec!["dev", "cli", "next"],
+                vec!["status"],
+                vec!["dashboard"],
+                vec!["truth"],
+                vec!["blockers"],
+                vec!["next"],
             ];
             let machine_commands: Vec<Vec<&str>> = vec![
-                vec!["dev", "cli", "parity"],
-                vec!["dev", "cli", "evidence", "audit"],
-                vec!["dev", "cli", "routes"],
-                vec!["dev", "cli", "registry"],
-                vec!["dev", "cli", "env"],
-                vec!["dev", "cli", "contracts"],
-                vec!["dev", "cli", "state-audit"],
-                vec!["dev", "cli", "state-doctor"],
-                vec!["dev", "cli", "runtime-identity"],
-                vec!["dev", "cli", "package-health"],
+                vec!["parity"],
+                vec!["evidence", "audit"],
+                vec!["routes"],
+                vec!["registry"],
+                vec!["env"],
+                vec!["contracts"],
+                vec!["state-audit"],
+                vec!["state-doctor"],
+                vec!["runtime-identity"],
+                vec!["package-health"],
             ];
             let mut determinism_rows = Vec::<Value>::new();
             for command in summary_commands.iter().chain(machine_commands.iter()) {
@@ -100,22 +97,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let failure_cases: Vec<(&str, Vec<&str>, Vec<(&str, String)>)> = vec![
                 (
                     "status_unreadable_input",
-                    vec!["dev", "cli", "status"],
+                    vec!["status"],
                     vec![("BIJUX_HISTORY_PATH", "/root/forbidden/history.json".to_string())],
                 ),
                 (
                     "parity_corrupted_input",
-                    vec!["dev", "cli", "parity"],
+                    vec!["parity"],
                     vec![("BIJUX_MEMORY_PATH", "/dev/null/not-json".to_string())],
                 ),
                 (
                     "contracts_missing_snapshot_context",
-                    vec!["dev", "cli", "contracts"],
+                    vec!["contracts"],
                     vec![("PWD", "/definitely/missing/contracts/root".to_string())],
                 ),
                 (
                     "runtime_identity_path_ambiguity",
-                    vec!["dev", "cli", "runtime-identity"],
+                    vec!["runtime-identity"],
                     vec![(
                         "PATH",
                         format!(
@@ -126,7 +123,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ),
                 (
                     "package_health_metadata_mismatch",
-                    vec!["dev", "cli", "package-health"],
+                    vec!["package-health"],
                     vec![
                         ("BIJUX_WHEEL_VERSION", "0.0.1".to_string()),
                         ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
@@ -180,27 +177,27 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         .collect()
                 })
                 .unwrap_or_default();
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_control_plane_resilience_artifact.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_control_plane_resilience_artifact.json", &json!({
                                 "scope":"bijux-dev-cli control-plane resilience","generator":"bijux-dev-cli","failure_injection_cases":failure_rows,"checks":checks,"side_effect_run_errors":side_effect_run_errors,
                                 "status": if drift_checks.is_empty() {"complete"} else {"partial"}
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_determinism_artifact.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_determinism_artifact.json", &json!({
                                 "scope":"bijux-dev-cli determinism","generator":"bijux-dev-cli","rows":determinism_rows,
                                 "status": if determinism_rows.iter().all(|r| r.get("stable").and_then(Value::as_bool)==Some(true)) {"clean"} else {"drift"}
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_side_effect_audit_artifact.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_side_effect_audit_artifact.json", &json!({
                                 "scope":"bijux-dev-cli side-effect audit","generator":"bijux-dev-cli","before":before,"after":after,
                                 "status": if before == after {"clean"} else {"drift"}
                             })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/dev_cli_resilience_drift_artifact.json", &json!({
+            write_status_artifact_json(workspace_root, "artifacts/status/maintainer_resilience_drift_artifact.json", &json!({
                                 "scope":"bijux-dev-cli resilience drift","generator":"bijux-dev-cli","drift_checks":drift_checks,"drift_count":drift_checks.len(),
                                 "status": if drift_checks.is_empty() {"clean"} else {"drift"}
                             })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/dev_cli_control_plane_resilience_artifact.json",
-                "artifacts/status/dev_cli_determinism_artifact.json",
-                "artifacts/status/dev_cli_side_effect_audit_artifact.json",
-                "artifacts/status/dev_cli_resilience_drift_artifact.json"
+                "artifacts/status/maintainer_control_plane_resilience_artifact.json",
+                "artifacts/status/maintainer_determinism_artifact.json",
+                "artifacts/status/maintainer_side_effect_audit_artifact.json",
+                "artifacts/status/maintainer_resilience_drift_artifact.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DEV-CLI-SCOPE-REASSESSMENT" => {
@@ -212,8 +209,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             };
             let runtime_leakage = read_json("artifacts/status/runtime_dev_leakage_report.json");
             let interface_bridge =
-                read_json("artifacts/status/dev_cli_interface_bridge_report.json");
-            let dispatch = read_json("artifacts/status/dev_cli_dispatch_ownership_report.json");
+                read_json("artifacts/status/maintainer_interface_bridge_report.json");
+            let dispatch = read_json("artifacts/status/maintainer_dispatch_ownership_report.json");
             let mut violations = Vec::<String>::new();
             if runtime_leakage.get("status").and_then(Value::as_str) != Some("ok") {
                 violations.push("runtime leakage report is not green".to_string());

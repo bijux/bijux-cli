@@ -190,7 +190,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/maintainer_maintenance_outside_dev_cli.json",
+                "artifacts/status/maintainer_maintenance_outside_control_plane.json",
                 "artifacts/status/maintainer_control_plane_commands.json",
                 "artifacts/status/maintainer_control_plane_text_report.txt",
                 "artifacts/status/maintainer_control_plane_report.json"

@@ -22,7 +22,7 @@ use crate::schema::command_registry::command_registry;
 const MAX_PATH_FIELD_SEGMENTS: usize = 32;
 const MAX_PATH_SEGMENT_CHARS: usize = 128;
 
-/// In-memory process output and exit result produced by the dev-cli runner.
+/// In-memory process output and exit result produced by the maintainer runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppRunResult {
     /// Process exit code.

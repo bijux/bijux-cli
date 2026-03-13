@@ -20,15 +20,15 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
     ("cli_command_completion_report", "artifacts/status/cli_command_completion_report.json"),
     ("cli_command_closure_set", "artifacts/status/cli_command_closure_set.json"),
     (
-        "dev_cli_command_remaining_inventory",
-        "artifacts/status/dev_cli_command_remaining_inventory.json",
+        "maintainer_command_remaining_inventory",
+        "artifacts/status/maintainer_command_remaining_inventory.json",
     ),
-    ("dev_cli_command_value_ranking", "artifacts/status/dev_cli_command_value_ranking.json"),
+    ("maintainer_command_value_ranking", "artifacts/status/maintainer_command_value_ranking.json"),
     (
-        "dev_cli_command_completion_report",
-        "artifacts/status/dev_cli_command_completion_report.json",
+        "maintainer_command_completion_report",
+        "artifacts/status/maintainer_command_completion_report.json",
     ),
-    ("dev_cli_command_closure_set", "artifacts/status/dev_cli_command_closure_set.json"),
+    ("maintainer_command_closure_set", "artifacts/status/maintainer_command_closure_set.json"),
     ("cli_dev_command_closure_report", "artifacts/status/cli_dev_command_closure_report.json"),
     ("plugin_commands", "artifacts/status/status_plugin_commands.json"),
     ("repl_parity_coverage", "artifacts/status/status_repl_parity_coverage.json"),
@@ -62,8 +62,8 @@ const REPORT_JSON_ITEMS: &[(&str, &str)] = &[
     ("intentional_differences", "artifacts/status/status_intentional_differences.json"),
     ("unowned_maintenance", "artifacts/status/status_unowned_maintenance.json"),
     (
-        "maintainer_maintenance_outside_dev_cli",
-        "artifacts/status/maintainer_maintenance_outside_dev_cli.json",
+        "maintainer_maintenance_outside_control_plane",
+        "artifacts/status/maintainer_maintenance_outside_control_plane.json",
     ),
     (
         "maintainer_control_plane_commands",

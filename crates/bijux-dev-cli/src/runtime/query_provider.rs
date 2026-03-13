@@ -34,7 +34,7 @@ use crate::reports::{
     state_audit as dev_state_audit,
 };
 
-/// Runtime context used to satisfy dev-cli runtime query interfaces.
+/// Runtime context used to satisfy maintainer runtime query interfaces.
 #[derive(Debug, Clone)]
 pub struct RuntimeQueryContext {
     registry: RouteRegistry,
@@ -64,7 +64,7 @@ impl RuntimeQueryContext {
     }
 }
 
-/// Runtime query adapter that maps `bijux-cli` query APIs into dev-cli contracts.
+/// Runtime query adapter that maps `bijux-cli` query APIs into maintainer control-plane contracts.
 pub struct RuntimeQueryAdapter<'a> {
     registry: &'a RouteRegistry,
     paths: &'a ResolvedStatePaths,
@@ -139,7 +139,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
                     package: tool.runtime_binary(),
                 },
                 control: ProductSurfaceRow {
-                    command_surface: format!("bijux dev {}", tool.namespace),
+                    command_surface: tool.control_binary(),
                     binary: tool.control_binary(),
                     package: tool.control_binary(),
                 },

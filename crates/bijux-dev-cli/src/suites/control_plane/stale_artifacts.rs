@@ -104,7 +104,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (
                     "optional_next_report_stale_warning",
                     "bijux-dev-cli next",
-                    "artifacts/status/dev_cli_next_report.json",
+                    "artifacts/status/maintainer_next_report.json",
                     "warning",
                     "Stale optional report is tolerated with warning.",
                 ),

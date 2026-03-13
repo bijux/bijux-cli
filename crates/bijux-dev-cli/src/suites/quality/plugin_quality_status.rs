@@ -82,7 +82,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .collect::<BTreeSet<_>>()
                 .into_iter()
                 .collect::<Vec<_>>();
-            let dev_cli_commands = command_rows
+            let maintainer_commands = command_rows
                 .iter()
                 .filter_map(|r| r.get("command").and_then(Value::as_str))
                 .filter(|c| c.starts_with("bijux-dev-cli "))
@@ -163,7 +163,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_root_commands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":root_commands})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_cli_subcommands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":cli_commands})).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/status_maintainer_subcommands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":dev_cli_commands})).ok()?;
+            write_status_artifact_json(workspace_root, "artifacts/status/status_maintainer_subcommands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":maintainer_commands})).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/status_plugin_commands.json", &json!({"generated_at":generated_at,"generator":"bijux-dev-cli","commands":plugin_commands})).ok()?;
             let repl = command_rows
                 .iter()
