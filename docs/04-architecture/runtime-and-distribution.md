@@ -52,7 +52,8 @@ It does not define a separate command language from the Rust runtime.
 The repository keeps two explicit compatibility checks:
 
 - current `bijux-cli` versus current `bijux-cli-python`
-- current `bijux-cli-python` versus the latest stable PyPI release line
+- current `bijux-cli-python` versus the repository's configured stable PyPI
+  baseline, currently `bijux-cli==0.2.0`
 
 That is narrower and more honest than keeping a large archive of checked-in behavior snapshots and pretending they are the architecture.
 

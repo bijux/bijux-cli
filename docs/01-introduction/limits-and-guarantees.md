@@ -47,7 +47,8 @@ Bijux is a weak fit when you need:
 
 - the repository treats the Rust runtime as the behavioral source of truth
 - the Python package is checked against the current runtime and the latest
-  stable PyPI baseline
+  stable PyPI compatibility baseline configured in this repository, currently
+  `bijux-cli==0.2.0`
 - generated artifacts under `artifacts/` are disposable and not part of the
   repo contract
 

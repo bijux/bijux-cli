@@ -13,7 +13,7 @@ sequenceDiagram
     C-->>U: runtime identity
     U->>C: bijux --help
     C-->>U: command surface
-    U->>C: bijux status --format json
+    U->>C: bijux status --format json --no-pretty
     C-->>U: machine-readable output
 ```
 
@@ -21,7 +21,7 @@ sequenceDiagram
 flowchart TD
     A[Install bijux-cli] --> B[Run bijux --version]
     B --> C[Run bijux --help]
-    C --> D[Run bijux status --format json]
+    C --> D[Run bijux status --format json --no-pretty]
     D --> E[You have verified identity, routing, and structured output]
 ```
 

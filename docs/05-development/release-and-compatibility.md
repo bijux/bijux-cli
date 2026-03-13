@@ -50,8 +50,8 @@ The Rust runtime owns current behavior. Compatibility review still matters in
 two directions:
 
 - current `bijux-cli` vs current `bijux-cli-python`
-- current `bijux-cli-python` vs the latest stable PyPI release line that is
-  still treated as the compatibility baseline
+- current `bijux-cli-python` vs the repository's configured stable PyPI
+  compatibility baseline, currently `bijux-cli==0.2.0`
 
 ## Runtime Migration Baseline
 
