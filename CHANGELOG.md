@@ -10,7 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## [Unreleased]
 
 ### Changed
-- Aligned Rust and Python distribution versions to `0.3.0` and regenerated lock metadata accordingly.
+- Switched runtime identity to tag-derived version metadata and regenerated
+  related package metadata accordingly.
 - Normalized `--version` behavior so Rust binary and Python facade return the same payload as `version`.
 - Reworked runtime boundaries: maintainer/control-plane routes are delegated through `bijux-dev-cli` with expanded contract tests.
 - Reduced the runtime-owned root surface to foundation commands; `dev`/official product namespaces are delegated to external owner binaries.
