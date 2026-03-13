@@ -8,7 +8,7 @@ The `bijux` command is the product surface. Migration work must preserve documen
 
 ## Current baseline inputs
 - Constitution and compatibility contracts under `docs/constitution/`.
-- Python behavior inventory under `docs/reference/current-python/`.
+- Python-facing compatibility baseline under `docs/06-reference/integrations-and-routed-runtimes.md`.
 - Current Rust vs current Python parity tests.
 - Stable-release compatibility checks against the published PyPI baseline.
 

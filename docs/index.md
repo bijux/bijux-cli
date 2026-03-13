@@ -18,8 +18,8 @@ High-value documents only. Everything else is supporting detail.
 - [Introduction](01-introduction/index.md)
 - [Getting started](02-getting-started/index.md)
 - [Install and verify](02-getting-started/install-and-verify.md)
-- [Commands reference](reference/commands.md)
-- [Exit codes](reference/exit-codes.md)
+- [Reference index](06-reference/index.md)
+- [Command surface](06-reference/command-surface.md)
 
 ## Guides
 - [User guide](03-user-guide/index.md)
@@ -28,7 +28,7 @@ High-value documents only. Everything else is supporting detail.
 - [Plugins and extensions](03-user-guide/plugins-and-extensions.md)
 - [Installation guide](guides/installation.md)
 - [Development guide](05-development/index.md)
-- [REPL reference](reference/repl.md)
+- [Integrations and routed runtimes](06-reference/integrations-and-routed-runtimes.md)
 
 ## Live Checks
 - `cargo test --workspace`

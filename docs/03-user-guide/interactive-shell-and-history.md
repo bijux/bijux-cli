@@ -56,6 +56,6 @@ output formats.
 
 ## Where To Go Deeper
 
-- [REPL reference](../reference/repl.md)
-- [Commands reference](../reference/commands.md)
+- [Command surface](../06-reference/command-surface.md)
+- [Integrations and routed runtimes](../06-reference/integrations-and-routed-runtimes.md)
 - [Routing and surfaces architecture](../04-architecture/routing-and-surfaces.md)

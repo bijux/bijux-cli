@@ -86,6 +86,6 @@ leaving ambiguous installs behind.
 ## Related Pages
 
 - [Architecture quality and change management](../04-architecture/quality-and-change-management.md)
-- [Exit codes](../reference/exit-codes.md)
-- [Environment and precedence inputs](../reference/environment.md)
+- [Command surface](../06-reference/command-surface.md)
+- [State and environment](../06-reference/state-and-environment.md)
 - [Plugin state](../plugin_state.md)

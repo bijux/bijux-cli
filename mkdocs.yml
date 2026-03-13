@@ -85,8 +85,8 @@ plugins:
         guides/upgrade-pypi-users.md: guides/installation.md
         guides/config-unified.md: 03-user-guide/configuration-and-output.md
         guides/plugin-unified.md: 03-user-guide/plugins-and-extensions.md
-        guides/repl-unified.md: reference/repl.md
-        reference/repl-command-reference.md: reference/repl.md
+        guides/repl-unified.md: 06-reference/command-surface.md
+        reference/repl-command-reference.md: 06-reference/command-surface.md
         guides/python/internal-differences.md: guides/python/runtime-migration.md
         guides/python/library-wrapper.md: guides/api-usage.md
         guides/python/packaging-maintainers.md: guides/installation.md
@@ -105,11 +105,29 @@ plugins:
         guides/release-checklist.md: 05-development/release-and-compatibility.md
         guides/upgrade-rollback-plan.md: 05-development/release-and-compatibility.md
         guides/compatibility-unified.md: 05-development/release-and-compatibility.md
-        reference/current-python/top-level-commands.md: reference/current-python/index.md
-        reference/current-python/dev-commands.md: reference/current-python/index.md
-        reference/current-python/repl-commands-and-shortcuts.md: reference/current-python/index.md
-        reference/current-python/shell-completion-behavior.md: reference/current-python/index.md
-        reference/current-python/exit-codes-used-in-tests.md: reference/current-python/index.md
+        reference/index.md: 06-reference/index.md
+        reference/commands.md: 06-reference/command-surface.md
+        reference/repl.md: 06-reference/command-surface.md
+        reference/repl-command-reference.md: 06-reference/command-surface.md
+        reference/exit-codes.md: 06-reference/command-surface.md
+        reference/environment.md: 06-reference/state-and-environment.md
+        reference/config-schema.md: 06-reference/state-and-environment.md
+        reference/product-binaries.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/python-bindings.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/pre-1.0.md: 06-reference/compatibility-and-terms.md
+        reference/glossary.md: 06-reference/compatibility-and-terms.md
+        reference/current-python/index.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/top-level-commands.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/dev-commands.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/repl-commands-and-shortcuts.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/shell-completion-behavior.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/exit-codes-used-in-tests.md: 06-reference/command-surface.md
+        reference/current-python/builtin-command-output-shapes.md: 06-reference/command-surface.md
+        reference/current-python/config-paths-and-environment-variables.md: 06-reference/state-and-environment.md
+        reference/current-python/error-message-and-exception-classes.md: 06-reference/command-surface.md
+        reference/current-python/global-flags-and-precedence.md: 06-reference/state-and-environment.md
+        reference/current-python/golden-and-behavior-captures.md: 06-reference/integrations-and-routed-runtimes.md
+        reference/current-python/plugin-command-and-lifecycle-behavior.md: 06-reference/integrations-and-routed-runtimes.md
         concepts/architecture.md: concepts/index.md
         concepts/execution-model.md: concepts/index.md
         concepts/exit-policy.md: concepts/index.md

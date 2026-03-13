@@ -52,4 +52,4 @@ These pages are intentionally practical:
 
 If you are still validating the runtime, go back to
 [Getting Started](../02-getting-started/index.md). If you need the exhaustive
-command inventory, use the [Commands reference](../reference/commands.md).
+command inventory, use the [Command surface](../06-reference/command-surface.md).

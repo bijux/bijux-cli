@@ -46,5 +46,5 @@ else:
 
 ## References
 
-- [Python bindings reference](../reference/python-bindings.md)
+- [Integrations and routed runtimes](../06-reference/integrations-and-routed-runtimes.md)
 - [Python runtime migration](python/runtime-migration.md)
