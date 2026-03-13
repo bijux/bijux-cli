@@ -1,6 +1,6 @@
 {
   "project_name": "testplug",
-  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-').replace('.', '-').replace(':', '-').replace('/', '-') }}",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-').replace('.', '-').replace(':', '-').replace('/', '-').replace('--', '-').replace('--', '-').replace('--', '-').strip('-') }}",
   "plugin_namespace": "{{ cookiecutter.project_slug }}",
   "plugin_version": "0.3.0",
   "cli_min": "0.3.0",

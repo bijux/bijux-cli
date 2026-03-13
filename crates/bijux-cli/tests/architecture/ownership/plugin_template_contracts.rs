@@ -181,12 +181,37 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
             payload["_template_version"], "0.3.0",
             "{path} must track the current template contract release"
         );
+
+        let project_slug = payload["project_slug"].as_str().expect("project slug template");
+        assert!(
+            project_slug.contains("replace('--', '-')"),
+            "{path} should collapse repeated hyphens in derived project_slug defaults"
+        );
+        assert!(
+            project_slug.contains("strip('-')"),
+            "{path} should trim unstable leading or trailing hyphens from project_slug defaults"
+        );
+        if path.ends_with("plugins-rs/cookiecutter.json") {
+            let crate_name = payload["crate_name"].as_str().expect("crate name template");
+            assert!(
+                crate_name.contains("replace('__', '_')"),
+                "{path} should collapse repeated underscores in crate_name defaults"
+            );
+            assert!(
+                crate_name.contains("strip('_')"),
+                "{path} should trim unstable leading or trailing underscores from crate_name defaults"
+            );
+        }
     }
 }
 
 #[test]
 fn template_hooks_guard_namespace_and_crate_identifier_rules() {
     let py_hook = read_repo_file("templates/plugins-py/hooks/pre_gen_project.py");
+    assert!(
+        py_hook.contains("project_slug must be lowercase kebab-case"),
+        "python template hook should reject unstable project slugs"
+    );
     assert!(
         py_hook.contains("plugin_namespace must be lowercase kebab-case"),
         "python template hook should reject invalid plugin namespaces"
@@ -195,8 +220,23 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
         py_hook.contains("plugin_namespace is reserved by bijux-cli or an official Bijux tool"),
         "python template hook should reject reserved plugin namespaces"
     );
+    for required in [
+        "parse_semver(\"plugin_version\"",
+        "parse_semver(\"cli_min\"",
+        "parse_semver(\"cli_max\"",
+        "cli_max must be greater than cli_min",
+    ] {
+        assert!(
+            py_hook.contains(required),
+            "python template hook should validate current release window inputs: {required}"
+        );
+    }
 
     let rs_hook = read_repo_file("templates/plugins-rs/hooks/pre_gen_project.py");
+    assert!(
+        rs_hook.contains("project_slug must be lowercase kebab-case"),
+        "rust template hook should reject unstable project slugs"
+    );
     assert!(
         rs_hook.contains("plugin_namespace must be lowercase kebab-case"),
         "rust template hook should reject invalid plugin namespaces"
@@ -209,6 +249,21 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
         rs_hook.contains("crate_name must be lowercase snake_case"),
         "rust template hook should reject invalid crate identifiers"
     );
+    assert!(
+        rs_hook.contains("crate_name must not use a reserved Rust keyword"),
+        "rust template hook should reject reserved Rust keywords"
+    );
+    for required in [
+        "parse_semver(\"plugin_version\"",
+        "parse_semver(\"cli_min\"",
+        "parse_semver(\"cli_max\"",
+        "cli_max must be greater than cli_min",
+    ] {
+        assert!(
+            rs_hook.contains(required),
+            "rust template hook should validate current release window inputs: {required}"
+        );
+    }
 }
 
 #[test]

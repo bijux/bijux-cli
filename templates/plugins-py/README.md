@@ -3,7 +3,10 @@
 Render this template with Cookiecutter from the repository root:
 
 ```bash
-python3 -m cookiecutter ./templates/plugins-py project_name="My Plugin" plugin_namespace=my-plugin
+python3 -m cookiecutter ./templates/plugins-py \
+  project_name="My Plugin" \
+  project_slug=my-plugin \
+  plugin_namespace=my-plugin
 ```
 
 The rendered project installs with the current plugin manifest contract:
@@ -25,5 +28,8 @@ Keep the plugin namespace stable after release, update the compatibility range w
 versions change, and add tests before sharing the plugin. The default template values target
 plugin version `0.3.0` with host compatibility from `0.3.0` up to, but not including, `1.0.0`.
 Use `plugin_namespace` for the durable CLI name even when `project_name` is a human-readable title.
+If `project_name` includes leading digits or punctuation that should not survive into identifiers,
+pass `project_slug` and `plugin_namespace` explicitly.
 Cookiecutter validation rejects namespaces that do not start with a letter or that contain repeated
-hyphens, and it blocks namespaces reserved by `bijux-cli` or official Bijux tools.
+hyphens, rejects invalid semver or inverted compatibility windows, and blocks namespaces reserved by
+`bijux-cli` or official Bijux tools.
