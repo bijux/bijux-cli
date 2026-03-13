@@ -79,8 +79,8 @@ fn plugins_check_parity_exit_and_stream_routing_matches_capture_overlap() {
     let (code, out, err) = run_with_env(&args, &env_refs);
     let expected_code = py["exit_code"].as_i64().unwrap_or(0) as i32;
     assert!(
-        code == expected_code || code == 1,
-        "unexpected exit code for plugin check parity overlap: expected {expected_code} or 1, got {code}",
+        code == expected_code || code == 1 || code == 2,
+        "unexpected exit code for plugin check parity overlap: expected {expected_code}, 1, or 2, got {code}",
     );
 
     let envelope = if out.trim().is_empty() { &err } else { &out };

@@ -78,10 +78,13 @@ fn repl_usage_validation_and_plugin_failures_map_to_same_failure_classes() {
     let bin_usage = run_bin(&["config", "get"]);
     assert_eq!(repl.last_exit_code, bin_usage.status.code().unwrap_or(-1));
 
-    let repl_validation = execute_repl_line(&mut repl, "status --format not-a-format");
+    let repl_validation =
+        execute_repl_line(&mut repl, "status --format not-a-format").expect("repl validation");
     let bin_validation = run_bin(&["status", "--format", "not-a-format"]);
-    assert!(repl_validation.is_err(), "repl should reject invalid format");
-    assert_eq!(bin_validation.status.code(), Some(1));
+    assert_eq!(bin_validation.status.code(), Some(2));
+    assert_eq!(repl.last_exit_code, bin_validation.status.code().unwrap_or(-1));
+    let validation_frame = repl_validation.expect("validation frame");
+    assert!(validation_frame.content.contains("invalid format"));
 
     let _ = execute_repl_line(&mut repl, "plugins uninstall").expect("repl plugin failure");
     let bin_plugin = run_bin(&["plugins", "uninstall"]);

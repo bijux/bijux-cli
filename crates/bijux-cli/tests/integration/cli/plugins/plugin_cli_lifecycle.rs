@@ -331,7 +331,7 @@ fn uninstall_failure_preserves_existing_registry_entries() {
     );
 
     let fail_uninstall = run(&["cli", "plugins", "uninstall", "missing"], &plugins_dir);
-    assert_eq!(fail_uninstall.status.code(), Some(1));
+    assert_eq!(fail_uninstall.status.code(), Some(2));
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     assert!(listed["plugins"]

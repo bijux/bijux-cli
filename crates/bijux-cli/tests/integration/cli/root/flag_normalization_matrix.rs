@@ -103,14 +103,14 @@ fn conflicting_color_always_and_never_are_rejected() {
 #[test]
 fn invalid_format_value_is_rejected() {
     let out = run(&["--format", "nope", "cli", "status"]);
-    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("invalid format: nope"));
 }
 
 #[test]
 fn invalid_color_value_is_rejected() {
     let out = run(&["--color", "nope", "cli", "status"]);
-    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("invalid color mode: nope"));
 }
 

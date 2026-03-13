@@ -200,7 +200,7 @@ fn uninstall_missing_plugin_returns_stable_failure() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let out = run(&["cli", "plugins", "uninstall", "missingplug"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(1));
+    assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("not found"));
 }
 
@@ -285,7 +285,7 @@ fn plugin_command_exit_codes_map_through_core_rules() {
     assert_eq!(success.status.code(), Some(0));
 
     let failure = run(&["cli", "plugins", "uninstall", "missing"], &plugins_dir);
-    assert_eq!(failure.status.code(), Some(1));
+    assert_eq!(failure.status.code(), Some(2));
 }
 
 #[test]
