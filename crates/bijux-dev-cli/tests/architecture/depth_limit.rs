@@ -32,6 +32,22 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+fn collect_directories_named(root: &Path, target_name: &str, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        if path.file_name().and_then(|name| name.to_str()) == Some(target_name) {
+            out.push(path.clone());
+        }
+        collect_directories_named(&path, target_name, out);
+    }
+}
+
 #[test]
 fn crate_src_path_depth_is_bounded() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -105,4 +121,29 @@ fn legacy_exception_artifacts_are_absent() {
     assert!(!workspace_root.join(".github/maintenance_additions_allowlist.txt").exists());
     assert!(!workspace_root.join(".github/root_maintenance_additions_allowlist.txt").exists());
     assert!(!workspace_root.join(".github/public_api_allowlist.txt").exists());
+}
+
+#[test]
+fn artifact_directories_exist_only_under_workspace_artifacts_root() {
+    let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let workspace_root = crate_root.join("..").join("..");
+    let allowed_root = workspace_root.join("artifacts");
+
+    let mut artifact_dirs = Vec::<PathBuf>::new();
+    collect_directories_named(&workspace_root, "artifacts", &mut artifact_dirs);
+    artifact_dirs.sort();
+
+    let violations: Vec<String> = artifact_dirs
+        .into_iter()
+        .filter(|path| path != &allowed_root && !path.starts_with(&allowed_root))
+        .filter_map(|path| {
+            path.strip_prefix(&workspace_root).ok().map(|relative| relative.display().to_string())
+        })
+        .collect();
+
+    assert!(
+        violations.is_empty(),
+        "artifact directories must live under workspace artifacts/: \n{}",
+        violations.join("\n")
+    );
 }
