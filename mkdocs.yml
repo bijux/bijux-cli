@@ -71,6 +71,11 @@ plugins:
   - autorefs
   - redirects:
       redirect_maps:
+        CODE_OF_CONDUCT.md: 05-development/index.md
+        KNOWN_GAPS.md: 05-development/testing-and-evidence.md
+        MIGRATING_FROM_PYTHON_CORE.md: 05-development/release-and-compatibility.md
+        PLUGIN_RUNTIME_LAW.md: 07-contracts/plugin-contracts.md
+        plugin_state.md: 03-user-guide/plugins-and-extensions.md
         getting-started/installation.md: 02-getting-started/installation-and-recovery.md
         guides/index.md: 02-getting-started/index.md
         guides/installation.md: 02-getting-started/installation-and-recovery.md
@@ -215,7 +220,7 @@ plugins:
         architecture/config-get-post-parity-improvements.md: 04-architecture/configuration-and-state.md
         architecture/config-set-post-parity-improvements.md: 04-architecture/configuration-and-state.md
         architecture/config-parity-matrix.md: 04-architecture/configuration-and-state.md
-        architecture/known-remaining-parity-gaps.md: KNOWN_GAPS.md
+        architecture/known-remaining-parity-gaps.md: 05-development/testing-and-evidence.md
         architecture/rust-baseline-parity-v1.md: 04-architecture/configuration-and-state.md
         architecture/rust-config-baseline-parity-status.md: 04-architecture/configuration-and-state.md
         rust-config-parity.md: 04-architecture/configuration-and-state.md

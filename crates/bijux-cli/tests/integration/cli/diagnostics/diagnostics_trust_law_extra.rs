@@ -144,7 +144,7 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
     assert!(!docs.is_empty(), "docs audit must list documentation files");
     let docs_paths: BTreeSet<&str> = docs.iter().filter_map(Value::as_str).collect();
     assert!(docs_paths.contains("docs/index.md"));
-    assert!(docs_paths.contains("docs/reference/index.md"));
+    assert!(docs_paths.contains("docs/06-reference/index.md"));
     assert!(docs_audit["docs_audit"]["docs_count"].is_u64());
 }
 

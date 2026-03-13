@@ -60,7 +60,7 @@ Move to the fuller docs when the basics are already proven:
 - [Command surface](../06-reference/command-surface.md)
 - [Configuration and output](../03-user-guide/configuration-and-output.md)
 - [Plugins and extensions](../03-user-guide/plugins-and-extensions.md)
-- [Status and gaps](../KNOWN_GAPS.md)
+- [Testing and evidence](../05-development/testing-and-evidence.md)
 
 ## Closing Rule
 

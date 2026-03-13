@@ -107,7 +107,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/what_is_done.json",
                 "artifacts/status/what_is_partial.json",
                 "artifacts/status/what_is_intentionally_different.json",
-                "docs/KNOWN_GAPS.md",
+                "docs/05-development/testing-and-evidence.md",
             ];
             let evidence = paths
                 .iter()

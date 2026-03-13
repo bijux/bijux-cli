@@ -2,11 +2,11 @@
 
 High-value documents only. Everything else is supporting detail.
 
-## Current Status
-- [Status and gaps](KNOWN_GAPS.md)
-- [Plugin runtime law](PLUGIN_RUNTIME_LAW.md)
-- [Development guide](05-development/index.md)
-- [Plugin state](plugin_state.md)
+## Current Review
+- [Testing and evidence](05-development/testing-and-evidence.md)
+- [Release and compatibility](05-development/release-and-compatibility.md)
+- [Plugin contracts](07-contracts/plugin-contracts.md)
+- [Plugins and extensions](03-user-guide/plugins-and-extensions.md)
 
 ## Core Law
 - [Architecture index](04-architecture/index.md)
