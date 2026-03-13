@@ -4,11 +4,31 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use bijux_cli::api::version::runtime_semver;
 use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV2};
+use semver::{Prerelease, Version};
 
-const TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
-const TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
 const TEMPLATE_CONTRACT_VERSION: &str = "v2";
+
+fn template_compatibility_min_inclusive() -> String {
+    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
+    if !runtime.pre.is_empty() {
+        let channel = runtime
+            .pre
+            .as_str()
+            .split('.')
+            .next()
+            .expect("runtime prerelease channel");
+        min.pre = Prerelease::new(channel).expect("prerelease channel");
+    }
+    min.to_string()
+}
+
+fn template_compatibility_max_exclusive() -> String {
+    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    Version::new(runtime.major + 1, 0, 0).to_string()
+}
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -54,12 +74,14 @@ fn walk_dirs(root: &Path) -> Vec<PathBuf> {
 }
 
 fn render_template(text: &str) -> String {
+    let min = template_compatibility_min_inclusive();
+    let max = template_compatibility_max_exclusive();
     text.replace("{{cookiecutter.project_name}}", "testplug")
         .replace("{{cookiecutter.project_slug}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
         .replace("{{cookiecutter.plugin_version}}", "0.1.0")
-        .replace("{{cookiecutter.cli_min}}", TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE)
-        .replace("{{cookiecutter.cli_max}}", TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE)
+        .replace("{{cookiecutter.cli_min}}", &min)
+        .replace("{{cookiecutter.cli_max}}", &max)
         .replace("{{cookiecutter.crate_name}}", "testplug_rs")
         .replace("{{cookiecutter.rust_edition}}", "2021")
 }
@@ -138,6 +160,11 @@ fn template_docs_reference_current_rendering_and_install_flow() {
             );
         }
     }
+    let rust_readme = read_repo_file("templates/plugins-rs/README.md");
+    assert!(
+        rust_readme.to_ascii_lowercase().contains("placeholder bridge stub"),
+        "rust template docs must clarify that the generated bridge is only a starting stub"
+    );
 }
 
 #[test]
@@ -147,6 +174,13 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
     );
     assert_rendered_project_readme(
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
+    );
+    let rust_rendered = render_template(&read_repo_file(
+        "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
+    ));
+    assert!(
+        rust_rendered.to_ascii_lowercase().contains("placeholder bridge stub"),
+        "rendered rust project README must clarify that plugin.py is only a starting stub"
     );
 }
 
@@ -179,7 +213,7 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(
             manifest
                 .compatibility
-                .supports_host(TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE)
+                .supports_host(&template_compatibility_min_inclusive())
                 .expect("valid compatibility"),
             "{path} should support the current post-0.2.0 host floor"
         );
@@ -194,12 +228,12 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
         assert_eq!(payload["plugin_version"], "0.1.0", "{path} must default new plugins to 0.1.0");
         assert_eq!(
-            payload["cli_min"], TEMPLATE_COMPATIBILITY_MIN_INCLUSIVE,
+            payload["cli_min"], template_compatibility_min_inclusive(),
             "{path} must require the first post-0.2.0 Bijux host line"
         );
         assert_eq!(
-            payload["cli_max"], TEMPLATE_COMPATIBILITY_MAX_EXCLUSIVE,
-            "{path} must keep future compatibility open until the 1.0.0 boundary"
+            payload["cli_max"], template_compatibility_max_exclusive(),
+            "{path} must keep future compatibility open until the next major host boundary"
         );
         assert_eq!(
             payload["_template_version"], TEMPLATE_CONTRACT_VERSION,

@@ -1,6 +1,6 @@
 # {{cookiecutter.project_name}}
 
-Python delegated plugin scaffold for Bijux.
+Python plugin scaffold for Bijux.
 
 - `plugin.manifest.json` defines the install contract.
 - `plugin.py` exposes the `plugin:main` entrypoint.
@@ -19,4 +19,6 @@ bijux plugins schema
 
 Keep `plugin_namespace` stable after release, update the compatibility range in
 `plugin.manifest.json` when the supported Bijux host versions change, and avoid reserved Bijux
-namespaces when renaming the plugin.
+namespaces when renaming the plugin. The rendered defaults start at plugin version
+`{{cookiecutter.plugin_version}}` with host compatibility from `{{cookiecutter.cli_min}}` up to,
+but not including, `{{cookiecutter.cli_max}}`.

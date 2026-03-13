@@ -6,5 +6,5 @@ def main(argv: list[str]) -> dict[str, object]:
         "status": "ok",
         "argv": argv,
         "namespace": "{{cookiecutter.plugin_namespace}}",
-        "bridge": "replace plugin.py with your Rust bridge entrypoint",
+        "bridge": "placeholder bridge stub; replace plugin.py with a real Rust entrypoint",
     }

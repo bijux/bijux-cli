@@ -185,7 +185,7 @@ Bijux relies on POSIX filesystem and process semantics.
 bijux plugins scaffold python my-plugin --path ./my-plugin --force
 
 # Scaffold a Rust-backed plugin from repository templates
-bijux plugins scaffold delegated my-rust-plugin --path ./my-rust-plugin --force
+bijux plugins scaffold rust my-rust-plugin --path ./my-rust-plugin --force
 
 # Install and explore
 bijux plugins install ./my-plugin/plugin.manifest.json

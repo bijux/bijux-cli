@@ -4,6 +4,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 use anyhow::Result;
+use semver::{Prerelease, Version};
 
 use crate::api::version::runtime_semver;
 
@@ -13,24 +14,43 @@ use super::{
 };
 
 const SCAFFOLD_PLUGIN_VERSION: &str = "0.1.0";
-const SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
-const SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE: &str = "1.0.0";
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
     !path.components().any(|component| matches!(component, Component::ParentDir))
 }
 
-fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> String {
-    format!(
+fn scaffold_compatibility_window() -> Result<(String, String)> {
+    let runtime = Version::parse(runtime_semver())
+        .map_err(|error| anyhow::anyhow!("runtime semver is invalid: {error}"))?;
+
+    let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
+    if !runtime.pre.is_empty() {
+        let channel = runtime
+            .pre
+            .as_str()
+            .split('.')
+            .next()
+            .expect("non-empty prerelease has a first identifier");
+        min.pre = Prerelease::new(channel)
+            .map_err(|error| anyhow::anyhow!("runtime prerelease channel is invalid: {error}"))?;
+    }
+
+    let max = Version::new(runtime.major.saturating_add(1), 0, 0);
+    Ok((min.to_string(), max.to_string()))
+}
+
+fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> Result<String> {
+    let (min_inclusive, max_exclusive) = scaffold_compatibility_window()?;
+    Ok(format!(
         "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
         SCAFFOLD_PLUGIN_VERSION,
-        SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE,
-        SCAFFOLD_COMPATIBILITY_MAX_EXCLUSIVE,
+        min_inclusive,
+        max_exclusive,
         namespace,
         plugin_kind,
         "plugin:main",
-    )
+    ))
 }
 
 fn scaffold_manifest_kind(kind: &str) -> Result<&'static str> {
@@ -69,7 +89,7 @@ pub(crate) fn scaffold_plugin_layout(
 
     fs::create_dir_all(base_dir)?;
     let manifest_path = base_dir.join("plugin.manifest.json");
-    fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, namespace))?;
+    fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, namespace)?)?;
     if kind == "python" {
         fs::write(
             base_dir.join("plugin.py"),
@@ -78,7 +98,7 @@ pub(crate) fn scaffold_plugin_layout(
     } else {
         fs::write(
             base_dir.join("plugin.py"),
-            "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv, \"bridge\": \"replace plugin.py with your Rust bridge entrypoint\"}\n",
+            "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv, \"bridge\": \"placeholder bridge stub; replace plugin.py with a real Rust entrypoint\"}\n",
         )?;
         fs::create_dir_all(base_dir.join("src"))?;
         fs::write(

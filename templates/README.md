@@ -3,8 +3,8 @@
 Repository-maintained Cookiecutter templates live under this directory for plugin authors who want
 more than the built-in `bijux plugins scaffold` minimal layout.
 
-- `plugins-py`: Python delegated plugin template with the current `plugin.manifest.json` contract.
-- `plugins-rs`: Rust-backed delegated plugin template with a Python shim and Cargo crate baseline.
+- `plugins-py`: Python plugin template with the current `plugin.manifest.json` contract.
+- `plugins-rs`: Rust-backed plugin template with a placeholder bridge stub and Cargo crate baseline.
 
 ## Usage
 

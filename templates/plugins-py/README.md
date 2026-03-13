@@ -27,9 +27,9 @@ Generated files:
 - `pyproject.toml`: optional local packaging metadata for the rendered project.
 
 Keep the plugin namespace stable after release, update the compatibility range when supported host
-versions change, and add tests before sharing the plugin. The default template values target
-plugin version `0.1.0` with host compatibility from `0.2.1-dev` up to, but not including,
-`1.0.0`.
+versions change, and add tests before sharing the plugin. The default template values start new
+plugins at version `0.1.0` and use the current `cli_min` / `cli_max` compatibility window from the
+template defaults.
 Use `plugin_namespace` for the durable CLI name even when `project_name` is a human-readable title.
 If `project_name` includes leading digits or punctuation that should not survive into identifiers,
 pass `project_slug` and `plugin_namespace` explicitly.
