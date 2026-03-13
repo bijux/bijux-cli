@@ -53,9 +53,10 @@ RUST_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:spac
 PY_VERSION := $(if $(strip $(PY_VERSION_RAW)),$(strip $(PY_VERSION_RAW)),0.0.0)
 RUST_VERSION := $(if $(strip $(RUST_VERSION_RAW)),$(strip $(RUST_VERSION_RAW)),0.0.0)
 
-.PHONY: python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py security-py build-py publish-py lint test security build publish
+.PHONY: python-env python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py security-py build-py publish-py
 
-python-env-py:
+##@ Python
+python-env: ## Prepare the artifact-scoped Python virtualenv and developer tools
 	@set -euo pipefail; \
 	bootstrap="$(PYTHON_BOOTSTRAP)"; \
 	if [ -z "$$bootstrap" ]; then \
@@ -98,7 +99,9 @@ python-env-py:
 	fi
 	@rm -f "$(PYTHON_SRC_DIR)/bijux_cli_py"/_native*.so || true
 
-fmt-py: python-env-py
+python-env-py: python-env ## Backward-compatible alias for python-env
+
+fmt-py: python-env ## Run Python formatting with Ruff
 	@echo "→ Ruff format"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -o pipefail; \
@@ -106,7 +109,7 @@ fmt-py: python-env-py
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-fmt-check-py: python-env-py
+fmt-check-py: python-env ## Check Python formatting without modifying files
 	@echo "→ Ruff format check"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -o pipefail; \
@@ -114,14 +117,14 @@ fmt-check-py: python-env-py
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format-check.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-lint-py: fmt-py
+lint-py: fmt-py ## Run Python lint fixes with Ruff
 	@echo "→ Ruff lint"
 	@set -o pipefail; \
 	$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-lint-check-py: python-env-py
+lint-check-py: python-env ## Run Python lint checks without modifying files
 	@echo "→ Ruff lint check"
 	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
 	@set -o pipefail; \
@@ -129,7 +132,7 @@ lint-check-py: python-env-py
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check-ci.log"
 	@rm -rf .ruff_cache .benchmark .benchmarks || true
 
-test-py: python-env-py
+test-py: python-env ## Run the default Python test suite
 	@echo "→ Running Python test suite on $(PYTHON_TEST_DIR)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis" "$(PYTEST_BENCHMARK_DIR)"
 	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
@@ -154,7 +157,7 @@ test-py: python-env-py
 	  $$BENCH_FLAGS
 	@rm -rf .benchmarks .benchmark .ruff_cache || true
 
-security-py: python-env-py
+security-py: python-env ## Run Python security checks
 	@echo "→ Bandit (medium/high severity)"
 	@mkdir -p "$(SECURITY_ARTIFACTS_DIR)"
 	@$(BANDIT) -r "$(PYTHON_SRC_DIR)/bijux_cli_py" -ll -f json -o "$(SECURITY_ARTIFACTS_DIR)/bandit.json"
@@ -167,7 +170,7 @@ security-py: python-env-py
 	$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/pip-audit.txt"
 
-build-py: python-env-py
+build-py: python-env ## Build Python wheel and source distribution
 	@echo "→ Building Python wheel and sdist"
 	@mkdir -p "$(BUILD_ARTIFACTS_DIR)"
 	@rm -f "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz "$(BUILD_ARTIFACTS_DIR)/twine-check.log" || true
@@ -175,7 +178,7 @@ build-py: python-env-py
 	@set -o pipefail; \
 	$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
 
-publish-py: python-env-py
+publish-py: python-env ## Publish Python distributions to the configured index
 	@echo "→ Validating Python/Rust package version parity"
 	@[ "$(PY_VERSION)" != "0.0.0" ] || { echo "✘ Python package version resolved to 0.0.0"; exit 1; }
 	@[ "$(RUST_VERSION)" != "0.0.0" ] || { echo "✘ Rust crate version resolved to 0.0.0"; exit 1; }
@@ -195,10 +198,3 @@ publish-py: python-env-py
 	$(TWINE) upload --non-interactive --disable-progress-bar $$SKIP_FLAG \
 	  --repository "$(TWINE_REPOSITORY)" -u "__token__" -p "$$token" \
 	  "$(BUILD_ARTIFACTS_DIR)"/*
-
-# Compatibility aliases.
-lint: lint-py
-test: test-py
-security: security-py
-build: build-py
-publish: publish-py

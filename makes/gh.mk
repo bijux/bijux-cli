@@ -9,6 +9,7 @@ GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python bijux-dev-cli
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-export-release-tag gh-docs-configure-git \
 	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token
 
+##@ GitHub
 gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without mutating files
 
 gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without mutating files

@@ -1,7 +1,5 @@
 # Rust quality gates and reports (artifact-scoped, no root pollution)
 
-SHELL := /bin/bash
-
 RS_ARTIFACT_ROOT ?= artifacts/rust
 RS_RUN_ID ?= local
 
