@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::io;
+use std::path::PathBuf;
 
 use crate::contracts::PluginKind;
 
@@ -55,6 +56,9 @@ pub enum PluginError {
     /// Plugin not found by namespace.
     #[error("plugin not found: {0}")]
     PluginNotFound(String),
+    /// Registry lock is already held by another writer.
+    #[error("plugin registry lock is held at {0}")]
+    RegistryLocked(PathBuf),
     /// Delegated plugin execution denied due missing capability.
     #[error("plugin is missing required capability: {0}")]
     MissingCapability(String),

@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 use std::fs;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
@@ -56,6 +57,39 @@ fn backup_registry(path: &Path) -> Result<Option<PathBuf>, PluginError> {
     Ok(Some(backup))
 }
 
+#[derive(Debug)]
+struct RegistryLockGuard {
+    path: PathBuf,
+}
+
+impl Drop for RegistryLockGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
+    }
+}
+
+fn lock_path(path: &Path) -> PathBuf {
+    path.with_extension("lock")
+}
+
+fn acquire_registry_lock(path: &Path) -> Result<RegistryLockGuard, PluginError> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let lock = lock_path(path);
+    match fs::OpenOptions::new().create_new(true).write(true).open(&lock) {
+        Ok(mut file) => {
+            let _ = writeln!(file, "pid={}", std::process::id());
+            let _ = file.sync_all();
+            Ok(RegistryLockGuard { path: lock })
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            Err(PluginError::RegistryLocked(lock))
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
 fn restore_registry(path: &Path, backup: Option<PathBuf>) -> Result<(), PluginError> {
     if let Some(backup_path) = backup {
         replace_file(&backup_path, path)?;
@@ -89,6 +123,7 @@ pub fn update_registry<F>(path: &Path, mutator: F) -> Result<PluginRegistry, Plu
 where
     F: FnOnce(&mut PluginRegistry) -> Result<(), PluginError>,
 {
+    let _lock = acquire_registry_lock(path)?;
     let backup = backup_registry(path)?;
     let mut registry = load_registry(path)?;
 
@@ -305,12 +340,13 @@ fn state_rank(state: crate::contracts::PluginLifecycleState) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
     use std::sync::Arc;
     use std::thread;
 
     use tempfile::TempDir;
 
-    use super::{load_registry, save_registry, PluginRegistry};
+    use super::{load_registry, lock_path, save_registry, update_registry, PluginError, PluginRegistry};
 
     #[test]
     fn concurrent_registry_writes_keep_registry_parseable() {
@@ -334,5 +370,18 @@ mod tests {
 
         let loaded = load_registry(path.as_path()).expect("load registry");
         assert_eq!(loaded, PluginRegistry::default());
+    }
+
+    #[test]
+    fn update_registry_rejects_when_lock_is_held() {
+        let temp = TempDir::new().expect("tempdir");
+        let path = temp.path().join("registry.json");
+        save_registry(path.as_path(), &PluginRegistry::default()).expect("seed");
+
+        let lock = lock_path(path.as_path());
+        fs::write(&lock, "held\n").expect("seed lock");
+
+        let err = update_registry(path.as_path(), |_| Ok(())).expect_err("lock should block write");
+        assert!(matches!(err, PluginError::RegistryLocked(_)));
     }
 }
