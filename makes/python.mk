@@ -45,11 +45,6 @@ TWINE_REPOSITORY     ?= pypi
 PUBLISH_SKIP_EXISTING ?= 1
 PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 
-PY_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(PYTHON_PYPROJECT)" 2>/dev/null)
-RUST_VERSION_RAW := $(shell awk -F'"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*"/ { print $$2; exit }' "$(CARGO_MANIFEST_PY)" 2>/dev/null)
-PY_VERSION := $(if $(strip $(PY_VERSION_RAW)),$(strip $(PY_VERSION_RAW)),0.0.0)
-RUST_VERSION := $(if $(strip $(RUST_VERSION_RAW)),$(strip $(RUST_VERSION_RAW)),0.0.0)
-
 .PHONY: python-env python-env-py fmt-py fmt-check-py lint-py lint-check-py test-py test-unit-py test-nightly-py security-py build-py publish-py
 
 define run_pytest
@@ -148,22 +143,35 @@ build-py: python-env ## Build the Python wheel and source distribution
 	@echo "→ Building Python wheel and sdist"
 	@mkdir -p "$(BUILD_ARTIFACTS_DIR)"
 	@rm -f "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz "$(BUILD_ARTIFACTS_DIR)/twine-check.log" || true
-	@$(BUILD_PY) --wheel --sdist --outdir "$(BUILD_ARTIFACTS_DIR)" "$(PYTHON_PACKAGE_DIR)"
+	@set -euo pipefail; \
+	build_source="$(PYTHON_PACKAGE_DIR)"; \
+	temp_root=""; \
+	if [ -n "$(RELEASE_VERSION)" ]; then \
+		temp_root="$$(mktemp -d "$${TMPDIR:-/tmp}/bijux-release-tree.XXXXXX")"; \
+		trap 'test -n "$${temp_root}" && rm -rf "$${temp_root}"' EXIT; \
+		python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$${temp_root}" --version "$(RELEASE_VERSION)" >/dev/null; \
+		build_source="$${temp_root}/$(PYTHON_PACKAGE_DIR)"; \
+		echo "→ Building from release tree stamped to $(RELEASE_VERSION)"; \
+	fi; \
+	$(BUILD_PY) --wheel --sdist --outdir "$(BUILD_ARTIFACTS_DIR)" "$${build_source}"
 	@set -o pipefail; \
 	$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
 
 publish-py: python-env ## Publish Python distributions to the configured index
-	@echo "→ Validating Python/Rust package version parity"
-	@[ "$(PY_VERSION)" != "0.0.0" ] || { echo "✘ Python package version resolved to 0.0.0"; exit 1; }
-	@[ "$(RUST_VERSION)" != "0.0.0" ] || { echo "✘ Rust crate version resolved to 0.0.0"; exit 1; }
-	@[ "$(PY_VERSION)" = "$(RUST_VERSION)" ] || { \
-	  echo "✘ Version drift: pyproject.toml ($(PY_VERSION)) != Cargo.toml ($(RUST_VERSION))"; \
-	  exit 1; \
-	}
 	@token="$${$(PYPI_TOKEN_ENV):-}"; \
 	if [ -z "$$token" ]; then \
 	  echo "✘ $(PYPI_TOKEN_ENV) is not set"; \
 	  exit 1; \
+	fi; \
+	if [ -n "$(RELEASE_VERSION)" ]; then \
+	  echo "→ Publishing release version $(RELEASE_VERSION)"; \
+	else \
+	 	package_version="$$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; data=json.load(sys.stdin); pkgs={p[\"name\"]: p[\"version\"] for p in data[\"packages\"]}; print(pkgs.get(\"bijux-cli-python\", \"\"))')"; \
+	  if [ -z "$$package_version" ]; then \
+	    echo "✘ Could not resolve bijux-cli-python version from cargo metadata"; \
+	    exit 1; \
+	  fi; \
+	  echo "→ Publishing workspace package version $$package_version"; \
 	fi; \
 	$(MAKE) --no-print-directory build-py; \
 	SKIP_FLAG=""; \

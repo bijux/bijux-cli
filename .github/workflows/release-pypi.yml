@@ -66,4 +66,5 @@ jobs:
         if: ${{ steps.release.outputs.publish == 'true' }}
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: make publish-py

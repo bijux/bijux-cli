@@ -6,6 +6,8 @@
 .SHELLFLAGS           := -eu -o pipefail -c
 SHELL                 := bash
 PYTHON                ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
+RELEASE_VERSION       ?=
+RELEASE_TREE_SCRIPT   ?= .github/scripts/prepare_release_tree.py
 VENV                  := artifacts/python/.venv
 VENV_PYTHON           := $(VENV)/bin/python
 ACT                   := $(VENV)/bin

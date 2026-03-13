@@ -210,11 +210,21 @@ publish-rs: ## Publish Rust crates and dry-run by default
 	if [ "$(RUST_PUBLISH_ALLOW_DIRTY)" = "1" ]; then \
 		allow_dirty_flag="--allow-dirty"; \
 	fi; \
+	workspace_root="."; \
+	temp_root=""; \
+	if [ -n "$(RELEASE_VERSION)" ]; then \
+		temp_root="$$(mktemp -d "$${TMPDIR:-/tmp}/bijux-release-tree.XXXXXX")"; \
+		trap 'test -n "$${temp_root}" && rm -rf "$${temp_root}"' EXIT; \
+		python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$${temp_root}" --version "$(RELEASE_VERSION)" >/dev/null; \
+		workspace_root="$${temp_root}"; \
+		echo "→ Publishing from release tree stamped to $(RELEASE_VERSION)"; \
+	fi; \
 	for pkg in $(RUST_PUBLISH_PACKAGES); do \
 		echo "→ cargo publish -p $$pkg --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 		cargo publish \
 			--locked \
+			--manifest-path "$${workspace_root}/Cargo.toml" \
 			--registry "$(RUST_PUBLISH_REGISTRY)" \
 			-p "$$pkg" \
 			$$allow_dirty_flag \

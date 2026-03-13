@@ -60,4 +60,5 @@ jobs:
         if: ${{ steps.release.outputs.publish == 'true' }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: make publish-rs RUST_PUBLISH_DRY_RUN=0 RUST_PUBLISH_PACKAGES="${{ steps.release.outputs.packages }}"

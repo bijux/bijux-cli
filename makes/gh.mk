@@ -102,11 +102,6 @@ gh-release-plan-pypi: ## Determine whether the tagged commit should publish to P
 	fi; \
 	tag="$$(printf '%s\n' "$${tags}" | head -n 1)"; \
 	version="$${tag#v}"; \
-	package_version="$$(awk -F'\"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*\"/ { print $$2; exit }' crates/bijux-cli-python/pyproject.toml)"; \
-	if [ "$${package_version}" != "$${version}" ]; then \
-		echo "tag version $${version} does not match bijux-cli-python version $${package_version}" >&2; \
-		exit 1; \
-	fi; \
 	status="$$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/bijux-cli/$${version}/json" || true)"; \
 	already_published=false; \
 	publish=true; \
@@ -133,18 +128,6 @@ gh-release-plan-crates: ## Determine whether the tagged commit should publish wo
 	fi; \
 	tag="$$(printf '%s\n' "$${tags}" | head -n 1)"; \
 	version="$${tag#v}"; \
-	for package in $(GH_CRATES_RELEASE_PACKAGES); do \
-		case "$${package}" in \
-			bijux-cli) manifest="crates/bijux-cli/Cargo.toml" ;; \
-			bijux-cli-python) manifest="crates/bijux-cli-python/Cargo.toml" ;; \
-			*) echo "unknown release package: $${package}" >&2; exit 1 ;; \
-		esac; \
-		package_version="$$(awk -F'\"' '/^[[:space:]]*version[[:space:]]*=[[:space:]]*\"/ { print $$2; exit }' "$${manifest}")"; \
-		if [ "$${package_version}" != "$${version}" ]; then \
-			echo "tag version $${version} does not match $${package} version $${package_version}" >&2; \
-			exit 1; \
-		fi; \
-	done; \
 	unpublished=""; \
 	for package in $(GH_CRATES_RELEASE_PACKAGES); do \
 		status="$$(curl -s -o /dev/null -w '%{http_code}' "https://crates.io/api/v1/crates/$${package}/$${version}" || true)"; \
