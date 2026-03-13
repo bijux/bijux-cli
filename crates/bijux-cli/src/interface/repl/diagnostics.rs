@@ -89,10 +89,7 @@ pub fn benchmark_startup_latency(iterations: usize) -> Duration {
     }
     let total = started.elapsed();
     let avg_nanos = total.as_nanos() / runs as u128;
-    let nanos = match u64::try_from(avg_nanos) {
-        Ok(value) => value,
-        Err(_) => u64::MAX,
-    };
+    let nanos = u64::try_from(avg_nanos).unwrap_or(u64::MAX);
     Duration::from_nanos(nanos)
 }
 
