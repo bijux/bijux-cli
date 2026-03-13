@@ -67,6 +67,11 @@ pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
 
 pub(crate) fn decorate_help_text(mut rendered: String, path: &[&str]) -> String {
     append_help_sections(&mut rendered, path);
+    if path == ["version"] {
+        rendered.push_str(
+            "\nVersion output:\n  text: one-line summary (`bijux version <value>`)\n  json/yaml: includes semver, source, commit, and build profile fields\n",
+        );
+    }
     if matches!(path, ["plugins", "inspect"] | ["cli", "plugins", "inspect"]) {
         rendered.push_str(
             "\nCompatibility note: inspect output includes plugin compatibility warnings when present.\n",

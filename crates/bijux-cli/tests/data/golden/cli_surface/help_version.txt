@@ -13,3 +13,7 @@ Options:
 Examples:
   bijux version
   bijux --version
+
+Version output:
+  text: one-line summary (`bijux version <value>`)
+  json/yaml: includes semver, source, commit, and build profile fields
