@@ -42,24 +42,6 @@ impl StatusContractKind {
     }
 }
 
-/// Infer status contract kind from stable id prefix.
-#[must_use]
-pub fn infer_status_contract_kind(value: &str) -> StatusContractKind {
-    if value.starts_with("STATUS-CONTRACT-GENERATE-") {
-        StatusContractKind::Generate
-    } else if value.starts_with("STATUS-CONTRACT-CHECK-") {
-        StatusContractKind::Check
-    } else if value.starts_with("STATUS-CONTRACT-ENFORCE-") {
-        StatusContractKind::Enforce
-    } else if value.starts_with("STATUS-CONTRACT-WARN-") {
-        StatusContractKind::Warn
-    } else if value.starts_with("STATUS-CONTRACT-RUN-") {
-        StatusContractKind::Run
-    } else {
-        StatusContractKind::Status
-    }
-}
-
 /// Runtime specification for one status contract row.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatusContractSpec {
@@ -79,25 +61,39 @@ impl StatusContractSpec {
         let kind = row
             .get("kind")
             .and_then(Value::as_str)
-            .and_then(StatusContractKind::from_str)
-            .unwrap_or_else(|| infer_status_contract_kind(&contract_id));
+            .and_then(StatusContractKind::from_str)?;
         let source_ref = row
             .get("source_ref")
             .and_then(Value::as_str)
             .map(ToString::to_string)
             .filter(|item| !item.is_empty());
-        let implementation =
-            row.get("implementation").and_then(Value::as_str).unwrap_or("rust").to_string();
+        let implementation = row
+            .get("implementation")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())?
+            .to_string();
         let outputs = row
             .get("outputs")
             .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default()
+            .cloned()?
             .into_iter()
             .filter_map(|value| value.as_str().map(ToString::to_string))
             .collect();
-        let command = row.get("command").and_then(Value::as_str).unwrap_or("").to_string();
-        Some(Self { contract_id, kind, source_ref, implementation, outputs, command })
+        let command = row
+            .get("command")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())?
+            .to_string();
+        Some(Self {
+            contract_id,
+            kind,
+            source_ref,
+            implementation,
+            outputs,
+            command,
+        })
     }
 
     /// Convert specification back to inventory row payload.
