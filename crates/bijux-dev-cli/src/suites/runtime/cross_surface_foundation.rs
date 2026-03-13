@@ -159,25 +159,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-STATE-REPORTS" => {
-            let sources: Vec<(String, String)> = vec![
-                (
-                    "crates/bijux-cli/tests/bin_surface/cross_surface_state_extra.rs".to_string(),
-                    fs::read_to_string(
-                        workspace_root.join(
-                            "crates/bijux-cli/tests/bin_surface/cross_surface_state_extra.rs",
-                        ),
-                    )
-                    .unwrap_or_default(),
-                ),
-                (
-                    "crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs"
-                        .to_string(),
-                    fs::read_to_string(workspace_root.join(
-                        "crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs",
-                    ))
-                    .unwrap_or_default(),
-                ),
-            ];
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: Vec<(String, String)> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (321, "config_mutations_are_visible_across_binary_bridge_and_repl_reads"),
                                 (322, "config_mutations_are_visible_across_binary_bridge_and_repl_reads"),

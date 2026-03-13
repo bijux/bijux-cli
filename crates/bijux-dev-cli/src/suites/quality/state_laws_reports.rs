@@ -243,11 +243,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-STREAM-DISCIPLINE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let cases: Vec<(i64, &str, Vec<&str>, i32, bool, bool)> = vec![
                 (
                     41,
@@ -418,16 +421,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (57, "binary_and_bridge_agree_on_stream_routing_for_success_and_failure"),
             ]);
             let coverage_rows = required
-                                        .iter()
-                                        .map(|(coverage_id, test_name)| {
-                                            json!({
-                                                "coverage_id": coverage_id,
-                                                "test_name": test_name,
-                                                "status": if source.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
-                                                "evidence": "crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs",
-                                            })
-                                        })
-                                        .collect::<Vec<_>>();
+                .iter()
+                .map(|(coverage_id, test_name)| {
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {test_name}(")))
+                        .map(|(path, _)| path.clone());
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test_name": test_name,
+                        "status": if evidence.is_some() { "covered" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect::<Vec<_>>();
             let missing_coverage_ids = coverage_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))

@@ -114,11 +114,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-METADATA-CONSISTENCY-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/metadata_inspection_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let inspect =
                 run_bijux_json(workspace_root, &["inspect"]).unwrap_or_else(|_| json!({}));
             let routes = run_bijux_json(workspace_root, &["routes"]).unwrap_or_else(|_| json!({}));
@@ -189,7 +192,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         (71, "reserved_namespaces_and_alias_metadata_are_consistent_and_non_canonical"),(72, "reserved_namespaces_and_alias_metadata_are_consistent_and_non_canonical"),(73, "reserved_namespaces_and_alias_metadata_are_consistent_and_non_canonical"),
                                         (74, "help_output_and_inspect_metadata_agree_on_command_names_and_grouping"),(75, "help_output_and_inspect_metadata_agree_on_command_names_and_grouping"),
                                     ]);
-            let coverage_rows = required.iter().map(|(id,name)| json!({"coverage_id":id,"test_name":name,"status":if source.contains(&format!("fn {name}(")){"covered"}else{"missing"},"evidence":"crates/bijux-cli/tests/bin_surface/metadata_inspection_matrix.rs"})).collect::<Vec<_>>();
+            let coverage_rows = required
+                .iter()
+                .map(|(id, name)| {
+                    let evidence = sources.iter().find(|(_, src)| src.contains(&format!("fn {name}("))).map(|(path, _)| path.clone());
+                    json!({"coverage_id":id,"test_name":name,"status":if evidence.is_some(){"covered"}else{"missing"},"evidence":evidence})
+                })
+                .collect::<Vec<_>>();
             let missing_cov = coverage_rows
                 .iter()
                 .filter(|r| r.get("status").and_then(Value::as_str) != Some("covered"))

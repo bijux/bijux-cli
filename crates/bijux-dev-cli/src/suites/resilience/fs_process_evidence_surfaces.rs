@@ -318,11 +318,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-SURFACE-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (362, "inspect_text_json_yaml_quiet_and_trace_modes"),
                 (363, "inspect_text_json_yaml_quiet_and_trace_modes"),
@@ -335,25 +338,29 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (370, "doctor_text_json_and_corrupted_state_coverage"),
                 (371, "doctor_text_json_and_corrupted_state_coverage"),
                 (372, "doctor_text_json_and_corrupted_state_coverage"),
-                (373, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
-                (374, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
-                (375, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
-                (376, "dev_cli_routes_registry_env_contracts_json_shape_stability"),
-                (377, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
-                (378, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
-                (379, "diagnostics_consistency_across_inspect_doctor_and_dev_surfaces"),
+                (373, "maintainer_routes_registry_env_contracts_json_shape_stability"),
+                (374, "maintainer_routes_registry_env_contracts_json_shape_stability"),
+                (375, "maintainer_routes_registry_env_contracts_json_shape_stability"),
+                (376, "maintainer_routes_registry_env_contracts_json_shape_stability"),
+                (377, "diagnostics_consistency_across_inspect_doctor_and_maintainer_surfaces"),
+                (378, "diagnostics_consistency_across_inspect_doctor_and_maintainer_surfaces"),
+                (379, "diagnostics_consistency_across_inspect_doctor_and_maintainer_surfaces"),
             ]);
             let coverage_rows = required
-                                .iter()
-                                .map(|(coverage_id, fn_name)| {
-                                    json!({
-                                        "coverage_id": coverage_id,
-                                        "test": fn_name,
-                                        "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
-                                    })
-                                })
-                                .collect::<Vec<_>>();
+                .iter()
+                .map(|(coverage_id, fn_name)| {
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {fn_name}(")))
+                        .map(|(path, _)| path.clone());
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": fn_name,
+                        "status": if evidence.is_some() { "complete" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect::<Vec<_>>();
             let drift = coverage_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("complete"))
@@ -413,7 +420,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Diagnostics outputs must remain structured, consistent across surfaces, and stable in machine shape.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/bin_surface/diagnostics_command_matrix.rs",
+                                        "crates/bijux-cli/tests",
                                         "artifacts/status/diagnostics_matrix_artifact.json",
                                         "artifacts/status/diagnostics_shape_drift_artifact.json",
                                     ],

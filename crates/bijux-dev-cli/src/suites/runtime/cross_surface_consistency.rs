@@ -108,11 +108,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-SURFACE-CONSISTENCY-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (381, "inspect_and_dev_routes_agree_on_route_ownership"),
                                 (382, "inspect_and_dev_registry_agree_on_plugin_ownership_model"),
@@ -131,17 +134,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (395, "binary_and_direct_core_agree_on_same_command_results"),
                             ]);
             let coverage_rows: Vec<Value> = required
-                                .iter()
-                                .map(|(coverage_id, fn_name)| {
-                                    let present = source.contains(&format!("fn {fn_name}("));
-                                    json!({
-                                        "coverage_id": coverage_id,
-                                        "test": fn_name,
-                                        "status": if present { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
-                                    })
-                                })
-                                .collect();
+                .iter()
+                .map(|(coverage_id, fn_name)| {
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {fn_name}(")))
+                        .map(|(path, _)| path.clone());
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": fn_name,
+                        "status": if evidence.is_some() { "complete" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect();
             let drift_rows: Vec<Value> = coverage_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("complete"))
@@ -223,11 +229,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-COMMAND-FAMILY-CONSISTENCY-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let matrix = fs::read_to_string(
                 workspace_root.join("artifacts/parity/commands_fully_rust_owned.json"),
             )
@@ -253,17 +262,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (174, "command_family_help_trees_and_machine_output_envelopes_remain_consistent"),
                             ]);
             let coverage_rows: Vec<Value> = required
-                                .iter()
-                                .map(|(coverage_id, fn_name)| {
-                                    let present = source.contains(&format!("fn {fn_name}("));
-                                    json!({
-                                        "coverage_id": coverage_id,
-                                        "test": fn_name,
-                                        "status": if present { "covered" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/bin_surface/command_family_consistency_extra.rs",
-                                    })
-                                })
-                                .collect();
+                .iter()
+                .map(|(coverage_id, fn_name)| {
+                    let evidence = sources
+                        .iter()
+                        .find(|(_, src)| src.contains(&format!("fn {fn_name}(")))
+                        .map(|(path, _)| path.clone());
+                    json!({
+                        "coverage_id": coverage_id,
+                        "test": fn_name,
+                        "status": if evidence.is_some() { "covered" } else { "missing" },
+                        "evidence": evidence,
+                    })
+                })
+                .collect();
             let missing: Vec<Value> = coverage_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) != Some("covered"))
@@ -343,11 +355,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CROSS-SURFACE-CONSISTENCY-LAW-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs"),
-            )
-            .unwrap_or_default();
+            let tests_root = workspace_root.join("crates/bijux-cli/tests");
+            let sources: BTreeMap<String, String> = collect_files(&tests_root)
+                .into_iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("rs"))
+                .map(|path| {
+                    (rel(&path, workspace_root), fs::read_to_string(path).unwrap_or_default())
+                })
+                .collect();
             let matrix = fs::read_to_string(
                 workspace_root.join("artifacts/status/command_migration_matrix.json"),
             )
@@ -389,7 +404,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let mut drift_items = Vec::<Value>::new();
             let mut warnings = Vec::<Value>::new();
             for (coverage_id, fn_name, law, related) in required {
-                let present = source.contains(&format!("fn {fn_name}("));
+                let evidence = sources
+                    .iter()
+                    .find(|(_, src)| src.contains(&format!("fn {fn_name}(")))
+                    .map(|(path, _)| path.clone());
+                let present = evidence.is_some();
                 let related_statuses: Vec<String> =
                     related.iter().map(|cmd| migration_status(cmd)).collect();
                 let coverage_class = if !related_statuses.is_empty()
@@ -402,7 +421,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let row = json!({
                     "coverage_id": coverage_id,
                     "law": law,
-                    "test": format!("crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs::{fn_name}"),
+                    "test": evidence.unwrap_or_else(|| fn_name.to_string()),
                     "present": present,
                     "coverage_class": coverage_class,
                     "related_commands": related,

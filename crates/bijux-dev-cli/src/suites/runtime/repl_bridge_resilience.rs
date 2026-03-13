@@ -341,26 +341,26 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     .filter_map(|path| fs::read_to_string(path).ok())
                     .collect::<Vec<_>>()
                     .join("\n");
-                let mut bijux_dev_cli_imports = source.matches("bijux_dev_cli").count();
-                let mut dev_cli_literals = source.matches("bijux-dev-cli").count();
+                let mut maintainer_crate_imports = source.matches("bijux_dev_cli").count();
+                let mut maintainer_binary_literals = source.matches("bijux-dev-cli").count();
                 let route_audit_assembly_calls = source.matches("route_audit_report(").count();
                 let mut report_builder_calls = source.matches("build_report(").count();
                 if crate_name == "bijux-cli" {
                     report_builder_calls = 0;
-                    bijux_dev_cli_imports = 0;
-                    dev_cli_literals = 0;
+                    maintainer_crate_imports = 0;
+                    maintainer_binary_literals = 0;
                 }
                 if crate_name == "bijux-cli::routing" {
-                    dev_cli_literals = 0;
+                    maintainer_binary_literals = 0;
                 }
-                let leakage_score = bijux_dev_cli_imports
-                    + dev_cli_literals
+                let leakage_score = maintainer_crate_imports
+                    + maintainer_binary_literals
                     + route_audit_assembly_calls
                     + report_builder_calls;
                 rows.push(json!({
                     "crate": crate_name,
-                    "bijux_dev_cli_imports": bijux_dev_cli_imports,
-                    "dev_cli_literals": dev_cli_literals,
+                    "maintainer_crate_imports": maintainer_crate_imports,
+                    "maintainer_binary_literals": maintainer_binary_literals,
                     "route_audit_assembly_calls": route_audit_assembly_calls,
                     "report_builder_calls_outside_core_exception": report_builder_calls,
                     "leakage_score": leakage_score,
