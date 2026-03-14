@@ -5,9 +5,10 @@ use std::collections::BTreeSet;
 use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV2};
 use semver::Version;
 
-use super::constants::{is_reserved_namespace, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES};
+use super::constants::{is_reserved_namespace, CORE_NAMESPACES};
 use super::errors::PluginError;
 use super::models::ValidatedPlugin;
+use crate::contracts::known_bijux_tool_namespaces;
 
 /// Parse `PluginManifestV2` from JSON text.
 pub fn parse_manifest_v2(text: &str) -> Result<PluginManifestV2, PluginError> {
@@ -93,7 +94,7 @@ fn reject_core_namespace(namespace: &Namespace) -> Result<(), PluginError> {
 }
 
 fn reject_known_bijux_project_namespace(namespace: &Namespace) -> Result<(), PluginError> {
-    if KNOWN_BIJUX_PROJECT_NAMESPACES.iter().any(|value| *value == namespace.0) {
+    if known_bijux_tool_namespaces().iter().any(|value| *value == namespace.0) {
         return Err(PluginError::FutureNamespaceConflict(namespace.0.clone()));
     }
     Ok(())
@@ -108,7 +109,7 @@ fn validate_aliases(namespace: &Namespace, aliases: &[String]) -> Result<(), Plu
         }
         if is_reserved_namespace(alias, &[])
             || CORE_NAMESPACES.iter().any(|value| *value == alias)
-            || KNOWN_BIJUX_PROJECT_NAMESPACES.iter().any(|value| *value == alias)
+            || known_bijux_tool_namespaces().iter().any(|value| *value == alias)
         {
             return Err(PluginError::ReservedAlias(alias.clone()));
         }

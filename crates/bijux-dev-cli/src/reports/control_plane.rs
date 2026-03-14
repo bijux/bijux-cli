@@ -37,6 +37,8 @@ pub struct ProductContractRow {
     pub namespace: String,
     /// Repository slug under `github.com/bijux`.
     pub repository: String,
+    /// Registry declaration status.
+    pub status: String,
     /// Runtime command surface contract.
     pub runtime: ProductSurfaceRow,
     /// Control-plane command surface contract.

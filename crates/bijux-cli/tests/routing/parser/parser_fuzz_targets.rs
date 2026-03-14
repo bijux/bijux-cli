@@ -5,7 +5,7 @@
 use bijux_cli::api::routing::catalog::normalize_command_path;
 use bijux_cli::api::routing::parser::{parse_intent, ParsedIntent};
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::contracts::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::contracts::official_product_namespaces;
 use clap as _;
 use proptest as _;
 use schemars as _;
@@ -300,7 +300,7 @@ fn fuzz_namespace_normalization_and_reserved_rejection_stays_safe() {
     assert!(matches!(case_collision, RouteError::Conflict(_)));
 
     let mut reserved = RouteRegistry::default();
-    for ns in OFFICIAL_PRODUCT_NAMESPACES {
+    for ns in official_product_namespaces() {
         let err =
             reserved.register_plugin_namespace(ns).expect_err("reserved namespace must reject");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));

@@ -4,7 +4,7 @@ use std::cmp::max;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::contracts::{
-    known_bijux_tool, CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES,
+    known_bijux_tool, official_product_namespaces, CommandPath, Namespace, NamespaceMetadata,
 };
 
 /// Route target categories.
@@ -62,7 +62,7 @@ impl Default for RouteRegistry {
             "completion".to_string(),
             "inspect".to_string(),
         ]);
-        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(std::string::ToString::to_string));
+        reserved.extend(official_product_namespaces().iter().map(std::string::ToString::to_string));
 
         Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
     }

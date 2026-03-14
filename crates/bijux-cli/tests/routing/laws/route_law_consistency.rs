@@ -3,7 +3,7 @@
 
 use bijux_cli::api::routing::catalog::{is_known_route, normalize_command_path};
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry, RouteTarget};
-use bijux_cli::contracts::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::contracts::official_product_namespaces;
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -52,7 +52,7 @@ fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
 fn route_tree_marks_official_product_namespaces_as_reserved() {
     let registry = RouteRegistry::default();
     let tree = registry.route_tree();
-    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
+    for namespace in official_product_namespaces() {
         assert!(tree.iter().any(|item| {
             item.name.0 == *namespace && item.reserved && item.owner == format!("bijux-{namespace}")
         }));
@@ -62,7 +62,7 @@ fn route_tree_marks_official_product_namespaces_as_reserved() {
 #[test]
 fn official_product_namespace_registry_drives_routing_rejections() {
     let mut registry = RouteRegistry::default();
-    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
+    for namespace in official_product_namespaces() {
         let err = registry
             .register_plugin_namespace(namespace)
             .expect_err("official product namespace must stay reserved");

@@ -21,7 +21,7 @@ use bijux_cli::api::parser::ParsedGlobalFlags;
 use bijux_cli::api::plugins::{list_plugins, load_time_diagnostics};
 use bijux_cli::api::routing::registry::RouteRegistry;
 use bijux_cli::api::version::runtime_semver;
-use bijux_cli::contracts::{contracts_schema_query, KNOWN_BIJUX_TOOLS};
+use bijux_cli::contracts::{contracts_schema_query, known_bijux_tools};
 use serde_json::{json, Value};
 
 use crate::cli::dispatch::{
@@ -128,21 +128,22 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     }
 
     fn product_contracts(&self) -> Vec<ProductContractRow> {
-        KNOWN_BIJUX_TOOLS
+        known_bijux_tools()
             .iter()
             .map(|tool| ProductContractRow {
                 namespace: tool.namespace.to_string(),
-                repository: tool.runtime_binary(),
+                repository: tool.repository(),
                 runtime: ProductSurfaceRow {
                     command_surface: format!("bijux {}", tool.namespace),
                     binary: tool.runtime_binary(),
-                    package: tool.runtime_binary(),
+                    package: tool.runtime_package(),
                 },
                 control: ProductSurfaceRow {
                     command_surface: tool.control_binary(),
                     binary: tool.control_binary(),
-                    package: tool.control_binary(),
+                    package: tool.control_package(),
                 },
+                status: tool.status.to_string(),
             })
             .collect()
     }

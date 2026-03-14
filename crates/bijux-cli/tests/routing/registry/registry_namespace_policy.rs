@@ -1,15 +1,16 @@
 #![forbid(unsafe_code)]
 //! Registry precedence and namespace-policy tests.
 
+use std::collections::BTreeMap;
+use std::fs;
+use std::sync::{Arc, Barrier, Mutex};
+
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::contracts::{KNOWN_BIJUX_TOOLS, OFFICIAL_PRODUCT_NAMESPACES};
+use bijux_cli::contracts::{known_bijux_tools, official_product_namespaces};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
 use serde_json as _;
-use std::collections::BTreeMap;
-use std::fs;
-use std::sync::{Arc, Barrier, Mutex};
 
 use clap as _;
 use schemars as _;
@@ -26,7 +27,7 @@ fn official_reserved_namespaces_take_precedence() {
             "expected reserved rejection for {ns}"
         );
     }
-    for ns in OFFICIAL_PRODUCT_NAMESPACES {
+    for ns in official_product_namespaces() {
         let result = registry.register_plugin_namespace(ns);
         assert!(
             matches!(result, Err(RouteError::Reserved(_))),
@@ -38,8 +39,8 @@ fn official_reserved_namespaces_take_precedence() {
 #[test]
 fn known_bijux_tool_registry_matches_expected_namespaces() {
     let expected = ["agent", "atlas", "dag", "dna", "gnss", "rag", "rar", "vex"];
-    let official: Vec<&str> = OFFICIAL_PRODUCT_NAMESPACES.to_vec();
-    let known: Vec<&str> = KNOWN_BIJUX_TOOLS.iter().map(|tool| tool.namespace).collect();
+    let official: Vec<&str> = official_product_namespaces().to_vec();
+    let known: Vec<&str> = known_bijux_tools().iter().map(|tool| tool.namespace).collect();
 
     assert_eq!(official, expected);
     assert_eq!(known, expected);
@@ -47,13 +48,19 @@ fn known_bijux_tool_registry_matches_expected_namespaces() {
 
 #[test]
 fn known_bijux_tools_follow_standard_binary_and_package_patterns() {
-    for tool in KNOWN_BIJUX_TOOLS {
+    for tool in known_bijux_tools() {
         let runtime_binary = tool.runtime_binary();
         let control_binary = tool.control_binary();
+        let runtime_package = tool.runtime_package();
+        let control_package = tool.control_package();
         assert_eq!(tool.runtime_binary(), format!("bijux-{}", tool.namespace));
         assert_eq!(tool.control_binary(), format!("bijux-dev-{}", tool.namespace));
         assert_eq!(runtime_binary, format!("bijux-{}", tool.namespace));
         assert_eq!(control_binary, format!("bijux-dev-{}", tool.namespace));
+        assert_eq!(runtime_package, runtime_binary);
+        assert_eq!(control_package, control_binary);
+        assert_eq!(tool.repository(), runtime_binary);
+        assert_eq!(tool.status, "declared");
     }
 }
 
@@ -70,6 +77,7 @@ struct OfficialProductRegistryEntry {
     runtime_package: String,
     control_package: String,
     repository: String,
+    status: String,
 }
 
 #[test]
@@ -80,7 +88,7 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
     let registry: OfficialProductRegistry =
         serde_json::from_str(&registry_text).expect("parse official product registry json");
 
-    let expected: BTreeMap<String, OfficialProductRegistryEntry> = KNOWN_BIJUX_TOOLS
+    let expected: BTreeMap<String, OfficialProductRegistryEntry> = known_bijux_tools()
         .iter()
         .map(|tool| {
             (
@@ -89,9 +97,10 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
                     namespace: tool.namespace.to_string(),
                     runtime_binary: tool.runtime_binary(),
                     control_binary: tool.control_binary(),
-                    runtime_package: tool.runtime_binary(),
-                    control_package: tool.control_binary(),
-                    repository: tool.runtime_binary(),
+                    runtime_package: tool.runtime_package(),
+                    control_package: tool.control_package(),
+                    repository: tool.repository(),
+                    status: tool.status.to_string(),
                 },
             )
         })

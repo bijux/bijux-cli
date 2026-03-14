@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use crate::contracts::KNOWN_BIJUX_TOOL_NAMESPACES;
+use crate::contracts::known_bijux_tool_namespaces;
 
 /// Registry schema version.
 pub const REGISTRY_VERSION: &str = "1";
@@ -12,14 +12,11 @@ pub const RESERVED_NAMESPACES: &[&str] =
 /// Reserved namespaces currently owned by bijux-cli core command graph.
 pub const CORE_NAMESPACES: &[&str] = &["cli"];
 
-/// Reserved namespaces owned by known Bijux tool projects.
-pub const KNOWN_BIJUX_PROJECT_NAMESPACES: &[&str] = KNOWN_BIJUX_TOOL_NAMESPACES;
-
 /// Return true if namespace is reserved for core or compatibility behavior.
 #[must_use]
 pub fn is_reserved_namespace(namespace: &str, additional: &[&str]) -> bool {
     RESERVED_NAMESPACES.contains(&namespace)
         || CORE_NAMESPACES.contains(&namespace)
-        || KNOWN_BIJUX_PROJECT_NAMESPACES.contains(&namespace)
+        || known_bijux_tool_namespaces().contains(&namespace)
         || additional.contains(&namespace)
 }

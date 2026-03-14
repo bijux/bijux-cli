@@ -34,8 +34,8 @@ pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV2,
 };
 pub use product_mount::{
-    known_bijux_tool, KnownBijuxTool, ProductMountMetadata, KNOWN_BIJUX_TOOLS,
-    KNOWN_BIJUX_TOOL_NAMESPACES, OFFICIAL_PRODUCT_NAMESPACES,
+    known_bijux_tool, known_bijux_tool_namespaces, known_bijux_tools, official_product_namespaces,
+    KnownBijuxTool, ProductMountMetadata,
 };
 pub use query::{contracts_schema_query, ContractsSchemaQuery};
 pub use schema::{error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v2_schema};

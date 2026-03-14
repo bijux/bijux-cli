@@ -8,14 +8,15 @@ use anyhow::Result;
 use serde_json::{json, Value};
 
 use crate::api::version::runtime_semver;
-use crate::contracts::plugin_manifest_v2_schema;
-use crate::contracts::PluginLifecycleState;
+use crate::contracts::{
+    known_bijux_tool_namespaces, plugin_manifest_v2_schema, PluginLifecycleState,
+};
 use crate::features::plugins::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
-    KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
+    RESERVED_NAMESPACES,
 };
 
 fn plugin_record_payload(record: &crate::features::plugins::PluginRecord) -> Value {
@@ -329,7 +330,7 @@ pub(crate) fn reserved_namespaces_report() -> Value {
     json!({
         "reserved_namespaces": RESERVED_NAMESPACES,
         "core_namespaces": CORE_NAMESPACES,
-        "known_bijux_projects": KNOWN_BIJUX_PROJECT_NAMESPACES,
+        "known_bijux_projects": known_bijux_tool_namespaces(),
     })
 }
 

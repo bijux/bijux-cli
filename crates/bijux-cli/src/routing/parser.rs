@@ -4,7 +4,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
 use crate::contracts::{
-    ColorMode, LogLevel, OutputFormat, PrettyMode, KNOWN_BIJUX_TOOL_NAMESPACES,
+    known_bijux_tool_namespaces, ColorMode, LogLevel, OutputFormat, PrettyMode,
 };
 
 /// Parsed and normalized global options.
@@ -383,7 +383,7 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let command_path = extract_path(&raw_matches);
     let normalize_external_globals = matches!(
         command_path.as_slice(),
-        [a, ..] if KNOWN_BIJUX_TOOL_NAMESPACES.contains(&a.as_str())
+        [a, ..] if known_bijux_tool_namespaces().contains(&a.as_str())
     );
 
     let global_flags = if normalize_external_globals {
