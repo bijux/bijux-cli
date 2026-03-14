@@ -11,12 +11,17 @@ import pytest
 
 from bijux_cli_py import execution_facade
 
-STABLE_PYPI_VERSION = "0.2.0"
+DEFAULT_STABLE_PYPI_VERSION = "0.2.0"
+STABLE_PYPI_VERSION_ENV = "BIJUX_STABLE_PYPI_VERSION"
 ENABLE_STABLE_RELEASE_CHECK = "BIJUX_ENABLE_STABLE_PYPI_PARITY"
 
 
 def _project_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def stable_pypi_version() -> str:
+    return os.environ.get(STABLE_PYPI_VERSION_ENV, DEFAULT_STABLE_PYPI_VERSION)
 
 
 def _stable_python() -> str:
@@ -25,7 +30,7 @@ def _stable_python() -> str:
     venv.EnvBuilder(with_pip=True, clear=True).create(venv_dir)
     python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     subprocess.run(
-        [str(python), "-m", "pip", "install", f"bijux-cli=={STABLE_PYPI_VERSION}"],
+        [str(python), "-m", "pip", "install", f"bijux-cli=={stable_pypi_version()}"],
         check=True,
         capture_output=True,
         text=True,
@@ -41,6 +46,14 @@ def _run_stable(*args: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
+
+def test_stable_release_version_override_is_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(STABLE_PYPI_VERSION_ENV, "9.9.9")
+    assert stable_pypi_version() == "9.9.9"
+
+    monkeypatch.delenv(STABLE_PYPI_VERSION_ENV)
+    assert stable_pypi_version() == DEFAULT_STABLE_PYPI_VERSION
 
 
 @pytest.mark.nightly
@@ -72,5 +85,5 @@ def test_current_python_package_keeps_stable_release_entrypoint_shape() -> None:
     assert stable_version.returncode == 0
     assert stable_version.stdout.strip()
     assert current_version
-    assert STABLE_PYPI_VERSION in stable_version.stdout
+    assert stable_pypi_version() in stable_version.stdout
     assert current_version != stable_version.stdout.strip()
