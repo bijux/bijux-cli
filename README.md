@@ -142,7 +142,7 @@ channel for a stable published build and use `cargo run` from a checkout when
 you want the current branch state. Checkout builds still report the latest real
 release tag line until a newer `v*` tag exists.
 
-Supported install channels on Linux and macOS:
+Supported install channels today:
 
 ```bash
 # Cargo
@@ -177,12 +177,23 @@ cargo run -q -p bijux-cli --bin bijux -- version
 
 ## Platform Support
 
-* **Supported**: Linux, macOS
-* **Not supported**: Windows
+* **Supported host contract today**: Linux, macOS
+* **Not supported yet**: Windows
 
-Bijux relies on POSIX filesystem and process semantics. `pwsh` completion output
-is supported on Linux and macOS hosts where PowerShell is installed; that does
-not imply general Windows runtime support.
+The Rust runtime now includes some Windows-aware code paths such as `.exe`
+discovery, state-path resolution, and install-path diagnostics. That is real
+progress, but it is not enough to advertise Windows as an end-to-end supported
+host.
+
+The current blockers are still product-level, not just packaging-level:
+
+* the built-in Rust plugin scaffold emits a POSIX shell entrypoint,
+* completion target paths and install guidance are Linux/macOS-oriented,
+* and the documented support and release contract is still written around
+  Linux/macOS hosts.
+
+`pwsh` completion output is supported on Linux and macOS hosts where PowerShell
+is installed. That does not imply general Windows runtime support.
 
 ---
 
