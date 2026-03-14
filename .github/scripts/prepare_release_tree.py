@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -124,6 +125,27 @@ def rewrite_lockfile_versions(path: Path, release_version: str) -> None:
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
+def parse_release_version(release_version: str) -> tuple[int, int, int]:
+    parts = release_version.split(".")
+    if len(parts) != 3 or any(not part.isdigit() for part in parts):
+        raise SystemExit(f"release version must be x.y.z semver without prerelease/build metadata: {release_version}")
+    return int(parts[0]), int(parts[1]), int(parts[2])
+
+
+def next_supported_host_boundary(release_version: str) -> str:
+    major, minor, _patch = parse_release_version(release_version)
+    if major == 0:
+        return f"0.{minor + 1}.0"
+    return f"{major + 1}.0.0"
+
+
+def rewrite_template_compatibility_defaults(path: Path, release_version: str) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["cli_min"] = release_version
+    payload["cli_max"] = next_supported_host_boundary(release_version)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     args = parse_args()
     workspace_root = Path(args.workspace_root).resolve()
@@ -136,6 +158,14 @@ def main() -> int:
     copy_workspace(workspace_root, output_dir)
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
     rewrite_lockfile_versions(output_dir / "Cargo.lock", release_version)
+    rewrite_template_compatibility_defaults(
+        output_dir / "templates/plugins-py/cookiecutter.json",
+        release_version,
+    )
+    rewrite_template_compatibility_defaults(
+        output_dir / "templates/plugins-rs/cookiecutter.json",
+        release_version,
+    )
     print(output_dir)
     return 0
 
