@@ -28,14 +28,80 @@ fn is_hex_sha(value: &str) -> bool {
 }
 
 #[test]
-fn runtime_crate_manifest_declares_publish_metadata() {
-    let manifest = read_repo_file("crates/bijux-cli/Cargo.toml");
-    for required in
-        ["homepage = ", "documentation = ", "readme = ", "keywords = [", "categories = ["]
-    {
+fn workspace_manifest_declares_shared_project_links() {
+    let manifest = read_repo_file("Cargo.toml");
+    for required in ["homepage = ", "documentation = "] {
         assert!(
             manifest.contains(required),
-            "runtime crate manifest is missing publish metadata: {required}"
+            "workspace manifest is missing shared project metadata: {required}"
+        );
+    }
+}
+
+#[test]
+fn crate_manifests_declare_clear_publish_metadata() {
+    for (path, required) in [
+        (
+            "crates/bijux-cli/Cargo.toml",
+            vec![
+                "description = ",
+                "homepage",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+            ],
+        ),
+        (
+            "crates/bijux-cli-python/Cargo.toml",
+            vec![
+                "description = ",
+                "homepage",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+            ],
+        ),
+        (
+            "crates/bijux-dev-cli/Cargo.toml",
+            vec![
+                "description = ",
+                "homepage",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+            ],
+        ),
+    ] {
+        let manifest = read_repo_file(path);
+        for field in required {
+            assert!(
+                manifest.contains(field),
+                "{path} is missing crate metadata field: {field}"
+            );
+        }
+    }
+}
+
+#[test]
+fn crate_documentation_links_match_current_public_docs() {
+    for (path, expected) in [
+        ("crates/bijux-cli/Cargo.toml", "https://bijux.github.io/bijux-cli/04-architecture/runtime-and-distribution/"),
+        (
+            "crates/bijux-cli-python/Cargo.toml",
+            "https://bijux.github.io/bijux-cli/06-reference/integrations-and-routed-runtimes/",
+        ),
+        (
+            "crates/bijux-dev-cli/Cargo.toml",
+            "https://bijux.github.io/bijux-cli/04-architecture/maintainer-control-plane/",
+        ),
+    ] {
+        let manifest = read_repo_file(path);
+        assert!(
+            manifest.contains(expected),
+            "{path} should point to the current public documentation surface"
         );
     }
 }
