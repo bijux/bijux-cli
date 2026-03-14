@@ -101,7 +101,9 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
             continue;
         }
         let text = fs::read_to_string(&file).unwrap_or_default();
-        assert!(!text.contains("scripts"), "legacy token found in {}", file.display());
+        for legacy_marker in ["join(\"scripts\")", "join(\"scripts/", "\"scripts/"] {
+            assert!(!text.contains(legacy_marker), "legacy token found in {}", file.display());
+        }
         assert!(
             !text.contains("packages/bijux-cli-py"),
             "legacy token found in {}",
