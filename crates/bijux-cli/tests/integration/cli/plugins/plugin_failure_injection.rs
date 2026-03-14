@@ -711,7 +711,9 @@ fn check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor() {
     assert_eq!(check.status.code(), Some(1));
 
     let doctor = run_ok_json(&["cli", "plugins", "doctor"], &plugins_dir);
-    assert_eq!(doctor["status"], "ok");
+    assert_eq!(doctor["status"], "degraded");
+    assert_eq!(doctor["self_repair_attempted"], true);
+    assert_eq!(doctor["self_repair_success"], true);
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     assert!(listed["plugins"].is_array());

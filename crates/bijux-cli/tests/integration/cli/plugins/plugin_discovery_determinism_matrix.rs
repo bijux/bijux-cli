@@ -383,8 +383,22 @@ fn registry_and_discovery_disagreement_diagnostics_are_deterministic() {
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write corrupt registry");
     let first = run(&["cli", "plugins", "doctor"], &plugins_dir);
     let second = run(&["cli", "plugins", "doctor"], &plugins_dir);
+    let third = run(&["cli", "plugins", "doctor"], &plugins_dir);
     assert_eq!(first.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout);
+    assert_eq!(second.status.code(), Some(0));
+    assert_eq!(third.status.code(), Some(0));
+    let first_payload: Value = serde_json::from_slice(&first.stdout).expect("first doctor payload");
+    let second_payload: Value =
+        serde_json::from_slice(&second.stdout).expect("second doctor payload");
+    let third_payload: Value = serde_json::from_slice(&third.stdout).expect("third doctor payload");
+    assert_eq!(first_payload["status"], "degraded");
+    assert_eq!(first_payload["self_repair_attempted"], true);
+    assert_eq!(first_payload["self_repair_success"], true);
+    assert_eq!(second_payload["status"], "ok");
+    assert_eq!(second_payload["self_repair_attempted"], false);
+    assert_eq!(second_payload["self_repair_success"], false);
+    assert_eq!(second_payload, third_payload);
+    assert_eq!(second.stdout, third.stdout);
 }
 
 #[test]
