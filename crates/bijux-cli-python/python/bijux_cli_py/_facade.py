@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+import importlib
 import json
 import os
 from pathlib import Path
@@ -93,7 +94,7 @@ def _sanitized_subprocess_env() -> dict[str, str]:
 
 
 try:
-    from . import _native as native
+    native = importlib.import_module(f"{__package__}._native")
 
     NATIVE_AVAILABLE = True
 except (ImportError, ModuleNotFoundError, OSError) as exc:  # pragma: no cover
