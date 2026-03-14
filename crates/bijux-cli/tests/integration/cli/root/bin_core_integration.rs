@@ -271,5 +271,5 @@ fn repl_process_executes_piped_commands_and_exits_cleanly() {
         .expect("repl should emit a json payload line");
     let payload: serde_json::Value =
         serde_json::from_str(status_line).expect("status payload json");
-    assert_eq!(payload["status"], serde_json::json!("ok"));
+    assert_runtime_status_grade(&payload);
 }
