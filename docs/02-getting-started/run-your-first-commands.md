@@ -14,12 +14,20 @@ flowchart TD
     E --> F[See diagnostics behavior]
 ```
 
+This flowchart shows the minimal progression from discovery to confidence. Help
+proves the command tree exists, `status` proves normal execution works, and
+`doctor` proves the runtime can inspect its own environment.
+
 ```mermaid
 flowchart LR
     A[Help] --> B[Routing proof]
     C[Status] --> D[Execution proof]
     E[Doctor] --> F[Diagnostic proof]
 ```
+
+The second diagram compresses the same idea into capability labels. It explains
+why these three commands are paired together instead of treated as redundant
+checks.
 
 ## Minimal Command Set
 

@@ -16,12 +16,19 @@ flowchart TD
     E --> H[yaml]
 ```
 
+This diagram shows where configuration actually takes effect. Flags,
+environment, and config are resolved into one runtime behavior first, and only
+then does the command result get rendered as text, JSON, or YAML.
+
 ```mermaid
 flowchart LR
     A[config list] --> B[Inspect state]
     C[config set] --> D[Change one value]
     E[config export/load] --> F[Move state between environments]
 ```
+
+The second diagram maps the common config actions to their practical use:
+inspection, one-off mutation, and file-based transfer between environments.
 
 ## Common Configuration Commands
 

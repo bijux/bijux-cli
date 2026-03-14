@@ -17,6 +17,10 @@ flowchart TD
     F -->|Yes| H[Move to a guide or issue investigation]
 ```
 
+This flowchart gives the intended troubleshooting order. It starts with binary
+resolution, then moves through install health, and only after that asks whether
+the underlying expectation is actually supported.
+
 ```mermaid
 mindmap
   root((Early problems))
@@ -30,6 +34,10 @@ mindmap
       unsupported platform
       wrong binary in PATH
 ```
+
+The mindmap groups the common causes behind that flow: install identity
+problems, usage mistakes, and environment limits. Reading failures this way
+helps keep early debugging concrete instead of speculative.
 
 ## First Checks
 

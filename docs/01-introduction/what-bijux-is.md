@@ -15,6 +15,10 @@ flowchart LR
     B --> E[Shared execution law]
 ```
 
+This diagram shows the current entry surfaces that users actually touch. The
+important point is that they all terminate in the same runtime law instead of
+competing command implementations.
+
 ```mermaid
 flowchart TD
     A[Current repository] --> B[Rust crates]
@@ -24,6 +28,10 @@ flowchart TD
     D --> F[Single command behavior model]
     E --> F
 ```
+
+This second diagram explains the repository split. Rust crates own the runtime
+behavior, while the Python package keeps installation and compatibility duties
+without becoming a separate source of truth for command semantics.
 
 ## What It Optimizes For
 

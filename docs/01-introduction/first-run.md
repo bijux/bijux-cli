@@ -17,6 +17,9 @@ sequenceDiagram
     C-->>U: machine-readable output
 ```
 
+This sequence shows the smallest honest verification loop: identity first, then
+help generation, then one ordinary command rendered as machine-readable output.
+
 ```mermaid
 flowchart TD
     A[Install bijux-cli] --> B[Run bijux --version]
@@ -24,6 +27,10 @@ flowchart TD
     C --> D[Run bijux status --format json --no-pretty]
     D --> E[You have verified identity, routing, and structured output]
 ```
+
+This flowchart summarizes what each verification step adds. By the end of the
+path, you have checked that the binary resolves, the command tree renders, and
+the runtime can emit stable structured output.
 
 ## Minimal Verification
 

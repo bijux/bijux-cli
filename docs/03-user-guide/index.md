@@ -14,6 +14,10 @@ flowchart TD
     D --> E[Use the interactive shell when it helps]
 ```
 
+This flowchart shows the intended order for practical use: learn the everyday
+checks first, then control configuration and output, then add plugins, and only
+after that reach for the REPL when interactive work is genuinely faster.
+
 ```mermaid
 mindmap
   root((User guide))
@@ -32,6 +36,10 @@ mindmap
       repl
       history
 ```
+
+The mindmap summarizes the same territory by theme. It helps readers jump to
+the right guide depending on whether their question is about daily operation,
+state and output, extensions, or interactive use.
 
 ## Read This Set In Order
 

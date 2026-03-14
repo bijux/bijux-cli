@@ -18,6 +18,10 @@ flowchart LR
     G --> H[Exit code]
 ```
 
+This diagram shows the shared execution spine: different entry surfaces may
+start the run, but they all converge on one routing, policy, execution, and
+emission path before an exit code is produced.
+
 ```mermaid
 flowchart TD
     A[Inputs] --> B[Flags and environment]
@@ -26,6 +30,10 @@ flowchart TD
     D --> E[Output envelope]
     E --> F[stdout or stderr]
 ```
+
+This companion diagram narrows the focus to policy resolution. It shows that
+inputs are combined before command logic runs, so formatting and stream
+behavior are consequences of resolved policy rather than ad hoc handler code.
 
 ## Stable Ideas
 

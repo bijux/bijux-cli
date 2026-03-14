@@ -13,6 +13,10 @@ flowchart LR
     C[doctor] --> F[Health and conflicts]
 ```
 
+This diagram groups the daily commands by question. `version` answers identity,
+`status` answers current runtime state, and `doctor` answers whether the
+environment or install surface still needs attention.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -24,6 +28,10 @@ sequenceDiagram
     U->>C: bijux doctor
     C-->>U: diagnostics
 ```
+
+The sequence diagram shows the normal order of use in a shell session: confirm
+which runtime you are invoking, inspect the runtime state, then ask for deeper
+diagnostics only if you need them.
 
 ## Core Commands
 

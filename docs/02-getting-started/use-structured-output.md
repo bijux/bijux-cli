@@ -13,6 +13,10 @@ flowchart TD
     C --> E[Parse a stable envelope]
 ```
 
+This flowchart explains the branching rule for output formats. Human-readable
+text stays appropriate for interactive work, while automation should switch to
+an explicit structured format before any downstream parsing begins.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -23,6 +27,10 @@ sequenceDiagram
     U->>J: pass JSON to script
     J-->>U: stable machine-readable handling
 ```
+
+The sequence diagram shows the handoff that matters in practice: the CLI emits
+one structured payload, and the consumer handles that payload directly instead
+of scraping styled terminal output.
 
 ## First Structured Command
 

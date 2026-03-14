@@ -13,6 +13,10 @@ flowchart TD
     D --> E[What limits should I know before I commit to it?]
 ```
 
+This flowchart is the intended reading order for the section. It starts with
+identity, then moves through first-use behavior and execution shape before
+ending on the practical limits that decide whether Bijux fits your workflow.
+
 ```mermaid
 mindmap
   root((Introduction))
@@ -29,6 +33,10 @@ mindmap
       No Windows support
       No plugin sandbox
 ```
+
+The mindmap is the short summary of what this section establishes: who owns the
+runtime today, how command execution behaves, where the project fits well, and
+which limits you should carry forward into the rest of the docs.
 
 ## Read This Set In Order
 

@@ -12,6 +12,10 @@ flowchart LR
     C[Maintainer review] --> D
 ```
 
+This diagram shows where confidence is allowed to come from. Bijux treats
+contracts, live tests, and current review evidence as the inputs that justify a
+claim, instead of relying on reputation or broad language.
+
 ```mermaid
 flowchart TD
     A[Request stronger guarantee] --> B{Is it documented?}
@@ -19,6 +23,10 @@ flowchart TD
     B -->|No| D[Treat as current behavior only]
     D --> E[Check tests and release notes before relying on it]
 ```
+
+This decision path explains how to classify a behavior. If the answer is not in
+the documented contract set, the safe reading is that it remains current
+behavior only and should be checked before you build automation around it.
 
 ## Where Bijux Fits Well
 

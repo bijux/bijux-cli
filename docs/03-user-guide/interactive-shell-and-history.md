@@ -15,6 +15,10 @@ flowchart TD
     E --> F[Use history and session controls]
 ```
 
+This flowchart shows when the REPL is the right tool. It is for repeated,
+interactive exploration, not for replacing the normal CLI in automation or
+single-command workflows.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -26,6 +30,10 @@ sequenceDiagram
     U->>R: doctor
     R-->>U: JSON output
 ```
+
+The sequence diagram demonstrates the main advantage of the REPL: you can keep
+one session open, change session-local settings, and rerun commands without
+rebuilding shell pipelines each time.
 
 ## Start The REPL
 

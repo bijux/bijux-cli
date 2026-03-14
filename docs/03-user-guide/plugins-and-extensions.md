@@ -14,12 +14,21 @@ flowchart TD
     E --> F[uninstall when no longer needed]
 ```
 
+This diagram shows the lifecycle that the runtime actually supports today:
+install from a manifest, inspect and validate the result, use the plugin only
+after those checks, and uninstall it when you no longer want it in the local
+registry.
+
 ```mermaid
 flowchart LR
     A[Trusted local plugin] --> B[Reasonable use]
     C[Untrusted plugin] --> D[Do not install]
     E[inspect and check] --> F[Current health evidence]
 ```
+
+The second diagram explains the trust boundary around that lifecycle. Bijux can
+show health evidence and current registry state, but it cannot turn an
+untrusted plugin into a safe one.
 
 ## Common Commands
 

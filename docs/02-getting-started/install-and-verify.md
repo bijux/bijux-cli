@@ -14,6 +14,10 @@ flowchart LR
     D -->|No| F[Resolve path or install conflicts]
 ```
 
+This flowchart shows the recommended install posture: commit to one channel,
+verify immediately, and treat any non-healthy result as a recovery problem to
+solve before you move on to normal command use.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -27,6 +31,10 @@ sequenceDiagram
     U->>B: bijux doctor
     B-->>U: install health report
 ```
+
+The sequence diagram turns that advice into the exact first-run check. Each
+command answers a different question about runtime identity, active paths, and
+install health, so skipping one leaves a real blind spot.
 
 ## Recommended Channels
 

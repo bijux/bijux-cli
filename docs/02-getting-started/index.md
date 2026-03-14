@@ -14,6 +14,10 @@ flowchart TD
     D --> E[Handle early failures]
 ```
 
+This flowchart is the practical onboarding path for new users. It shows the
+order that prevents confusion: install first, verify the active binary, prove a
+few commands work, then move to structured output and troubleshooting.
+
 ```mermaid
 mindmap
   root((Getting Started))
@@ -34,6 +38,10 @@ mindmap
       path confusion
       unsupported expectations
 ```
+
+The mindmap highlights the themes behind that path: one install choice, early
+verification, a small set of first commands, and explicit recovery steps when
+expectations or environment state are wrong.
 
 ## Read This Set In Order
 
