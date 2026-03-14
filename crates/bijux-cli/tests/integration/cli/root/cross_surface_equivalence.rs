@@ -21,7 +21,7 @@ fn run_binary(args: &[&str]) -> Output {
 
 fn run_core_cmd(args: &[&str]) -> AppRunResult {
     let mut argv = vec!["bijux".to_string()];
-    argv.extend(args.iter().map(|arg| arg.to_string()));
+    argv.extend(args.iter().map(|arg| (*arg).to_string()));
     run_app(&argv).expect("core execution should succeed")
 }
 

@@ -9,7 +9,7 @@ use serde_json::Value;
 
 fn bridge_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
-        .chain(args.iter().map(|value| value.to_string()))
+        .chain(args.iter().map(|value| (*value).to_string()))
         .collect::<Vec<_>>();
     serde_json::from_str(&execution_outcome_api(&argv).expect("bridge outcome json"))
         .expect("bridge outcome payload")
@@ -17,7 +17,7 @@ fn bridge_outcome(args: &[&str]) -> Value {
 
 fn core_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
-        .chain(args.iter().map(|value| value.to_string()))
+        .chain(args.iter().map(|value| (*value).to_string()))
         .collect::<Vec<_>>();
     let result = run_app(&argv).expect("core run");
     serde_json::json!({

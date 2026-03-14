@@ -282,13 +282,11 @@ fn completion_supports_explicit_shell_selection_in_text_and_json_modes() {
     let bash_text = String::from_utf8(bash.stdout).expect("utf-8");
     assert!(bash_text.contains("complete -W "));
 
-    let zsh_payload = run_ok_json(&["completion", "--shell", "zsh", "--format", "json", "--no-pretty"]);
+    let zsh_payload =
+        run_ok_json(&["completion", "--shell", "zsh", "--format", "json", "--no-pretty"]);
     assert_eq!(zsh_payload["active_shell"], "zsh");
     assert_eq!(zsh_payload["selection_source"], "explicit");
-    assert!(zsh_payload["script"]
-        .as_str()
-        .expect("script")
-        .contains("#compdef bijux"));
+    assert!(zsh_payload["script"].as_str().expect("script").contains("#compdef bijux"));
 }
 
 #[test]

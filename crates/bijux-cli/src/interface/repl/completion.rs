@@ -72,7 +72,7 @@ fn normalize_completion_value(value: &str) -> Option<String> {
 fn core_completion_candidates() -> &'static [String] {
     CORE_COMPLETION_CACHE.get_or_init(|| {
         let mut values = built_in_route_paths().to_vec();
-        values.extend(STATIC_REPL_COMPLETIONS.iter().map(|entry| entry.to_string()));
+        values.extend(STATIC_REPL_COMPLETIONS.iter().map(|entry| (*entry).to_string()));
         let mut normalized = values
             .into_iter()
             .filter_map(|entry| normalize_completion_value(&entry))

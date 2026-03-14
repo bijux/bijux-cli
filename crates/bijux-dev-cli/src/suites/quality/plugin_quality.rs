@@ -174,10 +174,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let stxt = text(scaffold_targets);
             let srtxt = text(scaffold_reg);
             let required: BTreeMap<i64, (&str, &str)> = BTreeMap::from([
-                (
-                    61,
-                    (manifest_targets, "install_rejects_stale_manifest_version_markers"),
-                ),
+                (61, (manifest_targets, "install_rejects_stale_manifest_version_markers")),
                 (
                     62,
                     (
@@ -243,10 +240,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     77,
                     (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),
                 ),
-                (
-                    78,
-                    (manifest_reg, "json_error_envelopes_for_namespace_rejection_are_stable"),
-                ),
+                (78, (manifest_reg, "json_error_envelopes_for_namespace_rejection_are_stable")),
                 (
                     79,
                     (scaffold_reg, "minimized_scaffold_cases_replay_with_deterministic_exit_codes"),

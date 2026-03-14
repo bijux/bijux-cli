@@ -72,10 +72,7 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
             home_dir.join(".config").join("fish").join("completions").join("bijux.fish")
         }
         CompletionShell::PowerShell => {
-            home_dir
-                .join(".config")
-                .join("powershell")
-                .join("Microsoft.PowerShell_profile.ps1")
+            home_dir.join(".config").join("powershell").join("Microsoft.PowerShell_profile.ps1")
         }
     }
 }

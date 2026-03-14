@@ -290,7 +290,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 let mut sorted_actual = actual.clone();
                 sorted_actual.sort();
                 let mut sorted_expected =
-                    expected.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+                    expected.iter().map(|s| (*s).to_string()).collect::<Vec<_>>();
                 sorted_expected.sort();
                 schema_rows.push(json!({"command":command,"expected_keys":expected,"actual_keys":sorted_actual,"status":if sorted_actual==sorted_expected{"match"}else{"drift"}}));
             }

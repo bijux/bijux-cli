@@ -11,15 +11,14 @@ use serde_json::{json, Value};
 use crate::api::version::runtime_semver;
 use crate::contracts::{
     known_bijux_tool, known_bijux_tool_namespaces, official_product_namespaces,
-    plugin_manifest_v2_schema,
-    PluginLifecycleState,
+    plugin_manifest_v2_schema, PluginLifecycleState,
 };
 use crate::features::plugins::{
-    blocked_namespace_inventory, compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
-    install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins, load_registry,
-    load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
-    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginError, PluginTrustLevel,
-    CORE_NAMESPACES, RESERVED_NAMESPACES,
+    blocked_namespace_inventory, compatibility_warnings, disable_plugin, enable_plugin,
+    inspect_plugin, install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
+    load_registry, load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout,
+    self_repair_registry, uninstall_plugin, validate_manifest, InstallPluginRequest, PluginError,
+    PluginTrustLevel, CORE_NAMESPACES, RESERVED_NAMESPACES,
 };
 
 fn plugin_record_payload(record: &crate::features::plugins::PluginRecord) -> Value {
@@ -178,25 +177,16 @@ fn path_report(path: &Path, expected_kind: &str) -> Value {
 fn blocked_namespace_details() -> Vec<Value> {
     let mut details = BTreeMap::<String, Vec<String>>::new();
     for namespace in RESERVED_NAMESPACES {
-        details
-            .entry((*namespace).to_string())
-            .or_default()
-            .push("runtime-command".to_string());
+        details.entry((*namespace).to_string()).or_default().push("runtime-command".to_string());
     }
     for namespace in CORE_NAMESPACES {
         details.entry((*namespace).to_string()).or_default().push("core-cli".to_string());
     }
     for namespace in official_product_namespaces() {
-        details
-            .entry((*namespace).to_string())
-            .or_default()
-            .push("official-product".to_string());
+        details.entry((*namespace).to_string()).or_default().push("official-product".to_string());
     }
     for namespace in known_bijux_tool_namespaces() {
-        details
-            .entry((*namespace).to_string())
-            .or_default()
-            .push("repository-tool".to_string());
+        details.entry((*namespace).to_string()).or_default().push("repository-tool".to_string());
     }
 
     details

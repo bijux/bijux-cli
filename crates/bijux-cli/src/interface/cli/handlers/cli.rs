@@ -1,15 +1,15 @@
 //! `cli` command handlers.
 
+use serde_json::{json, Value};
 use std::env;
 use std::path::Path;
-use serde_json::{json, Value};
 
 use crate::api::config::validate_config_file;
 use crate::api::version::{runtime_semver, runtime_version_info};
 use crate::features::diagnostics::state_paths::{state_diagnostics, ResolvedStatePaths};
 use crate::features::install::{
-    completion_file_path, completion_script, detect_shell, install_health_report, post_install_hint,
-    CompletionShell,
+    completion_file_path, completion_script, detect_shell, install_health_report,
+    post_install_hint, CompletionShell,
 };
 use crate::features::plugins::{
     compatibility_warnings, list_plugins, plugin_doctor, plugin_origin_metadata,
@@ -70,9 +70,7 @@ pub(crate) fn completion_report(argv: &[String]) -> Value {
     .map(completion_shell_name)
     .collect::<Vec<_>>();
     let target_file = env::var_os("HOME").map(|home| {
-        completion_file_path(active_shell, Path::new(&home))
-            .to_string_lossy()
-            .into_owned()
+        completion_file_path(active_shell, Path::new(&home)).to_string_lossy().into_owned()
     });
 
     json!({
@@ -226,10 +224,8 @@ pub(crate) fn runtime_audit_report(
     }));
 
     let state = state_diagnostics(paths);
-    let state_issue_count = state
-        .get("issues")
-        .and_then(Value::as_array)
-        .map_or(0, std::vec::Vec::len);
+    let state_issue_count =
+        state.get("issues").and_then(Value::as_array).map_or(0, std::vec::Vec::len);
     checks.push(json!({
         "name": "state",
         "status": if state_issue_count == 0 { "ok" } else { "warning" },
@@ -237,11 +233,7 @@ pub(crate) fn runtime_audit_report(
         "issue_count": state_issue_count,
     }));
 
-    let issues = checks
-        .iter()
-        .filter(|check| check["status"] != "ok")
-        .cloned()
-        .collect::<Vec<_>>();
+    let issues = checks.iter().filter(|check| check["status"] != "ok").cloned().collect::<Vec<_>>();
 
     json!({
         "status": if issues.iter().any(|item| item["status"] == "error") {
@@ -322,7 +314,7 @@ pub(crate) fn self_test_report(
             "status": if config_check.is_ok() { "ok" } else { "error" },
             "message": config_check
                 .as_ref()
-                .map(|_| "config file parsed successfully".to_string())
+                .map(|()| "config file parsed successfully".to_string())
                 .unwrap_or_else(|error| error.clone()),
         }),
         json!({
@@ -421,22 +413,18 @@ pub(crate) fn try_handle(
                 })
                 .collect();
             route_sources.extend(
-                registry
-                    .route_tree()
-                    .into_iter()
-                    .filter(|item| !item.reserved)
-                    .map(|item| {
-                        let source = if item.owner.starts_with("plugin-alias:") {
-                            "plugin-alias"
-                        } else {
-                            "plugin"
-                        };
-                        json!({
-                            "segments": [item.name.0],
-                            "owner": item.owner,
-                            "source": source,
-                        })
-                    }),
+                registry.route_tree().into_iter().filter(|item| !item.reserved).map(|item| {
+                    let source = if item.owner.starts_with("plugin-alias:") {
+                        "plugin-alias"
+                    } else {
+                        "plugin"
+                    };
+                    json!({
+                        "segments": [item.name.0],
+                        "owner": item.owner,
+                        "source": source,
+                    })
+                }),
             );
             Some(json!({
                 "status": "ok",
@@ -479,7 +467,9 @@ pub(crate) fn try_handle(
                 }
             }))
         }
-        [a, b] if a == "cli" && b == "status" => Some(runtime_status_report(paths, plugin_registry_path)),
+        [a, b] if a == "cli" && b == "status" => {
+            Some(runtime_status_report(paths, plugin_registry_path))
+        }
         [a, b] if a == "cli" && b == "paths" => {
             let install = install_report_payload();
             let hint = install

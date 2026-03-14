@@ -91,12 +91,8 @@ fn canonical_cli_completion_and_doctor_paths_parse_successfully() {
     assert_eq!(completion.command_path, vec!["cli", "completion"]);
     assert_eq!(completion.normalized_path, vec!["cli", "completion"]);
 
-    let doctor = parse_intent(&[
-        "bijux".to_string(),
-        "cli".to_string(),
-        "doctor".to_string(),
-    ])
-    .expect("parse should succeed");
+    let doctor = parse_intent(&["bijux".to_string(), "cli".to_string(), "doctor".to_string()])
+        .expect("parse should succeed");
     assert_eq!(doctor.command_path, vec!["cli", "doctor"]);
     assert_eq!(doctor.normalized_path, vec!["cli", "doctor"]);
 }

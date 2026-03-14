@@ -30,13 +30,9 @@ fn is_hex_sha(value: &str) -> bool {
 #[test]
 fn runtime_crate_manifest_declares_publish_metadata() {
     let manifest = read_repo_file("crates/bijux-cli/Cargo.toml");
-    for required in [
-        "homepage = ",
-        "documentation = ",
-        "readme = ",
-        "keywords = [",
-        "categories = [",
-    ] {
+    for required in
+        ["homepage = ", "documentation = ", "readme = ", "keywords = [", "categories = ["]
+    {
         assert!(
             manifest.contains(required),
             "runtime crate manifest is missing publish metadata: {required}"

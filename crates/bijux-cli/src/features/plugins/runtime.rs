@@ -115,11 +115,7 @@ pub(crate) fn detected_python_interpreters() -> Vec<PythonInterpreterStatus> {
             };
             let supported = parse_python_version(&version)
                 .is_some_and(|(major, minor)| major > 3 || (major == 3 && minor >= 11));
-            Some(PythonInterpreterStatus {
-                command: candidate.to_string(),
-                version,
-                supported,
-            })
+            Some(PythonInterpreterStatus { command: candidate.to_string(), version, supported })
         })
         .collect()
 }
@@ -170,10 +166,8 @@ fn run_python_plugin(
         return Ok(PluginRouteOutput::Process(render_process_result(output)));
     }
 
-    let envelope: PythonBridgeEnvelope =
-        serde_json::from_slice(&output.stdout).with_context(|| {
-            format!("plugin `{namespace}` returned an invalid structured payload")
-        })?;
+    let envelope: PythonBridgeEnvelope = serde_json::from_slice(&output.stdout)
+        .with_context(|| format!("plugin `{namespace}` returned an invalid structured payload"))?;
     Ok(PluginRouteOutput::Structured(envelope.result))
 }
 

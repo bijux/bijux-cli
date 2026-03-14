@@ -181,7 +181,7 @@ mod tests {
     use super::parse_help_path_tokens;
 
     fn vec_of(values: &[&str]) -> Vec<String> {
-        values.iter().map(|value| value.to_string()).collect()
+        values.iter().map(|value| (*value).to_string()).collect()
     }
 
     #[test]

@@ -93,11 +93,11 @@ fn parser_flag_order_permutations_keep_same_result() {
         vec!["bijux", "--format", "json", "cli", "status", "--quiet"],
     ];
 
-    let baseline = parse_intent(&variants[0].iter().map(|x| x.to_string()).collect::<Vec<_>>())
+    let baseline = parse_intent(&variants[0].iter().map(|x| (*x).to_string()).collect::<Vec<_>>())
         .expect("baseline parse");
 
     for variant in variants.iter().skip(1) {
-        let intent = parse_intent(&variant.iter().map(|x| x.to_string()).collect::<Vec<_>>())
+        let intent = parse_intent(&variant.iter().map(|x| (*x).to_string()).collect::<Vec<_>>())
             .expect("variant parse");
         assert_eq!(intent.normalized_path, baseline.normalized_path);
         assert_eq!(intent.global_flags, baseline.global_flags);
@@ -139,7 +139,7 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
     for argv in
         [vec!["bijux", "--help"], vec!["bijux", "cli", "--help"], vec!["bijux", "atlas", "--help"]]
     {
-        let intent = parse_intent(&argv.iter().map(|x| x.to_string()).collect::<Vec<_>>())
+        let intent = parse_intent(&argv.iter().map(|x| (*x).to_string()).collect::<Vec<_>>())
             .expect("help parse should not error");
         assert!(intent.normalized_path.is_empty() || !intent.command_path.is_empty());
     }
@@ -154,7 +154,7 @@ fn compatibility_aliases_are_normalized_and_external_mounts_are_left_as_is() {
     ];
 
     for (argv, expected) in cases {
-        let intent = parse_intent(&argv.iter().map(|x| x.to_string()).collect::<Vec<_>>())
+        let intent = parse_intent(&argv.iter().map(|x| (*x).to_string()).collect::<Vec<_>>())
             .expect("parse should succeed");
         assert_eq!(intent.normalized_path, expected);
     }

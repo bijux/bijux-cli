@@ -66,28 +66,30 @@ fn install_command_for(package_name: &str, quiet: bool) -> Vec<String> {
     command
 }
 
-fn success_payload(
-    requested_target: &str,
-    canonical_target: &str,
-    package_name: &str,
-    executable_name: &str,
+struct SuccessPayload<'a> {
+    requested_target: &'a str,
+    canonical_target: &'a str,
+    package_name: &'a str,
+    executable_name: &'a str,
     dry_run: bool,
-    command: &[String],
-    stdout: &str,
-    stderr: &str,
-) -> Value {
+    command: &'a [String],
+    stdout: &'a str,
+    stderr: &'a str,
+}
+
+fn success_payload(args: SuccessPayload<'_>) -> Value {
     json!({
         "status": "ok",
-        "requested_target": requested_target,
-        "target": canonical_target,
+        "requested_target": args.requested_target,
+        "target": args.canonical_target,
         "installer": "cargo",
         "ecosystem": "cargo",
-        "package": package_name,
-        "executable": executable_name,
-        "dry_run": dry_run,
-        "command": command,
-        "stdout": stdout,
-        "stderr": stderr,
+        "package": args.package_name,
+        "executable": args.executable_name,
+        "dry_run": args.dry_run,
+        "command": args.command,
+        "stdout": args.stdout,
+        "stderr": args.stderr,
     })
 }
 
@@ -146,16 +148,16 @@ pub(crate) fn try_run(
     let dry_run = command_has_flag(argv, "--dry-run");
 
     if dry_run {
-        let payload = success_payload(
-            &requested_target,
-            &target.target_name,
-            &target.strategy.package_name,
-            &target.strategy.executable_name,
-            true,
-            &command,
-            "",
-            "",
-        );
+        let payload = success_payload(SuccessPayload {
+            requested_target: &requested_target,
+            canonical_target: &target.target_name,
+            package_name: &target.strategy.package_name,
+            executable_name: &target.strategy.executable_name,
+            dry_run: true,
+            command: &command,
+            stdout: "",
+            stderr: "",
+        });
         if cfg.format == OutputFormat::Text {
             return Ok(Some(AppRunResult {
                 exit_code: 0,
@@ -202,16 +204,16 @@ pub(crate) fn try_run(
             }
 
             let payload = if exit_code == 0 {
-                success_payload(
-                    &requested_target,
-                    &target.target_name,
-                    &target.strategy.package_name,
-                    &target.strategy.executable_name,
-                    false,
-                    &command,
-                    &stdout,
-                    &stderr,
-                )
+                success_payload(SuccessPayload {
+                    requested_target: &requested_target,
+                    canonical_target: &target.target_name,
+                    package_name: &target.strategy.package_name,
+                    executable_name: &target.strategy.executable_name,
+                    dry_run: false,
+                    command: &command,
+                    stdout: &stdout,
+                    stderr: &stderr,
+                })
             } else {
                 error_payload(
                     &requested_target,

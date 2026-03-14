@@ -22,19 +22,13 @@ pub(crate) fn try_handle(
             Ok(Some(plugin_operations::plugins_overview(plugin_registry_path, &paths.plugins_dir)))
         }
         [a, b] if a == "plugins" && b == "info" => {
-            Ok(Some(plugin_operations::plugins_info(
-                plugin_registry_path,
-                &paths.plugins_dir,
-            )))
+            Ok(Some(plugin_operations::plugins_info(plugin_registry_path, &paths.plugins_dir)))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
             Ok(Some(plugin_operations::plugins_list(plugin_registry_path, &paths.plugins_dir)))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "info" => {
-            Ok(Some(plugin_operations::plugins_info(
-                plugin_registry_path,
-                &paths.plugins_dir,
-            )))
+            Ok(Some(plugin_operations::plugins_info(plugin_registry_path, &paths.plugins_dir)))
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
             let plugin = command_positionals(argv, &["cli", "plugins", "inspect"]).first().cloned();

@@ -110,10 +110,7 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         )
         .expect("parse manifest");
         assert_eq!(manifest["version"], "0.1.0");
-        assert_eq!(
-            manifest["compatibility"]["min_inclusive"],
-            current_plugin_host_floor()
-        );
+        assert_eq!(manifest["compatibility"]["min_inclusive"], current_plugin_host_floor());
         assert_eq!(manifest["compatibility"]["max_exclusive"], current_plugin_host_ceiling());
 
         let forbidden = if kind == "python" {

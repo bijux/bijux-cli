@@ -285,12 +285,13 @@ fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
         .as_array()
         .expect("route sources")
         .iter()
-        .any(|row| row["segments"] == serde_json::json!(["alias-short"]) && row["source"] == "plugin-alias"));
-    assert!(routing["alias_rewrites"]
-        .as_array()
-        .expect("alias rewrites")
-        .iter()
-        .any(|row| row["alias"] == serde_json::json!(["alias-short"]) && row["canonical"] == serde_json::json!(["aliasplug"]) && row["source"] == "plugin-alias"));
+        .any(|row| row["segments"] == serde_json::json!(["alias-short"])
+            && row["source"] == "plugin-alias"));
+    assert!(routing["alias_rewrites"].as_array().expect("alias rewrites").iter().any(|row| row
+        ["alias"]
+        == serde_json::json!(["alias-short"])
+        && row["canonical"] == serde_json::json!(["aliasplug"])
+        && row["source"] == "plugin-alias"));
 
     let check = run_ok_json(&["cli", "plugins", "check", "alias-short"], &plugins_dir);
     assert_eq!(check["status"], "healthy");
@@ -644,8 +645,10 @@ fn install_rejects_python_entrypoints_that_do_not_match_runtime_shape() {
     );
     mutate_manifest_entrypoint(&manifest_file(&scaffold_dir), "plugin.main");
 
-    let out =
-        run(&["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")], &plugins_dir);
+    let out = run(
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
+        &plugins_dir,
+    );
     assert_eq!(out.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&out.stderr).contains("entrypoint"));
 }
@@ -891,7 +894,10 @@ fn reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces() {
         .as_array()
         .expect("blocked namespace details")
         .iter()
-        .any(|row| row["namespace"] == "atlas" && row["categories"].as_array().is_some_and(|items| items.iter().any(|item| item == "official-product"))));
+        .any(|row| row["namespace"] == "atlas"
+            && row["categories"]
+                .as_array()
+                .is_some_and(|items| items.iter().any(|item| item == "official-product"))));
 
     let explain = run_ok_json(&["cli", "plugins", "explain", "cli"], &plugins_dir);
     assert_eq!(explain["requested_reference"], "cli");

@@ -57,7 +57,9 @@ fn resolves_registered_plugin_aliases_to_their_namespace() {
     assert_eq!(alias_route, RouteTarget::Plugin("alpha".to_string()));
 
     let tree = registry.route_tree();
-    assert!(tree.iter().any(|row| row.name.0 == "alpha-short" && row.owner == "plugin-alias:alpha"));
+    assert!(tree
+        .iter()
+        .any(|row| row.name.0 == "alpha-short" && row.owner == "plugin-alias:alpha"));
 }
 
 #[test]

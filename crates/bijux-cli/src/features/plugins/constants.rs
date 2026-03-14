@@ -9,17 +9,7 @@ pub const REGISTRY_VERSION: &str = "1";
 
 /// Reserved namespaces that plugins cannot claim.
 pub const RESERVED_NAMESPACES: &[&str] =
-    &[
-        "cli",
-        "dev",
-        "help",
-        "version",
-        "doctor",
-        "repl",
-        "plugins",
-        "completion",
-        "inspect",
-    ];
+    &["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"];
 
 /// Reserved namespaces currently owned by bijux-cli core command graph.
 pub const CORE_NAMESPACES: &[&str] = &["cli"];
@@ -39,7 +29,5 @@ pub fn blocked_namespace_inventory(additional: &[&str]) -> Vec<String> {
 /// Return true if namespace is reserved for core or compatibility behavior.
 #[must_use]
 pub fn is_reserved_namespace(namespace: &str, additional: &[&str]) -> bool {
-    blocked_namespace_inventory(additional)
-        .iter()
-        .any(|blocked| blocked == namespace)
+    blocked_namespace_inventory(additional).iter().any(|blocked| blocked == namespace)
 }

@@ -40,7 +40,7 @@ fn parity_against_core(args: &[&str]) {
     assert!(!out.stdout.is_empty(), "successful parity command must emit stdout: {args:?}");
 
     let mut argv = vec!["bijux".to_string()];
-    argv.extend(args.iter().map(|a| a.to_string()));
+    argv.extend(args.iter().map(|a| (*a).to_string()));
     let core = run_app(&argv).expect("core should run");
 
     assert_eq!(out.status.code(), Some(core.exit_code));

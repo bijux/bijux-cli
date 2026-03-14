@@ -87,21 +87,11 @@ fn render_template(text: &str) -> String {
 }
 
 fn expected_template_reserved_namespaces() -> BTreeSet<String> {
-    [
-        "cli",
-        "completion",
-        "dev",
-        "doctor",
-        "help",
-        "inspect",
-        "plugins",
-        "repl",
-        "version",
-    ]
-    .into_iter()
-    .map(str::to_string)
-    .chain(known_bijux_tool_namespaces().iter().map(|value| (*value).to_string()))
-    .collect()
+    ["cli", "completion", "dev", "doctor", "help", "inspect", "plugins", "repl", "version"]
+        .into_iter()
+        .map(str::to_string)
+        .chain(known_bijux_tool_namespaces().iter().map(|value| (*value).to_string()))
+        .collect()
 }
 
 fn reserved_namespaces_from_hook(path: &str) -> BTreeSet<String> {
@@ -236,8 +226,9 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
         rust_rendered.to_ascii_lowercase().contains("rebuild"),
         "rendered rust project README must explain the local rebuild contract"
     );
-    let python_rendered =
-        render_template(&read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/README.md"));
+    let python_rendered = render_template(&read_repo_file(
+        "templates/plugins-py/{{cookiecutter.plugin_namespace}}/README.md",
+    ));
     assert!(
         python_rendered.contains("Python 3.11 or newer"),
         "rendered python project README must document the Python runtime floor"
@@ -284,8 +275,9 @@ fn template_manifests_match_current_plugin_contract() {
         );
     }
 
-    let rust_entrypoint =
-        render_template(&read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin-entrypoint"));
+    let rust_entrypoint = render_template(&read_repo_file(
+        "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin-entrypoint",
+    ));
     assert!(
         rust_entrypoint.contains("cargo build --quiet"),
         "rust template entrypoint should build the binary when needed"
@@ -295,8 +287,9 @@ fn template_manifests_match_current_plugin_contract() {
         "rust template entrypoint should not route every execution through cargo run"
     );
 
-    let rust_cargo_toml =
-        render_template(&read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/Cargo.toml"));
+    let rust_cargo_toml = render_template(&read_repo_file(
+        "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/Cargo.toml",
+    ));
     assert!(
         rust_cargo_toml.contains("name = \"testplug\""),
         "rust template Cargo.toml should align package and binary names with plugin_namespace"
@@ -416,9 +409,10 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
 #[test]
 fn template_hook_reserved_namespaces_match_runtime_contracts() {
     let expected = expected_template_reserved_namespaces();
-    for path in
-        ["templates/plugins-py/hooks/pre_gen_project.py", "templates/plugins-rs/hooks/pre_gen_project.py"]
-    {
+    for path in [
+        "templates/plugins-py/hooks/pre_gen_project.py",
+        "templates/plugins-rs/hooks/pre_gen_project.py",
+    ] {
         assert_eq!(
             reserved_namespaces_from_hook(path),
             expected,
@@ -429,7 +423,8 @@ fn template_hook_reserved_namespaces_match_runtime_contracts() {
 
 #[test]
 fn template_projects_ship_local_ignore_rules() {
-    let py_ignore = read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/.gitignore");
+    let py_ignore =
+        read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/.gitignore");
     assert!(
         py_ignore.contains("__pycache__/"),
         "python template should ignore interpreter cache directories"
@@ -439,7 +434,8 @@ fn template_projects_ship_local_ignore_rules() {
         "python template should ignore local virtual environments"
     );
 
-    let rust_ignore = read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/.gitignore");
+    let rust_ignore =
+        read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/.gitignore");
     assert!(
         rust_ignore.contains("/target/"),
         "rust template should ignore the local Cargo target directory"

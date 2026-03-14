@@ -8,6 +8,10 @@ use crate::infra::artifacts::{
     collect_files_recursive, json_artifact_state, read_json_if_exists, relative_to_root,
 };
 
+fn has_extension(path: &str, extension: &str) -> bool {
+    Path::new(path).extension().is_some_and(|ext| ext.eq_ignore_ascii_case(extension))
+}
+
 /// Builds the maintainer documentation audit report payload.
 #[must_use]
 pub fn build_report(workspace_root: &Path) -> Value {
@@ -22,19 +26,19 @@ pub fn build_report(workspace_root: &Path) -> Value {
         .map(|p| relative_to_root(&p, workspace_root))
         .collect::<Vec<_>>();
     let docs_files =
-        all_docs_files.iter().filter(|path| path.ends_with(".md")).cloned().collect::<Vec<_>>();
+        all_docs_files.iter().filter(|path| has_extension(path, "md")).cloned().collect::<Vec<_>>();
     let machine_readable_docs = all_docs_files
         .iter()
-        .filter(|path| path.ends_with(".json") && path.starts_with("docs/assets/"))
+        .filter(|path| has_extension(path, "json") && path.starts_with("docs/assets/"))
         .cloned()
         .collect::<Vec<_>>();
     let site_assets = all_docs_files
         .iter()
         .filter(|path| {
-            path.ends_with(".css")
-                || path.ends_with(".js")
-                || path.ends_with(".html")
-                || path.ends_with(".png")
+            has_extension(path, "css")
+                || has_extension(path, "js")
+                || has_extension(path, "html")
+                || has_extension(path, "png")
         })
         .cloned()
         .collect::<Vec<_>>();

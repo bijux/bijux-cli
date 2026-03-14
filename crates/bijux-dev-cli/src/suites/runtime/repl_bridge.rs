@@ -201,7 +201,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs"),
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([

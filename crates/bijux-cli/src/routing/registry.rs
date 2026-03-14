@@ -321,9 +321,7 @@ fn normalize_namespace(input: &str) -> String {
 }
 
 fn to_path(raw: &str) -> CommandPath {
-    CommandPath {
-        segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect(),
-    }
+    CommandPath { segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect() }
 }
 
 #[cfg(test)]
