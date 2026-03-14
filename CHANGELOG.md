@@ -58,7 +58,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## [0.2.0] – 2026-01-26
 
 ### Added
-- Linear bootstrap flow with explicit phase boundaries and a first-class `CLIIntent`
+- Linear bootstrap flow with explicit bootstrap boundaries and a first-class `CLIIntent`
 - Rebuilt E2E suite with domain taxonomy, invariants, and a subprocess harness
 - Nightly fuzz and stress suites under `tests/nightly` with dedicated markers
 - Expanded regression coverage for bootstrap paths, flags matrix, plugin loader/metadata, and real serializer roundtrips
