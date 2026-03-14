@@ -1,7 +1,7 @@
 [package]
 name = "bijux-cli-python"
 version.workspace = true
-description = "PyO3 bridge and Python installation surface for the Rust-owned Bijux runtime."
+description = "Python package and native bridge for installing and launching the Bijux command runtime."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -10,7 +10,7 @@ documentation = "https://bijux.github.io/bijux-cli/06-reference/integrations-and
 authors.workspace = true
 rust-version.workspace = true
 readme = "README.md"
-keywords = ["bijux", "python", "pyo3", "bindings", "cli"]
+keywords = ["bijux", "python", "cli", "automation", "plugins"]
 categories = ["api-bindings", "command-line-interface", "development-tools"]
 
 [lib]

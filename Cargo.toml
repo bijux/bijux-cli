@@ -13,7 +13,7 @@ license = "Apache-2.0"
 repository = "https://github.com/bijux/bijux-cli"
 homepage = "https://bijux.github.io/bijux-cli/"
 documentation = "https://bijux.github.io/bijux-cli/"
-authors = ["Bijan Mousavi"]
+authors = ["Bijan Mousavi <mousavi.bijan@gmail.com>"]
 rust-version = "1.85"
 
 [workspace.dependencies]
