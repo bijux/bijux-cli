@@ -11,6 +11,7 @@ This repository currently ships three connected surfaces:
 * `bijux-dev-cli`: the workspace-only maintainer control plane.
 
 The public promise today is a deterministic CLI with explicit plugin lifecycle handling, stable machine-readable output, and shared CLI/REPL behavior.
+Git checkout builds derive runtime identity from the latest real `v*` tag in Git until a newer release tag exists, so a bumped workspace manifest alone does not make the checkout claim a published release.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
@@ -136,9 +137,10 @@ replace runtime ownership or reintroduce a separate Python-first command graph.
 Use one install channel at a time.
 
 Published versions come from PyPI and crates.io. The repository main branch may
-carry `-dev` versions between releases, so install from a release channel for a
-stable published build and use `cargo run` from a checkout when you want the
-current branch state.
+carry release-preparation manifests between tags, so install from a release
+channel for a stable published build and use `cargo run` from a checkout when
+you want the current branch state. Checkout builds still report the latest real
+release tag line until a newer `v*` tag exists.
 
 Supported install channels on Linux and macOS:
 
@@ -256,8 +258,9 @@ back to ad hoc prose.
 ## Developer Introspection
 
 Maintainer diagnostics run through `bijux-dev-cli` from a workspace build or
-checkout. They are not part of the ordinary end-user command surface, and
-`bijux install` does not install them:
+checkout. They are not part of the ordinary end-user command surface. Runtime
+install aliases such as `bijux install dev-cli --dry-run` resolve package names,
+but they do not make maintainer commands part of the `bijux` runtime namespace:
 
 ```bash
 cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
@@ -271,6 +274,8 @@ cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- state-doctor --format text
 
 Flags short-circuit in a fixed order.
 Once a higher-priority flag applies, lower-priority inputs are ignored.
+The table below describes precedence-sensitive flags, not every available
+global switch.
 
 | Priority | Flag                         | Effect                                 |
 | -------: | ---------------------------- | -------------------------------------- |
@@ -349,12 +354,21 @@ Precedence: **flags → env → config → defaults**
 Bijux quality claims are checked through tests, CI gates, and live maintainer
 commands.
 
-Run locally:
+Suggested local baseline:
 
 ```bash
 make bootstrap
-make all
+make fmt
+make lint
+make test
 make docs-check
+```
+
+Run `make all` when you want the full release-facing gate, including security
+checks and Python package builds:
+
+```bash
+make all
 ```
 
 For runtime-surface or release-facing changes, also check the maintainer views
@@ -387,7 +401,7 @@ contracts/      Repository contracts and registries
 * The project is still pre-1.0, so compatibility tightening can still happen.
 * Core CLI semantics such as flags, output formats, exit behavior, and runtime-owned state paths are the strongest stability surface today.
 * Plugin lifecycle behavior is shipped and tested, but plugin metadata and loader internals can still evolve before v1.0.
-* Published package versions represent the release line; the repository main branch may be ahead with `-dev` versions.
+* Published package versions and `v*` git tags define the public release line. Untagged checkout builds stay anchored to the latest real tag line even when the repository source tree has already moved ahead for the next release.
 * Plugins are executable extension code, not a sandboxed trust boundary.
 
 ---
@@ -405,7 +419,7 @@ contracts/      Repository contracts and registries
 ## Contributing
 
 Contributions are welcome.
-See [CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 When changing public behavior, update the README and reference docs so the
 repository front page stays aligned with the shipped runtime.
 
