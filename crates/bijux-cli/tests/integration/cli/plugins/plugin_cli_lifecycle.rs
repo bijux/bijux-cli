@@ -743,12 +743,18 @@ fn reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let names = run_ok_json(&["cli", "plugins", "reserved-names"], &plugins_dir);
+    assert_eq!(names["status"], "ok");
     let reserved = names["reserved_namespaces"].as_array().expect("reserved array");
+    let blocked = names["blocked_namespaces"].as_array().expect("blocked array");
     assert!(reserved.iter().any(|item| item == "cli"));
     assert!(reserved.iter().any(|item| item == "dev"));
     assert!(reserved.iter().any(|item| item == "help"));
     assert!(reserved.iter().any(|item| item == "version"));
     assert!(reserved.iter().any(|item| item == "doctor"));
+    assert!(blocked.iter().any(|item| item == "atlas"));
+    assert!(blocked.iter().any(|item| item == "dag"));
+    assert!(blocked.iter().any(|item| item == "dna"));
+    assert_eq!(names["alias_policy"]["namespace_rules_apply_to_aliases"], true);
 
     let explain = run_ok_json(&["cli", "plugins", "explain", "cli"], &plugins_dir);
     assert_eq!(explain["plugin"], "cli");

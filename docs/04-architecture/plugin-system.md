@@ -42,7 +42,8 @@ The current plugin model includes:
 - trust labels
 - local entrypoint resolution
 - routed execution for enabled installed plugin namespaces
-- reserved-name and alias collision checks
+- reserved-name and alias collision checks, including official product
+  namespaces and alias reuse of blocked names
 - install, info, inspect, check, enable, disable, uninstall, scaffold, doctor,
   reserved-names, where, explain, and schema commands
 

@@ -49,8 +49,9 @@ The durable local plugin contract is based on `plugin.manifest.json`.
 - `plugins explain [plugin]` can report either a registry-wide summary or one
   plugin's compatibility and load diagnostics
 - `plugins where` reports the active plugins directory and registry file
-- `plugins reserved-names` reports the current reserved plugin namespace
-  inventory
+- `plugins reserved-names` reports the full blocked plugin namespace inventory,
+  including official product namespaces, and confirms that the same policy
+  applies to plugin aliases
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install

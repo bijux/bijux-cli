@@ -93,7 +93,8 @@ Expected shape:
 - `check` verifies manifest validity and entrypoint presence
 - `doctor` shows registry-wide health and load diagnostics
 - `where` shows the active plugins directory and registry file
-- `reserved-names` shows the namespaces that plugins must not claim
+- `reserved-names` shows the full blocked namespace inventory and confirms that
+  the same rules apply to plugin aliases
 - `explain` without an argument shows the overall plugin summary; with a
   namespace it shows compatibility or load diagnostics for one plugin
 - `list` no longer reports the namespace after uninstall
