@@ -3,7 +3,7 @@
 # Prefer the virtualenv binary and fall back to PATH.
 ACT              ?= $(VENV)/bin
 MKDOCS_BIN_CAND  ?= $(ACT)/mkdocs
-MKDOCS_BIN       := $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOCS_BIN_CAND)" || command -v mkdocs)
+MKDOCS_BIN       = $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOCS_BIN_CAND)" || command -v mkdocs)
 MKDOCS_CFG       ?= mkdocs.yml
 
 # Keep documentation build outputs and caches under `artifacts/`.
