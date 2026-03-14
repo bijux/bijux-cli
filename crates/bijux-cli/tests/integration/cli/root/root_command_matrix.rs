@@ -83,7 +83,6 @@ fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     let actual_semver = semver::Version::parse(payload["semver"].as_str().expect("runtime semver"))
         .expect("runtime semver");
     let source = payload["source"].as_str().expect("source");
-    let package_semver = semver::Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
     if source == "git-tag" {
         assert_eq!(actual_semver, tagged_semver);
     } else {
@@ -91,14 +90,9 @@ fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     }
 
     let version = payload["version"].as_str().expect("display version");
-    let expected_prefix = if source == "git-tag" || package_semver <= tagged_semver {
-        tag
-    } else {
-        format!("v{}", env!("CARGO_PKG_VERSION"))
-    };
     assert!(
-        version.starts_with(&expected_prefix),
-        "display version should start with {expected_prefix}, got {version}"
+        version.starts_with(&tag),
+        "display version should start with the latest real tag {tag}, got {version}"
     );
     assert_ne!(payload["source"], "package-fallback");
 }

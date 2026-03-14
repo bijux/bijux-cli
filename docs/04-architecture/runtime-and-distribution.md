@@ -28,15 +28,12 @@ flowchart LR
 
 The runtime version model is intentionally split:
 
-- display version tracks the latest released tag line, for example `vX.Y.Z+dev...`
-- compatibility semver for a development build moves onto the next patch line, for example `X.Y.(Z+1)-dev...`
-- workspace package manifests stay on that development line until release
-  publication
-- release workflows stamp the exact tag version into a temporary release tree so
-  published artifacts match the tag without forcing release-only manifest edits
-  into the main branch
+- display version tracks the latest released git tag line, for example `vX.Y.Z+dev...`
+- compatibility semver for a development build moves onto the next patch line from that latest real tag, for example `X.Y.(Z+1)-dev...`
+- workspace package manifests may move ahead for release preparation, but untagged runtime builds do not present that newer line as the shipped runtime version
+- release workflows stamp the exact tag version into a temporary release tree so published artifacts match the tag without forcing release-only manifest edits into the main branch
 
-This split exists because a development checkout should not claim to be the exact published release while still needing an honest semver for compatibility checks.
+This split exists because a development checkout should not claim to be the next published release before the repository has an actual release tag for it.
 
 ## Packaging Roles
 
