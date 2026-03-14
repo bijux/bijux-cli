@@ -20,9 +20,9 @@ DOCS_PORT           ?= 8000
 ifeq ($(shell uname -s),Darwin)
   BREW_PREFIX   := $(shell command -v brew >/dev/null 2>&1 && brew --prefix)
   LIBFFI_PREFIX := $(shell test -n "$(BREW_PREFIX)" && brew --prefix libffi)
-  DOCS_ENV      := DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
+  DOCS_ENV      := NO_MKDOCS_2_WARNING=1 DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
 else
-  DOCS_ENV      :=
+  DOCS_ENV      := NO_MKDOCS_2_WARNING=1
 endif
 
 .PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require
