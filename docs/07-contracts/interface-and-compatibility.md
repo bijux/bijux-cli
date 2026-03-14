@@ -13,12 +13,20 @@ flowchart LR
     D --> E[compatibility promise]
 ```
 
+This diagram shows the layers of the public interface contract. Binary name,
+grammar, global flags, and exit codes all feed into the compatibility promise
+described on the rest of the page.
+
 ```mermaid
 flowchart TD
     A[Documented interface] --> B{Compatible change?}
     B -->|Yes| C[minor or patch release]
     B -->|No| D[major-version decision]
 ```
+
+The second diagram explains how contract changes are classified. Compatibility
+is judged from the documented interface first, which is what decides whether a
+normal release or a major-version decision is required.
 
 ## Canonical Interface Identity
 

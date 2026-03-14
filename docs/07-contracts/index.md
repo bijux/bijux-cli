@@ -13,6 +13,10 @@ flowchart TD
     C --> D[Compatibility promise]
 ```
 
+This diagram shows the contract ladder for the whole section. Public behavior
+becomes a contract only when it is documented and backed by reviewable
+evidence, which is what turns it into a compatibility promise.
+
 ```mermaid
 mindmap
   root((Contracts))
@@ -35,6 +39,10 @@ mindmap
       deprecation
       schema evolution
 ```
+
+The mindmap groups the contract surfaces by domain so readers can quickly tell
+whether their question is about interface identity, output, plugins, or
+distribution ownership.
 
 ## Read This Set In Order
 

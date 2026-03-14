@@ -12,12 +12,19 @@ flowchart LR
     B --> D[one public command contract]
 ```
 
+This diagram shows the ownership rule for the public command. Different package
+channels may deliver the runtime, but they are still required to converge on
+one `bijux` command contract.
+
 ```mermaid
 flowchart TD
     A[bijux-<tool>] --> B[product runtime ownership]
     C[bijux-dev-<tool>] --> D[product control-plane ownership]
     E[official product registry] --> F[routing ownership]
 ```
+
+The second diagram explains how product binaries stay separate from the public
+runtime while still fitting into one naming and routing policy.
 
 ## Package Naming Contract
 

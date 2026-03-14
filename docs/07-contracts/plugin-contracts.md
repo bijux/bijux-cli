@@ -19,6 +19,10 @@ stateDiagram-v2
     disabled --> enabled
 ```
 
+This state diagram defines the stable lifecycle vocabulary for plugins. It is
+the reference for registry persistence and diagnostics, not just a loose sketch
+of possible states.
+
 ```mermaid
 flowchart TD
     A[plugin.manifest.json] --> B[namespace validation]
@@ -26,6 +30,10 @@ flowchart TD
     C --> D[lifecycle registration]
     D --> E[management and diagnostics surface]
 ```
+
+The second diagram shows how a manifest becomes part of the managed plugin
+surface: validate the namespace and compatibility first, then register the
+lifecycle state that later commands inspect and diagnose.
 
 ## Namespace Rules
 

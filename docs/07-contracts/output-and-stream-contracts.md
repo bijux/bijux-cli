@@ -14,12 +14,20 @@ flowchart TD
     D --> F[stderr]
 ```
 
+This diagram shows the stream-routing rule at the center of the contract:
+successful payloads go to `stdout`, while failure payloads and fatal
+diagnostics go to `stderr`.
+
 ```mermaid
 flowchart LR
     A[json or yaml request] --> B[stable envelope semantics]
     C[pretty or compact] --> D[rendering only]
     D --> B
 ```
+
+The second diagram explains the formatting boundary. Structured-format requests
+select stable payload semantics, while pretty-vs-compact choices only change
+rendering and not field meaning.
 
 ## Public CLI Success Contract
 
