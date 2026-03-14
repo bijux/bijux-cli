@@ -9,9 +9,12 @@ GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS ?= 1800
 GH_RELEASE_CI_POLL_INTERVAL_SECONDS ?= 15
 GH_RELEASE_CI_LOOKBACK_SECONDS ?= 120
 GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS ?= 20
+GH_SECURITY_CARGO_DENY_VERSION ?= 0.18.3
+GH_SECURITY_CARGO_AUDIT_VERSION ?= 0.22.0
 
 .PHONY: gh-fmt gh-lint gh-security gh-test \
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-configure-git \
+	gh-security-install-rust-tools \
 	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token gh-release-wait-for-ci
 
 ##@ GitHub
@@ -22,6 +25,10 @@ gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without modifyi
 gh-security: install security ## Run GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
+
+gh-security-install-rust-tools: ## Install Rust security tools that match the pinned CI toolchain
+	@cargo install --locked cargo-deny --version "$(GH_SECURITY_CARGO_DENY_VERSION)"
+	@cargo install --locked cargo-audit --version "$(GH_SECURITY_CARGO_AUDIT_VERSION)"
 
 gh-docs-install: install ## Install the documentation toolchain for GitHub Actions
 	@$(MAKE) --no-print-directory docs-require

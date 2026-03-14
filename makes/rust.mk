@@ -187,8 +187,8 @@ audit-rs: ## Run cargo-deny and cargo-audit
 	deny_status=0; \
 	audit_status=0; \
 	{ \
-		echo "run: cargo deny check --config configs/rust/deny.toml"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check --config configs/rust/deny.toml || deny_status=$$?; \
+		echo "run: cargo deny check bans licenses sources --config configs/rust/deny.toml"; \
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check bans licenses sources --config configs/rust/deny.toml || deny_status=$$?; \
 		echo; \
 		echo "run: cargo audit"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit || audit_status=$$?; \
