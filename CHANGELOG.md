@@ -38,15 +38,19 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ### Removed
 - Legacy `bijux-cli` compatibility executable naming; `bijux` is now the only runtime command name
 - Legacy runtime ownership of maintainer/dev namespaces from the end-user command surface
-- Legacy `scripts/` automation paths, root OpenAPI/Node release remnants, and the previous MkDocs builder pipeline
+- Legacy `scripts/` automation paths, root git-hook wiring, root OpenAPI/Node release remnants, and the previous MkDocs builder pipeline
 - Legacy duplicate Python distribution/test roots outside `crates/bijux-cli-python`
-- Demo-grade root commands and placeholder plugin execution paths that no longer matched the shipped runtime contract
+- Legacy docs trees, stale policy fragments, and compatibility shims that no longer matched the canonical runtime/docs layout
+- Demo-grade root commands, placeholder plugin execution paths, and stale maintainer fallback behavior that no longer matched the shipped runtime contract
 
 ### Fixed
 - Corrected plugin routing so installed plugins and aliases execute through the runtime instead of stopping at placeholder errors
-- Hardened `doctor`, install diagnostics, state-path handling, and registry/history recovery so health output reflects actual runtime conditions
+- Hardened `doctor`, `status`, install diagnostics, state-path handling, and registry/history/memory recovery so health output reflects actual runtime conditions
+- Corrected config precedence, config mutation flows, help/usage handling, completion shell selection, and root/`cli` route normalization to match the current runtime law
 - Aligned Rust, Python, and release metadata around supported hosts, package ownership, explicit completion shells, and tag-derived version provenance
 - Tightened plugin manifest validation, runtime floors, registry locking, and scaffold build behavior for Python and Rust plugin projects
+- Strengthened REPL hostile-session behavior, history bounds, multiline parsing, completion registries, and shared CLI/REPL execution parity
+- Bounded runtime and maintainer telemetry fields, trace payloads, and observability lifecycle reporting so diagnostics stay structured under failure and scale
 - Reduced Python bootstrap noise in common Make workflows and cleared remaining release-line/documentation drift around the shipped runtime boundary
 
 <a id="v0-2-0"></a>
