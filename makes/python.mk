@@ -24,7 +24,6 @@ SECURITY_ARTIFACTS_DIR  ?= $(PYTHON_ARTIFACTS_DIR)/security
 BUILD_ARTIFACTS_DIR     ?= $(PYTHON_ARTIFACTS_DIR)/build
 LINT_PATHS              ?= $(PYTHON_SRC_DIR)/bijux_cli_py
 RUFF_CACHE_DIR          ?= $(abspath $(LINT_ARTIFACTS_DIR)/.ruff_cache)
-PYTEST_BENCHMARK_DIR    ?= $(abspath $(TEST_ARTIFACTS_DIR)/benchmarks)
 PYTEST_CACHE_DIR        ?= $(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)
 
 PYTEST_INI := $(abspath $(PYTHON_CONFIG_DIR)/pytest.ini)
@@ -32,7 +31,7 @@ COVCFG_INI := $(abspath $(PYTHON_CONFIG_DIR)/coveragerc.ini)
 
 PY_RUNTIME_BIN ?= artifacts/rust/target/debug/bijux
 
-PYTEST_DEFAULT_MARKER_EXPR ?= not nightly and not slow
+PYTEST_DEFAULT_MARKER_EXPR ?= not nightly
 PYTEST_MARKER_EXPR         ?= $(PYTEST_DEFAULT_MARKER_EXPR)
 PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short --cov=bijux_cli_py --cov-branch --cov-config=$(COVCFG_INI) --cov-report=term-missing:skip-covered --cov-report=html:$(abspath $(TEST_ARTIFACTS_DIR)/htmlcov) --cov-report=xml:$(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml) --cov-fail-under=60
 
@@ -50,35 +49,28 @@ PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 
 define run_pytest
 	@echo "→ Running Python tests on $(PYTHON_TEST_DIR)"
-	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(TEST_ARTIFACTS_DIR)/hypothesis" "$(PYTEST_BENCHMARK_DIR)"
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)"
 	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
 	  echo "→ Building Rust runtime binary for Python parity tests"; \
 	  cargo build -q -p bijux-cli --bin bijux; \
 	fi
 	@echo "   • JUnit XML → $(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)"
-	@echo "   • Hypothesis DB → $(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)"
 	@echo "   • Using pytest → $(PYTEST)"
 	@set -euo pipefail; \
-	BENCH_FLAGS=""; \
-	if "$(PYTEST)" -q --help 2>/dev/null | grep -q -- '--benchmark-storage'; then \
-	  BENCH_FLAGS="--benchmark-storage=file://$(PYTEST_BENCHMARK_DIR)"; \
-	fi; \
 	extra_addopts="$(strip $(3))"; \
 	status=0; \
 	PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
-	HYPOTHESIS_DATABASE_DIRECTORY="$(abspath $(TEST_ARTIFACTS_DIR)/hypothesis)" \
 	BIJUX_BIN="$(abspath $(PY_RUNTIME_BIN))" \
 	$(PYTEST) -c "$(PYTEST_INI)" "$(abspath $(PYTHON_TEST_DIR))" \
 	  --junitxml "$(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)" \
 	  -o cache_dir="$(PYTEST_CACHE_DIR)" \
-	  -o addopts='$(PYTEST_ADDOPTS) -m "$(1)" '$${extra_addopts} \
-	  $$BENCH_FLAGS || status=$$?; \
+	  -o addopts='$(PYTEST_ADDOPTS) -m "$(1)" '$${extra_addopts} || status=$$?; \
 	if [ "$$status" -eq 5 ] && [ "$(2)" = "allow-empty" ]; then \
 	  echo "→ No tests matched marker expression: $(1)"; \
 	  exit 0; \
 	fi; \
 	exit $$status
-	@rm -rf .benchmarks .benchmark .ruff_cache || true
+	@rm -rf .ruff_cache || true
 endef
 
 ##@ Python
@@ -91,7 +83,7 @@ fmt-py: python-env ## Run Python formatting with Ruff
 	@set -o pipefail; \
 	$(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
-	@rm -rf .ruff_cache .benchmark .benchmarks || true
+	@rm -rf .ruff_cache || true
 
 fmt-check-py: python-env ## Verify Python formatting without modifying files
 	@echo "→ Ruff format check"
@@ -99,14 +91,14 @@ fmt-check-py: python-env ## Verify Python formatting without modifying files
 	@set -o pipefail; \
 	$(RUFF) format --check --cache-dir "$(RUFF_CACHE_DIR)" --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format-check.log"
-	@rm -rf .ruff_cache .benchmark .benchmarks || true
+	@rm -rf .ruff_cache || true
 
 lint-py: fmt-py ## Run Python lint fixes with Ruff
 	@echo "→ Ruff lint"
 	@set -o pipefail; \
 	$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --fix --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check.log"
-	@rm -rf .ruff_cache .benchmark .benchmarks || true
+	@rm -rf .ruff_cache || true
 
 lint-check-py: python-env ## Verify Python lint checks without modifying files
 	@echo "→ Ruff lint check"
@@ -114,7 +106,7 @@ lint-check-py: python-env ## Verify Python lint checks without modifying files
 	@set -o pipefail; \
 	$(RUFF) check --cache-dir "$(RUFF_CACHE_DIR)" --select E,F,I,UP,B,SIM,C4,TID,PERF --ignore E501 --config "$(PYTHON_CONFIG_DIR)/ruff.toml" $(LINT_PATHS) \
 	  2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-check-ci.log"
-	@rm -rf .ruff_cache .benchmark .benchmarks || true
+	@rm -rf .ruff_cache || true
 
 test-py: python-env ## Run the default Python test suite
 	$(call run_pytest,$(PYTEST_MARKER_EXPR),strict,)

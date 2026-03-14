@@ -1,10 +1,10 @@
 target-version = "py311"
 line-length = 88
 respect-gitignore = true
-src = ["src", "tests"]
+src = ["crates/bijux-cli-python/python", "crates/bijux-cli-python/tests/python"]
 
 exclude = [
-  ".git", ".hg", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv",
+  ".git", ".hg", ".pytest_cache", ".ruff_cache", ".venv",
   "build", "dist", "docs", "htmlcov", "__pycache__", "migrations", "*.egg-info"
 ]
 
@@ -21,7 +21,7 @@ ignore = ["E501", "E203"]
 
 [lint.isort]
 force-sort-within-sections = true
-known-first-party = ["bijux_cli"]
+known-first-party = ["bijux_cli_py"]
 required-imports = ["from __future__ import annotations"]
 
 [lint.flake8-tidy-imports]
