@@ -322,8 +322,7 @@ fn template_defaults_preserve_plugin_semver_and_host_compatibility_window() {
         let payload: serde_json::Value =
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
         assert_eq!(
-            payload["plugin_version"],
-            "0.1.0",
+            payload["plugin_version"], "0.1.0",
             "{path} must keep new plugin semver independent from the Bijux host release line"
         );
         assert_eq!(

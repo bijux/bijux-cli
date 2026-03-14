@@ -38,7 +38,7 @@ fn apply_session_flags(session: &mut ReplSession, flags: &ParsedGlobalFlags) {
         session.policy.quiet = true;
         session.policy.log_level = crate::contracts::LogLevel::Error;
     }
-    session.config_path = flags.config_path.clone();
+    session.config_path.clone_from(&flags.config_path);
 }
 
 fn write_frame(frame: ReplFrame) -> io::Result<()> {
