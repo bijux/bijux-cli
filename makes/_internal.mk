@@ -16,7 +16,8 @@ RM                    := rm -rf
 PROFRAW_DIR           := artifacts/rust/coverage/profraw
 LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 BIJUX_RUNTIME_BIN     ?= bijux
-PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[dev]
+PYTHON_EDITABLE_EXTRAS ?= test,lint,security,docs,build
+PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[$(PYTHON_EDITABLE_EXTRAS)]
 PYTHON_INSTALL_ARTIFACTS_DIR ?= artifacts/python/install
 PIP_BOOTSTRAP_LOG     ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-bootstrap.log)
 PIP_EDITABLE_LOG      ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-editable.log)
@@ -89,8 +90,8 @@ clean-soft: ## Remove generated outputs and keep the repo-managed virtualenv und
 	@echo "→ Cleaning (keeping $(VENV)) ..."
 	@$(RM) \
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info demo .tmp_home \
-	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
-	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
+	  .ruff_cache .coverage.* .coverage \
+	  spec.json openapitools.json node_modules session.sqlite site \
 	  usage_test usage_test_artifacts .cache default_*.profraw || true
 	@if [ -d artifacts/rust ]; then \
 	  find artifacts/rust -mindepth 1 -maxdepth 1 -exec rm -rf {} +; \

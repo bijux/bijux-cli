@@ -5,12 +5,12 @@ build-backend = "maturin"
 [project]
 name = "bijux-cli"
 dynamic = ["version"]
-description = "Python installation surface for the Rust-backed Bijux CLI runtime"
+description = "Python install and compatibility facade for the Rust-owned Bijux CLI runtime"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
-keywords = ["cli", "developer-tools", "plugins", "automation", "repl", "rust"]
+keywords = ["bijux", "cli", "python", "rust", "plugins", "automation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
@@ -37,52 +37,42 @@ classifiers = [
 bijux = "bijux_cli_py.cli:main"
 
 [project.optional-dependencies]
-dev = [
+test = [
   "pytest>=8.4.1,<9.0",
   "pytest-cov>=6.2.1,<7.0",
-  "pytest-asyncio>=1.0.0,<2.0",
   "pytest-timeout>=2.4.0,<3.0",
-  "pytest-rerunfailures>=13.0,<14.0",
-  "pytest-benchmark>=4.0.0,<5.0",
-  "pytest-mock>=3.14.1,<4.0",
-  "hypothesis>=6.103.0,<7.0",
-  "hypothesis-jsonschema>=0.23.0,<1.0",
-  "pexpect>=4.8.0,<5.0",
+]
+lint = [
   "ruff>=0.6.8,<1.0",
-  "mypy>=1.11.2,<2.0",
-  "codespell>=2.3.0,<3.0",
-  "pydocstyle>=6.2.1,<7.0",
-  "radon>=6.0.0",
-  "vulture>=2.7,<3.0",
-  "deptry>=0.10.0,<1.0",
-  "build>=1.0.3,<2.0",
+]
+security = [
   "bandit>=1.7.10,<2.0",
   "pip-audit>=2.7.3,<3.0",
-  "commitizen>=4.0.0,<5.0",
-  "interrogate>=1.7.0,<2.0",
+]
+docs = [
   "mkdocs>=1.6.1,<2.0",
-  "mkdocs-material>=9.5.39,<10.0",
-  "mkdocstrings[python]>=0.26.1,<1.0",
-  "mkdocs-git-revision-date-localized-plugin>=1.2.0,<2.0",
-  "mkdocs-include-markdown-plugin",
-  "mkdocs-gen-files",
-  "mkdocs-literate-nav",
-  "mkdocs-redirects>=1.2,<2.0",
-  "mkdocs-minify-plugin>=0.7,<1.0",
+  "mkdocs-autorefs>=1.4.4,<2.0",
   "mkdocs-glightbox>=0.3,<1.0",
-  "mkdocs-material[imaging]>=9.5.39,<10.0",
+  "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
+  "mkdocs-material[imaging]>=9.7.5,<10.0",
+  "mkdocs-minify-plugin>=0.7,<1.0",
+  "mkdocs-redirects>=1.2,<2.0",
+]
+build = [
+  "build>=1.4.0,<2.0",
   "twine>=6.1.0,<7.0",
-  "mutmut>=3.0",
   "maturin>=1.7,<2.0",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/bijux/bijux-cli"
+"Homepage" = "https://bijux.github.io/bijux-cli/"
 "Repository" = "https://github.com/bijux/bijux-cli.git"
 "Bug Tracker" = "https://github.com/bijux/bijux-cli/issues"
 "Documentation" = "https://bijux.github.io/bijux-cli/"
 "Changelog" = "https://bijux.github.io/bijux-cli/changelog"
 "Discussions" = "https://github.com/bijux/bijux-cli/discussions"
+"Rust Runtime Crate" = "https://crates.io/crates/bijux-cli"
+"Rust Runtime Docs" = "https://docs.rs/bijux-cli"
 
 [tool.maturin]
 python-source = "python"
