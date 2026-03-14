@@ -89,8 +89,8 @@ fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> Run
         describe_git_version(workspace_root).or_else(|| latest_tag_baseline_version(workspace_root))
     {
         return RuntimeBuildVersion {
-            semver_version: derived_semver_version(
-                &derived.base_semver,
+            semver_version: compatibility_semver_version(
+                package_version,
                 derived.commits_since_tag,
                 &derived.commit_abbrev,
                 derived.dirty,
@@ -229,16 +229,24 @@ fn derived_display_version(
     version
 }
 
-fn derived_semver_version(
-    base_semver: &str,
+fn compatibility_semver_version(
+    package_version: &str,
     commits_since_tag: u64,
     commit_abbrev: &str,
     dirty: bool,
 ) -> String {
-    let mut next = Version::parse(base_semver).expect("base git tag semver should be valid");
-    next.patch += 1;
+    let mut version =
+        normalize_version_string(package_version).unwrap_or_else(|| package_version.to_string());
+    if commits_since_tag == 0 && !dirty {
+        return version;
+    }
 
-    let mut version = format!("{next}-dev.{commits_since_tag}.g{commit_abbrev}");
+    let separator = if version.contains('+') { "." } else { "+" };
+    version.push_str(separator);
+    version.push_str("git.");
+    version.push_str(&commits_since_tag.to_string());
+    version.push_str(".g");
+    version.push_str(commit_abbrev);
     if dirty {
         version.push_str(".dirty");
     }
