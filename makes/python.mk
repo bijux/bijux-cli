@@ -173,7 +173,8 @@ publish-py: ## Publish Python distributions to the configured index
 	$(MAKE) --no-print-directory build-py; \
 	SKIP_FLAG=""; \
 	if [ "$(PUBLISH_SKIP_EXISTING)" = "1" ]; then SKIP_FLAG="--skip-existing"; fi; \
+	set -- "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz; \
 	echo "→ Uploading distributions to $(TWINE_REPOSITORY)"; \
 	$(TWINE) upload --non-interactive --disable-progress-bar $$SKIP_FLAG \
 	  --repository "$(TWINE_REPOSITORY)" -u "__token__" -p "$$token" \
-	  "$(BUILD_ARTIFACTS_DIR)"/*
+	  "$$@"
