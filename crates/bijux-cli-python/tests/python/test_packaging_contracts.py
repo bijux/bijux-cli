@@ -88,11 +88,94 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "version" not in project
     assert "version" in project["dynamic"]
     assert project["requires-python"] == ">=3.11"
-    assert project["description"] == "Python installation surface for the Rust-backed Bijux CLI runtime"
+    assert project["description"] == "Python install and compatibility facade for the Rust-owned Bijux CLI runtime"
     classifiers = set(project["classifiers"])
     assert "Operating System :: POSIX :: Linux" in classifiers
     assert "Operating System :: MacOS :: MacOS X" in classifiers
     assert "Framework :: Pytest" not in classifiers
+
+
+def test_optional_dependency_groups_match_current_repo_workflows() -> None:
+    pyproject = _load_pyproject()
+    optional = pyproject["project"]["optional-dependencies"]
+
+    assert set(optional) == {"build", "docs", "lint", "security", "test"}
+
+    assert optional["test"] == [
+        "pytest>=8.4.1,<9.0",
+        "pytest-cov>=6.2.1,<7.0",
+        "pytest-timeout>=2.4.0,<3.0",
+    ]
+    assert optional["lint"] == ["ruff>=0.6.8,<1.0"]
+    assert optional["security"] == [
+        "bandit>=1.7.10,<2.0",
+        "pip-audit>=2.7.3,<3.0",
+    ]
+    assert optional["docs"] == [
+        "mkdocs>=1.6.1,<2.0",
+        "mkdocs-autorefs>=1.4.4,<2.0",
+        "mkdocs-glightbox>=0.3,<1.0",
+        "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
+        "mkdocs-material[imaging]>=9.7.5,<10.0",
+        "mkdocs-minify-plugin>=0.7,<1.0",
+        "mkdocs-redirects>=1.2,<2.0",
+    ]
+    assert optional["build"] == [
+        "build>=1.4.0,<2.0",
+        "twine>=6.1.0,<7.0",
+        "maturin>=1.7,<2.0",
+    ]
+
+
+def test_optional_dependencies_drop_legacy_python_only_tooling() -> None:
+    pyproject = _load_pyproject()
+    optional = pyproject["project"]["optional-dependencies"]
+    flattened = {dep.split(">=", 1)[0].split("[", 1)[0] for deps in optional.values() for dep in deps}
+
+    for legacy in {
+        "commitizen",
+        "deptry",
+        "hypothesis",
+        "hypothesis-jsonschema",
+        "interrogate",
+        "mkdocs-gen-files",
+        "mkdocs-git-revision-date-localized-plugin",
+        "mkdocs-literate-nav",
+        "mkdocstrings",
+        "mypy",
+        "mutmut",
+        "pexpect",
+        "pydocstyle",
+        "pytest-asyncio",
+        "pytest-benchmark",
+        "pytest-mock",
+        "pytest-rerunfailures",
+        "radon",
+        "vulture",
+        "codespell",
+    }:
+        assert legacy not in flattened
+
+    assert any(
+        dep.startswith("mkdocs-material[imaging]")
+        for dep in pyproject["project"]["optional-dependencies"]["docs"]
+    )
+
+
+def test_project_urls_expose_python_and_rust_runtime_surfaces() -> None:
+    pyproject = _load_pyproject()
+    urls = pyproject["project"]["urls"]
+
+    assert urls == {
+        "Homepage": "https://bijux.github.io/bijux-cli/",
+        "Repository": "https://github.com/bijux/bijux-cli.git",
+        "Bug Tracker": "https://github.com/bijux/bijux-cli/issues",
+        "Documentation": "https://bijux.github.io/bijux-cli/",
+        "Changelog": "https://bijux.github.io/bijux-cli/changelog",
+        "Discussions": "https://github.com/bijux/bijux-cli/discussions",
+        "Rust Runtime Crate": "https://crates.io/crates/bijux-cli",
+        "Rust Runtime Docs": "https://docs.rs/bijux-cli",
+    }
 
 
 def test_runtime_support_helper_matches_python_requirement_floor() -> None:
