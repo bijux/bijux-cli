@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Guard that command-tree diff report stays in sync with fixture inventories.
+//! Guard that the documented root-command comparison stays in sync with fixture inventories.
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -23,7 +23,7 @@ fn read_set(path: &str) -> BTreeSet<String> {
 }
 
 #[test]
-fn command_tree_diff_report_counts_match_fixtures() {
+fn routing_docs_root_command_comparison_counts_match_fixtures() {
     let py = read_set("tests/data/fixtures/routing/python_documented_commands.txt");
     let rs = read_set("tests/data/fixtures/routing/rust_routed_root_commands.txt");
 
@@ -31,8 +31,8 @@ fn command_tree_diff_report_counts_match_fixtures() {
     let py_only = py.difference(&rs).count();
     let rs_only = rs.difference(&py).count();
 
-    let report = fs::read_to_string("../../docs/architecture/routing/command-tree-diff.md")
-        .expect("diff report should exist");
+    let report = fs::read_to_string("../../docs/04-architecture/routing-and-surfaces.md")
+        .expect("routing docs should exist");
 
     assert!(report.contains(&format!("Python documented root commands: {}", py.len())));
     assert!(report.contains(&format!("Rust routed root commands: {}", rs.len())));

@@ -19,12 +19,20 @@ graph TD
     E --> R
 ```
 
+This diagram shows the core routing claim for the runtime: several user-facing
+surfaces exist, but they all rely on one shared route model instead of growing
+separate command grammars.
+
 ```mermaid
 flowchart LR
     RootAlias[Root aliases like plugins inspect] --> Canonical[cli plugins inspect]
     Canonical --> Handler[command handler]
     Handler --> Output[result]
 ```
+
+The second diagram makes alias normalization concrete. Short root forms stay
+useful for users, but they are still rewritten into canonical routed commands
+before the handler runs.
 
 ## Current Surfaces
 
@@ -67,6 +75,22 @@ It uses the same routing and execution model as the CLI as far as practical.
 
 The Python package is a distribution surface that calls into the Rust runtime or its bridge layer. It is not the authoritative source of routing rules.
 
+## Current Root Command Comparison
+
+The legacy Python command inventory and the current Rust-routed root inventory
+still overlap heavily, but they are no longer identical.
+
+- Python documented root commands: 14
+- Rust routed root commands: 15
+- Overlap: 14
+- Python-only: 0
+- Rust-only: 1
+
+The one current Rust-only routed root command is `cli`. That difference is
+intentional: the Rust runtime exposes `cli` as the canonical namespace for
+normalized subcommands, while shorter aliases remain available for common root
+workflows.
+
 ## Alias Policy
 
 ```mermaid
@@ -77,6 +101,10 @@ flowchart TD
     C --> E[Dispatch]
     D --> E
 ```
+
+This flowchart shows the decision that happens after parsing: known aliases and
+routed plugin namespaces are normalized, while unknown paths remain unchanged
+until dispatch decides what to do with them.
 
 ```mermaid
 sequenceDiagram
@@ -90,6 +118,10 @@ sequenceDiagram
     N->>H: cli/plugins/inspect
     H-->>U: plugin inspection payload
 ```
+
+The sequence diagram demonstrates that normalization with a real command. A
+short root alias such as `plugins inspect` still reaches the canonical handler
+path before the payload is produced.
 
 ## Help Surface
 
