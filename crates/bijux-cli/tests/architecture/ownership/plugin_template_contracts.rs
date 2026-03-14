@@ -316,12 +316,16 @@ fn template_manifests_match_current_plugin_contract() {
 }
 
 #[test]
-fn template_default_release_window_matches_planned_plugin_publish_range() {
+fn template_defaults_preserve_plugin_semver_and_host_compatibility_window() {
     for path in ["templates/plugins-py/cookiecutter.json", "templates/plugins-rs/cookiecutter.json"]
     {
         let payload: serde_json::Value =
             serde_json::from_str(&read_repo_file(path)).expect("valid cookiecutter json");
-        assert_eq!(payload["plugin_version"], "0.1.0", "{path} must default new plugins to 0.1.0");
+        assert_eq!(
+            payload["plugin_version"],
+            "0.1.0",
+            "{path} must keep new plugin semver independent from the Bijux host release line"
+        );
         assert_eq!(
             payload["cli_min"],
             template_compatibility_min_inclusive(),
@@ -330,7 +334,7 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
         assert_eq!(
             payload["cli_max"],
             template_compatibility_max_exclusive(),
-            "{path} must keep future compatibility open until the next major host boundary"
+            "{path} must keep host compatibility open through the next supported host boundary"
         );
         assert_eq!(
             payload["_template_version"], TEMPLATE_CONTRACT_VERSION,
