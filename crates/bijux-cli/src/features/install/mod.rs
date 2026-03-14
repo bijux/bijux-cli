@@ -25,8 +25,8 @@ pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use io::atomic_write_text;
 #[allow(unused_imports)]
 pub use metadata::{
-    canonical_crate_name, cargo_install_strategy, pip_install_strategy, Ecosystem, InstallStrategy,
-    CANONICAL_EXECUTABLE,
+    canonical_crate_name, cargo_install_strategy, install_target_aliases, pip_install_strategy,
+    resolve_install_target, Ecosystem, InstallStrategy, InstallTarget, CANONICAL_EXECUTABLE,
 };
 #[allow(unused_imports)]
 pub use paths::{
@@ -461,6 +461,39 @@ mod tests {
         let pip_canonical = pip_install_strategy();
         assert_eq!(cargo_canonical.package_name, pip_canonical.package_name);
         assert_eq!(cargo_canonical.executable_name, pip_canonical.executable_name);
+    }
+
+    #[test]
+    fn install_target_aliases_resolve_to_canonical_packages() {
+        let cli = resolve_install_target("cli").expect("cli target");
+        assert_eq!(cli.target_name, "cli");
+        assert_eq!(cli.strategy.package_name, "bijux-cli");
+        assert_eq!(cli.strategy.executable_name, "bijux");
+
+        let dev_cli = resolve_install_target("dev-cli").expect("dev-cli target");
+        assert_eq!(dev_cli.target_name, "dev-cli");
+        assert_eq!(dev_cli.strategy.package_name, "bijux-dev-cli");
+        assert_eq!(dev_cli.strategy.executable_name, "bijux-dev-cli");
+
+        let atlas = resolve_install_target("atlas").expect("atlas target");
+        assert_eq!(atlas.target_name, "atlas");
+        assert_eq!(atlas.strategy.package_name, "bijux-atlas");
+        assert_eq!(atlas.strategy.executable_name, "bijux-atlas");
+
+        let dev_atlas = resolve_install_target("bijux-dev-atlas").expect("dev-atlas target");
+        assert_eq!(dev_atlas.target_name, "dev-atlas");
+        assert_eq!(dev_atlas.strategy.package_name, "bijux-dev-atlas");
+        assert_eq!(dev_atlas.strategy.executable_name, "bijux-dev-atlas");
+    }
+
+    #[test]
+    fn install_target_alias_inventory_stays_short_and_canonical() {
+        let aliases = install_target_aliases();
+        assert!(aliases.contains(&"cli".to_string()));
+        assert!(aliases.contains(&"dev-cli".to_string()));
+        assert!(aliases.contains(&"atlas".to_string()));
+        assert!(aliases.contains(&"dev-atlas".to_string()));
+        assert!(!aliases.iter().any(|alias| alias.starts_with("bijux-")));
     }
 
     #[test]
