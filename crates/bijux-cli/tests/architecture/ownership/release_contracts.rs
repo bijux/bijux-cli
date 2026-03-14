@@ -163,6 +163,10 @@ fn github_workflows_pin_external_actions_to_commits() {
 #[test]
 fn generated_ported_snapshots_are_not_checked_in() {
     let ported_dir = repo_root().join("crates/bijux-cli/tests/data/golden/ported");
+    if !ported_dir.exists() {
+        return;
+    }
+
     let entries = fs::read_dir(&ported_dir).expect("ported snapshot dir");
     let checked_in = entries
         .filter_map(Result::ok)

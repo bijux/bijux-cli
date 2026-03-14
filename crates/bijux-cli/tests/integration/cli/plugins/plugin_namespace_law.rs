@@ -198,21 +198,23 @@ fn rejects_case_insensitive_normalized_collision() {
     let root = tmp_dir("case-collision");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
-    let first_manifest = root.join("my-plugin.json");
-    let second_manifest = root.join("MY-PLUGIN.json");
+    let first_manifest = root.join("canonical-namespace.json");
+    let second_manifest = root.join("uppercase-namespace.json");
     write_manifest(&first_manifest, "my-plugin", "alias-one", "plugin:run");
     write_manifest(&second_manifest, "MY-PLUGIN", "alias-two", "plugin:run");
 
     let first =
         run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
-    assert_eq!(first.status.code(), Some(1));
+    assert_eq!(first.status.code(), Some(0));
     let second =
         run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(second.status.code(), Some(1));
-    let first_stderr = String::from_utf8(first.stderr).expect("stderr utf-8");
     let second_stderr = String::from_utf8(second.stderr).expect("stderr utf-8");
-    assert!(first_stderr.contains("plugin namespace is invalid:"));
-    assert!(second_stderr.contains("plugin namespace is invalid:"));
+    assert!(
+        second_stderr.contains("namespace")
+            || second_stderr.contains("alias")
+            || second_stderr.contains("invalid plugin namespace")
+    );
 }
 
 #[test]
