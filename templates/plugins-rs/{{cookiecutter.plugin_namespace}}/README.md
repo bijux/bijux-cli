@@ -36,6 +36,8 @@ when supported Bijux host versions change, and avoid reserved Bijux namespaces w
 plugin. The rendered defaults start at plugin version `{{cookiecutter.plugin_version}}` with host
 compatibility from `{{cookiecutter.cli_min}}` up to, but not including,
 `{{cookiecutter.cli_max}}`. For a pre-1.0 Bijux host, that upper bound should move with the next
-supported minor line instead of every future `0.x` release. The Rust library identifier remains
-`{{cookiecutter.crate_name}}`. The first local build creates `Cargo.lock`, and later builds use
-`cargo build --locked`.
+supported minor line instead of every future `0.x` release. Plugin semver is separate from the
+Bijux host release line, so the default plugin version remains
+`{{cookiecutter.plugin_version}}` even when the host compatibility window advances. The Rust
+library identifier remains `{{cookiecutter.crate_name}}`. The first local build creates
+`Cargo.lock`, and later builds use `cargo build --locked`.

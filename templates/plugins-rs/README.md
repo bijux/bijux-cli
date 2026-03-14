@@ -44,7 +44,9 @@ after release, and update the compatibility range when the supported Bijux host 
 The default template values start new plugins at version `0.1.0` and use the current `cli_min` /
 `cli_max` compatibility window from the template defaults.
 For a pre-1.0 Bijux host, that window should stop at the next supported minor line instead of
-claiming compatibility with every future `0.x` release.
+claiming compatibility with every future `0.x` release. The plugin's own version is intentionally
+independent from the Bijux host release line, so new plugins still start at `0.1.0` while the host
+compatibility window now targets `0.3.0` up to, but not including, `0.4.0`.
 Use `plugin_namespace` for the durable CLI name and compiled binary name, and use `crate_name` for
 the Rust library identifier when `project_name` contains presentation-only punctuation.
 If `project_name` includes leading digits or punctuation that should not survive into identifiers,

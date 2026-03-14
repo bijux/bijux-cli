@@ -24,5 +24,7 @@ Keep `plugin_namespace` stable after release, update the compatibility range in
 namespaces when renaming the plugin. The rendered defaults start at plugin version
 `{{cookiecutter.plugin_version}}` with host compatibility from `{{cookiecutter.cli_min}}` up to,
 but not including, `{{cookiecutter.cli_max}}`. For a pre-1.0 Bijux host, that upper bound should
-move with the next supported minor line instead of every future `0.x` release.
+move with the next supported minor line instead of every future `0.x` release. Plugin semver is
+separate from the Bijux host release line, so the default plugin version remains
+`{{cookiecutter.plugin_version}}` even when the host compatibility window advances.
 Python-backed plugin execution requires Python 3.11 or newer on `PATH`.
