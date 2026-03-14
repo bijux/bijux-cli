@@ -9,14 +9,14 @@ avoid carrying ambiguous installs into later automation.
 flowchart LR
     A[Choose one channel] --> B[Install bijux-cli]
     B --> C[Run verification commands]
-    C --> D{Healthy result?}
+    C --> D{Status acceptable?}
     D -->|Yes| E[Continue to command usage]
     D -->|No| F[Resolve path or install conflicts]
 ```
 
 This flowchart shows the recommended install posture: commit to one channel,
-verify immediately, and treat any non-healthy result as a recovery problem to
-solve before you move on to normal command use.
+verify immediately, and treat `warning` or `degraded` results as recovery work
+to solve before you move on to normal command use.
 
 ```mermaid
 sequenceDiagram
@@ -59,7 +59,8 @@ These commands answer three different questions:
 
 - does `bijux` resolve at all
 - which binary and state paths are active
-- is the current install healthy or shadowed by another channel
+- whether the current install reports `ok`, `warning`, or `degraded`, and
+  whether another channel is shadowing it
 
 ## Honest Rule
 

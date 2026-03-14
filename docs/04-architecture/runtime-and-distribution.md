@@ -78,7 +78,7 @@ The current supported host contract is Linux and macOS.
 That does not mean the runtime is unaware of Windows. The Rust-owned install
 and state layers already handle Windows-specific binary names and home-directory
 resolution, and the Python bridge can look for `bijux.exe`. Those changes are
-real, but they do not yet add up to a supported Windows release contract.
+real, but they do not add up to a supported Windows release contract.
 
 The remaining gaps are product-facing:
 

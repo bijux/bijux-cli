@@ -3,8 +3,8 @@
 ## Goal
 
 Use a small set of commands that answer the most common daily questions: what
-version am I running, is the runtime healthy, and what command surface is
-available right now?
+version am I running, what grade does the runtime currently report, and what
+command surface is available right now?
 
 ```mermaid
 flowchart LR

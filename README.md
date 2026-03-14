@@ -17,7 +17,7 @@ Git checkout builds derive runtime identity from the latest real `v*` tag in Git
 [![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
 [![docs.rs](https://img.shields.io/docsrs/bijux-cli)](https://docs.rs/bijux-cli/latest/bijux_cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
 
@@ -136,11 +136,11 @@ replace runtime ownership or reintroduce a separate Python-first command graph.
 
 Use one install channel at a time.
 
-Published versions come from PyPI and crates.io. The repository main branch may
-carry release-preparation manifests between tags, so install from a release
-channel for a stable published build and use `cargo run` from a checkout when
-you want the current branch state. Checkout builds still report the latest real
-release tag line until a newer `v*` tag exists.
+Published versions come from PyPI and crates.io. Repository checkouts may carry
+release-preparation manifests between tags, so install from a release channel
+for a stable published build and use `cargo run` from a checkout when you want
+the current source tree. Checkout builds still report the latest real release
+tag line until a newer `v*` tag exists.
 
 Supported install channels today:
 
@@ -159,13 +159,15 @@ Quick verification:
 
 ```bash
 bijux version
+bijux cli paths
 bijux status
 bijux doctor
 ```
 
-`bijux doctor` is the install-health check. If it reports path ambiguity,
-stale wrappers, or state issues, treat that as part of the install outcome
-rather than a postscript.
+`bijux doctor` is the install-health check. Treat `warning` and `degraded`
+results as part of the install outcome rather than a postscript. `bijux cli
+paths` makes the active binary and state locations explicit when you need to
+confirm which install surface is actually in use.
 
 From a workspace checkout, run the branch version directly with:
 
@@ -178,7 +180,7 @@ cargo run -q -p bijux-cli --bin bijux -- version
 ## Platform Support
 
 * **Supported host contract today**: Linux, macOS
-* **Not supported yet**: Windows
+* **Not supported today**: Windows
 
 The Rust runtime now includes some Windows-aware code paths such as `.exe`
 discovery, state-path resolution, and install-path diagnostics. That is real

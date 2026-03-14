@@ -44,7 +44,7 @@ without becoming a separate source of truth for command semantics.
 ## What It Is Not
 
 - not a general-purpose plugin sandbox
-- not yet a supported Windows host runtime
+- not a supported Windows host runtime
 - not a multi-runtime architecture where Python and Rust diverge by design
 - not a promise that every internal crate boundary is stable for downstream use
 
