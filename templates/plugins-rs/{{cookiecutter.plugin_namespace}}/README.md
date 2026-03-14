@@ -4,7 +4,8 @@ Cargo-backed Rust plugin scaffold for Bijux.
 
 - `plugin.manifest.json` defines the install contract.
 - `plugin-entrypoint` is the executable manifest entrypoint. It rebuilds the local debug binary
-  when Cargo inputs changed and then runs the compiled plugin.
+  when Cargo inputs changed, refreshes `Cargo.lock` when needed, and then runs the compiled plugin
+  through a locked dependency graph.
 - `src/lib.rs` contains the plugin logic.
 - `src/main.rs` exposes the compiled binary surface that `plugin-entrypoint` runs.
 - `.gitignore` ignores the local Cargo build directory.
@@ -36,4 +37,5 @@ plugin. The rendered defaults start at plugin version `{{cookiecutter.plugin_ver
 compatibility from `{{cookiecutter.cli_min}}` up to, but not including,
 `{{cookiecutter.cli_max}}`. For a pre-1.0 Bijux host, that upper bound should move with the next
 supported minor line instead of every future `0.x` release. The Rust library identifier remains
-`{{cookiecutter.crate_name}}`.
+`{{cookiecutter.crate_name}}`. The first local build creates `Cargo.lock`, and later builds use
+`cargo build --locked`.

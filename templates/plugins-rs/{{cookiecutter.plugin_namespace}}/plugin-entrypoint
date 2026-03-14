@@ -6,22 +6,44 @@ cd "$SCRIPT_DIR"
 
 export CARGO_TARGET_DIR="$SCRIPT_DIR/target"
 BIN_PATH="$CARGO_TARGET_DIR/debug/{{cookiecutter.plugin_namespace}}"
+LOCK_PATH="$SCRIPT_DIR/Cargo.lock"
 needs_build=0
+needs_lock_refresh=0
+if [ ! -f "$LOCK_PATH" ]; then
+  needs_lock_refresh=1
+elif [ "$SCRIPT_DIR/Cargo.toml" -nt "$LOCK_PATH" ]; then
+  needs_lock_refresh=1
+fi
 if [ ! -x "$BIN_PATH" ]; then
   needs_build=1
 elif [ "$SCRIPT_DIR/Cargo.toml" -nt "$BIN_PATH" ]; then
+  needs_build=1
+elif [ "$LOCK_PATH" -nt "$BIN_PATH" ]; then
   needs_build=1
 elif [ -d "$SCRIPT_DIR/src" ] && find "$SCRIPT_DIR/src" -type f -name '*.rs' -newer "$BIN_PATH" -print -quit | grep -q .; then
   needs_build=1
 fi
 
-if [ "$needs_build" -eq 1 ]; then
+if [ "$needs_build" -eq 1 ] || [ "$needs_lock_refresh" -eq 1 ]; then
   if ! command -v cargo >/dev/null 2>&1; then
     echo "cargo is required to build the {{cookiecutter.plugin_namespace}} plugin binary" >&2
     exit 1
   fi
+fi
+
+if [ "$needs_lock_refresh" -eq 1 ]; then
+  lock_stderr=$(mktemp)
+  if ! cargo generate-lockfile 1>/dev/null 2>"$lock_stderr"; then
+    cat "$lock_stderr" >&2
+    rm -f "$lock_stderr"
+    exit 1
+  fi
+  rm -f "$lock_stderr"
+fi
+
+if [ "$needs_build" -eq 1 ]; then
   build_stderr=$(mktemp)
-  if ! cargo build --quiet 2>"$build_stderr"; then
+  if ! cargo build --quiet --locked 2>"$build_stderr"; then
     cat "$build_stderr" >&2
     rm -f "$build_stderr"
     exit 1

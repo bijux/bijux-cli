@@ -26,7 +26,8 @@ Generated files:
 
 - `plugin.manifest.json`: current plugin contract consumed by install and diagnostics commands.
 - `plugin-entrypoint`: executable manifest entrypoint that builds the local debug binary when Cargo
-  inputs changed and then runs the compiled plugin.
+  inputs changed, refreshes `Cargo.lock` when needed, and then runs the compiled plugin through a
+  locked dependency graph.
 - `Cargo.toml`, `src/lib.rs`, and `src/main.rs`: Cargo-backed Rust implementation and CLI surface.
 - `.gitignore`: ignores the local Cargo build directory.
 
@@ -52,5 +53,7 @@ Cookiecutter validation rejects namespaces that do not start with a letter, crat
 not lowercase snake_case, invalid semver or inverted compatibility windows, and Rust keyword crate
 names. It also blocks namespaces reserved by `bijux-cli` or official Bijux tools.
 The generated Rust template stays local-development friendly by rebuilding the debug binary when the
-wrapper detects source drift. Packaging a release binary later removes that local Cargo dependency
-for distribution, but it is not required to validate the manifest contract during development.
+wrapper detects source drift. It also refreshes `Cargo.lock` before the first build and then uses
+`cargo build --locked` so dependency resolution stays explicit after the lockfile exists. Packaging
+a release binary later removes that local Cargo dependency for distribution, but it is not required
+to validate the manifest contract during development.

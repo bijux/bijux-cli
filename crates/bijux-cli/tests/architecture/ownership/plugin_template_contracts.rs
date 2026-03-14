@@ -290,8 +290,12 @@ fn template_manifests_match_current_plugin_contract() {
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin-entrypoint",
     ));
     assert!(
-        rust_entrypoint.contains("cargo build --quiet"),
+        rust_entrypoint.contains("cargo build --quiet --locked"),
         "rust template entrypoint should build the binary when needed"
+    );
+    assert!(
+        rust_entrypoint.contains("cargo generate-lockfile"),
+        "rust template entrypoint should materialize Cargo.lock before the first locked build"
     );
     assert!(
         !rust_entrypoint.contains("cargo run --quiet"),

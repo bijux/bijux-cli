@@ -122,8 +122,12 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     let entrypoint =
         fs::read_to_string(rs_dir.join("plugin-entrypoint")).expect("read rust entrypoint");
     assert!(
-        entrypoint.contains("cargo build --quiet"),
+        entrypoint.contains("cargo build --quiet --locked"),
         "rust scaffold entrypoint should build before execution when needed"
+    );
+    assert!(
+        entrypoint.contains("cargo generate-lockfile"),
+        "rust scaffold entrypoint should create Cargo.lock before the first locked build"
     );
     assert!(
         !entrypoint.contains("cargo run --quiet"),
