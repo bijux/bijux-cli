@@ -21,8 +21,23 @@ fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
         .expect("binary should execute")
 }
 
+fn run_with_path(args: &[&str], plugins_dir: &Path, path_override: &Path) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .args(args)
+        .env("BIJUXCLI_PLUGINS_DIR", plugins_dir)
+        .env("PATH", path_override)
+        .output()
+        .expect("binary should execute")
+}
+
 fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
     let out = run(args, plugins_dir);
+    assert!(out.status.success(), "command failed: {args:?}");
+    serde_json::from_slice(&out.stdout).expect("valid json")
+}
+
+fn run_ok_json_with_path(args: &[&str], plugins_dir: &Path, path_override: &Path) -> Value {
+    let out = run_with_path(args, plugins_dir, path_override);
     assert!(out.status.success(), "command failed: {args:?}");
     serde_json::from_slice(&out.stdout).expect("valid json")
 }
@@ -94,6 +109,21 @@ fn set_read_only_dir(path: &Path) {
 fn set_writable_dir(path: &Path) {
     use std::os::unix::fs::PermissionsExt;
     fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("chmod 755");
+}
+
+#[cfg(unix)]
+fn write_fake_python_runtime(dir: &Path, name: &str, version: &str) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let path = dir.join(name);
+    fs::write(
+        &path,
+        format!(
+            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then\n  echo \"Python {version}\"\n  exit 0\nfi\necho \"unsupported invocation\" >&2\nexit 1\n"
+        ),
+    )
+    .expect("write fake python runtime");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).expect("chmod +x fake python");
 }
 
 #[test]
@@ -220,6 +250,46 @@ fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
         .expect("load diagnostics")
         .iter()
         .any(|row| row["message"] == "delegated entrypoint was not found"));
+}
+
+#[test]
+#[cfg(unix)]
+fn python_plugin_checks_and_doctor_reject_unsupported_python_runtime() {
+    let root = tmp_dir("unsupported-python-runtime");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let runtimes_dir = root.join("fake-bin");
+    fs::create_dir_all(&runtimes_dir).expect("mkdir fake bin");
+    write_fake_python_runtime(&runtimes_dir, "python3", "3.10.0");
+
+    let scaffold_dir = root.join("python_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "pyfloor",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    install(&plugins_dir, &scaffold_dir.join("plugin.manifest.json"));
+
+    let check = run_with_path(&["cli", "plugins", "check", "pyfloor"], &plugins_dir, &runtimes_dir);
+    assert_eq!(check.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&check.stderr).contains("python 3.11 or newer is required"));
+
+    let doctor = run_ok_json_with_path(&["cli", "plugins", "doctor"], &plugins_dir, &runtimes_dir);
+    assert_eq!(doctor["status"], "degraded");
+    assert!(doctor["load_diagnostics"]
+        .as_array()
+        .expect("load diagnostics")
+        .iter()
+        .any(|row| row["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("python 3.11 or newer is required"))));
 }
 
 #[test]

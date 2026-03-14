@@ -31,6 +31,13 @@ struct PythonBridgeEnvelope {
     result: Value,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PythonInterpreterStatus {
+    pub command: String,
+    pub version: String,
+    pub supported: bool,
+}
+
 const PYTHON_PLUGIN_BRIDGE: &str = r#"
 import importlib
 import json
@@ -88,10 +95,49 @@ fn delegated_module_and_callable(entrypoint: &str, kind: PluginKind) -> Result<(
     Ok((module_name, callable_name))
 }
 
-fn resolve_python_interpreter() -> Option<&'static str> {
+fn parse_python_version(text: &str) -> Option<(u64, u64)> {
+    let raw = text.trim().strip_prefix("Python ")?;
+    let mut parts = raw.split('.');
+    let major = parts.next()?.trim().parse().ok()?;
+    let minor = parts.next()?.trim().parse().ok()?;
+    Some((major, minor))
+}
+
+pub(crate) fn detected_python_interpreters() -> Vec<PythonInterpreterStatus> {
     ["python3.11", "python3", "python"]
         .into_iter()
-        .find(|candidate| Command::new(candidate).arg("--version").output().is_ok())
+        .filter_map(|candidate| {
+            let output = Command::new(candidate).arg("--version").output().ok()?;
+            let version = if output.stdout.is_empty() {
+                String::from_utf8_lossy(&output.stderr).trim().to_string()
+            } else {
+                String::from_utf8_lossy(&output.stdout).trim().to_string()
+            };
+            let supported = parse_python_version(&version)
+                .is_some_and(|(major, minor)| major > 3 || (major == 3 && minor >= 11));
+            Some(PythonInterpreterStatus {
+                command: candidate.to_string(),
+                version,
+                supported,
+            })
+        })
+        .collect()
+}
+
+pub(crate) fn resolve_python_interpreter() -> Option<PythonInterpreterStatus> {
+    detected_python_interpreters().into_iter().find(|candidate| candidate.supported)
+}
+
+fn python_runtime_error(namespace: &str) -> anyhow::Error {
+    if let Some(found) = detected_python_interpreters().into_iter().next() {
+        return anyhow!(
+            "python 3.11 or newer is required to run plugin `{namespace}`; found {} ({})",
+            found.command,
+            found.version
+        );
+    }
+
+    anyhow!("python 3.11 or newer is required to run plugin `{namespace}`")
 }
 
 fn render_process_result(output: std::process::Output) -> PluginProcessResult {
@@ -109,9 +155,8 @@ fn run_python_plugin(
     callable_name: &str,
     forwarded_args: &[String],
 ) -> Result<PluginRouteOutput> {
-    let python = resolve_python_interpreter()
-        .ok_or_else(|| anyhow!("python interpreter is required to run plugin `{namespace}`"))?;
-    let output = Command::new(python)
+    let python = resolve_python_interpreter().ok_or_else(|| python_runtime_error(namespace))?;
+    let output = Command::new(&python.command)
         .current_dir(manifest_root)
         .arg("-c")
         .arg(PYTHON_PLUGIN_BRIDGE)

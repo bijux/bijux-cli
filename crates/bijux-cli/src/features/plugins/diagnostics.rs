@@ -16,6 +16,7 @@ use super::errors::PluginError;
 use super::manifest::is_version_compatible;
 use super::models::PluginLoadDiagnostic;
 use super::registry::{load_registry, save_registry};
+use super::runtime::detected_python_interpreters;
 
 fn manifest_anchor_diagnostics(
     record: &super::models::PluginRecord,
@@ -56,6 +57,7 @@ fn record_load_diagnostics(
 ) -> Result<Vec<PluginLoadDiagnostic>, PluginError> {
     let namespace = record.manifest.namespace.0.clone();
     let mut diagnostics = manifest_anchor_diagnostics(record)?;
+    let python_runtimes = detected_python_interpreters();
 
     if record.state == crate::contracts::PluginLifecycleState::Broken {
         diagnostics.push(PluginLoadDiagnostic {
@@ -101,6 +103,24 @@ fn record_load_diagnostics(
                 message: "external-exec entrypoint is not executable".to_string(),
             });
         }
+    }
+
+    if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
+        && python_runtimes.iter().all(|candidate| !candidate.supported)
+    {
+        let message = if let Some(found) = python_runtimes.first() {
+            format!(
+                "python 3.11 or newer is required for delegated/python plugins; found {} ({})",
+                found.command, found.version
+            )
+        } else {
+            "python 3.11 or newer is required for delegated/python plugins".to_string()
+        };
+        diagnostics.push(PluginLoadDiagnostic {
+            namespace: namespace.clone(),
+            severity: "error".to_string(),
+            message,
+        });
     }
 
     if matches!(record.manifest.kind, PluginKind::Delegated | PluginKind::Python)
