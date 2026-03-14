@@ -7,55 +7,13 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
-## [Unreleased]
-
-This section tracks changes on the current branch since `v0.2.0`. It is not a
-published release announcement by itself; public releases are the tagged
-sections below.
-
-### Changed
-- Kept checkout runtime identity anchored to the latest real git tag line until
-  a newer release tag exists, even when workspace manifests move ahead for
-  release preparation.
-- Normalized `--version` behavior so Rust binary and Python facade return the same payload as `version`.
-- Reworked runtime boundaries: maintainer/control-plane routes are delegated through `bijux-dev-cli` with expanded contract tests.
-- Reduced the runtime-owned root surface to foundation commands; `dev`/official product namespaces are delegated to external owner binaries.
-- Kept `inspect` as hidden runtime compatibility routing while removing it from the public root command list.
-- Consolidated Python tooling configuration under `configs/python` and `crates/bijux-cli-python`.
-- Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
-- Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
-- Tightened public governance docs so README, contributing guidance, and
-  security policy describe the current runtime boundary, plugin trust model, and
-  release-source rules more explicitly.
-
-### Removed
-- Removed the legacy compatibility binary alias; `bijux` is now the only runtime executable name.
-- Removed legacy tox-based execution paths from Python automation and CI.
-- Removed root OpenAPI surface and Node manifest files from the repository root.
-- Removed legacy duplicate Python distribution/test roots; canonical packaging now lives under `crates/bijux-cli-python`.
-- Removed citation workflow files and REUSE/`LICENSES` root metadata that were no longer part of active release tooling.
-- Removed the `scripts/` directory from the repository.
-- Removed the MkDocs `docs_builder` script pipeline; documentation now builds from the simplified docs layout.
-
-### Fixed
-- Restored released-history text for sections [0.1.2] and [0.1.0] to match the exact wording shipped in tag `v0.2.0` (`2026-01-26`).
-- Documented this correction explicitly to preserve an auditable changelog record after accidental edits made on `2026-03-11` and `2026-03-12`.
-- Corrected changelog comparison links so `[Unreleased]` and `[0.2.0]` resolve to valid ranges.
-- Hardened `make clean` so transient virtualenv removal races do not fail the target.
-- Corrected README command examples for plugin scaffold/install and shell completion to match the actual CLI surface.
-- Reduced Python bootstrap noise in `make fmt-py` and related targets so routine
-  formatter runs report concise progress instead of full dependency chatter.
-- Corrected README wording around maintainer install aliases so package
-  resolution is not misrepresented as part of the runtime command namespace.
-
 ---
+
+<!-- towncrier start -->
 
 <a id="v0-2-0"></a>
 
 ## [0.2.0] – 2026-01-26
-
-Historical sections below intentionally preserve what shipped at those tags,
-even when later releases removed or replaced those surfaces.
 
 ### Added
 - Linear bootstrap flow with explicit phase boundaries and a first-class `CLIIntent`
