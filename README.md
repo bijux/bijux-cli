@@ -139,7 +139,9 @@ Every command can emit:
 
 ### Built-in Diagnostics
 
-Commands like `doctor`, `audit`, and `docs` help verify environments and workflows.
+Commands like `doctor`, `status`, `audit`, and `docs` are read-only diagnostic
+surfaces. They help verify the current environment and repository state; they
+are not workflow engines or deployment automation by themselves.
 
 ---
 
@@ -279,13 +281,13 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 | Command   | Purpose                 |
 | --------- | ----------------------- |
 | `doctor`  | Environment diagnostics |
-| `status`  | Runtime snapshot with install, plugin, and state context |
+| `status`  | Read-only runtime snapshot with install, plugin, and state context |
 | `repl`    | Interactive shell       |
 | `plugins` | Manage plugins          |
 | `config`  | Key-value settings      |
 | `history` | REPL history            |
-| `audit`   | Runtime health audit    |
-| `docs`    | Documentation inventory |
+| `audit`   | Read-only runtime health audit |
+| `docs`    | Documentation index and availability report |
 | `install` | Resolve runtime and ecosystem install aliases |
 | `completion` | Generate shell completion output |
 | `memory`  | Runtime-scoped key/value state |

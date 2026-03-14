@@ -17,7 +17,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     A[Current Rust runtime] --> B[current bijux-cli-python]
-    B --> C[configured PyPI baseline 0.2.0]
+    B --> C[configured PyPI baseline]
 ```
 
 ## Product Binary Routing
@@ -117,7 +117,7 @@ Compatibility review is still anchored on two comparisons:
 
 1. current `bijux-cli` vs current `bijux-cli-python`
 2. current `bijux-cli-python` vs the repository's configured stable PyPI
-   baseline, currently `bijux-cli==0.2.0`
+   baseline selected for the parity suite
 
 Historically retained Python-facing overlap still matters for:
 

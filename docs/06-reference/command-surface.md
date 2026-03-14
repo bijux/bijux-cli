@@ -25,9 +25,9 @@ flowchart LR
 | Command | Purpose |
 | --- | --- |
 | `cli` | Canonical runtime namespace for explicit subcommands such as `paths` and `self-test` |
-| `audit` | Diagnostics audit report |
+| `audit` | Read-only diagnostics audit report |
 | `config` | Configuration management |
-| `docs` | Documentation inventory |
+| `docs` | Read-only documentation index and availability report |
 | `doctor` | Environment diagnostics |
 | `help` | Global help |
 | `history` | REPL history tools |
@@ -36,7 +36,7 @@ flowchart LR
 | `plugins` | Plugin management |
 | `repl` | Interactive shell |
 | `completion` | Shell completion output |
-| `status` | CLI status probe |
+| `status` | Read-only CLI status probe |
 | `version` | CLI version |
 
 ## Common Subcommand Groups
@@ -91,16 +91,19 @@ When using `bijux repl`, the documented session controls are:
 ### `status`
 
 - structured output returns the current runtime, install, state, and plugin summary
+- this is a read-only diagnostic snapshot, not a deployment or workflow executor
 - current JSON shape includes `status`, `runtime`, `state`, `plugins`, `install`, and `issues`
 
 ### `docs`
 
 - structured output returns the current documentation inventory
+- this is a read-only discovery surface for local docs paths and published references
 - current JSON shape includes `status`, `site_url`, `local_docs_root`, and `references`
 
 ### `audit`
 
 - structured output returns current runtime audit checks and issues
+- this is a read-only diagnostics report, not a maintainer remediation workflow
 - current JSON shape includes `status`, `checks`, and `issues`
 
 ### `completion`

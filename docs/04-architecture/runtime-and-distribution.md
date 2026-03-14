@@ -28,8 +28,8 @@ flowchart LR
 
 The runtime version model is intentionally split:
 
-- display version tracks the latest released tag line, for example `v0.2.0+dev...`
-- compatibility semver for a development build moves onto the next patch line, for example `0.2.1-dev...`
+- display version tracks the latest released tag line, for example `vX.Y.Z+dev...`
+- compatibility semver for a development build moves onto the next patch line, for example `X.Y.(Z+1)-dev...`
 - workspace package manifests stay on that development line until release
   publication
 - release workflows stamp the exact tag version into a temporary release tree so
@@ -62,7 +62,7 @@ The repository keeps two explicit compatibility checks:
 
 - current `bijux-cli` versus current `bijux-cli-python`
 - current `bijux-cli-python` versus the repository's configured stable PyPI
-  baseline, currently `bijux-cli==0.2.0`
+  baseline used by the parity suite
 
 That is narrower and more honest than keeping a large archive of checked-in behavior snapshots and pretending they are the architecture.
 
