@@ -193,12 +193,13 @@ bijux plugins scaffold python my-plugin --path ./my-plugin --force
 # Scaffold a Cargo-backed Rust plugin
 bijux plugins scaffold rust my-rust-plugin --path ./my-rust-plugin --force
 
-# First Rust execution builds the local debug binary if needed
+# First Rust execution builds the local debug binary in the plugin's own target/ tree if needed
 ./my-rust-plugin/plugin-entrypoint --help
 
 # Install and explore
 bijux plugins install ./my-plugin
 bijux plugins list
+bijux cli plugins list
 bijux plugins inspect my-plugin
 bijux my-plugin --help
 # Routed aliases follow the same install contract
@@ -214,7 +215,9 @@ bijux plugins uninstall my-plugin
 Plugins provide a managed install, inspection, diagnostics, and routed runtime
 surface without baking plugin code into the core runtime binary. `plugins install`
 accepts either a plugin directory root or an explicit `plugin.manifest.json`
-path. Python-backed plugins require Python 3.11 or newer on `PATH`.
+path. Python-backed plugins require Python 3.11 or newer on `PATH`. The
+top-level `plugins` commands are the ordinary end-user surface; `cli plugins`
+is the canonical compatibility namespace for the same lifecycle area.
 
 ---
 
@@ -244,17 +247,22 @@ bijux status -f json --no-pretty | jq
 bijux status -f yaml --pretty
 ```
 
+Format flags are shared across the runtime surface. Successful payloads are
+stable per command, and error payloads stay machine-readable instead of falling
+back to ad hoc prose.
+
 ---
 
 ## Developer Introspection
 
 Maintainer diagnostics run through `bijux-dev-cli` from a workspace build or
-checkout. They are not part of the ordinary end-user command surface:
+checkout. They are not part of the ordinary end-user command surface, and
+`bijux install` does not install them:
 
 ```bash
-cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- state-doctor --text
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- state-doctor --format text
 ```
 
 ---
@@ -279,20 +287,14 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 
 ## Built-in Commands
 
-| Command   | Purpose                 |
-| --------- | ----------------------- |
-| `doctor`  | Environment diagnostics |
-| `status`  | Read-only runtime snapshot with install, plugin, and state context |
-| `repl`    | Interactive shell       |
-| `plugins` | Manage plugins          |
-| `config`  | Key-value settings      |
-| `history` | REPL history            |
-| `audit`   | Read-only runtime health audit |
-| `docs`    | Documentation index and availability report |
-| `install` | Resolve runtime and ecosystem install aliases |
-| `completion` | Generate shell completion output for an explicit or detected shell target |
-| `memory`  | Runtime-scoped key/value state |
-| `version` | Version info            |
+| Surface | Purpose |
+| ------- | ------- |
+| `status`, `audit`, `docs`, `doctor`, `version` | Read-only runtime and environment diagnostics |
+| `install`, `completion` | Installation guidance and shell integration |
+| `config`, `history`, `memory` | Runtime-owned state and compatibility paths |
+| `plugins` | End-user plugin lifecycle commands |
+| `repl` | Interactive runtime shell |
+| `cli` | Canonical compatibility namespace for `status`, `paths`, `doctor`, `version`, `repl`, `completion`, `config`, `self-test`, and `plugins` |
 
 ---
 
@@ -302,15 +304,15 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 
 * extensibility via plugins,
 * deterministic behavior in CI,
-* sync + async commands under one model,
-* structured output,
-* testable internals.
+* structured output and stable diagnostics,
+* an interactive shell that follows the same runtime rules,
+* and maintainable release evidence around the CLI surface.
 
 **It may be overkill if:**
 
 * you are writing a one-off script,
-* your CLI will never grow,
-* plugins and DI provide no value.
+* you need a Windows-first runtime today,
+* or you need a sandboxed plugin system with a permission model.
 
 ---
 
