@@ -16,6 +16,10 @@ graph TD
     P --> R
 ```
 
+This diagram shows the current distribution surfaces at a glance. A checkout, a
+crates.io install, and a PyPI install do not all look the same to the user, but
+they are still organized around one runtime ownership model.
+
 ```mermaid
 flowchart LR
     Tag[v* git tag] --> CI[CI workflow]
@@ -23,6 +27,10 @@ flowchart LR
     Release --> Crates[crates.io publish]
     Release --> PyPI[PyPI publish]
 ```
+
+The second diagram explains the release path itself. Tagged releases flow
+through CI and the publish workflows, which is why the repo treats release
+automation as part of the distribution contract.
 
 ## Version Model
 
@@ -77,6 +85,10 @@ sequenceDiagram
     Bin-->>User: version, semver, source, commit, profile
 ```
 
+This sequence shows where runtime identity comes from at build time. Git
+metadata is turned into the version data the binary reports, which is why tag
+provenance matters for honest version output.
+
 ```mermaid
 flowchart TD
     ExactTag[exact release tag] --> Tagged[git-tag source]
@@ -84,6 +96,10 @@ flowchart TD
     Override[explicit override] --> Forced[override source]
     None[no git metadata] --> Fallback[package-fallback source]
 ```
+
+The final diagram summarizes the runtime version sources. It clarifies how
+tagged builds, derived development builds, explicit overrides, and package
+fallbacks are kept distinct in the reported version metadata.
 
 ## Honest Constraint
 

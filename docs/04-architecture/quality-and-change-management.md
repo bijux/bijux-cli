@@ -25,6 +25,10 @@ flowchart LR
     Docs --> Confidence
 ```
 
+This diagram explains how the repository expects confidence to be earned.
+Documentation contributes context, but executable tests and contract assets are
+what keep an architectural claim reviewable instead of rhetorical.
+
 ```mermaid
 sequenceDiagram
     participant Change as Code or docs change
@@ -37,6 +41,10 @@ sequenceDiagram
     Review->>Release: accept or reject
     Release-->>Change: published or sent back
 ```
+
+The sequence diagram shows the review loop around a change. It connects
+implementation work, checks, review, and release so the quality model is tied
+to the actual repository workflow.
 
 ## What Quality Means Here
 
@@ -60,6 +68,10 @@ stateDiagram-v2
     Documented --> Released
 ```
 
+This state diagram expresses the expected maturity path for a change. Shipping
+is intentionally later than implementation so verification and documentation do
+not become optional cleanup.
+
 ```mermaid
 flowchart TD
     NewBehavior[New behavior] --> A{Public contract?}
@@ -68,6 +80,10 @@ flowchart TD
     B --> D[Review and release]
     C --> D
 ```
+
+The final diagram shows how contract scope changes the required follow-up. New
+public behavior must update tests, docs, and contracts together, while purely
+internal changes can stay narrower.
 
 ## Documentation Rule
 

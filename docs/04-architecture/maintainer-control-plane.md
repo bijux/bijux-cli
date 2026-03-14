@@ -12,6 +12,10 @@ flowchart LR
     DEV --> Reports[Repository and release reports]
 ```
 
+This diagram shows the main separation rule: end users and maintainers interact
+with different binaries, which keeps repository diagnostics from leaking into
+the public runtime surface by default.
+
 ```mermaid
 graph TD
     DEV[bijux-dev-cli] --> Contracts[contracts and inventories]
@@ -20,6 +24,10 @@ graph TD
     DEV --> Parity[maintainer parity views]
     DEV --> Runtime[uses bijux-cli contracts and helpers]
 ```
+
+The second diagram expands what the maintainer binary actually owns. It makes
+clear that the control-plane assembles inventories and reports on top of
+runtime contracts rather than redefining runtime behavior itself.
 
 ## Why This Crate Exists
 
@@ -65,6 +73,10 @@ sequenceDiagram
     Wait->>Publish: allow publish
 ```
 
+This sequence shows how release coordination is gated. Publication waits on the
+matching CI evidence for the tagged commit instead of assuming that a tag alone
+is sufficient proof to ship.
+
 ```mermaid
 flowchart TD
     RepoState[Repository state] --> DEV
@@ -72,6 +84,10 @@ flowchart TD
     DEV --> MaintainerOutput[Maintainer output]
     MaintainerOutput --> ReleaseDecision[release or follow-up action]
 ```
+
+This flowchart summarizes the maintainer feedback loop. Repository state and
+runtime evidence flow into the control-plane, which then produces the inputs a
+maintainer uses for release or remediation decisions.
 
 ## Honest Limit
 

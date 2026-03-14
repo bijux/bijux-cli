@@ -14,6 +14,10 @@ graph TD
     C --> A
 ```
 
+This graph shows the crate dependency direction at the highest level. Both the
+Python bridge and the maintainer control-plane depend on the runtime crate, and
+that one-way relationship is what keeps the runtime central.
+
 ```mermaid
 flowchart LR
     subgraph Runtime
@@ -26,6 +30,10 @@ flowchart LR
         C[bijux-dev-cli]
     end
 ```
+
+The second diagram groups the same crates by responsibility area. It helps a
+reader understand why the workspace split exists even though the crate count is
+still intentionally small.
 
 ## Responsibilities
 
@@ -92,6 +100,10 @@ graph TD
     J --> D
 ```
 
+This graph expands the internal layers of `bijux-cli`. It shows which parts of
+the runtime feed the binary entrypoint, kernel, interfaces, contracts, and
+feature implementations without turning the page into a source-code tour.
+
 ```mermaid
 flowchart TD
     Contracts[contracts/] --> Routing[routing/]
@@ -103,6 +115,10 @@ flowchart TD
     Shared --> Features
     Bootstrap --> Bin[src/bin/bijux.rs]
 ```
+
+The flowchart translates those layer names into the repo layout. It is useful
+when you need to decide where a change belongs or when you are checking whether
+the source tree still matches the documented architecture.
 
 ## Why The Split Matters
 

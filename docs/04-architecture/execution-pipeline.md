@@ -17,6 +17,10 @@ flowchart LR
     G --> H[exit code]
 ```
 
+This flowchart is the canonical runtime pipeline. It shows the order that every
+command is expected to follow so parsing, policy, execution, rendering, and
+exit behavior stay coupled in one predictable path.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -32,6 +36,10 @@ sequenceDiagram
     K->>O: success or failure payload
     O-->>U: rendered output and exit class
 ```
+
+The sequence diagram adds the collaborating components behind that flow. It
+helps explain which layer owns parsing, route normalization, execution, and
+output rendering when you are debugging behavior drift.
 
 ## Stages
 
@@ -74,6 +82,10 @@ flowchart TD
     E --> F[execution]
 ```
 
+This diagram narrows the pipeline to global flags alone. It shows why those
+flags are treated as shared runtime policy and why command handlers should not
+reinterpret them independently.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Parsed
@@ -83,6 +95,10 @@ stateDiagram-v2
     Executed --> Rendered
     Rendered --> Exited
 ```
+
+The state diagram expresses the same contract as lifecycle steps. A command
+should advance through these states in order, which makes failures easier to
+classify and easier to test.
 
 ## What Is Deliberately Centralized
 

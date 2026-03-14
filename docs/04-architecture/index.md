@@ -35,6 +35,10 @@ flowchart TD
     I --> J[quality-and-change-management.md]
 ```
 
+This flowchart is the recommended reading path through the architecture canon.
+It moves from the broad system picture into crate boundaries, then into the
+runtime subsystems, and ends with the maintainer and quality surfaces.
+
 ```mermaid
 mindmap
   root((Architecture Canon))
@@ -52,6 +56,10 @@ mindmap
     Governance
       Quality and change management
 ```
+
+The mindmap shows the same canon grouped by topic instead of order. It helps a
+reader jump directly to runtime, packaging, or governance material once they
+already know the broad system shape.
 
 ## The Ten Documents
 

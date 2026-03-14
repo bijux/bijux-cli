@@ -22,6 +22,10 @@ stateDiagram-v2
     Enabled --> Incompatible
 ```
 
+This state diagram shows the lifecycle the runtime persists and diagnoses. The
+important detail is that plugins can become broken or incompatible after
+installation, so the registry is more than a one-time install record.
+
 ```mermaid
 flowchart TD
     Manifest[plugin.manifest.json] --> Validate[Parse and validate manifest]
@@ -30,6 +34,10 @@ flowchart TD
     Registry --> Inspect[Info, inspect, where, and explain]
     Registry --> Doctor[Check, doctor, and load diagnostics]
 ```
+
+The flowchart shows how manifest validation turns into ongoing management
+surfaces. Installation is only the beginning; the registry also feeds the
+inspection and health commands that users rely on later.
 
 ## Current Plugin Model
 
@@ -71,6 +79,9 @@ flowchart LR
     Conflict --> Install[Registry update or rejection]
 ```
 
+This diagram focuses on name safety. It shows that namespaces and aliases are
+checked through one policy path before any registry mutation is allowed.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -84,6 +95,10 @@ sequenceDiagram
     V->>G: write validated record
     G-->>U: installed or rejected
 ```
+
+The sequence diagram turns that policy into a concrete install flow. It makes
+clear that validation happens before the registry write, which is what protects
+users from ambiguous partial installs.
 
 ## Honest Limits
 

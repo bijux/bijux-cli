@@ -19,6 +19,10 @@ flowchart LR
     DEV --> Repo[Repository diagnostics]
 ```
 
+This diagram shows the main system shape around the runtime. Users, the Python
+distribution, and maintainers all approach the system differently, but the Rust
+runtime remains the center that ties those paths together.
+
 ```mermaid
 graph TD
     A[Input] --> B[Routing]
@@ -28,6 +32,10 @@ graph TD
     E --> F[Stdout or stderr]
     F --> G[Exit code]
 ```
+
+The second diagram compresses runtime behavior into its essential command path.
+It is the short explanation for why routing, policy, execution, and emission
+are treated as one coherent model throughout the docs.
 
 ## What The Runtime Owns
 
@@ -96,6 +104,10 @@ flowchart TD
     D --> D3[test harnesses]
 ```
 
+This diagram separates what the repository treats as public from what remains
+internal. That boundary is important because the project promises command and
+contract behavior more strongly than it promises internal crate layout.
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -109,6 +121,10 @@ sequenceDiagram
     R->>O: structured result or error
     O-->>U: stdout/stderr plus exit code
 ```
+
+The sequence diagram shows the user-visible runtime path from invocation to
+output. It reinforces that the caller experiences one consistent execution
+chain, even though several internal layers participate.
 
 ## Honest Status
 

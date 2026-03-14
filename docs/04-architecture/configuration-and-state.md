@@ -20,6 +20,10 @@ flowchart TD
     D --> E[Resolved state paths]
 ```
 
+This diagram shows the precedence ladder that produces one effective runtime
+state. The important takeaway is that path and config behavior are resolved in
+one direction instead of being pieced together later in feature code.
+
 ```mermaid
 graph TD
     Home[Resolved home directory] --> Config[config file]
@@ -28,6 +32,10 @@ graph TD
     Home --> Plugins[plugins directory]
     Plugins --> Registry[plugin registry file]
 ```
+
+The second diagram turns that resolution into concrete files. It shows which
+durable paths the runtime owns and why plugin state is treated as part of the
+same local state model rather than as a separate subsystem.
 
 ## Current State Files
 
@@ -80,6 +88,10 @@ sequenceDiagram
     R-->>U: command output plus diagnostics
 ```
 
+This sequence shows how state enters command execution: resolve paths first,
+read and parse state second, then return either a normal result or explicit
+diagnostics to the caller.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Resolved
@@ -89,6 +101,10 @@ stateDiagram-v2
     Degraded --> Repaired
     Repaired --> Healthy
 ```
+
+This state diagram explains the health vocabulary around runtime files. State
+can be resolved and loaded yet still be degraded, and any repair step has to be
+visible rather than silently rewriting user data.
 
 ## Honest Constraint
 
