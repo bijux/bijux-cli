@@ -43,6 +43,7 @@ PIP_AUDIT_FLAGS ?= --progress-spinner off --skip-editable $(PIP_AUDIT_IGNORE_FLA
 
 TWINE_REPOSITORY     ?= pypi
 PUBLISH_SKIP_EXISTING ?= 1
+PUBLISH_BUILD         ?= 1
 PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 
 .PHONY: python-env fmt-py fmt-check-py lint-py lint-check-py test-py test-unit-py test-nightly-py security-py build-py publish-py
@@ -148,7 +149,7 @@ build-py: python-env ## Build the Python wheel and source distribution
 	@set -o pipefail; \
 	$(TWINE) check "$(BUILD_ARTIFACTS_DIR)"/* 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"
 
-publish-py: ## Publish Python distributions to the configured index
+publish-py: python-env ## Publish Python distributions to the configured index
 	@token="$${$(PYPI_TOKEN_ENV):-}"; \
 	if [ -z "$$token" ]; then \
 	  echo "✘ $(PYPI_TOKEN_ENV) is not set"; \
@@ -170,11 +171,26 @@ publish-py: ## Publish Python distributions to the configured index
 	  esac; \
 	  echo "→ Publishing workspace package version $$package_version"; \
 	fi; \
-	$(MAKE) --no-print-directory build-py; \
+	if [ "$(PUBLISH_BUILD)" = "1" ]; then \
+	  $(MAKE) --no-print-directory build-py; \
+	else \
+	  echo "→ Using prebuilt distributions from $(BUILD_ARTIFACTS_DIR)"; \
+	fi; \
 	SKIP_FLAG=""; \
 	if [ "$(PUBLISH_SKIP_EXISTING)" = "1" ]; then SKIP_FLAG="--skip-existing"; fi; \
-	set -- "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz; \
+	mkdir -p "$(BUILD_ARTIFACTS_DIR)"; \
+	dist_files=(); \
+	for candidate in "$(BUILD_ARTIFACTS_DIR)"/*.whl "$(BUILD_ARTIFACTS_DIR)"/*.tar.gz; do \
+	  if [ -e "$$candidate" ]; then \
+	    dist_files+=("$$candidate"); \
+	  fi; \
+	done; \
+	if [ "$${#dist_files[@]}" -eq 0 ]; then \
+	  echo "✘ No Python distributions found in $(BUILD_ARTIFACTS_DIR)"; \
+	  exit 1; \
+	fi; \
+	$(TWINE) check "$${dist_files[@]}" 2>&1 | tee "$(BUILD_ARTIFACTS_DIR)/twine-check.log"; \
 	echo "→ Uploading distributions to $(TWINE_REPOSITORY)"; \
 	$(TWINE) upload --non-interactive --disable-progress-bar $$SKIP_FLAG \
 	  --repository "$(TWINE_REPOSITORY)" -u "__token__" -p "$$token" \
-	  "$$@"
+	  "$${dist_files[@]}"

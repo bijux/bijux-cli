@@ -17,6 +17,7 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONUNBUFFERED: "1"
   RUST_TOOLCHAIN_VERSION: "1.85.0"
+  MATURIN_VERSION: "v1.12.6"
 
 jobs:
   publish-pypi:
@@ -66,9 +67,55 @@ jobs:
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         if: ${{ steps.release.outputs.publish == 'true' }}
 
+      - name: Prepare release tree
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        id: release_tree
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          release_tree="${RUNNER_TEMP}/release-tree"
+          rm -rf "${release_tree}"
+          python3 .github/scripts/prepare_release_tree.py \
+            --workspace-root . \
+            --output-dir "${release_tree}" \
+            --version "${RELEASE_VERSION}" >/dev/null
+          rm -rf artifacts/python/build
+          mkdir -p artifacts/python/build
+          echo "path=${release_tree}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build manylinux wheel
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        with:
+          maturin-version: ${{ env.MATURIN_VERSION }}
+          rust-toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+          working-directory: ${{ steps.release_tree.outputs.path }}
+          manylinux: "2014"
+          command: build
+          args: >-
+            --release
+            --locked
+            --manifest-path crates/bijux-cli-python/Cargo.toml
+            --interpreter python3.11
+            --compatibility pypi
+            --out ${{ github.workspace }}/artifacts/python/build
+
+      - name: Build source distribution
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        with:
+          maturin-version: ${{ env.MATURIN_VERSION }}
+          rust-toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+          working-directory: ${{ steps.release_tree.outputs.path }}
+          command: sdist
+          args: >-
+            --manifest-path crates/bijux-cli-python/Cargo.toml
+            --out ${{ github.workspace }}/artifacts/python/build
+
       - name: Publish PyPI distributions
         if: ${{ steps.release.outputs.publish == 'true' }}
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
-        run: make publish-py
+        run: make publish-py PUBLISH_BUILD=0

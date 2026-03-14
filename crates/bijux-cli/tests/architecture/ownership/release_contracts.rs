@@ -161,6 +161,23 @@ fn github_workflows_pin_external_actions_to_commits() {
 }
 
 #[test]
+fn pypi_release_workflow_builds_pypi_compatible_distributions() {
+    let workflow = read_repo_file(".github/workflows/release-pypi.yml");
+    for required in [
+        "PyO3/maturin-action@",
+        "maturin-version: ${{ env.MATURIN_VERSION }}",
+        "manylinux: \"2014\"",
+        "--compatibility pypi",
+        "make publish-py PUBLISH_BUILD=0",
+    ] {
+        assert!(
+            workflow.contains(required),
+            "release-pypi.yml must keep PyPI-safe build and upload guardrails: {required}"
+        );
+    }
+}
+
+#[test]
 fn generated_ported_snapshots_are_not_checked_in() {
     let ported_dir = repo_root().join("crates/bijux-cli/tests/data/golden/ported");
     if !ported_dir.exists() {

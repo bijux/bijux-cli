@@ -23,6 +23,11 @@ def _load_pyproject() -> dict[str, object]:
     return tomllib.loads(pyproject.read_text(encoding="utf-8"))
 
 
+def _load_cargo_manifest() -> dict[str, object]:
+    manifest = _project_root() / "Cargo.toml"
+    return tomllib.loads(manifest.read_text(encoding="utf-8"))
+
+
 def _runtime_binary() -> str:
     override = os.environ.get("BIJUX_BIN")
     if override:
@@ -101,6 +106,14 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "Operating System :: MacOS :: MacOS X" in classifiers
     assert "Programming Language :: Python :: 3.14" in classifiers
     assert "Framework :: Pytest" not in classifiers
+
+
+def test_native_extension_uses_abi3_for_supported_python_range() -> None:
+    manifest = _load_cargo_manifest()
+    pyo3 = manifest["dependencies"]["pyo3"]
+    features = set(pyo3["features"])
+    assert "abi3-py311" in features
+    assert "extension-module" in features
 
 
 def test_optional_dependency_groups_match_current_repo_workflows() -> None:
