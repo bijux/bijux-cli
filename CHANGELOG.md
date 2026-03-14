@@ -9,9 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ## [Unreleased]
 
+This section tracks changes on the current branch since `v0.2.0`. It is not a
+published release announcement by itself; public releases are the tagged
+sections below.
+
 ### Changed
-- Switched runtime identity to tag-derived version metadata and regenerated
-  related package metadata accordingly.
+- Kept checkout runtime identity anchored to the latest real git tag line until
+  a newer release tag exists, even when workspace manifests move ahead for
+  release preparation.
 - Normalized `--version` behavior so Rust binary and Python facade return the same payload as `version`.
 - Reworked runtime boundaries: maintainer/control-plane routes are delegated through `bijux-dev-cli` with expanded contract tests.
 - Reduced the runtime-owned root surface to foundation commands; `dev`/official product namespaces are delegated to external owner binaries.
@@ -19,6 +24,9 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Consolidated Python tooling configuration under `configs/python` and `crates/bijux-cli-python`.
 - Removed `scripts/git-hooks` and Make hook installation wiring; `bootstrap` now only sets up the environment.
 - Delegated maintenance workflows previously executed from `scripts/*` to `bijux-dev-cli` command contracts.
+- Tightened public governance docs so README, contributing guidance, and
+  security policy describe the current runtime boundary, plugin trust model, and
+  release-source rules more explicitly.
 
 ### Removed
 - Removed the legacy compatibility binary alias; `bijux` is now the only runtime executable name.
@@ -35,12 +43,19 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Corrected changelog comparison links so `[Unreleased]` and `[0.2.0]` resolve to valid ranges.
 - Hardened `make clean` so transient virtualenv removal races do not fail the target.
 - Corrected README command examples for plugin scaffold/install and shell completion to match the actual CLI surface.
+- Reduced Python bootstrap noise in `make fmt-py` and related targets so routine
+  formatter runs report concise progress instead of full dependency chatter.
+- Corrected README wording around maintainer install aliases so package
+  resolution is not misrepresented as part of the runtime command namespace.
 
 ---
 
 <a id="v0-2-0"></a>
 
 ## [0.2.0] – 2026-01-26
+
+Historical sections below intentionally preserve what shipped at those tags,
+even when later releases removed or replaced those surfaces.
 
 ### Added
 - Linear bootstrap flow with explicit phase boundaries and a first-class `CLIIntent`
