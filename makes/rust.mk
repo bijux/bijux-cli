@@ -5,6 +5,7 @@ RS_RUN_ID ?= local
 
 RS_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/target)
 RS_NEXTEST_CACHE_DIR ?= $(RS_TARGET_DIR)/nextest
+RS_NEXTEST_CONFIG_HOME ?= $(abspath $(RS_ARTIFACT_ROOT)/nextest/config)
 RS_PROFRAW_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/profraw)
 RS_LLVM_PROFILE_FILE ?= $(RS_PROFRAW_DIR)/default_%m_%p.profraw
 RS_COVERAGE_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/target)
@@ -32,7 +33,6 @@ CARGO_TERM_COLOR ?= always
 NEXTEST_PROFILE ?= default
 NEXTEST_STATUS_LEVEL ?= all
 NEXTEST_FINAL_STATUS_LEVEL ?= all
-NEXTEST_SHOW_PROGRESS ?= counter
 # Default fast-lane exclusions for tests that consistently exceed 10 seconds.
 # Override with NEXTEST_FILTER_EXPR to run a custom selection.
 NEXTEST_SLOW_EXCLUDE_EXPR ?= not ( \
@@ -84,13 +84,14 @@ lint-rs: ## Run Rust clippy checks with -D warnings
 
 test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)"
+	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
 	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
+	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
@@ -100,11 +101,9 @@ test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	cargo nextest run \
 		--workspace \
 		--config-file configs/rust/nextest.toml \
-		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		--show-progress "$(NEXTEST_SHOW_PROGRESS)" \
 		$${filter_expr:+-E "$${filter_expr}"} \
 		2>&1 | tee "$(RS_TEST_REPORT)" || status=$$?; \
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
@@ -112,12 +111,13 @@ test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 
 test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)"
+	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
+	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
@@ -129,11 +129,9 @@ test-all-rs: ## Run the full Rust suite, including ignored tests
 		--run-ignored all \
 		--retries 0 \
 		--config-file configs/rust/nextest.toml \
-		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		--show-progress "$(NEXTEST_SHOW_PROGRESS)" \
 		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
 		2>&1 | tee "$(RS_TEST_ALL_REPORT)" || status=$$?; \
 	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
@@ -142,12 +140,13 @@ test-all-rs: ## Run the full Rust suite, including ignored tests
 coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)"
+	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
 	@printf '%s\n' "prepare: cargo build -p bijux-dev-cli --bin bijux-dev-cli"
 	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dev-cli --bin bijux-dev-cli
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dev-cli" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
+	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
@@ -160,11 +159,9 @@ coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 		--run-ignored all \
 		--retries 0 \
 		--config-file configs/rust/nextest.toml \
-		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		--show-progress "$(NEXTEST_SHOW_PROGRESS)" \
 		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
 		--lcov --output-path "$(RS_LCOV_FILE)" \
 		2>&1 | tee "$(RS_COVERAGE_TEST_REPORT)" || status=$$?; \
