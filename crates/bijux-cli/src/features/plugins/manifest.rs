@@ -192,9 +192,11 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV2) -> Result<(), Plugi
 
     match manifest.kind {
         PluginKind::Delegated | PluginKind::Python => {
-            if !manifest.entrypoint.contains(':') && !manifest.entrypoint.contains('.') {
+            let Some((module_name, callable_name)) = manifest.entrypoint.split_once(':') else {
                 return Err(PluginError::InvalidEntrypoint { kind: manifest.kind });
-            }
+            };
+            validate_symbol_path(module_name, manifest.kind)?;
+            validate_symbol_path(callable_name, manifest.kind)?;
         }
         PluginKind::ExternalExec => {
             if manifest.entrypoint.contains(':') {
@@ -204,6 +206,14 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV2) -> Result<(), Plugi
         PluginKind::Native => return Err(PluginError::UnsupportedKind(PluginKind::Native)),
     }
 
+    Ok(())
+}
+
+fn validate_symbol_path(path: &str, kind: PluginKind) -> Result<(), PluginError> {
+    let segments: Vec<&str> = path.split('.').map(str::trim).collect();
+    if segments.is_empty() || segments.iter().any(|segment| segment.is_empty()) {
+        return Err(PluginError::InvalidEntrypoint { kind });
+    }
     Ok(())
 }
 
@@ -309,5 +319,23 @@ mod tests {
         let host = current_plugin_host_floor();
         let error = validate_manifest(manifest, &host, &[]).expect_err("reserved alias");
         assert_eq!(error.to_string(), "plugin alias is reserved: cli");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_python_entrypoints_without_a_callable_separator() {
+        let mut manifest = sample_manifest();
+        manifest.entrypoint = "plugin.main".to_string();
+        let host = current_plugin_host_floor();
+        let error = validate_manifest(manifest, &host, &[]).expect_err("entrypoint separator");
+        assert_eq!(error.to_string(), "plugin entrypoint is invalid for kind Python");
+    }
+
+    #[test]
+    fn validate_manifest_rejects_python_entrypoints_with_empty_segments() {
+        let mut manifest = sample_manifest();
+        manifest.entrypoint = "plugin.:main".to_string();
+        let host = current_plugin_host_floor();
+        let error = validate_manifest(manifest, &host, &[]).expect_err("empty module segment");
+        assert_eq!(error.to_string(), "plugin entrypoint is invalid for kind Python");
     }
 }

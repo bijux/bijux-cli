@@ -48,6 +48,15 @@ fn add_alias(manifest_path: &Path, alias: &str) {
         .expect("write manifest");
 }
 
+fn mutate_manifest_entrypoint(manifest_path: &Path, entrypoint: &str) {
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).expect("read manifest"))
+            .expect("parse manifest");
+    manifest["entrypoint"] = Value::String(entrypoint.to_string());
+    fs::write(manifest_path, serde_json::to_string_pretty(&manifest).expect("serialize manifest"))
+        .expect("write manifest");
+}
+
 #[test]
 fn python_scaffold_install_list_inspect_uninstall_flow() {
     let root = tmp_dir("python-flow");
@@ -550,6 +559,33 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
     let duplicate =
         run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(duplicate.status.code(), Some(1));
+}
+
+#[test]
+fn install_rejects_python_entrypoints_that_do_not_match_runtime_shape() {
+    let root = tmp_dir("bad-python-entrypoint");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "badentry",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    mutate_manifest_entrypoint(&manifest_file(&scaffold_dir), "plugin.main");
+
+    let out =
+        run(&["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")], &plugins_dir);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("entrypoint"));
 }
 
 #[test]
