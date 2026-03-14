@@ -180,8 +180,9 @@ fn deterministic_route_registration_with_different_install_orders() {
 
     let a = run(&["routealpha", "--help"], &dir_a);
     let b = run(&["routealpha", "--help"], &dir_b);
-    assert_eq!(a.status.code(), Some(2));
-    assert_eq!(b.status.code(), Some(2));
+    assert_eq!(a.status.code(), Some(0));
+    assert_eq!(b.status.code(), Some(0));
+    assert_eq!(a.stdout, b.stdout);
     assert_eq!(a.stderr, b.stderr);
 }
 
@@ -201,9 +202,11 @@ fn deterministic_route_registration_after_uninstall_reinstall_cycles() {
     assert!(second_install.status.success());
 
     let out = run(&["cycleplug", "--help"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr)
-        .contains("plugin route execution is not implemented: namespace=cycleplug"));
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
+    assert_eq!(payload["status"], "ok");
+    assert_eq!(payload["argv"], serde_json::json!(["--help"]));
+    assert!(out.stderr.is_empty());
 }
 
 #[test]

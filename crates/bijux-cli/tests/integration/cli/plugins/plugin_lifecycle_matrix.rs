@@ -133,7 +133,7 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
 }
 
 #[test]
-fn installed_plugin_help_entrypoint_is_deterministic() {
+fn installed_plugin_route_executes_structured_python_output() {
     let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
@@ -141,10 +141,36 @@ fn installed_plugin_help_entrypoint_is_deterministic() {
     scaffold_and_install("python", "helpplug", &root, &plugins_dir);
 
     let out = run(&["helpplug", "--help"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&out.stderr)
-        .contains("plugin route execution is not implemented: namespace=helpplug"));
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stderr.is_empty());
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
+    assert_eq!(payload["status"], "ok");
+    assert_eq!(payload["argv"], serde_json::json!(["--help"]));
+}
+
+#[test]
+fn installed_external_exec_plugin_route_passthrough_is_stable() {
+    let root = tmp_dir("plugin-lifecycle");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let entry_file = root.join("routeplug.sh");
+    fs::write(&entry_file, "#!/bin/sh\nprintf 'route:%s\\n' \"$1\"\nprintf 'warn:%s\\n' \"$2\" >&2\n")
+        .expect("write entrypoint");
+    #[cfg(unix)]
+    mark_executable(&entry_file);
+
+    let manifest = root.join("routeplug.manifest.json");
+    write_external_exec_manifest(&manifest, "routeplug", &entry_file);
+    run_ok_json(
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+
+    let out = run(&["routeplug", "alpha", "beta"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(0));
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "route:alpha\n");
+    assert_eq!(String::from_utf8_lossy(&out.stderr), "warn:beta\n");
 }
 
 #[test]

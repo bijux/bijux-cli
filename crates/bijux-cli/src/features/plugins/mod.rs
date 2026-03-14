@@ -9,6 +9,7 @@ mod errors;
 mod manifest;
 mod models;
 pub(crate) mod operations;
+pub(crate) mod runtime;
 mod registry;
 /// Plugin scaffolding helpers for manifest and starter files.
 pub(crate) mod scaffold;

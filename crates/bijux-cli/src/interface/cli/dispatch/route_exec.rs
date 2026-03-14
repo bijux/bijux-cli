@@ -5,10 +5,12 @@ use serde_json::{json, Value};
 
 use crate::features::diagnostics::state_paths::resolve_state_paths;
 use crate::features::plugins::list_plugins;
+use crate::features::plugins::runtime::{execute_plugin_route, PluginRouteOutput};
 use crate::interface::cli::handlers::{
     cli as cli_handlers, config as config_handlers, history as history_handlers,
     memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
 };
+use crate::interface::cli::dispatch::AppRunResult;
 use crate::interface::cli::parser::ParsedGlobalFlags;
 use crate::routing::registry::{RouteError, RouteRegistry, RouteTarget};
 
@@ -34,7 +36,7 @@ pub(super) fn route_response(
     normalized_path: &[String],
     argv: &[String],
     global_flags: &ParsedGlobalFlags,
-) -> Result<Value> {
+) -> Result<RouteResponse> {
     let paths = resolve_state_paths(global_flags)?;
     let plugin_registry_path = paths.plugin_registry_file.clone();
 
@@ -54,36 +56,45 @@ pub(super) fn route_response(
         Err(error) => return Err(error.into()),
     };
     if let RouteTarget::Plugin(namespace) = target {
-        anyhow::bail!(
-            "plugin route execution is not implemented: namespace={namespace}, route={}",
-            normalized_path.join(" ")
-        );
+        return Ok(match execute_plugin_route(&plugin_registry_path, &namespace, argv)? {
+            PluginRouteOutput::Structured(payload) => RouteResponse::Payload(payload),
+            PluginRouteOutput::Process(result) => RouteResponse::Process(AppRunResult {
+                exit_code: result.exit_code,
+                stdout: result.stdout,
+                stderr: result.stderr,
+            }),
+        });
     }
 
     if let Some(payload) =
         config_handlers::execute_config_command(normalized_path, argv, &paths.config_file)?
     {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) = history_handlers::try_handle(normalized_path, argv, &paths)? {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) = memory_handlers::try_handle(normalized_path, argv, &paths)? {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) =
         plugins_handlers::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
     {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) =
         cli_handlers::try_handle(normalized_path, &paths, &registry, &plugin_registry_path)
     {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) = root_handlers::try_handle(normalized_path, argv) {
-        return Ok(payload);
+        return Ok(RouteResponse::Payload(payload));
     }
 
-    Ok(json!({"status": "error", "message": "unknown route"}))
+    Ok(RouteResponse::Payload(json!({"status": "error", "message": "unknown route"})))
+}
+
+pub(super) enum RouteResponse {
+    Payload(Value),
+    Process(AppRunResult),
 }

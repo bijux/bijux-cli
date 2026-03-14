@@ -13,7 +13,6 @@ use crate::contracts::{known_bijux_tool, OutputFormat};
 use crate::interface::cli::handlers::install as install_handler;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
-use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::routing::model::{alias_rewrites, built_in_route_paths};
 use crate::shared::output::render_value;
 use crate::shared::telemetry::{
@@ -390,11 +389,25 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         return Ok(result);
     }
 
-    let is_unknown = !is_known_catalog_route(&intent.normalized_path);
-
     let response = route_exec::route_response(&intent.normalized_path, argv, &intent.global_flags);
     let payload = match response {
-        Ok(value) => value,
+        Ok(route_exec::RouteResponse::Payload(value)) => value,
+        Ok(route_exec::RouteResponse::Process(result)) => {
+            let command_joined = intent.normalized_path.join(" ");
+            let (command, command_truncated) = bounded_command(&command_joined);
+            telemetry.record(
+                "dispatch.route.completed",
+                json!({
+                    "command": command,
+                    "command_truncated": command_truncated,
+                    "status": if result.exit_code == 0 { Some("ok") } else { Some("error") },
+                    "status_truncated": false,
+                    "exit_code": result.exit_code,
+                    "exit_kind": crate::shared::telemetry::exit_code_kind(result.exit_code),
+                }),
+            );
+            return Ok(result);
+        }
         Err(error) => {
             let message = error.to_string();
             let code = policy::classify_error_exit_code(&message);
@@ -508,52 +521,6 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         }
     };
     let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
-
-    if is_unknown {
-        let command_joined = intent.normalized_path.join(" ");
-        let (command, command_truncated) = bounded_command(&command_joined);
-        let (status, status_truncated) =
-            bounded_status(payload.get("status").and_then(serde_json::Value::as_str));
-        let mut suggestion_emitted = false;
-        if let Some(correction) = suggest::correction_for_unknown_route(&intent.normalized_path) {
-            let nearest_command = correction.nearest_command;
-            let next_command = correction.next_command;
-            let next_help = correction.next_help;
-            let (nearest_command_bounded, nearest_command_truncated) =
-                bounded_command(&nearest_command);
-            let (next_command_bounded, next_command_truncated) = bounded_command(&next_command);
-            let (next_help_bounded, next_help_truncated) = bounded_command(&next_help);
-            telemetry.record(
-                "dispatch.route.suggested",
-                json!({
-                    "command": command.clone(),
-                    "command_truncated": command_truncated,
-                    "nearest_command": nearest_command_bounded,
-                    "nearest_command_truncated": nearest_command_truncated,
-                    "next_command": next_command_bounded,
-                    "next_command_truncated": next_command_truncated,
-                    "next_help": next_help_bounded,
-                    "next_help_truncated": next_help_truncated,
-                    "source": "payload_path",
-                }),
-            );
-            suggestion_emitted = true;
-        }
-        telemetry.record(
-            "dispatch.route.unknown",
-            json!({
-                "command": command,
-                "command_truncated": command_truncated,
-                "exit_code": 2,
-                "exit_kind": crate::shared::telemetry::exit_code_kind(2),
-                "status": status,
-                "status_truncated": status_truncated,
-                "source": "payload_path",
-                "suggestion_emitted": suggestion_emitted,
-            }),
-        );
-        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
-    }
 
     let route_exit_code = 0;
     let command_joined = intent.normalized_path.join(" ");
