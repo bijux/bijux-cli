@@ -212,6 +212,44 @@ fn local_install_keeps_manifest_anchor_when_source_label_is_overridden() {
 }
 
 #[test]
+fn install_accepts_plugin_directory_roots_from_scaffolds_and_templates() {
+    let root = tmp_dir("install-directory");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "dirplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    let install = run_ok_json(
+        &["cli", "plugins", "install", scaffold_dir.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+    assert_eq!(install["status"], "installed");
+    assert_eq!(
+        Path::new(install["manifest_path"].as_str().expect("manifest path")),
+        manifest_file(&scaffold_dir).canonicalize().expect("canonical manifest path")
+    );
+
+    let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "dirplug"));
+}
+
+#[test]
 fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
     let root = tmp_dir("alias-commands");
     let plugins_dir = root.join("plugins");
@@ -255,17 +293,27 @@ fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
         .any(|row| row["alias"] == serde_json::json!(["alias-short"]) && row["canonical"] == serde_json::json!(["aliasplug"]) && row["source"] == "plugin-alias"));
 
     let check = run_ok_json(&["cli", "plugins", "check", "alias-short"], &plugins_dir);
-    assert_eq!(check["plugin"], "alias-short");
+    assert_eq!(check["status"], "healthy");
+    assert_eq!(check["state"], "installed");
+    assert_eq!(check["reference"]["requested_reference"], "alias-short");
+    assert_eq!(check["reference"]["namespace"], "aliasplug");
+    assert_eq!(check["reference"]["matched_via"], "alias");
 
     let disable = run_ok_json(&["cli", "plugins", "disable", "alias-short"], &plugins_dir);
     assert_eq!(disable["status"], "disabled");
+    assert_eq!(disable["state"], "disabled");
+    assert_eq!(disable["reference"]["namespace"], "aliasplug");
 
     let enable = run_ok_json(&["cli", "plugins", "enable", "alias-short"], &plugins_dir);
     assert_eq!(enable["status"], "enabled");
+    assert_eq!(enable["state"], "enabled");
+    assert_eq!(enable["reference"]["namespace"], "aliasplug");
 
     let uninstall = run_ok_json(&["cli", "plugins", "uninstall", "alias-short"], &plugins_dir);
     assert_eq!(uninstall["status"], "uninstalled");
-    assert_eq!(uninstall["namespace"], "alias-short");
+    assert_eq!(uninstall["reference"]["requested_reference"], "alias-short");
+    assert_eq!(uninstall["reference"]["namespace"], "aliasplug");
+    assert_eq!(uninstall["reference"]["matched_via"], "alias");
 }
 
 #[test]

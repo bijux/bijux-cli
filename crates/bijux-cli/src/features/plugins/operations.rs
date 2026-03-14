@@ -35,6 +35,40 @@ fn plugin_records_payload(records: &[crate::features::plugins::PluginRecord]) ->
     records.iter().map(plugin_record_payload).collect()
 }
 
+fn lifecycle_state_name(state: PluginLifecycleState) -> &'static str {
+    match state {
+        PluginLifecycleState::Discovered => "discovered",
+        PluginLifecycleState::Validated => "validated",
+        PluginLifecycleState::Installed => "installed",
+        PluginLifecycleState::Enabled => "enabled",
+        PluginLifecycleState::Disabled => "disabled",
+        PluginLifecycleState::Broken => "broken",
+        PluginLifecycleState::Incompatible => "incompatible",
+    }
+}
+
+fn namespace_reference_payload(requested: &str, canonical: &str) -> Value {
+    json!({
+        "requested_reference": requested,
+        "namespace": canonical,
+        "matched_via": if requested == canonical { "namespace" } else { "alias" },
+    })
+}
+
+fn resolve_install_manifest_path(input: &Path) -> Result<std::path::PathBuf> {
+    if input.is_dir() {
+        let manifest_path = input.join("plugin.manifest.json");
+        if !manifest_path.exists() {
+            anyhow::bail!(
+                "Invalid argument: plugin directory does not contain plugin.manifest.json: {}",
+                input.display()
+            );
+        }
+        return Ok(manifest_path);
+    }
+    Ok(input.to_path_buf())
+}
+
 fn integrity_issue(source: &str, error: impl ToString) -> Value {
     json!({
         "source": source,
@@ -200,7 +234,15 @@ pub(crate) fn check_plugin_health(plugin_registry_path: &Path, plugin: &str) -> 
         anyhow::bail!("Invalid argument: {}", diag.message);
     }
 
-    Ok(json!({"plugin": plugin, "status": "healthy", "state": format!("{:?}", record.state)}))
+    Ok(json!({
+        "status": "healthy",
+        "state": lifecycle_state_name(record.state),
+        "trust_level": record.trust_level,
+        "source": record.source,
+        "aliases": record.manifest.aliases,
+        "manifest_path": record.manifest_path,
+        "reference": namespace_reference_payload(plugin, &record.manifest.namespace.0),
+    }))
 }
 
 pub(crate) fn scaffold_plugin(
@@ -225,11 +267,12 @@ pub(crate) fn install_plugin_from_manifest(
     source: Option<&str>,
     trust_level: PluginTrustLevel,
 ) -> Result<Value> {
-    let manifest_text = fs::read_to_string(manifest_path)?;
+    let manifest_path = resolve_install_manifest_path(manifest_path)?;
+    let manifest_text = fs::read_to_string(&manifest_path)?;
     let source = source
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| manifest_path.to_string_lossy().into_owned());
-    let manifest_path = Some(
+    let manifest_path_text = Some(
         manifest_path
             .canonicalize()
             .unwrap_or_else(|_| manifest_path.to_path_buf())
@@ -239,12 +282,18 @@ pub(crate) fn install_plugin_from_manifest(
 
     let installed = install_plugin_manifest(
         plugin_registry_path,
-        InstallPluginRequest { manifest_text, source, manifest_path, trust_level },
+        InstallPluginRequest {
+            manifest_text,
+            source,
+            manifest_path: manifest_path_text.clone(),
+            trust_level,
+        },
         runtime_semver(),
     )?;
 
     Ok(json!({
         "status": "installed",
+        "manifest_path": manifest_path_text,
         "plugin": plugin_record_payload(&installed),
     }))
 }
@@ -253,10 +302,11 @@ pub(crate) fn uninstall_plugin_namespace(
     plugin_registry_path: &Path,
     namespace: &str,
 ) -> Result<Value> {
+    let record = inspect_plugin(plugin_registry_path, namespace)?;
     uninstall_plugin(plugin_registry_path, namespace)?;
     Ok(json!({
         "status": "uninstalled",
-        "namespace": namespace,
+        "reference": namespace_reference_payload(namespace, &record.manifest.namespace.0),
     }))
 }
 
@@ -278,8 +328,8 @@ pub(crate) fn enable_plugin_namespace(
     let record = enable_plugin(plugin_registry_path, namespace)?;
     Ok(json!({
         "status": "enabled",
-        "namespace": namespace,
-        "state": format!("{:?}", record.state),
+        "state": lifecycle_state_name(record.state),
+        "reference": namespace_reference_payload(namespace, &record.manifest.namespace.0),
     }))
 }
 
@@ -290,8 +340,8 @@ pub(crate) fn disable_plugin_namespace(
     let record = disable_plugin(plugin_registry_path, namespace)?;
     Ok(json!({
         "status": "disabled",
-        "namespace": namespace,
-        "state": format!("{:?}", record.state),
+        "state": lifecycle_state_name(record.state),
+        "reference": namespace_reference_payload(namespace, &record.manifest.namespace.0),
     }))
 }
 
