@@ -110,8 +110,9 @@ Expected shape:
 
 ## Current Scope
 
-The current plugin surface is a management and diagnostics surface. These
-commands are implemented and supported for baseline use:
+The current plugin surface includes both lifecycle management and direct routed
+execution for installed plugin namespaces. These commands are implemented and
+supported for baseline use:
 
 - `info`
 - `list`
@@ -128,10 +129,11 @@ commands are implemented and supported for baseline use:
 - `explain`
 - `schema`
 
-Installed plugin namespaces are not currently executed as direct runtime
-subcommands under `bijux`. If your workflow depends on
-`bijux <plugin-namespace> ...` execution, that behavior is outside the current
-supported surface.
+Installed plugin namespaces are executed as direct runtime subcommands under
+`bijux`, subject to the installed plugin kind and current registry health.
+`python` and `delegated` plugins return structured payloads through the host
+renderer. `external-exec` plugins keep their own stdout, stderr, and exit-code
+contract.
 
 ## Important Limit
 

@@ -34,7 +34,7 @@ The reserved root namespaces are:
 
 `agent`, `atlas`, `audit`, `cli`, `config`, `dag`, `dev`, `dna`, `doctor`,
 `docs`, `gnss`, `help`, `history`, `install`, `memory`, `plugins`, `rag`,
-`rar`, `repl`, `sleep`, `status`, `version`, `completion`, `vex`
+`rar`, `repl`, `status`, `version`, `completion`, `vex`
 
 Plugins must not claim these namespaces.
 

@@ -120,9 +120,9 @@ All services are explicit and injectable:
 
 Plugins are treated as real system components:
 
-* scaffolded from templates,
+* scaffolded as runnable local projects,
 * validated before loading,
-* dynamically exposed as top-level commands.
+* executed through installed top-level namespaces.
 
 ### Interactive REPL
 
@@ -181,16 +181,17 @@ Bijux relies on POSIX filesystem and process semantics.
 ## Plugins in 60 Seconds
 
 ```bash
-# Scaffold a Python plugin from repository templates
+# Scaffold a Python plugin
 bijux plugins scaffold python my-plugin --path ./my-plugin --force
 
-# Scaffold a Rust-backed plugin from repository templates
+# Scaffold a Cargo-backed Rust plugin
 bijux plugins scaffold rust my-rust-plugin --path ./my-rust-plugin --force
 
 # Install and explore
 bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
 bijux plugins inspect my-plugin
+bijux my-plugin --help
 bijux plugins explain my-plugin
 
 # Validate and remove
@@ -198,8 +199,8 @@ bijux plugins check my-plugin
 bijux plugins uninstall my-plugin
 ```
 
-Plugins provide a managed install, inspection, and diagnostics surface without
-changing the core runtime command inventory.
+Plugins provide a managed install, inspection, diagnostics, and routed runtime
+surface without baking plugin code into the core runtime binary.
 
 ---
 
@@ -272,9 +273,8 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 | `plugins` | Manage plugins          |
 | `config`  | Key-value settings      |
 | `history` | REPL history            |
-| `audit`   | Security checks         |
-| `docs`    | Generate specs/docs     |
-| `sleep`   | Pause execution         |
+| `audit`   | Runtime health audit    |
+| `docs`    | Documentation inventory |
 | `version` | Version info            |
 
 ---
@@ -305,6 +305,8 @@ bijux completion --format json
 ```
 
 Supports Bash, Zsh, Fish, and PowerShell.
+`bijux completion` emits the active shell script, while structured output
+includes the detected shell, supported shells, and the generated script.
 
 ---
 

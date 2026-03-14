@@ -36,7 +36,6 @@ flowchart LR
 | `plugins` | Plugin management |
 | `repl` | Interactive shell |
 | `completion` | Shell completion output |
-| `sleep` | Sleep for a duration |
 | `status` | CLI status probe |
 | `version` | CLI version |
 
@@ -92,25 +91,18 @@ When using `bijux repl`, the documented session controls are:
 
 ### `docs`
 
-- structured output returns the current documentation topic inventory
-- current JSON shape includes `status` and `topics`
+- structured output returns the current documentation inventory
+- current JSON shape includes `status`, `site_url`, `local_docs_root`, and `references`
 
 ### `audit`
 
-- structured output returns runtime diagnostic audit categories and issues
+- structured output returns current runtime audit checks and issues
 - current JSON shape includes `status`, `checks`, and `issues`
-
-### `sleep`
-
-- accepts an optional duration argument such as `1` or `250ms`
-- structured output reports the resolved sleep duration
-- current JSON shape includes `status` and `slept_seconds`
 
 ### `completion`
 
-- text output emits shell completion content for the selected shell workflow
-- JSON or YAML output returns the supported shell inventory
-- current structured shell list: `bash`, `zsh`, `fish`, `powershell`
+- text output emits the generated completion script for the detected shell
+- JSON or YAML output returns `active_shell`, `supported_shells`, and `script`
 
 ### `install`
 
