@@ -83,6 +83,7 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         history_limit: 500,
         history_enabled: true,
         history_file: None,
+        config_path: None,
         pending_multiline: None,
         last_error: None,
         plugin_completion_hooks: BTreeMap::new(),

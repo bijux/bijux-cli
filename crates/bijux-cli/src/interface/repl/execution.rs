@@ -54,6 +54,18 @@ fn output_format_name(format: OutputFormat) -> &'static str {
     }
 }
 
+fn argv_has_flag(line_argv: &[String], long: &str, short: Option<&str>) -> bool {
+    line_argv.iter().any(|token| {
+        token == long
+            || short.is_some_and(|value| token == value)
+            || token.starts_with(&format!("{long}="))
+    })
+}
+
+fn argv_has_any_flag(line_argv: &[String], flags: &[&str]) -> bool {
+    line_argv.iter().any(|token| flags.iter().any(|flag| token == flag))
+}
+
 /// Build argv using the same tokenization path REPL execution uses.
 #[must_use]
 pub fn repl_argv_from_line(line: &str) -> Vec<String> {
@@ -138,45 +150,62 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
 fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> Vec<String> {
     let mut argv = vec!["bijux".to_string()];
 
-    argv.push("--format".to_string());
-    argv.push(output_format_name(session.policy.output_format).to_string());
+    let has_output_override = argv_has_any_flag(line_argv, &["--json", "--text"])
+        || argv_has_flag(line_argv, "--format", Some("-f"));
+    if !has_output_override {
+        argv.push("--format".to_string());
+        argv.push(output_format_name(session.policy.output_format).to_string());
+    }
 
-    argv.push(
-        match session.policy.pretty_mode {
-            PrettyMode::Pretty => "--pretty",
-            PrettyMode::Compact => "--no-pretty",
-        }
-        .to_string(),
-    );
+    if !argv_has_any_flag(line_argv, &["--pretty", "--no-pretty"]) {
+        argv.push(
+            match session.policy.pretty_mode {
+                PrettyMode::Pretty => "--pretty",
+                PrettyMode::Compact => "--no-pretty",
+            }
+            .to_string(),
+        );
+    }
 
-    if session.policy.quiet {
+    if session.policy.quiet && !argv_has_any_flag(line_argv, &["--quiet", "-q"]) {
         argv.push("--quiet".to_string());
     }
 
-    argv.push("--color".to_string());
-    argv.push(
-        match session.policy.color_mode {
-            ColorMode::Auto => "auto",
-            ColorMode::Always => "always",
-            ColorMode::Never => "never",
-        }
-        .to_string(),
-    );
+    if !argv_has_flag(line_argv, "--color", None) {
+        argv.push("--color".to_string());
+        argv.push(
+            match session.policy.color_mode {
+                ColorMode::Auto => "auto",
+                ColorMode::Always => "always",
+                ColorMode::Never => "never",
+            }
+            .to_string(),
+        );
+    }
 
-    argv.push("--log-level".to_string());
-    argv.push(if session.trace_mode {
-        "trace".to_string()
-    } else {
-        match session.policy.log_level {
-            LogLevel::Trace => "trace",
-            LogLevel::Debug => "debug",
-            LogLevel::Info => "info",
-            LogLevel::Warning => "warning",
-            LogLevel::Error => "error",
-            _ => "info",
+    if !argv_has_flag(line_argv, "--log-level", None) {
+        argv.push("--log-level".to_string());
+        argv.push(if session.trace_mode {
+            "trace".to_string()
+        } else {
+            match session.policy.log_level {
+                LogLevel::Trace => "trace",
+                LogLevel::Debug => "debug",
+                LogLevel::Info => "info",
+                LogLevel::Warning => "warning",
+                LogLevel::Error => "error",
+                _ => "info",
+            }
+            .to_string()
+        });
+    }
+
+    if !argv_has_flag(line_argv, "--config-path", None) {
+        if let Some(config_path) = &session.config_path {
+            argv.push("--config-path".to_string());
+            argv.push(config_path.clone());
         }
-        .to_string()
-    });
+    }
 
     if line_argv.len() > 1 {
         argv.extend_from_slice(&line_argv[1..]);

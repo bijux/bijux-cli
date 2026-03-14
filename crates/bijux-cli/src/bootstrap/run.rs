@@ -4,6 +4,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
+use crate::bootstrap::repl::try_run_interactive_repl;
 use crate::bootstrap::wiring::{decode_os_argv, emit_run_result};
 use crate::interface::cli::dispatch::run_app;
 use crate::kernel::map_error_category_to_exit;
@@ -38,6 +39,15 @@ pub fn run_cli_from_env() -> ExitCode {
             return ExitCode::from(map_error_category_to_exit("usage") as u8);
         }
     };
+
+    match try_run_interactive_repl(&argv) {
+        Ok(Some(code)) => return ExitCode::from(normalize_process_exit_code(code)),
+        Ok(None) => {}
+        Err(error) => {
+            let _ = writeln!(io::stderr(), "{error}");
+            return ExitCode::from(1);
+        }
+    }
 
     let result = match run_app(&argv) {
         Ok(value) => value,

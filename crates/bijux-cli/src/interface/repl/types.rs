@@ -84,6 +84,8 @@ pub struct ReplSession {
     pub history_enabled: bool,
     /// History file location.
     pub history_file: Option<PathBuf>,
+    /// Optional config path override propagated into nested command execution.
+    pub config_path: Option<String>,
     /// Pending multiline input buffer.
     pub pending_multiline: Option<String>,
     /// Last observed error message.

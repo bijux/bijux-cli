@@ -85,6 +85,139 @@ pub(crate) fn completion_report(argv: &[String]) -> Value {
     })
 }
 
+pub(crate) fn doctor_report(paths: &ResolvedStatePaths, plugin_registry_path: &Path) -> Value {
+    let install = install_report_payload();
+    let config_result = validate_config_file(&paths.config_file);
+    let state = state_diagnostics(paths);
+    let plugins = plugin_doctor(plugin_registry_path);
+
+    let mut checks = Vec::<Value>::new();
+    let mut issues = Vec::<Value>::new();
+
+    let config_status = match &config_result {
+        Ok(()) => "ok",
+        Err(_) => "error",
+    };
+    let config_message = match config_result {
+        Ok(()) if paths.config_file.exists() => "config file parsed successfully".to_string(),
+        Ok(()) => "config file is absent and will be treated as empty".to_string(),
+        Err(error) => error,
+    };
+    checks.push(json!({
+        "name": "config",
+        "status": config_status,
+        "message": config_message,
+    }));
+
+    let install_warnings = [
+        (
+            install.get("has_path_shadowing").and_then(Value::as_bool) == Some(true),
+            "multiple bijux binaries are visible on PATH",
+        ),
+        (
+            install.get("has_duplicate_installs").and_then(Value::as_bool) == Some(true),
+            "duplicate bijux installs were detected",
+        ),
+        (
+            install.get("has_mismatched_wheel_binary_versions").and_then(Value::as_bool)
+                == Some(true),
+            "wheel and binary versions do not match",
+        ),
+        (
+            install
+                .get("stale_wrapper_scripts")
+                .and_then(Value::as_array)
+                .is_some_and(|items| !items.is_empty()),
+            "stale wrapper scripts were found",
+        ),
+        (
+            install
+                .get("legacy_installer_conflicts")
+                .and_then(Value::as_array)
+                .is_some_and(|items| !items.is_empty()),
+            "legacy installer conflicts were found",
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(active, message)| active.then_some(message))
+    .collect::<Vec<_>>();
+    let install_status = if install_warnings.is_empty() { "ok" } else { "warning" };
+    checks.push(json!({
+        "name": "install",
+        "status": install_status,
+        "message": if install_warnings.is_empty() {
+            "runtime install paths evaluated".to_string()
+        } else {
+            install_warnings.join("; ")
+        },
+    }));
+
+    let state_issue_count =
+        state.get("issues").and_then(Value::as_array).map_or(0, std::vec::Vec::len);
+    checks.push(json!({
+        "name": "state",
+        "status": if state_issue_count == 0 { "ok" } else { "warning" },
+        "message": "runtime state files evaluated",
+        "issue_count": state_issue_count,
+    }));
+
+    match plugins {
+        Ok(report) => {
+            let status = if report.broken.is_empty() && report.incompatible.is_empty() {
+                "ok"
+            } else {
+                "warning"
+            };
+            checks.push(json!({
+                "name": "plugins",
+                "status": status,
+                "message": if status == "ok" {
+                    "plugin registry health evaluated".to_string()
+                } else {
+                    "installed plugins need attention".to_string()
+                },
+                "installed": report.installed,
+                "broken": report.broken,
+                "incompatible": report.incompatible,
+            }));
+        }
+        Err(error) => checks.push(json!({
+            "name": "plugins",
+            "status": "error",
+            "message": error.to_string(),
+        })),
+    }
+
+    issues.extend(checks.iter().filter(|check| check["status"] != "ok").cloned());
+    if let Some(items) = state.get("issues").and_then(Value::as_array) {
+        issues.extend(items.iter().cloned());
+    }
+
+    let status = if issues.iter().any(|item| {
+        item.get("status") == Some(&json!("error")) || item.get("severity") == Some(&json!("error"))
+    }) {
+        "degraded"
+    } else if issues.is_empty() {
+        "ok"
+    } else {
+        "warning"
+    };
+
+    json!({
+        "status": status,
+        "checks": checks,
+        "install": {
+            "has_path_shadowing": install["has_path_shadowing"],
+            "has_duplicate_installs": install["has_duplicate_installs"],
+            "stale_wrapper_scripts": install["stale_wrapper_scripts"],
+            "legacy_installer_conflicts": install["legacy_installer_conflicts"].as_array().is_some_and(|items| !items.is_empty()),
+            "legacy_installer_conflict_paths": install["legacy_installer_conflicts"],
+            "has_mismatched_wheel_binary_versions": install["has_mismatched_wheel_binary_versions"],
+        },
+        "issues": issues,
+    })
+}
+
 pub(crate) fn runtime_status_report(
     paths: &ResolvedStatePaths,
     plugin_registry_path: &Path,
@@ -358,24 +491,14 @@ pub(crate) fn try_handle(
                 "build_profile": version.build_profile,
             }))
         }
-        [a, b] if a == "cli" && b == "doctor" => {
-            let install = install_report_payload();
-            Some(json!({
-                "status": "healthy",
-                "checks": ["routing", "output", "config", "install"],
-                "install": {
-                    "has_path_shadowing": install["has_path_shadowing"],
-                    "has_duplicate_installs": install["has_duplicate_installs"],
-                    "stale_wrapper_scripts": install["stale_wrapper_scripts"],
-                    "legacy_installer_conflicts": install["legacy_installer_conflicts"].as_array().is_some_and(|items| !items.is_empty()),
-                    "legacy_installer_conflict_paths": install["legacy_installer_conflicts"],
-                    "has_mismatched_wheel_binary_versions": install["has_mismatched_wheel_binary_versions"],
-                }
-            }))
-        }
-        [a, b] if a == "cli" && b == "repl" => {
-            Some(json!({"status": "ready", "mode": "repl", "history_file": paths.history_file}))
-        }
+        [a, b] if a == "cli" && b == "doctor" => Some(doctor_report(paths, plugin_registry_path)),
+        [a, b] if a == "cli" && b == "repl" => Some(json!({
+            "status": "ready",
+            "mode": "interactive",
+            "interactive": true,
+            "history_file": paths.history_file,
+            "message": "The process entrypoint launches the persistent REPL session loop.",
+        })),
         [a, b] if a == "cli" && b == "completion" => Some(completion_report(argv)),
         [a, b] if a == "cli" && b == "inspect" => {
             let mut integrity_issues = Vec::<Value>::new();
@@ -498,7 +621,11 @@ pub(crate) fn try_handle(
 
 #[cfg(test)]
 mod tests {
-    use super::completion_report;
+    use tempfile::tempdir;
+
+    use super::{completion_report, doctor_report};
+    use crate::features::diagnostics::state_paths::ResolvedStatePaths;
+    use crate::shared::telemetry::TEST_ENV_LOCK;
 
     #[test]
     fn completion_report_declares_supported_platform_contract() {
@@ -517,5 +644,59 @@ mod tests {
             .expect("supported shells")
             .iter()
             .any(|shell| shell == "pwsh"));
+    }
+
+    #[test]
+    fn doctor_report_degrades_when_install_surface_has_real_warnings() {
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
+        let temp = tempdir().expect("temp dir");
+        let bin_a = temp.path().join("bin-a");
+        let bin_b = temp.path().join("bin-b");
+        std::fs::create_dir_all(&bin_a).expect("bin-a");
+        std::fs::create_dir_all(&bin_b).expect("bin-b");
+        let path_a = bin_a.join("bijux");
+        let path_b = bin_b.join("bijux");
+        std::fs::write(&path_a, "#!/bin/sh\n").expect("bijux a");
+        std::fs::write(&path_b, "#!/bin/sh\n").expect("bijux b");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            std::fs::set_permissions(&path_a, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod a");
+            std::fs::set_permissions(&path_b, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod b");
+        }
+
+        let old_path = std::env::var_os("PATH");
+        let old_bin = std::env::var_os("BIJUX_BIN");
+        let joined_path = std::env::join_paths([&bin_a, &bin_b]).expect("join path");
+        std::env::set_var("PATH", joined_path);
+        std::env::set_var("BIJUX_BIN", &path_a);
+
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let report = doctor_report(&paths, &paths.plugin_registry_file);
+
+        if let Some(value) = old_path {
+            std::env::set_var("PATH", value);
+        } else {
+            std::env::remove_var("PATH");
+        }
+        if let Some(value) = old_bin {
+            std::env::set_var("BIJUX_BIN", value);
+        } else {
+            std::env::remove_var("BIJUX_BIN");
+        }
+
+        assert_eq!(report["status"], serde_json::json!("warning"));
+        assert_eq!(report["install"]["has_path_shadowing"], serde_json::json!(true));
     }
 }
