@@ -159,3 +159,18 @@ fn github_workflows_pin_external_actions_to_commits() {
         );
     }
 }
+
+#[test]
+fn generated_ported_snapshots_are_not_checked_in() {
+    let ported_dir = repo_root().join("crates/bijux-cli/tests/data/golden/ported");
+    let entries = fs::read_dir(&ported_dir).expect("ported snapshot dir");
+    let checked_in = entries
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "json"))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+    assert!(
+        checked_in.is_empty(),
+        "generated ported snapshots must stay out of the repo: {checked_in:?}"
+    );
+}
