@@ -11,6 +11,39 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-0"></a>
+
+## [0.3.0] – 2026-03-14
+
+### Added
+- Rust-owned runtime crates for the end-user binary (`bijux`), the Python bridge package, and the workspace-only maintainer control plane (`bijux-dev-cli`)
+- Typed command routing, structured output contracts, schema snapshots, and parity coverage across the binary, core runtime, Python bridge, and routed REPL surface
+- Shipped plugin lifecycle management with routed execution, install/inspect/check/explain/enable/disable/uninstall flows, reserved-namespace enforcement, and Cookiecutter-backed Python and Cargo templates
+- Interactive REPL execution with shared CLI semantics, history compatibility, completion, diagnostics, and hostile-session resilience coverage
+- Installation diagnostics, first-run state setup, explicit shell completion output, and package alias resolution for official Bijux runtime and maintainer packages
+- Maintainer command contracts and evidence reports for runtime identity, route audits, parity, repository health, docs audits, and publish-time contract assets
+
+### Changed
+- Migrated the repository from the older Python-first layout to a Rust-first workspace with `crates/`, `configs/`, `contracts/`, `makes/`, and canonical docs sections
+- Reduced the public root runtime surface to shipped commands, moved maintainer automation behind `bijux-dev-cli`, and kept the `cli` namespace as the canonical compatibility surface
+- Standardized runtime identity so checkout builds derive from the latest real git tag line while release workflows stamp exact tagged versions into release artifacts
+- Reworked plugin compatibility handling, scaffold defaults, and template guidance around the current manifest contract and pre-1.0 host boundaries
+- Rewrote public docs, contributor guidance, and security policy to match the current runtime, plugin trust boundary, and release process more explicitly
+
+### Removed
+- Legacy `bijux-cli` compatibility executable naming; `bijux` is now the only runtime command name
+- Legacy runtime ownership of maintainer/dev namespaces from the end-user command surface
+- Legacy `scripts/` automation paths, root OpenAPI/Node release remnants, and the previous MkDocs builder pipeline
+- Legacy duplicate Python distribution/test roots outside `crates/bijux-cli-python`
+- Demo-grade root commands and placeholder plugin execution paths that no longer matched the shipped runtime contract
+
+### Fixed
+- Corrected plugin routing so installed plugins and aliases execute through the runtime instead of stopping at placeholder errors
+- Hardened `doctor`, install diagnostics, state-path handling, and registry/history recovery so health output reflects actual runtime conditions
+- Aligned Rust, Python, and release metadata around supported hosts, package ownership, explicit completion shells, and tag-derived version provenance
+- Tightened plugin manifest validation, runtime floors, registry locking, and scaffold build behavior for Python and Rust plugin projects
+- Reduced Python bootstrap noise in common Make workflows and cleared remaining release-line/documentation drift around the shipped runtime boundary
+
 <a id="v0-2-0"></a>
 
 ## [0.2.0] – 2026-01-26
@@ -231,7 +264,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/bijux/bijux-cli/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/bijux/bijux-cli/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/bijux/bijux-cli/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
