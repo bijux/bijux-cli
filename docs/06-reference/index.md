@@ -14,6 +14,10 @@ flowchart TD
     A --> E[Compatibility and terms]
 ```
 
+This flowchart is the lookup map for the reference section. It points readers
+to the right page based on whether they need command facts, state rules,
+integration boundaries, or compatibility terminology.
+
 ```mermaid
 mindmap
   root((Reference))
@@ -35,6 +39,10 @@ mindmap
       glossary
       Python compatibility baseline
 ```
+
+The mindmap summarizes the same reference territory by topic cluster. It is a
+quick way to confirm whether the answer you need belongs in commands, state,
+integrations, or compatibility language.
 
 ## Read This Set By Need
 

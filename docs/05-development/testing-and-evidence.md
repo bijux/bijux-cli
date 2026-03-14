@@ -13,6 +13,10 @@ flowchart TD
     D --> E[Reviewable evidence]
 ```
 
+This diagram shows the evidence ladder the repository expects. Targeted tests
+come first, broader checks follow, and maintainer-only checks are added when a
+surface needs them before review can be considered complete.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Changed
@@ -21,6 +25,10 @@ stateDiagram-v2
     Checked --> Reviewed
     Reviewed --> Merged
 ```
+
+The state diagram expresses that same rule as a workflow boundary. A change is
+not ready to merge simply because code exists; it has to move through testing,
+checking, and reviewable evidence.
 
 ## Evidence Rules
 

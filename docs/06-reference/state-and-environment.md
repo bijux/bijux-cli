@@ -13,6 +13,10 @@ flowchart TD
     D --> E[Command behavior]
 ```
 
+This diagram shows the precedence model that readers should keep in mind while
+using the tables below. Flags, environment, and config feed one resolved policy
+before command behavior is decided.
+
 ```mermaid
 flowchart LR
     A[~/.bijux/.env] --> B[Config state]
@@ -20,6 +24,10 @@ flowchart LR
     E[~/.bijux/.memory.json] --> F[Memory state]
     G[~/.bijux/.plugins] --> H[Plugin state]
 ```
+
+The second diagram turns that policy model into concrete default paths. It
+helps explain why config, history, memory, and plugin state are documented
+together on one reference page.
 
 ## Common Configuration Keys
 

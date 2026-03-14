@@ -14,6 +14,10 @@ flowchart TD
     E --> F[Publish]
 ```
 
+This flowchart shows the release gate in order. A commit is not treated as a
+release candidate until CI, maintainer checks, and compatibility review have
+all been satisfied.
+
 ```mermaid
 sequenceDiagram
     participant C as Candidate
@@ -25,6 +29,10 @@ sequenceDiagram
     R->>P: publish tagged version
     P-->>R: rollback to last good version if needed
 ```
+
+The sequence diagram adds the operational picture behind that gate. It makes
+clear that publication and rollback are part of the same release process rather
+than separate afterthoughts.
 
 ## Release Rules
 

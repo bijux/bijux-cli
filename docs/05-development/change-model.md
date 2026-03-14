@@ -13,6 +13,10 @@ flowchart TD
     B -->|emission| F[output and error envelopes]
 ```
 
+This diagram is the first routing question for a code change. It helps a
+contributor classify the change before implementation so behavior lands in the
+right layer instead of being hidden in the nearest convenient file.
+
 ```mermaid
 flowchart LR
     A[Wrong layer] --> B[nondeterministic behavior]
@@ -21,6 +25,10 @@ flowchart LR
     E[Correct layer] --> F[explicit behavior]
     F --> G[clearer tests]
 ```
+
+The second diagram explains why that classification matters. Correct placement
+leads to clearer tests and more explicit behavior, while the wrong layer tends
+to create regressions and confusing side effects.
 
 ## Mental Model
 

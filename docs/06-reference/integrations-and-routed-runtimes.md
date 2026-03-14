@@ -14,11 +14,19 @@ flowchart TD
     G[plugins command group] --> H[plugin.manifest.json lifecycle]
 ```
 
+This diagram shows the four integration surfaces that still matter in the
+current repository: product binaries, control-plane binaries, the Python facade,
+and the plugin lifecycle exposed through the runtime.
+
 ```mermaid
 flowchart LR
     A[Current Rust runtime] --> B[current bijux-cli-python]
     B --> C[configured PyPI baseline]
 ```
+
+The second diagram explains the remaining compatibility chain. It shows why the
+reference docs still talk about both the current Python package and the
+configured stable PyPI baseline.
 
 ## Product Binary Routing
 

@@ -12,6 +12,10 @@ flowchart LR
     C --> D[Run build and tests]
 ```
 
+This flowchart shows the intended setup order for contributors. It keeps local
+tooling and generated outputs inside the repository workflow before any build
+or test run happens.
+
 ```mermaid
 sequenceDiagram
     participant U as Contributor
@@ -22,6 +26,10 @@ sequenceDiagram
     U->>M: make test
     M->>W: run repository checks
 ```
+
+The sequence diagram turns that setup into concrete commands. It highlights
+that `make` targets are the supported entrypoints for local tooling and checks,
+not just convenience wrappers.
 
 ## Working Rules
 

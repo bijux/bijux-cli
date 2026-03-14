@@ -12,6 +12,10 @@ flowchart TD
     E[Pre-1.0 limit] --> F[must be named explicitly]
 ```
 
+This diagram shows the classification rule behind the page. Stability comes
+from documented contracts, while undocumented behavior remains movable and
+pre-1.0 limits must be called out directly.
+
 ```mermaid
 mindmap
   root((Compatibility and terms))
@@ -26,6 +30,10 @@ mindmap
       REPL UX details
       config extensions
 ```
+
+The mindmap groups the vocabulary and the current pre-1.0 flexibility in one
+place. It helps readers distinguish stable core terms from areas where the
+project still reserves room to adjust details.
 
 ## Core Terms
 

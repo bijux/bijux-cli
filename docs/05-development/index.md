@@ -13,6 +13,10 @@ flowchart TD
     D --> E[Prepare release or follow-up work]
 ```
 
+This flowchart is the contributor path through the section. It starts with
+local setup, then explains how to place changes correctly, and only then moves
+into evidence and release-facing expectations.
+
 ```mermaid
 mindmap
   root((Development))
@@ -30,6 +34,10 @@ mindmap
       compatibility
       rollback
 ```
+
+The mindmap groups that path by responsibility area. It is a quick reminder
+that setup, code placement, evidence, and release review are all part of the
+same contributor workflow.
 
 ## Read This Set In Order
 

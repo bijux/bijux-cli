@@ -13,12 +13,20 @@ flowchart TD
     D --> E[Exit code and output]
 ```
 
+This diagram shows how to read the command inventory on this page. Start at the
+top-level command, then drill into subcommand groups, flags, and finally the
+observable output and exit behavior.
+
 ```mermaid
 flowchart LR
     A[CLI invocation] --> B[Top-level commands]
     A --> C[REPL controls]
     A --> D[Exit codes]
 ```
+
+The second diagram explains the page scope. It is not only a CLI list: it also
+records REPL session controls and the stable exit-code table that automation
+depends on.
 
 ## Built-In Top-Level Commands
 
