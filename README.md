@@ -198,7 +198,7 @@ bijux plugins scaffold rust my-rust-plugin --path ./my-rust-plugin --force
 ./my-rust-plugin/plugin-entrypoint --help
 
 # Install and explore
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux my-plugin --help
@@ -213,7 +213,9 @@ bijux plugins uninstall my-plugin
 ```
 
 Plugins provide a managed install, inspection, diagnostics, and routed runtime
-surface without baking plugin code into the core runtime binary.
+surface without baking plugin code into the core runtime binary. `plugins install`
+accepts either a plugin directory root or an explicit `plugin.manifest.json`
+path. Python-backed plugins require Python 3.11 or newer on `PATH`.
 
 ---
 

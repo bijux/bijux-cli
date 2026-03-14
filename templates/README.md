@@ -13,12 +13,13 @@ python3 -m cookiecutter ./templates/plugins-py \
   project_name="My Plugin" \
   project_slug=my-plugin \
   plugin_namespace=my-plugin
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
 bijux plugins schema
+bijux my-plugin --help
 ```
 
 ```bash
@@ -27,12 +28,13 @@ python3 -m cookiecutter ./templates/plugins-rs \
   project_slug=my-plugin \
   plugin_namespace=my-plugin \
   crate_name=my_plugin
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
 bijux plugins schema
+bijux my-plugin --help
 ```
 
 These templates are rendered with Cookiecutter. Use them when you want a repository-shaped plugin
@@ -40,7 +42,8 @@ project with authoring files such as `README.md`, packaging metadata, and ignore
 `bijux plugins scaffold` command stays intentionally minimal and does not load custom templates.
 
 The Rust template keeps local development honest: `plugin-entrypoint` rebuilds the debug binary on
-first use or after source drift, then runs the compiled plugin.
+first use or after source drift, then runs the compiled plugin. Python plugins require Python 3.11
+or newer on `PATH`.
 
 Keep the rendered plugin namespace stable after release, update the compatibility window when host
 support changes, and avoid namespaces reserved by `bijux-cli` or official Bijux tools.

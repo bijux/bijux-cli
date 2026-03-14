@@ -1,11 +1,12 @@
 #![forbid(unsafe_code)]
 //! Guardrails for repository-owned plugin templates.
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use bijux_cli::api::version::runtime_semver;
-use bijux_cli::contracts::{Namespace, PluginKind, PluginManifestV2};
+use bijux_cli::contracts::{known_bijux_tool_namespaces, Namespace, PluginKind, PluginManifestV2};
 use semver::{Prerelease, Version};
 
 const TEMPLATE_CONTRACT_VERSION: &str = "v2";
@@ -85,11 +86,45 @@ fn render_template(text: &str) -> String {
         .replace("{{cookiecutter.rust_edition}}", "2021")
 }
 
+fn expected_template_reserved_namespaces() -> BTreeSet<String> {
+    [
+        "cli",
+        "completion",
+        "dev",
+        "doctor",
+        "help",
+        "inspect",
+        "plugins",
+        "repl",
+        "version",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .chain(known_bijux_tool_namespaces().iter().map(|value| (*value).to_string()))
+    .collect()
+}
+
+fn reserved_namespaces_from_hook(path: &str) -> BTreeSet<String> {
+    let text = read_repo_file(path);
+    let block = text
+        .split("RESERVED_NAMESPACES = {")
+        .nth(1)
+        .and_then(|tail| tail.split("\n}\n").next())
+        .expect("reserved namespace block");
+    block
+        .lines()
+        .filter_map(|line| {
+            let trimmed = line.trim().trim_end_matches(',');
+            trimmed.strip_prefix('"').and_then(|rest| rest.strip_suffix('"')).map(str::to_string)
+        })
+        .collect()
+}
+
 fn assert_rendered_project_readme(path: &str) {
     let rendered = render_template(&read_repo_file(path));
     assert!(
-        rendered.contains("bijux plugins install ./plugin.manifest.json"),
-        "{path} should document local install with the current manifest contract"
+        rendered.contains("bijux plugins install ."),
+        "{path} should document local install from the rendered project root"
     );
     assert!(
         rendered.contains("bijux plugins list"),
@@ -110,6 +145,10 @@ fn assert_rendered_project_readme(path: &str) {
     assert!(
         rendered.contains("bijux plugins schema"),
         "{path} should document schema discovery for the manifest contract"
+    );
+    assert!(
+        rendered.contains("bijux testplug --help"),
+        "{path} should document routed execution for the rendered namespace"
     );
     assert!(
         rendered.contains("compatibility range"),
@@ -143,6 +182,10 @@ fn template_docs_reference_current_rendering_and_install_flow() {
                 "{path} should document current plugin guidance: {required}"
             );
         }
+        assert!(
+            text.contains("bijux plugins install ./my-plugin"),
+            "{path} should document directory-root install flow"
+        );
         for forbidden in [
             "--template",
             "plugin.json",
@@ -192,6 +235,12 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
     assert!(
         rust_rendered.to_ascii_lowercase().contains("rebuild"),
         "rendered rust project README must explain the local rebuild contract"
+    );
+    let python_rendered =
+        render_template(&read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/README.md"));
+    assert!(
+        python_rendered.contains("Python 3.11 or newer"),
+        "rendered python project README must document the Python runtime floor"
     );
 }
 
@@ -360,6 +409,20 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
         assert!(
             rs_hook.contains(required),
             "rust template hook should validate current release window inputs: {required}"
+        );
+    }
+}
+
+#[test]
+fn template_hook_reserved_namespaces_match_runtime_contracts() {
+    let expected = expected_template_reserved_namespaces();
+    for path in
+        ["templates/plugins-py/hooks/pre_gen_project.py", "templates/plugins-rs/hooks/pre_gen_project.py"]
+    {
+        assert_eq!(
+            reserved_namespaces_from_hook(path),
+            expected,
+            "{path} must stay aligned with reserved runtime and official-product namespaces"
         );
     }
 }

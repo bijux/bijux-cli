@@ -28,7 +28,7 @@ bijux plugins info
 bijux plugins list
 bijux plugins inspect
 bijux plugins inspect NAMESPACE
-bijux plugins install ./plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins check NAMESPACE
 bijux plugins enable NAMESPACE
 bijux plugins disable NAMESPACE
@@ -77,7 +77,7 @@ Install, inspect, validate, and remove it:
 
 ```bash
 bijux plugins info
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
@@ -102,10 +102,13 @@ Expected shape:
   as `plugin:main`
 - `doctor` shows registry-wide health and load diagnostics
 - `where` shows the active plugins directory and registry file
-- `reserved-names` shows the full blocked namespace inventory and confirms that
-  the same rules apply to plugin aliases
+- `reserved-names` shows the full blocked namespace inventory, grouped
+  ownership details, and confirms that the same rules apply to plugin aliases
 - `explain` without an argument shows the overall plugin summary; with a
-  namespace it shows compatibility or load diagnostics for one plugin
+  namespace it shows compatibility or load diagnostics for one plugin and it
+  reports unknown names without failing
+- `where` reports the active plugin paths together with existence and
+  write-readiness hints
 - `list` no longer reports the namespace after uninstall
 
 ## Working Rule
@@ -144,7 +147,8 @@ subcommands under `bijux`, subject to the installed plugin kind and current
 registry health.
 `python` and `delegated` plugins return structured payloads through the host
 renderer. `external-exec` plugins keep their own stdout, stderr, and exit-code
-contract.
+contract. Python-backed plugin execution requires Python 3.11 or newer on
+`PATH`.
 
 ## Important Limit
 

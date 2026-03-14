@@ -12,12 +12,13 @@ python3 -m cookiecutter ./templates/plugins-py \
 The rendered project installs with the current plugin manifest contract:
 
 ```bash
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
 bijux plugins schema
+bijux my-plugin --help
 ```
 
 Generated files:
@@ -38,3 +39,4 @@ pass `project_slug` and `plugin_namespace` explicitly.
 Cookiecutter validation rejects namespaces that do not start with a letter or that contain repeated
 hyphens, rejects invalid semver or inverted compatibility windows, and blocks namespaces reserved by
 `bijux-cli` or official Bijux tools.
+Python-backed plugin execution requires Python 3.11 or newer on `PATH`.

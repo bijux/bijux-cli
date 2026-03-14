@@ -13,12 +13,13 @@ python3 -m cookiecutter ./templates/plugins-rs \
 The rendered project installs with the current plugin manifest contract:
 
 ```bash
-bijux plugins install ./my-plugin/plugin.manifest.json
+bijux plugins install ./my-plugin
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux plugins check my-plugin
 bijux plugins explain my-plugin
 bijux plugins schema
+bijux my-plugin --help
 ```
 
 Generated files:

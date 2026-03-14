@@ -12,12 +12,13 @@ Cargo-backed Rust plugin scaffold for Bijux.
 Install locally with:
 
 ```bash
-bijux plugins install ./plugin.manifest.json
+bijux plugins install .
 bijux plugins list
 bijux plugins inspect {{cookiecutter.plugin_namespace}}
 bijux plugins check {{cookiecutter.plugin_namespace}}
 bijux plugins explain {{cookiecutter.plugin_namespace}}
 bijux plugins schema
+bijux {{cookiecutter.plugin_namespace}} --help
 ```
 
 Run the generated plugin directly with:

@@ -10,12 +10,13 @@ Python plugin scaffold for Bijux.
 Install locally with:
 
 ```bash
-bijux plugins install ./plugin.manifest.json
+bijux plugins install .
 bijux plugins list
 bijux plugins inspect {{cookiecutter.plugin_namespace}}
 bijux plugins check {{cookiecutter.plugin_namespace}}
 bijux plugins explain {{cookiecutter.plugin_namespace}}
 bijux plugins schema
+bijux {{cookiecutter.plugin_namespace}} --help
 ```
 
 Keep `plugin_namespace` stable after release, update the compatibility range in
@@ -24,3 +25,4 @@ namespaces when renaming the plugin. The rendered defaults start at plugin versi
 `{{cookiecutter.plugin_version}}` with host compatibility from `{{cookiecutter.cli_min}}` up to,
 but not including, `{{cookiecutter.cli_max}}`. For a pre-1.0 Bijux host, that upper bound should
 move with the next supported minor line instead of every future `0.x` release.
+Python-backed plugin execution requires Python 3.11 or newer on `PATH`.

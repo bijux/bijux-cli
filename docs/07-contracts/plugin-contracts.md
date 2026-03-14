@@ -59,10 +59,13 @@ failure.
 ## Manifest And Kind Policy
 
 - the durable local plugin contract is based on `plugin.manifest.json`
+- `plugins install` accepts either a plugin directory root or an explicit
+  `plugin.manifest.json` path
 - current manifest baseline is `v2`
 - unknown major manifest versions are rejected
 - supported executable kinds are `delegated`, `python`, and `external-exec`
 - `delegated` and `python` entrypoints must use `module:callable`
+- `delegated` and `python` execution requires Python 3.11 or newer on `PATH`
 - `external-exec` entrypoints are executable filesystem paths or manifest-local
   executable names
 - `native` is reserved for forward compatibility and is intentionally not
@@ -88,7 +91,8 @@ The current plugin-management contract covers:
 - `schema`
 
 `inspect` may target one plugin or the full inventory.
-`explain` may target one plugin or the full inventory summary.
+`explain` may target one plugin, an unknown name, or the full inventory
+summary.
 `doctor` is the registry-wide health and self-repair view.
 Installed plugin namespaces and declared plugin aliases are also executed as
 direct runtime subcommands

@@ -39,22 +39,26 @@ binaries.
 
 The durable local plugin contract is based on `plugin.manifest.json`.
 
-- local installs consume `plugin.manifest.json`
+- local installs consume either a plugin directory root or `plugin.manifest.json`
 - `plugins info`, `plugins`, and `plugins list` report registry-wide status,
   inventory counts, state totals, and current compatibility or load
   diagnostics
 - delegated and Python plugins resolve their declared entrypoint from the
   installed manifest anchor when available, and they must declare that
   entrypoint as `module:callable`
+- delegated and Python plugin execution requires Python 3.11 or newer on
+  `PATH`
 - `plugins inspect [plugin]` can report either one plugin or the full
   inventory, and `plugins doctor` reports current-runtime drift and missing
   entrypoints
 - `plugins explain [plugin]` can report either a registry-wide summary or one
-  plugin's compatibility and load diagnostics
+  plugin's compatibility and load diagnostics, including unknown or reserved
+  references
 - `plugins where` reports the active plugins directory and registry file
+  together with existence and write-readiness hints
 - `plugins reserved-names` reports the full blocked plugin namespace inventory,
-  including official product namespaces, and confirms that the same policy
-  applies to plugin aliases
+  including official product namespaces and grouped ownership details, and
+  confirms that the same policy applies to plugin aliases
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install
