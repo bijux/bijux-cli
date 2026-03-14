@@ -1,6 +1,7 @@
 # Contributing to Bijux CLI
 
-This document is intentionally short. It only lists commands and rules that exist in this repository today.
+This document stays intentionally operational. It lists the commands, review
+rules, and evidence expectations that exist in this repository today.
 
 ## Prerequisites
 
@@ -19,10 +20,10 @@ Optional tools for some Rust targets:
 ```bash
 git clone https://github.com/bijux/bijux-cli.git
 cd bijux-cli
-make install
+make bootstrap
 ```
 
-`make install` prepares the repository-managed virtualenv under `artifacts/`
+`make bootstrap` prepares the repository-managed virtualenv under `artifacts/`
 and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
 
 Workspace package manifests stay on the current development line. Tagged release
@@ -40,6 +41,7 @@ Python and docs:
 - `make security-py`
 - `make build-py`
 - `make docs`
+- `make docs-check`
 - `make docs-serve`
 
 Rust:
@@ -65,6 +67,16 @@ Direct pytest invocation (without Make):
 pytest -c configs/python/pytest.ini crates/bijux-cli-python/tests/python -q
 ```
 
+Direct Rust runtime verification that is useful for command-surface and docs
+changes:
+
+```bash
+cargo test -p bijux-cli
+cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- docs-audit --format json --no-pretty
+```
+
 ## Pull Requests
 
 Before opening a PR, run the checks relevant to your change.
@@ -72,15 +84,37 @@ Before opening a PR, run the checks relevant to your change.
 Typical baseline:
 
 ```bash
-make test-py
-make lint-py
-make docs
-make fmt-rs
-make lint-rs
-make test-rs
+make fmt
+make lint
+make test
+make docs-check
 ```
 
 Keep PRs focused and small enough to review.
+
+## Docs Honesty Rules
+
+Public docs are part of the product contract. When code changes behavior:
+
+- update the user-facing docs in the same change
+- remove claims that are no longer true instead of explaining them away
+- prefer command output, tests, or maintainer reports over hand-wavy prose
+- treat README and contract pages as higher-scrutiny surfaces than architecture notes
+
+If a command is still partial, internal, workspace-only, or unsupported, say
+that directly.
+
+## Evidence Rules
+
+Before merging a behavior claim about the runtime, make sure at least one of
+these is true:
+
+- the relevant tests pass locally
+- the behavior is visible from the current binary output
+- the maintainer reports agree with the docs you changed
+
+Do not leave stale docs in place because the code changed "recently". That is
+exactly the kind of drift this repository tries to avoid.
 
 ## Changelog Rules
 
@@ -90,7 +124,7 @@ Keep PRs focused and small enough to review.
 
 ## Commit Messages
 
-Conventional commit style is preferred:
+Use conventional commit style:
 
 ```text
 <type>(<scope>): <summary>
@@ -100,3 +134,4 @@ Examples:
 
 - `fix(cli): normalize --version behavior`
 - `docs(changelog): clarify unreleased notes`
+- `refactor(runtime): replace placeholder command handlers`

@@ -4,10 +4,17 @@ Last updated: 2026-03-11
 
 We use coordinated disclosure. Please report security issues privately.
 
+This repository is explicit about one important trust boundary:
+
+- the runtime can execute installed plugins
+- plugins are not sandboxed
+- installing a plugin is a trust decision, not a security boundary
+
 ## Supported Versions
 
-Security fixes are applied to the latest released version only.
-Older versions may not receive patches.
+Security fixes are applied to the latest released `bijux-cli` runtime only.
+Older versions may not receive patches. Development branches and local
+checkouts are reviewed on a best-effort basis.
 
 ## Reporting a Vulnerability
 
@@ -45,10 +52,12 @@ We will publish a GitHub security advisory when appropriate.
 
 In scope:
 - this repository
-- official release artifacts
+- official release artifacts published from this repository
+- the runtime, Python compatibility package, and repository-owned docs or build flows
 
 Out of scope:
 - vulnerabilities in third-party plugins not maintained here
+- the trust or behavior of locally installed untrusted plugins
 - social engineering and physical attacks
 - denial-of-service load testing
 - third-party infrastructure outside this project
@@ -57,3 +66,5 @@ Out of scope:
 
 - No public bug bounty program.
 - Non-security questions should go to regular GitHub issues.
+- If the report depends on a third-party plugin, say whether the issue is in the
+  runtime host or in the plugin itself.
