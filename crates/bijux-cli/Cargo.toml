@@ -1,17 +1,17 @@
 [package]
 name = "bijux-cli"
 version.workspace = true
-description = "Core Bijux command-line runtime and routing surface."
+description = "Rust-owned Bijux runtime for command routing, plugins, install diagnostics, and the interactive shell."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-homepage = "https://github.com/bijux/bijux-cli"
-documentation = "https://docs.rs/bijux-cli"
+homepage.workspace = true
+documentation = "https://bijux.github.io/bijux-cli/04-architecture/runtime-and-distribution/"
 authors.workspace = true
 rust-version.workspace = true
 readme = "README.md"
-keywords = ["cli", "automation", "plugins", "repl", "routing"]
-categories = ["command-line-interface", "development-tools", "development-tools::build-utils"]
+keywords = ["bijux", "cli", "plugins", "repl", "automation"]
+categories = ["command-line-interface", "development-tools", "config"]
 
 [lib]
 name = "bijux_cli"

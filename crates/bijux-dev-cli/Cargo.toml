@@ -1,12 +1,18 @@
 [package]
 name = "bijux-dev-cli"
 version.workspace = true
+description = "Maintainer control-plane for Bijux release, docs, parity, and quality automation."
 publish = false
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://bijux.github.io/bijux-cli/04-architecture/maintainer-control-plane/"
 authors.workspace = true
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "maintenance", "release", "docs", "quality"]
+categories = ["command-line-interface", "development-tools"]
 
 [dependencies]
 anyhow.workspace = true
