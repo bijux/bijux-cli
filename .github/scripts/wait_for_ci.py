@@ -51,6 +51,7 @@ def latest_ci_run(
     runs: list[dict[str, Any]],
     started_at: datetime,
     lookback_seconds: int,
+    target_ref_name: str,
 ) -> dict[str, Any] | None:
     window_start = started_at - timedelta(seconds=lookback_seconds)
     candidates = [
@@ -62,6 +63,12 @@ def latest_ci_run(
     ]
     if not candidates:
         return None
+
+    if target_ref_name:
+        ref_matched = [run for run in candidates if run.get("head_branch") == target_ref_name]
+        if ref_matched:
+            candidates = ref_matched
+
     candidates.sort(key=lambda run: parse_github_time(run["created_at"]), reverse=True)
     return candidates[0]
 
@@ -81,6 +88,7 @@ def main() -> int:
     repository = require_env("GITHUB_REPOSITORY")
     target_sha = require_env("TARGET_SHA")
     started_at = parse_github_time(require_env("CI_WAIT_STARTED_AT"))
+    target_ref_name = os.environ.get("TARGET_REF_NAME", "").strip()
 
     api_root = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip("/")
     workflow_file = os.environ.get("GH_RELEASE_CI_WORKFLOW_FILE", "ci.yml")
@@ -111,7 +119,7 @@ def main() -> int:
     while time.monotonic() < deadline:
         payload = github_get_json(url, token)
         runs = payload.get("workflow_runs", [])
-        run = latest_ci_run(runs, started_at, lookback_seconds)
+        run = latest_ci_run(runs, started_at, lookback_seconds, target_ref_name)
         if run is None:
             print("CI run not visible yet; polling again soon.")
             time.sleep(poll_seconds)
