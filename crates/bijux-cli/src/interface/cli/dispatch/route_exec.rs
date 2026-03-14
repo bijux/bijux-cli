@@ -87,7 +87,9 @@ pub(super) fn route_response(
     {
         return Ok(RouteResponse::Payload(payload));
     }
-    if let Some(payload) = root_handlers::try_handle(normalized_path, argv) {
+    if let Some(payload) =
+        root_handlers::try_handle(normalized_path, argv, &paths, &plugin_registry_path)
+    {
         return Ok(RouteResponse::Payload(payload));
     }
 

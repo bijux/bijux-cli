@@ -1,4 +1,34 @@
 {
-  "runtime": "rust-foundation",
+  "install": {
+    "active_binary": null,
+    "has_duplicate_installs": false,
+    "has_mismatched_wheel_binary_versions": false,
+    "has_path_shadowing": false,
+    "legacy_installer_conflicts": [],
+    "path_binaries": [],
+    "stale_wrapper_scripts": []
+  },
+  "issues": [],
+  "plugins": {
+    "broken": [],
+    "incompatible": [],
+    "installed": 0
+  },
+  "runtime": {
+    "build_profile": "debug",
+    "git_commit": "48f74ac74d8c",
+    "git_dirty": true,
+    "name": "bijux",
+    "semver": "0.2.1-dev.1530.g48f74ac74d8c.dirty",
+    "source": "git-tag-derived",
+    "version": "v0.2.0+dev.1530.g48f74ac74d8c.dirty"
+  },
+  "state": {
+    "config": "<runtime-home>/.bijux/.env",
+    "history": "<runtime-home>/.bijux/.history",
+    "path_resolution_warning": null,
+    "plugin_registry": "<plugins-dir>/registry.json",
+    "plugins": "<plugins-dir>"
+  },
   "status": "ok"
 }

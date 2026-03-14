@@ -1,10 +1,33 @@
 {
-  "status": "ok",
-  "topics": [
-    "commands",
-    "configuration",
-    "plugins",
-    "repl",
-    "diagnostics"
-  ]
+  "local_docs_available": true,
+  "local_docs_root": "docs",
+  "references": [
+    {
+      "exists": true,
+      "name": "overview",
+      "path": "README.md"
+    },
+    {
+      "exists": true,
+      "name": "first-run",
+      "path": "docs/01-introduction/first-run.md"
+    },
+    {
+      "exists": true,
+      "name": "plugins",
+      "path": "docs/03-user-guide/plugins-and-extensions.md"
+    },
+    {
+      "exists": true,
+      "name": "command-surface",
+      "path": "docs/06-reference/command-surface.md"
+    },
+    {
+      "exists": true,
+      "name": "plugin-contracts",
+      "path": "docs/07-contracts/plugin-contracts.md"
+    }
+  ],
+  "site_url": "https://bijux.github.io/bijux-cli/",
+  "status": "ok"
 }

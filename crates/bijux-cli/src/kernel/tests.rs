@@ -19,6 +19,16 @@ use super::{
     KernelError, LifecycleHook, PolicyInputs, SyncHandler,
 };
 
+fn normalize_emission(mut emission: Option<super::Emission>) -> Option<super::Emission> {
+    if let Some(item) = emission.as_mut() {
+        if let Some(meta) = item.payload.get_mut("meta").and_then(serde_json::Value::as_object_mut)
+        {
+            meta.insert("timestamp".to_string(), json!("<normalized>"));
+        }
+    }
+    emission
+}
+
 struct SyncOk;
 impl SyncHandler for SyncOk {
     fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
@@ -1081,6 +1091,10 @@ fn repeated_run_kernel_invariants_harness_for_representative_commands() {
         let second = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
             .expect("second");
         assert_eq!(first.exit_code, second.exit_code, "exit mismatch for {argv:?}");
-        assert_eq!(first.emission, second.emission, "emission mismatch for {argv:?}");
+        assert_eq!(
+            normalize_emission(first.emission),
+            normalize_emission(second.emission),
+            "emission mismatch for {argv:?}"
+        );
     }
 }

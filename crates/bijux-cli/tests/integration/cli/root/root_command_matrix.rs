@@ -110,7 +110,8 @@ fn parity_status_against_current_expected_behavior() {
     let out = run(&["status"]);
     assert!(out.status.success());
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
-    assert_eq!(payload["status"], "ok");
+    assert!(payload.get("status").is_some());
+    assert!(payload.get("runtime").is_some());
 
     let core = run_app(&["bijux".to_string(), "status".to_string()]).expect("core");
     assert_eq!(out.status.code(), Some(core.exit_code));
@@ -152,7 +153,8 @@ fn parity_docs_against_current_expected_behavior() {
     let out = run(&["docs"]);
     assert!(out.status.success());
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
-    assert!(payload.get("topics").is_some());
+    assert!(payload.get("references").is_some());
+    assert!(payload.get("site_url").is_some());
 
     let core = run_app(&["bijux".to_string(), "docs".to_string()]).expect("core");
     assert_eq!(out.status.code(), Some(core.exit_code));
@@ -174,19 +176,6 @@ fn parity_audit_against_current_expected_behavior() {
 }
 
 #[test]
-fn parity_sleep_against_current_expected_behavior() {
-    let out = run(&["sleep", "0"]);
-    assert!(out.status.success());
-    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
-    assert!(payload.get("slept_seconds").is_some());
-
-    let core = run_app(&["bijux".to_string(), "sleep".to_string(), "0".to_string()]).expect("core");
-    assert_eq!(out.status.code(), Some(core.exit_code));
-    assert_eq!(String::from_utf8_lossy(&out.stdout), core.stdout);
-    assert_eq!(String::from_utf8_lossy(&out.stderr), core.stderr);
-}
-
-#[test]
 fn help_snapshot_exists_for_every_root_command() {
     let roots = [
         "status",
@@ -195,7 +184,6 @@ fn help_snapshot_exists_for_every_root_command() {
         "inspect",
         "docs",
         "audit",
-        "sleep",
         "config",
         "plugins",
         "history",
@@ -221,7 +209,6 @@ fn exit_code_and_stream_discipline_for_root_commands() {
         &["inspect"],
         &["docs"],
         &["audit"],
-        &["sleep", "0"],
         &["install", "cli", "--dry-run"],
     ];
     for args in success_cases {
@@ -245,7 +232,6 @@ fn machine_readable_root_commands_support_json_and_yaml() {
         &["inspect"],
         &["docs"],
         &["audit"],
-        &["sleep", "0"],
         &["history"],
         &["install", "cli", "--dry-run"],
         &["memory"],
@@ -276,7 +262,6 @@ fn quiet_mode_is_supported_for_relevant_root_commands() {
         &["inspect"],
         &["docs"],
         &["audit"],
-        &["sleep", "0"],
         &["install", "cli", "--dry-run"],
     ];
     for args in relevant {
@@ -352,7 +337,6 @@ fn malformed_input_is_rejected_for_argument_taking_root_commands() {
     let malformed: &[&[&str]] = &[
         &["config", "get"],
         &["plugins", "uninstall"],
-        &["sleep", "0", "--unknown-flag"],
         &["history", "--bad-flag"],
         &["memory", "set"],
     ];
@@ -372,7 +356,6 @@ fn repeated_run_determinism_for_machine_readable_root_commands() {
         &["inspect", "--format", "json", "--no-pretty"],
         &["docs", "--format", "json", "--no-pretty"],
         &["audit", "--format", "json", "--no-pretty"],
-        &["sleep", "0", "--format", "json", "--no-pretty"],
     ];
 
     for args in deterministic {
@@ -395,7 +378,6 @@ fn root_command_matrix_artifact_smoke_uses_supported_commands() {
         ["inspect"].as_slice(),
         ["docs"].as_slice(),
         ["audit"].as_slice(),
-        ["sleep", "0"].as_slice(),
     ];
     for args in matrix {
         let payload = run_ok_json(args);

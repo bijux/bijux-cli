@@ -507,6 +507,14 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
         && emitter_config.format == OutputFormat::Text
     {
         crate::api::version::runtime_version_line()
+    } else if matches!(intent.normalized_path.as_slice(), [a, b] if a == "cli" && b == "completion")
+        && emitter_config.format == OutputFormat::Text
+    {
+        payload
+            .get("script")
+            .and_then(serde_json::Value::as_str)
+            .map(ToOwned::to_owned)
+            .unwrap_or_default()
     } else {
         match render_value(&payload, emitter_config) {
             Ok(value) => value,
