@@ -17,6 +17,9 @@ PROFRAW_DIR           := artifacts/rust/coverage/profraw
 LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 BIJUX_RUNTIME_BIN     ?= bijux
 PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[dev]
+PYTHON_INSTALL_ARTIFACTS_DIR ?= artifacts/python/install
+PIP_BOOTSTRAP_LOG     ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-bootstrap.log)
+PIP_EDITABLE_LOG      ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-editable.log)
 
 .NOTPARALLEL: all clean
 
@@ -43,9 +46,25 @@ install: $(VENV) ## Install the project into the repo-managed virtualenv under a
 	  $(RM) "$(VENV)"; \
 	  $(PYTHON) -m venv "$(VENV)"; \
 	fi
-	@echo "→ Installing dependencies..."
-	@$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
-	@$(VENV_PYTHON) -m pip install -e "$(PYTHON_EDITABLE_SPEC)"
+	@mkdir -p "$(PYTHON_INSTALL_ARTIFACTS_DIR)"
+	@echo "→ Syncing Python packaging tools"
+	@set -euo pipefail; \
+	if $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet --upgrade pip setuptools wheel >"$(PIP_BOOTSTRAP_LOG)" 2>&1; then \
+	  echo "✓ Python packaging tools ready"; \
+	else \
+	  echo "✘ Failed to sync Python packaging tools"; \
+	  cat "$(PIP_BOOTSTRAP_LOG)"; \
+	  exit 1; \
+	fi
+	@echo "→ Syncing editable Python package"
+	@set -euo pipefail; \
+	if $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet -e "$(PYTHON_EDITABLE_SPEC)" >"$(PIP_EDITABLE_LOG)" 2>&1; then \
+	  echo "✓ Editable Python package ready"; \
+	else \
+	  echo "✘ Failed to sync editable Python package"; \
+	  cat "$(PIP_EDITABLE_LOG)"; \
+	  exit 1; \
+	fi
 
 bootstrap: install ## Prepare the local development environment
 .PHONY: bootstrap
