@@ -95,6 +95,8 @@ Expected shape:
 - `inspect` without an argument shows the full inventory; with a namespace it
   shows one plugin's manifest, source, and trust metadata
 - `check` verifies manifest validity and entrypoint presence
+- delegated and Python manifests must use a `module:callable` entrypoint such
+  as `plugin:main`
 - `doctor` shows registry-wide health and load diagnostics
 - `where` shows the active plugins directory and registry file
 - `reserved-names` shows the full blocked namespace inventory and confirms that
@@ -134,8 +136,9 @@ supported for baseline use:
 - `explain`
 - `schema`
 
-Installed plugin namespaces are executed as direct runtime subcommands under
-`bijux`, subject to the installed plugin kind and current registry health.
+Installed plugin namespaces and plugin aliases are executed as direct runtime
+subcommands under `bijux`, subject to the installed plugin kind and current
+registry health.
 `python` and `delegated` plugins return structured payloads through the host
 renderer. `external-exec` plugins keep their own stdout, stderr, and exit-code
 contract.

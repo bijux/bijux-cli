@@ -200,6 +200,9 @@ bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list
 bijux plugins inspect my-plugin
 bijux my-plugin --help
+# Routed aliases follow the same install contract
+# if your manifest declares aliases: ["my-shortcut"]
+# bijux my-shortcut --help
 bijux plugins explain my-plugin
 
 # Validate and remove

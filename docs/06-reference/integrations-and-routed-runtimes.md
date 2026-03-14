@@ -44,7 +44,8 @@ The durable local plugin contract is based on `plugin.manifest.json`.
   inventory counts, state totals, and current compatibility or load
   diagnostics
 - delegated and Python plugins resolve their declared entrypoint from the
-  installed manifest anchor when available
+  installed manifest anchor when available, and they must declare that
+  entrypoint as `module:callable`
 - `plugins inspect [plugin]` can report either one plugin or the full
   inventory, and `plugins doctor` reports current-runtime drift and missing
   entrypoints
@@ -57,8 +58,8 @@ The durable local plugin contract is based on `plugin.manifest.json`.
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install
-- enabled installed plugin namespaces are executed as routed
-  `bijux <plugin-namespace> ...` subcommands
+- installed plugin namespaces and declared plugin aliases are executed as
+  routed `bijux <plugin-command> ...` subcommands
 - `python` and `delegated` plugins return structured payloads through the host
   renderer, while `external-exec` plugins keep their own stdout, stderr, and
   exit-code contract

@@ -41,7 +41,7 @@ The current plugin model includes:
 - compatibility ranges
 - trust labels
 - local entrypoint resolution
-- routed execution for enabled installed plugin namespaces
+- routed execution for installed plugin namespaces and routed aliases
 - reserved-name and alias collision checks, including official product
   namespaces and alias reuse of blocked names
 - install, info, inspect, check, enable, disable, uninstall, scaffold, doctor,
@@ -57,7 +57,8 @@ Current health evaluation includes:
 - namespace and alias collision safety
 - compatibility range against the current runtime semver
 - manifest drift after install
-- delegated or Python entrypoint availability
+- delegated or Python entrypoint availability through `module:callable`
+  contracts
 - external executable existence and executability
 
 ## Namespace And Alias Safety

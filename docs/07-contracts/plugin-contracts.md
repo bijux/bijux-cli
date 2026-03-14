@@ -62,6 +62,9 @@ failure.
 - current manifest baseline is `v2`
 - unknown major manifest versions are rejected
 - supported executable kinds are `delegated`, `python`, and `external-exec`
+- `delegated` and `python` entrypoints must use `module:callable`
+- `external-exec` entrypoints are executable filesystem paths or manifest-local
+  executable names
 - `native` is reserved for forward compatibility and is intentionally not
   executable today
 
@@ -87,7 +90,8 @@ The current plugin-management contract covers:
 `inspect` may target one plugin or the full inventory.
 `explain` may target one plugin or the full inventory summary.
 `doctor` is the registry-wide health and self-repair view.
-Installed plugin namespaces are also executed as direct runtime subcommands
+Installed plugin namespaces and declared plugin aliases are also executed as
+direct runtime subcommands
 under `bijux` when their kind and registry health allow it.
 
 ## Stability Standard
