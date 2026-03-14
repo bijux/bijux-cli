@@ -204,6 +204,10 @@ fn crates_release_automation_only_targets_public_rust_runtime_crate() {
         publish_support.contains("already present on crates.io"),
         "cargo publish automation should emit an explicit skip path when a crate version already exists"
     );
+    assert!(
+        publish_support.contains("registry already has this release"),
+        "cargo publish automation should recover cleanly when cargo publish reports a duplicate release"
+    );
 }
 
 #[test]

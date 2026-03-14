@@ -239,12 +239,26 @@ publish-rs: ## Publish Rust crates and dry-run by default
 			fi; \
 		fi; \
 		echo "→ cargo publish -p $$pkg@$${publish_version} --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-		cargo publish \
-			--locked \
-			--manifest-path "$${workspace_root}/Cargo.toml" \
-			--registry "$(RUST_PUBLISH_REGISTRY)" \
-			-p "$$pkg" \
-			$$allow_dirty_flag \
-			$$dry_run_flag; \
+		publish_log="$$(mktemp "$${TMPDIR:-/tmp}/bijux-cargo-publish.XXXXXX.log")"; \
+		if CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+			cargo publish \
+				--locked \
+				--manifest-path "$${workspace_root}/Cargo.toml" \
+				--registry "$(RUST_PUBLISH_REGISTRY)" \
+				-p "$$pkg" \
+				$$allow_dirty_flag \
+				$$dry_run_flag >"$${publish_log}" 2>&1; then \
+			cat "$${publish_log}"; \
+			rm -f "$${publish_log}"; \
+		else \
+			cat "$${publish_log}"; \
+			if [ "$(RUST_PUBLISH_DRY_RUN)" != "1" ] && [ "$(RUST_PUBLISH_SKIP_EXISTING)" = "1" ] && \
+				grep -Eq 'already exists on crates\.io index|already uploaded' "$${publish_log}"; then \
+				echo "→ Skipping $$pkg $${publish_version}; registry already has this release"; \
+				rm -f "$${publish_log}"; \
+				continue; \
+			fi; \
+			rm -f "$${publish_log}"; \
+			exit 1; \
+		fi; \
 	done
