@@ -31,6 +31,7 @@ flowchart LR
 | `doctor` | Environment diagnostics |
 | `help` | Global help |
 | `history` | REPL history tools |
+| `install` | Install the runtime, maintainer CLI, or an official product package |
 | `memory` | In-memory key/value tools |
 | `plugins` | Plugin management |
 | `repl` | Interactive shell |
@@ -110,6 +111,12 @@ When using `bijux repl`, the documented session controls are:
 - text output emits shell completion content for the selected shell workflow
 - JSON or YAML output returns the supported shell inventory
 - current structured shell list: `bash`, `zsh`, `fish`, `powershell`
+
+### `install`
+
+- accepts `cli`, `dev-cli`, `<product>`, and `dev-<product>` target aliases
+- `--dry-run` prints or returns the exact `cargo install --locked ...` command
+- product aliases resolve from `contracts/official_product_namespace_registry.json`
 
 ### `version`
 
