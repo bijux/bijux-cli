@@ -49,8 +49,8 @@ than separate afterthoughts.
 cargo test --locked --workspace
 python3 -m pytest crates/bijux-cli-python/tests/python/test_runtime_parity.py
 BIJUX_STABLE_PYPI_VERSION=<released-version> BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py
-bijux-dev-cli status --format json --no-pretty
-bijux-dev-cli parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- parity --format json --no-pretty
 make docs-check
 ```
 

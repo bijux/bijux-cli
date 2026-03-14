@@ -40,8 +40,8 @@ checking, and reviewable evidence.
 ## Claim Discipline
 
 - treat missing evidence as an open gap, not an implicit success
-- review `bijux-dev-cli status --format json --no-pretty` before making current
-  maintainer status claims
+- review `cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty`
+  before making current maintainer status claims
 - if parity, docs, or diagnostics still report `partial`, `missing`, or
   equivalent blockers, say that directly instead of rounding it up to done
 
@@ -68,9 +68,9 @@ Treat a surface as still risky when:
 ```bash
 cargo test --locked --workspace
 python3 -m pytest crates/bijux-cli-python/tests/python
-bijux-dev-cli status --format json --no-pretty
-bijux-dev-cli parity --format json --no-pretty
-bijux-dev-cli docs-audit --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- docs-audit --format json --no-pretty
 make docs-check
 ```
 

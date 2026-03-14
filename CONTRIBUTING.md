@@ -75,9 +75,9 @@ changes:
 
 ```bash
 cargo test -p bijux-cli
-cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- docs-audit --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- docs-audit --format json --no-pretty
 ```
 
 If your change touches release identity, installation guidance, or version
