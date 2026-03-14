@@ -60,6 +60,12 @@ The runtime does not currently claim:
 - full removal of Python-facing compatibility surfaces
 - that every maintainer-facing report is part of the public user contract
 
+The Windows item is a support-boundary statement, not a denial that the code
+has evolved. The runtime already contains Windows-aware binary discovery,
+state-path resolution, and some filesystem handling, but the end-to-end product
+contract is still blocked by POSIX-oriented plugin scaffolding and shell
+completion integration.
+
 ## Design Priorities
 
 The architecture is optimized for:

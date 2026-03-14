@@ -124,6 +124,9 @@ When using `bijux repl`, the documented session controls are:
   `target_file`, and `script`
 - `pwsh` support applies to supported Linux/macOS hosts; Windows is not part
   of the current completion contract
+- that Windows exclusion is deliberate today: script generation exists, but the
+  surrounding completion install paths and host support contract are still
+  Linux/macOS-oriented
 
 ### `install`
 

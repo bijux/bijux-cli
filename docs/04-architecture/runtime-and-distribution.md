@@ -71,6 +71,22 @@ The repository keeps two explicit compatibility checks:
 
 That is narrower and more honest than keeping a large archive of checked-in behavior snapshots and pretending they are the architecture.
 
+## Current Host Support Boundary
+
+The current supported host contract is Linux and macOS.
+
+That does not mean the runtime is unaware of Windows. The Rust-owned install
+and state layers already handle Windows-specific binary names and home-directory
+resolution, and the Python bridge can look for `bijux.exe`. Those changes are
+real, but they do not yet add up to a supported Windows release contract.
+
+The remaining gaps are product-facing:
+
+- the built-in Rust plugin scaffold still generates a POSIX shell wrapper
+- completion target paths and install guidance are written for Linux/macOS
+- release metadata and public docs still intentionally advertise Linux/macOS as
+  the supported hosts
+
 ## Runtime Identity Flow
 
 ```mermaid
