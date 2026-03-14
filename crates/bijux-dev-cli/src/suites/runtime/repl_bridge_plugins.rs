@@ -56,7 +56,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "summary": {
                         "complete": complete,
                         "missing": rows.len() - complete,
-                        "artifact_todo": 40,
+                        "coverage_window_end": 40,
                         "artifact_path": "artifacts/status/plugin_lifecycle_test_matrix.json",
                     },
                 }),
@@ -118,7 +118,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "summary": {
                                         "complete": complete,
                                         "missing": rows.len() - complete,
-                                        "artifact_todo": 60,
+                                        "coverage_window_end": 60,
                                         "artifact_path": "artifacts/status/plugin_failure_rollback_test_matrix.json",
                                     },
                                 }),

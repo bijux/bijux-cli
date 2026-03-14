@@ -301,7 +301,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "summary": {
                                         "complete": complete,
                                         "missing": rows.len() - complete,
-                                        "artifact_todo": 79,
+                                        "coverage_window_end": 79,
                                         "artifact_path": "artifacts/status/plugin_discovery_determinism_report.json",
                                     },
                                 }),
@@ -318,7 +318,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
                         "artifacts/status/plugin_discovery_determinism_report.json",
                     ],
-                    "covers_todo": 80,
+                    "coverage_ids": [80],
                 }),
             )
             .ok()?;

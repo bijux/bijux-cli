@@ -136,7 +136,6 @@ fn classify_error_exit_code(message: &str) -> i32 {
         || lower.contains("unsupported format")
         || lower.contains("failed to load config")
         || lower.contains("unknown route:")
-        || lower.contains("plugin route execution is not implemented")
         || lower.contains("plugin not found")
         || lower.starts_with("invalid format:")
         || lower.starts_with("invalid color mode:")

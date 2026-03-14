@@ -97,7 +97,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 &json!({
                     "generated_at": generated_at_utc(),
                     "harness_file": "artifacts/status/repeated_run_corruption_harness.json",
-                    "covers_todo": 157
+                    "coverage_ids": [157]
                 }),
             )
             .ok()?;

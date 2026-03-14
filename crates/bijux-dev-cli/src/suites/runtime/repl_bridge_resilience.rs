@@ -444,7 +444,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "summary": {
                         "complete": complete,
                         "missing": rows.len() - complete,
-                        "artifact_todo": 100,
+                        "coverage_window_end": 100,
                         "artifact_path": "artifacts/status/flag_normalization_matrix.json",
                     },
                 }),
