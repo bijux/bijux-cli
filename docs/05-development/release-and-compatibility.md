@@ -42,6 +42,8 @@ than separate afterthoughts.
 - keep rollback tied to released versions, not local artifacts
 - keep workspace manifests on the active dev line; let tagged publish workflows
   stamp the exact release version into their temporary release tree
+- let the tag workflows create the GitHub Release entry and attach stamped
+  release artifacts rather than drafting repository releases by hand
 
 ## Common Review Commands
 

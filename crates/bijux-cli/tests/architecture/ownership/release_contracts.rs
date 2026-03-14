@@ -134,6 +134,7 @@ fn github_workflows_pin_external_actions_to_commits() {
     for path in [
         ".github/workflows/ci.yml",
         ".github/workflows/deploy-docs.yml",
+        ".github/workflows/release-github.yml",
         ".github/workflows/release-crates.yml",
         ".github/workflows/release-pypi.yml",
     ] {
@@ -157,6 +158,26 @@ fn github_workflows_pin_external_actions_to_commits() {
             content.contains("toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}")
                 || !content.contains("dtolnay/rust-toolchain@"),
             "{path} must set the pinned Rust toolchain input when using dtolnay/rust-toolchain"
+        );
+    }
+}
+
+#[test]
+fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tree() {
+    let workflow = read_repo_file(".github/workflows/release-github.yml");
+    for required in [
+        "softprops/action-gh-release@",
+        "make gh-release-plan-github",
+        "make gh-release-wait-for-ci",
+        "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
+        "PyO3/maturin-action@",
+        "--compatibility pypi",
+        "sha256sums.txt",
+        "Repository releases mirror the stamped tag artifacts for this version.",
+    ] {
+        assert!(
+            workflow.contains(required),
+            "release-github.yml must keep GitHub Release guardrails and attached artifacts: {required}"
         );
     }
 }
@@ -187,6 +208,10 @@ fn crates_release_automation_only_targets_public_rust_runtime_crate() {
     assert!(
         workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli"),
         "release planning should only consider the public Rust runtime crate for crates.io publication"
+    );
+    assert!(
+        workflow_support.contains("gh-release-plan-github"),
+        "release planning support should include a dedicated GitHub Release lane"
     );
     assert!(
         publish_support.contains("RUST_PUBLISH_PACKAGES ?= bijux-cli"),

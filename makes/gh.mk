@@ -16,7 +16,8 @@ GH_TEST_CARGO_NEXTEST_VERSION ?= 0.9.100
 .PHONY: gh-fmt gh-lint gh-security gh-test \
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-configure-git \
 	gh-security-install-rust-tools gh-test-install-rust-tools \
-	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token gh-release-wait-for-ci
+	gh-release-plan-github gh-release-plan-pypi gh-release-plan-crates \
+	gh-release-require-cargo-token gh-release-wait-for-ci
 
 ##@ GitHub
 gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without modifying files
@@ -89,6 +90,24 @@ docs-artifact-pages-check: docs-artifact-pages ## Verify that generated release 
 gh-docs-configure-git: ## Configure the Git author identity for documentation deployment
 	@git config user.name "github-actions[bot]"
 	@git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+gh-release-plan-github: ## Determine whether the tagged commit should publish a GitHub Release
+	@$(call require_var,GITHUB_OUTPUT)
+	@$(call require_var,TARGET_SHA)
+	@set -euo pipefail; \
+	git fetch --tags --force --prune >/dev/null 2>&1; \
+	tags="$$(git tag --points-at "$(TARGET_SHA)" | grep -E "$(GH_RELEASE_TAG_PATTERN)" || true)"; \
+	if [ -z "$${tags}" ]; then \
+		echo "publish=false" >> "$${GITHUB_OUTPUT}"; \
+		exit 0; \
+	fi; \
+	tag="$$(printf '%s\n' "$${tags}" | head -n 1)"; \
+	version="$${tag#v}"; \
+	{ \
+		echo "publish=true"; \
+		echo "tag=$${tag}"; \
+		echo "version=$${version}"; \
+	} >> "$${GITHUB_OUTPUT}"
 
 gh-release-plan-pypi: ## Determine whether the tagged commit should publish to PyPI
 	@$(call require_var,GITHUB_OUTPUT)
