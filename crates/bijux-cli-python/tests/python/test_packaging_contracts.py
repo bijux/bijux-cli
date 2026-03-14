@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from bijux_cli_py import check_python_runtime_supported
@@ -92,6 +93,8 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert project["name"] == "bijux-cli"
     assert "version" not in project
     assert "version" in project["dynamic"]
+    assert project["readme"]["content-type"] == "text/markdown"
+    assert "Rust-backed Bijux CLI runtime" in project["readme"]["text"]
     assert project["requires-python"] == ">=3.11"
     assert (
         project["description"]
@@ -114,6 +117,49 @@ def test_native_extension_uses_abi3_for_supported_python_range() -> None:
     features = set(pyo3["features"])
     assert "abi3-py311" in features
     assert "extension-module" in features
+
+
+def test_source_distribution_supports_metadata_generation_from_the_published_layout() -> None:
+    project_root = _project_root()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        result = subprocess.run(
+            [sys.executable, "-m", "build", "--sdist", "--outdir", temp_dir, str(project_root)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, result.stderr or result.stdout
+
+        sdist_path = next(Path(temp_dir).glob("bijux_cli-*.tar.gz"))
+        metadata_dir = Path(temp_dir) / "dist-info"
+        extracted_dir = Path(temp_dir) / "extracted"
+        extracted_dir.mkdir()
+        subprocess.run(
+            ["tar", "-xzf", str(sdist_path), "-C", str(extracted_dir)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        sdist_root = next(extracted_dir.iterdir())
+        maturin_bin = Path(sys.executable).with_name("maturin")
+        metadata = subprocess.run(
+            [
+                str(maturin_bin),
+                "pep517",
+                "write-dist-info",
+                "--metadata-directory",
+                str(metadata_dir),
+                "--interpreter",
+                sys.executable,
+            ],
+            cwd=sdist_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert metadata.returncode == 0, metadata.stderr or metadata.stdout
 
 
 def test_optional_dependency_groups_match_current_repo_workflows() -> None:
