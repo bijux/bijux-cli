@@ -14,7 +14,7 @@ pub enum CompletionShell {
     Zsh,
     /// Fish shell completion.
     Fish,
-    /// `PowerShell` completion.
+    /// `pwsh` completion on supported POSIX hosts.
     PowerShell,
 }
 
@@ -58,7 +58,10 @@ pub(crate) fn completion_file_path(shell: CompletionShell, home_dir: &Path) -> P
             home_dir.join(".config").join("fish").join("completions").join("bijux.fish")
         }
         CompletionShell::PowerShell => {
-            home_dir.join("Documents").join("PowerShell").join("Microsoft.PowerShell_profile.ps1")
+            home_dir
+                .join(".config")
+                .join("powershell")
+                .join("Microsoft.PowerShell_profile.ps1")
         }
     }
 }
@@ -78,7 +81,7 @@ pub(crate) fn detect_shell(shell_env: Option<&str>) -> Option<CompletionShell> {
     if raw.contains("fish") {
         return Some(CompletionShell::Fish);
     }
-    if raw.contains("pwsh") || raw.contains("powershell") {
+    if raw.contains("pwsh") {
         return Some(CompletionShell::PowerShell);
     }
     None

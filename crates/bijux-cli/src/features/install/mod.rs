@@ -431,6 +431,7 @@ mod tests {
         assert!(zsh.to_string_lossy().ends_with("/_bijux"));
         assert!(fish.to_string_lossy().contains(".config/fish/completions"));
         assert!(fish.to_string_lossy().ends_with("/bijux.fish"));
+        assert!(powershell.to_string_lossy().contains(".config/powershell"));
         assert!(powershell.to_string_lossy().contains("Microsoft.PowerShell_profile.ps1"));
     }
 
@@ -439,7 +440,8 @@ mod tests {
         assert_eq!(detect_shell(Some("/bin/bash")), Some(CompletionShell::Bash));
         assert_eq!(detect_shell(Some("/bin/zsh")), Some(CompletionShell::Zsh));
         assert_eq!(detect_shell(Some("/usr/bin/fish")), Some(CompletionShell::Fish));
-        assert_eq!(detect_shell(Some("powershell.exe")), Some(CompletionShell::PowerShell));
+        assert_eq!(detect_shell(Some("/usr/local/bin/pwsh")), Some(CompletionShell::PowerShell));
+        assert_eq!(detect_shell(Some("powershell.exe")), None);
         assert_eq!(detect_shell(Some("/usr/bin/unknown")), None);
     }
 

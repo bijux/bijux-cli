@@ -20,7 +20,7 @@ fn completion_shell_name(shell: CompletionShell) -> &'static str {
         CompletionShell::Bash => "bash",
         CompletionShell::Zsh => "zsh",
         CompletionShell::Fish => "fish",
-        CompletionShell::PowerShell => "powershell",
+        CompletionShell::PowerShell => "pwsh",
     }
 }
 
@@ -59,6 +59,8 @@ pub(crate) fn completion_report() -> Value {
         "status": "ok",
         "active_shell": completion_shell_name(active_shell),
         "supported_shells": supported_shells,
+        "supported_platforms": ["linux", "macos"],
+        "windows_supported": false,
         "script": completion_script(active_shell),
     })
 }
@@ -478,5 +480,22 @@ pub(crate) fn try_handle(
             Some(self_test_report(paths, registry, plugin_registry_path))
         }
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::completion_report;
+
+    #[test]
+    fn completion_report_declares_supported_platform_contract() {
+        let report = completion_report();
+        assert_eq!(report["supported_platforms"], serde_json::json!(["linux", "macos"]));
+        assert_eq!(report["windows_supported"], serde_json::json!(false));
+        assert!(report["supported_shells"]
+            .as_array()
+            .expect("supported shells")
+            .iter()
+            .any(|shell| shell == "pwsh"));
     }
 }

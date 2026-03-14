@@ -318,9 +318,10 @@ bijux completion
 bijux completion --format json
 ```
 
-Supports Bash, Zsh, Fish, and PowerShell.
+Supports Bash, Zsh, Fish, and `pwsh` on supported Linux/macOS hosts.
 `bijux completion` emits the active shell script, while structured output
-includes the detected shell, supported shells, and the generated script.
+includes the detected shell, supported shells, supported platforms, and the
+generated script. Windows is not part of this completion contract today.
 
 ---
 

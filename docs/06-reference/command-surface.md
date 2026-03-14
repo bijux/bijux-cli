@@ -106,7 +106,10 @@ When using `bijux repl`, the documented session controls are:
 ### `completion`
 
 - text output emits the generated completion script for the detected shell
-- JSON or YAML output returns `active_shell`, `supported_shells`, and `script`
+- JSON or YAML output returns `active_shell`, `supported_shells`,
+  `supported_platforms`, `windows_supported`, and `script`
+- `pwsh` support applies to supported Linux/macOS hosts; Windows is not part
+  of the current completion contract
 
 ### `install`
 
