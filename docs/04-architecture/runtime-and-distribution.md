@@ -59,6 +59,9 @@ release channel exists.
 
 `bijux-cli-python` is the Python-facing distribution and bridge layer.
 
+It is built from the Rust workspace for PyPI, but it is not a public crates.io
+release surface.
+
 It does not define a separate command language from the Rust runtime.
 
 ## Current Compatibility Story

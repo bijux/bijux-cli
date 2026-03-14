@@ -20,8 +20,9 @@ RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
 RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
 RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
 RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
-RUST_PUBLISH_PACKAGES ?= bijux-cli bijux-cli-python
+RUST_PUBLISH_PACKAGES ?= bijux-cli
 RUST_PUBLISH_DRY_RUN ?= 1
+RUST_PUBLISH_SKIP_EXISTING ?= 1
 RUST_PUBLISH_ALLOW_DIRTY ?= 0
 RUST_PUBLISH_REGISTRY ?= crates-io
 
@@ -225,7 +226,19 @@ publish-rs: ## Publish Rust crates and dry-run by default
 		esac; \
 	fi; \
 	for pkg in $(RUST_PUBLISH_PACKAGES); do \
-		echo "→ cargo publish -p $$pkg --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
+		publish_version="$$(cargo metadata --manifest-path "$${workspace_root}/Cargo.toml" --no-deps --format-version 1 | python3 -c 'import json,sys; data=json.load(sys.stdin); pkgs={p["name"]: p["version"] for p in data["packages"]}; print(pkgs.get(sys.argv[1], ""))' "$$pkg" 2>/dev/null)"; \
+		if [ -z "$${publish_version}" ]; then \
+			echo "Could not resolve version for package $$pkg from cargo metadata"; \
+			exit 1; \
+		fi; \
+		if [ "$(RUST_PUBLISH_DRY_RUN)" != "1" ] && [ "$(RUST_PUBLISH_SKIP_EXISTING)" = "1" ]; then \
+			status="$$(curl -s -o /dev/null -w '%{http_code}' "https://crates.io/api/v1/crates/$$pkg/$${publish_version}" || true)"; \
+			if [ "$${status}" = "200" ]; then \
+				echo "→ Skipping $$pkg $${publish_version}; already present on crates.io"; \
+				continue; \
+			fi; \
+		fi; \
+		echo "→ cargo publish -p $$pkg@$${publish_version} --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 		cargo publish \
 			--locked \

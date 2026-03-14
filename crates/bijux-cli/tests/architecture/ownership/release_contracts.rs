@@ -61,6 +61,7 @@ fn crate_manifests_declare_clear_publish_metadata() {
         (
             "crates/bijux-cli-python/Cargo.toml",
             vec![
+                "publish = false",
                 "description = ",
                 "homepage",
                 "documentation = ",
@@ -168,6 +169,7 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
         "maturin-version: ${{ env.MATURIN_VERSION }}",
         "manylinux: \"2014\"",
         "--compatibility pypi",
+        "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
         "make publish-py PUBLISH_BUILD=0",
     ] {
         assert!(
@@ -175,6 +177,33 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
             "release-pypi.yml must keep PyPI-safe build and upload guardrails: {required}"
         );
     }
+}
+
+#[test]
+fn crates_release_automation_only_targets_public_rust_runtime_crate() {
+    let workflow_support = read_repo_file("makes/gh.mk");
+    let publish_support = read_repo_file("makes/rust.mk");
+
+    assert!(
+        workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli"),
+        "release planning should only consider the public Rust runtime crate for crates.io publication"
+    );
+    assert!(
+        publish_support.contains("RUST_PUBLISH_PACKAGES ?= bijux-cli"),
+        "cargo publish automation should only target the public Rust runtime crate by default"
+    );
+    assert!(
+        !workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python"),
+        "release planning must not treat the Python bridge crate as a crates.io package"
+    );
+    assert!(
+        publish_support.contains("RUST_PUBLISH_SKIP_EXISTING ?= 1"),
+        "cargo publish automation should skip already-published crate versions by default"
+    );
+    assert!(
+        publish_support.contains("already present on crates.io"),
+        "cargo publish automation should emit an explicit skip path when a crate version already exists"
+    );
 }
 
 #[test]

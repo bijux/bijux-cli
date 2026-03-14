@@ -74,7 +74,7 @@ jobs:
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
-          release_tree="${RUNNER_TEMP}/release-tree"
+          release_tree="${GITHUB_WORKSPACE}/artifacts/release-tree"
           rm -rf "${release_tree}"
           python3 .github/scripts/prepare_release_tree.py \
             --workspace-root . \

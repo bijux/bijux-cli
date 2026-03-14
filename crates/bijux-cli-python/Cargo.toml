@@ -1,6 +1,7 @@
 [package]
 name = "bijux-cli-python"
 version.workspace = true
+publish = false
 description = "Python package and native bridge for installing and launching the Bijux command runtime."
 edition.workspace = true
 license.workspace = true
