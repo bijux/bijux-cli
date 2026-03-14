@@ -50,21 +50,49 @@ install: $(VENV) ## Install the project into the repo-managed virtualenv under a
 	@mkdir -p "$(PYTHON_INSTALL_ARTIFACTS_DIR)"
 	@echo "→ Syncing Python packaging tools"
 	@set -euo pipefail; \
-	if $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet --upgrade pip setuptools wheel >"$(PIP_BOOTSTRAP_LOG)" 2>&1; then \
+	recreate_venv() { \
+	  stale_venv="$(VENV).stale.$$"; \
+	  if [ -d "$(VENV)" ]; then \
+	    mv "$(VENV)" "$${stale_venv}" 2>/dev/null || true; \
+	  fi; \
+	  $(PYTHON) -m venv "$(VENV)"; \
+	  if [ -n "$${stale_venv:-}" ] && [ -d "$${stale_venv}" ]; then \
+	    $(RM) "$${stale_venv}" || true; \
+	  fi; \
+	}; \
+	bootstrap_python_tools() { \
+	  $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet --upgrade pip setuptools wheel >"$(PIP_BOOTSTRAP_LOG)" 2>&1; \
+	}; \
+	if bootstrap_python_tools; then \
 	  echo "✓ Python packaging tools ready"; \
 	else \
-	  echo "✘ Failed to sync Python packaging tools"; \
-	  cat "$(PIP_BOOTSTRAP_LOG)"; \
-	  exit 1; \
+	  echo "→ Recreating $(VENV) after packaging tool sync failure"; \
+	  recreate_venv; \
+	  if bootstrap_python_tools; then \
+	    echo "✓ Python packaging tools ready"; \
+	  else \
+	    echo "✘ Failed to sync Python packaging tools"; \
+	    cat "$(PIP_BOOTSTRAP_LOG)"; \
+	    exit 1; \
+	  fi; \
 	fi
 	@echo "→ Syncing editable Python package"
 	@set -euo pipefail; \
-	if $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet -e "$(PYTHON_EDITABLE_SPEC)" >"$(PIP_EDITABLE_LOG)" 2>&1; then \
+	install_editable_package() { \
+	  $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet -e "$(PYTHON_EDITABLE_SPEC)" >"$(PIP_EDITABLE_LOG)" 2>&1; \
+	}; \
+	if install_editable_package; then \
 	  echo "✓ Editable Python package ready"; \
 	else \
-	  echo "✘ Failed to sync editable Python package"; \
-	  cat "$(PIP_EDITABLE_LOG)"; \
-	  exit 1; \
+	  echo "→ Recreating $(VENV) after editable package sync failure"; \
+	  recreate_venv; \
+	  if $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet --upgrade pip setuptools wheel >"$(PIP_BOOTSTRAP_LOG)" 2>&1 && install_editable_package; then \
+	    echo "✓ Editable Python package ready"; \
+	  else \
+	    echo "✘ Failed to sync editable Python package"; \
+	    cat "$(PIP_EDITABLE_LOG)"; \
+	    exit 1; \
+	  fi; \
 	fi
 
 bootstrap: install ## Prepare the local development environment
