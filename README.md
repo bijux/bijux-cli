@@ -2,11 +2,15 @@
 
 <a id="top"></a>
 
-**Bijux CLI is a command interface with Rust runtime ownership and Python compatibility surfaces.**
+**Bijux CLI is a Rust-owned command runtime with plugin routing, structured output, and a Python compatibility bridge.**
 
-It is designed for CLIs that grow over time and need stable command behavior.
+This repository currently ships three connected surfaces:
 
-Bijux focuses on deterministic flags, explicit plugin lifecycle behavior, structured output, and shared CLI/REPL command law.
+* `bijux`: the end-user runtime binary,
+* `bijux-cli`: the Python distribution and Rust crate that package that runtime,
+* `bijux-dev-cli`: the workspace-only maintainer control plane.
+
+The public promise today is a deterministic CLI with explicit plugin lifecycle handling, stable machine-readable output, and shared CLI/REPL behavior.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
@@ -22,17 +26,18 @@ Rust API docs: [docs.rs](https://docs.rs/bijux-cli/latest/bijux_cli/)
 Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source/)
 
 > **At a glance**
-> Plugin-driven · Deterministic flags · Dependency Injection · Sync + Async · REPL · JSON/YAML output
+> Rust runtime · Python bridge · Routed plugins · REPL · JSON/YAML output
 > **Quality**
 > Quality status is checked from live tests and maintainer commands.
 > `artifacts/` is disposable local output and is not part of the repo contract.
+> The repository may be ahead of the latest published release between version tags.
 
 ---
 
 ## Table of Contents
 
 * [Why Bijux CLI?](#why-bijux-cli)
-* [How to Think About Bijux](#how-to-think-about-bijux)
+* [What Ships Today](#what-ships-today)
 * [Key Features](#key-features)
 * [Installation](#installation)
 * [Platform Support](#platform-support)
@@ -47,8 +52,7 @@ Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source
 * [Configuration & Paths](#configuration--paths)
 * [Tests & Quality](#tests--quality)
 * [Project Tree](#project-tree)
-* [Stability Notes](#stability-notes)
-* [Roadmap](#roadmap)
+* [Release Line & Stability](#release-line--stability)
 * [Docs & Resources](#docs--resources)
 * [Contributing](#contributing)
 * [License](#license)
@@ -57,70 +61,49 @@ Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source
 
 ## Why Bijux CLI?
 
-Bijux is for CLIs where:
+Bijux is for command surfaces where:
 
 * global flags must behave consistently in CI and automation,
-* commands may be synchronous or asynchronous,
-* features and plugins are added incrementally,
-* internal state must be observable and testable,
-* and regressions must be caught early.
+* structured output matters as much as human-readable output,
+* plugins must be installable, inspectable, and removable without patching the core binary,
+* REPL and CLI behavior should not diverge,
+* and maintainers need evidence for release claims instead of guesswork.
 
 ---
 
-## How to Think About Bijux
+## What Ships Today
 
-A Bijux command flows through a **fixed, explicit pipeline**:
+The repository is strongest when it stays concrete about what is already real:
 
-```
-intent → policy resolution → (sync | async) execution → emission → exit
-```
+* a Rust runtime binary named `bijux`,
+* top-level runtime commands such as `status`, `audit`, `docs`, `doctor`, `install`, and `plugins`,
+* a canonical `cli` namespace for runtime inspection and compatibility routes,
+* routed plugins with install, inspect, check, explain, enable, disable, and uninstall flows,
+* a Python bridge package that delegates to the Rust runtime,
+* and a separate maintainer binary, `bijux-dev-cli`, for workspace evidence and control-plane reports.
 
-Key principles:
-
-* **Flags never compete** — precedence is strict and deterministic.
-* **Decisions are made once**, early in execution.
-* **Services are injected**, never hidden behind globals.
-* **Commands do not format output** — emission is centralized.
-* **Async and sync commands share the same semantics**.
-* **The REPL uses the exact same execution path as the CLI**.
-
-If you reason about Bijux in these terms, the framework becomes predictable rather than magical.
+This README intentionally describes those shipped surfaces, not broader framework ambition.
 
 ---
 
 ## Key Features
 
-### Deterministic Global Flags
+### Deterministic Runtime Surface
 
-Global flags follow **strict precedence**, eliminating ambiguity and unexpected behavior in scripts and CI pipelines.
+Global flags follow strict precedence, root commands keep stable names, and the
+REPL mirrors the same command semantics instead of inventing a separate mode.
 
-### Unified Sync + Async Execution
+### Canonical Runtime Namespace
 
-Commands may be implemented as synchronous or `async` functions.
-Bijux runs both through the same execution pipeline, guaranteeing identical behavior for:
+The root command surface is the main end-user entrypoint. The `cli` namespace
+is the canonical runtime-management surface for paths, self-tests, completion,
+plugin lifecycle commands, and compatibility inspection.
 
-* flag precedence,
-* output formatting,
-* logging,
-* and exit codes.
+### Routed Plugins
 
-Async and sync commands use one execution path.
-
-### Dependency Injection (DI)
-
-All services are explicit and injectable:
-
-* no hidden globals,
-* easy mocking,
-* inspectable dependency graphs.
-
-### First-Class Plugins
-
-Plugins are treated as real system components:
-
-* scaffolded as runnable local projects,
-* validated before loading,
-* executed through installed top-level namespaces.
+Plugins are scaffolded as local projects, validated before install, mounted
+into the runtime namespace after install, and kept visible through list,
+inspect, explain, check, and doctor workflows.
 
 ### Interactive REPL
 
@@ -129,7 +112,7 @@ Explore and debug using a persistent shell:
 * identical semantics to CLI execution,
 * history and introspection built in.
 
-### Structured Output
+### Structured Output and Diagnostics
 
 Every command can emit:
 
@@ -137,17 +120,25 @@ Every command can emit:
 * pretty or compact,
 * consistent error envelopes suitable for automation.
 
-### Built-in Diagnostics
+Commands such as `doctor`, `status`, `audit`, and `docs` are read-only
+diagnostic surfaces. They report environment and runtime state; they are not
+deployment orchestration or workflow engines by themselves.
 
-Commands like `doctor`, `status`, `audit`, and `docs` are read-only diagnostic
-surfaces. They help verify the current environment and repository state; they
-are not workflow engines or deployment automation by themselves.
+### Python Compatibility Surface
+
+The Python package exists to package and bridge the Rust runtime. It does not
+replace runtime ownership or reintroduce a separate Python-first command graph.
 
 ---
 
 ## Installation
 
 Use one install channel at a time.
+
+Published versions come from PyPI and crates.io. The repository main branch may
+carry `-dev` versions between releases, so install from a release channel for a
+stable published build and use `cargo run` from a checkout when you want the
+current branch state.
 
 Supported install channels on Linux and macOS:
 
@@ -166,13 +157,19 @@ Quick verification:
 
 ```bash
 bijux version
-bijux cli paths
+bijux status
 bijux doctor
 ```
 
 `bijux doctor` is the install-health check. If it reports path ambiguity,
 stale wrappers, or state issues, treat that as part of the install outcome
 rather than a postscript.
+
+From a workspace checkout, run the branch version directly with:
+
+```bash
+cargo run -q -p bijux-cli --bin bijux -- version
+```
 
 ---
 
@@ -181,7 +178,9 @@ rather than a postscript.
 * **Supported**: Linux, macOS
 * **Not supported**: Windows
 
-Bijux relies on POSIX filesystem and process semantics.
+Bijux relies on POSIX filesystem and process semantics. `pwsh` completion output
+is supported on Linux and macOS hosts where PowerShell is installed; that does
+not imply general Windows runtime support.
 
 ---
 
