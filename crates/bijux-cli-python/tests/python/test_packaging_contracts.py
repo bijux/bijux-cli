@@ -29,6 +29,10 @@ def _load_cargo_manifest() -> dict[str, object]:
     return tomllib.loads(manifest.read_text(encoding="utf-8"))
 
 
+def _load_workspace_root_readme() -> str:
+    return _project_root().parents[1].joinpath("README.md").read_text(encoding="utf-8")
+
+
 def _runtime_binary() -> str:
     override = os.environ.get("BIJUX_BIN")
     if override:
@@ -94,7 +98,7 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "version" not in project
     assert "version" in project["dynamic"]
     assert project["readme"]["content-type"] == "text/markdown"
-    assert "Rust-backed Bijux CLI runtime" in project["readme"]["text"]
+    assert project["readme"]["file"] == "README.md"
     assert project["requires-python"] == ">=3.11"
     assert (
         project["description"]
@@ -109,6 +113,12 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "Operating System :: MacOS :: MacOS X" in classifiers
     assert "Programming Language :: Python :: 3.14" in classifiers
     assert "Framework :: Pytest" not in classifiers
+
+
+def test_python_package_readme_tracks_workspace_root_readme() -> None:
+    project_root = _project_root()
+    package_readme = (project_root / "README.md").read_text(encoding="utf-8")
+    assert package_readme == _load_workspace_root_readme()
 
 
 def test_native_extension_uses_abi3_for_supported_python_range() -> None:
@@ -142,6 +152,7 @@ def test_source_distribution_supports_metadata_generation_from_the_published_lay
             text=True,
         )
         sdist_root = next(extracted_dir.iterdir())
+        assert (sdist_root / "README.md").read_text(encoding="utf-8") == _load_workspace_root_readme()
         maturin_bin = Path(sys.executable).with_name("maturin")
         metadata = subprocess.run(
             [
