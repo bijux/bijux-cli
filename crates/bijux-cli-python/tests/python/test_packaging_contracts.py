@@ -88,6 +88,11 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "version" not in project
     assert "version" in project["dynamic"]
     assert project["requires-python"] == ">=3.11"
+    assert project["description"] == "Python installation surface for the Rust-backed Bijux CLI runtime"
+    classifiers = set(project["classifiers"])
+    assert "Operating System :: POSIX :: Linux" in classifiers
+    assert "Operating System :: MacOS :: MacOS X" in classifiers
+    assert "Framework :: Pytest" not in classifiers
 
 
 def test_runtime_support_helper_matches_python_requirement_floor() -> None:

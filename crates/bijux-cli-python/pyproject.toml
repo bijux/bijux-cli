@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "bijux-cli"
 dynamic = ["version"]
-description = "Rust-backed Bijux CLI Python distribution"
+description = "Python installation surface for the Rust-backed Bijux CLI runtime"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
@@ -17,8 +17,8 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
-  "Operating System :: MacOS",
-  "Operating System :: POSIX",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
@@ -30,7 +30,6 @@ classifiers = [
   "Topic :: Software Development :: Build Tools",
   "Topic :: Terminals",
   "Topic :: Utilities",
-  "Framework :: Pytest",
   "Typing :: Typed",
 ]
 
