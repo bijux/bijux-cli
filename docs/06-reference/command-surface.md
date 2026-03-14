@@ -101,18 +101,21 @@ When using `bijux repl`, the documented session controls are:
 - structured output returns the current runtime, install, state, and plugin summary
 - this is a read-only diagnostic snapshot, not a deployment or workflow executor
 - current JSON shape includes `status`, `runtime`, `state`, `plugins`, `install`, and `issues`
+- `status` becomes `warning` or `degraded` when the snapshot includes warning or error issues
 
 ### `docs`
 
 - structured output returns the current documentation inventory
 - this is a read-only discovery surface for local docs paths and published references
-- current JSON shape includes `status`, `site_url`, `local_docs_root`, and `references`
+- current JSON shape includes `status`, `site_url`, `local_docs_root`, `references`, and `missing_references`
+- `status` becomes `warning` when the local docs root or any documented reference is missing
 
 ### `audit`
 
 - structured output returns current runtime audit checks and issues
 - this is a read-only diagnostics report, not a maintainer remediation workflow
 - current JSON shape includes `status`, `checks`, and `issues`
+- install warnings include path shadowing, duplicate installs, stale wrappers, legacy conflicts, and wheel/binary version mismatches
 
 ### `completion`
 

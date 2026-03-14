@@ -44,6 +44,53 @@ fn install_report_payload() -> Value {
     })
 }
 
+fn install_warning_messages(install: &Value) -> Vec<&'static str> {
+    [
+        (
+            install.get("has_path_shadowing").and_then(Value::as_bool) == Some(true),
+            "multiple bijux binaries are visible on PATH",
+        ),
+        (
+            install.get("has_duplicate_installs").and_then(Value::as_bool) == Some(true),
+            "duplicate bijux installs were detected",
+        ),
+        (
+            install.get("has_mismatched_wheel_binary_versions").and_then(Value::as_bool)
+                == Some(true),
+            "wheel and binary versions do not match",
+        ),
+        (
+            install
+                .get("stale_wrapper_scripts")
+                .and_then(Value::as_array)
+                .is_some_and(|items| !items.is_empty()),
+            "stale wrapper scripts were found",
+        ),
+        (
+            install
+                .get("legacy_installer_conflicts")
+                .and_then(Value::as_array)
+                .is_some_and(|items| !items.is_empty()),
+            "legacy installer conflicts were found",
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(active, message)| active.then_some(message))
+    .collect()
+}
+
+fn issue_status(issues: &[Value]) -> &'static str {
+    if issues.iter().any(|item| {
+        item.get("status") == Some(&json!("error")) || item.get("severity") == Some(&json!("error"))
+    }) {
+        "degraded"
+    } else if issues.is_empty() {
+        "ok"
+    } else {
+        "warning"
+    }
+}
+
 fn resolve_completion_shell(argv: &[String]) -> (CompletionShell, &'static str) {
     if let Some(raw) = command_option_value(argv, &["cli", "completion"], "--shell") {
         if let Some(shell) = CompletionShell::from_cli_value(&raw) {
@@ -109,38 +156,7 @@ pub(crate) fn doctor_report(paths: &ResolvedStatePaths, plugin_registry_path: &P
         "message": config_message,
     }));
 
-    let install_warnings = [
-        (
-            install.get("has_path_shadowing").and_then(Value::as_bool) == Some(true),
-            "multiple bijux binaries are visible on PATH",
-        ),
-        (
-            install.get("has_duplicate_installs").and_then(Value::as_bool) == Some(true),
-            "duplicate bijux installs were detected",
-        ),
-        (
-            install.get("has_mismatched_wheel_binary_versions").and_then(Value::as_bool)
-                == Some(true),
-            "wheel and binary versions do not match",
-        ),
-        (
-            install
-                .get("stale_wrapper_scripts")
-                .and_then(Value::as_array)
-                .is_some_and(|items| !items.is_empty()),
-            "stale wrapper scripts were found",
-        ),
-        (
-            install
-                .get("legacy_installer_conflicts")
-                .and_then(Value::as_array)
-                .is_some_and(|items| !items.is_empty()),
-            "legacy installer conflicts were found",
-        ),
-    ]
-    .into_iter()
-    .filter_map(|(active, message)| active.then_some(message))
-    .collect::<Vec<_>>();
+    let install_warnings = install_warning_messages(&install);
     let install_status = if install_warnings.is_empty() { "ok" } else { "warning" };
     checks.push(json!({
         "name": "install",
@@ -193,18 +209,8 @@ pub(crate) fn doctor_report(paths: &ResolvedStatePaths, plugin_registry_path: &P
         issues.extend(items.iter().cloned());
     }
 
-    let status = if issues.iter().any(|item| {
-        item.get("status") == Some(&json!("error")) || item.get("severity") == Some(&json!("error"))
-    }) {
-        "degraded"
-    } else if issues.is_empty() {
-        "ok"
-    } else {
-        "warning"
-    };
-
     json!({
-        "status": status,
+        "status": issue_status(&issues),
         "checks": checks,
         "install": {
             "has_path_shadowing": install["has_path_shadowing"],
@@ -250,22 +256,16 @@ pub(crate) fn runtime_status_report(
         })),
     }
 
-    if install.get("has_path_shadowing").and_then(Value::as_bool) == Some(true) {
+    for message in install_warning_messages(&install) {
         issues.push(json!({
             "area": "install",
             "severity": "warning",
-            "message": "multiple bijux binaries are visible on PATH",
+            "message": message,
         }));
     }
 
-    let status = if issues.iter().any(|item| item.get("severity") == Some(&json!("error"))) {
-        "degraded"
-    } else {
-        "ok"
-    };
-
     json!({
-        "status": status,
+        "status": issue_status(&issues),
         "runtime": {
             "name": version.name,
             "version": version.version,
@@ -342,17 +342,16 @@ pub(crate) fn runtime_audit_report(
     }
 
     let install = install_report_payload();
-    let install_status = if install.get("has_path_shadowing").and_then(Value::as_bool) == Some(true)
-        || install.get("has_duplicate_installs").and_then(Value::as_bool) == Some(true)
-    {
-        "warning"
-    } else {
-        "ok"
-    };
+    let install_warnings = install_warning_messages(&install);
+    let install_status = if install_warnings.is_empty() { "ok" } else { "warning" };
     checks.push(json!({
         "name": "install",
         "status": install_status,
-        "message": "runtime install paths evaluated",
+        "message": if install_warnings.is_empty() {
+            "runtime install paths evaluated".to_string()
+        } else {
+            install_warnings.join("; ")
+        },
         "details": install,
     }));
 
@@ -369,20 +368,13 @@ pub(crate) fn runtime_audit_report(
     let issues = checks.iter().filter(|check| check["status"] != "ok").cloned().collect::<Vec<_>>();
 
     json!({
-        "status": if issues.iter().any(|item| item["status"] == "error") {
-            "degraded"
-        } else if issues.is_empty() {
-            "ok"
-        } else {
-            "warning"
-        },
+        "status": issue_status(&issues),
         "checks": checks,
         "issues": issues,
     })
 }
 
-pub(crate) fn docs_inventory_report() -> Value {
-    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+fn docs_inventory_report_at(workspace_root: &Path) -> Value {
     let docs_root = workspace_root.join("docs");
     let references = [
         ("overview", "README.md"),
@@ -401,14 +393,29 @@ pub(crate) fn docs_inventory_report() -> Value {
         })
     })
     .collect::<Vec<_>>();
+    let missing_references = references
+        .iter()
+        .filter_map(|reference| {
+            (reference.get("exists") != Some(&json!(true))).then(|| {
+                reference.get("path").and_then(Value::as_str).unwrap_or_default().to_string()
+            })
+        })
+        .collect::<Vec<_>>();
+    let docs_available = docs_root.exists();
 
     json!({
-        "status": if docs_root.exists() { "ok" } else { "warning" },
+        "status": if docs_available && missing_references.is_empty() { "ok" } else { "warning" },
         "site_url": "https://bijux.github.io/bijux-cli/",
         "local_docs_root": docs_root,
-        "local_docs_available": docs_root.exists(),
+        "local_docs_available": docs_available,
         "references": references,
+        "missing_references": missing_references,
     })
+}
+
+pub(crate) fn docs_inventory_report() -> Value {
+    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    docs_inventory_report_at(&workspace_root)
 }
 
 pub(crate) fn self_test_report(
@@ -623,7 +630,10 @@ pub(crate) fn try_handle(
 mod tests {
     use tempfile::tempdir;
 
-    use super::{completion_report, doctor_report};
+    use super::{
+        completion_report, docs_inventory_report_at, doctor_report, runtime_audit_report,
+        runtime_status_report,
+    };
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
     use crate::shared::telemetry::TEST_ENV_LOCK;
 
@@ -698,5 +708,149 @@ mod tests {
 
         assert_eq!(report["status"], serde_json::json!("warning"));
         assert_eq!(report["install"]["has_path_shadowing"], serde_json::json!(true));
+    }
+
+    #[test]
+    fn runtime_status_report_warns_when_install_surface_has_real_warnings() {
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
+        let temp = tempdir().expect("temp dir");
+        let bin_a = temp.path().join("bin-a");
+        let bin_b = temp.path().join("bin-b");
+        std::fs::create_dir_all(&bin_a).expect("bin-a");
+        std::fs::create_dir_all(&bin_b).expect("bin-b");
+        let path_a = bin_a.join("bijux");
+        let path_b = bin_b.join("bijux");
+        std::fs::write(&path_a, "#!/bin/sh\n").expect("bijux a");
+        std::fs::write(&path_b, "#!/bin/sh\n").expect("bijux b");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            std::fs::set_permissions(&path_a, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod a");
+            std::fs::set_permissions(&path_b, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod b");
+        }
+
+        let old_path = std::env::var_os("PATH");
+        let old_bin = std::env::var_os("BIJUX_BIN");
+        let joined_path = std::env::join_paths([&bin_a, &bin_b]).expect("join path");
+        std::env::set_var("PATH", joined_path);
+        std::env::set_var("BIJUX_BIN", &path_a);
+
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let report = runtime_status_report(&paths, &paths.plugin_registry_file);
+
+        if let Some(value) = old_path {
+            std::env::set_var("PATH", value);
+        } else {
+            std::env::remove_var("PATH");
+        }
+        if let Some(value) = old_bin {
+            std::env::set_var("BIJUX_BIN", value);
+        } else {
+            std::env::remove_var("BIJUX_BIN");
+        }
+
+        assert_eq!(report["status"], serde_json::json!("warning"));
+        assert!(report["issues"].as_array().expect("issues").iter().any(|issue| issue["message"]
+            == serde_json::json!("multiple bijux binaries are visible on PATH")));
+    }
+
+    #[test]
+    fn runtime_audit_report_warns_for_all_install_surface_problems() {
+        let _guard = TEST_ENV_LOCK.lock().expect("env lock");
+        let temp = tempdir().expect("temp dir");
+        let wrapper_bin = temp.path().join("wrapper-bin");
+        let active_bin = temp.path().join("active-bin");
+        std::fs::create_dir_all(&wrapper_bin).expect("wrapper bin");
+        std::fs::create_dir_all(&active_bin).expect("active bin");
+        let stale_wrapper = wrapper_bin.join("bijux.cmd");
+        let legacy = active_bin.join("bijux.py");
+        let active = active_bin.join("bijux");
+        std::fs::write(&stale_wrapper, "#!/bin/sh\n").expect("stale wrapper");
+        std::fs::write(&legacy, "#!/bin/sh\n").expect("legacy");
+        std::fs::write(&active, "#!/bin/sh\n").expect("active");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            std::fs::set_permissions(&stale_wrapper, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod stale wrapper");
+            std::fs::set_permissions(&legacy, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod legacy");
+            std::fs::set_permissions(&active, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod active");
+        }
+
+        let old_path = std::env::var_os("PATH");
+        let old_bin = std::env::var_os("BIJUX_BIN");
+        let old_wheel = std::env::var_os("BIJUX_WHEEL_VERSION");
+        let joined_path = std::env::join_paths([&wrapper_bin, &active_bin]).expect("join path");
+        std::env::set_var("PATH", joined_path);
+        std::env::set_var("BIJUX_BIN", &active);
+        std::env::set_var("BIJUX_WHEEL_VERSION", "9.9.9");
+
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let report = runtime_audit_report(&paths, &paths.plugin_registry_file);
+
+        if let Some(value) = old_path {
+            std::env::set_var("PATH", value);
+        } else {
+            std::env::remove_var("PATH");
+        }
+        if let Some(value) = old_bin {
+            std::env::set_var("BIJUX_BIN", value);
+        } else {
+            std::env::remove_var("BIJUX_BIN");
+        }
+        if let Some(value) = old_wheel {
+            std::env::set_var("BIJUX_WHEEL_VERSION", value);
+        } else {
+            std::env::remove_var("BIJUX_WHEEL_VERSION");
+        }
+
+        assert_eq!(report["status"], serde_json::json!("warning"));
+        let install_check = report["checks"]
+            .as_array()
+            .expect("checks")
+            .iter()
+            .find(|check| check["name"] == serde_json::json!("install"))
+            .expect("install check");
+        let message = install_check["message"].as_str().expect("install message");
+        assert!(message.contains("stale wrapper scripts were found"));
+        assert!(message.contains("legacy installer conflicts were found"));
+        assert!(message.contains("wheel and binary versions do not match"));
+    }
+
+    #[test]
+    fn docs_inventory_report_warns_when_references_are_missing() {
+        let temp = tempdir().expect("temp dir");
+        std::fs::create_dir_all(temp.path().join("docs")).expect("docs dir");
+        std::fs::write(temp.path().join("README.md"), "# Overview\n").expect("readme");
+        let report = docs_inventory_report_at(temp.path());
+
+        assert_eq!(report["status"], serde_json::json!("warning"));
+        assert!(report["missing_references"]
+            .as_array()
+            .expect("missing refs")
+            .iter()
+            .any(|value| value == "docs/01-introduction/first-run.md"));
     }
 }
