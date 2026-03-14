@@ -35,7 +35,7 @@ flowchart LR
 | `memory` | In-memory key/value tools |
 | `plugins` | Plugin management |
 | `repl` | Interactive shell |
-| `completion` | Shell completion output |
+| `completion` | Shell completion output for an explicit or detected shell target |
 | `status` | Read-only CLI status probe |
 | `version` | CLI version |
 
@@ -43,7 +43,7 @@ flowchart LR
 
 ### `cli`
 
-`status`, `paths`, `config`, `self-test`, `plugins`
+`status`, `paths`, `doctor`, `version`, `repl`, `completion`, `config`, `self-test`, `plugins`
 
 ### `config`
 
@@ -108,9 +108,12 @@ When using `bijux repl`, the documented session controls are:
 
 ### `completion`
 
-- text output emits the generated completion script for the detected shell
-- JSON or YAML output returns `active_shell`, `supported_shells`,
-  `supported_platforms`, `windows_supported`, and `script`
+- text output emits the generated completion script for the selected shell
+- `--shell <bash|zsh|fish|pwsh>` selects a shell explicitly; otherwise the
+  runtime falls back to shell detection and then to `bash`
+- JSON or YAML output returns `active_shell`, `selection_source`,
+  `supported_shells`, `supported_platforms`, `windows_supported`,
+  `target_file`, and `script`
 - `pwsh` support applies to supported Linux/macOS hosts; Windows is not part
   of the current completion contract
 

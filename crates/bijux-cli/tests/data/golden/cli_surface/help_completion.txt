@@ -2,6 +2,7 @@ Usage: bijux completion [OPTIONS]
 
 Options:
   -f, --format <FORMAT>     Output format: text, json, or yaml
+      --shell <SHELL>       Generate completion output for an explicit shell target [possible values: bash, zsh, fish, pwsh]
   -q, --quiet               Suppress command output
       --log-level <LEVEL>   Log verbosity level
       --color <MODE>        ANSI color policy
@@ -11,5 +12,5 @@ Options:
   -h, --help                Print help
 
 Examples:
-  bijux completion
-  bijux completion --format json
+  bijux completion --shell bash
+  bijux completion --shell zsh --format json

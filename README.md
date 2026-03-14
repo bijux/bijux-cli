@@ -289,7 +289,7 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 | `audit`   | Read-only runtime health audit |
 | `docs`    | Documentation index and availability report |
 | `install` | Resolve runtime and ecosystem install aliases |
-| `completion` | Generate shell completion output |
+| `completion` | Generate shell completion output for an explicit or detected shell target |
 | `memory`  | Runtime-scoped key/value state |
 | `version` | Version info            |
 
@@ -316,14 +316,16 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 ## Shell Completion
 
 ```bash
-bijux completion
-bijux completion --format json
+bijux completion --shell bash
+bijux completion --shell fish --format json --no-pretty
 ```
 
 Supports Bash, Zsh, Fish, and `pwsh` on supported Linux/macOS hosts.
-`bijux completion` emits the active shell script, while structured output
-includes the detected shell, supported shells, supported platforms, and the
-generated script. Windows is not part of this completion contract today.
+Use `--shell` in automation so the output does not depend on environment
+detection. Text output emits the selected shell script, while structured output
+includes the active shell, how it was selected, supported shells, supported
+platforms, a suggested target file, and the generated script. Windows is not
+part of this completion contract today.
 
 ---
 
