@@ -353,19 +353,17 @@ Run locally:
 
 ```bash
 make bootstrap
-make fmt
-make lint
-make test
+make all
 make docs-check
 ```
 
-For release-facing or parity-sensitive changes, also run:
+For runtime-surface or release-facing changes, also check the maintainer views
+that summarize the current repository contract:
 
 ```bash
-cargo test -p bijux-cli
-cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
-cargo run -q -p bijux-dev-cli -- docs-audit --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- docs-audit --format json --no-pretty
 ```
 
 ---
@@ -379,30 +377,26 @@ makes/          Make modules
 templates/      Plugin templates (plugins-py, plugins-rs)
 crates/         Rust workspace crates (runtime, maintainer CLI, python bridge)
 crates/*/tests/ Crate-local test suites
+contracts/      Repository contracts and registries
 ```
 
 ---
 
-## Stability Notes
+## Release Line & Stability
 
-* Core CLI semantics (flags, precedence, exit behavior) are stable.
-* The async execution model is stable and supported.
-* Plugin lifecycle behavior is real, but plugin metadata and loader internals may still evolve before v1.0.
+* The project is still pre-1.0, so compatibility tightening can still happen.
+* Core CLI semantics such as flags, output formats, exit behavior, and runtime-owned state paths are the strongest stability surface today.
+* Plugin lifecycle behavior is shipped and tested, but plugin metadata and loader internals can still evolve before v1.0.
+* Published package versions represent the release line; the repository main branch may be ahead with `-dev` versions.
 * Plugins are executable extension code, not a sandboxed trust boundary.
-* Breaking changes, when unavoidable, will be documented clearly.
-
----
-
-## Roadmap
-
-Roadmap priorities come from open tests, maintainer review, and current command
-surfaces.
 
 ---
 
 ## Docs & Resources
 
-* Documentation: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
+* Documentation home: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
+* Command reference: [https://bijux.github.io/bijux-cli/06-reference/command-surface/](https://bijux.github.io/bijux-cli/06-reference/command-surface/)
+* Plugin guide: [https://bijux.github.io/bijux-cli/03-user-guide/plugins-and-extensions/](https://bijux.github.io/bijux-cli/03-user-guide/plugins-and-extensions/)
 * Artifacts: [https://bijux.github.io/bijux-cli/artifacts/](https://bijux.github.io/bijux-cli/artifacts/)
 * Repository: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 
@@ -412,6 +406,8 @@ surfaces.
 
 Contributions are welcome.
 See [CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CONTRIBUTING.md).
+When changing public behavior, update the README and reference docs so the
+repository front page stays aligned with the shipped runtime.
 
 ---
 
