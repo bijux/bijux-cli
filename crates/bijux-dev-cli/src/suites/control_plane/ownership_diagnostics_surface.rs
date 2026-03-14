@@ -104,6 +104,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
             let route_files = [
                 workspace_root.join("crates/bijux-dev-cli/src/cli/routes/root.rs"),
+                workspace_root.join("crates/bijux-dev-cli/src/cli/routes/docs.rs"),
                 workspace_root.join("crates/bijux-dev-cli/src/cli/routes/config.rs"),
                 workspace_root.join("crates/bijux-dev-cli/src/cli/routes/evidence.rs"),
                 workspace_root.join("crates/bijux-dev-cli/src/cli/routes/maintenance.rs"),
@@ -113,11 +114,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ];
             let read = |path: &Path| fs::read_to_string(path).unwrap_or_default();
             let runtime_dispatch_source = read(&runtime_dispatch);
-            let maintainer_route_source = route_files
-                .iter()
-                .map(|path| read(path))
-                .collect::<Vec<_>>()
-                .join("\n");
+            let maintainer_route_source =
+                route_files.iter().map(|path| read(path)).collect::<Vec<_>>().join("\n");
             let commands: Vec<String> = read(&maintainer_fixture)
                 .lines()
                 .map(str::trim)
@@ -177,6 +175,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 ("bijux-dev-cli registry", "command == \"registry\""),
                 ("bijux-dev-cli parity", "command == \"parity\""),
                 ("bijux-dev-cli docs", "command == \"docs\""),
+                (
+                    "bijux-dev-cli docs publish-contract-assets",
+                    "group == \"docs\" && command == \"publish-contract-assets\"",
+                ),
                 ("bijux-dev-cli docs-audit", "command == \"docs-audit\""),
                 ("bijux-dev-cli plugin-health", "command == \"plugin-health\""),
                 ("bijux-dev-cli status", "command == \"status\""),
@@ -491,10 +493,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let main_rs =
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bin/bijux.rs"))
                     .unwrap_or_default();
-            let runtime_entry = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli/src/bootstrap/run.rs"),
-            )
-            .unwrap_or_default();
+            let runtime_entry =
+                fs::read_to_string(workspace_root.join("crates/bijux-cli/src/bootstrap/run.rs"))
+                    .unwrap_or_default();
             let runtime_dispatch = fs::read_to_string(
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs"),
             )
@@ -509,7 +510,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("crates/bijux-dev-cli/src/cli/routes/root.rs"),
             )
             .unwrap_or_default();
-            let runtime_maintainer_literal_count = runtime_dispatch.matches("bijux-dev-cli").count();
+            let runtime_maintainer_literal_count =
+                runtime_dispatch.matches("bijux-dev-cli").count();
             let maintainer_builder_call_count = [
                 "dev_routes::build_report(",
                 "dev_registry::build_report(",

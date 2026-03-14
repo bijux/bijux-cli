@@ -1,6 +1,7 @@
 //! Shared helpers for reading and traversing maintainer artifact inputs.
 
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use serde_json::{json, Value};
@@ -92,6 +93,61 @@ pub fn collect_files_recursive(base: &Path) -> Vec<PathBuf> {
     out
 }
 
+/// Replace a destination directory with a copied snapshot of a source directory tree.
+pub fn replace_directory_tree(source: &Path, destination: &Path) -> std::io::Result<usize> {
+    if !source.is_dir() {
+        return Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            format!("source directory does not exist: {}", source.display()),
+        ));
+    }
+
+    if destination.exists() {
+        fs::remove_dir_all(destination)?;
+    }
+
+    copy_directory_tree(source, destination)
+}
+
+fn copy_directory_tree(source: &Path, destination: &Path) -> std::io::Result<usize> {
+    let mut copied_file_count = 0usize;
+    let mut stack = vec![(source.to_path_buf(), destination.to_path_buf())];
+
+    while let Some((source_dir, destination_dir)) = stack.pop() {
+        fs::create_dir_all(&destination_dir)?;
+
+        let mut entries = Vec::new();
+        for entry in fs::read_dir(&source_dir)? {
+            entries.push(entry?);
+        }
+        entries.sort_by_key(|entry| entry.path());
+
+        for entry in entries {
+            let source_path = entry.path();
+            let destination_path = destination_dir.join(entry.file_name());
+            let file_type = entry.file_type()?;
+
+            if file_type.is_dir() {
+                stack.push((source_path, destination_path));
+                continue;
+            }
+
+            if file_type.is_file() {
+                fs::copy(&source_path, &destination_path)?;
+                copied_file_count += 1;
+                continue;
+            }
+
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                format!("unsupported filesystem entry: {}", source_path.display()),
+            ));
+        }
+    }
+
+    Ok(copied_file_count)
+}
+
 /// Render a path relative to workspace root with normalized separators.
 #[must_use]
 pub fn relative_to_root(path: &Path, root: &Path) -> String {
@@ -130,11 +186,12 @@ pub fn parse_make_targets(path: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::io::ErrorKind;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use serde_json::json;
 
-    use super::{json_artifact_state, read_json_if_exists};
+    use super::{json_artifact_state, read_json_if_exists, replace_directory_tree};
 
     #[test]
     fn read_json_if_exists_reports_missing_files() {
@@ -185,5 +242,44 @@ mod tests {
         let payload = read_json_if_exists(&path);
         assert_eq!(json_artifact_state(&payload), "valid");
         assert_eq!(payload, json!({"ok": true}));
+    }
+
+    #[test]
+    fn replace_directory_tree_replaces_existing_destination_contents() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-copy-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        let source = root.join("source");
+        let destination = root.join("destination");
+
+        fs::create_dir_all(source.join("nested")).expect("mkdir");
+        fs::write(source.join("root.txt"), "root").expect("write");
+        fs::write(source.join("nested/child.txt"), "child").expect("write");
+
+        fs::create_dir_all(&destination).expect("mkdir");
+        fs::write(destination.join("stale.txt"), "stale").expect("write");
+
+        let copied_file_count = replace_directory_tree(&source, &destination).expect("copy");
+
+        assert_eq!(copied_file_count, 2);
+        assert!(!destination.join("stale.txt").exists());
+        assert_eq!(fs::read_to_string(destination.join("root.txt")).expect("read"), "root");
+        assert_eq!(
+            fs::read_to_string(destination.join("nested/child.txt")).expect("read"),
+            "child"
+        );
+    }
+
+    #[test]
+    fn replace_directory_tree_reports_missing_source_directory() {
+        let root = std::env::temp_dir().join(format!(
+            "bijux-artifacts-copy-missing-{}",
+            SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos()
+        ));
+        let error = replace_directory_tree(&root.join("missing"), &root.join("destination"))
+            .expect_err("missing");
+
+        assert_eq!(error.kind(), ErrorKind::NotFound);
     }
 }

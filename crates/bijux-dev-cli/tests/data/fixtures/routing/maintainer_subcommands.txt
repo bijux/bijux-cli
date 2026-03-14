@@ -16,6 +16,7 @@ bijux-dev-cli route-audit
 bijux-dev-cli registry
 bijux-dev-cli parity
 bijux-dev-cli docs
+bijux-dev-cli docs publish-contract-assets
 bijux-dev-cli docs-audit
 bijux-dev-cli plugin-health
 bijux-dev-cli status

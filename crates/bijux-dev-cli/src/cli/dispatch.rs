@@ -12,6 +12,8 @@ use crate::reports::{
 
 #[path = "routes/config.rs"]
 mod config;
+#[path = "routes/docs.rs"]
+mod docs;
 #[path = "routes/evidence.rs"]
 mod evidence;
 #[path = "routes/maintenance.rs"]
@@ -147,7 +149,14 @@ pub fn owns_path(normalized_path: &[String]) -> bool {
         [group, _]
             if matches!(
                 group.as_str(),
-                "maintenance" | "rustdoc" | "release" | "evidence" | "config" | "python" | "repo"
+                "maintenance"
+                    | "rustdoc"
+                    | "release"
+                    | "evidence"
+                    | "config"
+                    | "python"
+                    | "repo"
+                    | "docs"
             ) =>
         {
             true
@@ -164,6 +173,9 @@ pub fn try_handle(
     runtime: &dyn RuntimeQueryProvider,
 ) -> Result<Option<Value>> {
     if let Some(payload) = root::try_handle(normalized_path, argv, runtime) {
+        return Ok(Some(payload));
+    }
+    if let Some(payload) = docs::try_handle(normalized_path, argv)? {
         return Ok(Some(payload));
     }
     if let Some(payload) = maintenance::try_handle(normalized_path, argv)? {
@@ -196,6 +208,7 @@ mod tests {
         assert!(owns_path(&["status".into()]));
         assert!(owns_path(&["maintenance".into(), "audit".into()]));
         assert!(owns_path(&["release".into(), "status".into()]));
+        assert!(owns_path(&["docs".into(), "publish-contract-assets".into()]));
 
         assert!(!owns_path(&["cli".into(), "status".into()]));
         assert!(!owns_path(&["not-a-command".into()]));

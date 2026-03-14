@@ -40,6 +40,7 @@ fn src_tree_matches_cli_contracts_suites_reports_infra_schema_layout() {
         "src/cli/dispatch.rs",
         "src/cli/workspace.rs",
         "src/cli/routes/root.rs",
+        "src/cli/routes/docs.rs",
         "src/cli/routes/maintenance.rs",
         "src/cli/routes/release.rs",
         "src/cli/routes/evidence.rs",

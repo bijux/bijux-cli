@@ -1,5 +1,6 @@
 #[allow(clippy::wildcard_imports)]
 use crate::contracts::maintenance::*;
+use crate::schema::command_registry::command_registry;
 
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
@@ -154,8 +155,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("crates/bijux-dev-cli/src/reports/runtime_surface/routes.rs");
             let maintainer_registry =
                 workspace_root.join("crates/bijux-dev-cli/src/reports/runtime_surface/registry.rs");
-            let inventory =
-                workspace_root.join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs");
+            let inventory = workspace_root
+                .join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs");
             let has = |path: &Path, token: &str| -> bool {
                 fs::read_to_string(path).map(|text| text.contains(token)).unwrap_or(false)
             };
@@ -245,23 +246,23 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let query_files = [
                 (
                     "routing_inventory",
-                    workspace_root.join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs"),
+                    workspace_root
+                        .join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs"),
                 ),
-                (
-                    "contracts_query",
-                    workspace_root.join("crates/bijux-cli/src/contracts/query.rs"),
-                ),
+                ("contracts_query", workspace_root.join("crates/bijux-cli/src/contracts/query.rs")),
                 (
                     "install_query",
                     workspace_root.join("crates/bijux-cli/src/features/install/query.rs"),
                 ),
                 (
                     "parity_status_query",
-                    workspace_root.join("crates/bijux-cli/src/features/diagnostics/parity_status.rs"),
+                    workspace_root
+                        .join("crates/bijux-cli/src/features/diagnostics/parity_status.rs"),
                 ),
                 (
                     "state_diagnostics_query",
-                    workspace_root.join("crates/bijux-cli/src/features/diagnostics/state_diagnostics.rs"),
+                    workspace_root
+                        .join("crates/bijux-cli/src/features/diagnostics/state_diagnostics.rs"),
                 ),
             ];
             let interfaces: Vec<Value> = query_files
@@ -302,36 +303,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
         }
         "STATUS-CONTRACT-GENERATE-MAINTAINER-OWNERSHIP-REPORT" => {
-            let command_rows = vec![
-                json!({"command":"bijux-dev-cli status","group":"dashboard","visible":true}),
-                json!({"command":"bijux-dev-cli parity","group":"dashboard","visible":true}),
-                json!({"command":"bijux-dev-cli doctor","group":"dashboard","visible":true}),
-                json!({"command":"bijux-dev-cli routes","group":"routing","visible":true}),
-                json!({"command":"bijux-dev-cli registry","group":"routing","visible":true}),
-                json!({"command":"bijux-dev-cli route-audit","group":"routing","visible":true}),
-                json!({"command":"bijux-dev-cli env","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli contracts","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli runtime-identity","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli package-health","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli state-audit","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli state-doctor","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli plugin-health","group":"runtime","visible":true}),
-                json!({"command":"bijux-dev-cli docs-audit","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli maintenance","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli rustdoc","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli release","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli maintenance-audit","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli crate-health","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli snapshots-audit","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli fixture-audit","group":"audit","visible":true}),
-                json!({"command":"bijux-dev-cli docs","group":"audit","visible":false}),
-                json!({"command":"bijux-dev-cli docs-prune-plan","group":"audit","visible":false}),
-                json!({"command":"bijux-dev-cli inventory","group":"internal","visible":false}),
-                json!({"command":"bijux-dev-cli atlas","group":"internal","visible":false}),
-                json!({"command":"bijux-dev-cli di","group":"internal","visible":false}),
-                json!({"command":"bijux-dev-cli list-products","group":"internal","visible":false}),
-                json!({"command":"bijux-dev-cli list-plugins","group":"internal","visible":false}),
-            ];
+            let command_rows = command_registry()
+                .iter()
+                .map(|entry| {
+                    json!({
+                        "command": entry.command.as_str(),
+                        "group": entry.group.as_str(),
+                        "visible": entry.visible,
+                    })
+                })
+                .collect::<Vec<_>>();
             let visible = command_rows
                 .iter()
                 .filter(|row| row.get("visible").and_then(Value::as_bool) == Some(true))

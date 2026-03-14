@@ -122,6 +122,16 @@ pub fn command_has_flag(argv: &[String], command_tokens: &[&str], name: &str) ->
 /// Return positional arguments that belong to a specific command path.
 #[must_use]
 pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {
+    command_positionals_with_options(argv, command_tokens, &[])
+}
+
+/// Return positional arguments while treating command-local option values as non-positional.
+#[must_use]
+pub fn command_positionals_with_options(
+    argv: &[String],
+    command_tokens: &[&str],
+    options_with_values: &[&str],
+) -> Vec<String> {
     let extras = extras_window(argv, command_tokens);
     let mut positional = Vec::new();
     let mut i = 0;
@@ -151,6 +161,14 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             i += 1;
             continue;
         }
+        if options_with_values.iter().any(|name| token == name) {
+            i += 2;
+            continue;
+        }
+        if options_with_values.iter().any(|name| token.starts_with(&format!("{name}="))) {
+            i += 1;
+            continue;
+        }
         if token.starts_with('-') {
             i += 1;
             continue;
@@ -163,7 +181,7 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
 
 #[cfg(test)]
 mod tests {
-    use super::command_option_value;
+    use super::{command_option_value, command_positionals_with_options};
 
     fn argv(items: &[&str]) -> Vec<String> {
         items.iter().map(|item| (*item).to_string()).collect()
@@ -209,6 +227,27 @@ mod tests {
         assert_eq!(
             command_option_value(&args, &["contracts"], "--kind").as_deref(),
             Some("second")
+        );
+    }
+
+    #[test]
+    fn command_positionals_with_options_skips_command_local_option_values() {
+        let args = argv(&[
+            "bijux-dev-cli",
+            "docs",
+            "publish-contract-assets",
+            "--site-dir",
+            "/tmp/site",
+            "unexpected",
+        ]);
+
+        assert_eq!(
+            command_positionals_with_options(
+                &args,
+                &["docs", "publish-contract-assets"],
+                &["--site-dir"]
+            ),
+            vec!["unexpected".to_string()]
         );
     }
 }

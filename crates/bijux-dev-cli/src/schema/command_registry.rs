@@ -91,6 +91,8 @@ pub enum DevCliCommand {
     Inventory,
     /// `bijux-dev-cli docs`
     Docs,
+    /// `bijux-dev-cli docs publish-contract-assets`
+    DocsPublishContractAssets,
     /// `bijux-dev-cli docs-prune-plan`
     DocsPrunePlan,
     /// `bijux-dev-cli atlas`
@@ -145,6 +147,7 @@ impl DevCliCommand {
             Self::FixtureAudit => "bijux-dev-cli fixture-audit",
             Self::Inventory => "bijux-dev-cli inventory",
             Self::Docs => "bijux-dev-cli docs",
+            Self::DocsPublishContractAssets => "bijux-dev-cli docs publish-contract-assets",
             Self::DocsPrunePlan => "bijux-dev-cli docs-prune-plan",
             Self::Atlas => "bijux-dev-cli atlas",
             Self::Di => "bijux-dev-cli di",
@@ -191,6 +194,7 @@ impl DevCliCommand {
             | Self::SnapshotsAudit
             | Self::FixtureAudit
             | Self::Docs
+            | Self::DocsPublishContractAssets
             | Self::DocsPrunePlan => DevCliCommandGroup::Audit,
             Self::Inventory | Self::Atlas | Self::Di | Self::ListProducts | Self::ListPlugins => {
                 DevCliCommandGroup::Internal
@@ -404,6 +408,12 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
         },
         DevCliCommandMetadata {
             command: DevCliCommand::Docs,
+            group: DevCliCommandGroup::Audit,
+            visible: false,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::DocsPublishContractAssets,
             group: DevCliCommandGroup::Audit,
             visible: false,
             owner: "bijux-dev-cli",
