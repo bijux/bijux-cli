@@ -3,4 +3,23 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$SCRIPT_DIR"
-cargo run --quiet -- "$@"
+
+BIN_PATH="$SCRIPT_DIR/target/debug/{{cookiecutter.plugin_namespace}}"
+needs_build=0
+if [ ! -x "$BIN_PATH" ]; then
+  needs_build=1
+elif [ "$SCRIPT_DIR/Cargo.toml" -nt "$BIN_PATH" ]; then
+  needs_build=1
+elif [ -d "$SCRIPT_DIR/src" ] && find "$SCRIPT_DIR/src" -type f -name '*.rs' -newer "$BIN_PATH" -print -quit | grep -q .; then
+  needs_build=1
+fi
+
+if [ "$needs_build" -eq 1 ]; then
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "cargo is required to build the {{cookiecutter.plugin_namespace}} plugin binary" >&2
+    exit 1
+  fi
+  cargo build --quiet
+fi
+
+exec "$BIN_PATH" "$@"

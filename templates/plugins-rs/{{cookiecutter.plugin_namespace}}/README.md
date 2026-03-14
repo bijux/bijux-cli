@@ -3,9 +3,10 @@
 Cargo-backed Rust plugin scaffold for Bijux.
 
 - `plugin.manifest.json` defines the install contract.
-- `plugin-entrypoint` is the executable entrypoint referenced by the manifest.
+- `plugin-entrypoint` is the executable manifest entrypoint. It rebuilds the local debug binary
+  when Cargo inputs changed and then runs the compiled plugin.
 - `src/lib.rs` contains the plugin logic.
-- `src/main.rs` exposes the binary surface that `plugin-entrypoint` runs.
+- `src/main.rs` exposes the compiled binary surface that `plugin-entrypoint` runs.
 
 Install locally with:
 
@@ -22,11 +23,14 @@ Run the generated plugin directly with:
 
 ```bash
 ./plugin-entrypoint --help
+cargo build
 cargo run -- --help
 ```
 
-Keep `plugin-entrypoint` aligned with the Cargo binary, keep `plugin_namespace` stable after
-release, update the compatibility range in `plugin.manifest.json` when supported Bijux host
-versions change, and avoid reserved Bijux namespaces when renaming the plugin. The rendered
-defaults start at plugin version `{{cookiecutter.plugin_version}}` with host compatibility from
-`{{cookiecutter.cli_min}}` up to, but not including, `{{cookiecutter.cli_max}}`.
+Keep `plugin-entrypoint` aligned with the compiled `{{cookiecutter.plugin_namespace}}` binary, keep
+`plugin_namespace` stable after release, update the compatibility range in `plugin.manifest.json`
+when supported Bijux host versions change, and avoid reserved Bijux namespaces when renaming the
+plugin. The rendered defaults start at plugin version `{{cookiecutter.plugin_version}}` with host
+compatibility from `{{cookiecutter.cli_min}}` up to, but not including,
+`{{cookiecutter.cli_max}}`. The Rust library identifier remains
+`{{cookiecutter.crate_name}}`.

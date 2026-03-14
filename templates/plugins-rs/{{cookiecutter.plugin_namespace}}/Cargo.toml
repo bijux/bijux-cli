@@ -1,5 +1,5 @@
 [package]
-name = "{{cookiecutter.crate_name}}"
+name = "{{cookiecutter.plugin_namespace}}"
 version = "{{cookiecutter.plugin_version}}"
 edition = "{{cookiecutter.rust_edition}}"
 license = "Apache-2.0"
@@ -10,7 +10,7 @@ name = "{{cookiecutter.crate_name}}"
 path = "src/lib.rs"
 
 [[bin]]
-name = "{{cookiecutter.crate_name}}"
+name = "{{cookiecutter.plugin_namespace}}"
 path = "src/main.rs"
 
 [dependencies]

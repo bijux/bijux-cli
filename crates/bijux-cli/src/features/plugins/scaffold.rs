@@ -62,6 +62,12 @@ fn scaffold_manifest_contract(kind: &str) -> Result<(&'static str, &'static str)
     }
 }
 
+fn rust_entrypoint_script(binary_name: &str, namespace: &str) -> String {
+    format!(
+        "#!/usr/bin/env sh\nset -eu\n\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\ncd \"$SCRIPT_DIR\"\n\nBIN_PATH=\"$SCRIPT_DIR/target/debug/{binary_name}\"\nneeds_build=0\nif [ ! -x \"$BIN_PATH\" ]; then\n  needs_build=1\nelif [ \"$SCRIPT_DIR/Cargo.toml\" -nt \"$BIN_PATH\" ]; then\n  needs_build=1\nelif [ -d \"$SCRIPT_DIR/src\" ] && find \"$SCRIPT_DIR/src\" -type f -name '*.rs' -newer \"$BIN_PATH\" -print -quit | grep -q .; then\n  needs_build=1\nfi\n\nif [ \"$needs_build\" -eq 1 ]; then\n  if ! command -v cargo >/dev/null 2>&1; then\n    echo \"cargo is required to build the {namespace} plugin binary\" >&2\n    exit 1\n  fi\n  cargo build --quiet\nfi\n\nexec \"$BIN_PATH\" \"$@\"\n"
+    )
+}
+
 #[cfg(unix)]
 fn mark_executable(path: &Path) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
@@ -119,10 +125,7 @@ pub(crate) fn scaffold_plugin_layout(
             ),
         )?;
         let entrypoint_path = base_dir.join(RUST_SCAFFOLD_ENTRYPOINT);
-        fs::write(
-            &entrypoint_path,
-            "#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\ncd \"$SCRIPT_DIR\"\ncargo run --quiet -- \"$@\"\n",
-        )?;
+        fs::write(&entrypoint_path, rust_entrypoint_script(cargo_package_name, namespace))?;
         mark_executable(&entrypoint_path)?;
         fs::create_dir_all(base_dir.join("src"))?;
         fs::write(

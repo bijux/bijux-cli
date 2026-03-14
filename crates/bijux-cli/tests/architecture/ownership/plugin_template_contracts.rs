@@ -185,6 +185,10 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
         rust_rendered.to_ascii_lowercase().contains("cargo"),
         "rendered rust project README must describe the cargo-backed runtime"
     );
+    assert!(
+        rust_rendered.to_ascii_lowercase().contains("rebuild"),
+        "rendered rust project README must explain the local rebuild contract"
+    );
 }
 
 #[test]
@@ -226,6 +230,28 @@ fn template_manifests_match_current_plugin_contract() {
             "{path} should support the current post-0.2.0 host floor"
         );
     }
+
+    let rust_entrypoint =
+        render_template(&read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin-entrypoint"));
+    assert!(
+        rust_entrypoint.contains("cargo build --quiet"),
+        "rust template entrypoint should build the binary when needed"
+    );
+    assert!(
+        !rust_entrypoint.contains("cargo run --quiet"),
+        "rust template entrypoint should not route every execution through cargo run"
+    );
+
+    let rust_cargo_toml =
+        render_template(&read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/Cargo.toml"));
+    assert!(
+        rust_cargo_toml.contains("name = \"testplug\""),
+        "rust template Cargo.toml should align package and binary names with plugin_namespace"
+    );
+    assert!(
+        rust_cargo_toml.contains("[lib]\nname = \"testplug_rs\""),
+        "rust template Cargo.toml should keep crate_name for the Rust library identifier"
+    );
 }
 
 #[test]

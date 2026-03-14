@@ -119,6 +119,16 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert!(rs_dir.join("Cargo.toml").exists(), "rust scaffold must emit a Cargo package");
     assert!(rs_dir.join("plugin-entrypoint").exists(), "rust scaffold must emit an entrypoint");
     assert!(rs_dir.join("src/main.rs").exists(), "rust scaffold must emit a Rust binary");
+    let entrypoint =
+        fs::read_to_string(rs_dir.join("plugin-entrypoint")).expect("read rust entrypoint");
+    assert!(
+        entrypoint.contains("cargo build --quiet"),
+        "rust scaffold entrypoint should build before execution when needed"
+    );
+    assert!(
+        !entrypoint.contains("cargo run --quiet"),
+        "rust scaffold entrypoint should not route every execution through cargo run"
+    );
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
