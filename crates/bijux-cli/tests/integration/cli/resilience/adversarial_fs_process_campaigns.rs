@@ -220,16 +220,19 @@ fn interrupted_process_behavior_is_normalized_for_interactive_entrypoint() {
     use std::os::unix::process::ExitStatusExt;
     use std::time::Duration;
 
+    let runtime_home = temp_dir("interruptible-home");
     let mut child = Command::new(env!("CARGO_BIN_EXE_bijux"))
-        .args(["sleep", "5"])
-        .stdin(Stdio::null())
+        .arg("repl")
+        .env_clear()
+        .env("HOME", &runtime_home)
+        .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn sleep");
+        .expect("spawn repl");
 
     // Give startup a short window, then interrupt via SIGINT to emulate Ctrl-C.
-    std::thread::sleep(Duration::from_millis(40));
+    std::thread::sleep(Duration::from_millis(150));
     let status = Command::new("kill")
         .args(["-INT", &child.id().to_string()])
         .status()

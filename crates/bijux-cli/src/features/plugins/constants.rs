@@ -7,7 +7,17 @@ pub const REGISTRY_VERSION: &str = "1";
 
 /// Reserved namespaces that plugins cannot claim.
 pub const RESERVED_NAMESPACES: &[&str] =
-    &["cli", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"];
+    &[
+        "cli",
+        "dev",
+        "help",
+        "version",
+        "doctor",
+        "repl",
+        "plugins",
+        "completion",
+        "inspect",
+    ];
 
 /// Reserved namespaces currently owned by bijux-cli core command graph.
 pub const CORE_NAMESPACES: &[&str] = &["cli"];

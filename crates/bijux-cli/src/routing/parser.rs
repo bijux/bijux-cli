@@ -288,9 +288,6 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("inspect").hide(true))
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
-        .subcommand(
-            Command::new("hold").hide(true).subcommand(Command::new("interruptible").hide(true)),
-        )
         .subcommand(plugins_group.clone());
 
     Command::new("bijux")
@@ -312,7 +309,6 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
         .subcommand(Command::new("docs"))
-        .subcommand(Command::new("sleep").arg(Arg::new("duration").num_args(1)))
         .subcommand(Command::new("doctor"))
         .subcommand(Command::new("version"))
         .subcommand(

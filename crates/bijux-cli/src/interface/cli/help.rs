@@ -237,7 +237,6 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ["status"] => vec!["bijux status".to_string(), "bijux status --format json".to_string()],
         ["audit"] => vec!["bijux audit".to_string(), "bijux audit --format json".to_string()],
         ["docs"] => vec!["bijux docs".to_string(), "bijux docs --format json".to_string()],
-        ["sleep"] => vec!["bijux sleep 1".to_string(), "bijux sleep 250ms".to_string()],
         ["install"] => vec![
             "bijux install cli --dry-run".to_string(),
             "bijux install dev-cli --dry-run".to_string(),

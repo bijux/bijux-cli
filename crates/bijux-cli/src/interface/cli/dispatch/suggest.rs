@@ -16,7 +16,6 @@ const ROOT_COMMANDS: &[&str] = &[
     "status",
     "audit",
     "docs",
-    "sleep",
     "doctor",
     "version",
     "config",

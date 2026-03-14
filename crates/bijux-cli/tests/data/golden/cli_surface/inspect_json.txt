@@ -558,6 +558,11 @@
     },
     {
       "segments": [
+        "install"
+      ]
+    },
+    {
+      "segments": [
         "memory"
       ]
     },
@@ -658,11 +663,6 @@
     },
     {
       "segments": [
-        "sleep"
-      ]
-    },
-    {
-      "segments": [
         "status"
       ]
     }
@@ -682,12 +682,12 @@
   "reserved_namespaces": [
     {
       "name": "agent",
-      "owner": "bijux-cli",
+      "owner": "bijux-agent",
       "reserved": true
     },
     {
       "name": "atlas",
-      "owner": "bijux-cli",
+      "owner": "bijux-atlas",
       "reserved": true
     },
     {
@@ -707,17 +707,12 @@
     },
     {
       "name": "dag",
-      "owner": "bijux-cli",
-      "reserved": true
-    },
-    {
-      "name": "dev",
-      "owner": "bijux-cli",
+      "owner": "bijux-dag",
       "reserved": true
     },
     {
       "name": "dna",
-      "owner": "bijux-cli",
+      "owner": "bijux-dna",
       "reserved": true
     },
     {
@@ -727,7 +722,7 @@
     },
     {
       "name": "gnss",
-      "owner": "bijux-cli",
+      "owner": "bijux-gnss",
       "reserved": true
     },
     {
@@ -747,12 +742,12 @@
     },
     {
       "name": "rag",
-      "owner": "bijux-cli",
+      "owner": "bijux-rag",
       "reserved": true
     },
     {
       "name": "rar",
-      "owner": "bijux-cli",
+      "owner": "bijux-rar",
       "reserved": true
     },
     {
@@ -767,7 +762,7 @@
     },
     {
       "name": "vex",
-      "owner": "bijux-cli",
+      "owner": "bijux-vex",
       "reserved": true
     }
   ],
@@ -1081,6 +1076,13 @@
     {
       "owner": "bijux-cli",
       "segments": [
+        "install"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
         "memory"
       ],
       "source": "built-in"
@@ -1209,13 +1211,6 @@
       "segments": [
         "plugins",
         "uninstall"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
-        "sleep"
       ],
       "source": "built-in"
     },

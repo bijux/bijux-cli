@@ -11,6 +11,5 @@ install
 memory
 plugins
 repl
-sleep
 status
 version

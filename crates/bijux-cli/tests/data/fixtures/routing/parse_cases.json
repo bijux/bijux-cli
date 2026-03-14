@@ -15,11 +15,6 @@
     "routed": true
   },
   {
-    "argv": ["bijux", "sleep"],
-    "expected_normalized": ["sleep"],
-    "routed": true
-  },
-  {
     "argv": ["bijux", "install", "atlas", "--dry-run"],
     "expected_normalized": ["install"],
     "routed": true

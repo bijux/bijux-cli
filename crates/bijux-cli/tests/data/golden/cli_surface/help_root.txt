@@ -5,9 +5,9 @@ Commands:
   status
   audit
   docs
-  sleep
   doctor
   version
+  install
   config
   plugins
   repl
@@ -27,7 +27,7 @@ Options:
   -h, --help                Print help
 
 Management Commands:
-runtime      status, audit, docs, sleep, doctor, version
+runtime      status, audit, docs, doctor, version, install
 config       config
 plugins      plugins
 state        history, memory
@@ -37,6 +37,7 @@ Use `bijux help <command>` for command-specific help.
 
 Examples:
   bijux status
+  bijux install atlas --dry-run
   bijux config get foo
   bijux config set foo=bar
   bijux plugins list

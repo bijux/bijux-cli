@@ -12,4 +12,3 @@ history
 install
 memory
 plugins
-sleep
