@@ -85,6 +85,18 @@ fn chmod_writable(path: &Path) {
     fs::set_permissions(path, fs::Permissions::from_mode(0o755)).expect("chmod 755");
 }
 
+#[cfg(unix)]
+fn readonly_directory_blocks_writes(path: &Path) -> bool {
+    let probe = path.join(".permission-probe");
+    match fs::write(&probe, b"probe") {
+        Ok(_) => {
+            let _ = fs::remove_file(&probe);
+            false
+        }
+        Err(_) => true,
+    }
+}
+
 #[test]
 #[cfg(unix)]
 fn simulated_disk_write_failure_during_install() {
@@ -95,6 +107,10 @@ fn simulated_disk_write_failure_during_install() {
     write_manifest(&manifest, "writefail", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
 
@@ -132,6 +148,10 @@ fn simulated_registry_write_failure_during_install() {
     write_manifest(&second, "candidate", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "install", second.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -186,6 +206,10 @@ fn simulated_permission_denied_failure_during_install() {
     write_manifest(&manifest, "deniedplug", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
 
@@ -204,6 +228,10 @@ fn simulated_partial_uninstall_failure() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "uninstall", "partialuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
 
@@ -222,6 +250,10 @@ fn simulated_registry_write_failure_during_uninstall() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "uninstall", "writeuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
 
@@ -278,6 +310,10 @@ fn rollback_proof_install_failure_preserves_existing_plugins() {
     let candidate = root.join("candidate.json");
     write_manifest(&candidate, "candidateproof", "plugin:main", &current_plugin_host_floor());
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "install", candidate.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -304,6 +340,10 @@ fn rollback_proof_uninstall_failure_preserves_existing_plugins() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "uninstall", "keepproof"], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -323,6 +363,10 @@ fn retry_install_after_partial_failure_is_idempotent() {
     write_manifest(&manifest, "retryinstall", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let first =
         run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
@@ -345,6 +389,10 @@ fn retry_uninstall_after_partial_failure_is_idempotent() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let first = run(&["cli", "plugins", "uninstall", "retryuninstall"], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(first.status.code(), Some(1));
@@ -367,6 +415,10 @@ fn failed_install_does_not_leave_claimed_namespace() {
     let failed = root.join("failed.json");
     write_manifest(&failed, "failedns", "plugin:main", &current_plugin_host_floor());
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "install", failed.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -393,6 +445,10 @@ fn failed_uninstall_does_not_orphan_registry_state_silently() {
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
+    if !readonly_directory_blocks_writes(&plugins_dir) {
+        chmod_writable(&plugins_dir);
+        return;
+    }
     let out = run(&["cli", "plugins", "uninstall", "orphanproof"], &plugins_dir);
     chmod_writable(&plugins_dir);
     assert_eq!(out.status.code(), Some(1));

@@ -70,6 +70,18 @@ fn write_config(path: &Path, text: &str) {
     fs::write(path, text).expect("write config");
 }
 
+#[cfg(unix)]
+fn readonly_directory_blocks_writes(path: &Path) -> bool {
+    let probe = path.join(".permission-probe");
+    match fs::write(&probe, b"probe") {
+        Ok(_) => {
+            let _ = fs::remove_file(&probe);
+            false
+        }
+        Err(_) => true,
+    }
+}
+
 #[test]
 fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_cleanly() {
     let root = temp_dir("corruption-shapes");
@@ -172,6 +184,10 @@ fn config_set_clear_unset_failures_preserve_previous_content_as_rollback_proof()
     let before = fs::read_to_string(&config_path).expect("read baseline");
 
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).expect("chmod 555");
+    if !readonly_directory_blocks_writes(&dir) {
+        fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).expect("chmod 755");
+        return;
+    }
 
     let set_fail = run(&[
         "cli",
@@ -214,6 +230,10 @@ fn config_clear_and_unset_retry_are_idempotent_after_transient_write_failure() {
     write_config(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n");
 
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).expect("chmod 555");
+    if !readonly_directory_blocks_writes(&dir) {
+        fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).expect("chmod 755");
+        return;
+    }
     let first_unset = run(&[
         "cli",
         "config",

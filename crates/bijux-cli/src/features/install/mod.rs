@@ -336,6 +336,13 @@ mod tests {
         std::fs::create_dir_all(&dir).expect("mkdir");
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555))
             .expect("set readonly");
+        let probe = dir.join(".permission-probe");
+        if std::fs::write(&probe, b"probe").is_ok() {
+            let _ = std::fs::remove_file(&probe);
+            std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755))
+                .expect("restore writable");
+            return;
+        }
         let result = initialize_first_run_state(&dir);
         assert!(result.is_err());
     }
