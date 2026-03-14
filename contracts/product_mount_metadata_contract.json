@@ -7,11 +7,10 @@
     "control_binary",
     "runtime_package",
     "control_package",
-    "repository"
-  ],
-  "optional_fields": [
+    "repository",
     "status"
   ],
+  "optional_fields": [],
   "notes": [
     "No dynamic loading contract is promised.",
     "No external ABI contract is promised.",

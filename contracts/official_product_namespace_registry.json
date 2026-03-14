@@ -19,7 +19,7 @@
       "runtime_package": "bijux-atlas",
       "control_package": "bijux-dev-atlas",
       "repository": "bijux-atlas",
-      "status": "active"
+      "status": "declared"
     },
     {
       "namespace": "dag",
