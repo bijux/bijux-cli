@@ -316,11 +316,22 @@ def test_command_tree_fallback_includes_warning_instead_of_stale_namespaces(
     assert "warning" in payload
 
 
-def test_strict_native_import_defaults_to_enabled_in_ci(
+def test_strict_native_import_defaults_to_disabled_without_explicit_opt_in(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     import bijux_cli_py._facade as facade
 
     monkeypatch.delenv("BIJUX_PY_STRICT_IMPORT", raising=False)
     monkeypatch.setenv("CI", "1")
+    monkeypatch.delenv("BIJUX_ENV", raising=False)
+    assert not facade._strict_native_import_enabled()
+
+
+def test_strict_native_import_is_enabled_by_explicit_environment_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import bijux_cli_py._facade as facade
+
+    monkeypatch.delenv("BIJUX_PY_STRICT_IMPORT", raising=False)
+    monkeypatch.setenv("BIJUX_ENV", "ci")
     assert facade._strict_native_import_enabled()

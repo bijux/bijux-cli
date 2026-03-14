@@ -32,8 +32,6 @@ def _strict_native_import_enabled() -> bool:
             "no",
             "off",
         }
-    if os.environ.get("CI"):
-        return True
     return os.environ.get("BIJUX_ENV", "").strip().lower() in {"dev", "test", "ci"}
 
 
