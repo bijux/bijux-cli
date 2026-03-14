@@ -5,12 +5,12 @@ build-backend = "maturin"
 [project]
 name = "bijux-cli"
 dynamic = ["version"]
-description = "Python install and compatibility facade for the Rust-owned Bijux CLI runtime"
+description = "Python package for installing and launching the Bijux command runtime for automation, plugins, and interactive workflows"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
-keywords = ["bijux", "cli", "python", "rust", "plugins", "automation"]
+keywords = ["bijux", "cli", "python", "automation", "plugins", "interactive"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
@@ -24,6 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Rust",
   "Topic :: Software Development :: Libraries",
