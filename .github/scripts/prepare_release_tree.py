@@ -90,6 +90,35 @@ def rewrite_workspace_version(path: Path, release_version: str) -> None:
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
+def rewrite_workspace_dependency_versions(path: Path, release_version: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    out: list[str] = []
+    in_workspace_dependencies = False
+    replaced = 0
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_workspace_dependencies = stripped == "[workspace.dependencies]"
+        if (
+            in_workspace_dependencies
+            and stripped.startswith('bijux-cli = {')
+            and 'version = "' in stripped
+        ):
+            prefix, version_tail = line.split('version = "', 1)
+            _old_version, suffix = version_tail.split('"', 1)
+            out.append(f'{prefix}version = "{release_version}"{suffix}')
+            replaced += 1
+            continue
+        out.append(line)
+
+    if replaced != 1:
+        raise SystemExit(
+            f"expected to rewrite 1 workspace dependency version in {path}, rewrote {replaced}"
+        )
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
 def rewrite_lockfile_versions(path: Path, release_version: str) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     out: list[str] = []
@@ -157,6 +186,7 @@ def main() -> int:
     ensure_clean_output_dir(output_dir)
     copy_workspace(workspace_root, output_dir)
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
+    rewrite_workspace_dependency_versions(output_dir / "Cargo.toml", release_version)
     rewrite_lockfile_versions(output_dir / "Cargo.lock", release_version)
     rewrite_template_compatibility_defaults(
         output_dir / "templates/plugins-py/cookiecutter.json",

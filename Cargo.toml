@@ -16,6 +16,7 @@ rust-version = "1.85"
 
 [workspace.dependencies]
 anyhow = "1.0.100"
+bijux-cli = { version = "0.2.1-dev", path = "crates/bijux-cli" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
 serde_yaml = "0.9.34"
@@ -62,7 +63,6 @@ items_after_statements = "allow"
 collapsible_if = "allow"
 single_char_pattern = "allow"
 many_single_char_names = "allow"
-manual_contains = "allow"
 useless_vec = "allow"
 cast_possible_wrap = "allow"
 implicit_clone = "allow"

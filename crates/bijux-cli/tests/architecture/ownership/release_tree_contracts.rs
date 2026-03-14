@@ -38,13 +38,20 @@ fn prepare_release_tree_stamps_template_compatibility_defaults() {
         String::from_utf8_lossy(&out.stderr)
     );
 
-    let py_cookiecutter = fs::read_to_string(output_dir.join("templates/plugins-py/cookiecutter.json"))
-        .expect("python template defaults");
-    let rs_cookiecutter = fs::read_to_string(output_dir.join("templates/plugins-rs/cookiecutter.json"))
-        .expect("rust template defaults");
+    let py_cookiecutter =
+        fs::read_to_string(output_dir.join("templates/plugins-py/cookiecutter.json"))
+            .expect("python template defaults");
+    let rs_cookiecutter =
+        fs::read_to_string(output_dir.join("templates/plugins-rs/cookiecutter.json"))
+            .expect("rust template defaults");
+    let workspace_manifest =
+        fs::read_to_string(output_dir.join("Cargo.toml")).expect("workspace manifest");
 
     for rendered in [&py_cookiecutter, &rs_cookiecutter] {
         assert!(rendered.contains(r#""cli_min": "0.2.0""#));
         assert!(rendered.contains(r#""cli_max": "0.3.0""#));
     }
+    assert!(workspace_manifest.contains(r#"version = "0.2.0""#));
+    assert!(workspace_manifest
+        .contains(r#"bijux-cli = { version = "0.2.0", path = "crates/bijux-cli" }"#));
 }

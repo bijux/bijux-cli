@@ -40,6 +40,7 @@ PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short --cov=bijux_cli_py --cov-branc
 PIP_AUDIT_IGNORE_IDS ?= \
 	PYSEC-2022-42969
 PIP_AUDIT_IGNORE_FLAGS := $(foreach id,$(PIP_AUDIT_IGNORE_IDS),--ignore-vuln $(id))
+PIP_AUDIT_FLAGS ?= --progress-spinner off --skip-editable $(PIP_AUDIT_IGNORE_FLAGS)
 
 TWINE_REPOSITORY     ?= pypi
 PUBLISH_SKIP_EXISTING ?= 1
@@ -132,9 +133,9 @@ security-py: python-env ## Run Python security checks
 	$(BANDIT) -r "$(PYTHON_SRC_DIR)/bijux_cli_py" -ll \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/bandit.txt"
 	@echo "→ pip-audit"
-	@$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) -f json -o "$(SECURITY_ARTIFACTS_DIR)/pip-audit.json"
+	@$(PIP_AUDIT) $(PIP_AUDIT_FLAGS) -f json -o "$(SECURITY_ARTIFACTS_DIR)/pip-audit.json"
 	@set -o pipefail; \
-	$(PIP_AUDIT) --progress-spinner off $(PIP_AUDIT_IGNORE_FLAGS) \
+	$(PIP_AUDIT) $(PIP_AUDIT_FLAGS) \
 	  2>&1 | tee "$(SECURITY_ARTIFACTS_DIR)/pip-audit.txt"
 
 build-py: python-env ## Build the Python wheel and source distribution

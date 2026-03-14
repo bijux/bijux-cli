@@ -10,7 +10,7 @@ rust-version.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-bijux-cli = { path = "../bijux-cli" }
+bijux-cli.workspace = true
 clap = { version = "4.5.51", features = ["std"] }
 serde.workspace = true
 serde_json.workspace = true
