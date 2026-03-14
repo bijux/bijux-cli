@@ -125,6 +125,11 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
         .iter()
         .any(|item| item["manifest"]["namespace"] == "rustchain"));
 
+    let routed = run(&["rustchain", "--help"], &plugins_dir);
+    assert_eq!(routed.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&routed.stdout).contains("Usage: rustchain [ARGS]"));
+    assert!(routed.stderr.is_empty());
+
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
 

@@ -116,7 +116,12 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         );
         assert_eq!(manifest["compatibility"]["max_exclusive"], "1.0.0");
 
-        for forbidden in ["README.md", "pyproject.toml", "Cargo.toml", ".gitignore"] {
+        let forbidden = if kind == "python" {
+            vec!["README.md", "pyproject.toml", "Cargo.toml", ".gitignore", "src/main.rs"]
+        } else {
+            vec!["README.md", "pyproject.toml", ".gitignore"]
+        };
+        for forbidden in forbidden {
             assert!(
                 !scaffold_dir.join(forbidden).exists(),
                 "{kind} scaffold should not include decorative file {forbidden}"

@@ -1,3 +1,5 @@
 plugin.manifest.json
-plugin.py
+Cargo.toml
+plugin-entrypoint
 src/lib.rs
+src/main.rs

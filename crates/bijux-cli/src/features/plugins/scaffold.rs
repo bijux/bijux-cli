@@ -14,6 +14,7 @@ use super::{
 };
 
 const SCAFFOLD_PLUGIN_VERSION: &str = "0.1.0";
+const RUST_SCAFFOLD_ENTRYPOINT: &str = "plugin-entrypoint";
 
 fn is_safe_scaffold_path(path: &Path) -> bool {
     !path.components().any(|component| matches!(component, Component::ParentDir))
@@ -39,7 +40,7 @@ fn scaffold_compatibility_window() -> Result<(String, String)> {
     Ok((min.to_string(), max.to_string()))
 }
 
-fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> Result<String> {
+fn scaffold_manifest_json(plugin_kind: &str, entrypoint: &str, namespace: &str) -> Result<String> {
     let (min_inclusive, max_exclusive) = scaffold_compatibility_window()?;
     Ok(format!(
         "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
@@ -49,16 +50,29 @@ fn scaffold_manifest_json(plugin_kind: &str, namespace: &str) -> Result<String> 
         max_exclusive,
         namespace,
         plugin_kind,
-        "plugin:main",
+        entrypoint,
     ))
 }
 
-fn scaffold_manifest_kind(kind: &str) -> Result<&'static str> {
+fn scaffold_manifest_contract(kind: &str) -> Result<(&'static str, &'static str)> {
     match kind {
-        "python" => Ok("python"),
-        "rust" => Ok("delegated"),
+        "python" => Ok(("python", "plugin:main")),
+        "rust" => Ok(("external-exec", RUST_SCAFFOLD_ENTRYPOINT)),
         _ => anyhow::bail!("plugin scaffold kind must be one of: python, rust"),
     }
+}
+
+#[cfg(unix)]
+fn mark_executable(path: &Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o755))?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn mark_executable(_path: &Path) -> Result<()> {
+    Ok(())
 }
 
 pub(crate) fn scaffold_plugin_layout(
@@ -74,7 +88,7 @@ pub(crate) fn scaffold_plugin_layout(
     if !is_safe_scaffold_path(base_dir) {
         anyhow::bail!("scaffold path is unsafe");
     }
-    let plugin_kind = scaffold_manifest_kind(kind)?;
+    let (plugin_kind, entrypoint) = scaffold_manifest_contract(kind)?;
     if base_dir.exists() {
         if !force {
             anyhow::bail!("scaffold path already exists; pass --force to overwrite");
@@ -89,21 +103,40 @@ pub(crate) fn scaffold_plugin_layout(
 
     fs::create_dir_all(base_dir)?;
     let manifest_path = base_dir.join("plugin.manifest.json");
-    fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, namespace)?)?;
+    fs::write(&manifest_path, scaffold_manifest_json(plugin_kind, entrypoint, namespace)?)?;
     if kind == "python" {
         fs::write(
             base_dir.join("plugin.py"),
             "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv}\n",
         )?;
     } else {
+        let cargo_package_name = namespace;
+        let cargo_module_name = namespace.replace('-', "_");
         fs::write(
-            base_dir.join("plugin.py"),
-            "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv, \"bridge\": \"placeholder bridge stub; replace plugin.py with a real Rust entrypoint\"}\n",
+            base_dir.join("Cargo.toml"),
+            format!(
+                "[package]\nname = \"{cargo_package_name}\"\nversion = \"{SCAFFOLD_PLUGIN_VERSION}\"\nedition = \"2021\"\nlicense = \"Apache-2.0\"\ndescription = \"Rust executable plugin for {namespace}\"\n\n[lib]\nname = \"{cargo_module_name}\"\npath = \"src/lib.rs\"\n\n[[bin]]\nname = \"{cargo_package_name}\"\npath = \"src/main.rs\"\n\n[dependencies]\nserde_json = \"1\"\n"
+            ),
         )?;
+        let entrypoint_path = base_dir.join(RUST_SCAFFOLD_ENTRYPOINT);
+        fs::write(
+            &entrypoint_path,
+            "#!/usr/bin/env sh\nset -eu\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\ncd \"$SCRIPT_DIR\"\ncargo run --quiet -- \"$@\"\n",
+        )?;
+        mark_executable(&entrypoint_path)?;
         fs::create_dir_all(base_dir.join("src"))?;
         fs::write(
             base_dir.join("src/lib.rs"),
-            "pub fn run(argv: &[String]) -> String { format!(\"rust plugin received {} args\", argv.len()) }\n",
+            format!(
+                "use serde_json::{{json, Value}};\n\npub fn run(argv: &[String]) -> Value {{\n    json!({{\"status\": \"ok\", \"namespace\": \"{namespace}\", \"argv\": argv}})\n}}\n\npub fn help_text() -> &'static str {{\n    \"Usage: {namespace} [ARGS]\\n\\nRuns the {namespace} Rust plugin entrypoint.\"\n}}\n"
+            ),
+        )?;
+        fs::write(
+            base_dir.join("src/main.rs"),
+            format!(
+                "use std::process::ExitCode;\n\nfn main() -> ExitCode {{\n    let argv = std::env::args().skip(1).collect::<Vec<_>>();\n    if argv.iter().any(|arg| matches!(arg.as_str(), \"--help\" | \"-h\")) {{\n        println!(\"{{}}\", {rust_module}::help_text());\n        return ExitCode::SUCCESS;\n    }}\n\n    match serde_json::to_string_pretty(&{rust_module}::run(&argv)) {{\n        Ok(rendered) => {{\n            println!(\"{{rendered}}\");\n            ExitCode::SUCCESS\n        }}\n        Err(error) => {{\n            eprintln!(\"failed to render plugin payload: {{error}}\");\n            ExitCode::from(1)\n        }}\n    }}\n}}\n",
+                rust_module = cargo_module_name
+            ),
         )?;
     }
 

@@ -1,10 +1,11 @@
 # {{cookiecutter.project_name}}
 
-Rust-backed plugin scaffold for Bijux.
+Cargo-backed Rust plugin scaffold for Bijux.
 
 - `plugin.manifest.json` defines the install contract.
-- `plugin.py` is a placeholder bridge stub for the host entrypoint.
-- `src/lib.rs` is the starting point for the Rust implementation.
+- `plugin-entrypoint` is the executable entrypoint referenced by the manifest.
+- `src/lib.rs` contains the plugin logic.
+- `src/main.rs` exposes the binary surface that `plugin-entrypoint` runs.
 
 Install locally with:
 
@@ -17,10 +18,15 @@ bijux plugins explain {{cookiecutter.plugin_namespace}}
 bijux plugins schema
 ```
 
-Keep `plugin.py` aligned with the Rust bridge, keep `plugin_namespace` stable after release,
-update the compatibility range in `plugin.manifest.json` when supported Bijux host versions
-change, and avoid reserved Bijux namespaces when renaming the plugin. The rendered defaults start
-at plugin version `{{cookiecutter.plugin_version}}` with host compatibility from
-`{{cookiecutter.cli_min}}` up to, but not including, `{{cookiecutter.cli_max}}`. The generated
-`plugin.py` is intentionally only a placeholder bridge stub until you wire it to a real Rust
-entrypoint.
+Run the generated plugin directly with:
+
+```bash
+./plugin-entrypoint --help
+cargo run -- --help
+```
+
+Keep `plugin-entrypoint` aligned with the Cargo binary, keep `plugin_namespace` stable after
+release, update the compatibility range in `plugin.manifest.json` when supported Bijux host
+versions change, and avoid reserved Bijux namespaces when renaming the plugin. The rendered
+defaults start at plugin version `{{cookiecutter.plugin_version}}` with host compatibility from
+`{{cookiecutter.cli_min}}` up to, but not including, `{{cookiecutter.cli_max}}`.

@@ -1,6 +1,13 @@
-//! Rust core scaffold for a Bijux plugin.
+use serde_json::{json, Value};
 
-/// Example entrypoint for logic invoked by the delegated plugin bridge.
-pub fn run(argv: &[String]) -> String {
-    format!("rust plugin received {} args", argv.len())
+pub fn run(argv: &[String]) -> Value {
+    json!({
+        "status": "ok",
+        "namespace": "{{cookiecutter.plugin_namespace}}",
+        "argv": argv
+    })
+}
+
+pub fn help_text() -> &'static str {
+    "Usage: {{cookiecutter.plugin_namespace}} [ARGS]\n\nRuns the {{cookiecutter.project_name}} Rust plugin."
 }

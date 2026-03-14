@@ -157,8 +157,12 @@ fn template_docs_reference_current_rendering_and_install_flow() {
     }
     let rust_readme = read_repo_file("templates/plugins-rs/README.md");
     assert!(
-        rust_readme.to_ascii_lowercase().contains("placeholder bridge stub"),
-        "rust template docs must clarify that the generated bridge is only a starting stub"
+        rust_readme.contains("plugin-entrypoint"),
+        "rust template docs must describe the executable entrypoint"
+    );
+    assert!(
+        rust_readme.to_ascii_lowercase().contains("cargo"),
+        "rust template docs must describe the cargo-backed execution model"
     );
 }
 
@@ -174,8 +178,12 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
     ));
     assert!(
-        rust_rendered.to_ascii_lowercase().contains("placeholder bridge stub"),
-        "rendered rust project README must clarify that plugin.py is only a starting stub"
+        rust_rendered.contains("./plugin-entrypoint --help"),
+        "rendered rust project README must document the executable entrypoint"
+    );
+    assert!(
+        rust_rendered.to_ascii_lowercase().contains("cargo"),
+        "rendered rust project README must describe the cargo-backed runtime"
     );
 }
 
@@ -188,7 +196,7 @@ fn template_manifests_match_current_plugin_contract() {
         ),
         (
             "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin.manifest.json",
-            PluginKind::Delegated,
+            PluginKind::ExternalExec,
         ),
     ] {
         let manifest: PluginManifestV2 =
@@ -197,7 +205,12 @@ fn template_manifests_match_current_plugin_contract() {
         assert_eq!(manifest.schema_version, "v2");
         assert_eq!(manifest.manifest_version, "v2");
         assert_eq!(manifest.kind, expected_kind);
-        assert_eq!(manifest.entrypoint, "plugin:main");
+        let expected_entrypoint = if expected_kind == PluginKind::ExternalExec {
+            "plugin-entrypoint"
+        } else {
+            "plugin:main"
+        };
+        assert_eq!(manifest.entrypoint, expected_entrypoint);
         assert!(manifest.aliases.is_empty());
         assert!(manifest.capabilities.is_empty());
         assert_eq!(manifest.namespace, Namespace::new("testplug").expect("valid namespace"));

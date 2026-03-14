@@ -3,10 +3,15 @@ name = "{{cookiecutter.crate_name}}"
 version = "{{cookiecutter.plugin_version}}"
 edition = "{{cookiecutter.rust_edition}}"
 license = "Apache-2.0"
-description = "Rust core for {{cookiecutter.project_name}} Bijux plugin"
+description = "Rust executable for {{cookiecutter.project_name}} Bijux plugin"
 
 [lib]
 name = "{{cookiecutter.crate_name}}"
 path = "src/lib.rs"
 
+[[bin]]
+name = "{{cookiecutter.crate_name}}"
+path = "src/main.rs"
+
 [dependencies]
+serde_json = "1"

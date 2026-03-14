@@ -111,12 +111,24 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
         &fs::read_to_string(rs_dir.join("plugin.manifest.json")).expect("rs manifest"),
     )
     .expect("parse rs manifest");
-    assert_eq!(rs_manifest["kind"], "delegated");
-    assert_eq!(rs_manifest["entrypoint"], "plugin:main");
+    assert_eq!(rs_manifest["kind"], "external-exec");
+    assert_eq!(rs_manifest["entrypoint"], "plugin-entrypoint");
     assert_eq!(rs_manifest["version"], "0.1.0");
     assert_eq!(rs_manifest["compatibility"]["min_inclusive"], SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE);
     assert_eq!(rs_manifest["compatibility"]["max_exclusive"], "1.0.0");
-    assert!(rs_dir.join("plugin.py").exists(), "rust scaffold must emit delegated shim");
+    assert!(rs_dir.join("Cargo.toml").exists(), "rust scaffold must emit a Cargo package");
+    assert!(rs_dir.join("plugin-entrypoint").exists(), "rust scaffold must emit an entrypoint");
+    assert!(rs_dir.join("src/main.rs").exists(), "rust scaffold must emit a Rust binary");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        let mode = fs::metadata(rs_dir.join("plugin-entrypoint"))
+            .expect("entrypoint metadata")
+            .permissions()
+            .mode();
+        assert_ne!(mode & 0o111, 0, "rust scaffold entrypoint must be executable");
+    }
 }
 
 #[test]
@@ -224,7 +236,7 @@ fn fuzz_plugin_reserved_name_error_rendering_is_stable() {
     let plugins = root.join("plugins");
     fs::create_dir_all(&plugins).expect("plugins dir");
 
-    for reserved in ["cli", "dev", "help", "atlas"] {
+    for reserved in ["cli", "help", "plugins", "atlas"] {
         let target = root.join(format!("reserved-{reserved}"));
         let out = run(
             &[

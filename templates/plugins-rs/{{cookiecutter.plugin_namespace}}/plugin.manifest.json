@@ -8,8 +8,8 @@
     "max_exclusive": "{{cookiecutter.cli_max}}"
   },
   "namespace": "{{cookiecutter.plugin_namespace}}",
-  "kind": "delegated",
+  "kind": "external-exec",
   "aliases": [],
-  "entrypoint": "plugin:main",
+  "entrypoint": "plugin-entrypoint",
   "capabilities": []
 }

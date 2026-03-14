@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use crate::contracts::known_bijux_tool_namespaces;
+use crate::contracts::{known_bijux_tool_namespaces, official_product_namespaces};
 
 /// Registry schema version.
 pub const REGISTRY_VERSION: &str = "1";
@@ -18,5 +18,6 @@ pub fn is_reserved_namespace(namespace: &str, additional: &[&str]) -> bool {
     RESERVED_NAMESPACES.contains(&namespace)
         || CORE_NAMESPACES.contains(&namespace)
         || known_bijux_tool_namespaces().contains(&namespace)
+        || official_product_namespaces().contains(&namespace)
         || additional.contains(&namespace)
 }
