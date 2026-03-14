@@ -82,11 +82,13 @@ def test_python_module_main_parity_with_runtime_for_version() -> None:
     assert wrapper.stdout.strip() == direct.stdout.strip()
 
 
-def test_python_facade_apis_are_exposed() -> None:
+def test_python_facade_apis_are_exposed(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
     assert isinstance(version(), str)
     assert "root" in command_tree_introspection()
-    assert "config_file" in config_resolution_helpers(str(Path.home()))
-    assert "plugins_dir" in install_path_helpers(str(Path.home()))
+    assert "config_file" in config_resolution_helpers(str(home))
+    assert "plugins_dir" in install_path_helpers(str(home))
     assert plugin_registry_inspection("/tmp/non-existing-registry.json")["version"] == "1"
 
 
@@ -143,8 +145,10 @@ def test_plugin_and_repl_startup_parity_smoke() -> None:
     assert wrapped_repl.strip() == direct_repl.stdout.strip()
 
 
-def test_config_precedence_helpers_and_alias_apis() -> None:
-    paths = config_resolution_helpers(str(Path.home()))
+def test_config_precedence_helpers_and_alias_apis(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    paths = config_resolution_helpers(str(home))
     assert paths["config_file"].endswith(".env")
     with pytest.deprecated_call(match=r"get_version\(\) is deprecated"):
         assert get_version() == version()
