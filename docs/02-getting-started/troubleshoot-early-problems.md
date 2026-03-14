@@ -58,7 +58,8 @@ command-level problems.
 - a wrapper script or shell cache still points at an older binary
 - automation expects text output to stay parser-friendly
 - the workflow assumes plugin isolation that Bijux does not provide
-- the environment is outside the supported platform envelope
+- the environment is outside the supported platform envelope, including current
+  Windows hosts
 
 ## When To Go Deeper
 

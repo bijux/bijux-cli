@@ -40,6 +40,11 @@ pipx install bijux-cli
 Windows is not a supported platform today. Do not treat an installation that
 appears to work on Windows as part of the supported contract.
 
+That boundary is intentional and current. The Rust runtime can already handle
+some Windows-specific concerns such as `.exe` discovery and state-path
+resolution, but the built-in Rust plugin scaffold and completion integration
+still assume Linux/macOS host conventions.
+
 ## Virtual Environments
 
 Use a virtual environment when the Python package should stay isolated from the

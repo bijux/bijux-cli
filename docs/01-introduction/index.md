@@ -30,13 +30,15 @@ mindmap
       Scriptable tools
       Plugin-driven command sets
     Limits
-      No Windows support
+      Windows-aware internals, unsupported host
       No plugin sandbox
 ```
 
 The mindmap is the short summary of what this section establishes: who owns the
 runtime today, how command execution behaves, where the project fits well, and
-which limits you should carry forward into the rest of the docs.
+which limits you should carry forward into the rest of the docs. The Windows
+note is deliberately precise: some internals are Windows-aware now, but the
+supported host contract still excludes Windows.
 
 ## Read This Set In Order
 

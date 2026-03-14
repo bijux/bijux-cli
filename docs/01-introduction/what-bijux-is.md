@@ -44,7 +44,7 @@ without becoming a separate source of truth for command semantics.
 ## What It Is Not
 
 - not a general-purpose plugin sandbox
-- not a Windows-first CLI framework
+- not yet a supported Windows host runtime
 - not a multi-runtime architecture where Python and Rust diverge by design
 - not a promise that every internal crate boundary is stable for downstream use
 
@@ -52,7 +52,9 @@ without becoming a separate source of truth for command semantics.
 
 Bijux is strongest when you want a command surface that stays scriptable as it
 grows. It is weaker if you need a fully sandboxed extension model or broad
-platform support beyond POSIX environments.
+platform support today. The Rust runtime has gained some Windows-aware install
+and path handling, but the supported host contract still stops at Linux and
+macOS until the remaining POSIX-only product edges are removed.
 
 ## Read Next
 

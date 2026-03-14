@@ -51,6 +51,11 @@ Bijux is a weak fit when you need:
 - release quality is judged from live tests and maintainer checks, not from
   checked-in artifact snapshots
 
+The Windows limit is about the supported host contract, not about pretending no
+Windows-aware code exists. The current runtime can resolve Windows-style binary
+names and state paths, but the shipped plugin scaffold and completion guidance
+still assume Linux/macOS host behavior.
+
 ## Current Guarantees
 
 - the repository treats the Rust runtime as the behavioral source of truth
