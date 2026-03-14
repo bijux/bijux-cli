@@ -28,7 +28,10 @@ and installs `crates/bijux-cli-python` in editable mode with dev dependencies.
 
 Workspace package manifests stay on the current development line. Tagged release
 publishes stamp the exact tag version into a temporary release tree instead of
-committing release-only version edits back into the working branch.
+committing release-only version edits back into the working branch. Untagged
+checkout builds still derive runtime identity from the latest real `v*` tag in
+Git, so the source tree can move ahead for the next release without claiming
+that newer release from `bijux version`.
 
 ## Commands
 
@@ -77,6 +80,14 @@ cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
 cargo run -q -p bijux-dev-cli -- docs-audit --format json --no-pretty
 ```
 
+If your change touches release identity, installation guidance, or version
+documentation, also verify the built runtime directly:
+
+```bash
+cargo build -p bijux-cli --bin bijux
+./artifacts/rust/target/debug/bijux version --format json --no-pretty
+```
+
 ## Pull Requests
 
 Before opening a PR, run the checks relevant to your change.
@@ -90,7 +101,19 @@ make test
 make docs-check
 ```
 
+For release-facing changes, prefer this fuller pass before asking for review:
+
+```bash
+make all
+```
+
 Keep PRs focused and small enough to review.
+
+Runtime and maintainer surfaces must stay separate:
+
+- `bijux` documents only the runtime namespace shipped to end users
+- `bijux-dev-cli` remains the workspace maintainer control plane
+- install aliases such as `bijux install dev-cli` resolve package names; they do not make maintainer commands part of the runtime command surface
 
 ## Docs Honesty Rules
 
@@ -103,6 +126,10 @@ Public docs are part of the product contract. When code changes behavior:
 
 If a command is still partial, internal, workspace-only, or unsupported, say
 that directly.
+
+When describing release posture, use the latest real git tag or published
+artifact as the release source of truth instead of the bumped workspace manifest
+line by itself.
 
 ## Evidence Rules
 

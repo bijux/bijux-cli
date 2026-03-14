@@ -1,6 +1,6 @@
 # Security Policy
 
-Last updated: 2026-03-11
+Last updated: 2026-03-14
 
 We use coordinated disclosure. Please report security issues privately.
 
@@ -13,8 +13,10 @@ This repository is explicit about one important trust boundary:
 ## Supported Versions
 
 Security fixes are applied to the latest released `bijux-cli` runtime only.
-Older versions may not receive patches. Development branches and local
-checkouts are reviewed on a best-effort basis.
+For this policy, "released" means an official tagged release with published
+artifacts from this repository. Older versions may not receive patches.
+Development branches, untagged local checkouts, and workspace-only maintainer
+tooling are reviewed on a best-effort basis.
 
 ## Reporting a Vulnerability
 
@@ -26,6 +28,8 @@ Fallback:
 
 Please include:
 - affected version and install method
+- whether the issue was observed on an official tagged release, a local checkout,
+  or a workspace build
 - operating system and runtime details
 - clear reproduction steps
 - expected impact
@@ -52,12 +56,14 @@ We will publish a GitHub security advisory when appropriate.
 
 In scope:
 - this repository
-- official release artifacts published from this repository
-- the runtime, Python compatibility package, and repository-owned docs or build flows
+- official release artifacts published from tagged releases in this repository
+- the runtime, Python compatibility package, and repository-owned docs or build flows when they affect supported release artifacts on Linux or macOS
 
 Out of scope:
 - vulnerabilities in third-party plugins not maintained here
 - the trust or behavior of locally installed untrusted plugins
+- unsupported Windows runtime behavior
+- untagged local checkout version strings or source-tree-only release preparation state by themselves
 - social engineering and physical attacks
 - denial-of-service load testing
 - third-party infrastructure outside this project
@@ -68,3 +74,5 @@ Out of scope:
 - Non-security questions should go to regular GitHub issues.
 - If the report depends on a third-party plugin, say whether the issue is in the
   runtime host or in the plugin itself.
+- A host-side bypass of the documented plugin trust boundary is in scope; the
+  ordinary risk of installing an untrusted plugin is not.
