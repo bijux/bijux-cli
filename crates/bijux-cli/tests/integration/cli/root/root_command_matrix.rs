@@ -199,6 +199,7 @@ fn help_snapshot_exists_for_every_root_command() {
         "config",
         "plugins",
         "history",
+        "install",
         "memory",
         "repl",
         "completion",
@@ -221,6 +222,7 @@ fn exit_code_and_stream_discipline_for_root_commands() {
         &["docs"],
         &["audit"],
         &["sleep", "0"],
+        &["install", "cli", "--dry-run"],
     ];
     for args in success_cases {
         let out = run(args);
@@ -245,6 +247,7 @@ fn machine_readable_root_commands_support_json_and_yaml() {
         &["audit"],
         &["sleep", "0"],
         &["history"],
+        &["install", "cli", "--dry-run"],
         &["memory"],
         &["plugins", "list"],
     ];
@@ -267,8 +270,15 @@ fn machine_readable_root_commands_support_json_and_yaml() {
 
 #[test]
 fn quiet_mode_is_supported_for_relevant_root_commands() {
-    let relevant: &[&[&str]] =
-        &[&["status"], &["doctor"], &["inspect"], &["docs"], &["audit"], &["sleep", "0"]];
+    let relevant: &[&[&str]] = &[
+        &["status"],
+        &["doctor"],
+        &["inspect"],
+        &["docs"],
+        &["audit"],
+        &["sleep", "0"],
+        &["install", "cli", "--dry-run"],
+    ];
     for args in relevant {
         let mut quiet_args = args.to_vec();
         quiet_args.insert(0, "--quiet");

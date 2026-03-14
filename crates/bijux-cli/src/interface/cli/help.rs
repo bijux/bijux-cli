@@ -223,6 +223,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
     match path {
         [] => vec![
             "bijux status".to_string(),
+            "bijux install atlas --dry-run".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
             "bijux plugins list".to_string(),
@@ -237,6 +238,11 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ["audit"] => vec!["bijux audit".to_string(), "bijux audit --format json".to_string()],
         ["docs"] => vec!["bijux docs".to_string(), "bijux docs --format json".to_string()],
         ["sleep"] => vec!["bijux sleep 1".to_string(), "bijux sleep 250ms".to_string()],
+        ["install"] => vec![
+            "bijux install cli --dry-run".to_string(),
+            "bijux install dev-cli --dry-run".to_string(),
+            "bijux install atlas --dry-run".to_string(),
+        ],
         ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],
         ["config"] => vec![

@@ -9,8 +9,8 @@ mod suggest;
 use anyhow::Result;
 use serde_json::json;
 
-use crate::contracts::known_bijux_tool;
-use crate::contracts::OutputFormat;
+use crate::contracts::{known_bijux_tool, OutputFormat};
+use crate::interface::cli::handlers::install as install_handler;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
@@ -369,6 +369,25 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             }
         };
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: usage });
+    }
+
+    if let Some(result) =
+        install_handler::try_run(&intent.normalized_path, argv, &intent.global_flags)?
+    {
+        let command_joined = intent.normalized_path.join(" ");
+        let (command, command_truncated) = bounded_command(&command_joined);
+        telemetry.record(
+            "dispatch.route.completed",
+            json!({
+                "command": command,
+                "command_truncated": command_truncated,
+                "status": if result.exit_code == 0 { Some("ok") } else { Some("error") },
+                "status_truncated": false,
+                "exit_code": result.exit_code,
+                "exit_kind": crate::shared::telemetry::exit_code_kind(result.exit_code),
+            }),
+        );
+        return Ok(result);
     }
 
     let is_unknown = !is_known_catalog_route(&intent.normalized_path);

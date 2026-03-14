@@ -20,6 +20,11 @@
     "routed": true
   },
   {
+    "argv": ["bijux", "install", "atlas", "--dry-run"],
+    "expected_normalized": ["install"],
+    "routed": true
+  },
+  {
     "argv": ["bijux", "cli", "status"],
     "expected_normalized": ["cli", "status"],
     "routed": true

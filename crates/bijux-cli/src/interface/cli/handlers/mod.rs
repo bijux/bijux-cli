@@ -4,6 +4,7 @@
 pub(crate) mod cli;
 pub(crate) mod config;
 pub(crate) mod history;
+pub(crate) mod install;
 pub(crate) mod memory;
 pub(crate) mod plugins;
 pub(crate) mod root;

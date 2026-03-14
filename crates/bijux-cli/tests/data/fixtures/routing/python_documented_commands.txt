@@ -4,12 +4,12 @@ version
 repl
 inspect
 completion
-atlas
 audit
 config
 docs
 help
 history
+install
 memory
 plugins
 sleep

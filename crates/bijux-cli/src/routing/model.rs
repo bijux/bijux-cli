@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
 pub const ROOT_RUNTIME_COMMANDS: &[&str] =
-    &["status", "audit", "docs", "sleep", "doctor", "version"];
+    &["status", "audit", "docs", "sleep", "doctor", "version", "install"];
 pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
 pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
@@ -82,6 +82,7 @@ fn build_built_in_route_paths() -> Vec<String> {
         "audit".to_string(),
         "docs".to_string(),
         "sleep".to_string(),
+        "install".to_string(),
         "config".to_string(),
         "config list".to_string(),
         "history".to_string(),

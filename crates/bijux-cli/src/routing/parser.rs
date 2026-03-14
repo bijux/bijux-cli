@@ -315,6 +315,11 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("sleep").arg(Arg::new("duration").num_args(1)))
         .subcommand(Command::new("doctor"))
         .subcommand(Command::new("version"))
+        .subcommand(
+            Command::new("install")
+                .arg(Arg::new("target").num_args(1))
+                .arg(Arg::new("dry-run").long("dry-run").action(ArgAction::SetTrue)),
+        )
         .subcommand(config_group)
         .subcommand(plugins_group)
         .subcommand(Command::new("repl"))
