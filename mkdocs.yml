@@ -353,10 +353,6 @@ extra:
     domain: bijux.github.io
   copyright:
     text: "© 2026 Bijan Mousavi"
-  release_tag: !ENV [RELEASE_TAG, "main"]
-
-extra_css:
-  - assets/styles/extra.css
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js

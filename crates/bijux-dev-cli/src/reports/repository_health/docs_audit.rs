@@ -102,6 +102,6 @@ mod tests {
         assert!(site_assets
             .iter()
             .filter_map(Value::as_str)
-            .any(|path| path == "docs/assets/styles/extra.css"));
+            .any(|path| path == "docs/assets/javascripts/mermaid-init.js"));
     }
 }

@@ -46,9 +46,6 @@ jobs:
       - name: Install documentation toolchain
         run: make gh-docs-install
 
-      - name: Export release tag
-        run: make gh-docs-export-release-tag
-
       - name: Generate release artifact summary pages
         run: make docs-artifact-pages
 

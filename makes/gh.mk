@@ -11,7 +11,7 @@ GH_RELEASE_CI_LOOKBACK_SECONDS ?= 120
 GH_RELEASE_CI_APPEARANCE_GRACE_SECONDS ?= 20
 
 .PHONY: gh-fmt gh-lint gh-security gh-test \
-	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-export-release-tag gh-docs-configure-git \
+	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-configure-git \
 	gh-release-plan-pypi gh-release-plan-crates gh-release-require-cargo-token gh-release-wait-for-ci
 
 ##@ GitHub
@@ -25,15 +25,6 @@ gh-test: install test ## Run GitHub test suites
 
 gh-docs-install: install docs-require ## Install the documentation toolchain for GitHub Actions
 	@"$(MKDOCS_BIN)" --version
-
-gh-docs-export-release-tag: ## Export the release tag for documentation builds
-	@$(call require_var,GITHUB_ENV)
-	@set -euo pipefail; \
-	tag="main"; \
-	if [[ "$${GITHUB_REF:-}" == refs/tags/* ]]; then \
-		tag="$${GITHUB_REF_NAME}"; \
-	fi; \
-	echo "RELEASE_TAG=$${tag}" >> "$${GITHUB_ENV}"
 
 docs-artifact-pages: ## Generate documentation pages that summarize release artifacts
 	@set -euo pipefail; \
