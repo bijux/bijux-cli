@@ -21,32 +21,46 @@ flowchart LR
     D --> B
 ```
 
-## Success Envelope Contract
+## Public CLI Success Contract
 
-Machine-readable success responses use this shape:
+Ordinary runtime commands do not share one universal success wrapper.
 
-- `status`: fixed string `ok`
-- `data`: command-specific payload object or array
-- `meta.command.segments`: ordered canonical command namespace segments
-- `meta.timestamp`: RFC 3339 timestamp
-- `meta.version`: envelope version identifier
+Examples:
 
-`--pretty` affects rendering only, not field meaning.
+- `bijux status` returns a runtime snapshot object
+- `bijux audit` returns audit checks and issues
+- `bijux docs` returns a documentation inventory
 
-## Error Envelope Contract
+The stable public rule is:
 
-Machine-readable error responses use this shape:
+- successful machine-readable payloads go to `stdout`
+- the payload shape is command-specific
+- `--pretty` affects rendering only, not field meaning
+
+## Public CLI Error Contract
+
+The normal top-level CLI failure shape is a compact error object such as:
 
 - `status`: fixed string `error`
-- `error.code`: stable symbolic code
-- `error.message`: user-readable summary
-- `error.category`: one of `usage`, `validation`, `plugin`, `internal`
-- `error.details`: optional structured context
-- `meta.command.segments`: ordered canonical command namespace segments
-- `meta.timestamp`: RFC 3339 timestamp
-- `meta.version`: envelope version identifier
+- `code`: numeric exit-compatible error code
+- `message`: user-readable summary
+- `command`: normalized command string when known
 
-Exact message wording is not frozen, but the envelope semantics are.
+Commands may add more fields, but they must not drop these core fields from the
+standard CLI error surface.
+
+## Schema Envelope Contract
+
+The repository also keeps `output-envelope-v1` and `error-envelope-v1` schemas.
+Those remain contract artifacts for compatibility and kernel-level envelope
+behavior, but they are not the default wrapper around ordinary runtime commands
+such as `status`, `audit`, `docs`, or `plugins list`.
+
+When those schema envelopes are emitted:
+
+- `meta.command.segments` records canonical command segments
+- `meta.timestamp` is a Unix timestamp in milliseconds encoded as a string
+- `meta.version` is the envelope version identifier
 
 ## Stream Routing Rules
 

@@ -41,6 +41,7 @@ The current plugin model includes:
 - compatibility ranges
 - trust labels
 - local entrypoint resolution
+- routed execution for enabled installed plugin namespaces
 - reserved-name and alias collision checks
 - install, info, inspect, check, enable, disable, uninstall, scaffold, doctor,
   reserved-names, where, explain, and schema commands
@@ -88,9 +89,11 @@ The plugin system does not currently claim:
 
 - sandboxing
 - a stable in-process native ABI
-- automatic execution of arbitrary installed plugin namespaces as runtime commands
+- that every plugin kind shares one identical stdout and rendering model
 
 The plugin system does claim that installation and health reporting are real runtime responsibilities, not documentation-only promises.
+Installed plugin namespaces are executable runtime routes, but they still obey
+their declared kind and current registry health.
 
 ## Why The Design Is Conservative
 

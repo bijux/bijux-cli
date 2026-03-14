@@ -45,7 +45,10 @@ This split exists because a development checkout should not claim to be the exac
 `bijux-cli` is the runtime crate.
 
 `bijux-dev-cli` is the maintainer diagnostics crate. It is a workspace-owned
-maintainer package, not a published public install channel.
+maintainer package. The current workspace manifest keeps it `publish = false`,
+so runtime alias resolution such as `bijux install dev-cli --dry-run` should be
+read as package-name resolution, not as a guarantee that a public crates.io
+release channel exists.
 
 ### Python Package
 

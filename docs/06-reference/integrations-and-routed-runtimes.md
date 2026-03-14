@@ -54,8 +54,11 @@ The durable local plugin contract is based on `plugin.manifest.json`.
 - compatibility is validated from `compatibility.min_inclusive` and
   `compatibility.max_exclusive`
 - duplicate namespaces and alias conflicts are rejected during install
-- installed plugin namespaces are not currently executed as routed
+- enabled installed plugin namespaces are executed as routed
   `bijux <plugin-namespace> ...` subcommands
+- `python` and `delegated` plugins return structured payloads through the host
+  renderer, while `external-exec` plugins keep their own stdout, stderr, and
+  exit-code contract
 
 ## Python Facade APIs
 
@@ -97,6 +100,7 @@ Examples:
 ```bash
 bijux-atlas --help
 bijux-dev-atlas --help
+# from a workspace checkout
 bijux-dev-cli list-products --format json --no-pretty
 ```
 

@@ -27,7 +27,7 @@ flowchart LR
 | `cli` | Canonical runtime namespace for explicit subcommands such as `paths` and `self-test` |
 | `audit` | Diagnostics audit report |
 | `config` | Configuration management |
-| `docs` | Documentation tools |
+| `docs` | Documentation inventory |
 | `doctor` | Environment diagnostics |
 | `help` | Global help |
 | `history` | REPL history tools |
@@ -84,10 +84,14 @@ When using `bijux repl`, the documented session controls are:
 - `:set trace on|off`
 - `:set quiet on|off`
 - `:set format json|yaml|text`
-- `:plugin reload`
 - `:exit`
 
 ## Structured Output Notes
+
+### `status`
+
+- structured output returns the current runtime, install, state, and plugin summary
+- current JSON shape includes `status`, `runtime`, `state`, `plugins`, `install`, and `issues`
 
 ### `docs`
 
@@ -109,6 +113,7 @@ When using `bijux repl`, the documented session controls are:
 - accepts `cli`, `dev-cli`, `<product>`, and `dev-<product>` target aliases
 - `--dry-run` prints or returns the exact `cargo install --locked ...` command
 - product aliases resolve from `contracts/official_product_namespace_registry.json`
+- alias resolution does not by itself guarantee that every target is published on every install channel
 
 ### `version`
 
