@@ -395,10 +395,9 @@ fn docs_inventory_report_at(workspace_root: &Path) -> Value {
     .collect::<Vec<_>>();
     let missing_references = references
         .iter()
-        .filter_map(|reference| {
-            (reference.get("exists") != Some(&json!(true))).then(|| {
-                reference.get("path").and_then(Value::as_str).unwrap_or_default().to_string()
-            })
+        .filter(|reference| reference.get("exists") != Some(&json!(true)))
+        .map(|reference| {
+            reference.get("path").and_then(Value::as_str).unwrap_or_default().to_string()
         })
         .collect::<Vec<_>>();
     let docs_available = docs_root.exists();
