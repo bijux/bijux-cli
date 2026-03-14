@@ -5,8 +5,13 @@ description = "Core Bijux command-line runtime and routing surface."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage = "https://github.com/bijux/bijux-cli"
+documentation = "https://docs.rs/bijux-cli"
 authors.workspace = true
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["cli", "automation", "plugins", "repl", "routing"]
+categories = ["command-line-interface", "development-tools", "development-tools::build-utils"]
 
 [lib]
 name = "bijux_cli"
