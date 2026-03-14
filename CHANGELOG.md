@@ -17,18 +17,23 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - Rust-owned runtime crates for the end-user binary (`bijux`), the Python bridge package, and the workspace-only maintainer control plane (`bijux-dev-cli`)
-- Typed command routing, structured output contracts, schema snapshots, and parity coverage across the binary, core runtime, Python bridge, and routed REPL surface
+- Typed command routing, execution-kernel contracts, structured output schemas, and parity coverage across the binary, core runtime, Python bridge, and routed REPL surface
+- Runtime support for config, history, memory, install, version, completion, and state-doctor behavior that is backed by focused parity, corruption, and resilience coverage
 - Shipped plugin lifecycle management with routed execution, install/inspect/check/explain/enable/disable/uninstall flows, reserved-namespace enforcement, and Cookiecutter-backed Python and Cargo templates
 - Interactive REPL execution with shared CLI semantics, history compatibility, completion, diagnostics, and hostile-session resilience coverage
-- Installation diagnostics, first-run state setup, explicit shell completion output, and package alias resolution for official Bijux runtime and maintainer packages
+- Installation diagnostics, first-run state setup, explicit shell completion output, official-product install alias resolution, and stable state-path reporting
+- Python packaging through the crate-owned `bijux-cli-python` surface with maturin/pyo3 bindings, native facade fallbacks, and bridge-vs-runtime parity checks
+- Opt-in structured telemetry and bounded trace diagnostics for runtime and maintainer execution paths
 - Maintainer command contracts and evidence reports for runtime identity, route audits, parity, repository health, docs audits, and publish-time contract assets
 
 ### Changed
 - Migrated the repository from the older Python-first layout to a Rust-first workspace with `crates/`, `configs/`, `contracts/`, `makes/`, and canonical docs sections
 - Reduced the public root runtime surface to shipped commands, moved maintainer automation behind `bijux-dev-cli`, and kept the `cli` namespace as the canonical compatibility surface
 - Standardized runtime identity so checkout builds derive from the latest real git tag line while release workflows stamp exact tagged versions into release artifacts
-- Reworked plugin compatibility handling, scaffold defaults, and template guidance around the current manifest contract and pre-1.0 host boundaries
-- Rewrote public docs, contributor guidance, and security policy to match the current runtime, plugin trust boundary, and release process more explicitly
+- Reworked plugin compatibility handling, manifest contracts, scaffold defaults, and template guidance around the current plugin runtime and pre-1.0 host boundaries
+- Consolidated release engineering around stamped release trees, pinned workflow/toolchain inputs, stable package metadata, and explicit publish gates for crates.io and PyPI artifacts
+- Rebuilt the public docs canon, changelog policy, contributor guidance, and security policy around current runtime behavior instead of historical Python-era assumptions
+- Moved maintainer evidence generation from legacy scripts into `bijux-dev-cli` report/query surfaces and contract-driven documentation publishing
 
 ### Removed
 - Legacy `bijux-cli` compatibility executable naming; `bijux` is now the only runtime command name
