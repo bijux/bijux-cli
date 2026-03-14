@@ -361,6 +361,25 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
 }
 
 #[test]
+fn template_projects_ship_local_ignore_rules() {
+    let py_ignore = read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/.gitignore");
+    assert!(
+        py_ignore.contains("__pycache__/"),
+        "python template should ignore interpreter cache directories"
+    );
+    assert!(
+        py_ignore.contains(".venv/"),
+        "python template should ignore local virtual environments"
+    );
+
+    let rust_ignore = read_repo_file("templates/plugins-rs/{{cookiecutter.plugin_namespace}}/.gitignore");
+    assert!(
+        rust_ignore.contains("/target/"),
+        "rust template should ignore the local Cargo target directory"
+    );
+}
+
+#[test]
 fn template_tree_does_not_ship_legacy_plugin_json_files() {
     let template_root = repo_root().join("templates");
     for path in walk_files(&template_root) {

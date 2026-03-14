@@ -25,6 +25,7 @@ Generated files:
 - `plugin.manifest.json`: current plugin contract consumed by install and diagnostics commands.
 - `plugin.py`: delegated Python entrypoint exposed as `plugin:main`.
 - `pyproject.toml`: optional local packaging metadata for the rendered project.
+- `.gitignore`: ignores local Python cache and virtual environment state.
 
 Keep the plugin namespace stable after release, update the compatibility range when supported host
 versions change, and add tests before sharing the plugin. The default template values start new

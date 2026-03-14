@@ -27,6 +27,7 @@ Generated files:
 - `plugin-entrypoint`: executable manifest entrypoint that builds the local debug binary when Cargo
   inputs changed and then runs the compiled plugin.
 - `Cargo.toml`, `src/lib.rs`, and `src/main.rs`: Cargo-backed Rust implementation and CLI surface.
+- `.gitignore`: ignores the local Cargo build directory.
 
 Run the generated plugin locally with:
 

@@ -35,8 +35,12 @@ bijux plugins explain my-plugin
 bijux plugins schema
 ```
 
-These templates are rendered with Cookiecutter. The built-in `bijux plugins scaffold` command does
-not load custom templates.
+These templates are rendered with Cookiecutter. Use them when you want a repository-shaped plugin
+project with authoring files such as `README.md`, packaging metadata, and ignore rules. The built-in
+`bijux plugins scaffold` command stays intentionally minimal and does not load custom templates.
+
+The Rust template keeps local development honest: `plugin-entrypoint` rebuilds the debug binary on
+first use or after source drift, then runs the compiled plugin.
 
 Keep the rendered plugin namespace stable after release, update the compatibility window when host
 support changes, and avoid namespaces reserved by `bijux-cli` or official Bijux tools.

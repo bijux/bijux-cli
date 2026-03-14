@@ -192,6 +192,9 @@ bijux plugins scaffold python my-plugin --path ./my-plugin --force
 # Scaffold a Cargo-backed Rust plugin
 bijux plugins scaffold rust my-rust-plugin --path ./my-rust-plugin --force
 
+# First Rust execution builds the local debug binary if needed
+./my-rust-plugin/plugin-entrypoint --help
+
 # Install and explore
 bijux plugins install ./my-plugin/plugin.manifest.json
 bijux plugins list

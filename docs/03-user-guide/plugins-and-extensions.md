@@ -30,6 +30,8 @@ bijux plugins inspect
 bijux plugins inspect NAMESPACE
 bijux plugins install ./plugin.manifest.json
 bijux plugins check NAMESPACE
+bijux plugins enable NAMESPACE
+bijux plugins disable NAMESPACE
 bijux plugins doctor
 bijux plugins explain
 bijux plugins explain NAMESPACE

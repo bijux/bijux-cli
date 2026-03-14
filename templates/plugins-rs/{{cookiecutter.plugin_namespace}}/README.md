@@ -7,6 +7,7 @@ Cargo-backed Rust plugin scaffold for Bijux.
   when Cargo inputs changed and then runs the compiled plugin.
 - `src/lib.rs` contains the plugin logic.
 - `src/main.rs` exposes the compiled binary surface that `plugin-entrypoint` runs.
+- `.gitignore` ignores the local Cargo build directory.
 
 Install locally with:
 
