@@ -6,8 +6,6 @@ use std::path::{Component, Path, PathBuf};
 use anyhow::Result;
 use semver::{Prerelease, Version};
 
-use crate::api::version::runtime_semver;
-
 use super::{
     is_reserved_namespace, parse_manifest_v2, validate_manifest, validate_namespace_text,
     RESERVED_NAMESPACES,
@@ -21,12 +19,12 @@ fn is_safe_scaffold_path(path: &Path) -> bool {
 }
 
 fn scaffold_compatibility_window() -> Result<(String, String)> {
-    let runtime = Version::parse(runtime_semver())
+    let release_line = Version::parse(env!("CARGO_PKG_VERSION"))
         .map_err(|error| anyhow::anyhow!("runtime semver is invalid: {error}"))?;
 
-    let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
-    if !runtime.pre.is_empty() {
-        let channel = runtime
+    let mut min = Version::new(release_line.major, release_line.minor, release_line.patch);
+    if !release_line.pre.is_empty() {
+        let channel = release_line
             .pre
             .as_str()
             .split('.')
@@ -36,10 +34,10 @@ fn scaffold_compatibility_window() -> Result<(String, String)> {
             .map_err(|error| anyhow::anyhow!("runtime prerelease channel is invalid: {error}"))?;
     }
 
-    let max = if runtime.major == 0 {
-        Version::new(0, runtime.minor.saturating_add(1), 0)
+    let max = if release_line.major == 0 {
+        Version::new(0, release_line.minor.saturating_add(1), 0)
     } else {
-        Version::new(runtime.major.saturating_add(1), 0, 0)
+        Version::new(release_line.major.saturating_add(1), 0, 0)
     };
     Ok((min.to_string(), max.to_string()))
 }
@@ -150,7 +148,7 @@ pub(crate) fn scaffold_plugin_layout(
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
     let manifest = parse_manifest_v2(&manifest_text)?;
-    let _ = validate_manifest(manifest, runtime_semver(), RESERVED_NAMESPACES)?;
+    let _ = validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
 
     Ok(manifest_path)
 }

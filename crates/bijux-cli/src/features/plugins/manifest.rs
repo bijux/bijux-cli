@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn validate_manifest_rejects_invalid_compatibility_windows() {
         let mut manifest = sample_manifest();
-        manifest.compatibility.max_exclusive = Some("0.2.0".to_string());
+        manifest.compatibility.max_exclusive = Some(current_plugin_host_floor());
         let host = current_plugin_host_floor();
         let error = validate_manifest(manifest, &host, &[]).expect_err("compatibility");
         assert_eq!(error.to_string(), "plugin manifest field invalid: compatibility.max_exclusive");

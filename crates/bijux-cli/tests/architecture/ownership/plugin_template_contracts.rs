@@ -5,14 +5,13 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use bijux_cli::api::version::runtime_semver;
 use bijux_cli::contracts::{known_bijux_tool_namespaces, Namespace, PluginKind, PluginManifestV2};
 use semver::{Prerelease, Version};
 
 const TEMPLATE_CONTRACT_VERSION: &str = "v2";
 
 fn template_compatibility_min_inclusive() -> String {
-    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
     let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
     if !runtime.pre.is_empty() {
         let channel = runtime.pre.as_str().split('.').next().expect("runtime prerelease channel");
@@ -22,11 +21,22 @@ fn template_compatibility_min_inclusive() -> String {
 }
 
 fn template_compatibility_max_exclusive() -> String {
-    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
     if runtime.major == 0 {
         Version::new(0, runtime.minor + 1, 0).to_string()
     } else {
         Version::new(runtime.major + 1, 0, 0).to_string()
+    }
+}
+
+fn previous_release_host_boundary() -> String {
+    let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
+    if runtime.major == 0 && runtime.minor > 0 {
+        Version::new(0, runtime.minor - 1, 0).to_string()
+    } else if runtime.major > 0 {
+        Version::new(runtime.major - 1, 0, 0).to_string()
+    } else {
+        "0.0.0".to_string()
     }
 }
 
@@ -262,16 +272,17 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(manifest.aliases.is_empty());
         assert!(manifest.capabilities.is_empty());
         assert_eq!(manifest.namespace, Namespace::new("testplug").expect("valid namespace"));
+        let previous_host = previous_release_host_boundary();
         assert!(
-            !manifest.compatibility.supports_host("0.2.0").expect("valid compatibility"),
-            "{path} must not claim support for the published 0.2.0 host"
+            !manifest.compatibility.supports_host(&previous_host).expect("valid compatibility"),
+            "{path} must not claim support for the previous stable host line"
         );
         assert!(
             manifest
                 .compatibility
                 .supports_host(&template_compatibility_min_inclusive())
                 .expect("valid compatibility"),
-            "{path} should support the current post-0.2.0 host floor"
+            "{path} should support the current repository host floor"
         );
     }
 
@@ -310,7 +321,7 @@ fn template_default_release_window_matches_planned_plugin_publish_range() {
         assert_eq!(
             payload["cli_min"],
             template_compatibility_min_inclusive(),
-            "{path} must require the first post-0.2.0 Bijux host line"
+            "{path} must require the current repository host line"
         );
         assert_eq!(
             payload["cli_max"],

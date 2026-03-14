@@ -85,9 +85,13 @@ fn resolve_runtime_versions(workspace_root: &Path, package_version: &str) -> Run
         }
     }
 
-    if let Some(derived) =
+    if let Some(mut derived) =
         describe_git_version(workspace_root).or_else(|| latest_tag_baseline_version(workspace_root))
     {
+        if should_prefer_package_release_line(package_version, &derived.base_semver) {
+            derived.base_semver = normalize_version_string(package_version)
+                .expect("package release line should normalize");
+        }
         return RuntimeBuildVersion {
             semver_version: derived_semver_version(
                 &derived.base_semver,
@@ -254,6 +258,16 @@ fn normalize_version_string(raw: &str) -> Option<String> {
     let without_prefix = trimmed.strip_prefix('v').unwrap_or(trimmed);
     let parsed = Version::parse(without_prefix).ok()?;
     Some(parsed.to_string())
+}
+
+fn should_prefer_package_release_line(package_version: &str, derived_base_semver: &str) -> bool {
+    let package = Version::parse(package_version).ok();
+    let derived = Version::parse(derived_base_semver).ok();
+
+    match (package, derived) {
+        (Some(package), Some(derived)) => package.pre.is_empty() && package > derived,
+        _ => false,
+    }
 }
 
 fn git_commit_abbrev(workspace_root: &Path) -> Option<String> {
