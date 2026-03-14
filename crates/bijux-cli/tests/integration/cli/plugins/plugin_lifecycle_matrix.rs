@@ -43,6 +43,15 @@ fn manifest_path(scaffold_dir: &Path) -> String {
     scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8").to_string()
 }
 
+fn add_alias(manifest_path: &Path, alias: &str) {
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).expect("read manifest"))
+            .expect("parse manifest");
+    manifest["aliases"] = Value::Array(vec![Value::String(alias.to_string())]);
+    fs::write(manifest_path, serde_json::to_string_pretty(&manifest).expect("serialize manifest"))
+        .expect("write manifest");
+}
+
 fn scaffold_and_install(kind: &str, namespace: &str, root: &Path, plugins_dir: &Path) -> String {
     let scaffold_dir = root.join(format!("{namespace}_{kind}_scaffold"));
     run_ok_json(
@@ -151,6 +160,57 @@ fn installed_plugin_route_executes_structured_python_output() {
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
     assert_eq!(payload["status"], "ok");
     assert_eq!(payload["argv"], serde_json::json!(["--help"]));
+}
+
+#[test]
+fn installed_plugin_alias_route_executes_the_canonical_plugin() {
+    let root = tmp_dir("plugin-alias-route");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let scaffold_dir = root.join("alias_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "aliasplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    add_alias(&scaffold_dir.join("plugin.manifest.json"), "alias-short");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    let out = run(&["alias-short", "--help"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stderr.is_empty());
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
+    assert_eq!(payload["status"], "ok");
+    assert_eq!(payload["argv"], serde_json::json!(["--help"]));
+}
+
+#[test]
+fn runtime_does_not_invent_placeholder_plugin_routes() {
+    let root = tmp_dir("no-placeholder-plugin-route");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let out = run(&["community", "status"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
+    assert!(stderr.contains("unknown route") || stderr.contains("Did you mean"));
 }
 
 #[test]

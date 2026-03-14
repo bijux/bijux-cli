@@ -38,6 +38,7 @@ pub enum RouteError {
 pub struct RouteRegistry {
     built_ins: BTreeSet<String>,
     plugin_namespaces: BTreeSet<String>,
+    plugin_aliases: BTreeMap<String, String>,
     aliases: BTreeMap<String, String>,
     reserved: BTreeSet<String>,
 }
@@ -64,7 +65,13 @@ impl Default for RouteRegistry {
         ]);
         reserved.extend(official_product_namespaces().iter().map(std::string::ToString::to_string));
 
-        Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
+        Self {
+            built_ins,
+            plugin_namespaces: BTreeSet::new(),
+            plugin_aliases: BTreeMap::new(),
+            aliases,
+            reserved,
+        }
     }
 }
 
@@ -84,22 +91,54 @@ impl RouteRegistry {
         blocked
     }
 
-    /// Register a plugin namespace with deterministic rejection rules.
-    pub fn register_plugin_namespace(&mut self, raw_namespace: &str) -> Result<(), RouteError> {
+    fn plugin_route_roots(&self) -> BTreeSet<String> {
+        let mut routes = self.plugin_namespaces.clone();
+        routes.extend(self.plugin_aliases.keys().cloned());
+        routes
+    }
+
+    fn validate_plugin_root(&self, raw_namespace: &str) -> Result<String, RouteError> {
         let ns = normalize_namespace(raw_namespace);
         if self.reserved.contains(&ns) {
             return Err(RouteError::Reserved(ns));
         }
 
-        if self.blocked_namespace_roots().contains(&ns) {
+        if self.blocked_namespace_roots().contains(&ns) || self.plugin_route_roots().contains(&ns) {
             return Err(RouteError::Conflict(ns));
         }
 
-        if self.plugin_namespaces.contains(&ns) {
-            return Err(RouteError::Conflict(ns));
-        }
+        Ok(ns)
+    }
 
+    /// Register a plugin namespace with deterministic rejection rules.
+    pub fn register_plugin_namespace(&mut self, raw_namespace: &str) -> Result<(), RouteError> {
+        let ns = self.validate_plugin_root(raw_namespace)?;
         self.plugin_namespaces.insert(ns);
+        Ok(())
+    }
+
+    /// Register a plugin namespace together with routed top-level aliases.
+    pub fn register_plugin_namespace_with_aliases(
+        &mut self,
+        raw_namespace: &str,
+        raw_aliases: &[String],
+    ) -> Result<(), RouteError> {
+        let namespace = self.validate_plugin_root(raw_namespace)?;
+        let mut aliases = BTreeSet::new();
+        for alias in raw_aliases {
+            let normalized = self.validate_plugin_root(alias)?;
+            if normalized == namespace {
+                return Err(RouteError::Conflict(normalized));
+            }
+            if !aliases.insert(normalized.clone()) {
+                return Err(RouteError::Conflict(normalized));
+            }
+        }
+
+        self.plugin_namespaces.insert(namespace.clone());
+        for alias in aliases {
+            self.plugin_aliases.insert(alias, namespace.clone());
+        }
         Ok(())
     }
 
@@ -124,6 +163,10 @@ impl RouteRegistry {
             return Ok(RouteTarget::Plugin(root.to_string()));
         }
 
+        if let Some(namespace) = self.plugin_aliases.get(root) {
+            return Ok(RouteTarget::Plugin(namespace.clone()));
+        }
+
         Err(RouteError::Unknown(rewritten.to_string()))
     }
 
@@ -140,6 +183,9 @@ impl RouteRegistry {
         }
         for ns in &self.plugin_namespaces {
             universe.insert(ns.clone());
+        }
+        for alias in self.plugin_aliases.keys() {
+            universe.insert(alias.clone());
         }
         for reserved in &self.reserved {
             universe.insert(reserved.clone());
@@ -169,6 +215,13 @@ impl RouteRegistry {
                 owner: "plugin".to_string(),
             });
         }
+        for (alias, namespace) in &self.plugin_aliases {
+            rows.push(NamespaceMetadata {
+                name: Namespace(alias.clone()),
+                reserved: false,
+                owner: format!("plugin-alias:{namespace}"),
+            });
+        }
 
         rows.sort_by(|a, b| a.name.0.cmp(&b.name.0));
         rows
@@ -190,6 +243,7 @@ impl RouteRegistry {
         }
         roots.insert("help".to_string());
         roots.extend(self.plugin_namespaces.iter().cloned());
+        roots.extend(self.plugin_aliases.keys().cloned());
 
         let mut out = String::new();
         for root in roots {
@@ -213,17 +267,15 @@ impl RouteRegistry {
     /// Render alias route rewrites for diagnostics introspection.
     #[must_use]
     pub fn alias_rewrites(&self) -> Vec<(CommandPath, CommandPath)> {
-        self.aliases
+        self.aliases.iter().map(|(alias, canonical)| (to_path(alias), to_path(canonical))).collect()
+    }
+
+    /// Render plugin alias rewrites for diagnostics introspection.
+    #[must_use]
+    pub fn plugin_alias_rewrites(&self) -> Vec<(CommandPath, CommandPath)> {
+        self.plugin_aliases
             .iter()
-            .map(|(alias, canonical)| {
-                let to_path = |raw: &str| CommandPath {
-                    segments: raw
-                        .split(' ')
-                        .map(|segment| Namespace(segment.to_string()))
-                        .collect(),
-                };
-                (to_path(alias), to_path(canonical))
-            })
+            .map(|(alias, namespace)| (to_path(alias), to_path(namespace)))
             .collect()
     }
 }
@@ -266,4 +318,44 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
 
 fn normalize_namespace(input: &str) -> String {
     Namespace::normalize(input)
+}
+
+fn to_path(raw: &str) -> CommandPath {
+    CommandPath {
+        segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{RouteRegistry, RouteTarget};
+
+    #[test]
+    fn registered_plugin_aliases_resolve_to_their_namespace() {
+        let mut registry = RouteRegistry::default();
+        registry
+            .register_plugin_namespace_with_aliases(
+                "alpha",
+                &[String::from("alpha-short"), String::from("alpha-tools")],
+            )
+            .expect("plugin aliases should register");
+
+        let alias_route = registry
+            .resolve(&["alpha-short".to_string(), "run".to_string()])
+            .expect("plugin alias should resolve");
+        assert_eq!(alias_route, RouteTarget::Plugin("alpha".to_string()));
+        assert!(registry
+            .route_tree()
+            .iter()
+            .any(|row| row.name.0 == "alpha-short" && row.owner == "plugin-alias:alpha"));
+    }
+
+    #[test]
+    fn suggestions_include_registered_plugin_aliases() {
+        let mut registry = RouteRegistry::default();
+        registry
+            .register_plugin_namespace_with_aliases("alpha", &[String::from("alpha-short")])
+            .expect("plugin alias should register");
+        assert_eq!(registry.suggest_namespace("alph-short").as_deref(), Some("alpha-short"));
+    }
 }

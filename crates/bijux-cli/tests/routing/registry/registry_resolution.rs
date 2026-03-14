@@ -42,10 +42,39 @@ fn resolves_builtins_and_plugins_deterministically() {
 }
 
 #[test]
+fn resolves_registered_plugin_aliases_to_their_namespace() {
+    let mut registry = RouteRegistry::default();
+    registry
+        .register_plugin_namespace_with_aliases(
+            "alpha",
+            &[String::from("alpha-short"), String::from("alpha-tools")],
+        )
+        .expect("plugin aliases should register");
+
+    let alias_route = registry
+        .resolve(&["alpha-short".to_string(), "run".to_string()])
+        .expect("plugin alias should resolve");
+    assert_eq!(alias_route, RouteTarget::Plugin("alpha".to_string()));
+
+    let tree = registry.route_tree();
+    assert!(tree.iter().any(|row| row.name.0 == "alpha-short" && row.owner == "plugin-alias:alpha"));
+}
+
+#[test]
 fn suggests_typo_namespace() {
     let registry = RouteRegistry::default();
     let suggestion = registry.suggest_namespace("inspekt");
     assert_eq!(suggestion.as_deref(), Some("inspect"));
+}
+
+#[test]
+fn suggests_registered_plugin_aliases_for_typoes() {
+    let mut registry = RouteRegistry::default();
+    registry
+        .register_plugin_namespace_with_aliases("alpha", &[String::from("alpha-short")])
+        .expect("plugin alias should register");
+    let suggestion = registry.suggest_namespace("alph-short");
+    assert_eq!(suggestion.as_deref(), Some("alpha-short"));
 }
 
 #[test]

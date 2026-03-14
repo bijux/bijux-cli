@@ -383,7 +383,7 @@ pub(crate) fn try_handle(
                     Vec::new()
                 }
             };
-            let route_sources: Vec<Value> = registry
+            let mut route_sources: Vec<Value> = registry
                 .built_in_paths()
                 .into_iter()
                 .map(|path| {
@@ -395,20 +395,55 @@ pub(crate) fn try_handle(
                     })
                 })
                 .collect();
+            route_sources.extend(
+                registry
+                    .route_tree()
+                    .into_iter()
+                    .filter(|item| !item.reserved)
+                    .map(|item| {
+                        let source = if item.owner.starts_with("plugin-alias:") {
+                            "plugin-alias"
+                        } else {
+                            "plugin"
+                        };
+                        json!({
+                            "segments": [item.name.0],
+                            "owner": item.owner,
+                            "source": source,
+                        })
+                    }),
+            );
             Some(json!({
                 "status": "ok",
                 "reserved_namespaces": registry.route_tree(),
                 "builtins": registry.built_in_paths(),
                 "route_sources": route_sources,
-                "alias_rewrites": registry.alias_rewrites().into_iter().map(|(alias, canonical)| {
-                    let alias_segments: Vec<String> = alias.segments.into_iter().map(|s| s.0).collect();
-                    let canonical_segments: Vec<String> = canonical.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "alias": alias_segments,
-                        "canonical": canonical_segments,
-                        "source": "compatibility-alias",
+                "alias_rewrites": registry
+                    .alias_rewrites()
+                    .into_iter()
+                    .map(|(alias, canonical)| {
+                        let alias_segments: Vec<String> =
+                            alias.segments.into_iter().map(|s| s.0).collect();
+                        let canonical_segments: Vec<String> =
+                            canonical.segments.into_iter().map(|s| s.0).collect();
+                        json!({
+                            "alias": alias_segments,
+                            "canonical": canonical_segments,
+                            "source": "compatibility-alias",
+                        })
                     })
-                }).collect::<Vec<_>>(),
+                    .chain(registry.plugin_alias_rewrites().into_iter().map(|(alias, canonical)| {
+                        let alias_segments: Vec<String> =
+                            alias.segments.into_iter().map(|s| s.0).collect();
+                        let canonical_segments: Vec<String> =
+                            canonical.segments.into_iter().map(|s| s.0).collect();
+                        json!({
+                            "alias": alias_segments,
+                            "canonical": canonical_segments,
+                            "source": "plugin-alias",
+                        })
+                    }))
+                    .collect::<Vec<_>>(),
                 "plugin_origins": plugin_origins,
                 "compatibility_warnings": compatibility,
                 "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },

@@ -18,11 +18,11 @@ fn populate_plugin_namespaces(
     registry: &mut RouteRegistry,
     plugin_registry_path: &std::path::Path,
 ) {
-    let _ = registry.register_plugin_namespace("community");
     if let Ok(installed_plugins) = list_plugins(plugin_registry_path) {
         for plugin in installed_plugins {
             let namespace = plugin.manifest.namespace.0;
-            let _ = registry.register_plugin_namespace(&namespace);
+            let _ =
+                registry.register_plugin_namespace_with_aliases(&namespace, &plugin.manifest.aliases);
         }
     }
 }
@@ -56,7 +56,8 @@ pub(super) fn route_response(
         Err(error) => return Err(error.into()),
     };
     if let RouteTarget::Plugin(namespace) = target {
-        return Ok(match execute_plugin_route(&plugin_registry_path, &namespace, argv)? {
+        let route_root = normalized_path.first().map(String::as_str).unwrap_or(namespace.as_str());
+        return Ok(match execute_plugin_route(&plugin_registry_path, &namespace, route_root, argv)? {
             PluginRouteOutput::Structured(payload) => RouteResponse::Payload(payload),
             PluginRouteOutput::Process(result) => RouteResponse::Process(AppRunResult {
                 exit_code: result.exit_code,

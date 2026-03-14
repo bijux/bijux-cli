@@ -233,6 +233,18 @@ fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
     assert_eq!(plugins.len(), 1);
     assert_eq!(plugins[0]["manifest"]["namespace"], "aliasplug");
 
+    let routing = run_ok_json(&["cli", "inspect"], &plugins_dir);
+    assert!(routing["route_sources"]
+        .as_array()
+        .expect("route sources")
+        .iter()
+        .any(|row| row["segments"] == serde_json::json!(["alias-short"]) && row["source"] == "plugin-alias"));
+    assert!(routing["alias_rewrites"]
+        .as_array()
+        .expect("alias rewrites")
+        .iter()
+        .any(|row| row["alias"] == serde_json::json!(["alias-short"]) && row["canonical"] == serde_json::json!(["aliasplug"]) && row["source"] == "plugin-alias"));
+
     let check = run_ok_json(&["cli", "plugins", "check", "alias-short"], &plugins_dir);
     assert_eq!(check["plugin"], "alias-short");
 

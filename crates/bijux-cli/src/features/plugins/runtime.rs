@@ -70,11 +70,11 @@ fn ensure_plugin_is_routable(namespace: &str, state: PluginLifecycleState) -> Re
     Ok(())
 }
 
-fn plugin_forwarded_args(argv: &[String], namespace: &str) -> Vec<String> {
+fn plugin_forwarded_args(argv: &[String], route_root: &str) -> Vec<String> {
     argv.iter()
         .enumerate()
         .skip(1)
-        .find(|(_, token)| token.eq_ignore_ascii_case(namespace))
+        .find(|(_, token)| token.eq_ignore_ascii_case(route_root))
         .map(|(index, _)| argv[index + 1..].to_vec())
         .unwrap_or_default()
 }
@@ -152,11 +152,12 @@ fn run_external_plugin(
 pub(crate) fn execute_plugin_route(
     plugin_registry_path: &Path,
     namespace: &str,
+    route_root: &str,
     argv: &[String],
 ) -> Result<PluginRouteOutput> {
     let record = inspect_plugin(plugin_registry_path, namespace)?;
     ensure_plugin_is_routable(namespace, record.state)?;
-    let forwarded_args = plugin_forwarded_args(argv, namespace);
+    let forwarded_args = plugin_forwarded_args(argv, route_root);
 
     match record.manifest.kind {
         PluginKind::Delegated | PluginKind::Python => {
