@@ -317,14 +317,19 @@ fn inspect_and_lifecycle_commands_accept_plugin_aliases() {
 }
 
 #[test]
-fn explain_rejects_unknown_plugin_reference() {
+fn explain_reports_unknown_plugin_reference_without_failing() {
     let root = tmp_dir("explain-missing");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
-    let out = run(&["cli", "plugins", "explain", "missing-plugin"], &plugins_dir);
-    assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("plugin not found"));
+    let explain = run_ok_json(&["cli", "plugins", "explain", "missing-plugin"], &plugins_dir);
+    assert_eq!(explain["requested_reference"], "missing-plugin");
+    assert_eq!(explain["plugin"], Value::Null);
+    assert!(explain["diagnostics"]
+        .as_array()
+        .expect("diagnostics")
+        .iter()
+        .any(|row| row["message"] == "plugin is not installed: missing-plugin"));
 }
 
 #[test]
@@ -833,9 +838,14 @@ fn plugin_doctor_self_repairs_corrupt_registry_file() {
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write corrupt registry");
 
     let doctor = run_ok_json(&["cli", "plugins", "doctor"], &plugins_dir);
-    assert_eq!(doctor["status"], "ok");
+    assert_eq!(doctor["status"], "degraded");
     assert_eq!(doctor["self_repair_attempted"], true);
     assert_eq!(doctor["self_repair_success"], true);
+    assert!(doctor["issues"]
+        .as_array()
+        .expect("issues")
+        .iter()
+        .any(|row| row["area"] == "registry"));
 }
 
 #[test]
@@ -877,9 +887,29 @@ fn reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces() {
     assert!(blocked.iter().any(|item| item == "dag"));
     assert!(blocked.iter().any(|item| item == "dna"));
     assert_eq!(names["alias_policy"]["namespace_rules_apply_to_aliases"], true);
+    assert!(names["blocked_namespace_details"]
+        .as_array()
+        .expect("blocked namespace details")
+        .iter()
+        .any(|row| row["namespace"] == "atlas" && row["categories"].as_array().is_some_and(|items| items.iter().any(|item| item == "official-product"))));
 
     let explain = run_ok_json(&["cli", "plugins", "explain", "cli"], &plugins_dir);
+    assert_eq!(explain["requested_reference"], "cli");
     assert_eq!(explain["plugin"], "cli");
     let diagnostics = explain["diagnostics"].as_array().expect("diagnostics");
     assert!(diagnostics.iter().any(|row| row["message"] == "namespace is reserved: cli"));
+}
+
+#[test]
+fn plugin_where_reports_path_readiness() {
+    let root = tmp_dir("where-paths");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let where_report = run_ok_json(&["cli", "plugins", "where"], &plugins_dir);
+    assert_eq!(where_report["status"], "ok");
+    assert_eq!(where_report["paths"]["plugins_dir"]["exists"], true);
+    assert_eq!(where_report["paths"]["plugins_dir"]["expected_kind"], "directory");
+    assert_eq!(where_report["paths"]["registry_file"]["exists"], false);
+    assert_eq!(where_report["paths"]["registry_file"]["expected_kind"], "file");
 }

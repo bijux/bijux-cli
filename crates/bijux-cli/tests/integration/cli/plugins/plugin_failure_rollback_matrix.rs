@@ -413,9 +413,14 @@ fn plugin_doctor_reports_rollback_relevant_damage_clearly() {
     fs::write(plugins_dir.join("registry.json"), "{broken-json").expect("write corrupt registry");
 
     let doctor = run_ok_json(&["cli", "plugins", "doctor"], &plugins_dir);
-    assert_eq!(doctor["status"], "ok");
+    assert_eq!(doctor["status"], "degraded");
     assert_eq!(doctor["self_repair_attempted"], true);
     assert_eq!(doctor["self_repair_success"], true);
+    assert!(doctor["issues"]
+        .as_array()
+        .expect("issues")
+        .iter()
+        .any(|row| row["area"] == "registry"));
 }
 
 #[test]

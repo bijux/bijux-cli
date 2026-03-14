@@ -10,15 +10,16 @@ use serde_json::{json, Value};
 
 use crate::api::version::runtime_semver;
 use crate::contracts::{
-    known_bijux_tool_namespaces, official_product_namespaces, plugin_manifest_v2_schema,
+    known_bijux_tool, known_bijux_tool_namespaces, official_product_namespaces,
+    plugin_manifest_v2_schema,
     PluginLifecycleState,
 };
 use crate::features::plugins::{
     blocked_namespace_inventory, compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
-    install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
+    install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins, load_registry,
     load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
-    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
-    RESERVED_NAMESPACES,
+    uninstall_plugin, validate_manifest, InstallPluginRequest, PluginError, PluginTrustLevel,
+    CORE_NAMESPACES, RESERVED_NAMESPACES,
 };
 
 fn plugin_record_payload(record: &crate::features::plugins::PluginRecord) -> Value {
@@ -150,6 +151,67 @@ fn inventory_report(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
         "integrity_error": integrity_error,
         "integrity_issues": integrity_issues,
     })
+}
+
+fn path_writable_hint(path: &Path) -> bool {
+    fs::metadata(path).map(|metadata| !metadata.permissions().readonly()).unwrap_or(false)
+}
+
+fn path_report(path: &Path, expected_kind: &str) -> Value {
+    let exists = path.exists();
+    let parent = path.parent().map(|parent| parent.to_path_buf());
+    let writable = if exists {
+        path_writable_hint(path)
+    } else {
+        parent.as_deref().is_some_and(|parent| parent.exists() && path_writable_hint(parent))
+    };
+
+    json!({
+        "path": path,
+        "exists": exists,
+        "expected_kind": expected_kind,
+        "writable_or_creatable": writable,
+        "parent": parent,
+    })
+}
+
+fn blocked_namespace_details() -> Vec<Value> {
+    let mut details = BTreeMap::<String, Vec<String>>::new();
+    for namespace in RESERVED_NAMESPACES {
+        details
+            .entry((*namespace).to_string())
+            .or_default()
+            .push("runtime-command".to_string());
+    }
+    for namespace in CORE_NAMESPACES {
+        details.entry((*namespace).to_string()).or_default().push("core-cli".to_string());
+    }
+    for namespace in official_product_namespaces() {
+        details
+            .entry((*namespace).to_string())
+            .or_default()
+            .push("official-product".to_string());
+    }
+    for namespace in known_bijux_tool_namespaces() {
+        details
+            .entry((*namespace).to_string())
+            .or_default()
+            .push("repository-tool".to_string());
+    }
+
+    details
+        .into_iter()
+        .map(|(namespace, mut categories)| {
+            categories.sort();
+            categories.dedup();
+            let owner = known_bijux_tool(&namespace).map(|tool| tool.runtime_binary());
+            json!({
+                "namespace": namespace,
+                "categories": categories,
+                "owner": owner,
+            })
+        })
+        .collect()
 }
 
 pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
@@ -346,12 +408,28 @@ pub(crate) fn disable_plugin_namespace(
 }
 
 pub(crate) fn plugin_doctor_report(plugin_registry_path: &Path) -> Result<Value> {
-    let repaired = self_repair_registry(plugin_registry_path).is_ok();
+    let self_repair_attempted =
+        matches!(load_registry(plugin_registry_path), Err(PluginError::RegistryCorrupted));
+    if self_repair_attempted {
+        self_repair_registry(plugin_registry_path)?;
+    }
     let report = plugin_doctor(plugin_registry_path)?;
     let diagnostics = load_time_diagnostics(plugin_registry_path, runtime_semver())?;
+    let mut issues = Vec::<Value>::new();
+    if self_repair_attempted {
+        issues.push(json!({
+            "area": "registry",
+            "severity": "warning",
+            "message": "plugin registry was corrupt and was replaced with an empty registry",
+        }));
+    }
 
     Ok(json!({
-        "status": if report.broken.is_empty() && report.incompatible.is_empty() { "ok" } else { "degraded" },
+        "status": if self_repair_attempted || !report.broken.is_empty() || !report.incompatible.is_empty() {
+            "degraded"
+        } else {
+            "ok"
+        },
         "doctor": {
             "installed": report.installed,
             "broken": report.broken,
@@ -364,8 +442,9 @@ pub(crate) fn plugin_doctor_report(plugin_registry_path: &Path) -> Result<Value>
                 "message": diag.message,
             })
         }).collect::<Vec<_>>(),
-        "self_repair_attempted": true,
-        "self_repair_success": repaired,
+        "issues": issues,
+        "self_repair_attempted": self_repair_attempted,
+        "self_repair_success": self_repair_attempted,
     }))
 }
 
@@ -378,6 +457,7 @@ pub(crate) fn reserved_namespaces_report() -> Value {
         "core_namespaces": CORE_NAMESPACES,
         "official_product_namespaces": official_product_namespaces(),
         "known_bijux_projects": known_bijux_tool_namespaces(),
+        "blocked_namespace_details": blocked_namespace_details(),
         "alias_policy": {
             "namespace_rules_apply_to_aliases": true,
             "notes": [
@@ -391,8 +471,13 @@ pub(crate) fn reserved_namespaces_report() -> Value {
 
 pub(crate) fn plugin_locations_report(plugins_dir: &Path, plugin_registry_path: &Path) -> Value {
     json!({
+        "status": "ok",
         "plugins_dir": plugins_dir,
         "registry_file": plugin_registry_path,
+        "paths": {
+            "plugins_dir": path_report(plugins_dir, "directory"),
+            "registry_file": path_report(plugin_registry_path, "file"),
+        }
     })
 }
 
@@ -401,9 +486,14 @@ pub(crate) fn explain_plugin_report(
     plugin: Option<&str>,
 ) -> Result<Value> {
     let mut integrity_issues = Vec::<Value>::new();
+    let requested_reference = plugin.map(ToOwned::to_owned);
     let resolved_namespace = match plugin {
         Some(requested) if !is_reserved_namespace(requested, &[]) => {
-            Some(inspect_plugin(plugin_registry_path, requested)?.manifest.namespace.0)
+            match inspect_plugin(plugin_registry_path, requested) {
+                Ok(record) => Some(record.manifest.namespace.0),
+                Err(PluginError::PluginNotFound(_)) => None,
+                Err(error) => return Err(error.into()),
+            }
         }
         Some(requested) => Some(requested.to_string()),
         None => None,
@@ -441,12 +531,18 @@ pub(crate) fn explain_plugin_report(
         })
         .collect();
 
-    if let Some(requested) = resolved_namespace.as_deref() {
+    if let Some(requested) = plugin {
         if is_reserved_namespace(requested, &[]) {
             filtered.push(json!({
                 "namespace": requested,
                 "severity": "error",
                 "message": format!("namespace is reserved: {requested}"),
+            }));
+        } else if resolved_namespace.is_none() {
+            filtered.push(json!({
+                "namespace": requested,
+                "severity": "warning",
+                "message": format!("plugin is not installed: {requested}"),
             }));
         }
     }
@@ -463,6 +559,7 @@ pub(crate) fn explain_plugin_report(
 
     Ok(json!({
         "plugin": resolved_namespace,
+        "requested_reference": requested_reference,
         "diagnostics": filtered,
         "summary": summary,
         "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },

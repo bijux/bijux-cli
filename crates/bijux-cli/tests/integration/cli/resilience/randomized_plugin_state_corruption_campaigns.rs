@@ -269,10 +269,12 @@ fn plugin_doctor_reports_corruption_injected_by_campaign() {
         let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
         let issues = payload["issues"].as_array().cloned().unwrap_or_default();
         let self_repair_attempted = payload["self_repair_attempted"].as_bool().unwrap_or(false);
+        let status = payload["status"].as_str().unwrap_or_default();
         assert!(
             issues.iter().any(|row| row["area"] == "plugins")
                 || !issues.is_empty()
-                || self_repair_attempted,
+                || self_repair_attempted
+                || status == "degraded",
             "doctor should expose plugin corruption via issues or self-repair signal"
         );
     } else {
