@@ -80,7 +80,7 @@ fn leak(raw: String) -> &'static str {
 fn load_known_bijux_tools() -> Vec<KnownBijuxTool> {
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../contracts/official_product_namespace_registry.json"
+        "/contracts/official_product_namespace_registry.json"
     ));
     let document: ProductRegistryDocument =
         serde_json::from_str(raw).expect("official product registry must stay valid JSON");

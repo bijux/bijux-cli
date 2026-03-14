@@ -178,3 +178,14 @@ fn generated_ported_snapshots_are_not_checked_in() {
         "generated ported snapshots must stay out of the repo: {checked_in:?}"
     );
 }
+
+#[test]
+fn vendored_runtime_registry_matches_root_contract() {
+    let root_contract = read_repo_file("contracts/official_product_namespace_registry.json");
+    let vendored_contract =
+        read_repo_file("crates/bijux-cli/contracts/official_product_namespace_registry.json");
+    assert_eq!(
+        vendored_contract, root_contract,
+        "published runtime crate must vendor the same official product registry contract as the workspace root"
+    );
+}
