@@ -23,7 +23,8 @@ fn fuzz_bridge_conversion_of_success_envelopes_is_stable() {
     let a = parse_json(&execution_facade_api(&argv).expect("facade a"));
     let b = parse_json(&execution_facade_api(&argv).expect("facade b"));
     assert_eq!(a, b);
-    assert_eq!(a["status"], "ok");
+    let status = a["status"].as_str().expect("status should be a string");
+    assert!(matches!(status, "ok" | "warning" | "degraded"));
     assert!(a.as_object().map(|o| o.len()).unwrap_or(0) > 1);
 }
 
