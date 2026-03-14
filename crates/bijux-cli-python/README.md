@@ -15,7 +15,7 @@ Git checkout builds derive runtime identity from the latest real `v*` tag in Git
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
-[![docs.rs](https://img.shields.io/docsrs/bijux-cli)](https://docs.rs/bijux-cli/latest/bijux_cli/)
+[![Rust Docs](https://img.shields.io/badge/docs-Rust%20Docs-blue)](https://docs.rs/bijux-cli/latest/bijux_cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)

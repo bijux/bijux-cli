@@ -51,5 +51,5 @@ When `project_name` contains leading digits or presentation-only punctuation, pa
 `project_slug`, `plugin_namespace`, and `crate_name` values instead of relying on derived defaults.
 New plugins still start at plugin version `0.1.0` because plugin semver belongs to the plugin's own
 release history, not to the Bijux host release line. The template `cli_min` / `cli_max` values are
-the host compatibility contract instead, and the current repository defaults target `0.3.1` up to,
+the host compatibility contract instead, and the current repository defaults target `0.3.2` up to,
 but not including, `0.4.0`.

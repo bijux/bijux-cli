@@ -37,7 +37,7 @@ automation as part of the distribution contract.
 The runtime version model is intentionally split:
 
 - display version tracks the latest released git tag line, for example `vX.Y.Z+dev...`
-- compatibility semver follows the current repository package line so plugin and install contracts match the source tree, for example `0.3.1+git...` before the `v0.3.1` tag exists
+- compatibility semver follows the current repository package line so plugin and install contracts match the source tree, for example `0.3.2+git...` before the `v0.3.2` tag exists
 - workspace package manifests may move ahead for release preparation, but untagged runtime builds do not present that newer line as the shipped runtime version
 - release workflows stamp the exact tag version into a temporary release tree so published artifacts match the tag without forcing release-only manifest edits into the main branch
 

@@ -34,7 +34,7 @@ plugins at version `0.1.0` and use the current `cli_min` / `cli_max` compatibili
 template defaults. For a pre-1.0 Bijux host, that window should stop at the next supported minor
 line instead of claiming compatibility with every future `0.x` release. The plugin's own version is
 intentionally independent from the Bijux host line, so it stays at `0.1.0` for a newly scaffolded
-plugin even while the host compatibility window now targets `0.3.1` up to, but not including,
+plugin even while the host compatibility window now targets `0.3.2` up to, but not including,
 `0.4.0`.
 Use `plugin_namespace` for the durable CLI name even when `project_name` is a human-readable title.
 If `project_name` includes leading digits or punctuation that should not survive into identifiers,
