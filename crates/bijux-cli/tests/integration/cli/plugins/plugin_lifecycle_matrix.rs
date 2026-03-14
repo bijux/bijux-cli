@@ -24,6 +24,15 @@ fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
         .expect("binary should execute")
 }
 
+fn run_with_env(args: &[&str], plugins_dir: &Path, envs: &[(&str, &str)]) -> std::process::Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_bijux"));
+    command.args(args).env("BIJUXCLI_PLUGINS_DIR", plugins_dir);
+    for (key, value) in envs {
+        command.env(key, value);
+    }
+    command.output().expect("binary should execute")
+}
+
 fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
     let out = run(args, plugins_dir);
     assert!(out.status.success(), "command failed: {args:?}");
@@ -135,7 +144,12 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
         .iter()
         .any(|item| item["manifest"]["namespace"] == "rustchain"));
 
-    let routed = run(&["rustchain", "--help"], &plugins_dir);
+    let inherited_target_dir = root.join("shared-target");
+    let routed = run_with_env(
+        &["rustchain", "--help"],
+        &plugins_dir,
+        &[("CARGO_TARGET_DIR", inherited_target_dir.to_str().expect("shared target utf-8"))],
+    );
     assert_eq!(routed.status.code(), Some(0));
     assert!(String::from_utf8_lossy(&routed.stdout).contains("Usage: rustchain [ARGS]"));
     assert!(routed.stderr.is_empty());
@@ -221,17 +235,17 @@ fn installed_external_exec_plugin_route_passthrough_is_stable() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let entry_file = root.join("routeplug.sh");
-    fs::write(&entry_file, "#!/bin/sh\nprintf 'route:%s\\n' \"$1\"\nprintf 'warn:%s\\n' \"$2\" >&2\n")
-        .expect("write entrypoint");
+    fs::write(
+        &entry_file,
+        "#!/bin/sh\nprintf 'route:%s\\n' \"$1\"\nprintf 'warn:%s\\n' \"$2\" >&2\n",
+    )
+    .expect("write entrypoint");
     #[cfg(unix)]
     mark_executable(&entry_file);
 
     let manifest = root.join("routeplug.manifest.json");
     write_external_exec_manifest(&manifest, "routeplug", &entry_file);
-    run_ok_json(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
 
     let out = run(&["routeplug", "alpha", "beta"], &plugins_dir);
     assert_eq!(out.status.code(), Some(0));

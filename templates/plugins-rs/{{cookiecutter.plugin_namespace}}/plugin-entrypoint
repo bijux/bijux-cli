@@ -4,7 +4,8 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$SCRIPT_DIR"
 
-BIN_PATH="$SCRIPT_DIR/target/debug/{{cookiecutter.plugin_namespace}}"
+export CARGO_TARGET_DIR="$SCRIPT_DIR/target"
+BIN_PATH="$CARGO_TARGET_DIR/debug/{{cookiecutter.plugin_namespace}}"
 needs_build=0
 if [ ! -x "$BIN_PATH" ]; then
   needs_build=1
@@ -19,7 +20,13 @@ if [ "$needs_build" -eq 1 ]; then
     echo "cargo is required to build the {{cookiecutter.plugin_namespace}} plugin binary" >&2
     exit 1
   fi
-  cargo build --quiet
+  build_stderr=$(mktemp)
+  if ! cargo build --quiet 2>"$build_stderr"; then
+    cat "$build_stderr" >&2
+    rm -f "$build_stderr"
+    exit 1
+  fi
+  rm -f "$build_stderr"
 fi
 
 exec "$BIN_PATH" "$@"
