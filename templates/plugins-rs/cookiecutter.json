@@ -5,7 +5,7 @@
   "plugin_version": "0.1.0",
   "crate_name": "{{ cookiecutter.project_slug.replace('-', '_').replace('__', '_').replace('__', '_').strip('_') }}",
   "cli_min": "0.2.1-dev",
-  "cli_max": "1.0.0",
+  "cli_max": "0.3.0",
   "rust_edition": "2021",
   "_template_version": "v2"
 }

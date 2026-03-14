@@ -13,7 +13,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
+use super::{current_plugin_host_ceiling, current_plugin_host_floor};
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -91,8 +91,8 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert_eq!(py_manifest["kind"], "python");
     assert_eq!(py_manifest["entrypoint"], "plugin:main");
     assert_eq!(py_manifest["version"], "0.1.0");
-    assert_eq!(py_manifest["compatibility"]["min_inclusive"], SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE);
-    assert_eq!(py_manifest["compatibility"]["max_exclusive"], "1.0.0");
+    assert_eq!(py_manifest["compatibility"]["min_inclusive"], current_plugin_host_floor());
+    assert_eq!(py_manifest["compatibility"]["max_exclusive"], current_plugin_host_ceiling());
 
     let rs_dir = root.join("rust-plugin");
     run_ok_json(
@@ -114,8 +114,8 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert_eq!(rs_manifest["kind"], "external-exec");
     assert_eq!(rs_manifest["entrypoint"], "plugin-entrypoint");
     assert_eq!(rs_manifest["version"], "0.1.0");
-    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE);
-    assert_eq!(rs_manifest["compatibility"]["max_exclusive"], "1.0.0");
+    assert_eq!(rs_manifest["compatibility"]["min_inclusive"], current_plugin_host_floor());
+    assert_eq!(rs_manifest["compatibility"]["max_exclusive"], current_plugin_host_ceiling());
     assert!(rs_dir.join("Cargo.toml").exists(), "rust scaffold must emit a Cargo package");
     assert!(rs_dir.join("plugin-entrypoint").exists(), "rust scaffold must emit an entrypoint");
     assert!(rs_dir.join("src/main.rs").exists(), "rust scaffold must emit a Rust binary");

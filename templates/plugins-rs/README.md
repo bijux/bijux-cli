@@ -41,6 +41,8 @@ Keep `plugin-entrypoint` aligned with the compiled binary name, keep the manifes
 after release, and update the compatibility range when the supported Bijux host versions change.
 The default template values start new plugins at version `0.1.0` and use the current `cli_min` /
 `cli_max` compatibility window from the template defaults.
+For a pre-1.0 Bijux host, that window should stop at the next supported minor line instead of
+claiming compatibility with every future `0.x` release.
 Use `plugin_namespace` for the durable CLI name and compiled binary name, and use `crate_name` for
 the Rust library identifier when `project_name` contains presentation-only punctuation.
 If `project_name` includes leading digits or punctuation that should not survive into identifiers,

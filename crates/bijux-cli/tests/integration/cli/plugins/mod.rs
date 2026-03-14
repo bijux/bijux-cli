@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 //! plugins integration suites.
 
+use bijux_cli::api::version::runtime_semver;
+use semver::{Prerelease, Version};
+
 mod plugin_cli_lifecycle;
 mod plugin_command_parity;
 mod plugin_discovery_determinism_matrix;
@@ -11,3 +14,22 @@ mod plugin_namespace_law;
 mod plugin_scaffold_fuzz_regressions;
 mod plugin_scaffold_fuzz_targets;
 mod plugin_scaffold_minimal;
+
+pub(super) fn current_plugin_host_floor() -> String {
+    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    let mut floor = Version::new(runtime.major, runtime.minor, runtime.patch);
+    if !runtime.pre.is_empty() {
+        let channel = runtime.pre.as_str().split('.').next().expect("runtime prerelease channel");
+        floor.pre = Prerelease::new(channel).expect("prerelease channel");
+    }
+    floor.to_string()
+}
+
+pub(super) fn current_plugin_host_ceiling() -> String {
+    let runtime = Version::parse(runtime_semver()).expect("runtime semver");
+    if runtime.major == 0 {
+        Version::new(0, runtime.minor.saturating_add(1), 0).to_string()
+    } else {
+        Version::new(runtime.major.saturating_add(1), 0, 0).to_string()
+    }
+}

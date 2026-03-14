@@ -12,7 +12,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+use super::current_plugin_host_floor;
 
 static TEMP_DIR_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -72,13 +72,14 @@ fn scaffold_and_install(kind: &str, namespace: &str, root: &Path, plugins_dir: &
 }
 
 fn write_external_exec_manifest(path: &Path, namespace: &str, entrypoint: &Path) {
+    let current_plugin_host_floor = current_plugin_host_floor();
     let manifest = format!(
         r#"{{
   "name": "{namespace}",
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "external-exec",
   "aliases": [],

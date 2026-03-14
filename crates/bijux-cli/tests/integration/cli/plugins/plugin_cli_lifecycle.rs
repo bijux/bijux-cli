@@ -11,7 +11,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+use super::{current_plugin_host_ceiling, current_plugin_host_floor};
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
@@ -423,21 +423,25 @@ fn install_rejects_stale_manifest_version_markers() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
+    let current_plugin_host_floor = current_plugin_host_floor();
+    let current_plugin_host_ceiling = current_plugin_host_ceiling();
     let manifest = root.join("stale.manifest.json");
     fs::write(
         &manifest,
-        r#"{
+        format!(
+            r#"{{
   "name": "staleplug",
   "version": "0.1.0",
   "schema_version": "v1",
   "manifest_version": "v1",
-  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": "1.0.0"},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": "{current_plugin_host_ceiling}"}},
   "namespace": "staleplug",
   "kind": "python",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
-}"#,
+}}"#
+        ),
     )
     .expect("write stale manifest");
 
@@ -485,6 +489,7 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
+    let current_plugin_host_floor = current_plugin_host_floor();
     let invalid_manifest = root.join("invalid.json");
     fs::write(&invalid_manifest, "{not-json").expect("write invalid manifest");
     let invalid_out = run(
@@ -496,18 +501,20 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
     let missing_entrypoint = root.join("missing-entrypoint.json");
     fs::write(
         &missing_entrypoint,
-        r#"{
+        format!(
+            r#"{{
   "name": "broken",
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": null},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "broken",
   "kind": "python",
   "aliases": [],
   "entrypoint": "",
   "capabilities": []
-}"#,
+}}"#
+        ),
     )
     .expect("write missing entrypoint manifest");
     let missing_out = run(
@@ -519,18 +526,20 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
     let reserved_manifest = root.join("reserved.json");
     fs::write(
         &reserved_manifest,
-        r#"{
+        format!(
+            r#"{{
   "name": "reserved",
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {"min_inclusive":"0.2.1-dev", "max_exclusive": null},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "cli",
   "kind": "python",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
-}"#,
+}}"#
+        ),
     )
     .expect("write reserved manifest");
     let reserved_out = run(
@@ -740,6 +749,7 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_install() {
     fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o644))
         .expect("set non executable perms");
 
+    let current_plugin_host_floor = current_plugin_host_floor();
     let manifest = root.join("external.json");
     fs::write(
         &manifest,
@@ -749,7 +759,7 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_install() {
   "version": "0.1.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}", "max_exclusive": null}},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "externalplug",
   "kind": "external-exec",
   "aliases": [],

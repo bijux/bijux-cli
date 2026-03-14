@@ -54,8 +54,8 @@ cat > ./my-plugin/plugin.manifest.json <<'JSON'
   "schema_version": "v2",
   "manifest_version": "v2",
   "compatibility": {
-    "min_inclusive": "0.2.1-dev",
-    "max_exclusive": "1.0.0"
+    "min_inclusive": "<current bijux host version>",
+    "max_exclusive": "<next supported host boundary>"
   },
   "namespace": "my-plugin",
   "kind": "python",
@@ -69,6 +69,9 @@ def main(argv: list[str]) -> dict[str, object]:
     return {"status": "ok", "argv": argv}
 PY
 ```
+
+For pre-1.0 hosts, set `max_exclusive` to the next supported minor line rather
+than assuming compatibility across every future `0.x` release.
 
 Install, inspect, validate, and remove it:
 

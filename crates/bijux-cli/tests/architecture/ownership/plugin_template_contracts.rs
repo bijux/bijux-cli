@@ -22,7 +22,11 @@ fn template_compatibility_min_inclusive() -> String {
 
 fn template_compatibility_max_exclusive() -> String {
     let runtime = Version::parse(runtime_semver()).expect("runtime semver");
-    Version::new(runtime.major + 1, 0, 0).to_string()
+    if runtime.major == 0 {
+        Version::new(0, runtime.minor + 1, 0).to_string()
+    } else {
+        Version::new(runtime.major + 1, 0, 0).to_string()
+    }
 }
 
 fn repo_root() -> PathBuf {

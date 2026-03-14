@@ -33,5 +33,6 @@ Keep `plugin-entrypoint` aligned with the compiled `{{cookiecutter.plugin_namesp
 when supported Bijux host versions change, and avoid reserved Bijux namespaces when renaming the
 plugin. The rendered defaults start at plugin version `{{cookiecutter.plugin_version}}` with host
 compatibility from `{{cookiecutter.cli_min}}` up to, but not including,
-`{{cookiecutter.cli_max}}`. The Rust library identifier remains
+`{{cookiecutter.cli_max}}`. For a pre-1.0 Bijux host, that upper bound should move with the next
+supported minor line instead of every future `0.x` release. The Rust library identifier remains
 `{{cookiecutter.crate_name}}`.

@@ -12,7 +12,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE: &str = "0.2.1-dev";
+use super::{current_plugin_host_ceiling, current_plugin_host_floor};
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
@@ -112,9 +112,9 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         assert_eq!(manifest["version"], "0.1.0");
         assert_eq!(
             manifest["compatibility"]["min_inclusive"],
-            SCAFFOLD_COMPATIBILITY_MIN_INCLUSIVE
+            current_plugin_host_floor()
         );
-        assert_eq!(manifest["compatibility"]["max_exclusive"], "1.0.0");
+        assert_eq!(manifest["compatibility"]["max_exclusive"], current_plugin_host_ceiling());
 
         let forbidden = if kind == "python" {
             vec!["README.md", "pyproject.toml", "Cargo.toml", ".gitignore", "src/main.rs"]

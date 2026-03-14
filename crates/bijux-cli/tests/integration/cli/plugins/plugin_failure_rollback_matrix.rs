@@ -12,7 +12,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+use super::current_plugin_host_floor;
 
 static TEMP_DIR_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -92,7 +92,7 @@ fn simulated_disk_write_failure_during_install() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("writefail.json");
-    write_manifest(&manifest, "writefail", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "writefail", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
@@ -125,11 +125,11 @@ fn simulated_registry_write_failure_during_install() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let first = root.join("first.json");
-    write_manifest(&first, "stable", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&first, "stable", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &first);
 
     let second = root.join("second.json");
-    write_manifest(&second, "candidate", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&second, "candidate", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
     let out = run(&["cli", "plugins", "install", second.to_str().expect("utf-8")], &plugins_dir);
@@ -169,7 +169,7 @@ fn simulated_missing_entrypoint_failure_during_install() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("missing-entrypoint.json");
-    write_manifest(&manifest, "missingentry", "", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "missingentry", "", &current_plugin_host_floor());
 
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
@@ -183,7 +183,7 @@ fn simulated_permission_denied_failure_during_install() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = root.join("denied.json");
-    write_manifest(&manifest, "deniedplug", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "deniedplug", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
     let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
@@ -200,7 +200,7 @@ fn simulated_partial_uninstall_failure() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("uninstall-partial.json");
-    write_manifest(&manifest, "partialuninstall", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "partialuninstall", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
@@ -218,7 +218,7 @@ fn simulated_registry_write_failure_during_uninstall() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("uninstall-write-fail.json");
-    write_manifest(&manifest, "writeuninstall", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "writeuninstall", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
@@ -235,7 +235,7 @@ fn simulated_enable_failure_when_plugin_files_missing() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("enable-fail.json");
-    write_manifest(&manifest, "enablefail", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "enablefail", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     let registry_path = plugins_dir.join("registry.json");
@@ -272,11 +272,11 @@ fn rollback_proof_install_failure_preserves_existing_plugins() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let stable = root.join("stable.json");
-    write_manifest(&stable, "stableproof", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&stable, "stableproof", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &stable);
 
     let candidate = root.join("candidate.json");
-    write_manifest(&candidate, "candidateproof", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&candidate, "candidateproof", "plugin:main", &current_plugin_host_floor());
     chmod_read_only(&plugins_dir);
     let out = run(&["cli", "plugins", "install", candidate.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
@@ -300,7 +300,7 @@ fn rollback_proof_uninstall_failure_preserves_existing_plugins() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("keep.json");
-    write_manifest(&manifest, "keepproof", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "keepproof", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
@@ -320,7 +320,7 @@ fn retry_install_after_partial_failure_is_idempotent() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("retry-install.json");
-    write_manifest(&manifest, "retryinstall", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "retryinstall", "plugin:main", &current_plugin_host_floor());
 
     chmod_read_only(&plugins_dir);
     let first =
@@ -341,7 +341,7 @@ fn retry_uninstall_after_partial_failure_is_idempotent() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("retry-uninstall.json");
-    write_manifest(&manifest, "retryuninstall", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "retryuninstall", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);
@@ -361,11 +361,11 @@ fn failed_install_does_not_leave_claimed_namespace() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let stable = root.join("stable.json");
-    write_manifest(&stable, "stableonly", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&stable, "stableonly", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &stable);
 
     let failed = root.join("failed.json");
-    write_manifest(&failed, "failedns", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&failed, "failedns", "plugin:main", &current_plugin_host_floor());
     chmod_read_only(&plugins_dir);
     let out = run(&["cli", "plugins", "install", failed.to_str().expect("utf-8")], &plugins_dir);
     chmod_writable(&plugins_dir);
@@ -389,7 +389,7 @@ fn failed_uninstall_does_not_orphan_registry_state_silently() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = root.join("orphan.json");
-    write_manifest(&manifest, "orphanproof", "plugin:main", CURRENT_PLUGIN_HOST_FLOOR);
+    write_manifest(&manifest, "orphanproof", "plugin:main", &current_plugin_host_floor());
     install_ok(&plugins_dir, &manifest);
 
     chmod_read_only(&plugins_dir);

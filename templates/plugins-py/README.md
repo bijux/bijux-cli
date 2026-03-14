@@ -30,7 +30,8 @@ Generated files:
 Keep the plugin namespace stable after release, update the compatibility range when supported host
 versions change, and add tests before sharing the plugin. The default template values start new
 plugins at version `0.1.0` and use the current `cli_min` / `cli_max` compatibility window from the
-template defaults.
+template defaults. For a pre-1.0 Bijux host, that window should stop at the next supported minor
+line instead of claiming compatibility with every future `0.x` release.
 Use `plugin_namespace` for the durable CLI name even when `project_name` is a human-readable title.
 If `project_name` includes leading digits or punctuation that should not survive into identifiers,
 pass `project_slug` and `plugin_namespace` explicitly.

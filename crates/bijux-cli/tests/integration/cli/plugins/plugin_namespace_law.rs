@@ -11,7 +11,7 @@ use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
-const CURRENT_PLUGIN_HOST_FLOOR: &str = "0.2.1-dev";
+use super::{current_plugin_host_ceiling, current_plugin_host_floor};
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux"))
@@ -30,13 +30,15 @@ fn tmp_dir(name: &str) -> PathBuf {
 }
 
 fn write_manifest(path: &Path, namespace: &str, alias: &str, entrypoint: &str) {
+    let current_plugin_host_floor = current_plugin_host_floor();
+    let current_plugin_host_ceiling = current_plugin_host_ceiling();
     let body = format!(
         r#"{{
   "name": "{namespace}",
   "version": "1.0.0",
   "schema_version": "v2",
   "manifest_version": "v2",
-  "compatibility": {{"min_inclusive":"{CURRENT_PLUGIN_HOST_FLOOR}","max_exclusive":"2.0.0"}},
+  "compatibility": {{"min_inclusive":"{current_plugin_host_floor}","max_exclusive":"{current_plugin_host_ceiling}"}},
   "namespace": "{namespace}",
   "kind": "delegated",
   "aliases": ["{alias}"],

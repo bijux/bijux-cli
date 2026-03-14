@@ -36,7 +36,11 @@ fn scaffold_compatibility_window() -> Result<(String, String)> {
             .map_err(|error| anyhow::anyhow!("runtime prerelease channel is invalid: {error}"))?;
     }
 
-    let max = Version::new(runtime.major.saturating_add(1), 0, 0);
+    let max = if runtime.major == 0 {
+        Version::new(0, runtime.minor.saturating_add(1), 0)
+    } else {
+        Version::new(runtime.major.saturating_add(1), 0, 0)
+    };
     Ok((min.to_string(), max.to_string()))
 }
 
