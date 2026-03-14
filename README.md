@@ -12,7 +12,6 @@ Bijux focuses on deterministic flags, explicit plugin lifecycle behavior, struct
 [![crates.io](https://img.shields.io/crates/v/bijux-cli.svg)](https://crates.io/crates/bijux-cli)
 [![docs.rs](https://img.shields.io/docsrs/bijux-cli)](https://docs.rs/bijux-cli/latest/bijux_cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
-[![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
@@ -52,7 +51,6 @@ Rust source docs: [docs.rs source](https://docs.rs/crate/bijux-cli/latest/source
 * [Roadmap](#roadmap)
 * [Docs & Resources](#docs--resources)
 * [Contributing](#contributing)
-* [Acknowledgments](#acknowledgments)
 * [License](#license)
 
 ---
@@ -147,25 +145,32 @@ Commands like `doctor`, `audit`, and `docs` help verify environments and workflo
 
 ## Installation
 
-Requires **Python ≥ 3.11** (3.11–3.13 tested).
+Use one install channel at a time.
+
+Supported install channels on Linux and macOS:
 
 ```bash
-# Recommended (isolated)
+# Cargo
+cargo install --locked bijux-cli
+
+# Pipx
 pipx install bijux-cli
 
-# Standard
+# Pip
 python3 -m pip install --upgrade bijux-cli
 ```
-
-Upgrade with `pipx upgrade bijux-cli` or `python3 -m pip install --upgrade bijux-cli`.
 
 Quick verification:
 
 ```bash
-bijux --version
+bijux version
+bijux cli paths
 bijux doctor
-bijux status --format json --no-pretty
 ```
+
+`bijux doctor` is the install-health check. If it reports path ambiguity,
+stale wrappers, or state issues, treat that as part of the install outcome
+rather than a postscript.
 
 ---
 
@@ -235,7 +240,7 @@ bijux status -f yaml --pretty
 ## Developer Introspection
 
 Maintainer diagnostics run through `bijux-dev-cli` from a workspace build or
-checkout:
+checkout. They are not part of the ordinary end-user command surface:
 
 ```bash
 cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
@@ -268,13 +273,16 @@ See the execution model in the [Introduction docs](https://bijux.github.io/bijux
 | Command   | Purpose                 |
 | --------- | ----------------------- |
 | `doctor`  | Environment diagnostics |
-| `status`  | CLI snapshot            |
+| `status`  | Runtime snapshot with install, plugin, and state context |
 | `repl`    | Interactive shell       |
 | `plugins` | Manage plugins          |
 | `config`  | Key-value settings      |
 | `history` | REPL history            |
 | `audit`   | Runtime health audit    |
 | `docs`    | Documentation inventory |
+| `install` | Resolve runtime and ecosystem install aliases |
+| `completion` | Generate shell completion output |
+| `memory`  | Runtime-scoped key/value state |
 | `version` | Version info            |
 
 ---
@@ -330,21 +338,20 @@ commands.
 Run locally:
 
 ```bash
-make env
-make test-py
-make test-unit-py
-make test-nightly-py
-make fmt-rs lint-rs audit-rs test-all-rs
-make build-py
-make publish-py    # requires PYPI_API_TOKEN; set RELEASE_VERSION=x.y.z for a tagged release publish
-make publish-rs    # dry-run by default; set RUST_PUBLISH_DRY_RUN=0 RELEASE_VERSION=x.y.z to publish a tagged release
+make bootstrap
+make fmt
+make lint
+make test
+make docs-check
 ```
 
-Parity checks worth running:
+For release-facing or parity-sensitive changes, also run:
 
 ```bash
-python3 -m pytest crates/bijux-cli-python/tests/python/test_runtime_parity.py
-BIJUX_ENABLE_STABLE_PYPI_PARITY=1 python3 -m pytest -m nightly crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py
+cargo test -p bijux-cli
+cargo run -q -p bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- parity --format json --no-pretty
+cargo run -q -p bijux-dev-cli -- docs-audit --format json --no-pretty
 ```
 
 ---
@@ -366,7 +373,8 @@ crates/*/tests/ Crate-local test suites
 
 * Core CLI semantics (flags, precedence, exit behavior) are stable.
 * The async execution model is stable and supported.
-* Plugin metadata and loader internals may evolve before v1.0.
+* Plugin lifecycle behavior is real, but plugin metadata and loader internals may still evolve before v1.0.
+* Plugins are executable extension code, not a sandboxed trust boundary.
 * Breaking changes, when unavoidable, will be documented clearly.
 
 ---
@@ -390,13 +398,6 @@ surfaces.
 
 Contributions are welcome.
 See [CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CONTRIBUTING.md).
-
----
-
-## Acknowledgments
-
-Built on Typer, FastAPI, and Injector.  
-Inspired by Click, Typer, and Cobra.  
 
 ---
 
