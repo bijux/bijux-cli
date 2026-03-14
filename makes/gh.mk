@@ -23,7 +23,8 @@ gh-security: install security ## Run GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
 
-gh-docs-install: install docs-require ## Install the documentation toolchain for GitHub Actions
+gh-docs-install: install ## Install the documentation toolchain for GitHub Actions
+	@$(MAKE) --no-print-directory docs-require
 	@"$(MKDOCS_BIN)" --version
 
 docs-artifact-pages: ## Generate documentation pages that summarize release artifacts
