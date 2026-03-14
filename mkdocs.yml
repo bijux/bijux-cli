@@ -352,7 +352,7 @@ extra:
     provider: plausible
     domain: bijux.github.io
   copyright:
-    text: "© 2025 Bijan Mousavi"
+    text: "© 2026 Bijan Mousavi"
   release_tag: !ENV [RELEASE_TAG, "main"]
 
 extra_css:
