@@ -16,11 +16,12 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONUNBUFFERED: "1"
+  RUST_TOOLCHAIN_VERSION: "1.85.0"
 
 jobs:
   publish-pypi:
     name: Publish PyPI distributions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -35,7 +36,7 @@ jobs:
           make gh-release-wait-for-ci
 
       - name: Checkout release commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
@@ -48,7 +49,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.release.outputs.publish == 'true' }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
@@ -56,10 +57,12 @@ jobs:
 
       - name: Set up Rust
         if: ${{ steps.release.outputs.publish == 'true' }}
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         if: ${{ steps.release.outputs.publish == 'true' }}
 
       - name: Publish PyPI distributions

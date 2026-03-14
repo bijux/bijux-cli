@@ -15,18 +15,19 @@ concurrency:
 jobs:
   build-deploy:
     name: Build and deploy documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ENABLE_SOCIAL_CARDS: "true"
+      RUST_TOOLCHAIN_VERSION: "1.85.0"
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
@@ -35,10 +36,12 @@ jobs:
             mkdocs.yml
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
 
       - name: Install documentation toolchain
         run: make gh-docs-install
