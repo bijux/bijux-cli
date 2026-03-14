@@ -86,8 +86,10 @@ bijux plugins uninstall my-plugin
 
 Expected shape:
 
-- `info` shows overall registry status and plugin inventory details
-- `list` includes `my-plugin` after install
+- `info` shows overall registry status, plugin counts, and current
+  compatibility or load diagnostics
+- `list` includes `my-plugin` after install and carries the same current
+  registry-health summary as `info`
 - `inspect` without an argument shows the full inventory; with a namespace it
   shows one plugin's manifest, source, and trust metadata
 - `check` verifies manifest validity and entrypoint presence

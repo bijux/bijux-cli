@@ -209,6 +209,15 @@ fn delegated_plugin_check_fails_when_module_file_disappears_after_install() {
         .expect("load diagnostics")
         .iter()
         .any(|row| row["message"] == "delegated entrypoint was not found"));
+
+    let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
+    assert_eq!(listed["status"], "degraded");
+    assert_eq!(listed["load_diagnostic_count"], 1);
+    assert!(listed["load_diagnostics"]
+        .as_array()
+        .expect("load diagnostics")
+        .iter()
+        .any(|row| row["message"] == "delegated entrypoint was not found"));
 }
 
 #[test]

@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! Plugin feature operations exposed to command adapters.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -34,94 +35,99 @@ fn plugin_records_payload(records: &[crate::features::plugins::PluginRecord]) ->
     records.iter().map(plugin_record_payload).collect()
 }
 
-pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
-    match list_plugins(plugin_registry_path) {
-        Ok(plugins) => json!({
-            "status": "ok",
-            "count": plugins.len(),
-            "plugins": plugin_records_payload(&plugins),
-            "directory": plugins_dir,
-            "integrity_status": "ok",
-        }),
-        Err(error) => json!({
-            "status": "degraded",
-            "count": 0,
-            "plugins": [],
-            "directory": plugins_dir,
-            "integrity_status": "degraded",
-            "integrity_error": error.to_string(),
-        }),
-    }
+fn integrity_issue(source: &str, error: impl ToString) -> Value {
+    json!({
+        "source": source,
+        "error": error.to_string(),
+    })
 }
 
-pub(crate) fn plugins_list(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
-    match list_plugins(plugin_registry_path) {
-        Ok(plugins) => json!({
-            "plugins": plugin_records_payload(&plugins),
-            "directory": plugins_dir,
-            "integrity_status": "ok",
-        }),
-        Err(error) => json!({
-            "plugins": [],
-            "directory": plugins_dir,
-            "integrity_status": "degraded",
-            "integrity_error": error.to_string(),
-        }),
-    }
+fn render_load_diagnostics(
+    diagnostics: impl IntoIterator<Item = crate::features::plugins::PluginLoadDiagnostic>,
+) -> Vec<Value> {
+    diagnostics
+        .into_iter()
+        .map(|diag| {
+            json!({
+                "namespace": diag.namespace,
+                "severity": diag.severity,
+                "message": diag.message,
+            })
+        })
+        .collect()
 }
 
-pub(crate) fn plugins_info(plugin_registry_path: &Path) -> Value {
+fn state_counts(records: &[crate::features::plugins::PluginRecord]) -> Value {
+    let mut counts = BTreeMap::<&'static str, usize>::new();
+    for record in records {
+        let key = match record.state {
+            PluginLifecycleState::Discovered => "discovered",
+            PluginLifecycleState::Validated => "validated",
+            PluginLifecycleState::Installed => "installed",
+            PluginLifecycleState::Enabled => "enabled",
+            PluginLifecycleState::Disabled => "disabled",
+            PluginLifecycleState::Broken => "broken",
+            PluginLifecycleState::Incompatible => "incompatible",
+        };
+        *counts.entry(key).or_insert(0) += 1;
+    }
+    json!(counts)
+}
+
+fn inventory_report(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
     let mut integrity_issues = Vec::<Value>::new();
     let plugins = match list_plugins(plugin_registry_path) {
         Ok(plugins) => plugins,
         Err(error) => {
-            integrity_issues.push(json!({
-                "source": "registry",
-                "error": error.to_string(),
-            }));
+            integrity_issues.push(integrity_issue("registry", error));
             Vec::new()
         }
     };
-    let warnings = match compatibility_warnings(plugin_registry_path, runtime_semver()) {
+    let compatibility = match compatibility_warnings(plugin_registry_path, runtime_semver()) {
         Ok(warnings) => warnings,
         Err(error) => {
-            integrity_issues.push(json!({
-                "source": "compatibility",
-                "error": error.to_string(),
-            }));
+            integrity_issues.push(integrity_issue("compatibility", error));
             Vec::new()
         }
     };
     let load_diagnostics = match load_time_diagnostics(plugin_registry_path, runtime_semver()) {
-        Ok(diagnostics) => diagnostics
-            .into_iter()
-            .map(|diag| {
-                json!({
-                    "namespace": diag.namespace,
-                    "severity": diag.severity,
-                    "message": diag.message,
-                })
-            })
-            .collect::<Vec<_>>(),
+        Ok(diagnostics) => render_load_diagnostics(diagnostics),
         Err(error) => {
-            integrity_issues.push(json!({
-                "source": "load-time-diagnostics",
-                "error": error.to_string(),
-            }));
+            integrity_issues.push(integrity_issue("load-time-diagnostics", error));
             Vec::new()
         }
     };
+    let degraded = !integrity_issues.is_empty() || !load_diagnostics.is_empty();
+    let integrity_error =
+        integrity_issues.first().and_then(|issue| issue["error"].as_str()).map(str::to_string);
 
-    let has_runtime_issues = !load_diagnostics.is_empty();
     json!({
-        "status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
+        "status": if degraded { "degraded" } else { "ok" },
+        "count": plugins.len(),
         "plugins": plugin_records_payload(&plugins),
-        "compatibility_warnings": warnings,
-        "load_diagnostics": load_diagnostics,
+        "directory": plugins_dir,
         "registry_file": plugin_registry_path,
-        "integrity_status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
+        "state_counts": state_counts(&plugins),
+        "compatibility_warnings": compatibility,
+        "compatibility_warning_count": compatibility.len(),
+        "load_diagnostics": load_diagnostics,
+        "load_diagnostic_count": load_diagnostics.len(),
+        "integrity_status": if degraded { "degraded" } else { "ok" },
+        "integrity_error": integrity_error,
         "integrity_issues": integrity_issues,
     })
+}
+
+pub(crate) fn plugins_overview(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
+    inventory_report(plugin_registry_path, plugins_dir)
+}
+
+pub(crate) fn plugins_list(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
+    inventory_report(plugin_registry_path, plugins_dir)
+}
+
+pub(crate) fn plugins_info(plugin_registry_path: &Path, plugins_dir: &Path) -> Value {
+    inventory_report(plugin_registry_path, plugins_dir)
 }
 
 pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>) -> Result<Value> {
@@ -132,10 +138,7 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>)
         match list_plugins(plugin_registry_path) {
             Ok(plugins) => plugins,
             Err(error) => {
-                integrity_issues.push(json!({
-                    "source": "registry",
-                    "error": error.to_string(),
-                }));
+                integrity_issues.push(integrity_issue("registry", error));
                 Vec::new()
             }
         }
@@ -152,32 +155,16 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>)
             })
             .collect::<Vec<_>>(),
         Err(error) => {
-            integrity_issues.push(json!({
-                "source": "compatibility",
-                "error": error.to_string(),
-            }));
+            integrity_issues.push(integrity_issue("compatibility", error));
             Vec::new()
         }
     };
     let load_diagnostics = match load_time_diagnostics(plugin_registry_path, runtime_semver()) {
-        Ok(diagnostics) => diagnostics
-            .into_iter()
-            .filter(|diag| {
-                requested_namespace.as_deref().is_none_or(|reference| diag.namespace == reference)
-            })
-            .map(|diag| {
-                json!({
-                    "namespace": diag.namespace,
-                    "severity": diag.severity,
-                    "message": diag.message,
-                })
-            })
-            .collect::<Vec<_>>(),
+        Ok(diagnostics) => render_load_diagnostics(diagnostics.into_iter().filter(|diag| {
+            requested_namespace.as_deref().is_none_or(|reference| diag.namespace == reference)
+        })),
         Err(error) => {
-            integrity_issues.push(json!({
-                "source": "load-time-diagnostics",
-                "error": error.to_string(),
-            }));
+            integrity_issues.push(integrity_issue("load-time-diagnostics", error));
             Vec::new()
         }
     };
@@ -185,10 +172,15 @@ pub(crate) fn plugins_inspect(plugin_registry_path: &Path, plugin: Option<&str>)
     let has_runtime_issues = !load_diagnostics.is_empty();
     Ok(json!({
         "plugin": plugin,
+        "count": plugins.len(),
         "plugins": plugin_records_payload(&plugins),
         "status": if integrity_issues.is_empty() && !has_runtime_issues { "loaded" } else { "degraded" },
+        "registry_file": plugin_registry_path,
+        "state_counts": state_counts(&plugins),
         "compatibility_warnings": compatibility,
+        "compatibility_warning_count": compatibility.len(),
         "load_diagnostics": load_diagnostics,
+        "load_diagnostic_count": load_diagnostics.len(),
         "integrity_status": if integrity_issues.is_empty() && !has_runtime_issues { "ok" } else { "degraded" },
         "integrity_issues": integrity_issues,
     }))

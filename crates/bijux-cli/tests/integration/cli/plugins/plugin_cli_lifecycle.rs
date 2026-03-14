@@ -83,14 +83,30 @@ fn python_scaffold_install_list_inspect_uninstall_flow() {
     assert_eq!(install["status"], "installed");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
+    assert_eq!(listed["status"], "ok");
+    assert_eq!(listed["count"], 1);
+    assert_eq!(listed["compatibility_warning_count"], 0);
+    assert_eq!(listed["load_diagnostic_count"], 0);
+    assert_eq!(listed["state_counts"]["installed"], 1);
     assert!(listed["plugins"]
         .as_array()
         .expect("plugins array")
         .iter()
         .any(|item| item["manifest"]["namespace"] == "pyflow"));
 
+    let info = run_ok_json(&["cli", "plugins", "info"], &plugins_dir);
+    assert_eq!(info["status"], "ok");
+    assert_eq!(info["count"], 1);
+    assert_eq!(info["state_counts"]["installed"], 1);
+    assert_eq!(
+        Path::new(info["registry_file"].as_str().expect("registry file")),
+        plugins_dir.join("registry.json")
+    );
+
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
+    assert_eq!(inspected["count"], 1);
+    assert_eq!(inspected["state_counts"]["installed"], 1);
     let source = inspected["plugins"]
         .as_array()
         .expect("plugins array")

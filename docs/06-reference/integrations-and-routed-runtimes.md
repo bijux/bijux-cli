@@ -40,7 +40,9 @@ binaries.
 The durable local plugin contract is based on `plugin.manifest.json`.
 
 - local installs consume `plugin.manifest.json`
-- `plugins info` reports registry-wide status and inventory details
+- `plugins info`, `plugins`, and `plugins list` report registry-wide status,
+  inventory counts, state totals, and current compatibility or load
+  diagnostics
 - delegated and Python plugins resolve their declared entrypoint from the
   installed manifest anchor when available
 - `plugins inspect [plugin]` can report either one plugin or the full
