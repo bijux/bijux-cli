@@ -89,7 +89,7 @@ fn chmod_writable(path: &Path) {
 fn readonly_directory_blocks_writes(path: &Path) -> bool {
     let probe = path.join(".permission-probe");
     match fs::write(&probe, b"probe") {
-        Ok(_) => {
+        Ok(()) => {
             let _ = fs::remove_file(&probe);
             false
         }
