@@ -18,6 +18,20 @@ pub enum CompletionShell {
     PowerShell,
 }
 
+impl CompletionShell {
+    /// Parse a shell selector from CLI input.
+    #[must_use]
+    pub fn from_cli_value(raw: &str) -> Option<Self> {
+        match raw {
+            "bash" => Some(Self::Bash),
+            "zsh" => Some(Self::Zsh),
+            "fish" => Some(Self::Fish),
+            "pwsh" => Some(Self::PowerShell),
+            _ => None,
+        }
+    }
+}
+
 /// Generate deterministic completion content for an install hook.
 #[must_use]
 #[allow(dead_code)]

@@ -8,12 +8,14 @@ use crate::api::config::validate_config_file;
 use crate::api::version::{runtime_semver, runtime_version_info};
 use crate::features::diagnostics::state_paths::{state_diagnostics, ResolvedStatePaths};
 use crate::features::install::{
-    completion_script, detect_shell, install_health_report, post_install_hint, CompletionShell,
+    completion_file_path, completion_script, detect_shell, install_health_report, post_install_hint,
+    CompletionShell,
 };
 use crate::features::plugins::{
     compatibility_warnings, list_plugins, plugin_doctor, plugin_origin_metadata,
 };
 use crate::routing::registry::RouteRegistry;
+use crate::shared::argv::command_option_value;
 
 fn completion_shell_name(shell: CompletionShell) -> &'static str {
     match shell {
@@ -42,9 +44,22 @@ fn install_report_payload() -> Value {
     })
 }
 
-pub(crate) fn completion_report() -> Value {
-    let active_shell =
-        detect_shell(env::var("SHELL").ok().as_deref()).unwrap_or(CompletionShell::Bash);
+fn resolve_completion_shell(argv: &[String]) -> (CompletionShell, &'static str) {
+    if let Some(raw) = command_option_value(argv, &["cli", "completion"], "--shell") {
+        if let Some(shell) = CompletionShell::from_cli_value(&raw) {
+            return (shell, "explicit");
+        }
+    }
+
+    if let Some(shell) = detect_shell(env::var("SHELL").ok().as_deref()) {
+        return (shell, "detected");
+    }
+
+    (CompletionShell::Bash, "default")
+}
+
+pub(crate) fn completion_report(argv: &[String]) -> Value {
+    let (active_shell, selection_source) = resolve_completion_shell(argv);
     let supported_shells = [
         CompletionShell::Bash,
         CompletionShell::Zsh,
@@ -54,13 +69,20 @@ pub(crate) fn completion_report() -> Value {
     .into_iter()
     .map(completion_shell_name)
     .collect::<Vec<_>>();
+    let target_file = env::var_os("HOME").map(|home| {
+        completion_file_path(active_shell, Path::new(&home))
+            .to_string_lossy()
+            .into_owned()
+    });
 
     json!({
         "status": "ok",
         "active_shell": completion_shell_name(active_shell),
+        "selection_source": selection_source,
         "supported_shells": supported_shells,
         "supported_platforms": ["linux", "macos"],
         "windows_supported": false,
+        "target_file": target_file,
         "script": completion_script(active_shell),
     })
 }
@@ -326,6 +348,7 @@ pub(crate) fn self_test_report(
 
 pub(crate) fn try_handle(
     normalized_path: &[String],
+    argv: &[String],
     paths: &ResolvedStatePaths,
     registry: &RouteRegistry,
     plugin_registry_path: &Path,
@@ -361,7 +384,7 @@ pub(crate) fn try_handle(
         [a, b] if a == "cli" && b == "repl" => {
             Some(json!({"status": "ready", "mode": "repl", "history_file": paths.history_file}))
         }
-        [a, b] if a == "cli" && b == "completion" => Some(completion_report()),
+        [a, b] if a == "cli" && b == "completion" => Some(completion_report(argv)),
         [a, b] if a == "cli" && b == "inspect" => {
             let mut integrity_issues = Vec::<Value>::new();
             let plugin_origins = match plugin_origin_metadata(plugin_registry_path) {
@@ -489,9 +512,16 @@ mod tests {
 
     #[test]
     fn completion_report_declares_supported_platform_contract() {
-        let report = completion_report();
+        let report = completion_report(&[
+            "bijux".to_string(),
+            "completion".to_string(),
+            "--shell".to_string(),
+            "pwsh".to_string(),
+        ]);
         assert_eq!(report["supported_platforms"], serde_json::json!(["linux", "macos"]));
         assert_eq!(report["windows_supported"], serde_json::json!(false));
+        assert_eq!(report["active_shell"], serde_json::json!("pwsh"));
+        assert_eq!(report["selection_source"], serde_json::json!("explicit"));
         assert!(report["supported_shells"]
             .as_array()
             .expect("supported shells")

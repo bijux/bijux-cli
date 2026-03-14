@@ -63,3 +63,40 @@ fn conflicting_output_and_pretty_flags_normalize_deterministically() {
     assert_eq!(left.global_flags.output_format, right.global_flags.output_format);
     assert_eq!(left.global_flags.pretty_mode, right.global_flags.pretty_mode);
 }
+
+#[test]
+fn completion_alias_normalizes_with_explicit_shell_selector() {
+    let argv = vec![
+        "bijux".to_string(),
+        "completion".to_string(),
+        "--shell".to_string(),
+        "bash".to_string(),
+    ];
+
+    let intent = parse_intent(&argv).expect("parse should succeed");
+    assert_eq!(intent.command_path, vec!["completion"]);
+    assert_eq!(intent.normalized_path, vec!["cli", "completion"]);
+}
+
+#[test]
+fn canonical_cli_completion_and_doctor_paths_parse_successfully() {
+    let completion = parse_intent(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "completion".to_string(),
+        "--shell".to_string(),
+        "fish".to_string(),
+    ])
+    .expect("parse should succeed");
+    assert_eq!(completion.command_path, vec!["cli", "completion"]);
+    assert_eq!(completion.normalized_path, vec!["cli", "completion"]);
+
+    let doctor = parse_intent(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "doctor".to_string(),
+    ])
+    .expect("parse should succeed");
+    assert_eq!(doctor.command_path, vec!["cli", "doctor"]);
+    assert_eq!(doctor.normalized_path, vec!["cli", "doctor"]);
+}

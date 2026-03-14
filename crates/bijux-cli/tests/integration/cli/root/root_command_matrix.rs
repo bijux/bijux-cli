@@ -275,6 +275,37 @@ fn quiet_mode_is_supported_for_relevant_root_commands() {
 }
 
 #[test]
+fn completion_supports_explicit_shell_selection_in_text_and_json_modes() {
+    let bash = run(&["completion", "--shell", "bash"]);
+    assert_eq!(bash.status.code(), Some(0));
+    assert!(bash.stderr.is_empty());
+    let bash_text = String::from_utf8(bash.stdout).expect("utf-8");
+    assert!(bash_text.contains("complete -W "));
+
+    let zsh_payload = run_ok_json(&["completion", "--shell", "zsh", "--format", "json", "--no-pretty"]);
+    assert_eq!(zsh_payload["active_shell"], "zsh");
+    assert_eq!(zsh_payload["selection_source"], "explicit");
+    assert!(zsh_payload["script"]
+        .as_str()
+        .expect("script")
+        .contains("#compdef bijux"));
+}
+
+#[test]
+fn canonical_cli_alias_routes_are_executable() {
+    let cases: &[&[&str]] = &[
+        &["cli", "doctor"],
+        &["cli", "version"],
+        &["cli", "repl"],
+        &["cli", "completion", "--shell", "fish"],
+    ];
+    for args in cases {
+        let out = run(&args);
+        assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
+    }
+}
+
+#[test]
 fn no_color_is_supported_for_text_root_commands() {
     for args in [vec!["help"], vec!["help", "status"], vec!["help", "plugins"]] {
         let mut argv = vec!["--color", "never"];

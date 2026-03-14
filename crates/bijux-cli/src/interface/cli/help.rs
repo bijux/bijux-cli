@@ -187,6 +187,10 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
         ["cli"] => Some(render_subcommand_guide(&[
             "status     Runtime status summary".to_string(),
             "paths      Runtime state and filesystem paths".to_string(),
+            "doctor     Runtime environment diagnostics".to_string(),
+            "version    Runtime identity and provenance".to_string(),
+            "repl       Interactive runtime shell".to_string(),
+            "completion Shell completion output".to_string(),
             "config     Runtime configuration operations".to_string(),
             "self-test  Deterministic runtime self-checks".to_string(),
             "plugins    Canonical plugin lifecycle namespace".to_string(),
@@ -272,9 +276,10 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux help cli plugins inspect".to_string(),
         ],
         ["repl"] => vec!["bijux repl".to_string(), "bijux repl --format text".to_string()],
-        ["completion"] => {
-            vec!["bijux completion".to_string(), "bijux completion --format json".to_string()]
-        }
+        ["completion"] => vec![
+            "bijux completion --shell bash".to_string(),
+            "bijux completion --shell zsh --format json".to_string(),
+        ],
         ["history"] => vec![
             "bijux history".to_string(),
             "bijux history clear".to_string(),

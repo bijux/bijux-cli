@@ -281,10 +281,22 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("where"))
         .subcommand(Command::new("explain").arg(Arg::new("plugin").num_args(1)))
         .subcommand(Command::new("schema"));
+    let completion_group = Command::new("completion").arg(
+        Arg::new("shell")
+            .long("shell")
+            .num_args(1)
+            .value_name("SHELL")
+            .value_parser(["bash", "zsh", "fish", "pwsh"])
+            .help("Generate completion output for an explicit shell target"),
+    );
 
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
+        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("version"))
+        .subcommand(Command::new("repl"))
+        .subcommand(completion_group.clone())
         .subcommand(Command::new("inspect").hide(true))
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
@@ -319,7 +331,7 @@ pub fn root_command() -> Command {
         .subcommand(config_group)
         .subcommand(plugins_group)
         .subcommand(Command::new("repl"))
-        .subcommand(Command::new("completion"))
+        .subcommand(completion_group)
         .subcommand(Command::new("inspect").hide(true))
         .subcommand(
             Command::new("history")

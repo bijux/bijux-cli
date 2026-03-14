@@ -18,7 +18,7 @@ pub use compatibility::{
     ENV_PLUGINS_PATH,
 };
 #[allow(unused_imports)]
-pub(crate) use completion::{completion_script, detect_shell};
+pub(crate) use completion::{completion_file_path, completion_script, detect_shell};
 #[allow(unused_imports)]
 pub use completion::{post_install_hint, CompletionShell};
 #[allow(unused_imports)]
