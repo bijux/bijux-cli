@@ -54,8 +54,16 @@ fn routed_runtime_reference_matches_current_binary_resolution_contract() {
 
     assert!(doc.contains("bijux-dev-cli"), "maintainer binary documentation must stay explicit");
     assert!(
+        doc.contains("`bijux dev <tool> ...`"),
+        "routed product control commands must remain documented explicitly"
+    );
+    assert!(
         doc.contains("`bijux-dev-<tool>`"),
-        "product control-plane binaries must remain documented explicitly"
+        "direct product control binaries must remain documented explicitly"
+    );
+    assert!(
+        doc.contains("`bijux <tool> ...`"),
+        "routed product runtime commands must remain documented explicitly"
     );
     assert!(
         doc.contains("`PATH`"),
@@ -63,7 +71,6 @@ fn routed_runtime_reference_matches_current_binary_resolution_contract() {
     );
 
     for unsupported in [
-        "bijux dev ",
         "BIJUXCLI_ALLOWED_PRODUCT_BINS",
         "BIJUXCLI_PRODUCT_BIN_DIR",
         "BIJUXCLI_PRODUCT_BIN_DIRS",

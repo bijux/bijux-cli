@@ -8,15 +8,15 @@ that still matters.
 
 ```mermaid
 flowchart TD
-    A[bijux-<tool>] --> B[product runtime binary]
-    C[bijux-dev-<tool>] --> D[product control binary]
+    A[bijux <tool>] --> B[bijux-<tool> runtime binary]
+    C[bijux dev <tool>] --> D[bijux-dev-<tool> control binary]
     E[Python package] --> F[Rust-backed facade]
     G[plugins command group] --> H[plugin.manifest.json lifecycle]
 ```
 
 This diagram shows the four integration surfaces that still matter in the
-current repository: product binaries, control-plane binaries, the Python facade,
-and the plugin lifecycle exposed through the runtime.
+current repository: routed product commands, routed product control commands,
+the Python facade, and the plugin lifecycle exposed through the runtime.
 
 ```mermaid
 flowchart LR
@@ -32,6 +32,8 @@ configured stable PyPI baseline.
 
 | Surface | Binary pattern |
 | --- | --- |
+| Routed runtime command | `bijux <tool> ...` |
+| Routed control command | `bijux dev <tool> ...` |
 | Runtime binary | `bijux-<tool>` |
 | Control-plane binary | `bijux-dev-<tool>` |
 
@@ -39,9 +41,15 @@ Known routed product namespaces are:
 
 `agent`, `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, `vex`
 
-Owned product binaries are discovered by executable name on `PATH`. The `bijux`
-runtime command contract stays separate from these maintainer and product
-binaries.
+Owned product binaries are discovered by executable name on `PATH`.
+
+- `bijux <tool> ...` delegates to `bijux-<tool> ...`
+- `bijux dev <tool> ...` delegates to `bijux-dev-<tool> ...`
+- `bijux-dev-cli ...` remains the standalone maintainer surface for the CLI
+  repository itself
+
+The `bijux` runtime command contract stays separate from these maintainer and
+product binaries, but it now owns both routed product entrypoints.
 
 ## Plugin Runtime Reference
 
@@ -102,8 +110,8 @@ Relevant runtime-facing exceptions include:
 
 ## Local Product Routing
 
-Adjacent Bijux product binaries can be invoked directly when their executables
-are discoverable.
+Adjacent Bijux product binaries can be invoked either through the routed
+umbrella command or directly when their executables are discoverable.
 
 Typical local setup:
 
@@ -114,6 +122,8 @@ export PATH="/path/to/product/bin:$PATH"
 Examples:
 
 ```bash
+bijux atlas --help
+bijux dev atlas --help
 bijux-atlas --help
 bijux-dev-atlas --help
 # from a workspace checkout

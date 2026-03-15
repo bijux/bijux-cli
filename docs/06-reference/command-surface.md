@@ -73,13 +73,15 @@ Subcommands: `clear`
 
 `clear`, `delete`, `get`, `list`, `set`
 
-## Companion Binaries
+## Adjacent Product Routes And Binaries
 
 Maintainer and product tooling stays outside the runtime command inventory:
 
 - `bijux-dev-cli ...` for the maintainer control plane
-- `bijux-<product> ...` for adjacent Bijux product runtimes
-- `bijux-dev-<product> ...` for adjacent Bijux product control planes
+- `bijux <product> ...` for routed adjacent Bijux product runtimes
+- `bijux dev <product> ...` for routed adjacent Bijux product control planes
+- `bijux-<product> ...` for direct adjacent Bijux product runtimes
+- `bijux-dev-<product> ...` for direct adjacent Bijux product control planes
 
 Use [Integrations And Routed Runtimes](integrations-and-routed-runtimes.md) for
 the product-binary and maintainer-binary rules.

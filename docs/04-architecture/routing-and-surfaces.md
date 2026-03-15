@@ -62,8 +62,10 @@ even when shorter root commands also exist.
 These surfaces stay separate from the runtime command inventory:
 
 - `bijux-dev-cli ...` for the maintainer control-plane
-- `bijux-<product> ...` and `bijux-dev-<product> ...` for adjacent runtime and
-  control-plane binaries when those owned executables are available
+- `bijux <product> ...` and `bijux dev <product> ...` for routed adjacent
+  runtime and control-plane entrypoints
+- `bijux-<product> ...` and `bijux-dev-<product> ...` for the owned binaries
+  behind those routed entrypoints when the executables are available
 
 ### REPL
 
@@ -139,6 +141,7 @@ The route model is shared, but not every route is equal:
 
 - some routes are public runtime behavior
 - some routes are normalized compatibility aliases
-- some routes are routed product or maintainer namespaces
+- some routes are routed product or maintainer namespaces backed by owned
+  binaries
 
 The architecture works because those categories are kept separate in code and documentation.
