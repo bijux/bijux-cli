@@ -6,6 +6,7 @@ mod cli_command_matrix;
 mod cross_surface_equivalence;
 mod flag_normalization_matrix;
 mod install_command;
+mod official_product_routes;
 mod parser_invalid_utf8_argv;
 mod precedence_matrix;
 mod python_command_port_parity;

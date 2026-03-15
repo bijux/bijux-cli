@@ -6,6 +6,14 @@ use crate::contracts::known_bijux_tool;
 
 use super::AppRunResult;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DelegatedKnownToolCommand {
+    binary: String,
+    package_name: String,
+    command_surface: String,
+    forwarded_args: Vec<String>,
+}
+
 fn delegate_to_external_binary(
     binary: &str,
     package_name: &str,
@@ -27,20 +35,49 @@ fn delegate_to_external_binary(
     }
 }
 
-pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
-    let first = argv.get(1)?;
-
-    if let Some(tool) = known_bijux_tool(first) {
-        let runtime_binary = tool.runtime_binary();
-        let runtime_package = runtime_binary.clone();
-        let command_surface = format!("bijux {}", tool.namespace);
-        return Some(delegate_to_external_binary(
-            &runtime_binary,
-            &runtime_package,
-            &command_surface,
-            &argv[2..],
-        ));
+fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownToolCommand> {
+    match argv.get(1).map(String::as_str) {
+        Some("dev") => {
+            let namespace = argv.get(2)?;
+            let tool = known_bijux_tool(namespace)?;
+            Some(DelegatedKnownToolCommand {
+                binary: tool.control_binary(),
+                package_name: tool.control_package(),
+                command_surface: format!("bijux dev {}", tool.namespace),
+                forwarded_args: argv[3..].to_vec(),
+            })
+        }
+        Some(namespace) => {
+            let tool = known_bijux_tool(namespace)?;
+            Some(DelegatedKnownToolCommand {
+                binary: tool.runtime_binary(),
+                package_name: tool.runtime_package(),
+                command_surface: format!("bijux {}", tool.namespace),
+                forwarded_args: argv[2..].to_vec(),
+            })
+        }
+        None => None,
     }
+}
 
-    None
+pub(super) fn is_known_bijux_tool_route(path: &[String]) -> bool {
+    match path {
+        [dev, namespace, ..] => dev == "dev" && known_bijux_tool(namespace).is_some(),
+        [namespace, ..] => known_bijux_tool(namespace).is_some(),
+        [] => false,
+    }
+}
+
+pub(super) fn delegated_command_surface(argv: &[String]) -> Option<String> {
+    delegated_known_bijux_tool_command(argv).map(|command| command.command_surface)
+}
+
+pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
+    let command = delegated_known_bijux_tool_command(argv)?;
+    Some(delegate_to_external_binary(
+        &command.binary,
+        &command.package_name,
+        &command.command_surface,
+        &command.forwarded_args,
+    ))
 }

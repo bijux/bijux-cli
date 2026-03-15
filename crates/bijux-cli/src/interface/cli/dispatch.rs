@@ -9,7 +9,7 @@ mod suggest;
 use anyhow::Result;
 use serde_json::json;
 
-use crate::contracts::{known_bijux_tool, OutputFormat};
+use crate::contracts::OutputFormat;
 use crate::interface::cli::handlers::install as install_handler;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
@@ -234,24 +234,23 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             }
         };
         let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+        if delegation::is_known_bijux_tool_route(&path) {
+            let mut delegated_argv = vec!["bijux".to_string()];
+            delegated_argv.extend(path.clone());
+            delegated_argv.push("--help".to_string());
+            if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv) {
+                let surface = delegation::delegated_command_surface(&delegated_argv)
+                    .unwrap_or_else(|| path.join(" "));
+                let (target, target_truncated) = bounded_command(&surface);
+                telemetry.record(
+                    "dispatch.delegated.help",
+                    json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
+                );
+                return Ok(delegated);
+            }
+        }
         if !is_known_help_topic(&path) {
             return Ok(unknown_help_topic_result(&path_refs.join(" "), telemetry));
-        }
-        if let Some(first) = path.first().map(String::as_str) {
-            if known_bijux_tool(first).is_some() {
-                let mut delegated_argv = vec!["bijux".to_string()];
-                delegated_argv.extend(path.clone());
-                delegated_argv.push("--help".to_string());
-                if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv)
-                {
-                    let (target, target_truncated) = bounded_command(first);
-                    telemetry.record(
-                        "dispatch.delegated.help",
-                        json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
-                    );
-                    return Ok(delegated);
-                }
-            }
         }
         let rendered = match render_command_help(&path_refs) {
             Ok(rendered) => rendered,
@@ -275,10 +274,10 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     let has_help_flag = argv.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h"));
-    if has_help_flag && argv.get(1).is_some_and(|first| known_bijux_tool(first).is_some()) {
+    if has_help_flag && delegation::is_known_bijux_tool_route(&argv[1..]) {
         if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
-            let target_arg = argv.get(1).cloned().unwrap_or_default();
-            let (target, target_truncated) = bounded_command(&target_arg);
+            let surface = delegation::delegated_command_surface(argv).unwrap_or_default();
+            let (target, target_truncated) = bounded_command(&surface);
             telemetry.record(
                 "dispatch.delegated.help_flag",
                 json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
@@ -296,8 +295,8 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
     }
 
     if let Some(delegated) = delegation::try_delegate_known_bijux_tool(argv) {
-        let target_arg = argv.get(1).cloned().unwrap_or_default();
-        let (target, target_truncated) = bounded_command(&target_arg);
+        let surface = delegation::delegated_command_surface(argv).unwrap_or_default();
+        let (target, target_truncated) = bounded_command(&surface);
         telemetry.record(
             "dispatch.delegated.command",
             json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
