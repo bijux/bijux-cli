@@ -29,9 +29,7 @@ fn temp_dir(name: &str) -> PathBuf {
 fn write_stub_binary(bin_dir: &Path, binary_name: &str) {
     use std::os::unix::fs::PermissionsExt;
 
-    let script = format!(
-        "#!/bin/sh\nprintf 'stub:{binary_name}\\n'\nprintf 'args:%s\\n' \"$*\"\n"
-    );
+    let script = format!("#!/bin/sh\nprintf 'stub:{binary_name}\\n'\nprintf 'args:%s\\n' \"$*\"\n");
     let path = bin_dir.join(binary_name);
     fs::write(&path, script).expect("write stub");
     let mut permissions = fs::metadata(&path).expect("metadata").permissions();
@@ -61,8 +59,17 @@ fn official_runtime_routes_delegate_to_runtime_binaries_for_every_reserved_names
 
     for tool in known_bijux_tools() {
         let out = run_with_env(&[tool.namespace, "status"], &[("PATH", &bin_dir)]);
-        assert_eq!(out.status.code(), Some(0), "runtime route should succeed for {}", tool.namespace);
-        assert!(out.stderr.is_empty(), "runtime route should keep stderr empty for {}", tool.namespace);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "runtime route should succeed for {}",
+            tool.namespace
+        );
+        assert!(
+            out.stderr.is_empty(),
+            "runtime route should keep stderr empty for {}",
+            tool.namespace
+        );
         let stdout = String::from_utf8(out.stdout).expect("utf-8");
         assert!(stdout.contains(&format!("stub:{}", tool.runtime_binary_name)));
         assert!(stdout.contains("args:status"));
@@ -78,8 +85,17 @@ fn official_control_routes_delegate_to_control_binaries_for_every_reserved_names
 
     for tool in known_bijux_tools() {
         let out = run_with_env(&["dev", tool.namespace, "status"], &[("PATH", &bin_dir)]);
-        assert_eq!(out.status.code(), Some(0), "control route should succeed for {}", tool.namespace);
-        assert!(out.stderr.is_empty(), "control route should keep stderr empty for {}", tool.namespace);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "control route should succeed for {}",
+            tool.namespace
+        );
+        assert!(
+            out.stderr.is_empty(),
+            "control route should keep stderr empty for {}",
+            tool.namespace
+        );
         let stdout = String::from_utf8(out.stdout).expect("utf-8");
         assert!(stdout.contains(&format!("stub:{}", tool.control_binary_name)));
         assert!(stdout.contains("args:status"));
