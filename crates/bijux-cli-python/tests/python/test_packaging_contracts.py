@@ -5,7 +5,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import importlib.util
 from pathlib import Path
+
+import pytest
 
 from bijux_cli_py import check_python_runtime_supported
 
@@ -130,6 +133,9 @@ def test_native_extension_uses_abi3_for_supported_python_range() -> None:
 
 
 def test_source_distribution_supports_metadata_generation_from_the_published_layout() -> None:
+    if importlib.util.find_spec("build") is None:
+        pytest.skip("python build module is not installed in the active interpreter")
+
     project_root = _project_root()
     with tempfile.TemporaryDirectory() as temp_dir:
         result = subprocess.run(
