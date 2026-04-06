@@ -42,6 +42,7 @@ same contributor workflow.
 ## Read This Set In Order
 
 1. [Workspace And Tooling](workspace-and-tooling.md)
+2. [DAG CI And Ownership](dag-ci-and-ownership.md)
 2. [Change Model](change-model.md)
 3. [Testing And Evidence](testing-and-evidence.md)
 4. [Release And Compatibility](release-and-compatibility.md)
