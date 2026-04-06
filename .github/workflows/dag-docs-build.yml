@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -32,7 +32,7 @@ jobs:
       - name: rustdoc workspace
         run: cargo doc --workspace --no-deps
       - name: docs policy checks
-        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- docs run --advisory
+        run: cargo run -p bijux-dev --bin bijux-dev-dag -- docs run --advisory
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

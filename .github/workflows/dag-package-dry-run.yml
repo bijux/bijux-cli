@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -38,4 +38,4 @@ jobs:
           cargo check -p bijux-dag-runtime
           cargo check -p bijux-dag-app
           cargo check -p bijux-dag-cli
-          cargo check -p bijux-core-dev
+          cargo check -p bijux-dev

@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -31,4 +31,4 @@ jobs:
           toolchain: 1.81
           components: rustfmt
       - name: cargo fmt
-        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- fmt
+        run: cargo run -p bijux-dev --bin bijux-dev-dag -- fmt

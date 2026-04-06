@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-core-dev/**"
+      - "crates/bijux-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
       - "docs/bijux-dag/**"
@@ -30,12 +30,12 @@ jobs:
         with:
           toolchain: 1.81
       - name: generate hotspot reports
-        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- repo hotspot-reports
+        run: cargo run -p bijux-dev --bin bijux-dev-dag -- repo hotspot-reports
       - name: generate planner hardening report
-        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- repo planner-hardening-report
+        run: cargo run -p bijux-dev --bin bijux-dev-dag -- repo planner-hardening-report
       - name: verify generated hotspot reports are committed
         run: git diff --exit-code docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md docs/reports/foundation/dependency_cycle_report.md
       - name: verify generated planner hardening report is committed
         run: git diff --exit-code docs/reports/foundation/PLANNER_HARDENING_REPORT.md
       - name: run repo health contract tests
-        run: cargo test -p bijux-core-dev --test file_size_guardrails
+        run: cargo test -p bijux-dev --test file_size_guardrails
