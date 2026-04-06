@@ -21,15 +21,28 @@ nav:
   - Home: index.md
   - "bijux-core : Repository Handbook":
       - Repository Handbook: bijux-core/index.md
-      - Platform Overview: bijux-core/platform-overview.md
-      - Repository Scope: bijux-core/repository-scope.md
-      - Workspace Layout: bijux-core/workspace-layout.md
-      - Package Map: bijux-core/package-map.md
-      - API and Schema Governance: bijux-core/api-and-schema-governance.md
-      - Local Development: bijux-core/local-development.md
-      - Testing and Validation: bijux-core/testing-and-validation.md
-      - Release and Versioning: bijux-core/release-and-versioning.md
-      - Documentation System: bijux-core/documentation-system.md
+      - Architecture:
+          - Core Architecture: bijux-core/architecture/index.md
+          - System Overview: bijux-core/architecture/system-overview.md
+          - Workspace Topology: bijux-core/architecture/workspace-topology.md
+          - Dependency Direction: bijux-core/architecture/dependency-direction.md
+          - Runtime Surfaces: bijux-core/architecture/runtime-surfaces.md
+          - State and Configuration: bijux-core/architecture/state-and-configuration.md
+          - Distribution Model: bijux-core/architecture/distribution-model.md
+          - Maintainer Control Plane: bijux-core/architecture/maintainer-control-plane.md
+          - Artifact and Contract Flow: bijux-core/architecture/artifact-and-contract-flow.md
+          - Architecture Risks: bijux-core/architecture/architecture-risks.md
+      - Governance:
+          - Core Governance: bijux-core/governance/index.md
+          - Repository Scope: bijux-core/governance/repository-scope.md
+          - Package Ownership: bijux-core/governance/package-ownership.md
+          - Change Management: bijux-core/governance/change-management.md
+          - Testing and Validation: bijux-core/governance/testing-and-validation.md
+          - Release and Versioning: bijux-core/governance/release-and-versioning.md
+          - Compatibility and Schema: bijux-core/governance/compatibility-and-schema.md
+          - Documentation Standards: bijux-core/governance/documentation-standards.md
+          - Decision Record Policy: bijux-core/governance/decision-record-policy.md
+          - Risk and Exceptions: bijux-core/governance/risk-and-exceptions.md
   - "bijux-cli : CLI Handbook":
       - CLI Handbook: bijux-cli/index.md
       - Foundation:
@@ -146,11 +159,28 @@ nav:
           - Risk Register: bijux-dag/quality/risk-register.md
   - "bijux-dev : Maintainer Handbook":
       - Maintainer Handbook: bijux-dev/index.md
-      - Package Overview: bijux-dev/package-overview.md
-      - Automation Surface: bijux-dev/automation-surface.md
-      - Development Workflow: bijux-dev/development-workflow.md
-      - Validation and Gates: bijux-dev/validation-and-gates.md
-      - Release Operations: bijux-dev/release-operations.md
+      - Operations:
+          - Dev Operations: bijux-dev/operations/index.md
+          - Toolchain Setup: bijux-dev/operations/toolchain-setup.md
+          - Command Surface: bijux-dev/operations/command-surface.md
+          - Repository Gates: bijux-dev/operations/repository-gates.md
+          - Evidence Collection: bijux-dev/operations/evidence-collection.md
+          - Diagnostics and Reporting: bijux-dev/operations/diagnostics-and-reporting.md
+          - Docs Operations: bijux-dev/operations/docs-operations.md
+          - CI and Automation: bijux-dev/operations/ci-and-automation.md
+          - Incident Response: bijux-dev/operations/incident-response.md
+          - Release Operations: bijux-dev/operations/release-operations.md
+      - Governance:
+          - Dev Governance: bijux-dev/governance/index.md
+          - Ownership Model: bijux-dev/governance/ownership-model.md
+          - Quality Policy: bijux-dev/governance/quality-policy.md
+          - Test Policy: bijux-dev/governance/test-policy.md
+          - Change Control: bijux-dev/governance/change-control.md
+          - Contract Governance: bijux-dev/governance/contract-governance.md
+          - Dependency Governance: bijux-dev/governance/dependency-governance.md
+          - Documentation Standard: bijux-dev/governance/documentation-standard.md
+          - Security and Secrets: bijux-dev/governance/security-and-secrets.md
+          - Known Limitations: bijux-dev/governance/known-limitations.md
 
 hooks:
   - docs/automation/publish_contract_assets.py

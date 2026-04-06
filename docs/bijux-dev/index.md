@@ -9,16 +9,32 @@ last_reviewed: 2026-04-06
 
 # Maintainer Handbook
 
-`bijux-dev` documents maintainer-only automation, release hygiene, and
-repository health checks.
+`bijux-dev` documents maintainer-only operations and governance for quality
+gates, evidence workflows, and release reliability.
 
-Read this handbook when the work changes repository operations, guardrails,
-automation checks, or release maintenance tasks.
+## Visual Summary
 
-## Pages In This Section
+```mermaid
+flowchart LR
+    handbook[maintainer handbook] --> operations[operations section]
+    handbook --> governance[governance section]
+    operations --> evidence[evidence and diagnostics workflows]
+    governance --> policy[quality and contract policy]
+```
 
-- [Package Overview](package-overview.md)
-- [Automation Surface](automation-surface.md)
-- [Development Workflow](development-workflow.md)
-- [Validation and Gates](validation-and-gates.md)
-- [Release Operations](release-operations.md)
+## Sections In This Handbook
+
+- [Dev Operations](operations/index.md)
+- [Dev Governance](governance/index.md)
+
+## Use This Handbook For
+
+- maintainer command workflows and repository gates
+- evidence collection and reporting operations
+- policy decisions around contracts, dependencies, and security
+
+## Program Handbooks
+
+- [Repository Handbook](../bijux-core/index.md)
+- [CLI Handbook](../bijux-cli/index.md)
+- [DAG Handbook](../bijux-dag/index.md)
