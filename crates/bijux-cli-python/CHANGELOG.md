@@ -1,7 +1,7 @@
 # Changelog
 <a id="top"></a>
 
-All notable changes to **Bijux CLI** are documented here.
+All notable changes to **Bijux CLI Python Package** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
