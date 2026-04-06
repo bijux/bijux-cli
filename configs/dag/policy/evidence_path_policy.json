@@ -5,6 +5,7 @@
     "dag.json"
   ],
   "governed_roots": [
+    "evidence/dag",
     "evidence/authoring",
     "evidence/battle",
     "evidence/cache",
@@ -22,6 +23,7 @@
     "crates/bijux-dag-runtime/tests/fixtures"
   ],
   "schema_fixture_roots": [
+    "configs/dag/schema/fixtures",
     "configs/schema/fixtures"
   ],
   "legacy_scenario_roots": [
@@ -40,6 +42,7 @@
     "tests/integration_fixtures/*.sh",
     "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
     "crates/bijux-dag-app/tests/fixtures/run_history_mixed_runs.json",
-    "crates/bijux-dag-app/tests/fixtures/git_for_computation_graphs_workflow.json"
+    "crates/bijux-dag-app/tests/fixtures/git_for_computation_graphs_workflow.json",
+    "crates/bijux-cli/tests/data/fixtures/**/*.json"
   ]
 }

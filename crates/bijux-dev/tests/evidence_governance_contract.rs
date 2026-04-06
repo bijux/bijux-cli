@@ -17,6 +17,14 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn evidence_ledger_path(root: &Path) -> PathBuf {
+    let canonical = root.join("evidence/dag/ownership/evidence_ledger.json");
+    if canonical.exists() {
+        return canonical;
+    }
+    root.join("evidence/ownership/evidence_ledger.json")
+}
+
 fn collect_files(root: &Path, rel: &str, out: &mut BTreeSet<String>) {
     let base = root.join(rel);
     if !base.exists() {
@@ -100,8 +108,7 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
             .expect("read evidence governance policy");
     let policy: Value = serde_json::from_str(&policy_payload).expect("parse evidence governance");
 
-    let ledger_payload = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
-        .expect("read evidence ledger");
+    let ledger_payload = fs::read_to_string(evidence_ledger_path(&root)).expect("read evidence ledger");
     let ledger: Value = serde_json::from_str(&ledger_payload).expect("parse evidence ledger");
 
     let managed_roots = policy["managed_roots"].as_array().expect("managed_roots array");
