@@ -246,10 +246,11 @@ def test_project_urls_expose_python_and_rust_runtime_surfaces() -> None:
 
     assert urls == {
         "Homepage": "https://bijux.io/bijux-core/bijux-cli/",
-        "Repository": "https://github.com/bijux/bijux-core.git",
-        "Bug Tracker": "https://github.com/bijux/bijux-core/issues",
+        "Repository": "https://github.com/bijux/bijux-core",
+        "Issues": "https://github.com/bijux/bijux-core/issues",
         "Documentation": "https://bijux.io/bijux-core/bijux-cli/",
         "Changelog": "https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/CHANGELOG.md",
+        "Security": "https://github.com/bijux/bijux-core/security/policy",
         "Discussions": "https://github.com/bijux/bijux-core/discussions",
         "Rust Runtime Crate": "https://crates.io/crates/bijux-cli",
         "Rust Runtime Docs": "https://docs.rs/bijux-cli",
