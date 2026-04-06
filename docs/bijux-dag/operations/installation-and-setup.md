@@ -9,15 +9,50 @@ last_reviewed: 2026-04-06
 
 # Installation And Setup
 
-This page captures the DAG operational contract for **Installation And Setup**.
+Installation and setup should create a predictable DAG execution environment for
+both local and automation use.
 
-Start with:
+## Visual Summary
 
-- [Installation and setup](installation-and-setup.md)
-- [Failure recovery](failure-recovery.md)
+```mermaid
+flowchart TD
+    fetch[fetch repository and toolchain] --> build[build workspace]
+    build --> verify[verify dag command availability]
+    verify --> sample[run a sample graph]
+    sample --> baseline[capture baseline artifacts]
+```
 
-## Consolidated Runtime Operations
+## Required Setup Contract
 
-This section absorbs former getting-started and operations chapters, including
-first DAG execution, run-history interpretation, troubleshooting, backend
-support posture, and reproducibility expectations.
+- Rust toolchain pinned by repository `rust-toolchain.toml`
+- workspace build succeeds with `cargo build --workspace`
+- DAG command surface reachable via `bijux dag --help`
+- sample graph validates and runs without undocumented flags
+
+## Recommended Validation Sequence
+
+```bash
+cargo build --workspace
+cargo test -p bijux-dag-core
+bijux dag validate ./examples/simple.dag.json
+bijux dag run ./examples/simple.dag.json --out ./runs/bootstrap
+bijux dag inspect ./runs/bootstrap/latest
+```
+
+## Code Anchors
+
+- `crates/bijux-dag-cli/src/main.rs`
+- `crates/bijux-dag-app/src/commands/mod.rs`
+- `crates/bijux-dag-app/src/routes/run_routes.rs`
+
+## Setup Failure Signals
+
+- command not found for `bijux dag`
+- schema rejection on known-good example graphs
+- run directories missing outputs index or manifest evidence
+
+## Next Reads
+
+- [Local Development](local-development.md)
+- [Common Workflows](common-workflows.md)
+- [Failure Recovery](failure-recovery.md)
