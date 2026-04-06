@@ -1,101 +1,43 @@
-# Architecture
+---
+title: Core Architecture
+audience: mixed
+type: section-index
+status: canonical
+owner: bijux-core-docs
+last_reviewed: 2026-04-06
+---
 
-This directory is the current architecture canon for `bijux-cli`.
+# Core Architecture
 
-The goal here is narrow: keep the smallest set of documents that explains the
-current system accurately.
+This section defines the repository-level architecture that coordinates CLI,
+DAG, Python bridge, and maintainer control-plane responsibilities.
 
-## What This Set Is
-
-- a description of the current Rust-owned system
-- a map of the workspace and its responsibilities
-- an explanation of how commands are parsed, executed, and emitted
-- a record of the state model, plugin model, packaging model, and maintainer control-plane
-- a description of how quality gates and architectural change are handled
-
-## What This Set Is Not
-
-- a migration diary from the older Python-owned runtime
-- a progress tracker
-- a parity scoreboard
-- a replacement for executable tests, schemas, or code-level contracts
-
-## Reading Order
+## Visual Summary
 
 ```mermaid
-flowchart TD
-    A[index.md] --> B[system-overview.md]
-    B --> C[workspace-map.md]
-    C --> D[execution-pipeline.md]
-    D --> E[routing-and-surfaces.md]
-    D --> F[configuration-and-state.md]
-    D --> G[plugin-system.md]
-    C --> H[runtime-and-distribution.md]
-    C --> I[maintainer-control-plane.md]
-    I --> J[quality-and-change-management.md]
+flowchart LR
+    topology[workspace topology] --> dependencies[dependency direction]
+    dependencies --> runtime[runtime surfaces]
+    runtime --> state[state and configuration]
+    state --> distribution[distribution model]
+    distribution --> risks[architecture risks]
 ```
 
-This flowchart is the recommended reading path through the architecture canon.
-It moves from the broad system picture into crate boundaries, then into the
-runtime subsystems, and ends with the maintainer and quality surfaces.
+## Architecture Priorities
 
-```mermaid
-mindmap
-  root((Architecture Canon))
-    System
-      System overview
-      Workspace map
-    Runtime
-      Execution pipeline
-      Routing and surfaces
-      Configuration and state
-      Plugin system
-    Packaging
-      Runtime and distribution
-      Maintainer control-plane
-    Governance
-      Quality and change management
-```
+- one workspace authority at the repository root
+- explicit crate ownership with one-way dependency rules
+- stable command and artifact behavior across CLI and DAG programs
+- maintainers operate through dedicated control-plane paths
 
-The mindmap shows the same canon grouped by topic instead of order. It helps a
-reader jump directly to runtime, packaging, or governance material once they
-already know the broad system shape.
+## Pages In This Section
 
-## The Eleven Documents
-
-1. [System Overview](system-overview.md)
-2. [Workspace Map](workspace-map.md)
-3. [Workspace Ownership Map](workspace-ownership-map.md)
-3. [Execution Pipeline](execution-pipeline.md)
-4. [Routing And Surfaces](routing-and-surfaces.md)
-5. [Configuration And State](configuration-and-state.md)
-6. [Plugin System](plugin-system.md)
-7. [Runtime And Distribution](runtime-and-distribution.md)
-8. [Maintainer Control-Plane](maintainer-control-plane.md)
-9. [Quality And Change Management](quality-and-change-management.md)
-10. [Architecture Index](index.md)
-
-## Source Of Truth
-
-These documents are explanatory, not normative by themselves.
-
-The deeper sources of truth are:
-
-- the Rust source tree under `crates/`
-- the contract markdown under `docs/07-contracts/`
-- the machine-readable contract assets under `contracts/`
-- the executable tests
-- the published package surfaces
-
-If one of these pages conflicts with the running code or the contracts, the
-page is wrong and should be corrected.
-
-## Current Architectural Claim
-
-The current claim of this repository is simple:
-
-- `bijux-cli` owns the runtime
-- `bijux-cli-python` is a Python-facing packaging and bridge layer around the Rust runtime
-- `bijux-dev-cli` is the maintainer control-plane for repository and release diagnostics
-
-That is the architecture being documented here.
+- [System Overview](system-overview.md)
+- [Workspace Topology](workspace-topology.md)
+- [Dependency Direction](dependency-direction.md)
+- [Runtime Surfaces](runtime-surfaces.md)
+- [State and Configuration](state-and-configuration.md)
+- [Distribution Model](distribution-model.md)
+- [Maintainer Control Plane](maintainer-control-plane.md)
+- [Artifact and Contract Flow](artifact-and-contract-flow.md)
+- [Architecture Risks](architecture-risks.md)
