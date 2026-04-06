@@ -1,3 +1,0 @@
-msrv = "1.84.1"
-allow-expect-in-tests = true
-allow-unwrap-in-tests = true
