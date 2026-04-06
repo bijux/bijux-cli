@@ -10,7 +10,7 @@ theme:
   language: en
   custom_dir: overrides
   logo: assets/bijux_logo_hq.png
-  favicon: assets/bijux_icon.png
+  favicon: assets/site-icons/favicon.ico
   font: false
   icon:
     repo: fontawesome/brands/github
@@ -74,11 +74,18 @@ markdown_extensions:
 
 extra:
   homepage: https://bijux.io/
+  generator: true
+  bijux:
+    repository: bijux-core
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/bijux
 
+extra_css:
+  - assets/styles/extra.css
+
 extra_javascript:
+  - assets/javascripts/vendor/mermaid-11.6.0.min.js
   - assets/javascripts/mermaid-init.js
 
 copyright: "© 2026 Bijan Mousavi"
