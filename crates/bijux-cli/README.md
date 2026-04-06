@@ -2,6 +2,9 @@
 
 `bijux-cli` is the Rust runtime crate behind the `bijux` executable.
 
+It is the public command runtime product in `v0.3.4` and the source of truth
+for runtime command semantics shared by the native binary and Python bridge.
+
 ## Scope
 
 - Own command parsing, normalization, registry lookup, and execution.
@@ -34,3 +37,10 @@
 - `tests/integration.rs`: command behavior, parity, resilience, and REPL coverage.
 - `tests/routing.rs`: parser, registry, schema, and routing law coverage.
 - `tests/data/fixtures` and `tests/data/golden`: stable fixtures and snapshots.
+
+## Release References
+
+- Repository handbook: `docs/bijux-cli/`
+- Crate changelog: `crates/bijux-cli/CHANGELOG.md`
+- Root release log: `CHANGELOG.md`
+- Security policy: `SECURITY.md`
