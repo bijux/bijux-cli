@@ -25,6 +25,9 @@ replay fidelity, diff semantics, or DAG backend operations.
 
 This keeps DAG documentation stable and easy to review across releases.
 
+Topic migration coverage is documented in
+[Documentation Standards](quality/documentation-standards.md).
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)
