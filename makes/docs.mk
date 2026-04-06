@@ -4,6 +4,8 @@
 ACT              ?= $(VENV)/bin
 MKDOCS_BIN_CAND  ?= $(ACT)/mkdocs
 MKDOCS_BIN       = $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOCS_BIN_CAND)" || command -v mkdocs)
+DOCS_PYTHON_BIN_CAND ?= $(ACT)/python
+DOCS_PYTHON_BIN      = $(shell test -x "$(DOCS_PYTHON_BIN_CAND)" && printf "%s" "$(DOCS_PYTHON_BIN_CAND)" || command -v python3 || command -v python)
 MKDOCS_CFG       ?= mkdocs.yml
 DOCS_REQUIREMENTS ?= requirements-docs.txt
 
@@ -21,9 +23,9 @@ DOCS_PORT           ?= 8000
 ifeq ($(shell uname -s),Darwin)
   BREW_PREFIX   := $(shell command -v brew >/dev/null 2>&1 && brew --prefix)
   LIBFFI_PREFIX := $(shell test -n "$(BREW_PREFIX)" && brew --prefix libffi)
-  DOCS_ENV      := NO_MKDOCS_2_WARNING=1 DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
 else
-  DOCS_ENV      := NO_MKDOCS_2_WARNING=1
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
 endif
 
 .PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install
@@ -36,7 +38,7 @@ docs-require: ## Verify the documentation toolchain and configuration
 
 docs-install: ## Install the documentation toolchain dependencies
 	@echo "Installing documentation dependencies from $(DOCS_REQUIREMENTS)"
-	@"$(ACT)/python" -m pip install -r "$(DOCS_REQUIREMENTS)"
+	@"$(DOCS_PYTHON_BIN)" -m pip install -r "$(DOCS_REQUIREMENTS)"
 
 docs: docs-clean docs-require ## Build documentation into artifacts/docs/site
 	@echo "Building documentation"
