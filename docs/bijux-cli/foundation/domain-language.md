@@ -1,7 +1,7 @@
 ---
 title: Domain Language
 audience: mixed
-type: foundation
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,52 @@ last_reviewed: 2026-04-06
 
 # Domain Language
 
-This page defines the CLI foundation contract for **Domain Language**.
+`bijux-cli` uses a small set of terms repeatedly across source, tests, and docs.
+This page defines those terms so reviewers and maintainers read behavior the
+same way.
 
-Primary references:
+## Visual Summary
 
-- [CLI foundation index](index.md)
-- [Operator workflows](../interfaces/operator-workflows.md)
+```mermaid
+flowchart LR
+    argv["argv"] --> intent["parsed intent"]
+    intent --> route["normalized route"]
+    route --> policy["execution policy"]
+    policy --> payload["success or error payload"]
+    payload --> exit["process exit code"]
+```
 
-## Consolidated Terms
+## Core Terms
 
-Use stable terms for command family, output envelope, plugin boundary, contract
-surface, and compatibility window to keep design and operations discussions
-unambiguous.
+- `command path`: ordered route segments such as `cli plugins install`
+- `normalized path`: canonical route after alias rewriting
+- `global flags`: top-level options (format, color, log-level, quiet, config-path)
+- `execution policy`: resolved runtime policy used by rendering and execution
+- `route target`: selected owner (`BuiltIn` or `Plugin(namespace)`)
+- `envelope`: typed success/error contract structures in `contracts/envelope.rs`
+
+## Plugin Terms
+
+- `namespace`: top-level plugin route root
+- `reserved namespace`: blocked names owned by built-ins or known product tools
+- `compatibility range`: semver bounds a plugin declares for host runtime support
+- `lifecycle state`: discovered, validated, installed, enabled, disabled, broken, incompatible
+
+## Code Anchors
+
+- `crates/bijux-cli/src/contracts/command.rs`
+- `crates/bijux-cli/src/contracts/execution.rs`
+- `crates/bijux-cli/src/contracts/plugin.rs`
+- `crates/bijux-cli/src/routing/registry.rs`
+
+## Rule for Documentation and Review
+
+When adding new runtime behavior, prefer existing terminology. If new terms are
+necessary, define them here and reflect them in contracts and tests in the same
+change set.
+
+## Next Reads
+
+- [Lifecycle Overview](lifecycle-overview.md)
+- [Data Contracts](../interfaces/data-contracts.md)
+- [Invariants](../quality/invariants.md)
