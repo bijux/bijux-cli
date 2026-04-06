@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-WORKSPACE_PACKAGES = {"bijux-cli", "bijux-cli-python", "bijux-core-dev"}
+WORKSPACE_PACKAGES = {"bijux-cli", "bijux-cli-python", "bijux-dev"}
 IGNORE_NAMES = {
     ".git",
     ".DS_Store",
