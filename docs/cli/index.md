@@ -1,17 +1,14 @@
-# CLI Program
+---
+title: CLI Program Redirect
+audience: mixed
+type: redirect
+status: canonical
+owner: bijux-cli-docs
+last_reviewed: 2026-04-06
+---
 
-This section is the canonical user and operator documentation for the `bijux-cli` command surface.
+# CLI Program Redirect
 
-## Start here
+Canonical CLI docs moved to the handbook path:
 
-- [Introduction](../01-introduction/index.md)
-- [Getting Started](../02-getting-started/index.md)
-- [User Guide](../03-user-guide/index.md)
-- [Reference](../06-reference/index.md)
-- [Contracts](../07-contracts/index.md)
-
-## Runtime entrypoint
-
-```bash
-cargo run -p bijux-cli --bin bijux -- --help
-```
+- [CLI Handbook](../bijux-cli/index.md)

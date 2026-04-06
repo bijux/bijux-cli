@@ -1,20 +1,17 @@
-# DAG Program
+---
+title: DAG Program Redirect
+audience: mixed
+type: redirect
+status: canonical
+owner: bijux-dag-docs
+last_reviewed: 2026-04-06
+---
 
-This section is the canonical documentation for the DAG runtime and its command surface.
+# DAG Program Redirect
 
-## Program sections
+Canonical DAG docs moved to:
 
-- [Introduction](01-introduction/01-what-is-bijux-dag.md)
-- [Getting Started](02-getting-started/01-installation.md)
-- [User Guide](03-user-guide/01-authoring-dags.md)
-- [CLI Reference](04-cli-reference/01-cli-overview.md)
-- [System Architecture](05-system-architecture/01-system-overview.md)
-- [Specification](06-specification/01-dag-model.md)
-- [Operations](07-operations/01-ci-integration.md)
-- [Development](08-development/01-repository-structure.md)
+- [DAG Handbook](../bijux-dag/index.md)
 
-## Runtime entrypoint
-
-```bash
-cargo run -p bijux-dag-cli --bin bijux-dag -- dag --help
-```
+Legacy DAG chapter pages remain available under `docs/dag/` and are referenced
+from the DAG handbook sections.

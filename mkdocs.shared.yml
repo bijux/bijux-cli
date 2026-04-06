@@ -54,6 +54,10 @@ plugins:
   - redirects:
       redirect_maps:
         08-dag/index.md: dag/index.md
+        cli/index.md: bijux-cli/index.md
+        dag/index.md: bijux-dag/index.md
+        core/index.md: bijux-core/index.md
+        dev/index.md: bijux-dev/index.md
 
 markdown_extensions:
   - admonition

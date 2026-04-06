@@ -1,17 +1,14 @@
-# Dev Program
+---
+title: Dev Program Redirect
+audience: maintainers
+type: redirect
+status: canonical
+owner: bijux-dev-docs
+last_reviewed: 2026-04-06
+---
 
-This section is the maintainer and contributor control-plane documentation for `bijux-dev`.
+# Dev Program Redirect
 
-## Maintainer and contribution flow
+Canonical maintainer docs moved to:
 
-- [Development Overview](../05-development/index.md)
-- [Workspace And Tooling](../05-development/workspace-and-tooling.md)
-- [Testing And Evidence](../05-development/testing-and-evidence.md)
-- [Release And Compatibility](../05-development/release-and-compatibility.md)
-- [DAG CI And Ownership](../05-development/dag-ci-and-ownership.md)
-
-## Maintainer command surface
-
-```bash
-cargo run -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
-```
+- [Maintainer Handbook](../bijux-dev/index.md)
