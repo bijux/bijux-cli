@@ -12,7 +12,7 @@ use futures as _;
 use serde_json::Value;
 
 fn is_internal_workspace_crate(name: &str) -> bool {
-    name == "bijux-cli" || name == "bijux-dev-cli" || name.starts_with("bijux-cli-")
+    name == "bijux-cli" || name == "bijux-dev" || name.starts_with("bijux-cli-")
 }
 
 fn dependency_kind(dep: &Value) -> Option<&str> {
@@ -73,7 +73,7 @@ fn enforces_internal_crate_boundaries() {
         root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<(&str, &str)>> = BTreeMap::from([
-        ("bijux-dev-cli", BTreeSet::from([("normal", "bijux-cli")])),
+        ("bijux-dev", BTreeSet::from([("normal", "bijux-cli")])),
         ("bijux-cli", BTreeSet::new()),
         ("bijux-cli-python", BTreeSet::from([("normal", "bijux-cli")])),
     ]);
