@@ -250,7 +250,7 @@ fn run_history_query_performance_contract_on_large_fixture_set() {
 #[test]
 fn run_manifest_regression_corpus_fixture_is_stable_and_parseable() {
     let corpus: Value = serde_json::from_str(include_str!(
-        "../../../evidence/cache/replay/run_manifest_regression_corpus.json"
+        "../../../bijux-dag/evidence/cache/replay/run_manifest_regression_corpus.json"
     ))
     .expect("corpus");
     assert_eq!(corpus["version"], "v1");

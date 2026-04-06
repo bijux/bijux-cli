@@ -8,8 +8,8 @@ use std::process::Command;
 use tempfile::{tempdir, NamedTempFile};
 
 fn dag_command() -> Command {
-    let path = option_env!("CARGO_BIN_EXE_bijux")
-        .expect("cargo test must provide CARGO_BIN_EXE_bijux for integration tests");
+    let path = option_env!("CARGO_BIN_EXE_bijux-dag")
+        .expect("cargo test must provide CARGO_BIN_EXE_bijux-dag for integration tests");
     assert!(
         std::path::Path::new(path).exists(),
         "resolved bijux test binary path does not exist: {path}"
