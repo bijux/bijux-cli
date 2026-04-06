@@ -3,6 +3,13 @@ members = [
   "crates/bijux-dev-cli",
   "crates/bijux-cli",
   "crates/bijux-cli-python",
+  "bijux-dag/crates/bijux-dag-core",
+  "bijux-dag/crates/bijux-dag-artifacts",
+  "bijux-dag/crates/bijux-dag-runtime",
+  "bijux-dag/crates/bijux-dag-app",
+  "bijux-dag/crates/bijux-dag-cli",
+  "bijux-dag/crates/bijux-dag-testkit",
+  "bijux-dag/crates/bijux-dev-dag",
 ]
 resolver = "2"
 
@@ -25,6 +32,14 @@ serde_yaml = "0.9.34"
 toml = "0.9.8"
 thiserror = "2.0.17"
 tempfile = "3.23.0"
+clap = { version = "4.5.51", features = ["derive"] }
+clap_complete = "4.5.60"
+sha2 = "0.10.9"
+ctrlc = "3.5.1"
+hex = "0.4.3"
+tar = "0.4.44"
+flate2 = "1.1.4"
+base64 = "0.22.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
