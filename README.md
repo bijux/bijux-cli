@@ -21,7 +21,7 @@ All build, test, and release validation commands are expected to run from reposi
 cargo check --workspace
 cargo test --workspace
 cargo run -p bijux-cli --bin bijux -- --help
-cargo run -p bijux-dag-cli -- dag --help
+cargo run -p bijux-dag-cli --bin bijux-dag -- dag --help
 ```
 
 ## Make targets

@@ -16,7 +16,7 @@ Run from repository root:
 
 ```bash
 cargo check --workspace
-cargo run -p bijux-dag-cli -- dag --help
+cargo run -p bijux-dag-cli --bin bijux-dag -- dag --help
 make dag-test
 make dag-contracts
 ```

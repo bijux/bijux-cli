@@ -21,5 +21,5 @@ tempfile = { workspace = true }
 serde_json = { workspace = true }
 
 [[bin]]
-name = "bijux"
+name = "bijux-dag"
 path = "src/main.rs"
