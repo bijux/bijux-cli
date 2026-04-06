@@ -1,7 +1,7 @@
 ---
 title: Execution Model
 audience: mixed
-type: architecture
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,9 +9,48 @@ last_reviewed: 2026-04-06
 
 # Execution Model
 
-This architecture page anchors **Execution Model** for CLI.
+`bijux-cli` treats each invocation as a deterministic run: parse, normalize,
+execute, render, and exit. This model allows command behavior to remain
+predictable across CLI and REPL usage.
 
-Related references:
+## Visual Summary
 
-- [Execution pipeline](../../bijux-core/architecture/execution-pipeline.md)
-- [CLI surface](../interfaces/cli-surface.md)
+```mermaid
+flowchart LR
+    argv["argv input"] --> parse["parse_intent"]
+    parse --> normalize["alias and route normalization"]
+    normalize --> dispatch["run_app dispatch"]
+    dispatch --> handler["route handler or plugin route"]
+    handler --> render["render_value or process output"]
+    render --> exit["exit code mapping"]
+```
+
+## Execution Steps
+
+1. Decode argv and optional REPL interception.
+2. Parse intent with global flags recognized regardless of placement.
+3. Resolve fast-path help/version and known-tool delegation cases.
+4. Route to root, cli, config, history, memory, plugins, or install handlers.
+5. Render output respecting format and pretty settings.
+6. Emit stdout/stderr payloads and return final exit code.
+
+## Code Anchors
+
+- `crates/bijux-cli/src/bootstrap/run.rs`
+- `crates/bijux-cli/src/interface/cli/dispatch.rs`
+- `crates/bijux-cli/src/interface/cli/dispatch/route_exec.rs`
+- `crates/bijux-cli/src/routing/parser.rs`
+- `crates/bijux-cli/src/kernel/pipeline.rs`
+
+## Execution Guarantees
+
+- usage and parser failures are surfaced with usage-class exit behavior
+- help rendering can short-circuit without running full command handlers
+- quiet mode suppresses output streams but preserves command exit outcome
+- unknown routes include correction hints when similarity matches exist
+
+## Next Reads
+
+- [Error Model](error-model.md)
+- [Operator Workflows](../interfaces/operator-workflows.md)
+- [Failure Recovery](../operations/failure-recovery.md)
