@@ -1,23 +1,59 @@
 ---
-title: Cli Surface
+title: CLI Surface
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Cli Surface
+# CLI Surface
 
-This page defines interface expectations for **Cli Surface** in `bijux-cli`.
+`bijux-cli` exposes a route-oriented command surface where global flags apply
+across commands and aliases normalize toward canonical forms.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Artifact contracts](artifact-contracts.md)
+```mermaid
+flowchart TD
+    root["bijux root"] --> runtime["status audit docs install"]
+    root --> state["config history memory"]
+    root --> plugins["plugins and cli plugins namespace"]
+    root --> interaction["repl completion help version"]
+```
 
-## Consolidated Operator Guidance
+## Stable Route Groups
 
-This page incorporates the former user-guide material for interactive history,
-configuration/output interpretation, everyday commands, and plugin extension
-usage from an interface-contract perspective.
+- runtime probes: `status`, `audit`, `docs`, `doctor`, `version`
+- state management: `config`, `history`, `memory`
+- plugin lifecycle: `plugins` and `cli plugins ...`
+- interaction: `repl`, `completion`, `help`
+
+## Global Flag Contract
+
+- `--format|-f`: `text`, `json`, `yaml`
+- `--json` and `--text`: explicit format aliases
+- `--pretty` and `--no-pretty`: render style toggles
+- `--color`: ANSI policy
+- `--log-level`: telemetry and diagnostics verbosity
+- `--quiet`: suppress output streams after successful execution
+
+## Code Anchors
+
+- `crates/bijux-cli/src/routing/parser.rs`
+- `crates/bijux-cli/src/routing/model.rs`
+- `crates/bijux-cli/src/interface/cli/help.rs`
+- `crates/bijux-cli/tests/data/golden/cli_surface/`
+
+## CLI Surface Rules
+
+- aliases should normalize to canonical paths before route execution
+- help output should match parser model and route catalog
+- command additions require docs update and route test coverage
+- root and `cli` prefixed forms must remain coherent
+
+## Next Reads
+
+- [Operator Workflows](operator-workflows.md)
+- [Entrypoints and Examples](entrypoints-and-examples.md)
+- [Compatibility Commitments](compatibility-commitments.md)
