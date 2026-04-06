@@ -30,6 +30,13 @@ flowchart LR
 - examples use current command names and realistic paths
 - diagrams summarize key system relationships on each page
 
+## Language and Tone Rules
+
+- prefer direct declarative language over speculative wording
+- use concrete ownership verbs: `owns`, `does not own`, `requires`, `proves`
+- avoid vague filler such as "might be okay" or "generally works"
+- when uncertainty exists, state uncertainty and next verification step
+
 ## Required Frontmatter Keys
 
 - `title`
@@ -38,6 +45,33 @@ flowchart LR
 - `status`
 - `owner`
 - `last_reviewed`
+
+## Canonical Page Template
+
+````md
+---
+title: <Page Title>
+audience: <operators|maintainers|mixed>
+type: <section-index|architecture|governance|operations|quality>
+status: canonical
+owner: <handbook-owner>
+last_reviewed: YYYY-MM-DD
+---
+
+# <Page Title>
+
+## Visual Summary
+```mermaid
+flowchart LR
+    A --> B
+```
+
+## Core Policy Or Guidance
+
+## Code Anchors
+
+## Next Reads
+````
 
 ## Code Anchors
 
