@@ -16,8 +16,8 @@ shared handbook format used across Bijux repositories.
 
 ```mermaid
 flowchart LR
-    structure[section structure contract] --> style[language and tone consistency]
-    style --> anchors[code anchors and examples]
+    structure[section structure contract] --> language_style[language and tone consistency]
+    language_style --> anchors[code anchors and examples]
     anchors --> validation[docs-check validation]
 ```
 

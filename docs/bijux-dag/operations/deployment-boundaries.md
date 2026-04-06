@@ -16,7 +16,7 @@ DAG run meaning stable.
 
 ```mermaid
 flowchart LR
-    graph[graph definition] --> boundary[deployment boundary]
+    graph_def[graph definition] --> boundary[deployment boundary]
     runtime[runtime config] --> boundary
     storage[artifact backend] --> boundary
     boundary --> reproducibility[replay and diff comparability]

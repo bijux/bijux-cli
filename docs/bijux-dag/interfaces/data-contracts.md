@@ -16,7 +16,7 @@ artifact indices, and replay/diff classifications.
 
 ```mermaid
 flowchart TD
-    graph["graph contracts"] --> runtime["runtime execution contracts"]
+    graph_contracts["graph contracts"] --> runtime["runtime execution contracts"]
     runtime --> run["run and node trace contracts"]
     run --> artifact["artifact index and lineage contracts"]
     artifact --> classify["replay and diff classification contracts"]

@@ -23,7 +23,7 @@ This handbook is optimized for operational questions that need hard answers:
 
 ```mermaid
 flowchart LR
-    graph["graph definition"] --> run["run execution"]
+    graph_def["graph definition"] --> run["run execution"]
     run --> evidence["run and artifact evidence"]
     evidence --> replay["replay classification"]
     replay --> diff["diff classification"]

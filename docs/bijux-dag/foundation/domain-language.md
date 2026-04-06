@@ -16,7 +16,7 @@ across docs, tests, and command output.
 
 ```mermaid
 flowchart LR
-    graph["graph identity"] --> run["run identity"]
+    graph_identity["graph identity"] --> run["run identity"]
     run --> artifact["artifact identity"]
     artifact --> replay["replay classification"]
     replay --> diff["diff classification"]
