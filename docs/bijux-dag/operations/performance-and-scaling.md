@@ -9,15 +9,39 @@ last_reviewed: 2026-04-06
 
 # Performance And Scaling
 
-This page captures the DAG operational contract for **Performance And Scaling**.
+Performance and scaling changes must preserve DAG correctness guarantees and
+not blur replay or diff attribution.
 
-Start with:
+## Visual Summary
 
-- [Installation and setup](installation-and-setup.md)
-- [Failure recovery](failure-recovery.md)
+```mermaid
+flowchart LR
+    baseline[collect baseline metrics] --> optimize[apply optimization]
+    optimize --> validate[validate run correctness]
+    validate --> replay[replay and diff check]
+    replay --> adopt[adopt or revert]
+```
 
-## Consolidated Runtime Operations
+## Performance Levers
 
-This section absorbs former getting-started and operations chapters, including
-first DAG execution, run-history interpretation, troubleshooting, backend
-support posture, and reproducibility expectations.
+- execution parallelism and scheduling strategy
+- artifact write/read batching and backend tuning
+- graph partitioning and incremental execution hints
+
+## Required Guardrails
+
+- track latency and throughput with fixed benchmark graphs
+- verify output equivalence and replay fidelity after tuning
+- reject optimization changes that hide classification precision
+
+## Code Anchors
+
+- `crates/bijux-dag-runtime/src/engine/`
+- `crates/bijux-dag-runtime/src/replay/`
+- `crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs`
+
+## Next Reads
+
+- [Invariants](../quality/invariants.md)
+- [Change Validation](../quality/change-validation.md)
+- [Common Workflows](common-workflows.md)

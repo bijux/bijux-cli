@@ -9,9 +9,39 @@ last_reviewed: 2026-04-06
 
 # Release And Versioning
 
-This page captures the DAG operational contract for **Release And Versioning**.
+Release and versioning policy for DAG protects compatibility expectations for
+operators, integrations, and artifact consumers.
 
-Start with:
+## Visual Summary
 
-- [Installation and setup](installation-and-setup.md)
-- [Failure recovery](failure-recovery.md)
+```mermaid
+flowchart TD
+    change[proposed change] --> classify[classify compatibility impact]
+    classify --> verify[run validation matrix]
+    verify --> note[document behavior and migration notes]
+    note --> release[tag and publish]
+```
+
+## Versioning Rules
+
+- behavior-changing command semantics require explicit compatibility note
+- schema and artifact shape changes require migration guidance
+- replay/diff classification vocabulary changes require contract review
+
+## Release Validation Matrix
+
+- cargo test suites for dag core/runtime/app crates
+- replay and diff contract tests for schema lockstep
+- docs checks ensuring references align with released behavior
+
+## Code Anchors
+
+- `crates/bijux-dag-app/tests/`
+- `crates/bijux-dag-core/tests/`
+- `crates/bijux-dag-runtime/tests/`
+
+## Next Reads
+
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)
+- [Definition of Done](../quality/definition-of-done.md)
+- [Review Checklist](../quality/review-checklist.md)
