@@ -26,6 +26,9 @@ output envelopes, or plugin/operator workflows.
 
 This keeps CLI documentation shape stable for long-term navigation and review.
 
+Topic migration coverage is documented in
+[Documentation Standards](quality/documentation-standards.md).
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)
