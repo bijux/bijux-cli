@@ -11,6 +11,20 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-4"></a>
+
+## [0.3.4] – 2026-04-06
+
+### Changed
+- Updated release metadata and automation to align with the unified `bijux-core` repository model.
+- Corrected release-tree stamping and DAG workflow package references to use `bijux-dev` consistently.
+- Aligned DAG CI toolchains and paths with the current workspace structure.
+
+### Fixed
+- Prevented accidental crates.io publication of `bijux-dag-*` crates by marking them internal-only.
+- Corrected root documentation links and release guidance to match the current docs tree and repository boundaries.
+- Added explicit release policy documentation: publish `bijux-cli` at `v0.3.4`; defer DAG publication to `v0.4.0`.
+
 <a id="v0-3-0"></a>
 
 ## [0.3.0] – 2026-03-14
