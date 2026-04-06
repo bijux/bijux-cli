@@ -12,7 +12,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let runtime_entrypoint = workspace_root.join("crates/bijux-cli/src/bootstrap/run.rs");
             let runtime_dispatch =
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
-            let lib_source = workspace_root.join("crates/bijux-dev/src/maintainer/lib.rs");
+            let lib_source = workspace_root.join("crates/bijux-dev/src/maintainer/mod.rs");
             let command_registry =
                 workspace_root.join("crates/bijux-dev/src/maintainer/schema/command_registry.rs");
             let maintainer_root =

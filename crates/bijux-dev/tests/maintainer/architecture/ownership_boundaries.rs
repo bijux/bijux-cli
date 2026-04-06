@@ -36,7 +36,7 @@ fn command_registry_entries_are_canonical_and_unique() {
 
 #[test]
 fn crate_scope_rejects_runtime_command_law_and_root_alias_reexports() {
-    let lib_source = include_str!("../../../src/maintainer/lib.rs");
+    let lib_source = include_str!("../../../src/maintainer/mod.rs");
     assert!(lib_source.contains("Runtime command law remains in runtime crates"));
     assert!(!lib_source.contains("pub use report"));
     assert!(!lib_source.contains("pub use contract_engine"));
