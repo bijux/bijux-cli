@@ -28,7 +28,7 @@ else
   DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check
 
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
@@ -73,6 +73,7 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	    --site-dir "$(DOCS_SITE_DIR)"
 	@$(MAKE) docs-hygiene
 	@$(MAKE) docs-cli-structure-check
+	@$(MAKE) docs-dag-structure-check
 	@echo "Documentation passes build checks"
 
 docs-clean: ## Remove generated documentation outputs
@@ -99,3 +100,13 @@ docs-cli-structure-check: ## Enforce canonical CLI handbook structure (5x10 page
 	  test "$$count" = "10" || (echo "ERROR: docs/bijux-cli/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
 	done
 	@echo "CLI docs structure OK"
+
+docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 pages)
+	@dirs=$$(find docs/bijux-dag -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' '); \
+	  test "$$dirs" = "5" || (echo "ERROR: docs/bijux-dag must contain exactly 5 section directories" && exit 1)
+	@for d in foundation architecture interfaces operations quality; do \
+	  test -d "docs/bijux-dag/$$d" || (echo "ERROR: missing docs/bijux-dag/$$d" && exit 1); \
+	  count=$$(find "docs/bijux-dag/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
+	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dag/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+	done
+	@echo "DAG docs structure OK"
