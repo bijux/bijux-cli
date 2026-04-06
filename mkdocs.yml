@@ -6,10 +6,16 @@ site_url: !ENV [SITE_URL, https://bijux.github.io/bijux-core/]
 site_author: Bijan Mousavi
 repo_url: https://github.com/bijux/bijux-core
 repo_name: bijux/bijux-core
-edit_uri: ""
+edit_uri: edit/main/docs/
 
 docs_dir: docs
 site_dir: artifacts/docs/site
+watch:
+  - docs
+  - docs/assets
+  - mkdocs.yml
+  - mkdocs.shared.yml
+  - tools/docs
 
 nav:
   - Home: index.md
@@ -145,3 +151,6 @@ nav:
       - Development Workflow: bijux-dev/development-workflow.md
       - Validation and Gates: bijux-dev/validation-and-gates.md
       - Release Operations: bijux-dev/release-operations.md
+
+hooks:
+  - tools/docs/publish_contract_assets.py
