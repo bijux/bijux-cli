@@ -15,3 +15,8 @@ Primary references:
 
 - [Command surface](../../reference/command-surface.md)
 - [Output contracts](../../contracts/output-and-stream-contracts.md)
+
+## Consolidated Reference And Contract Surface
+
+This page absorbs former reference and contracts chapter responsibilities for
+command surface semantics, compatibility terms, and stream envelope boundaries.

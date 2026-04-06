@@ -15,3 +15,8 @@ Validation references:
 
 - [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
 - [Plugin contracts](../../contracts/plugin-contracts.md)
+
+## Consolidated Contract Validation
+
+Validation here covers the former contracts chapter checks, including envelope
+schema stability, plugin contract integrity, and distribution ownership gates.
