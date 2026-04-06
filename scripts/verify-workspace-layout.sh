@@ -7,6 +7,7 @@ cd "$repo_root"
 [[ -f Cargo.toml ]] || { echo "missing root Cargo.toml" >&2; exit 1; }
 [[ ! -f bijux-dag/Cargo.toml ]] || { echo "nested bijux-dag/Cargo.toml must not exist" >&2; exit 1; }
 [[ -d configs/dag ]] || { echo "missing DAG config root at configs/dag" >&2; exit 1; }
+[[ ! -d bijux-dag/crates ]] || { echo "legacy bijux-dag/crates directory must not exist" >&2; exit 1; }
 
 required_members=(
   "crates/bijux-cli"
