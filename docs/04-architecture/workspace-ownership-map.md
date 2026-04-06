@@ -19,7 +19,7 @@
 ## Path Contract
 
 - Runtime crates stay under `crates/`.
-- DAG domain crates stay under root `crates/` with `bijux-dag-*` and `bijux-dev-dag` naming for discoverability and direct workspace ownership.
+- DAG domain crates stay under root `crates/` with `bijux-dag-*` and `bijux-core-dev` naming for discoverability and direct workspace ownership.
 - Repository-level docs live under `docs/` with links into DAG-specific docs under `docs/dag/`.
 
 ## Operational Contract
