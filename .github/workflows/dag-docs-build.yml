@@ -6,8 +6,9 @@ on:
       - "crates/bijux-dag-*/**"
       - "crates/bijux-dev-dag/**"
       - "configs/dag/**"
-      - "bijux-dag/**"
       - "makes/dag/**"
+      - "docs/dag/**"
+      - "evidence/dag/**"
       - ".github/workflows/dag-*"
   push:
     branches: [main]
@@ -15,8 +16,9 @@ on:
       - "crates/bijux-dag-*/**"
       - "crates/bijux-dev-dag/**"
       - "configs/dag/**"
-      - "bijux-dag/**"
       - "makes/dag/**"
+      - "docs/dag/**"
+      - "evidence/dag/**"
       - ".github/workflows/dag-*"
 
 jobs:
