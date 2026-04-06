@@ -17,9 +17,9 @@ fn repo_root() -> PathBuf {
 
 fn collect_makefiles(root: &Path) -> Vec<PathBuf> {
     let mut files = vec![root.join("Makefile")];
-    let make_dir = root.join("make");
-    if make_dir.exists() {
-        for entry in fs::read_dir(make_dir).expect("read make dir") {
+    let makes_dir = root.join("makes");
+    if makes_dir.exists() {
+        for entry in fs::read_dir(makes_dir).expect("read makes dir") {
             let entry = entry.expect("entry");
             let path = entry.path();
             if path.extension().and_then(|value| value.to_str()) == Some("mk") {
@@ -34,11 +34,10 @@ fn collect_makefiles(root: &Path) -> Vec<PathBuf> {
 #[ignore = "legacy make entrypoint contract expects historical module wiring"]
 fn root_make_includes_evidence_module() {
     let root = repo_root();
-    let root_mk =
-        fs::read_to_string(root.join("makes/dag/root.mk")).expect("read makes/dag/root.mk");
+    let root_mk = fs::read_to_string(root.join("makes/root.mk")).expect("read makes/root.mk");
     assert!(
-        root_mk.contains("include $(DAG_MAKE_DIR)/evidence.mk"),
-        "makes/dag/root.mk must include DAG evidence module"
+        root_mk.contains("include $(ROOT_MK_DIR)/dag.mk"),
+        "makes/root.mk must include DAG make module"
     );
 }
 
@@ -55,7 +54,7 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
 
         let has_evidence_verify = content.contains("verify evidence-")
             || content.contains("repo evidence-summary-report");
-        if has_evidence_verify && rel != "makes/dag/evidence.mk" {
+        if has_evidence_verify && rel != "makes/dag.mk" {
             violations.push(format!("{rel}: evidence verification command duplication"));
         }
 
@@ -64,16 +63,15 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
             if !trimmed.starts_with("evidence-") || !trimmed.contains(':') {
                 continue;
             }
-            if rel != "makes/dag/evidence.mk" {
-                violations
-                    .push(format!("{rel}: evidence target defined outside makes/dag/evidence.mk"));
+            if rel != "makes/dag.mk" {
+                violations.push(format!("{rel}: evidence target defined outside makes/dag.mk"));
             }
         }
     }
 
     assert!(
         violations.is_empty(),
-        "evidence make workflows must be declared in makes/dag/evidence.mk only: {}",
+        "evidence make workflows must be declared in makes/dag.mk only: {}",
         violations.join(" | ")
     );
 }
