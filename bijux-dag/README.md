@@ -1,6 +1,8 @@
 # bijux-dag
 
-DAG-specific documentation, evidence assets, and configs live in this directory.
+DAG-specific documentation and evidence assets live in this directory.
+
+DAG config authority lives at `configs/dag/`.
 
 DAG crates are part of the root workspace under:
 

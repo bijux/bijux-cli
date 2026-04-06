@@ -37,6 +37,7 @@ make dag-contracts
 
 - Runtime and control plane docs: `docs/`
 - DAG domain docs: `bijux-dag/docs/`
+- DAG config authority: `configs/dag/`
 - Workspace ownership map: `docs/04-architecture/workspace-ownership-map.md`
 
 ## Design intent
