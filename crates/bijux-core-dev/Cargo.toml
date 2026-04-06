@@ -33,7 +33,7 @@ bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testki
 
 [lib]
 name = "bijux_dev_cli"
-path = "dev-cli/src/lib.rs"
+path = "src/lib.rs"
 
 [[bin]]
 name = "bijux-dev-cli"
