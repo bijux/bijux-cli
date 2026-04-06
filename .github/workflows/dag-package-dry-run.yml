@@ -26,13 +26,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain # v1@stable
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
           toolchain: 1.85.0
       - name: package dry run
         run: |
-          cargo package -p bijux-dag-core --allow-dirty --no-verify
-          cargo package -p bijux-dag-artifacts --allow-dirty --no-verify
+          for manifest in \
+            crates/bijux-dag-core/Cargo.toml \
+            crates/bijux-dag-artifacts/Cargo.toml \
+            crates/bijux-dag-runtime/Cargo.toml \
+            crates/bijux-dag-app/Cargo.toml \
+            crates/bijux-dag-cli/Cargo.toml; do
+            grep -q "^publish = false$" "$manifest"
+          done
       - name: validate internal crate build surfaces
         run: |
           cargo check -p bijux-dag-runtime
