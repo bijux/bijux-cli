@@ -5,6 +5,7 @@ ACT              ?= $(VENV)/bin
 MKDOCS_BIN_CAND  ?= $(ACT)/mkdocs
 MKDOCS_BIN       = $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOCS_BIN_CAND)" || command -v mkdocs)
 MKDOCS_CFG       ?= mkdocs.yml
+DOCS_REQUIREMENTS ?= requirements-docs.txt
 
 # Keep documentation build outputs and caches under `artifacts/`.
 DOCS_SITE_DIR    ?= artifacts/docs/site
@@ -25,12 +26,17 @@ else
   DOCS_ENV      := NO_MKDOCS_2_WARNING=1
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install
 
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
 	@$(call require_tool,$(MKDOCS_BIN))
 	@$(call require_file,$(MKDOCS_CFG))
+	@$(call require_file,$(DOCS_REQUIREMENTS))
+
+docs-install: ## Install the documentation toolchain dependencies
+	@echo "Installing documentation dependencies from $(DOCS_REQUIREMENTS)"
+	@"$(ACT)/python" -m pip install -r "$(DOCS_REQUIREMENTS)"
 
 docs: docs-clean docs-require ## Build documentation into artifacts/docs/site
 	@echo "Building documentation"
