@@ -60,3 +60,15 @@ make docs-check
 ## Read Next
 
 Continue to [Change Model](change-model.md).
+
+## Documentation Layout Contract
+
+The repository documentation is maintained as four top-level programs:
+
+- [CLI Program](../cli/index.md)
+- [DAG Program](../dag/index.md)
+- [Core Program](../core/index.md)
+- [Dev Program](../dev/index.md)
+
+When adding or moving pages, preserve these boundaries so readers can navigate
+by program without flattening all crate-specific material into one surface.
