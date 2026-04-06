@@ -32,7 +32,7 @@ flowchart TD
 ```bash
 make install
 cargo build --workspace
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 make docs-check
 ```
 
