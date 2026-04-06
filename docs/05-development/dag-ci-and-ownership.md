@@ -6,7 +6,7 @@
 
 - Crates: `crates/bijux-dag-*`, `crates/bijux-core-dev`
 - Config: `configs/dag/`
-- Automation modules: `makes/dag/`
+- Automation modules: `makes/`
 - DAG documentation and evidence assets: `docs/dag/`, `evidence/dag/`
 - DAG GitHub workflows: `.github/workflows/dag-*.yml`
 
