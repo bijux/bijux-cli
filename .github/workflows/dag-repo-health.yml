@@ -26,9 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain # v1@stable
         with:
-          toolchain: 1.81
+          toolchain: 1.85.0
       - name: generate hotspot reports
         run: cargo run -p bijux-dev --bin bijux-dev-dag -- repo hotspot-reports
       - name: generate planner hardening report
