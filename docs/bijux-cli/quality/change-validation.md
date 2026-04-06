@@ -1,7 +1,7 @@
 ---
 title: Change Validation
-audience: maintainers
-type: quality
+audience: mixed
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,14 +9,45 @@ last_reviewed: 2026-04-06
 
 # Change Validation
 
-This page defines quality expectations for **Change Validation** in `bijux-cli`.
+Change validation is the minimum evidence package required before merging a
+`bijux-cli` behavior change.
 
-Validation references:
+## Visual Summary
 
-- [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
-- [Artifact contracts](../interfaces/artifact-contracts.md)
+```mermaid
+flowchart LR
+    change["change request"] --> classify["classify contract impact"]
+    classify --> verify["run targeted tests and docs gates"]
+    verify --> compare["compare payloads and behavior"]
+    compare --> record["record compatibility notes"]
+```
 
-## Consolidated Contract Validation
+## Validation Checklist
 
-Validation here covers the former contracts chapter checks, including envelope
-schema stability, plugin contract integrity, and distribution ownership gates.
+1. classify whether command grammar, output, or exit semantics changed
+2. execute targeted routing and integration suites
+3. run architecture boundary tests when module ownership shifts
+4. verify docs structure and handbook consistency
+5. include explicit compatibility notes when callers may be affected
+
+## Validation Commands
+
+```bash
+cargo test -p bijux-cli routing::
+cargo test -p bijux-cli integration::
+cargo test -p bijux-cli architecture::
+make docs-check
+```
+
+## Code Anchors
+
+- `crates/bijux-cli/tests/routing/`
+- `crates/bijux-cli/tests/integration/`
+- `crates/bijux-cli/tests/architecture/`
+- `makes/docs.mk`
+
+## Next Reads
+
+- [Definition of Done](definition-of-done.md)
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)
+- [Test Strategy](test-strategy.md)
