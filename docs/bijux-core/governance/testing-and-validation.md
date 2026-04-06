@@ -35,7 +35,7 @@ flowchart TD
 cargo test --workspace
 make test
 make docs-check
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 ```
 
 ## Minimum Review Evidence
