@@ -36,7 +36,7 @@ jobs:
         with:
           toolchain: 1.85.0
       - name: rustdoc workspace
-        run: cargo doc --workspace --no-deps
+        run: cargo doc --locked --workspace --no-deps
       - name: docs policy checks
         run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- docs run --advisory
       - name: upload reports
