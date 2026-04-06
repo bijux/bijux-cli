@@ -95,6 +95,6 @@ Result: run identity unchanged
 
 ## Next reading
 
-- [Run model contract](docs/06-specification/02-run-model.md)
-- [Graph identity contract](docs/06-specification/04-graph-identity.md)
-- [Artifact identity contract](docs/06-specification/06-artifact-identity.md)
+- [Run model contract](02-run-model.md)
+- [Graph identity contract](04-graph-identity.md)
+- [Artifact identity contract](06-artifact-identity.md)

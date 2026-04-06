@@ -103,6 +103,6 @@ Result: different graph identity (g_44a... -> g_981...)
 
 ## Next reading
 
-- [DAG model contract](docs/06-specification/01-dag-model.md)
-- [Run identity contract](docs/06-specification/05-run-identity.md)
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [DAG model contract](01-dag-model.md)
+- [Run identity contract](05-run-identity.md)
+- [Replay semantics contract](07-replay-semantics.md)

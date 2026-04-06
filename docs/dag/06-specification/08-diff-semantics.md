@@ -107,6 +107,6 @@ reason_code: ARTIFACT_HASH_MISMATCH
 
 ## Next reading
 
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
-- [Artifact identity contract](docs/06-specification/06-artifact-identity.md)
-- [User guide: diff interpretation](docs/03-user-guide/06-diff.md)
+- [Replay semantics contract](07-replay-semantics.md)
+- [Artifact identity contract](06-artifact-identity.md)
+- [User guide: diff interpretation](../03-user-guide/06-diff.md)

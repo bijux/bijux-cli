@@ -82,6 +82,6 @@ Result: artifact drift
 
 ## Next reading
 
-- [Artifact model contract](docs/06-specification/03-artifact-model.md)
-- [Run identity contract](docs/06-specification/05-run-identity.md)
-- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)
+- [Artifact model contract](03-artifact-model.md)
+- [Run identity contract](05-run-identity.md)
+- [Diff semantics contract](08-diff-semantics.md)

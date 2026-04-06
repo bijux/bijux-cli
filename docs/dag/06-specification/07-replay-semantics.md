@@ -95,6 +95,6 @@ reason_code: REPLAY_MISSING_ARTIFACT_SCOPE
 
 ## Next reading
 
-- [Graph identity contract](docs/06-specification/04-graph-identity.md)
-- [Run identity contract](docs/06-specification/05-run-identity.md)
-- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)
+- [Graph identity contract](04-graph-identity.md)
+- [Run identity contract](05-run-identity.md)
+- [Diff semantics contract](08-diff-semantics.md)
