@@ -13,7 +13,7 @@ GH_SECURITY_CARGO_DENY_VERSION ?= 0.18.3
 GH_SECURITY_CARGO_AUDIT_VERSION ?= 0.22.0
 GH_TEST_CARGO_NEXTEST_VERSION ?= 0.9.100
 
-.PHONY: gh-fmt gh-lint gh-security gh-test \
+.PHONY: gh-fmt gh-lint gh-security gh-audit gh-test \
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-configure-git \
 	gh-security-install-rust-tools gh-test-install-rust-tools \
 	gh-release-plan-github gh-release-plan-pypi gh-release-plan-crates \
@@ -25,6 +25,8 @@ gh-fmt: install fmt-rs fmt-check-py ## Run GitHub formatting checks without modi
 gh-lint: install lint-rs lint-check-py ## Run GitHub lint checks without modifying files
 
 gh-security: install security ## Run GitHub security checks
+
+gh-audit: gh-security ## Compatibility alias for GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
 
