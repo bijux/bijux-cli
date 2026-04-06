@@ -15,7 +15,7 @@ watch:
   - docs/assets
   - mkdocs.yml
   - mkdocs.shared.yml
-  - tools/docs
+  - docs/automation
 
 nav:
   - Home: index.md
@@ -153,4 +153,4 @@ nav:
       - Release Operations: bijux-dev/release-operations.md
 
 hooks:
-  - tools/docs/publish_contract_assets.py
+  - docs/automation/publish_contract_assets.py

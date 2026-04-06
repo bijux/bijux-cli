@@ -8,7 +8,7 @@ validation:
 theme:
   name: material
   language: en
-  custom_dir: overrides
+  custom_dir: docs/overrides
   logo: assets/bijux_logo_hq.png
   favicon: assets/site-icons/favicon.ico
   font: false
