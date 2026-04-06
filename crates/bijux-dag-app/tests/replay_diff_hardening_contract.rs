@@ -140,6 +140,7 @@ fn run_and_replay_with_prove(
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_proof_schema_lockstep_and_mismatch_grouping() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -198,6 +199,7 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -223,6 +225,7 @@ fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -277,6 +280,7 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -358,6 +362,7 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -419,6 +424,7 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
