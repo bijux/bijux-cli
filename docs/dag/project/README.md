@@ -12,7 +12,7 @@ DAG crates are part of the root workspace under:
 - `crates/bijux-dag-app`
 - `crates/bijux-dag-cli`
 - `crates/bijux-dag-testkit`
-- `crates/bijux-dev-dag`
+- `crates/bijux-core-dev`
 
 Run from repository root:
 

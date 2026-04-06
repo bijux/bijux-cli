@@ -127,7 +127,7 @@ bijux dev atlas --help
 bijux-atlas --help
 bijux-dev-atlas --help
 # from a workspace checkout
-cargo run -q -p bijux-dev-cli --bin bijux-dev-cli -- list-products --format json --no-pretty
+cargo run -q -p bijux-core-dev --bin bijux-dev-cli -- list-products --format json --no-pretty
 ```
 
 The `list-products` output is the verification surface for known runtime and

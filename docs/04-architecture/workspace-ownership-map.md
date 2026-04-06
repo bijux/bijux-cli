@@ -6,8 +6,8 @@
 
 - `crates/bijux-cli`: primary runtime and command surface authority.
 - `crates/bijux-cli-python`: Python packaging and bridge for the runtime.
-- `crates/bijux-dev-cli`: maintainer control plane for repository quality gates.
-- `crates/bijux-dag-*` and `crates/bijux-dev-dag`: DAG engine, app, cli, and testkit crates integrated as peer workspace members.
+- `crates/bijux-core-dev/dev-cli`: maintainer control plane for repository quality gates.
+- `crates/bijux-dag-*` and `crates/bijux-core-dev`: DAG engine, app, cli, and testkit crates integrated as peer workspace members.
 
 ## Ownership Rules
 

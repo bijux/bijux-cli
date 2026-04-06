@@ -60,7 +60,7 @@ It owns:
 
 It does not redefine the runtime contract independently from the Rust crate.
 
-### `crates/bijux-dev-cli`
+### `crates/bijux-core-dev/dev-cli`
 
 This is the maintainer control-plane.
 
