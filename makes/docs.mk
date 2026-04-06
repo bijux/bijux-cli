@@ -28,7 +28,7 @@ else
   DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check
 
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
@@ -72,6 +72,7 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	    --config-file "$(MKDOCS_CFG)" \
 	    --site-dir "$(DOCS_SITE_DIR)"
 	@$(MAKE) docs-hygiene
+	@$(MAKE) docs-cli-structure-check
 	@echo "Documentation passes build checks"
 
 docs-clean: ## Remove generated documentation outputs
@@ -88,3 +89,13 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@test -f "$(DOCS_CONTRACT_DIR)/official_product_namespace_registry.json" || (echo "ERROR: published contract registry copy is missing"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/product_mount_metadata_contract.json" || (echo "ERROR: published contract mount metadata copy is missing"; exit 1)
 	@echo "Docs hygiene OK"
+
+docs-cli-structure-check: ## Enforce canonical CLI handbook structure (5x10 pages)
+	@dirs=$$(find docs/bijux-cli -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' '); \
+	  test "$$dirs" = "5" || (echo "ERROR: docs/bijux-cli must contain exactly 5 section directories" && exit 1)
+	@for d in foundation architecture interfaces operations quality; do \
+	  test -d "docs/bijux-cli/$$d" || (echo "ERROR: missing docs/bijux-cli/$$d" && exit 1); \
+	  count=$$(find "docs/bijux-cli/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
+	  test "$$count" = "10" || (echo "ERROR: docs/bijux-cli/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+	done
+	@echo "CLI docs structure OK"
