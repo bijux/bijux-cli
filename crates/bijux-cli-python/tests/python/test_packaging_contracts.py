@@ -108,7 +108,9 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
         == "Python package for installing and launching the Bijux command runtime for automation, plugins, and interactive workflows"
     )
     authors = project["authors"]
-    assert authors == [{"name": "Bijan Mousavi", "email": "mousavi.bijan@gmail.com"}]
+    assert authors == [{"name": "Bijan Mousavi", "email": "bijan@bijux.io"}]
+    maintainers = project["maintainers"]
+    assert maintainers == [{"name": "Bijan Mousavi", "email": "bijan@bijux.io"}]
     keywords = set(project["keywords"])
     assert {"bijux", "cli", "python", "automation", "plugins", "interactive"} <= keywords
     classifiers = set(project["classifiers"])
