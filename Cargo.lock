@@ -122,6 +122,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bijux-core-dev"
+version = "0.3.2"
+dependencies = [
+ "anyhow",
+ "bijux-cli",
+ "bijux-dag-artifacts",
+ "bijux-dag-core",
+ "bijux-dag-runtime",
+ "bijux-dag-testkit",
+ "clap",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
 name = "bijux-dag-app"
 version = "0.3.2"
 dependencies = [
@@ -204,35 +223,6 @@ dependencies = [
  "bijux-dag-core",
  "serde",
  "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "bijux-dev-cli"
-version = "0.3.2"
-dependencies = [
- "anyhow",
- "bijux-cli",
- "clap",
- "serde",
- "serde_json",
- "tempfile",
- "toml",
-]
-
-[[package]]
-name = "bijux-dev-dag"
-version = "0.3.2"
-dependencies = [
- "bijux-dag-artifacts",
- "bijux-dag-core",
- "bijux-dag-runtime",
- "bijux-dag-testkit",
- "clap",
- "hex",
- "serde",
- "serde_json",
- "sha2",
  "tempfile",
 ]
 

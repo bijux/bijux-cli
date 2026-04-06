@@ -1,7 +1,6 @@
 [workspace]
 members = [
-  "crates/bijux-dev-cli",
-  "crates/bijux-cli",
+    "crates/bijux-cli",
   "crates/bijux-cli-python",
   "crates/bijux-dag-core",
   "crates/bijux-dag-artifacts",
@@ -9,8 +8,8 @@ members = [
   "crates/bijux-dag-app",
   "crates/bijux-dag-cli",
   "crates/bijux-dag-testkit",
-  "crates/bijux-dev-dag",
-]
+  "crates/bijux-core-dev",
+  ]
 resolver = "2"
 
 [workspace.package]
