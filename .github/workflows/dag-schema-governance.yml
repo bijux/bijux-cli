@@ -9,7 +9,7 @@ on:
       - "makes/*.mk"
       - "docs/bijux-dag/**"
       - "evidence/dag/**"
-      - ".github/workflows/dag-*"
+      - ".github/workflows/dag-*.yml"
   push:
     branches: [main]
     paths:
@@ -19,7 +19,7 @@ on:
       - "makes/*.mk"
       - "docs/bijux-dag/**"
       - "evidence/dag/**"
-      - ".github/workflows/dag-*"
+      - ".github/workflows/dag-*.yml"
 
 jobs:
   schema-governance:
