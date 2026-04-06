@@ -9,15 +9,33 @@ last_reviewed: 2026-04-06
 
 # Known Limitations
 
-This page defines quality expectations for **Known Limitations** in `bijux-dag`.
+Known limitations keep operator expectations realistic and reduce ambiguous bug
+reports.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart TD
+    capability[supported capability] --> boundary[known limitation]
+    boundary --> impact[operator impact]
+    impact --> mitigation[mitigation or workaround]
+```
 
-## Consolidated Development Governance
+## Limitation Categories
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+- environment portability gaps affecting reproducibility class
+- backend capability differences affecting fidelity outcomes
+- intentionally unsupported graph features pending design approval
+- explain output detail limits for specific mismatch types
+
+## Documentation Rules
+
+- every limitation must include impact and mitigation notes
+- resolved limitations must be removed in the same release train
+- limitation language must avoid ambiguous severity claims
+
+## Next Reads
+
+- [Risk Register](risk-register.md)
+- [Failure Recovery](../operations/failure-recovery.md)
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)

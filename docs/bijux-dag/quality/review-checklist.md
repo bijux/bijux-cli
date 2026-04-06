@@ -9,22 +9,35 @@ last_reviewed: 2026-04-06
 
 # Review Checklist
 
-This page defines quality expectations for **Review Checklist** in `bijux-dag`.
+Use this checklist during DAG review to prevent silent compatibility, evidence,
+or documentation regressions.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart TD
+    scope[scope and ownership] --> tests[test evidence]
+    tests --> contracts[replay and diff contract impact]
+    contracts --> docs[docs and links accuracy]
+    docs --> risk[risk and limitation updates]
+```
 
-## Required Review Checks
+## Required Checks
 
-- confirm `docs/bijux-dag/` contains only `foundation`, `architecture`,
-  `interfaces`, `operations`, and `quality` directories
-- confirm each of those five directories contains exactly ten markdown pages
-- confirm no links target removed `docs/bijux-dag/program/` chapter paths
+- change stays within clear crate/module ownership boundaries
+- tests cover modified behavior and relevant contracts
+- replay/diff semantics and reason-code meanings remain explicit
+- artifact evidence expectations remain intact and verifiable
+- docs links, examples, and code anchors match current repository state
 
-## Consolidated Development Governance
+## Structural Checks
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+- `docs/bijux-dag` contains exactly five section directories
+- each section contains exactly ten markdown files
+- no references to removed nested `program/*` docs remain
+
+## Next Reads
+
+- [Definition of Done](definition-of-done.md)
+- [Documentation Standards](documentation-standards.md)
+- [DAG Operations](../operations/index.md)

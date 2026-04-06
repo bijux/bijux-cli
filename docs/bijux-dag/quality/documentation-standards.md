@@ -9,28 +9,35 @@ last_reviewed: 2026-04-06
 
 # Documentation Standards
 
-This page defines quality expectations for **Documentation Standards** in `bijux-dag`.
+DAG documentation must remain executable as guidance: accurate, linked, and
+aligned with real code behavior.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart LR
+    source[code and command behavior] --> docs[documentation update]
+    docs --> verify[link and structure validation]
+    verify --> publish[publish with release]
+    publish --> feedback[operator feedback and correction loop]
+```
 
-## Legacy Coverage Matrix
+## Standards
 
-Former nested DAG chapter families are now covered by the canonical sections:
+- every page has canonical frontmatter and clear audience
+- examples use current command names and realistic paths
+- links remain within current docs tree and avoid removed paths
+- code anchors point to real crate/module surfaces
+- mermaid diagrams summarize core relationships on each page
 
-- `program/01-introduction/*` maps to `foundation/*`
-- `program/02-getting-started/*` and `program/07-operations/*` map to
-  `operations/*`
-- `program/03-user-guide/*` and `program/04-cli-reference/*` map to
-  `interfaces/*` and `operations/*`
-- `program/05-system-architecture/*` and `program/06-specification/*` map to
-  `architecture/*` and `interfaces/*`
-- `program/08-development/*` maps to `quality/*`
+## Legacy Mapping Policy
 
-## Consolidated Development Governance
+Legacy nested DAG chapters are intentionally consolidated into the five canonical
+sections: `foundation`, `architecture`, `interfaces`, `operations`, and
+`quality`.
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+## Next Reads
+
+- [Review Checklist](review-checklist.md)
+- [Definition of Done](definition-of-done.md)
+- [DAG Documentation Index](../index.md)

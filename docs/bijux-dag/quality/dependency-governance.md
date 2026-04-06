@@ -9,15 +9,41 @@ last_reviewed: 2026-04-06
 
 # Dependency Governance
 
-This page defines quality expectations for **Dependency Governance** in `bijux-dag`.
+Dependency governance for DAG keeps runtime behavior explainable and minimizes
+surprise from indirect upgrades.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart LR
+    add[add or update dependency] --> assess[assess runtime and security impact]
+    assess --> verify[verify tests and replay/diff contracts]
+    verify --> record[record rationale and constraints]
+    record --> monitor[monitor for regressions]
+```
 
-## Consolidated Development Governance
+## Governance Rules
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+- prefer minimal and purpose-specific dependencies
+- review transitive impact for runtime and artifact behavior
+- pin or constrain versions when compatibility is sensitive
+- document why each non-trivial dependency exists
+
+## High-Risk Change Triggers
+
+- parser/serialization dependencies affecting graph or artifact shape
+- runtime/execution dependencies affecting scheduling behavior
+- hashing/crypto dependencies affecting identity or integrity proofs
+
+## Code Anchors
+
+- `Cargo.toml`
+- `crates/bijux-dag-core/Cargo.toml`
+- `crates/bijux-dag-runtime/Cargo.toml`
+- `crates/bijux-dag-artifacts/Cargo.toml`
+
+## Next Reads
+
+- [Risk Register](risk-register.md)
+- [Change Validation](change-validation.md)
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)

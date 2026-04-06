@@ -9,15 +9,35 @@ last_reviewed: 2026-04-06
 
 # Risk Register
 
-This page defines quality expectations for **Risk Register** in `bijux-dag`.
+The risk register tracks high-impact DAG risks, their signals, and mitigation
+expectations.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart LR
+    risk[identify risk] --> signal[define leading signal]
+    signal --> mitigation[assign mitigation]
+    mitigation --> verify[verify effectiveness]
+    verify --> reassess[reassess risk level]
+```
 
-## Consolidated Development Governance
+## Active Risk Themes
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+- replay and diff semantic drift without explicit policy updates
+- artifact integrity regressions under backend or concurrency changes
+- environment-sensitive behavior reducing reproducibility confidence
+- documentation drift that misguides operator decisions
+
+## Mitigation Expectations
+
+- contract tests for replay/diff and integrity-sensitive surfaces
+- explicit compatibility notes for behavior-affecting changes
+- diagnostics quality checks in failure and downgrade pathways
+- documentation updates in the same change set when behavior changes
+
+## Next Reads
+
+- [Known Limitations](known-limitations.md)
+- [Security and Safety](../operations/security-and-safety.md)
+- [Invariants](invariants.md)
