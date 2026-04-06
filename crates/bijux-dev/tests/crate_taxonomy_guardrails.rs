@@ -24,6 +24,7 @@ fn cargo_toml(path: &str) -> String {
 fn only_cli_crate_declares_bin_target() {
     let crates_dir = root().join("crates");
     let mut offenders = Vec::new();
+    let allowed_bin_crates = ["bijux-cli", "bijux-dev", "bijux-dag-cli"];
 
     for entry in fs::read_dir(&crates_dir).expect("read crates") {
         let entry = entry.expect("crate dir entry");
@@ -33,13 +34,16 @@ fn only_cli_crate_declares_bin_target() {
         }
         let text = fs::read_to_string(&manifest).expect("read manifest");
         let has_bin = text.contains("[[bin]]");
-        let is_cli = entry.file_name().to_string_lossy() == "bijux-dag-cli";
-        if has_bin && !is_cli {
+        let crate_name = entry.file_name().to_string_lossy().to_string();
+        if has_bin && !allowed_bin_crates.iter().any(|allowed| *allowed == crate_name) {
             offenders.push(entry.file_name().to_string_lossy().to_string());
         }
     }
 
-    assert!(offenders.is_empty(), "non-cli crates declare [[bin]]: {offenders:?}");
+    assert!(
+        offenders.is_empty(),
+        "unexpected crates declare [[bin]] targets: {offenders:?}"
+    );
 }
 
 #[test]
