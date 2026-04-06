@@ -2497,11 +2497,18 @@ fn run_public_api() -> Result<(), String> {
     let root = repo_root()?;
     let docs_api = root.join("docs/api");
     fs::create_dir_all(&docs_api).map_err(|err| err.to_string())?;
+    let public_api_toolchain =
+        env::var("BIJUX_PUBLIC_API_TOOLCHAIN").unwrap_or_else(|_| "nightly-2025-06-22".into());
+    let toolchain_flag = format!("+{public_api_toolchain}");
 
     for crate_name in
         ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"]
     {
-        let output = run_stdout_and_json(&root, "cargo", &["public-api", "-p", crate_name])?;
+        let output = run_stdout_and_json(
+            &root,
+            "cargo",
+            &[&toolchain_flag, "public-api", "-p", crate_name],
+        )?;
         let out_txt = docs_api.join(format!("{crate_name}.txt"));
         if out_txt.exists() {
             let baseline = fs::read_to_string(&out_txt).map_err(|err| err.to_string())?;

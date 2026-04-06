@@ -30,11 +30,9 @@ fn is_hex_sha(value: &str) -> bool {
 #[test]
 fn workspace_manifest_declares_shared_project_links() {
     let manifest = read_repo_file("Cargo.toml");
-    for required in [
-        "homepage = ",
-        "documentation = ",
-        "authors = [\"Bijan Mousavi <mousavi.bijan@gmail.com>\"]",
-    ] {
+    for required in
+        ["homepage = ", "documentation = ", "authors = [\"Bijan Mousavi <bijan@bijux.io>\"]"]
+    {
         assert!(
             manifest.contains(required),
             "workspace manifest is missing shared project metadata: {required}"
