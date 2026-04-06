@@ -80,6 +80,15 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-prett
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit --format json --no-pretty
 ```
 
+Direct DAG verification that is useful for graph/runtime behavior and DAG docs
+changes:
+
+```bash
+cargo test -p bijux-dag-app
+cargo run -q -p bijux-dag-cli --bin bijux-dag -- dag --help
+cargo run -q -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
+```
+
 If your change touches release identity, installation guidance, or version
 documentation, also verify the built runtime directly:
 
