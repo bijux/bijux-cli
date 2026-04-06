@@ -1,7 +1,7 @@
 ---
 title: Invariants
-audience: maintainers
-type: quality
+audience: mixed
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,14 +9,43 @@ last_reviewed: 2026-04-06
 
 # Invariants
 
-This page defines quality expectations for **Invariants** in `bijux-cli`.
+Invariants are behavior guarantees `bijux-cli` should preserve across refactors
+and feature additions.
 
-Validation references:
+## Visual Summary
 
-- [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
-- [Artifact contracts](../interfaces/artifact-contracts.md)
+```mermaid
+flowchart LR
+    parser["parser invariants"] --> route["route normalization invariants"]
+    route --> output["output and stream invariants"]
+    output --> exit["exit-classification invariants"]
+    exit --> docs["docs and tests remain aligned"]
+```
 
-## Consolidated Contract Validation
+## Core Invariants
 
-Validation here covers the former contracts chapter checks, including envelope
-schema stability, plugin contract integrity, and distribution ownership gates.
+- parser and alias rewrites produce deterministic normalized paths
+- help/version short-circuits stay consistent with root command grammar
+- structured payload rendering does not mutate semantic meaning
+- unknown-route suggestions remain bounded and deterministic
+- plugin namespace conflict rules remain strict and explicit
+
+## Code Anchors
+
+- `crates/bijux-cli/src/routing/parser.rs`
+- `crates/bijux-cli/src/routing/model.rs`
+- `crates/bijux-cli/src/interface/cli/dispatch.rs`
+- `crates/bijux-cli/src/routing/registry.rs`
+- `crates/bijux-cli/tests/routing/laws/`
+
+## Invariant Rules
+
+- invariant changes require explicit compatibility review
+- invariants should be expressed as tests and docs, not prose alone
+- do not silently relax invariants to unblock short-term changes
+
+## Next Reads
+
+- [Review Checklist](review-checklist.md)
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)
+- [Architecture Risks](../architecture/architecture-risks.md)

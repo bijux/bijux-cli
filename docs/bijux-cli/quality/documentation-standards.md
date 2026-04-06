@@ -1,7 +1,7 @@
 ---
 title: Documentation Standards
-audience: maintainers
-type: quality
+audience: mixed
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,22 +9,48 @@ last_reviewed: 2026-04-06
 
 # Documentation Standards
 
-This page defines quality expectations for **Documentation Standards** in `bijux-cli`.
+CLI documentation is treated as part of the contract surface, not optional
+after-the-fact commentary.
 
-Validation references:
+## Visual Summary
 
-- [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
-- [Artifact contracts](../interfaces/artifact-contracts.md)
+```mermaid
+flowchart LR
+    source["source and tests"] --> docs["handbook pages"]
+    docs --> review["review checklist"]
+    review --> release["release notes and compatibility framing"]
+```
 
-## Legacy Coverage Matrix
+## Standards
 
-Legacy chapter families are now covered inside the canonical five sections:
+- every page must include frontmatter with owner and last review date
+- every page must include at least one Mermaid diagram
+- every page must include concrete code anchors
+- page claims must map to currently shipped behavior
+- cross-links should point to canonical handbook pages only
 
-- `introduction/*` topics map to `foundation/*` and `interfaces/cli-surface.md`
-- `getting-started/*` topics map to `operations/installation-and-setup.md`,
-  `operations/common-workflows.md`, and `operations/failure-recovery.md`
-- `user-guide/*` topics map to `interfaces/operator-workflows.md` and
-  `operations/observability-and-diagnostics.md`
-- `reference/*` topics map to `interfaces/*` compatibility and data-contract pages
-- `contracts/*` topics map to `interfaces/artifact-contracts.md`,
-  `interfaces/compatibility-commitments.md`, and `quality/change-validation.md`
+## CLI Handbook Shape Standard
+
+- package root index plus five section directories
+- ten pages in each section
+- no nested section trees under `docs/bijux-cli/`
+
+## Migration Coverage Standard
+
+Legacy chapter themes remain represented through current pages:
+
+- introduction and getting-started material maps into foundation and operations
+- reference and contracts material maps into interfaces and quality
+- development and architecture material maps into architecture and quality
+
+## Code Anchors
+
+- `mkdocs.yml`
+- `makes/docs.mk`
+- `docs/bijux-cli/`
+
+## Next Reads
+
+- [Review Checklist](review-checklist.md)
+- [Change Principles](../foundation/change-principles.md)
+- [Release and Versioning](../operations/release-and-versioning.md)
