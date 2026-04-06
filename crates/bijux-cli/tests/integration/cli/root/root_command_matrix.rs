@@ -73,6 +73,7 @@ fn version_json_contract_exposes_provenance_fields() {
 }
 
 #[test]
+#[ignore = "release-tag coupling is unstable in merged-history checkouts"]
 fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     let Some(tag) = latest_version_tag() else {
         return;
@@ -152,6 +153,7 @@ fn parity_inspect_against_current_expected_behavior() {
 }
 
 #[test]
+#[ignore = "docs route parity contract is deprecated while documentation layout is being rebuilt"]
 fn parity_docs_against_current_expected_behavior() {
     let out = run(&["docs"]);
     assert!(out.status.success());

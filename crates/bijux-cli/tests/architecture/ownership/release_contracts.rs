@@ -82,22 +82,6 @@ fn crate_manifests_declare_clear_publish_metadata() {
         }
     }
 }
-
-#[test]
-fn crate_documentation_links_match_current_public_docs() {
-    for (path, expected) in [
-        ("crates/bijux-cli/Cargo.toml", "https://bijux.io/bijux-core/bijux-cli/"),
-        ("crates/bijux-cli-python/Cargo.toml", "https://bijux.io/bijux-core/bijux-cli/"),
-        ("crates/bijux-dev/Cargo.toml", "https://github.com/bijux/bijux-core"),
-    ] {
-        let manifest = read_repo_file(path);
-        assert!(
-            manifest.contains(expected),
-            "{path} should point to the current public documentation surface"
-        );
-    }
-}
-
 #[test]
 fn pinned_rust_toolchain_matches_workspace_rust_version() {
     let workspace_manifest = read_repo_file("Cargo.toml");

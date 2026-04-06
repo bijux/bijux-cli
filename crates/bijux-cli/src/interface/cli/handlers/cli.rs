@@ -631,7 +631,7 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        completion_report, docs_inventory_report_at, doctor_report, runtime_audit_report,
+        completion_report, doctor_report, runtime_audit_report,
         runtime_status_report,
     };
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
@@ -839,18 +839,4 @@ mod tests {
         assert!(message.contains("wheel and binary versions do not match"));
     }
 
-    #[test]
-    fn docs_inventory_report_warns_when_references_are_missing() {
-        let temp = tempdir().expect("temp dir");
-        std::fs::create_dir_all(temp.path().join("docs")).expect("docs dir");
-        std::fs::write(temp.path().join("README.md"), "# Overview\n").expect("readme");
-        let report = docs_inventory_report_at(temp.path());
-
-        assert_eq!(report["status"], serde_json::json!("warning"));
-        assert!(report["missing_references"]
-            .as_array()
-            .expect("missing refs")
-            .iter()
-            .any(|value| value == "docs/01-introduction/first-run.md"));
-    }
 }

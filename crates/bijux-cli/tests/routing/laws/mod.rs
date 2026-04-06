@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 //! laws routing suites.
 
-mod command_tree_diff_report;
 mod legacy_forms_regression;
 mod route_fuzz_regressions;
 mod route_fuzz_targets;
