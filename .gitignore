@@ -1,1 +1,140 @@
 .DS_Store
+# OS
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+Icon?
+$RECYCLE.BIN/
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.vscode-test/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+# Python bytecode and native modules
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dylib
+# Python packaging and local toolchains
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+*.whl
+*.spec
+.venv/
+.venv*/
+.conda/
+.condarc
+*.conda
+.direnv/
+.env
+.envrc
+.envrc.local
+.env.*
+.pdm.toml
+.python-version
+.tool-versions
+__pypackages__/
+# Python test and coverage caches
+.coverage
+.coverage.*
+.coverage/
+coverage.xml
+htmlcov/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+.pytype/
+.hypothesis/
+.mutmut-cache/
+.cache/
+.ipynb_checkpoints/
+.noseids
+nosetests.xml
+test-results/
+*.cover
+*.prof
+profile_default/
+.benchmarks/
+# Documentation build outputs
+docs/_build/
+site/
+_build/
+doctrees/
+*.doctree
+# JavaScript
+node_modules/
+# Rust and native debugging
+target/
+*.dSYM/
+# Data and local analysis outputs
+*.bam
+*.bai
+*.cram
+*.crai
+*.sam
+*.vcf
+*.vcf.gz
+*.fai
+*.tar
+*.tar.gz
+*.h5
+*.hdf5
+*.sqlite
+*.sqlite3
+*.db
+*.mtx
+*.loom
+*.bw
+*.rda
+*.rds
+*.csv.gz
+*.tsv.gz
+results/
+output/
+out/
+.snakemake/
+*.singularity
+*.sif
+# Logs and temporary files
+*.log
+*.out
+*.err
+*.pid
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+# Secrets
+secrets.*
+*.key
+*.pem
+.secret
+.secret.*
+session.sqlite
+# Local workspace-only scratch data
+.tmp_home/
+tmp/
+tmp*/
+.local/
+openapitools.json
+# Workspace-generated outputs
+/artifacts/
+/comments.txt
