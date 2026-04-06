@@ -39,25 +39,11 @@ theme:
       accent: indigo
 
 plugins:
-  - include-markdown:
-      recursive: true
-      dedent: true
-      preserve_includer_indent: false
-      trailing_newlines: true
-      comments: false
-      rewrite_relative_urls: true
   - search
-  - social:
-      enabled: !ENV [ENABLE_SOCIAL_CARDS, false]
-      cache_dir: artifacts/docs/.cache/social
   - autorefs
-  - redirects:
-      redirect_maps:
-        08-dag/index.md: bijux-dag/program/index.md
-        cli/index.md: bijux-cli/index.md
-        dag/index.md: bijux-dag/index.md
-        core/index.md: bijux-core/index.md
-        dev/index.md: bijux-dev/index.md
+  - git-revision-date-localized:
+      enable_creation_date: false
+      fallback_to_build_date: true
 
 markdown_extensions:
   - admonition
