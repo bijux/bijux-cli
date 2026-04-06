@@ -1,0 +1,48 @@
+---
+title: Test Policy
+audience: maintainers
+type: governance
+status: canonical
+owner: bijux-dev-docs
+last_reviewed: 2026-04-06
+---
+
+# Test Policy
+
+Test policy defines what verification is required before maintainer-facing
+claims are considered reliable.
+
+## Visual Summary
+
+```mermaid
+flowchart LR
+    unit[unit and module tests] --> suite[maintainer suite tests]
+    suite --> workspace[workspace program tests]
+    workspace --> docs[docs integrity checks]
+    docs --> approval[approval readiness]
+```
+
+## Test Layers
+
+- `bijux-dev` crate tests for command and policy behavior
+- cross-program tests for CLI and DAG contract assumptions
+- workspace checks for integration health
+- documentation checks for structure and link integrity
+
+## Policy Rules
+
+- no release recommendation without passing required layers
+- flaky tests are tracked as explicit quality debt
+- slow tests are labeled and intentionally scheduled
+
+## Code Anchors
+
+- `crates/bijux-dev/tests/`
+- `crates/bijux-dev/src/suites/test.rs`
+- `makes/rust.mk`
+
+## Next Reads
+
+- [Quality Policy](quality-policy.md)
+- [Known Limitations](known-limitations.md)
+- [Repository Gates](../operations/repository-gates.md)
