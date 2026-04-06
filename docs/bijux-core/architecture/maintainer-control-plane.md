@@ -36,6 +36,21 @@ flowchart LR
 - maintainer crate may call product contracts as read-only inputs
 - operational decisions must be explainable from generated evidence
 
+## Separation Non-Goals
+
+- maintainer commands must not become hidden user-facing runtime entrypoints
+- governance reports must not override crate-level ownership boundaries
+- release automation must not bypass required program contract checks
+
+## Escalation Path
+
+When a maintainer command needs product behavior changes, escalate in this
+order:
+
+1. update owning program handbook (`bijux-cli` or `bijux-dag`)
+2. add contract/test evidence in the owning crate
+3. update maintainer workflows that consume the new evidence
+
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/mod.rs`

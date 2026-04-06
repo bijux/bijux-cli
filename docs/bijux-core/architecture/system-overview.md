@@ -39,6 +39,18 @@ flowchart LR
 - repository policy and release evidence belong to maintainer workflows
 - shared workspace policy belongs to root manifests, configs, and make targets
 
+## Non-Goals
+
+- this page does not define command-by-command CLI behavior
+- this page does not redefine DAG runtime semantics already owned by DAG docs
+- this page does not replace executable contract and test evidence
+
+## Boundary Smells
+
+- adding maintainer-only logic into user runtime crates
+- changing product behavior through repository scripts without crate-level review
+- documenting cross-program policy without linking owning code anchors
+
 ## Code Anchors
 
 - `Cargo.toml`

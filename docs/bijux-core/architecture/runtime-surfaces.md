@@ -30,6 +30,18 @@ flowchart LR
 - output envelopes must keep machine and human formats semantically aligned
 - command behavior changes require corresponding docs and compatibility evidence
 
+## Surface Non-Goals
+
+- no silent alias behavior that bypasses canonical route handling
+- no runtime-only shortcuts that produce undocumented output schemas
+- no cross-surface drift between machine-readable and human-readable meaning
+
+## Review Questions
+
+1. does this change alter public command meaning?
+2. does it change output schema or reason-code vocabulary?
+3. are docs and contract tests updated in the same change set?
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/main.rs`
