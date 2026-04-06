@@ -37,4 +37,4 @@ jobs:
           toolchain: 1.85.0
           components: rustfmt
       - name: cargo fmt
-        run: cargo run -p bijux-dev --bin bijux-dev-dag -- fmt
+        run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- fmt

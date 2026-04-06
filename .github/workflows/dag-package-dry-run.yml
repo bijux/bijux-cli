@@ -47,7 +47,7 @@ jobs:
           done
       - name: validate internal crate build surfaces
         run: |
-          cargo check -p bijux-dag-runtime
-          cargo check -p bijux-dag-app
-          cargo check -p bijux-dag-cli
-          cargo check -p bijux-dev
+          cargo check --locked -p bijux-dag-runtime
+          cargo check --locked -p bijux-dag-app
+          cargo check --locked -p bijux-dag-cli
+          cargo check --locked -p bijux-dev

@@ -36,4 +36,4 @@ jobs:
         with:
           toolchain: 1.85.0
       - name: ecosystem contract tests
-        run: cargo test -p bijux-dev --test control_plane_contracts --test evidence_control_plane_suites_contracts
+        run: cargo test --locked -p bijux-dev --test control_plane_contracts --test evidence_control_plane_suites_contracts

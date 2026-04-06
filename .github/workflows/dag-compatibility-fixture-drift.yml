@@ -36,7 +36,7 @@ jobs:
         with:
           toolchain: 1.85.0
       - name: check compatibility fixtures
-        run: cargo run -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat --advisory
+        run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat --advisory
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
