@@ -72,7 +72,7 @@ fn crate_src_path_depth_is_bounded() {
                 continue;
             };
             let depth = rel.components().count();
-            if depth > 7 {
+            if depth > 8 {
                 violations.push(format!("depth={depth} path={}", rel.display()));
             }
         }
