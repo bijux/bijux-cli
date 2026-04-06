@@ -1,0 +1,4 @@
+removed_file: true
+removed_keys: 2
+status: cleared
+updated: <CONFIG_PATH>

@@ -1,0 +1,38 @@
+{
+  "entries": [
+    {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_packaging_contracts.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/python_packaging_ownership.rs",
+        "crates/bijux-cli-python/tests/bridge_binary_parity_report.rs"
+      ]
+    },
+    {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_runtime_parity.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
+        "crates/bijux-cli-python/tests/bridge_surface_parity_matrix.rs",
+        "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs"
+      ]
+    },
+    {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_runtime_resilience.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/config_compatibility.rs",
+        "crates/bijux-cli-python/tests/maintainer_leakage_boundaries.rs",
+        "crates/bijux-cli/tests/integration/cli/resilience/install_ambiguity_hardening.rs"
+      ]
+    },
+    {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_stable_release_compatibility.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_command_parity.rs"
+      ]
+    }
+  ]
+}

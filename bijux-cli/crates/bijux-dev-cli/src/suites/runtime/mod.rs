@@ -1,0 +1,20 @@
+mod catalog;
+mod config_surface;
+mod config_surface_inventory;
+mod config_surface_reports;
+mod cross_surface;
+mod cross_surface_consistency;
+mod cross_surface_foundation;
+mod cross_surface_inventory;
+mod install_runtime;
+mod install_runtime_compatibility;
+mod install_runtime_inventory;
+mod install_runtime_reports;
+mod repl_bridge;
+mod repl_bridge_laws;
+mod repl_bridge_plugins;
+mod repl_bridge_resilience;
+mod run;
+
+pub(crate) use catalog::rows;
+pub(crate) use run::run;

@@ -1,0 +1,62 @@
+name: Deploy Docs
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    name: Build and deploy documentation
+    runs-on: ubuntu-24.04
+    env:
+      ENABLE_SOCIAL_CARDS: "true"
+      RUST_TOOLCHAIN_VERSION: "1.85.0"
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            crates/bijux-cli-python/pyproject.toml
+            mkdocs.yml
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Install documentation toolchain
+        run: make gh-docs-install
+
+      - name: Generate release artifact summary pages
+        run: make docs-artifact-pages
+
+      - name: Verify release artifact summary pages
+        run: make docs-artifact-pages-check
+
+      - name: Run documentation checks
+        run: make docs-check
+
+      - name: Configure the Git author
+        run: make gh-docs-configure-git
+
+      - name: Deploy documentation
+        run: make docs-deploy

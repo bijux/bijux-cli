@@ -1,0 +1,5 @@
+{# Reads domain from mkdocs.yml -> extra.analytics.domain #}
+{% set domain = config.extra.analytics.domain %}
+{% if domain %}
+<script defer data-domain="{{ domain }}" src="https://plausible.io/js/script.js"></script>
+{% endif %}

@@ -1,0 +1,15 @@
+audit
+cli
+completion
+config
+docs
+doctor
+help
+history
+inspect
+install
+memory
+plugins
+repl
+status
+version

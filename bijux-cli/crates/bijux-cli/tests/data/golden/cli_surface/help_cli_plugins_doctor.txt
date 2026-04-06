@@ -1,0 +1,16 @@
+Usage: bijux cli plugins doctor [OPTIONS]
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Examples:
+  bijux cli plugins doctor
+  bijux cli plugins doctor --format json
+  bijux help cli plugins doctor

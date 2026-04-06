@@ -1,0 +1,4 @@
+config
+doctor
+inspect
+plugins

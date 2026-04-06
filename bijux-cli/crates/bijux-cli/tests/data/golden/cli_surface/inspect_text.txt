@@ -1,0 +1,897 @@
+alias_rewrites:
+  -
+    alias:
+      - cli
+      - config
+    canonical:
+      - config
+    source: compatibility-alias
+  -
+    alias:
+      - completion
+    canonical:
+      - cli
+      - completion
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - clear
+    canonical:
+      - cli
+      - config
+      - clear
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - export
+    canonical:
+      - cli
+      - config
+      - export
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - get
+    canonical:
+      - cli
+      - config
+      - get
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - list
+    canonical:
+      - config
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - load
+    canonical:
+      - cli
+      - config
+      - load
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - reload
+    canonical:
+      - cli
+      - config
+      - reload
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - set
+    canonical:
+      - cli
+      - config
+      - set
+    source: compatibility-alias
+  -
+    alias:
+      - config
+      - unset
+    canonical:
+      - cli
+      - config
+      - unset
+    source: compatibility-alias
+  -
+    alias:
+      - doctor
+    canonical:
+      - cli
+      - doctor
+    source: compatibility-alias
+  -
+    alias:
+      - inspect
+    canonical:
+      - cli
+      - inspect
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - check
+    canonical:
+      - cli
+      - plugins
+      - check
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - disable
+    canonical:
+      - cli
+      - plugins
+      - disable
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - doctor
+    canonical:
+      - cli
+      - plugins
+      - doctor
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - enable
+    canonical:
+      - cli
+      - plugins
+      - enable
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - explain
+    canonical:
+      - cli
+      - plugins
+      - explain
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - info
+    canonical:
+      - plugins
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - inspect
+    canonical:
+      - cli
+      - plugins
+      - inspect
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - install
+    canonical:
+      - cli
+      - plugins
+      - install
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - list
+    canonical:
+      - cli
+      - plugins
+      - list
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - reserved-names
+    canonical:
+      - cli
+      - plugins
+      - reserved-names
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - scaffold
+    canonical:
+      - cli
+      - plugins
+      - scaffold
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - schema
+    canonical:
+      - cli
+      - plugins
+      - schema
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - uninstall
+    canonical:
+      - cli
+      - plugins
+      - uninstall
+    source: compatibility-alias
+  -
+    alias:
+      - plugins
+      - where
+    canonical:
+      - cli
+      - plugins
+      - where
+    source: compatibility-alias
+  -
+    alias:
+      - repl
+    canonical:
+      - cli
+      - repl
+    source: compatibility-alias
+  -
+    alias:
+      - version
+    canonical:
+      - cli
+      - version
+    source: compatibility-alias
+builtins:
+  -
+    segments:
+      - audit
+  -
+    segments:
+      - cli
+      - completion
+  -
+    segments:
+      - cli
+      - config
+      - clear
+  -
+    segments:
+      - cli
+      - config
+      - export
+  -
+    segments:
+      - cli
+      - config
+      - get
+  -
+    segments:
+      - cli
+      - config
+      - list
+  -
+    segments:
+      - cli
+      - config
+      - load
+  -
+    segments:
+      - cli
+      - config
+      - reload
+  -
+    segments:
+      - cli
+      - config
+      - set
+  -
+    segments:
+      - cli
+      - config
+      - unset
+  -
+    segments:
+      - cli
+      - doctor
+  -
+    segments:
+      - cli
+      - inspect
+  -
+    segments:
+      - cli
+      - paths
+  -
+    segments:
+      - cli
+      - plugins
+      - check
+  -
+    segments:
+      - cli
+      - plugins
+      - disable
+  -
+    segments:
+      - cli
+      - plugins
+      - doctor
+  -
+    segments:
+      - cli
+      - plugins
+      - enable
+  -
+    segments:
+      - cli
+      - plugins
+      - explain
+  -
+    segments:
+      - cli
+      - plugins
+      - info
+  -
+    segments:
+      - cli
+      - plugins
+      - inspect
+  -
+    segments:
+      - cli
+      - plugins
+      - install
+  -
+    segments:
+      - cli
+      - plugins
+      - list
+  -
+    segments:
+      - cli
+      - plugins
+      - reserved-names
+  -
+    segments:
+      - cli
+      - plugins
+      - scaffold
+  -
+    segments:
+      - cli
+      - plugins
+      - schema
+  -
+    segments:
+      - cli
+      - plugins
+      - uninstall
+  -
+    segments:
+      - cli
+      - plugins
+      - where
+  -
+    segments:
+      - cli
+      - repl
+  -
+    segments:
+      - cli
+      - self-test
+  -
+    segments:
+      - cli
+      - status
+  -
+    segments:
+      - cli
+      - version
+  -
+    segments:
+      - config
+  -
+    segments:
+      - config
+      - list
+  -
+    segments:
+      - docs
+  -
+    segments:
+      - history
+  -
+    segments:
+      - history
+      - clear
+  -
+    segments:
+      - install
+  -
+    segments:
+      - memory
+  -
+    segments:
+      - memory
+      - clear
+  -
+    segments:
+      - memory
+      - delete
+  -
+    segments:
+      - memory
+      - get
+  -
+    segments:
+      - memory
+      - list
+  -
+    segments:
+      - memory
+      - set
+  -
+    segments:
+      - plugins
+  -
+    segments:
+      - plugins
+      - check
+  -
+    segments:
+      - plugins
+      - disable
+  -
+    segments:
+      - plugins
+      - doctor
+  -
+    segments:
+      - plugins
+      - enable
+  -
+    segments:
+      - plugins
+      - info
+  -
+    segments:
+      - plugins
+      - inspect
+  -
+    segments:
+      - plugins
+      - install
+  -
+    segments:
+      - plugins
+      - list
+  -
+    segments:
+      - plugins
+      - scaffold
+  -
+    segments:
+      - plugins
+      - uninstall
+  -
+    segments:
+      - status
+compatibility_warnings: []
+contracts:
+  schemas:
+    - output-envelope-v1
+    - error-envelope-v1
+    - plugin-manifest-v2
+  version: v1
+integrity_issues: []
+integrity_status: ok
+plugin_origins: []
+reserved_namespaces:
+  -
+    name: agent
+    owner: bijux-agent
+    reserved: true
+  -
+    name: atlas
+    owner: bijux-atlas
+    reserved: true
+  -
+    name: cli
+    owner: bijux-cli
+    reserved: true
+  -
+    name: community
+    owner: plugin
+    reserved: false
+  -
+    name: completion
+    owner: bijux-cli
+    reserved: true
+  -
+    name: dag
+    owner: bijux-dag
+    reserved: true
+  -
+    name: dna
+    owner: bijux-dna
+    reserved: true
+  -
+    name: doctor
+    owner: bijux-cli
+    reserved: true
+  -
+    name: gnss
+    owner: bijux-gnss
+    reserved: true
+  -
+    name: help
+    owner: bijux-cli
+    reserved: true
+  -
+    name: inspect
+    owner: bijux-cli
+    reserved: true
+  -
+    name: plugins
+    owner: bijux-cli
+    reserved: true
+  -
+    name: rag
+    owner: bijux-rag
+    reserved: true
+  -
+    name: rar
+    owner: bijux-rar
+    reserved: true
+  -
+    name: repl
+    owner: bijux-cli
+    reserved: true
+  -
+    name: version
+    owner: bijux-cli
+    reserved: true
+  -
+    name: vex
+    owner: bijux-vex
+    reserved: true
+route_sources:
+  -
+    owner: bijux-cli
+    segments:
+      - audit
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - completion
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - clear
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - export
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - get
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - list
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - load
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - reload
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - set
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - config
+      - unset
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - doctor
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - inspect
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - paths
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - check
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - disable
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - doctor
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - enable
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - explain
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - info
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - inspect
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - install
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - list
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - reserved-names
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - scaffold
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - schema
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - uninstall
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - plugins
+      - where
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - repl
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - self-test
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - status
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - cli
+      - version
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - config
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - config
+      - list
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - docs
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - history
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - history
+      - clear
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - install
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+      - clear
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+      - delete
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+      - get
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+      - list
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - memory
+      - set
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - check
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - disable
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - doctor
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - enable
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - info
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - inspect
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - install
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - list
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - scaffold
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - plugins
+      - uninstall
+    source: built-in
+  -
+    owner: bijux-cli
+    segments:
+      - status
+    source: built-in
+status: ok

@@ -1,0 +1,72 @@
+[workspace]
+members = [
+  "crates/bijux-dev-cli",
+  "crates/bijux-cli",
+  "crates/bijux-cli-python",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.3.2"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/bijux/bijux-cli"
+homepage = "https://bijux.github.io/bijux-cli/"
+documentation = "https://bijux.github.io/bijux-cli/"
+authors = ["Bijan Mousavi <mousavi.bijan@gmail.com>"]
+rust-version = "1.85"
+
+[workspace.dependencies]
+anyhow = "1.0.100"
+bijux-cli = { version = "0.3.2", path = "crates/bijux-cli" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
+serde_yaml = "0.9.34"
+toml = "0.9.8"
+thiserror = "2.0.17"
+tempfile = "3.23.0"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unused_crate_dependencies = "allow"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+doc_markdown = "allow"
+too_many_lines = "allow"
+similar_names = "allow"
+unreadable_literal = "allow"
+cast_possible_truncation = "allow"
+match_same_arms = "allow"
+redundant_closure_for_method_calls = "allow"
+needless_pass_by_value = "allow"
+match_like_matches_macro = "allow"
+if_not_else = "allow"
+unusual_byte_groupings = "allow"
+needless_borrow = "allow"
+manual_string_new = "allow"
+ptr_arg = "allow"
+unnested_or_patterns = "allow"
+semicolon_if_nothing_returned = "allow"
+map_unwrap_or = "allow"
+if_same_then_else = "allow"
+uninlined_format_args = "allow"
+format_push_string = "allow"
+unused_self = "allow"
+result_large_err = "allow"
+single_match_else = "allow"
+manual_let_else = "allow"
+cast_sign_loss = "allow"
+items_after_statements = "allow"
+collapsible_if = "allow"
+single_char_pattern = "allow"
+many_single_char_names = "allow"
+useless_vec = "allow"
+cast_possible_wrap = "allow"
+implicit_clone = "allow"
+type_complexity = "allow"
+cast_lossless = "allow"

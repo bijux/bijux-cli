@@ -1,0 +1,3 @@
+entry_count: 2
+reloaded_path: <CONFIG_PATH>
+status: reloaded

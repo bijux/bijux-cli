@@ -1,0 +1,4 @@
+{
+  "args": ["history", "--format", "json", "--no-pretty"],
+  "history_text": "status\n"
+}

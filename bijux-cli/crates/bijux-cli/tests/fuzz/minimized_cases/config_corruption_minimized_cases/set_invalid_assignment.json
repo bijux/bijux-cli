@@ -1,0 +1,5 @@
+{
+  "args": ["cli", "config", "set", "bad-key=1", "--config-path", "<CONFIG_PATH>"],
+  "config_text": "BIJUXCLI_ALPHA=1\nBIJUXCLI_STABLE=keep\n",
+  "source_text": "BIJUXCLI_SRC=1\n"
+}

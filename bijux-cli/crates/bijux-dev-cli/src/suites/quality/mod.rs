@@ -1,0 +1,23 @@
+mod catalog;
+mod command_surface;
+mod command_surface_config;
+mod command_surface_control_plane;
+mod command_surface_crate_boundaries;
+mod command_surface_diagnostics;
+mod command_surface_governance;
+mod command_surface_history;
+mod plugin_quality;
+mod plugin_quality_compatibility;
+mod plugin_quality_state;
+mod plugin_quality_status;
+mod release_evidence;
+mod release_evidence_inventory;
+mod release_evidence_reports;
+mod run;
+mod state_laws;
+mod state_laws_governance;
+mod state_laws_inventory;
+mod state_laws_reports;
+
+pub(crate) use catalog::rows;
+pub(crate) use run::run;

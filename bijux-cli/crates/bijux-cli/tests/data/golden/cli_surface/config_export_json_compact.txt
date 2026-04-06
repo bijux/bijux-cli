@@ -1,0 +1,1 @@
+{"file":"<EXTERNAL_PATH>","file_format":"env","status":"exported"}

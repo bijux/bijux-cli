@@ -1,0 +1,5 @@
+[
+  {"input": "inspekt", "expected": "inspect"},
+  {"input": "plguins", "expected": "plugins"},
+  {"input": "doctro", "expected": "doctor"}
+]

@@ -1,0 +1,6 @@
+{
+  "args": ["memory", "list", "--format", "json", "--no-pretty"],
+  "registry_text": "{\"plugins\":[]}",
+  "history_text": "status\n",
+  "memory_text": "{\"alpha\":1,\"beta\":{\"value\":\"2\"}}"
+}

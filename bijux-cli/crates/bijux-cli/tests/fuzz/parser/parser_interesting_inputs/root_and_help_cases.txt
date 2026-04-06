@@ -1,0 +1,6 @@
+bijux --help
+bijux help
+bijux hеlp
+bijux --format json status
+bijux --color never --log-level trace doctor
+bijux status --unknown

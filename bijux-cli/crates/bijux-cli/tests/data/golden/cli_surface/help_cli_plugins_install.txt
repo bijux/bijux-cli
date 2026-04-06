@@ -1,0 +1,21 @@
+Usage: bijux cli plugins install [OPTIONS] [manifest]
+
+Arguments:
+  [manifest]
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+      --source <LABEL>      Override the displayed provenance label without changing local manifest resolution
+  -q, --quiet               Suppress command output
+      --trust <trust>       [possible values: core, verified, community, unknown]
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Examples:
+  bijux cli plugins install ./plugin.manifest.json
+  bijux cli plugins install ./plugin.manifest.json --format json
+  bijux cli plugins install ./plugin.manifest.json --source community-catalog

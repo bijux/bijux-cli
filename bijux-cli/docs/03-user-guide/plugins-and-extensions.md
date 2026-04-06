@@ -1,0 +1,179 @@
+# Plugins And Extensions
+
+## Goal
+
+Use plugins deliberately. The runtime can install, inspect, validate, and
+remove plugins, but it does not pretend they are isolated from the host.
+
+```mermaid
+flowchart TD
+    A[plugin.manifest.json] --> B[install]
+    B --> C[list or inspect]
+    C --> D[check]
+    D --> E[use]
+    E --> F[uninstall when no longer needed]
+```
+
+This diagram shows the lifecycle that the runtime actually supports today:
+install from a manifest, inspect and validate the result, use the plugin only
+after those checks, and uninstall it when you no longer want it in the local
+registry.
+
+```mermaid
+flowchart LR
+    A[Trusted local plugin] --> B[Reasonable use]
+    C[Untrusted plugin] --> D[Do not install]
+    E[inspect and check] --> F[Current health evidence]
+```
+
+The second diagram explains the trust boundary around that lifecycle. Bijux can
+show health evidence and current registry state, but it cannot turn an
+untrusted plugin into a safe one.
+
+## Common Commands
+
+```bash
+bijux plugins info
+bijux plugins list
+bijux plugins inspect
+bijux plugins inspect NAMESPACE
+bijux plugins install ./my-plugin
+bijux plugins check NAMESPACE
+bijux plugins enable NAMESPACE
+bijux plugins disable NAMESPACE
+bijux plugins doctor
+bijux plugins explain
+bijux plugins explain NAMESPACE
+bijux plugins where
+bijux plugins reserved-names
+bijux plugins uninstall NAMESPACE
+bijux plugins schema
+```
+
+## Minimal Local Plugin Walkthrough
+
+Create a minimal local plugin directory:
+
+```bash
+mkdir -p ./my-plugin
+cat > ./my-plugin/plugin.manifest.json <<'JSON'
+{
+  "name": "my-plugin",
+  "version": "0.1.0",
+  "schema_version": "v2",
+  "manifest_version": "v2",
+  "compatibility": {
+    "min_inclusive": "<current bijux host version>",
+    "max_exclusive": "<next supported host boundary>"
+  },
+  "namespace": "my-plugin",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}
+JSON
+cat > ./my-plugin/plugin.py <<'PY'
+def main(argv: list[str]) -> dict[str, object]:
+    return {"status": "ok", "argv": argv}
+PY
+```
+
+For pre-1.0 hosts, set `max_exclusive` to the next supported minor line rather
+than assuming compatibility across every future `0.x` release.
+
+Install, inspect, validate, and remove it:
+
+```bash
+bijux plugins info
+bijux plugins install ./my-plugin
+bijux plugins list
+bijux plugins inspect my-plugin
+bijux plugins check my-plugin
+bijux plugins doctor
+bijux plugins where
+bijux plugins reserved-names
+bijux plugins explain
+bijux plugins explain my-plugin
+bijux plugins uninstall my-plugin
+```
+
+Expected shape:
+
+- `info` shows overall registry status, plugin counts, and current
+  compatibility or load diagnostics
+- `list` includes `my-plugin` after install and carries the same current
+  registry-health summary as `info`
+- `inspect` without an argument shows the full inventory; with a namespace it
+  shows one plugin's manifest, source, and trust metadata
+- `check` verifies manifest validity and entrypoint presence
+- delegated and Python manifests must use a `module:callable` entrypoint such
+  as `plugin:main`
+- `doctor` shows registry-wide health and load diagnostics
+- `where` shows the active plugins directory and registry file
+- `reserved-names` shows the full blocked namespace inventory, grouped
+  ownership details, and confirms that the same rules apply to plugin aliases
+- `explain` without an argument shows the overall plugin summary; with a
+  namespace it shows compatibility or load diagnostics for one plugin and it
+  reports unknown names without failing
+- `where` reports the active plugin paths together with existence and
+  write-readiness hints
+- `list` no longer reports the namespace after uninstall
+
+## Working Rule
+
+- install from the manifest file
+- use `reserved-names` before choosing a new namespace or alias
+- inspect before assuming a plugin is healthy
+- use `doctor` when you need registry-wide health rather than one plugin check
+- use `where` when debugging plugin state paths or the active registry file
+- check before relying on a plugin in automation
+- uninstall plugins you do not actively want to keep
+
+## Current Scope
+
+The current plugin surface includes both lifecycle management and direct routed
+execution for installed plugin namespaces. These commands are implemented and
+supported for baseline use:
+
+- `info`
+- `list`
+- `inspect`
+- `check`
+- `enable`
+- `disable`
+- `install`
+- `uninstall`
+- `scaffold`
+- `doctor`
+- `reserved-names`
+- `where`
+- `explain`
+- `schema`
+
+Installed plugin namespaces and plugin aliases are executed as direct runtime
+subcommands under `bijux`, subject to the installed plugin kind and current
+registry health.
+`python` and `delegated` plugins return structured payloads through the host
+renderer. `external-exec` plugins keep their own stdout, stderr, and exit-code
+contract. Python-backed plugin execution requires Python 3.11 or newer on
+`PATH`.
+
+## Important Limit
+
+Plugins are not sandboxed. Installing a plugin is a trust decision, not just a
+feature toggle.
+
+## What The Runtime Can Tell You
+
+`inspect`, `check`, `doctor`, and `explain` can show compatibility, manifest
+drift, registry-wide health, and current load issues. They cannot make an
+untrusted plugin safe.
+
+Rust plugin management already adds guardrails beyond the historical Python
+baseline, including better reserved-namespace diagnostics, write-path rollback
+coverage, and current-runtime drift reporting.
+
+## Read Next
+
+Continue to [Interactive Shell And History](interactive-shell-and-history.md).

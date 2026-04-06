@@ -1,0 +1,31 @@
+target-version = "py311"
+line-length = 88
+respect-gitignore = true
+src = ["crates/bijux-cli-python/python", "crates/bijux-cli-python/tests/python"]
+
+exclude = [
+  ".git", ".hg", ".pytest_cache", ".ruff_cache", ".venv",
+  "build", "dist", "docs", "htmlcov", "__pycache__", "migrations", "*.egg-info"
+]
+
+[lint]
+select = [
+  "E","F","I","B","UP","SIM","PT","N","A","C4","S","TID","PERF",
+  # "RUF","ARG","TRY","T20","BLE","ERA"
+]
+ignore = ["E501", "E203"]
+
+[lint.per-file-ignores]
+"tests/**" = ["S101"]
+"__init__.py" = ["F401"]
+
+[lint.isort]
+force-sort-within-sections = true
+known-first-party = ["bijux_cli_py"]
+required-imports = ["from __future__ import annotations"]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[lint.mccabe]
+max-complexity = 10

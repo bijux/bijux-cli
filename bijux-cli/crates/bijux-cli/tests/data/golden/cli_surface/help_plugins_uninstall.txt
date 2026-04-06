@@ -1,0 +1,19 @@
+Usage: bijux plugins uninstall [OPTIONS] [namespace]
+
+Arguments:
+  [namespace]
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Examples:
+  bijux plugins uninstall
+  bijux plugins uninstall --format json
+  bijux help plugins uninstall

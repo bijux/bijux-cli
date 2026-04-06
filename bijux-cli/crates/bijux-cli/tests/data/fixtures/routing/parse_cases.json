@@ -1,0 +1,77 @@
+[
+  {
+    "argv": ["bijux", "status"],
+    "expected_normalized": ["status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "audit"],
+    "expected_normalized": ["audit"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "docs"],
+    "expected_normalized": ["docs"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "install", "atlas", "--dry-run"],
+    "expected_normalized": ["install"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "cli", "status"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "doctor"],
+    "expected_normalized": ["cli", "doctor"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "version"],
+    "expected_normalized": ["cli", "version"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "plugins", "list"],
+    "expected_normalized": ["cli", "plugins", "list"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "atlas", "status"],
+    "expected_normalized": ["atlas"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "rag", "doctor"],
+    "expected_normalized": ["rag"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "cli"],
+    "expected_normalized": ["cli"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "atlas"],
+    "expected_normalized": ["atlas"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "cli", "sttus"],
+    "expected_normalized": [],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "--quiet", "--format", "json", "cli", "status"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "cli", "status", "--quiet", "--format", "json"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  }
+]

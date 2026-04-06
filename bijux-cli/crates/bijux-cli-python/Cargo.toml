@@ -1,0 +1,32 @@
+[package]
+name = "bijux-cli-python"
+version.workspace = true
+publish = false
+description = "Python package and native bridge for installing and launching the Bijux command runtime."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://bijux.github.io/bijux-cli/06-reference/integrations-and-routed-runtimes/"
+authors.workspace = true
+rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "python", "cli", "automation", "plugins"]
+categories = ["api-bindings", "command-line-interface", "development-tools"]
+
+[lib]
+name = "bijux_cli_python"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+bijux-cli.workspace = true
+pyo3 = { version = "0.24.1", optional = true, default-features = false, features = ["abi3-py311", "extension-module", "macros"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+default = []
+python-extension = ["dep:pyo3"]

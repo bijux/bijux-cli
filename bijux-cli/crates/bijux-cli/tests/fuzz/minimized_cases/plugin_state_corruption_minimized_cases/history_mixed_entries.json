@@ -1,0 +1,6 @@
+{
+  "args": ["history", "--format", "json", "--no-pretty"],
+  "registry_text": "{\"plugins\":[]}",
+  "history_text": "[{\"command\":\"status\"},\"bad\",{\"command\":\"doctor\"}]",
+  "memory_text": "{\"alpha\":{\"value\":\"1\"}}"
+}

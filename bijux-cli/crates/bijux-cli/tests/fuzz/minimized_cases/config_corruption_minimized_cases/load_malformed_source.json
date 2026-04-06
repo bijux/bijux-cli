@@ -1,0 +1,5 @@
+{
+  "args": ["cli", "config", "load", "<SOURCE_PATH>", "--config-path", "<CONFIG_PATH>"],
+  "config_text": "BIJUXCLI_ALPHA=1\nBIJUXCLI_STABLE=keep\n",
+  "source_text": "BROKEN_LINE\n"
+}

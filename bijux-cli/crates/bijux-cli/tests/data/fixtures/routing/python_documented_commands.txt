@@ -1,0 +1,14 @@
+status
+doctor
+version
+repl
+inspect
+completion
+audit
+config
+docs
+help
+history
+install
+memory
+plugins

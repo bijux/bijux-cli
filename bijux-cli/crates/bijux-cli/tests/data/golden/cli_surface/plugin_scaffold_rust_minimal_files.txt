@@ -1,0 +1,5 @@
+plugin.manifest.json
+Cargo.toml
+plugin-entrypoint
+src/lib.rs
+src/main.rs

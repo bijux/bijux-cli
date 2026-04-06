@@ -1,0 +1,27 @@
+Usage: bijux history [OPTIONS] [COMMAND]
+
+Commands:
+  clear
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -l, --limit <limit>
+  -q, --quiet               Suppress command output
+  -F, --filter <filter>
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --sort <sort>         [possible values: timestamp]
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Examples:
+  bijux history
+  bijux history clear
+  bijux history clear --force
+
+History integrity:
+  malformed JSON payloads fail closed
+  use `bijux history clear --force` to reset corrupted history files

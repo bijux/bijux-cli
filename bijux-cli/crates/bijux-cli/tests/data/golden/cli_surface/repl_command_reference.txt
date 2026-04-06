@@ -1,0 +1,9 @@
+REPL Commands
+status
+doctor
+version
+:help <command>
+:set trace on|off
+:set quiet on|off
+:set format json|yaml|text
+:exit

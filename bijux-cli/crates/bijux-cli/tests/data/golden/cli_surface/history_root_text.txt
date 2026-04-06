@@ -1,0 +1,19 @@
+entries:
+  -
+    command: status
+    timestamp: 1.0
+  -
+    command: doctor
+    timestamp: 2.0
+summary:
+  accepted_entries: 2
+  dropped_invalid_entries: 0
+  file_bytes: 75
+  filter_applied: false
+  limit: 20
+  observed_entries: 2
+  returned_entries: 2
+  sort_mode: preserve
+  source_format: json-array
+  total_entries: 2
+  truncated_command_entries: 0

@@ -1,0 +1,50 @@
+Usage: bijux plugins [OPTIONS] [COMMAND]
+
+Commands:
+  list
+  info
+  inspect
+  check
+  enable
+  disable
+  install
+  uninstall
+  scaffold
+  doctor
+  reserved-names
+  where
+  explain
+  schema
+  help            Print this message or the help of the given subcommand(s)
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Subcommand guide:
+list            List discovered plugins
+info            Show plugin inventory details
+inspect         Inspect one plugin or the full inventory
+check           Validate a plugin namespace
+enable          Enable a plugin namespace
+disable         Disable a plugin namespace
+install         Install plugin from manifest/source
+uninstall       Remove a plugin namespace
+scaffold        Generate a plugin template
+doctor          Plugin health diagnostics
+reserved-names  Show reserved plugin namespace rules
+where           Show plugin state and install paths
+explain         Explain plugin resolution outcome
+schema          Show the current plugin manifest JSON schema
+
+Examples:
+  bijux plugins list
+  bijux plugins inspect sample
+  bijux plugins check sample
+  bijux plugins install ./plugin.manifest.json

@@ -1,0 +1,7 @@
+cli
+plugins
+scaffold
+python
+cli
+--path
+{ROOT}/reserved

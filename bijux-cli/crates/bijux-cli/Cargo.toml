@@ -1,0 +1,48 @@
+[package]
+name = "bijux-cli"
+version.workspace = true
+description = "Command-line runtime for automation, plugin-driven tools, and interactive workflows with structured output."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://bijux.github.io/bijux-cli/04-architecture/runtime-and-distribution/"
+authors.workspace = true
+rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "cli", "automation", "plugins", "diagnostics"]
+categories = ["command-line-interface", "development-tools", "config"]
+
+[lib]
+name = "bijux_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bijux"
+path = "src/bin/bijux.rs"
+
+[dependencies]
+anyhow.workspace = true
+futures = "0.3.31"
+clap = { version = "4.5.51", features = ["std"] }
+schemars = { version = "0.8.22", features = ["derive"] }
+semver = { version = "1.0.27", default-features = false, features = ["std"] }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+sha2 = "0.10.9"
+shlex = "1.3.0"
+thiserror.workspace = true
+
+[lints]
+workspace = true
+
+[build-dependencies]
+semver = { version = "1.0.27", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+libc = "0.2.177"
+proptest = "1.6.0"
+shlex = "1.3.0"
+tempfile.workspace = true
+thiserror.workspace = true

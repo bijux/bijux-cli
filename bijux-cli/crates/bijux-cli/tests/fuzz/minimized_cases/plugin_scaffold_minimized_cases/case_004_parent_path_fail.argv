@@ -1,0 +1,7 @@
+cli
+plugins
+scaffold
+python
+replayunsafe
+--path
+{ROOT}/ok/../escape

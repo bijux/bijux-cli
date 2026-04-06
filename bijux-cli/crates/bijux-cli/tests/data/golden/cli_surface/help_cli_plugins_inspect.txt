@@ -1,0 +1,21 @@
+Usage: bijux cli plugins inspect [OPTIONS] [plugin]
+
+Arguments:
+  [plugin]
+
+Options:
+  -f, --format <FORMAT>     Output format: text, json, or yaml
+  -q, --quiet               Suppress command output
+      --log-level <LEVEL>   Log verbosity level
+      --color <MODE>        ANSI color policy
+      --pretty              Pretty-print structured output
+      --no-pretty           Emit compact structured output
+      --config-path <PATH>  Use explicit config file path
+  -h, --help                Print help
+
+Examples:
+  bijux cli plugins inspect sample
+  bijux cli plugins inspect sample --format json
+  bijux help cli plugins inspect
+
+Compatibility note: inspect output includes plugin compatibility warnings when present.

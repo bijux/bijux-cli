@@ -1,0 +1,3 @@
+{
+  "args": ["cli", "config", "set", "alpha=1", "--config-path", "<CONFIG_PATH>"]
+}

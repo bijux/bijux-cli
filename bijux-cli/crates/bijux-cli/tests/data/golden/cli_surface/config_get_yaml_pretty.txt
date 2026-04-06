@@ -1,0 +1,4 @@
+key: alpha
+source: file
+source_path: <CONFIG_PATH>
+value: '1'

@@ -1,0 +1,3 @@
+my-plugin
+MY_PLUGIN
+my_plugin

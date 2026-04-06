@@ -1,0 +1,103 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "bijux-cli"
+dynamic = ["version"]
+description = "Python package for installing and launching the Bijux command runtime for automation, plugins, and interactive workflows"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
+keywords = ["bijux", "cli", "python", "automation", "plugins", "interactive"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Rust",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Terminals",
+  "Topic :: Utilities",
+  "Typing :: Typed",
+]
+
+[project.scripts]
+bijux = "bijux_cli_py.cli:main"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.4.1,<9.0",
+  "pytest-cov>=6.2.1,<7.0",
+  "pytest-timeout>=2.4.0,<3.0",
+]
+lint = [
+  "ruff>=0.6.8,<1.0",
+]
+security = [
+  "bandit>=1.7.10,<2.0",
+  "pip-audit>=2.7.3,<3.0",
+]
+docs = [
+  "mkdocs>=1.6.1,<2.0",
+  "mkdocs-autorefs>=1.4.4,<2.0",
+  "mkdocs-glightbox>=0.3,<1.0",
+  "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
+  "mkdocs-material[imaging]>=9.7.5,<10.0",
+  "mkdocs-minify-plugin>=0.7,<1.0",
+  "mkdocs-redirects>=1.2,<2.0",
+]
+build = [
+  "build>=1.4.0,<2.0",
+  "twine>=6.1.0,<7.0",
+  "maturin>=1.7,<2.0",
+]
+
+[project.urls]
+"Homepage" = "https://bijux.github.io/bijux-cli/"
+"Repository" = "https://github.com/bijux/bijux-cli.git"
+"Bug Tracker" = "https://github.com/bijux/bijux-cli/issues"
+"Documentation" = "https://bijux.github.io/bijux-cli/"
+"Changelog" = "https://bijux.github.io/bijux-cli/changelog"
+"Discussions" = "https://github.com/bijux/bijux-cli/discussions"
+"Rust Runtime Crate" = "https://crates.io/crates/bijux-cli"
+"Rust Runtime Docs" = "https://docs.rs/bijux-cli"
+
+[tool.maturin]
+python-source = "python"
+module-name = "bijux_cli_py._native"
+manifest-path = "Cargo.toml"
+features = ["python-extension"]
+include = [{ path = "README.md", format = "sdist" }]
+
+# --8<-- [start:bijux]
+[tool.bijux]
+runtime_version_source = "git-tag"
+# --8<-- [end:bijux]
+
+# --8<-- [start:security]
+[tool.security]
+
+[[tool.security.pip_audit_ignore]]
+id = "PYSEC-2022-42969"
+dependency = "py"
+reason = "Vulnerability is in a transitive dev-only dependency; it is not part of CLI runtime execution."
+# --8<-- [end:security]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+markers = [
+  "nightly: network-backed or long-running compatibility checks excluded from the default test run",
+]

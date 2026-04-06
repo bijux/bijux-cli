@@ -1,0 +1,8 @@
+cli
+plugins
+scaffold
+python
+replaypy
+--path
+{ROOT}/replaypy
+--force
