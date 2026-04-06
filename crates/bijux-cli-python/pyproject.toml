@@ -81,7 +81,11 @@ python-source = "python"
 module-name = "bijux_cli_py._native"
 manifest-path = "Cargo.toml"
 features = ["python-extension"]
-include = [{ path = "README.md", format = "sdist" }, { path = "CHANGELOG.md", format = "sdist" }]
+include = [
+  { path = "README.md", format = "sdist" },
+  { path = "CHANGELOG.md", format = "sdist" },
+  { path = "../../LICENSE", format = "sdist" },
+]
 
 # --8<-- [start:bijux]
 [tool.bijux]
