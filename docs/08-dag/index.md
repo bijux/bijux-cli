@@ -1,6 +1,6 @@
 # DAG Documentation
 
-The DAG subsystem is maintained in this repository and documented under `bijux-dag/docs/`.
+The DAG subsystem is maintained in this repository with crates under `crates/bijux-dag-*` and docs under `bijux-dag/docs/`.
 
 ## Entry points
 

@@ -1,13 +1,22 @@
 # bijux-dag
 
-This directory contains DAG-specific crates, docs, and support assets that are part of the `bijux-core` workspace.
+DAG-specific documentation, evidence assets, and configs live in this directory.
 
-Workspace and release authority live at the repository root.
+DAG crates are part of the root workspace under:
 
-Use root commands:
+- `crates/bijux-dag-core`
+- `crates/bijux-dag-artifacts`
+- `crates/bijux-dag-runtime`
+- `crates/bijux-dag-app`
+- `crates/bijux-dag-cli`
+- `crates/bijux-dag-testkit`
+- `crates/bijux-dev-dag`
+
+Run from repository root:
 
 ```bash
 cargo check --workspace
 cargo run -p bijux-dag-cli -- dag --help
-make test
+make dag-test
+make dag-contracts
 ```
