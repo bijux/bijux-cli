@@ -117,7 +117,7 @@ fn artifact_inspect_schema_required_fields_lockstep() {
     let (_tmp, run) = setup_run_with_lineage();
     let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
 
-    for field in required_fields("configs/schema/operator/artifact_inspect.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/artifact_inspect.schema.json") {
         assert!(
             inspected.get(&field).is_some(),
             "artifact inspect output missing required field `{field}`"

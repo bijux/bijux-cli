@@ -397,11 +397,11 @@ pub(super) enum RepoCommand {
         )]
         dep_out: PathBuf,
     },
-    /// Generate schema changelog from files under configs/schema
+    /// Generate schema changelog from files under configs/dag/schema
     SchemaChangelog {
         #[arg(long, default_value = "docs/reports/foundation/SCHEMA_CHANGELOG.md")]
         out: PathBuf,
-        #[arg(long, default_value = "configs/schema")]
+        #[arg(long, default_value = "configs/dag/schema")]
         schema_root: PathBuf,
     },
     /// Generate runtime kernel-boundary and API-scope reports from policy and source
@@ -466,12 +466,12 @@ include!("cli_verify_command.rs");
 pub(super) enum ScheduleCommand {
     /// Validate schedule registry semantics
     Validate {
-        #[arg(long, default_value = "configs/schedules/registry.json")]
+        #[arg(long, default_value = "configs/dag/schedules/registry.json")]
         file: PathBuf,
     },
     /// Preview next-fire behavior
     Preview {
-        #[arg(long, default_value = "configs/schedules/registry.json")]
+        #[arg(long, default_value = "configs/dag/schedules/registry.json")]
         file: PathBuf,
     },
 }

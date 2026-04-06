@@ -23,9 +23,9 @@ This crate is the single source of truth for shared DAG fixture builders and run
 - `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
 
 ## Related schemas
-- `configs/schema/dag.schema.json`
-- `configs/schema/run_manifest.schema.json`
-- `configs/schema/node_trace.schema.json`
+- `configs/dag/schema/dag.schema.json`
+- `configs/dag/schema/run_manifest.schema.json`
+- `configs/dag/schema/node_trace.schema.json`
 
 ## Versioning and change policy
 APIs are internal to repository tests; compatibility is maintained across workspace crates, not across external semver users.

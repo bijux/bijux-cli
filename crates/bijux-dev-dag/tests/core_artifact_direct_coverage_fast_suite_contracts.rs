@@ -14,7 +14,7 @@ use tempfile as _;
 #[test]
 fn core_artifact_fast_suite_covers_direct_coverage_contract_targets() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let suite = root.join("configs/suites/core_artifact_direct_coverage_fast.json");
+    let suite = root.join("configs/dag/suites/core_artifact_direct_coverage_fast.json");
     assert!(
         suite.exists(),
         "missing core/artifact direct coverage fast suite"

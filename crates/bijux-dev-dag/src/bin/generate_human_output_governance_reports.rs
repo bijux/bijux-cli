@@ -40,7 +40,7 @@ fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 fn main() -> Result<(), String> {
     let root = repo_root();
-    let policy_path = root.join("configs/policy/human_output_governance.json");
+    let policy_path = root.join("configs/dag/policy/human_output_governance.json");
     let raw = fs::read_to_string(policy_path).map_err(|e| e.to_string())?;
     let policy: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
 

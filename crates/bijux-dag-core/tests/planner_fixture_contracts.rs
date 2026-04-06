@@ -126,7 +126,7 @@ fn planner_json_dump_and_schema_compatibility_are_stable() {
     assert_eq!(first_dump, second_dump, "plan dump must be stable");
 
     let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/schema/execution_plan.schema.json");
+        .join("../../configs/dag/schema/execution_plan.schema.json");
     let schema_text = fs::read_to_string(schema_path).expect("schema file");
     let schema: Value = serde_json::from_str(&schema_text).expect("schema parse");
     let required = schema

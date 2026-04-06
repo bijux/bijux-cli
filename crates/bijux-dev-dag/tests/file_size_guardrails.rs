@@ -30,7 +30,7 @@ fn line_count(path: &Path) -> usize {
 #[test]
 fn source_files_stay_under_size_budget() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let policy_path = root.join("configs/policy/source_layout.json");
+    let policy_path = root.join("configs/dag/policy/source_layout.json");
     let policy_text = fs::read_to_string(&policy_path).expect("read source layout policy");
     let policy: SourceLayoutPolicy =
         serde_json::from_str(&policy_text).expect("parse source layout policy");

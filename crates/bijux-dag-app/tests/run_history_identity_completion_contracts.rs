@@ -143,7 +143,7 @@ fn run_summary_and_detail_output_fields_are_schema_lockstep_stable() {
     );
 
     let summary = inspect_summary(&root.join("run-detail")).expect("inspect summary");
-    for field in required_fields("configs/schema/operator/run_inspect.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/run_inspect.schema.json") {
         assert!(summary.get(&field).is_some(), "summary missing {field}");
     }
 
@@ -156,7 +156,7 @@ fn run_summary_and_detail_output_fields_are_schema_lockstep_stable() {
         .expect("row");
     let root_repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let history_schema: Value = serde_json::from_str(
-        &fs::read_to_string(root_repo.join("configs/schema/operator/run_history.schema.json"))
+        &fs::read_to_string(root_repo.join("configs/dag/schema/operator/run_history.schema.json"))
             .expect("history schema"),
     )
     .expect("parse history schema");

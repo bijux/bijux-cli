@@ -73,16 +73,16 @@ coverage: ## Run workspace coverage with full test-all semantics via cargo llvm-
 	@mkdir -p artifacts/coverage
 	@mkdir -p "$(PROFRAW_DIR)"
 	@status=0; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_LLVM_COV_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/nextest/nextest.toml --user-config-file none --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" --no-clean --cargo-quiet || status=$$?; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_LLVM_COV_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/dag/nextest/nextest.toml --user-config-file none --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" --no-clean --cargo-quiet || status=$$?; \
 	$(cleanup_root_nextest); \
 	test $$status -eq 0
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo run -p bijux-dev-dag --bin generate_line_coverage_reports
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_LLVM_COV_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo llvm-cov report
 
 fmt: ## Run cargo fmt --check
-	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
+	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/dag/rust/rustfmt.toml"
 	@mkdir -p $(ARTIFACT_ROOT)/fmt/$(RUN_ID)
-	@output="$$(CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml 2>&1)"; \
+	@output="$$(CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo fmt --all -- --check --config-path configs/dag/rust/rustfmt.toml 2>&1)"; \
 	status=$$?; \
 	printf '%s\n' "$$output" | tee $(ARTIFACT_ROOT)/fmt/$(RUN_ID)/report.txt; \
 	if [ $$status -eq 0 ]; then \
@@ -93,7 +93,7 @@ fmt: ## Run cargo fmt --check
 lint: ## Run cargo clippy with warnings denied
 	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
 	@mkdir -p $(ARTIFACT_ROOT)/lint/$(RUN_ID)
-	@CLIPPY_CONF_DIR=configs/rust CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee $(ARTIFACT_ROOT)/lint/$(RUN_ID)/report.txt
+	@CLIPPY_CONF_DIR=configs/dag/rust CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee $(ARTIFACT_ROOT)/lint/$(RUN_ID)/report.txt
 
 test: ## Run workspace fast tests (skip #[ignore = "slow"])
 	@$(call require_tool,cargo-nextest)
@@ -103,7 +103,7 @@ test: ## Run workspace fast tests (skip #[ignore = "slow"])
 	@status=0; report_file="$(ARTIFACT_ROOT)/test/$(RUN_ID)/nextest.log"; \
 	$(cleanup_root_nextest); \
 	cleanup() { $(cleanup_root_nextest); }; trap cleanup EXIT INT TERM; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" $${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} 2>&1 | tee "$$report_file"; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --workspace --config-file configs/dag/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" $${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} 2>&1 | tee "$$report_file"; \
 	status=$${PIPESTATUS:-$${pipestatus}}; \
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \
@@ -117,7 +117,7 @@ test-slow: ## Run only #[ignore = "slow"] tests
 	@status=0; report_file="$(ARTIFACT_ROOT)/test/$(RUN_ID)/nextest-slow.log"; \
 	$(cleanup_root_nextest); \
 	cleanup() { $(cleanup_root_nextest); }; trap cleanup EXIT INT TERM; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --run-ignored only --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" 2>&1 | tee "$$report_file"; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --config-file configs/dag/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --run-ignored only --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" 2>&1 | tee "$$report_file"; \
 	status=$${PIPESTATUS:-$${pipestatus}}; \
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \
@@ -131,7 +131,7 @@ test-all: ## Run full workspace test suite including slow and ignored tests
 	@status=0; report_file="$(ARTIFACT_ROOT)/test/$(RUN_ID)/nextest-all.log"; \
 	$(cleanup_root_nextest); \
 	cleanup() { $(cleanup_root_nextest); }; trap cleanup EXIT INT TERM; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --all-features --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" 2>&1 | tee "$$report_file"; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --all-features --config-file configs/dag/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" 2>&1 | tee "$$report_file"; \
 	status=$${PIPESTATUS:-$${pipestatus}}; \
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \

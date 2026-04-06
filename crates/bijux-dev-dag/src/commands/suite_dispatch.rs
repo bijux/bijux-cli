@@ -16,7 +16,7 @@ pub(crate) fn run_suite_group(
 ) -> Result<(), String> {
     let root = crate::commands::repo_root()?;
     let overrides =
-        crate::suites::load_suite_overrides(&root.join("configs/dev/suite_overrides.json"))?;
+        crate::suites::load_suite_overrides(&root.join("configs/dag/dev/suite_overrides.json"))?;
     let disabled: BTreeSet<String> = overrides.disabled_suite_ids.into_iter().collect();
     let selection = build_suite_selection(
         group,

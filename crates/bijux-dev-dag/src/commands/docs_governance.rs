@@ -176,7 +176,7 @@ pub(super) fn run_naming_governance_guard() -> Result<(), String> {
         "docs/spec/NAMING_PHILOSOPHY.md",
         "docs/spec/NAMING_REVIEW_POLICY.md",
         "docs/reference/NAMING_AUDIT.md",
-        "configs/policy/naming_rules.json",
+        "configs/dag/policy/naming_rules.json",
     ];
     for rel in required_docs {
         if !root.join(rel).exists() {
@@ -185,7 +185,7 @@ pub(super) fn run_naming_governance_guard() -> Result<(), String> {
     }
 
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/naming_rules.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/naming_rules.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -234,8 +234,8 @@ pub(super) fn run_naming_governance_guard() -> Result<(), String> {
 
 pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let docs_policy = root.join("configs/policy/docs_config_governance.json");
-    let config_policy = root.join("configs/policy/config_consumers.json");
+    let docs_policy = root.join("configs/dag/policy/docs_config_governance.json");
+    let config_policy = root.join("configs/dag/policy/config_consumers.json");
     if !docs_policy.exists() {
         return Err("missing docs config governance policy".to_string());
     }
@@ -284,13 +284,13 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
     for file in files {
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         for token in content.split_whitespace() {
-            if !token.contains("configs/schema/") {
+            if !token.contains("configs/dag/schema/") {
                 continue;
             }
             let clean =
                 token.trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"'));
-            let path = if clean.contains("configs/schema/") {
-                let idx = clean.find("configs/schema/").unwrap_or(0);
+            let path = if clean.contains("configs/dag/schema/") {
+                let idx = clean.find("configs/dag/schema/").unwrap_or(0);
                 &clean[idx..]
             } else {
                 clean
@@ -755,7 +755,7 @@ fn is_excluded(rel_path: &str, policy: &DocsLintPolicy) -> bool {
 }
 
 fn load_docs_lint_policy(root: &Path) -> Result<DocsLintPolicy, String> {
-    let path = root.join("configs/policy/docs_lint_policy.json");
+    let path = root.join("configs/dag/policy/docs_lint_policy.json");
     let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
     serde_json::from_str::<DocsLintPolicy>(&content).map_err(|err| err.to_string())
 }

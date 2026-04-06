@@ -13,7 +13,7 @@ use serde_json::Value;
 #[test]
 fn planner_fast_suite_covers_identity_closure_and_capability_rejection() {
     let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/suites/planner_identity_closure_fast.json");
+        .join("../../configs/dag/suites/planner_identity_closure_fast.json");
     let payload: Value =
         serde_json::from_str(&std::fs::read_to_string(suite_path).expect("suite")).expect("json");
 

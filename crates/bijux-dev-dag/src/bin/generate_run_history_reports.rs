@@ -38,7 +38,7 @@ fn required_fields(schema_path: &Path) -> Vec<String> {
 
 fn main() {
     let root = workspace_root();
-    let operator = root.join("configs/schema/operator");
+    let operator = root.join("configs/dag/schema/operator");
 
     let mut required = BTreeMap::<String, Vec<String>>::new();
     for name in [
@@ -51,7 +51,7 @@ fn main() {
     }
 
     let report = json!({
-        "generated_from": "configs/schema/operator",
+        "generated_from": "configs/dag/schema/operator",
         "surfaces": required,
         "lineage_boundary_doc": "docs/spec/RUN_VS_ARTIFACT_LINEAGE.md"
     });

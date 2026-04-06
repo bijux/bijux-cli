@@ -14,7 +14,7 @@ use tempfile as _;
 #[test]
 fn runtime_helper_fast_suite_covers_helper_invariant_targets() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let suite = root.join("configs/suites/runtime_helper_invariants_fast.json");
+    let suite = root.join("configs/dag/suites/runtime_helper_invariants_fast.json");
     assert!(suite.exists(), "missing runtime helper fast suite");
 
     let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))

@@ -44,7 +44,7 @@ fn listed_helper_modules_contain_direct_unit_tests() {
 #[test]
 fn dev_dag_helper_coverage_target_policy_exists() {
     let root = repo_root();
-    let path = root.join("configs/policy/dev_dag_helper_coverage_targets.json");
+    let path = root.join("configs/dag/policy/dev_dag_helper_coverage_targets.json");
     assert!(path.exists(), "missing helper coverage target policy");
     let payload: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(path).expect("read policy")).expect("json policy");

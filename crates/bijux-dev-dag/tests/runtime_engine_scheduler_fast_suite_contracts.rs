@@ -12,7 +12,7 @@ use tempfile as _;
 #[test]
 fn runtime_engine_scheduler_fast_suite_covers_execution_helpers_and_scheduler_invariants() {
     let suite = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/suites/runtime_engine_scheduler_fast.json");
+        .join("../../configs/dag/suites/runtime_engine_scheduler_fast.json");
     let payload: Value =
         serde_json::from_str(&std::fs::read_to_string(suite).expect("suite")).expect("json");
     assert_eq!(payload["id"], "runtime-engine-scheduler-fast");

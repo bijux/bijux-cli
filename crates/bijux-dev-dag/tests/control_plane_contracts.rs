@@ -19,8 +19,8 @@ fn repo_root() -> PathBuf {
 fn control_plane_schemas_are_valid_json_schema_objects() {
     let root = repo_root();
     for rel in [
-        "configs/schema/dev-control/command_report.schema.json",
-        "configs/schema/dev-control/suite_selection_report.schema.json",
+        "configs/dag/schema/dev-control/command_report.schema.json",
+        "configs/dag/schema/dev-control/suite_selection_report.schema.json",
     ] {
         let payload = fs::read_to_string(root.join(rel)).expect("read schema file");
         let value: Value = serde_json::from_str(&payload).expect("parse schema json");

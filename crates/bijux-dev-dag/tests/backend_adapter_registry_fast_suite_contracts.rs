@@ -14,7 +14,7 @@ use tempfile as _;
 #[test]
 fn backend_adapter_registry_fast_suite_covers_runtime_registry_surfaces() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let suite = root.join("configs/suites/backend_adapter_registry_fast.json");
+    let suite = root.join("configs/dag/suites/backend_adapter_registry_fast.json");
     assert!(
         suite.exists(),
         "missing backend adapter registry fast suite"

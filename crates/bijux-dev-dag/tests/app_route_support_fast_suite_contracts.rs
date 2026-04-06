@@ -21,7 +21,7 @@ fn repo_root() -> &'static Path {
 #[test]
 fn app_route_support_fast_suite_is_defined() {
     let root = repo_root();
-    let suite = root.join("configs/suites/app_route_support_fast.json");
+    let suite = root.join("configs/dag/suites/app_route_support_fast.json");
     assert!(suite.exists(), "missing app route-support fast suite");
 
     let payload: serde_json::Value =

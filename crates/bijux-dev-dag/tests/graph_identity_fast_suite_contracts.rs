@@ -16,7 +16,7 @@ fn graph_identity_fast_suite_includes_property_and_regression_contracts() {
         .canonicalize()
         .expect("workspace root");
     let payload: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(root.join("configs/suites/graph_identity_regression_fast.json"))
+        &std::fs::read_to_string(root.join("configs/dag/suites/graph_identity_regression_fast.json"))
             .expect("read suite"),
     )
     .expect("parse suite");

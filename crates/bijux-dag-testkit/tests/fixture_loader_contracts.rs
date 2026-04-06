@@ -13,7 +13,7 @@ use tempfile as _;
 fn graph_fixture_loader_reads_schema_fixture() {
     let value = load_graph_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
-        "configs/schema/fixtures/v0.1/positive/empty-graph.json",
+        "configs/dag/schema/fixtures/v0.1/positive/empty-graph.json",
     );
     assert_eq!(value["spec"], "bijux-dag/v0.1");
 }
@@ -58,7 +58,7 @@ fn replay_fixture_loader_reads_replay_fixture() {
 fn capability_fixture_loader_reads_capability_catalog() {
     let value = load_capability_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
-        "configs/policy/runtime_adapter_surface_catalog.json",
+        "configs/dag/policy/runtime_adapter_surface_catalog.json",
     );
     assert!(value.get("surfaces").is_some());
 }

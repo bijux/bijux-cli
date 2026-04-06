@@ -51,7 +51,7 @@ pub(super) fn run_evidence_ledger_report() -> Result<(), String> {
 
 pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Result<(), String> {
     let root = repo_root()?;
-    let structure_payload = fs::read_to_string(root.join("configs/policy/evidence_structure.json"))
+    let structure_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_structure.json"))
         .map_err(|err| err.to_string())?;
     let structure: Value =
         serde_json::from_str(&structure_payload).map_err(|err| err.to_string())?;
@@ -76,7 +76,7 @@ pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Re
 
     let payload = json!({
         "version": structure["version"].as_str().unwrap_or("1"),
-        "source_policy": "configs/policy/evidence_structure.json",
+        "source_policy": "configs/dag/policy/evidence_structure.json",
         "entries": map_entries
     });
     let out_path = if out.is_absolute() {
@@ -95,14 +95,14 @@ pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Re
 
 pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_payload = fs::read_to_string(root.join("configs/policy/evidence_governance.json"))
+    let policy_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_governance.json"))
         .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
     let ledger_payload = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
         .map_err(|err| err.to_string())?;
     let ledger: Value = serde_json::from_str(&ledger_payload).map_err(|err| err.to_string())?;
     let path_policy_payload =
-        fs::read_to_string(root.join("configs/policy/evidence_path_policy.json"))
+        fs::read_to_string(root.join("configs/dag/policy/evidence_path_policy.json"))
             .map_err(|err| err.to_string())?;
     let path_policy: Value =
         serde_json::from_str(&path_policy_payload).map_err(|err| err.to_string())?;
@@ -476,7 +476,7 @@ pub(super) fn run_repo_schema_changelog(out: &Path, schema_root: &Path) -> Resul
     schema_files.sort();
 
     let mut report = String::from(
-        "# Schema Changelog\n\nGenerated from files under `configs/schema`.\n\n## Schemas\n",
+        "# Schema Changelog\n\nGenerated from files under `configs/dag/schema`.\n\n## Schemas\n",
     );
     for rel in schema_files {
         let full = root.join(&rel);
@@ -540,7 +540,7 @@ pub(super) fn run_repo_runtime_scope_reports(
     runtime_api_out: &Path,
 ) -> Result<(), String> {
     let root = repo_root()?;
-    let scope_payload = fs::read_to_string(root.join("configs/policy/runtime_scope_v2.json"))
+    let scope_payload = fs::read_to_string(root.join("configs/dag/policy/runtime_scope_v2.json"))
         .map_err(|err| err.to_string())?;
     let scope: Value = serde_json::from_str(&scope_payload).map_err(|err| err.to_string())?;
     let entries = scope["module_entries"]
@@ -582,7 +582,7 @@ pub(super) fn run_repo_runtime_scope_reports(
     non_kernel_modules.sort();
 
     let mut kernel_report = String::from(
-        "# Kernel Owned Runtime Modules\n\nGenerated from `configs/policy/runtime_scope_v2.json`.\n\n",
+        "# Kernel Owned Runtime Modules\n\nGenerated from `configs/dag/policy/runtime_scope_v2.json`.\n\n",
     );
     kernel_report.push_str("## Runtime kernel-owned module set\n\n");
     for (module, classification, rationale) in &kernel_modules {
@@ -591,7 +591,7 @@ pub(super) fn run_repo_runtime_scope_reports(
     kernel_report.push_str(&format!("\nTotal: `{}` modules.\n", kernel_modules.len()));
 
     let mut non_kernel_report = String::from(
-        "# Runtime Non-Kernel Modules\n\nGenerated from `configs/policy/runtime_scope_v2.json`.\n\n",
+        "# Runtime Non-Kernel Modules\n\nGenerated from `configs/dag/policy/runtime_scope_v2.json`.\n\n",
     );
     non_kernel_report.push_str("## Runtime modules outside kernel ownership\n\n");
     for (module, classification, decision, rationale, _) in &non_kernel_modules {
@@ -730,7 +730,7 @@ pub(super) fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String
     });
     fixtures.sort();
 
-    let schema_path = root.join("configs/schema/execution_plan.schema.json");
+    let schema_path = root.join("configs/dag/schema/execution_plan.schema.json");
     let required = required_schema_fields(&schema_path)?;
     let mut rows = Vec::new();
 
@@ -858,15 +858,15 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
     let root = repo_root()?;
 
     let schema_files = [
-        "configs/schema/evidence_asset.schema.json",
-        "configs/schema/evidence_family.schema.json",
-        "configs/schema/evidence_cache_metadata.schema.json",
-        "configs/schema/evidence_battle_metadata.schema.json",
-        "configs/schema/evidence_perf_metadata.schema.json",
-        "configs/schema/evidence_compare_metadata.schema.json",
-        "configs/schema/evidence_compat_metadata.schema.json",
-        "configs/schema/evidence_fault_metadata.schema.json",
-        "configs/schema/evidence_authoring_metadata.schema.json",
+        "configs/dag/schema/evidence_asset.schema.json",
+        "configs/dag/schema/evidence_family.schema.json",
+        "configs/dag/schema/evidence_cache_metadata.schema.json",
+        "configs/dag/schema/evidence_battle_metadata.schema.json",
+        "configs/dag/schema/evidence_perf_metadata.schema.json",
+        "configs/dag/schema/evidence_compare_metadata.schema.json",
+        "configs/dag/schema/evidence_compat_metadata.schema.json",
+        "configs/dag/schema/evidence_fault_metadata.schema.json",
+        "configs/dag/schema/evidence_authoring_metadata.schema.json",
     ];
     for rel in schema_files {
         let path = root.join(rel);
@@ -882,9 +882,9 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
     }
 
     let asset_required =
-        required_schema_fields(&root.join("configs/schema/evidence_asset.schema.json"))?;
+        required_schema_fields(&root.join("configs/dag/schema/evidence_asset.schema.json"))?;
     let family_required =
-        required_schema_fields(&root.join("configs/schema/evidence_family.schema.json"))?;
+        required_schema_fields(&root.join("configs/dag/schema/evidence_family.schema.json"))?;
 
     let ledger: Value = serde_json::from_str(
         &fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
@@ -1402,13 +1402,13 @@ pub(super) fn run_evidence_foundation_verify() -> Result<(), String> {
         EvidenceFoundationStep {
             id: "suite-policy",
             description: "suite policy contract and verify-command mapping",
-            evidence_scope: &["configs/policy/evidence_suite_policy.json"],
+            evidence_scope: &["configs/dag/policy/evidence_suite_policy.json"],
             run: run_evidence_suite_policy_verify,
         },
         EvidenceFoundationStep {
             id: "schema",
             description: "schema validity for governed evidence JSON assets",
-            evidence_scope: &["configs/schema/**", "evidence/**.json"],
+            evidence_scope: &["configs/dag/schema/**", "evidence/**.json"],
             run: run_evidence_schema_verify,
         },
         EvidenceFoundationStep {
@@ -1432,7 +1432,7 @@ pub(super) fn run_evidence_foundation_verify() -> Result<(), String> {
             description: "legacy-root drift prevention for evidence asset placement",
             evidence_scope: &[
                 "repository-wide json surfaces",
-                "configs/policy/evidence_path_policy.json",
+                "configs/dag/policy/evidence_path_policy.json",
             ],
             run: run_evidence_drift_verify,
         },
@@ -1670,9 +1670,9 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
         "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs",
         "crates/bijux-dev-dag/tests/evidence_access_contracts.rs",
         "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
-        "configs/policy/evidence_governance.json",
-        "configs/policy/evidence_path_policy.json",
-        "configs/policy/release_evidence_policy.json",
+        "configs/dag/policy/evidence_governance.json",
+        "configs/dag/policy/evidence_path_policy.json",
+        "configs/dag/policy/release_evidence_policy.json",
     ];
     for file in files {
         let rel = file
@@ -1728,7 +1728,7 @@ pub(super) struct TestTaxonomyPolicy {
 
 pub(super) fn run_test_taxonomy_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_path = root.join("configs/policy/test_taxonomy.json");
+    let policy_path = root.join("configs/dag/policy/test_taxonomy.json");
     let policy_text = fs::read_to_string(&policy_path).map_err(|err| err.to_string())?;
     let policy: TestTaxonomyPolicy =
         serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
@@ -1869,12 +1869,12 @@ pub(super) fn run_test_policy_guard() -> Result<(), String> {
     let mut violations = Vec::new();
 
     let schema_fixtures_ok = root
-        .join("configs/schema/fixtures")
+        .join("configs/dag/schema/fixtures")
         .join("v0.1")
         .join("positive")
         .exists()
         && root
-            .join("configs/schema/fixtures")
+            .join("configs/dag/schema/fixtures")
             .join("v0.1")
             .join("negative")
             .exists();
@@ -2390,7 +2390,7 @@ pub(super) fn run_test_trust_foundation_guard() -> Result<(), String> {
 pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     let root = repo_root()?;
 
-    let policy_path = root.join("configs/policy/battle_trust_properties.json");
+    let policy_path = root.join("configs/dag/policy/battle_trust_properties.json");
     let metadata_path = root.join("evidence/battle/metadata.json");
     let harness_path =
         root.join("crates/bijux-dag-runtime/tests/battle_workflow_harness_contracts.rs");
@@ -2487,7 +2487,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
 
 pub(super) fn run_test_trust_cleanup_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let ledger = root.join("configs/policy/test_trust_ledger.json");
+    let ledger = root.join("configs/dag/policy/test_trust_ledger.json");
     if !ledger.exists() {
         return Err("missing test trust ledger policy".to_string());
     }
@@ -2535,7 +2535,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
         "crates/bijux-dev-dag/tests/planner_hardening_contracts.rs",
         "docs/reports/foundation/PLANNER_HARDENING_REPORT.md",
         "docs/spec/BATTLE_TRUST_PROPERTIES.md",
-        "configs/policy/battle_trust_properties.json",
+        "configs/dag/policy/battle_trust_properties.json",
         "crates/bijux-dag-runtime/src/runtime_core/planning/planner.rs",
     ];
     let mut missing = Vec::new();
@@ -2580,7 +2580,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
     }
 
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -3028,7 +3028,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         "docs/reports/foundation/RUN_DIR_IMPORT_EXPORT_HARDENING_REPORT.md",
         "docs/spec/ARTIFACT_OWNERSHIP_TABLE.md",
         "docs/spec/ARTIFACT_LIFECYCLE.md",
-        "configs/schema/operator/run_verify_report.schema.json",
+        "configs/dag/schema/operator/run_verify_report.schema.json",
         "evidence/compat/export_bundle/v0_1_supported/bundle.json",
         "evidence/compat/export_bundle/unsupported_past/bundle.json",
         "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
@@ -3074,7 +3074,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         }
     }
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -3134,7 +3134,7 @@ pub(super) fn run_extensibility_contract_guard() -> Result<(), String> {
     let required = [
         "docs/spec/EXTENSIBILITY_CONTRACT.md",
         "docs/reference/INTERNAL_HOOK_PROMOTION_CHECKLIST.md",
-        "configs/schema/extension_descriptor.schema.json",
+        "configs/dag/schema/extension_descriptor.schema.json",
         "crates/bijux-dag-runtime/tests/extension_catalog_contracts.rs",
     ];
     let mut missing = Vec::new();
@@ -3304,13 +3304,13 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
         "docs/reference/COMMAND_TAXONOMY.md",
         "crates/bijux-dag-app/tests/operator_ux_contract.rs",
         "evidence/operator/scenarios/inspection_only.json",
-        "configs/schema/operator/run_list.schema.json",
-        "configs/schema/operator/run_show.schema.json",
-        "configs/schema/operator/run_inspect.schema.json",
-        "configs/schema/operator/run_tree.schema.json",
-        "configs/schema/operator/run_timeline.schema.json",
-        "configs/schema/operator/run_explain_failure.schema.json",
-        "configs/schema/operator/run_doctor.schema.json",
+        "configs/dag/schema/operator/run_list.schema.json",
+        "configs/dag/schema/operator/run_show.schema.json",
+        "configs/dag/schema/operator/run_inspect.schema.json",
+        "configs/dag/schema/operator/run_tree.schema.json",
+        "configs/dag/schema/operator/run_timeline.schema.json",
+        "configs/dag/schema/operator/run_explain_failure.schema.json",
+        "configs/dag/schema/operator/run_doctor.schema.json",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -3573,7 +3573,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         }
     }
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -3598,7 +3598,7 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
     let required = [
         "docs/spec/REPLAY_CONTRACT.md",
         "docs/reports/foundation/REPLAY_HARDENING_REPORT.md",
-        "configs/schema/operator/replay_diff.schema.json",
+        "configs/dag/schema/operator/replay_diff.schema.json",
         "evidence/cache/replay/match_case.json",
         "evidence/cache/replay/mismatch_case.json",
         "evidence/cache/replay/corruption_case.json",
@@ -3645,7 +3645,7 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
         return Err("replay battle scenario must assert replay_mandatory_proof".to_string());
     }
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -3709,7 +3709,7 @@ pub(super) fn run_multi_run_analytics_guard() -> Result<(), String> {
         "docs/spec/MULTI_RUN_ANALYTICS_CONTRACT.md",
         "docs/spec/HISTORY_RETENTION_POLICY.md",
         "docs/spec/ANALYTICS_EXACTNESS.md",
-        "configs/schema/operator/runs_analytics.schema.json",
+        "configs/dag/schema/operator/runs_analytics.schema.json",
         "crates/bijux-dag-app/tests/multi_run_analytics_contract.rs",
     ];
     let mut missing = Vec::new();
@@ -4108,7 +4108,7 @@ pub(super) fn run_runtime_module_triage_guard() -> Result<(), String> {
     let required = [
         "docs/architecture/RUNTIME_MODULE_TRIAGE.md",
         "docs/spec/RUNTIME_PUBLIC_API_BOUNDARY.md",
-        "configs/policy/runtime_module_freeze.json",
+        "configs/dag/policy/runtime_module_freeze.json",
         "crates/bijux-dag-runtime/src/runtime.rs",
         "crates/bijux-dag-runtime/src/adapters.rs",
         "crates/bijux-dag-runtime/src/execution.rs",
@@ -4126,7 +4126,7 @@ pub(super) fn run_runtime_module_triage_guard() -> Result<(), String> {
         ));
     }
 
-    let freeze_payload = fs::read_to_string(root.join("configs/policy/runtime_module_freeze.json"))
+    let freeze_payload = fs::read_to_string(root.join("configs/dag/policy/runtime_module_freeze.json"))
         .map_err(|err| err.to_string())?;
     let freeze_json: Value =
         serde_json::from_str(&freeze_payload).map_err(|err| err.to_string())?;
@@ -4239,7 +4239,7 @@ pub(super) fn run_crate_boundary_foundation_guard() -> Result<(), String> {
         "docs/spec/CRATE_BOUNDARY_CONTRACT.md",
         "docs/architecture/crate_boundary_adr.md",
         "docs/architecture/CRATE_SERVICE_INTERFACES.md",
-        "configs/policy/forbidden_dependencies.json",
+        "configs/dag/policy/forbidden_dependencies.json",
         "crates/bijux-dag-app/tests/crate_boundary_contract.rs",
         "crates/bijux-dag-runtime/src/services.rs",
         "crates/bijux-dag-artifacts/src/services.rs",
@@ -4258,7 +4258,7 @@ pub(super) fn run_crate_boundary_foundation_guard() -> Result<(), String> {
     }
 
     let policy_payload =
-        fs::read_to_string(root.join("configs/policy/forbidden_dependencies.json"))
+        fs::read_to_string(root.join("configs/dag/policy/forbidden_dependencies.json"))
             .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
     let edges = policy
@@ -4292,7 +4292,7 @@ pub(super) struct EffectiveConfigDump {
 
 pub(super) fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
     let root = repo_root()?;
-    let defaults_path = root.join("configs/dev/default_runtime_config.json");
+    let defaults_path = root.join("configs/dag/dev/default_runtime_config.json");
     let defaults_payload = fs::read_to_string(&defaults_path).map_err(|err| err.to_string())?;
     let defaults: Value = serde_json::from_str(&defaults_payload).map_err(|err| err.to_string())?;
     let mut merged = defaults;
@@ -4326,7 +4326,7 @@ pub(super) fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
 
 pub(super) fn run_policy_audit(config: Option<&Path>) -> Result<(), String> {
     let root = repo_root()?;
-    let defaults_path = root.join("configs/dev/default_runtime_config.json");
+    let defaults_path = root.join("configs/dag/dev/default_runtime_config.json");
     let defaults_payload = fs::read_to_string(&defaults_path).map_err(|err| err.to_string())?;
     let defaults: Value = serde_json::from_str(&defaults_payload).map_err(|err| err.to_string())?;
     let mut merged = defaults;
@@ -4438,7 +4438,7 @@ pub(super) fn collect_fixture_count(dir: &Path) -> Result<usize, String> {
 
 pub(super) fn run_config_lint() -> Result<(), String> {
     let root = repo_root()?;
-    let examples_dir = root.join("configs/dev/examples");
+    let examples_dir = root.join("configs/dag/dev/examples");
     let mut violations = Vec::new();
 
     for entry in fs::read_dir(&examples_dir).map_err(|err| err.to_string())? {
@@ -4568,7 +4568,7 @@ pub(super) fn run_config_policy_determinism_guard() -> Result<(), String> {
     }
 
     let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;

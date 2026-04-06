@@ -32,9 +32,9 @@ This crate is the owner of command orchestration behavior, command-level respons
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 
 ## Related schemas
-- `configs/schema/run_manifest.schema.json`
-- `configs/schema/node_trace.schema.json`
-- `configs/schema/outputs_index.schema.json`
+- `configs/dag/schema/run_manifest.schema.json`
+- `configs/dag/schema/node_trace.schema.json`
+- `configs/dag/schema/outputs_index.schema.json`
 
 ## Versioning and change policy
 Contract-preserving changes are additive. Breaking changes require explicit CLI compatibility review and docs updates in the same change.

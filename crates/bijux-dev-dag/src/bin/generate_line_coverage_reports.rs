@@ -285,7 +285,7 @@ fn render_app_route_support_below_target_report(
     }
 
     lines.push(String::new());
-    lines.push("_Generated from `artifacts/coverage/lcov.info` and `configs/policy/app_routing_coverage_targets.json` by `generate_line_coverage_reports`._".to_string());
+    lines.push("_Generated from `artifacts/coverage/lcov.info` and `configs/dag/policy/app_routing_coverage_targets.json` by `generate_line_coverage_reports`._".to_string());
     lines.push(String::new());
     lines.join("\n")
 }
@@ -293,13 +293,13 @@ fn render_app_route_support_below_target_report(
 fn main() -> Result<(), String> {
     let root = repo_root();
     let lcov_path = root.join("artifacts/coverage/lcov.info");
-    let allowlist_path = root.join("configs/policy/protected_zero_coverage_allowlist.json");
+    let allowlist_path = root.join("configs/dag/policy/protected_zero_coverage_allowlist.json");
     let out_under_50 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md");
     let out_under_25 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md");
     let out_zero = root.join("docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md");
     let out_app_route_support = root
         .join("docs/reports/foundation/APP_ROUTE_SUPPORT_MODULES_BELOW_TARGET_COVERAGE_REPORT.md");
-    let app_route_policy = root.join("configs/policy/app_routing_coverage_targets.json");
+    let app_route_policy = root.join("configs/dag/policy/app_routing_coverage_targets.json");
 
     if !lcov_path.exists() {
         let msg = "# Coverage report unavailable\n\n`artifacts/coverage/lcov.info` was not found. Run `make coverage` first.\n";
@@ -378,7 +378,7 @@ fn main() -> Result<(), String> {
             msg.push_str(&format!("- {file}\n"));
         }
         msg.push_str(
-            "\nIf intentional, update configs/policy/protected_zero_coverage_allowlist.json.\n",
+            "\nIf intentional, update configs/dag/policy/protected_zero_coverage_allowlist.json.\n",
         );
         return Err(msg);
     }

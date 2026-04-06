@@ -14,7 +14,7 @@ use tempfile as _;
 #[test]
 fn dev_dag_command_files_are_not_allowlisted_for_zero_coverage() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let allowlist = root.join("configs/policy/protected_zero_coverage_allowlist.json");
+    let allowlist = root.join("configs/dag/policy/protected_zero_coverage_allowlist.json");
     let payload: Value =
         serde_json::from_str(&fs::read_to_string(allowlist).expect("read allowlist"))
             .expect("parse allowlist");

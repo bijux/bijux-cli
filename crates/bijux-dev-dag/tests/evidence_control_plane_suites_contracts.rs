@@ -42,7 +42,7 @@ fn verify_commands_include_replay_and_release_set() {
 fn evidence_suite_policy_covers_required_verify_surface() {
     let root = repo_root();
     let policy: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/evidence_suite_policy.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/evidence_suite_policy.json"))
             .expect("read evidence suite policy"),
     )
     .expect("parse policy");
@@ -158,7 +158,7 @@ fn release_evidence_set_assets_exist_and_are_registered() {
 fn evidence_suite_summary_models_exist() {
     let root = repo_root();
     for rel in [
-        "configs/schema/control_plane/evidence_suite_report.schema.json",
+        "configs/dag/schema/control_plane/evidence_suite_report.schema.json",
         "evidence/reports/evidence_verification_summary.md",
         "evidence/release/release_evidence.json",
         "evidence/reports/what_this_release_proves.md",
@@ -177,7 +177,7 @@ fn evidence_suite_summary_models_exist() {
 fn release_evidence_policy_exists_and_declares_governance_rules() {
     let root = repo_root();
     let policy: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/release_evidence_policy.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/release_evidence_policy.json"))
             .expect("read release evidence policy"),
     )
     .expect("parse release evidence policy");

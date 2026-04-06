@@ -83,7 +83,7 @@ struct ScenarioMetadata {
 
 fn load_policy() -> BattleTrustPolicy {
     let raw =
-        fs::read_to_string(workspace_root().join("configs/policy/battle_trust_properties.json"))
+        fs::read_to_string(workspace_root().join("configs/dag/policy/battle_trust_properties.json"))
             .expect("battle trust policy should exist");
     serde_json::from_str(&raw).expect("battle trust policy should parse")
 }

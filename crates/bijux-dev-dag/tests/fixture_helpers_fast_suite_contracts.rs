@@ -12,7 +12,7 @@ use tempfile as _;
 #[test]
 fn fixture_helpers_fast_suite_covers_shared_loader_and_governance_contracts() {
     let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/suites/fixture_helpers_fast.json");
+        .join("../../configs/dag/suites/fixture_helpers_fast.json");
     let payload: Value =
         serde_json::from_str(&std::fs::read_to_string(&suite_path).expect("read suite"))
             .expect("parse suite");

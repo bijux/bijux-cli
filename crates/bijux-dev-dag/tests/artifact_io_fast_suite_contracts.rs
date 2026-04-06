@@ -12,7 +12,7 @@ use tempfile as _;
 #[test]
 fn artifact_io_fast_suite_covers_store_fs_and_inspect_corruption_contracts() {
     let suite = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/suites/artifact_io_zero_coverage_fast.json");
+        .join("../../configs/dag/suites/artifact_io_zero_coverage_fast.json");
     let payload: Value =
         serde_json::from_str(&std::fs::read_to_string(suite).expect("suite")).expect("json");
     assert_eq!(payload["id"], "artifact-io-zero-coverage-fast");

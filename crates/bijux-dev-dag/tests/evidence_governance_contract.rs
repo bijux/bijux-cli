@@ -78,7 +78,7 @@ fn glob_match(pattern: &str, text: &str) -> bool {
 fn evidence_governance_contract_enforces_ownership_and_freeze() {
     let root = repo_root();
     let release_subset: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_release_blocking_subset.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_release_blocking_subset.json"))
             .expect("read battle release subset policy"),
     )
     .expect("parse battle release subset policy");
@@ -97,7 +97,7 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         })
         .collect();
 
-    let policy_payload = fs::read_to_string(root.join("configs/policy/evidence_governance.json"))
+    let policy_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_governance.json"))
         .expect("read evidence governance policy");
     let policy: Value = serde_json::from_str(&policy_payload).expect("parse evidence governance");
 
@@ -408,7 +408,7 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
     }
 
     let path_policy_payload =
-        fs::read_to_string(root.join("configs/policy/evidence_path_policy.json"))
+        fs::read_to_string(root.join("configs/dag/policy/evidence_path_policy.json"))
             .expect("read evidence path policy");
     let path_policy: Value =
         serde_json::from_str(&path_policy_payload).expect("parse evidence path policy");

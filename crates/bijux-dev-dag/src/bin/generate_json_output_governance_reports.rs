@@ -49,7 +49,7 @@ fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 fn main() -> Result<(), String> {
     let root = repo_root();
-    let policy_raw = fs::read_to_string(root.join("configs/policy/json_output_governance.json"))
+    let policy_raw = fs::read_to_string(root.join("configs/dag/policy/json_output_governance.json"))
         .map_err(|e| e.to_string())?;
     let policy: serde_json::Value = serde_json::from_str(&policy_raw).map_err(|e| e.to_string())?;
 
@@ -227,7 +227,7 @@ fn main() -> Result<(), String> {
         &missing_lock,
     )?;
 
-    let mut schema_registry = String::from("# Schema Registry\n\nGenerated from `configs/policy/json_output_governance.json`.\n\n| Schema | Example directory |\n| --- | --- |\n");
+    let mut schema_registry = String::from("# Schema Registry\n\nGenerated from `configs/dag/policy/json_output_governance.json`.\n\n| Schema | Example directory |\n| --- | --- |\n");
     for schema in &all_schemas {
         schema_registry.push_str(&format!(
             "| `{schema}` | `{}` |\n",
@@ -236,7 +236,7 @@ fn main() -> Result<(), String> {
     }
     write_file(&ref_dir.join("SCHEMA_REGISTRY.md"), &schema_registry)?;
 
-    let mut command_registry = String::from("# Stable JSON Output Command Registry\n\nGenerated from `configs/policy/json_output_governance.json`.\n\n| Family | Commands |\n| --- | --- |\n");
+    let mut command_registry = String::from("# Stable JSON Output Command Registry\n\nGenerated from `configs/dag/policy/json_output_governance.json`.\n\n| Family | Commands |\n| --- | --- |\n");
     for fam in families {
         let family = fam["family"].as_str().unwrap_or("");
         let commands = fam["commands"]

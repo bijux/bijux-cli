@@ -67,7 +67,7 @@ fn capability_query_output_schema_lockstep() {
     let root = repo_root();
     let payload = run_json(&root, &["--json", "capabilities", "--backend", "hpc"]);
     let data = payload["data"].as_object().expect("capability data object");
-    for field in required_fields("configs/schema/operator/capability_query.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/capability_query.schema.json") {
         assert!(
             data.contains_key(&field),
             "capability output missing required field: {field}"
@@ -104,7 +104,7 @@ fn verify_output_schema_lockstep() {
         ],
     );
     let data = verify["data"].as_object().expect("verify data");
-    for field in required_fields("configs/schema/operator/verify_output.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/verify_output.schema.json") {
         assert!(
             data.contains_key(&field),
             "verify missing required field: {field}"
@@ -141,7 +141,7 @@ fn prove_output_schema_lockstep() {
         ],
     );
     let data = prove["data"].as_object().expect("prove data");
-    for field in required_fields("configs/schema/operator/prove_output.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/prove_output.schema.json") {
         assert!(
             data.contains_key(&field),
             "prove missing required field: {field}"
@@ -182,7 +182,7 @@ fn export_summary_schema_lockstep() {
         ],
     );
     let data = export["data"].as_object().expect("export data");
-    for field in required_fields("configs/schema/operator/export_summary.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/export_summary.schema.json") {
         assert!(
             data.contains_key(&field),
             "export missing required field: {field}"
@@ -211,7 +211,7 @@ fn import_summary_schema_lockstep() {
         ],
     );
     let data = import["data"].as_object().expect("import data");
-    for field in required_fields("configs/schema/operator/import_summary.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/import_summary.schema.json") {
         assert!(
             data.contains_key(&field),
             "import missing required field: {field}"

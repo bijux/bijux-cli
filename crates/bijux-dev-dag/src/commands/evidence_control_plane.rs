@@ -8,7 +8,7 @@ use super::repo_root;
 
 pub(super) fn run_evidence_suite_policy_verify() -> Result<(), String> {
     let root = repo_root()?;
-    let payload = fs::read_to_string(root.join("configs/policy/evidence_suite_policy.json"))
+    let payload = fs::read_to_string(root.join("configs/dag/policy/evidence_suite_policy.json"))
         .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
     let suites = policy["suites"]
@@ -324,7 +324,7 @@ pub(super) fn run_evidence_summary_report(
     markdown_out: &Path,
 ) -> Result<(), String> {
     let root = repo_root()?;
-    let policy_payload = fs::read_to_string(root.join("configs/policy/evidence_suite_policy.json"))
+    let policy_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_suite_policy.json"))
         .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
     let suites = policy["suites"]
@@ -363,7 +363,7 @@ pub(super) fn run_evidence_summary_report(
 
     let report = json!({
         "report_version": "1",
-        "policy_source": "configs/policy/evidence_suite_policy.json",
+        "policy_source": "configs/dag/policy/evidence_suite_policy.json",
         "blocking": blocking,
         "advisory": advisory,
     });

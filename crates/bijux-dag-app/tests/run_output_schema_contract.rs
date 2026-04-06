@@ -86,8 +86,8 @@ fn run_show_and_inspect_outputs_cover_required_schema_fields() {
 
     let summary = inspect_summary(&run).expect("summary");
     for schema_rel in [
-        "configs/schema/operator/run_show.schema.json",
-        "configs/schema/operator/run_inspect.schema.json",
+        "configs/dag/schema/operator/run_show.schema.json",
+        "configs/dag/schema/operator/run_inspect.schema.json",
     ] {
         for field in required_schema_fields(schema_rel) {
             assert!(
@@ -111,7 +111,7 @@ fn run_history_output_covers_required_schema_fields() {
 
     let root = repo_root();
     let history_schema: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/schema/operator/run_history.schema.json"))
+        &fs::read_to_string(root.join("configs/dag/schema/operator/run_history.schema.json"))
             .expect("history schema"),
     )
     .expect("parse");
@@ -133,7 +133,7 @@ fn run_summary_output_covers_required_schema_fields() {
     write_manifest(&root.join("run-a"), "run-a");
 
     let summary = runs_summary(&root).expect("summary");
-    for field in required_schema_fields("configs/schema/operator/run_summary.schema.json") {
+    for field in required_schema_fields("configs/dag/schema/operator/run_summary.schema.json") {
         assert!(
             summary.get(&field).is_some(),
             "run summary output must include required field `{field}`"

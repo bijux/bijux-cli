@@ -419,7 +419,7 @@ fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
         "unexpected selection run exit code: {selection_code}"
     );
 
-    let compat_fixture = root.join("configs/schema/fixtures/v0.1/positive/hello.valid.json");
+    let compat_fixture = root.join("configs/dag/schema/fixtures/v0.1/positive/hello.valid.json");
     let (validate_code, _, _) = run_dag(&["validate", &output_path_string(&compat_fixture)], &root);
     assert!(
         validate_code == 0 || validate_code == 2 || validate_code == 3,

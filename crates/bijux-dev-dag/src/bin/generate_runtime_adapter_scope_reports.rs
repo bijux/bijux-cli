@@ -51,7 +51,7 @@ fn repo_root() -> Result<PathBuf, String> {
 
 fn load_catalog(root: &Path) -> Result<SurfaceCatalog, String> {
     let raw =
-        std::fs::read_to_string(root.join("configs/policy/runtime_adapter_surface_catalog.json"))
+        std::fs::read_to_string(root.join("configs/dag/policy/runtime_adapter_surface_catalog.json"))
             .map_err(|err| err.to_string())?;
     serde_json::from_str(&raw).map_err(|err| err.to_string())
 }

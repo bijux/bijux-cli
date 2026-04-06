@@ -45,7 +45,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn load_ledger(root: &Path) -> TestTrustLedger {
-    let payload = fs::read_to_string(root.join("configs/policy/test_trust_ledger.json"))
+    let payload = fs::read_to_string(root.join("configs/dag/policy/test_trust_ledger.json"))
         .expect("test trust ledger policy should exist");
     let mut value: serde_json::Value =
         serde_json::from_str(&payload).expect("test trust ledger should parse as json");

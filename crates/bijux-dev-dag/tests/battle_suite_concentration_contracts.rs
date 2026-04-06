@@ -102,7 +102,7 @@ fn collect_json_files(root: &Path, out: &mut Vec<PathBuf>) {
 fn battle_trust_mapping_and_metadata_have_no_orphans() {
     let root = repo_root();
     let release_subset: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_release_blocking_subset.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_release_blocking_subset.json"))
             .expect("read release subset policy"),
     )
     .expect("parse release subset policy");
@@ -113,7 +113,7 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
         .map(|value| value.as_str().expect("advisory scenario id").to_string())
         .collect();
     let policy: BattleTrustPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/battle_trust_properties.json"))
             .expect("battle policy"),
     )
     .expect("battle policy parse");

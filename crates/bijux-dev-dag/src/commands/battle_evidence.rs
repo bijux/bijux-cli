@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use super::{collect_files_with_extension, repo_root};
 
 fn load_battle_policy(root: &Path) -> Result<Value, String> {
-    let policy_path = root.join("configs/policy/battle_trust_properties.json");
+    let policy_path = root.join("configs/dag/policy/battle_trust_properties.json");
     serde_json::from_str(&fs::read_to_string(policy_path).map_err(|err| err.to_string())?)
         .map_err(|err| err.to_string())
 }

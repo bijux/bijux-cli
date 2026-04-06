@@ -14,7 +14,7 @@ use tempfile as _;
 #[test]
 fn graph_core_fast_suite_covers_canonical_topology_validate_scope() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let suite = root.join("configs/suites/graph_core_canonical_topology_validate_fast.json");
+    let suite = root.join("configs/dag/suites/graph_core_canonical_topology_validate_fast.json");
     assert!(suite.exists(), "missing graph core fast suite");
 
     let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))

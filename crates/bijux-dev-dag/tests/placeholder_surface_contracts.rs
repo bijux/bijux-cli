@@ -81,7 +81,7 @@ fn is_excluded(rel: &str) -> bool {
 fn stable_sources_reject_todo_and_unimplemented_markers() {
     let root = repo_root();
     let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/placeholder_surface_policy.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
             .expect("read placeholder policy"),
     )
     .expect("parse placeholder policy");
@@ -118,7 +118,7 @@ fn stable_sources_reject_todo_and_unimplemented_markers() {
 fn public_output_placeholder_text_requires_policy_exception() {
     let root = repo_root();
     let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/placeholder_surface_policy.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
             .expect("read placeholder policy"),
     )
     .expect("parse placeholder policy");
@@ -240,7 +240,7 @@ fn battle_scenarios_are_placeholder_free() {
 fn placeholder_exceptions_must_have_reasons() {
     let root = repo_root();
     let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/placeholder_surface_policy.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
             .expect("read placeholder policy"),
     )
     .expect("parse placeholder policy");

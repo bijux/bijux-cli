@@ -123,15 +123,15 @@ fn validate_asset_entry(entry: &Value) -> Result<(), String> {
 fn evidence_schema_files_exist() {
     let root = repo_root();
     for rel in [
-        "configs/schema/evidence_asset.schema.json",
-        "configs/schema/evidence_family.schema.json",
-        "configs/schema/evidence_cache_metadata.schema.json",
-        "configs/schema/evidence_battle_metadata.schema.json",
-        "configs/schema/evidence_perf_metadata.schema.json",
-        "configs/schema/evidence_compare_metadata.schema.json",
-        "configs/schema/evidence_compat_metadata.schema.json",
-        "configs/schema/evidence_fault_metadata.schema.json",
-        "configs/schema/evidence_authoring_metadata.schema.json",
+        "configs/dag/schema/evidence_asset.schema.json",
+        "configs/dag/schema/evidence_family.schema.json",
+        "configs/dag/schema/evidence_cache_metadata.schema.json",
+        "configs/dag/schema/evidence_battle_metadata.schema.json",
+        "configs/dag/schema/evidence_perf_metadata.schema.json",
+        "configs/dag/schema/evidence_compare_metadata.schema.json",
+        "configs/dag/schema/evidence_compat_metadata.schema.json",
+        "configs/dag/schema/evidence_fault_metadata.schema.json",
+        "configs/dag/schema/evidence_authoring_metadata.schema.json",
     ] {
         assert!(
             root.join(rel).exists(),

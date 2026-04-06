@@ -36,7 +36,7 @@ fn collect_files(path: &Path, out: &mut Vec<PathBuf>) {
 }
 
 fn read_policy(root: &Path) -> Result<serde_json::Value, String> {
-    let raw = fs::read_to_string(root.join("configs/policy/fixture_family_governance.json"))
+    let raw = fs::read_to_string(root.join("configs/dag/policy/fixture_family_governance.json"))
         .map_err(|e| e.to_string())?;
     serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
@@ -252,7 +252,7 @@ fn main() -> Result<(), String> {
         &stale,
     )?;
 
-    let mut quick = String::from("# Fixture Governance Quick Reference\n\nPolicy source: `configs/policy/fixture_family_governance.json`\n\n## Governed families\n\n| Family | Purpose | Owner | Lane | Taxonomy |\n| --- | --- | --- | --- | --- |\n");
+    let mut quick = String::from("# Fixture Governance Quick Reference\n\nPolicy source: `configs/dag/policy/fixture_family_governance.json`\n\n## Governed families\n\n| Family | Purpose | Owner | Lane | Taxonomy |\n| --- | --- | --- | --- | --- |\n");
     for family_obj in families {
         quick.push_str(&format!(
             "| `{}` | {} | `{}` | `{}` | `{}` |\n",

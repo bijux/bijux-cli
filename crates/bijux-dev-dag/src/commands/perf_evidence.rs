@@ -215,7 +215,7 @@ pub(super) fn run_performance_evidence_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
         "docs/spec/PERFORMANCE_CONTRACT.md",
-        "configs/schema/benchmarks/benchmark_report.schema.json",
+        "configs/dag/schema/benchmarks/benchmark_report.schema.json",
         "evidence/perf/baselines/regression_thresholds.json",
         "evidence/perf/metadata.json",
         "evidence/reports/perf_obsolete_candidates.md",

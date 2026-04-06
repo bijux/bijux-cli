@@ -290,7 +290,7 @@ pub fn node_kind_supported(kind: &NodeKind) -> bool {
 }
 
 pub fn planner_alignment_required_schema() -> &'static str {
-    "configs/schema/execution_plan.schema.json"
+    "configs/dag/schema/execution_plan.schema.json"
 }
 
 pub fn planner_alignment_required_doc() -> &'static str {

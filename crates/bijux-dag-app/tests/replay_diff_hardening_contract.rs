@@ -187,7 +187,7 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
     );
 
     let proof = &proved["data"]["replay_proof"];
-    for field in required_fields("configs/schema/operator/replay_proof.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/replay_proof.schema.json") {
         assert!(
             proof.get(&field).is_some(),
             "replay proof missing required field `{field}`"
@@ -394,7 +394,7 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     let run_b = out_dir.join("run-diff-b");
 
     let run_diff = run_json(&["diff", "--json", &out(&run_a), &out(&run_b)], &root);
-    for field in required_fields("configs/schema/operator/run_diff.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/run_diff.schema.json") {
         assert!(
             run_diff["data"].get(&field).is_some(),
             "run diff missing field `{field}`"
@@ -402,7 +402,7 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     }
 
     let canonical_diff = run_json(&["canonical-diff", "--json", &out(&graph)], &root);
-    for field in required_fields("configs/schema/operator/graph_diff.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/graph_diff.schema.json") {
         assert!(
             canonical_diff["data"].get(&field).is_some(),
             "graph diff missing field `{field}`"
@@ -410,7 +410,7 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     }
 
     let trace = run_json(&["trace-artifact", "--json", &out(&run_a), "a:out"], &root);
-    for field in required_fields("configs/schema/operator/artifact_trace.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/artifact_trace.schema.json") {
         assert!(
             trace["data"].get(&field).is_some(),
             "artifact trace missing field `{field}`"
@@ -468,7 +468,7 @@ fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
         ],
         &root,
     );
-    for field in required_fields("configs/schema/operator/run_explain_failure.schema.json") {
+    for field in required_fields("configs/dag/schema/operator/run_explain_failure.schema.json") {
         assert!(
             explain["data"].get(&field).is_some(),
             "explain-failure missing field `{field}`"

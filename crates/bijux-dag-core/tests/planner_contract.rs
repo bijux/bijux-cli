@@ -182,7 +182,7 @@ fn execution_plan_shape_matches_schema_required_fields() {
     );
     let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/schema/execution_plan.schema.json");
+        .join("../../configs/dag/schema/execution_plan.schema.json");
     let schema_text = fs::read_to_string(schema_path).expect("execution plan schema");
     let schema: serde_json::Value = serde_json::from_str(&schema_text).expect("schema parse");
     let required = schema

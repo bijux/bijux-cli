@@ -225,7 +225,7 @@ fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_
     );
 
     let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../configs/schema/execution_plan.schema.json");
+        .join("../../configs/dag/schema/execution_plan.schema.json");
     let schema_text = fs::read_to_string(schema_path).expect("schema");
     let schema: Value = serde_json::from_str(&schema_text).expect("schema json");
     let required = schema["required"].as_array().expect("required");

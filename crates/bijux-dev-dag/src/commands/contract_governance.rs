@@ -51,7 +51,7 @@ pub(super) fn run_contract_schema_owner_guard() -> Result<(), String> {
     }
 
     let mut missing = Vec::new();
-    for entry in fs::read_dir(root.join("configs/schema")).map_err(|err| err.to_string())? {
+    for entry in fs::read_dir(root.join("configs/dag/schema")).map_err(|err| err.to_string())? {
         let path = entry.map_err(|err| err.to_string())?.path();
         if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
             continue;
@@ -336,7 +336,7 @@ struct ErrorCodeEntry {
 }
 
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
-    let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
+    let payload = fs::read_to_string(root.join("configs/dag/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
     let registry: ErrorCodeRegistry =
         serde_json::from_str(&payload).map_err(|err| err.to_string())?;

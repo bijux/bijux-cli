@@ -1397,7 +1397,7 @@ fn run_foundation_hardening_suite(
     why: bool,
 ) -> Result<(), String> {
     let root = repo_root()?;
-    let config_path = root.join("configs/suites/foundation_hardening.json");
+    let config_path = root.join("configs/dag/suites/foundation_hardening.json");
     let payload = fs::read_to_string(&config_path).map_err(|err| err.to_string())?;
     let config: FoundationHardeningConfig =
         serde_json::from_str(&payload).map_err(|err| err.to_string())?;
@@ -1529,7 +1529,7 @@ fn run_release_readiness_report() -> Result<(), String> {
 
 fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
     let config: FoundationHardeningConfig = serde_json::from_value(read_json_value(
-        &root.join("configs/suites/foundation_hardening.json"),
+        &root.join("configs/dag/suites/foundation_hardening.json"),
     )?)
     .map_err(|err| err.to_string())?;
     let required_surfaces = [
@@ -1556,8 +1556,8 @@ fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
 fn run_release_compatibility_matrix() -> Result<(), String> {
     let root = repo_root()?;
     let mut rows = Vec::new();
-    let positive = root.join("configs/schema/fixtures/compat/positive");
-    let negative = root.join("configs/schema/fixtures/compat/negative");
+    let positive = root.join("configs/dag/schema/fixtures/compat/positive");
+    let negative = root.join("configs/dag/schema/fixtures/compat/negative");
     collect_fixture_rows(&positive, true, &mut rows)?;
     collect_fixture_rows(&negative, false, &mut rows)?;
     rows.sort_by(|a, b| a["fixture"].as_str().cmp(&b["fixture"].as_str()));
@@ -1696,10 +1696,10 @@ fn check_contract_coverage_ready(root: &Path) -> Value {
 
 fn check_schema_coverage_ready(root: &Path) -> Value {
     let positive = root
-        .join("configs/schema/fixtures/compat/positive")
+        .join("configs/dag/schema/fixtures/compat/positive")
         .exists();
     let negative = root
-        .join("configs/schema/fixtures/compat/negative")
+        .join("configs/dag/schema/fixtures/compat/negative")
         .exists();
     json!({"ok": positive && negative})
 }
@@ -1725,7 +1725,7 @@ fn check_resource_baseline_ready(root: &Path) -> Value {
 }
 
 fn read_release_blockers(root: &Path) -> Result<Value, String> {
-    read_json_value(&root.join("configs/release/release_blockers.json"))
+    read_json_value(&root.join("configs/dag/release/release_blockers.json"))
 }
 
 fn collect_fixture_rows(
@@ -1863,7 +1863,7 @@ fn validate_execution_plan_shape(
     root: &Path,
     plan: &bijux_dag_core::ExecutionPlan,
 ) -> Result<(), String> {
-    let schema_path = root.join("configs/schema/execution_plan.schema.json");
+    let schema_path = root.join("configs/dag/schema/execution_plan.schema.json");
     let schema_payload = fs::read_to_string(&schema_path).map_err(|err| err.to_string())?;
     let schema: Value = serde_json::from_str(&schema_payload).map_err(|err| err.to_string())?;
     let required = schema
@@ -2809,7 +2809,7 @@ fn run_public_api() -> Result<(), String> {
 
 fn run_dep_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/policy/dependency_rules.json"))
+    let policy_text = fs::read_to_string(root.join("configs/dag/policy/dependency_rules.json"))
         .map_err(|err| err.to_string())?;
     let policy: DependencyPolicy =
         serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
@@ -2907,7 +2907,7 @@ fn run_workspace_manifest_policy_guard() -> Result<(), String> {
 
 fn run_public_export_docs_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
         .map_err(|err| err.to_string())?;
     let policy: CrateOwnershipPolicy =
         serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
@@ -2938,7 +2938,7 @@ fn run_public_export_docs_guard() -> Result<(), String> {
 
 fn run_crate_ownership_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
         .map_err(|err| err.to_string())?;
     let policy: CrateOwnershipPolicy =
         serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
@@ -3111,12 +3111,12 @@ fn run_validation_rule_docs_guard() -> Result<(), String> {
 fn run_schema_contracts_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
-        "configs/schema/dag.schema.json",
-        "configs/schema/run_manifest.schema.json",
-        "configs/schema/node_trace.schema.json",
-        "configs/schema/outputs_index.schema.json",
-        "configs/schema/fixtures/v0.1/positive/empty-graph.json",
-        "configs/schema/fixtures/v0.1/negative/unknown-field.json",
+        "configs/dag/schema/dag.schema.json",
+        "configs/dag/schema/run_manifest.schema.json",
+        "configs/dag/schema/node_trace.schema.json",
+        "configs/dag/schema/outputs_index.schema.json",
+        "configs/dag/schema/fixtures/v0.1/positive/empty-graph.json",
+        "configs/dag/schema/fixtures/v0.1/negative/unknown-field.json",
     ];
     for rel in required {
         let path = root.join(rel);
@@ -3147,7 +3147,7 @@ fn run_repo_docs_guard() -> Result<(), String> {
 
 fn run_repo_source_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy = root.join("configs/policy/source_layout.json");
+    let policy = root.join("configs/dag/policy/source_layout.json");
     if !policy.exists() {
         return Err("missing source layout policy".into());
     }
