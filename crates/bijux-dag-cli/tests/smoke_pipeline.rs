@@ -11,13 +11,13 @@ fn repo_root() -> PathBuf {
 }
 
 fn dag_command() -> Command {
-    if let Ok(path) = std::env::var("CARGO_BIN_EXE_bijux") {
+    if let Ok(path) = std::env::var("CARGO_BIN_EXE_bijux-dag") {
         if std::path::Path::new(&path).exists() {
             return Command::new(path);
         }
     }
 
-    if let Some(path) = option_env!("CARGO_BIN_EXE_bijux") {
+    if let Some(path) = option_env!("CARGO_BIN_EXE_bijux-dag") {
         if std::path::Path::new(path).exists() {
             return Command::new(path);
         }
