@@ -16,6 +16,14 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn evidence_ledger_path(root: &std::path::Path) -> PathBuf {
+    let canonical = root.join("evidence/dag/ownership/evidence_ledger.json");
+    if canonical.exists() {
+        return canonical;
+    }
+    root.join("evidence/ownership/evidence_ledger.json")
+}
+
 fn validate_asset_entry(entry: &Value) -> Result<(), String> {
     let object = entry.as_object().ok_or_else(|| "evidence entry must be object".to_string())?;
 
@@ -110,11 +118,9 @@ fn evidence_schema_files_exist() {
 #[ignore = "legacy evidence ledger schema contract enforces historical key set and paths"]
 fn evidence_ledger_entries_use_strict_schema_keys() {
     let root = repo_root();
-    let ledger: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
-            .expect("read ledger"),
-    )
-    .expect("parse ledger");
+    let ledger: Value =
+        serde_json::from_str(&fs::read_to_string(evidence_ledger_path(&root)).expect("read ledger"))
+            .expect("parse ledger");
     let entries = ledger["entries"].as_array().expect("entries array");
     for entry in entries {
         validate_asset_entry(entry).expect("entry should satisfy strict evidence schema");
