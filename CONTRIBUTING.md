@@ -1,7 +1,7 @@
-# Contributing to Bijux CLI
+# Contributing to bijux-core
 
 This document stays intentionally operational. It lists the commands, review
-rules, and evidence expectations that exist in this repository today.
+rules, and evidence expectations that govern this repository today.
 
 ## Prerequisites
 
