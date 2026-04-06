@@ -43,9 +43,9 @@ same contributor workflow.
 
 1. [Workspace And Tooling](workspace-and-tooling.md)
 2. [DAG CI And Ownership](dag-ci-and-ownership.md)
-2. [Change Model](change-model.md)
-3. [Testing And Evidence](testing-and-evidence.md)
-4. [Release And Compatibility](release-and-compatibility.md)
+3. [Change Model](change-model.md)
+4. [Testing And Evidence](testing-and-evidence.md)
+5. [Release And Compatibility](release-and-compatibility.md)
 
 ## Scope
 

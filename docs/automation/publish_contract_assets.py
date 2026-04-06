@@ -16,7 +16,7 @@ def on_post_build(config, **kwargs) -> None:
             "run",
             "--quiet",
             "-p",
-            "bijux-dev-cli",
+            "bijux-core-dev",
             "--",
             "docs",
             "publish-contract-assets",
