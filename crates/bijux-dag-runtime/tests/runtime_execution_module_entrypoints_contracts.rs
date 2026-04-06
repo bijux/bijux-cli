@@ -38,5 +38,6 @@ fn execution_context_aliases_match_runtime_context_types() {
 fn node_result_surface_exports_runtime_node_status() {
     let status = node_result::NodeStatus::Cached;
     assert!(matches!(status, NodeStatus::Cached));
-    let _status_alias: node_result::NodeStatus = status;
+    let status_alias: node_result::NodeStatus = status;
+    assert!(matches!(status_alias, NodeStatus::Cached));
 }

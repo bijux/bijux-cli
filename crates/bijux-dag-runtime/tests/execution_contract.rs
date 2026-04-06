@@ -58,21 +58,15 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
     let runtime = Runtime::new();
     let temp = tempfile::tempdir().expect("temp dir");
 
-    let run_dir = runtime
-        .run(&graph, temp.path(), RuntimeConfig::default())
-        .expect("runtime run");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
 
     let manifest = run_dir.join("manifest.json");
     let data: Value =
         serde_json::from_str(&fs::read_to_string(&manifest).expect("read manifest")).unwrap();
     assert_eq!(data["status"], "success");
-    assert_eq!(data["graph_fingerprint"].as_str().is_some(), true);
+    assert!(data["graph_fingerprint"].as_str().is_some());
 
-    let output_file = run_dir
-        .join("nodes")
-        .join("const1")
-        .join("outputs")
-        .join("value.txt");
+    let output_file = run_dir.join("nodes").join("const1").join("outputs").join("value.txt");
     let rendered = fs::read_to_string(&output_file).expect("output file");
     assert_eq!(rendered.trim(), "\"hello\"");
 
@@ -88,12 +82,8 @@ fn runtime_replay_contract_preserves_fingerprint_and_outputs() {
     let graph = parse_graph_strict(&simple_const_graph()).expect("parse graph");
     let runtime = Runtime::new();
     let temp = tempfile::tempdir().expect("temp dir");
-    let run_one = runtime
-        .run(&graph, temp.path(), RuntimeConfig::default())
-        .expect("first run");
-    let run_two = runtime
-        .run(&graph, temp.path(), RuntimeConfig::default())
-        .expect("second run");
+    let run_one = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("first run");
+    let run_two = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("second run");
 
     let manifest_one: Value = serde_json::from_str(
         &fs::read_to_string(run_one.join("manifest.json")).expect("manifest one"),
@@ -103,27 +93,14 @@ fn runtime_replay_contract_preserves_fingerprint_and_outputs() {
         &fs::read_to_string(run_two.join("manifest.json")).expect("manifest two"),
     )
     .expect("manifest parse");
-    assert_eq!(
-        manifest_one["graph_fingerprint"],
-        manifest_two["graph_fingerprint"]
-    );
+    assert_eq!(manifest_one["graph_fingerprint"], manifest_two["graph_fingerprint"]);
 
-    let first_output = fs::read_to_string(
-        run_one
-            .join("nodes")
-            .join("const1")
-            .join("outputs")
-            .join("value.txt"),
-    )
-    .expect("first output");
-    let second_output = fs::read_to_string(
-        run_two
-            .join("nodes")
-            .join("const1")
-            .join("outputs")
-            .join("value.txt"),
-    )
-    .expect("second output");
+    let first_output =
+        fs::read_to_string(run_one.join("nodes").join("const1").join("outputs").join("value.txt"))
+            .expect("first output");
+    let second_output =
+        fs::read_to_string(run_two.join("nodes").join("const1").join("outputs").join("value.txt"))
+            .expect("second output");
     assert_eq!(first_output, second_output);
 }
 

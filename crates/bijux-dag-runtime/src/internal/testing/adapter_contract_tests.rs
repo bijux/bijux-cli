@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::adapter::{AdapterDescriptor, AdapterOrigin, EffectSet};
 use crate::adapter_conformance::validate_descriptor;
 
@@ -30,10 +28,7 @@ fn external_adapter_requires_effect_declaration() {
     };
     let report = validate_descriptor(&descriptor);
     assert!(!report.passed);
-    assert!(report
-        .violations
-        .iter()
-        .any(|v| v.contains("declares no required effects")));
+    assert!(report.violations.iter().any(|v| v.contains("declares no required effects")));
 }
 
 #[test]

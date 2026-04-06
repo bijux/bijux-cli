@@ -8,8 +8,7 @@ use std::process::Command;
 use tempfile::{tempdir, NamedTempFile};
 
 fn dag_command() -> Command {
-    let path = option_env!("CARGO_BIN_EXE_bijux-dag")
-        .expect("cargo test must provide CARGO_BIN_EXE_bijux-dag for integration tests");
+    let path = env!("CARGO_BIN_EXE_bijux-dag");
     assert!(
         std::path::Path::new(path).exists(),
         "resolved bijux test binary path does not exist: {path}"
@@ -52,10 +51,7 @@ fn write_temp_dag() -> String {
 
 #[test]
 fn dag_validate_help_is_stable_enough() {
-    let output = dag_command()
-        .args(["dag", "validate", "--help"])
-        .output()
-        .expect("validate help");
+    let output = dag_command().args(["dag", "validate", "--help"]).output().expect("validate help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -65,10 +61,7 @@ fn dag_validate_help_is_stable_enough() {
 
 #[test]
 fn dag_unknown_subcommand_fails_with_code() {
-    let output = dag_command()
-        .args(["foo"])
-        .output()
-        .expect("unknown subcommand");
+    let output = dag_command().args(["foo"]).output().expect("unknown subcommand");
 
     assert!(!output.status.success());
 }
@@ -76,10 +69,8 @@ fn dag_unknown_subcommand_fails_with_code() {
 #[test]
 fn dag_validate_json_schema_contract() {
     let dag = write_temp_dag();
-    let output = dag_command()
-        .args(["dag", "validate", &dag, "--json"])
-        .output()
-        .expect("json validate");
+    let output =
+        dag_command().args(["dag", "validate", &dag, "--json"]).output().expect("json validate");
 
     assert!(output.status.success());
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
@@ -105,39 +96,25 @@ fn dag_command_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in [
-        "validate", "run", "replay", "diff", "explain", "status", "cache", "adapters",
-    ] {
+    for token in ["validate", "run", "replay", "diff", "explain", "status", "cache", "adapters"] {
         assert!(text.contains(token));
     }
 }
 
 #[test]
 fn dag_run_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "run", "--help"])
-        .output()
-        .expect("run help");
+    let output = dag_command().args(["dag", "run", "--help"]).output().expect("run help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in [
-        "--out",
-        "--hermetic",
-        "--deny-network",
-        "--clean-env",
-        "run",
-    ] {
+    for token in ["--out", "--hermetic", "--deny-network", "--clean-env", "run"] {
         assert!(text.contains(token));
     }
 }
 
 #[test]
 fn dag_replay_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "replay", "--help"])
-        .output()
-        .expect("replay help");
+    let output = dag_command().args(["dag", "replay", "--help"]).output().expect("replay help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -148,10 +125,7 @@ fn dag_replay_help_surface_contract() {
 
 #[test]
 fn dag_diff_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "diff", "--help"])
-        .output()
-        .expect("diff help");
+    let output = dag_command().args(["dag", "diff", "--help"]).output().expect("diff help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -161,10 +135,7 @@ fn dag_diff_help_surface_contract() {
 
 #[test]
 fn dag_explain_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "explain", "--help"])
-        .output()
-        .expect("explain help");
+    let output = dag_command().args(["dag", "explain", "--help"]).output().expect("explain help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -174,10 +145,7 @@ fn dag_explain_help_surface_contract() {
 
 #[test]
 fn dag_cache_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "cache", "--help"])
-        .output()
-        .expect("cache help");
+    let output = dag_command().args(["dag", "cache", "--help"]).output().expect("cache help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -188,10 +156,7 @@ fn dag_cache_help_surface_contract() {
 
 #[test]
 fn dag_adapters_help_surface_contract() {
-    let output = dag_command()
-        .args(["dag", "adapters", "--help"])
-        .output()
-        .expect("adapters help");
+    let output = dag_command().args(["dag", "adapters", "--help"]).output().expect("adapters help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -203,10 +168,7 @@ fn dag_adapters_help_surface_contract() {
 #[test]
 fn dag_validate_text_output_contract() {
     let dag = write_temp_dag();
-    let output = dag_command()
-        .args(["dag", "validate", &dag])
-        .output()
-        .expect("validate text");
+    let output = dag_command().args(["dag", "validate", &dag]).output().expect("validate text");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -227,11 +189,8 @@ fn dag_validate_invalid_argument_fails() {
 fn dag_validate_rejects_invalid_spec_with_validation_exit_code() {
     let invalid = NamedTempFile::new().expect("temp invalid");
     let invalid_path = invalid.path().to_path_buf();
-    std::fs::write(
-        &invalid_path,
-        r#"{"spec":"bijux-dag/v9.9","nodes":[],"edges":[]}"#,
-    )
-    .expect("write invalid spec");
+    std::fs::write(&invalid_path, r#"{"spec":"bijux-dag/v9.9","nodes":[],"edges":[]}"#)
+        .expect("write invalid spec");
 
     let output = dag_command()
         .args(["dag", "validate", invalid_path.to_str().unwrap()])
@@ -248,13 +207,7 @@ fn dag_run_exit_code_success() {
     let out_dir = tempfile::tempdir().expect("run out");
 
     let output = dag_command()
-        .args([
-            "dag",
-            "run",
-            &dag,
-            "--out",
-            out_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", &dag, "--out", out_dir.path().to_str().unwrap()])
         .output()
         .expect("run success");
 
@@ -290,13 +243,7 @@ fn dag_run_runtime_failure_returns_nonzero_exit() {
     let out_dir = tempfile::tempdir().expect("run out");
 
     let output = dag_command()
-        .args([
-            "dag",
-            "run",
-            &dag,
-            "--out",
-            out_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", &dag, "--out", out_dir.path().to_str().unwrap()])
         .output()
         .expect("run fail");
 
@@ -312,10 +259,7 @@ fn completions_generation_supports_all_supported_shells() {
             .output()
             .expect("completion command");
         assert!(output.status.success(), "shell {shell} failed");
-        assert!(
-            !output.stdout.is_empty(),
-            "shell {shell} emitted empty completion"
-        );
+        assert!(!output.stdout.is_empty(), "shell {shell} emitted empty completion");
     }
 }
 
@@ -324,40 +268,20 @@ fn fsck_alias_surface_runs_on_valid_run_dir() {
     let dag = write_temp_dag();
     let out_dir = tempdir().expect("run out");
     let run_output = dag_command()
-        .args([
-            "dag",
-            "run",
-            &dag,
-            "--out",
-            out_dir.path().to_str().expect("run out path"),
-        ])
+        .args(["dag", "run", &dag, "--out", out_dir.path().to_str().expect("run out path")])
         .output()
         .expect("run");
-    assert!(
-        run_output.status.success(),
-        "run must succeed for fsck setup"
-    );
+    assert!(run_output.status.success(), "run must succeed for fsck setup");
 
-    let mut entries: Vec<_> = std::fs::read_dir(out_dir.path())
-        .expect("read out dir")
-        .filter_map(Result::ok)
-        .collect();
+    let mut entries: Vec<_> =
+        std::fs::read_dir(out_dir.path()).expect("read out dir").filter_map(Result::ok).collect();
     entries.sort_by_key(|entry| entry.file_name());
-    let run_dir = entries
-        .last()
-        .expect("expected run directory")
-        .path()
-        .to_string_lossy()
-        .into_owned();
+    let run_dir =
+        entries.last().expect("expected run directory").path().to_string_lossy().into_owned();
 
-    let fsck_output = dag_command()
-        .args(["dag", "fsck", &run_dir, "--strict", "--json"])
-        .output()
-        .expect("fsck");
-    assert!(
-        fsck_output.status.success(),
-        "fsck on valid run directory should succeed"
-    );
+    let fsck_output =
+        dag_command().args(["dag", "fsck", &run_dir, "--strict", "--json"]).output().expect("fsck");
+    assert!(fsck_output.status.success(), "fsck on valid run directory should succeed");
 
     let payload: serde_json::Value =
         serde_json::from_slice(&fsck_output.stdout).expect("fsck json payload");
@@ -383,12 +307,7 @@ fn fsck_alias_supports_bundle_verification_mode() {
     .expect("write bundle");
 
     let output = dag_command()
-        .args([
-            "dag",
-            "fsck",
-            bundle_path.to_str().expect("bundle path"),
-            "--json",
-        ])
+        .args(["dag", "fsck", bundle_path.to_str().expect("bundle path"), "--json"])
         .output()
         .expect("bundle fsck");
     assert!(output.status.success());
@@ -440,23 +359,14 @@ fn capabilities_backend_query_supports_remote() {
     assert_eq!(payload["command"], "dag.capabilities");
     assert_eq!(payload["data"]["backend"], "remote");
     assert_eq!(payload["data"]["status"], "simulated");
-    assert_eq!(
-        payload["data"]["capabilities"]["worker_pool_capability_negotiation"],
-        true
-    );
+    assert_eq!(payload["data"]["capabilities"]["worker_pool_capability_negotiation"], true);
 }
 
 #[test]
 #[ignore = "slow"]
 fn semantic_portability_backend_query_surface_is_available() {
     let output = dag_command()
-        .args([
-            "dag",
-            "semantic-portability",
-            "--backend",
-            "kubernetes",
-            "--json",
-        ])
+        .args(["dag", "semantic-portability", "--backend", "kubernetes", "--json"])
         .output()
         .expect("semantic portability");
     assert!(output.status.success());
@@ -472,38 +382,20 @@ fn equivalence_proof_surface_reports_for_two_runs() {
     let run_a = tempfile::tempdir().expect("run a dir");
     let run_b = tempfile::tempdir().expect("run b dir");
     let run_a_out = dag_command()
-        .args([
-            "dag",
-            "run",
-            &dag,
-            "--out",
-            run_a.path().to_str().expect("run_a path"),
-            "--json",
-        ])
+        .args(["dag", "run", &dag, "--out", run_a.path().to_str().expect("run_a path"), "--json"])
         .output()
         .expect("run a");
     assert!(run_a_out.status.success());
     let run_b_out = dag_command()
-        .args([
-            "dag",
-            "run",
-            &dag,
-            "--out",
-            run_b.path().to_str().expect("run_b path"),
-            "--json",
-        ])
+        .args(["dag", "run", &dag, "--out", run_b.path().to_str().expect("run_b path"), "--json"])
         .output()
         .expect("run b");
     assert!(run_b_out.status.success());
 
     let run_a_payload: serde_json::Value = serde_json::from_slice(&run_a_out.stdout).expect("a");
     let run_b_payload: serde_json::Value = serde_json::from_slice(&run_b_out.stdout).expect("b");
-    let run_a_dir = run_a_payload["data"]["run_dir"]
-        .as_str()
-        .expect("run a dir");
-    let run_b_dir = run_b_payload["data"]["run_dir"]
-        .as_str()
-        .expect("run b dir");
+    let run_a_dir = run_a_payload["data"]["run_dir"].as_str().expect("run a dir");
+    let run_b_dir = run_b_payload["data"]["run_dir"].as_str().expect("run b dir");
 
     let output = dag_command()
         .args([
@@ -528,10 +420,8 @@ fn equivalence_proof_surface_reports_for_two_runs() {
 
 #[test]
 fn export_import_help_includes_bundle_control_flags() {
-    let export_help = dag_command()
-        .args(["dag", "export", "--help"])
-        .output()
-        .expect("export help");
+    let export_help =
+        dag_command().args(["dag", "export", "--help"]).output().expect("export help");
     assert!(export_help.status.success());
     let export_text = String::from_utf8_lossy(&export_help.stdout);
     assert!(export_text.contains("--from-run"));
@@ -539,10 +429,8 @@ fn export_import_help_includes_bundle_control_flags() {
     assert!(export_text.contains("--provenance-only"));
     assert!(export_text.contains("--redact"));
 
-    let import_help = dag_command()
-        .args(["dag", "import", "--help"])
-        .output()
-        .expect("import help");
+    let import_help =
+        dag_command().args(["dag", "import", "--help"]).output().expect("import help");
     assert!(import_help.status.success());
     let import_text = String::from_utf8_lossy(&import_help.stdout);
     assert!(import_text.contains("--verify-only"));
@@ -550,10 +438,7 @@ fn export_import_help_includes_bundle_control_flags() {
 
 #[test]
 fn prove_help_and_json_surface_are_available() {
-    let help = dag_command()
-        .args(["dag", "prove", "--help"])
-        .output()
-        .expect("prove help");
+    let help = dag_command().args(["dag", "prove", "--help"]).output().expect("prove help");
     assert!(help.status.success());
     let text = String::from_utf8_lossy(&help.stdout);
     assert!(text.contains("dag prove"));
@@ -572,10 +457,8 @@ fn proof_summary_help_surface_is_available() {
 
 #[test]
 fn migrate_help_includes_dry_run_preview_flag() {
-    let help = dag_command()
-        .args(["dag", "migrate", "dag", "--help"])
-        .output()
-        .expect("migrate help");
+    let help =
+        dag_command().args(["dag", "migrate", "dag", "--help"]).output().expect("migrate help");
     assert!(help.status.success());
     let text = String::from_utf8_lossy(&help.stdout);
     assert!(text.contains("--dry-run"));
@@ -586,24 +469,15 @@ fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");
     let run = dag_command()
-        .args([
-            "dag",
-            "run",
-            "--json",
-            &dag,
-            "--out",
-            run_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", "--json", &dag, "--out", run_dir.path().to_str().unwrap()])
         .output()
         .expect("run json");
     let run_payload: serde_json::Value =
         serde_json::from_slice(&run.stdout).expect("parse run payload");
     let run_path = run_payload["data"]["run_dir"].as_str().unwrap();
 
-    let output = dag_command()
-        .args(["dag", "status", "--json", run_path])
-        .output()
-        .expect("status json");
+    let output =
+        dag_command().args(["dag", "status", "--json", run_path]).output().expect("status json");
 
     assert!(output.status.success());
     let payload: serde_json::Value =
@@ -621,37 +495,15 @@ fn dag_diff_json_schema_contract() {
     let second_run_dir = tempfile::tempdir().expect("second run out");
 
     let run_a = dag_command()
-        .args([
-            "dag",
-            "run",
-            "--json",
-            &dag,
-            "--out",
-            first_run_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", "--json", &dag, "--out", first_run_dir.path().to_str().unwrap()])
         .output()
         .expect("run a");
     let run_b = dag_command()
-        .args([
-            "dag",
-            "run",
-            "--json",
-            &dag,
-            "--out",
-            second_run_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", "--json", &dag, "--out", second_run_dir.path().to_str().unwrap()])
         .output()
         .expect("run b");
-    assert!(
-        run_a.status.success(),
-        "run a failed: {}",
-        String::from_utf8_lossy(&run_a.stderr)
-    );
-    assert!(
-        run_b.status.success(),
-        "run b failed: {}",
-        String::from_utf8_lossy(&run_b.stderr)
-    );
+    assert!(run_a.status.success(), "run a failed: {}", String::from_utf8_lossy(&run_a.stderr));
+    assert!(run_b.status.success(), "run b failed: {}", String::from_utf8_lossy(&run_b.stderr));
 
     let payload_a: serde_json::Value =
         serde_json::from_slice(&run_a.stdout).expect("parse run a payload");
@@ -677,18 +529,13 @@ fn dag_diff_json_schema_contract() {
 #[test]
 fn dag_validate_json_exists_with_human_and_machine_contracts() {
     let dag = write_temp_dag();
-    let output = dag_command()
-        .args(["dag", "validate", &dag])
-        .output()
-        .expect("validate text");
+    let output = dag_command().args(["dag", "validate", &dag]).output().expect("validate text");
 
     assert!(output.status.success());
     assert!(!String::from_utf8_lossy(&output.stdout).contains("{\"ok\""));
 
-    let output_json = dag_command()
-        .args(["dag", "validate", "--json", &dag])
-        .output()
-        .expect("validate json");
+    let output_json =
+        dag_command().args(["dag", "validate", "--json", &dag]).output().expect("validate json");
 
     assert!(output_json.status.success());
     let payload: serde_json::Value =
@@ -704,14 +551,7 @@ fn dag_run_json_output_contract_and_exit_code() {
     let out_dir = tempdir().expect("temp out");
 
     let output = dag_command()
-        .args([
-            "dag",
-            "run",
-            "--json",
-            &dag,
-            "--out",
-            out_dir.path().to_str().unwrap(),
-        ])
+        .args(["dag", "run", "--json", &dag, "--out", out_dir.path().to_str().unwrap()])
         .output()
         .expect("run with json");
 
@@ -720,8 +560,5 @@ fn dag_run_json_output_contract_and_exit_code() {
         serde_json::from_slice(&output.stdout).expect("run json parse");
     assert_eq!(payload["command"], "dag.run");
     assert_eq!(payload["status"], "ok");
-    assert!(payload["data"]
-        .get("run_dir")
-        .and_then(|v| v.as_str())
-        .is_some());
+    assert!(payload["data"].get("run_dir").and_then(|v| v.as_str()).is_some());
 }

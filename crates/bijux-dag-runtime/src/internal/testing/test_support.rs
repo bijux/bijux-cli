@@ -1,4 +1,3 @@
-#![cfg(test)]
 
 use crate::Graph;
 use bijux_dag_core::ParamValue;
@@ -7,11 +6,7 @@ use std::collections::BTreeMap;
 use std::process::Command;
 
 pub(crate) fn docker_available() -> bool {
-    Command::new("docker")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+    Command::new("docker").arg("--version").output().map(|o| o.status.success()).unwrap_or(false)
 }
 
 pub(crate) fn sample_graph() -> Graph {

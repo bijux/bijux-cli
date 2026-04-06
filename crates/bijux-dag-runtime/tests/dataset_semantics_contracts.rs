@@ -34,28 +34,20 @@ fn consumption_contract_supports_stable_latest_and_freshness_modes() {
         dataset_id: DatasetId("sales-mart".to_string()),
         mode: DatasetConsumptionMode::StableVersion(available.clone()),
     };
-    assert!(dataset_consumption_satisfied(
-        &stable, &available, &approved, 30
-    ));
+    assert!(dataset_consumption_satisfied(&stable, &available, &approved, 30));
 
     let latest = DatasetConsumptionContract {
         dataset_id: DatasetId("sales-mart".to_string()),
         mode: DatasetConsumptionMode::LatestApproved,
     };
-    assert!(dataset_consumption_satisfied(
-        &latest, &available, &approved, 30
-    ));
+    assert!(dataset_consumption_satisfied(&latest, &available, &approved, 30));
 
     let freshness = DatasetConsumptionContract {
         dataset_id: DatasetId("sales-mart".to_string()),
         mode: DatasetConsumptionMode::FreshnessBounded(60),
     };
-    assert!(dataset_consumption_satisfied(
-        &freshness, &available, &approved, 30
-    ));
-    assert!(!dataset_consumption_satisfied(
-        &freshness, &available, &approved, 90
-    ));
+    assert!(dataset_consumption_satisfied(&freshness, &available, &approved, 30));
+    assert!(!dataset_consumption_satisfied(&freshness, &available, &approved, 90));
 }
 
 #[test]
@@ -99,10 +91,7 @@ fn catalog_query_filters_by_owner_freshness_and_quality() {
 
     let filtered = dataset_catalog_query(&entries, &query);
     assert_eq!(filtered.len(), 1);
-    assert_eq!(
-        filtered[0].version_id,
-        DatasetVersionId("v2026-03-07".to_string())
-    );
+    assert_eq!(filtered[0].version_id, DatasetVersionId("v2026-03-07".to_string()));
 }
 
 #[test]
@@ -139,12 +128,10 @@ fn provenance_report_and_mapping_index_are_deterministic() {
 
     let index = dataset_mapping_index(&mappings);
     assert_eq!(index.len(), 1);
-    assert!(index
-        .get(&(
-            DatasetId("sales-mart".to_string()),
-            DatasetVersionId("v2026-03-07".to_string())
-        ))
-        .is_some());
+    assert!(index.contains_key(&(
+        DatasetId("sales-mart".to_string()),
+        DatasetVersionId("v2026-03-07".to_string()),
+    )));
 }
 
 #[test]

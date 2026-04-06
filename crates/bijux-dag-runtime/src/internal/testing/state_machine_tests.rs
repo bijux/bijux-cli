@@ -1,4 +1,3 @@
-#![cfg(test)]
 
 use crate::state_machine::{
     failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
