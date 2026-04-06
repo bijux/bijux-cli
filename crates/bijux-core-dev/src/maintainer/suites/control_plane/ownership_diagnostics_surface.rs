@@ -98,19 +98,19 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-MAINTAINER-BOUNDARY-REPORTS" => {
             let maintainer_fixture = workspace_root.join(
-                "crates/bijux-core-dev/dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+                "crates/bijux-core-dev/tests/maintainer/data/fixtures/routing/maintainer_subcommands.txt",
             );
             let runtime_dispatch =
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
             let route_files = [
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/root.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/docs.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/config.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/evidence.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/maintenance.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/python.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/release.rs"),
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/rustdoc.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/root.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/docs.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/config.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/evidence.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/maintenance.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/python.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/release.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/rustdoc.rs"),
             ];
             let read = |path: &Path| fs::read_to_string(path).unwrap_or_default();
             let runtime_dispatch_source = read(&runtime_dispatch);
@@ -229,8 +229,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "leaks_through_runtime": leaks,
                     "exposed_through_binary": true,
                     "evidence": [
-                        "crates/bijux-core-dev/dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
-                        "crates/bijux-core-dev/dev-cli/src/cli/routes",
+                        "crates/bijux-core-dev/tests/maintainer/data/fixtures/routing/maintainer_subcommands.txt",
+                        "crates/bijux-core-dev/src/maintainer/cli/routes",
                         "crates/bijux-cli/src/interface/cli/dispatch.rs"
                     ],
                 }));
@@ -309,7 +309,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-MAINTAINER-COMMAND-SURFACE-REPORTS" => {
             let fixture = workspace_root.join(
-                "crates/bijux-core-dev/dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+                "crates/bijux-core-dev/tests/maintainer/data/fixtures/routing/maintainer_subcommands.txt",
             );
             let tests_root = workspace_root.join("crates/bijux-cli/tests");
             let test_sources: BTreeMap<String, String> = collect_files(&tests_root)
@@ -507,7 +507,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 fs::read_to_string(workspace_root.join("crates/bijux-cli/src/routing/registry.rs"))
                     .unwrap_or_default();
             let maintainer_root = fs::read_to_string(
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/root.rs"),
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/root.rs"),
             )
             .unwrap_or_default();
             let runtime_maintainer_literal_count =

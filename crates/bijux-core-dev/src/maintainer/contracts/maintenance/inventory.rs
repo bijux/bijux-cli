@@ -40,7 +40,7 @@ pub fn build_package_metadata_report(workspace_root: &Path) -> Value {
 pub fn build_e2e_contract_report(workspace_root: &Path) -> Value {
     let e2e_roots = [
         workspace_root.join("crates/bijux-cli/tests/integration"),
-        workspace_root.join("crates/bijux-core-dev/dev-cli/tests/e2e"),
+        workspace_root.join("crates/bijux-core-dev/tests/maintainer/e2e"),
     ];
     let mut files = Vec::new();
     for root in &e2e_roots {

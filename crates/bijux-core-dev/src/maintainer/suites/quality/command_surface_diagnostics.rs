@@ -5,7 +5,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-DEEP-BEHAVIOR-REPORTS" => {
             let mut sources = BTreeMap::<String, String>::new();
-            for root in ["crates/bijux-cli/tests", "crates/bijux-core-dev/dev-cli/tests"] {
+            for root in ["crates/bijux-cli/tests", "crates/bijux-core-dev/tests/maintainer"] {
                 for path in collect_files(&workspace_root.join(root)) {
                     if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
                         sources.insert(
@@ -62,13 +62,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .collect::<Vec<_>>();
             let expected_contracts = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-core-dev/dev-cli/tests/data/golden/runtime_contracts.json"),
+                    .join("crates/bijux-core-dev/tests/maintainer/data/golden/runtime_contracts.json"),
             )
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
             .unwrap_or_else(|| json!({}));
             let expected_routes = fs::read_to_string(
-                workspace_root.join("crates/bijux-core-dev/dev-cli/tests/data/golden/runtime_routes.json"),
+                workspace_root.join("crates/bijux-core-dev/tests/maintainer/data/golden/runtime_routes.json"),
             )
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
@@ -167,7 +167,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-DIAGNOSTICS-TRUST-REPORTS" => {
             let mut sources = BTreeMap::<String, String>::new();
-            for root in ["crates/bijux-cli/tests", "crates/bijux-core-dev/dev-cli/tests"] {
+            for root in ["crates/bijux-cli/tests", "crates/bijux-core-dev/tests/maintainer"] {
                 for path in collect_files(&workspace_root.join(root)) {
                     if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
                         sources.insert(

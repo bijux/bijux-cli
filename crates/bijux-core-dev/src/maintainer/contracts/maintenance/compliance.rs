@@ -324,7 +324,7 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
         "count": tests.len(),
         "tests": tests,
         "policy": "no flaky test may be silently ignored; each flaky marker requires remediation tracking",
-        "generator": "crates/bijux-core-dev/dev-cli/src/contracts/maintenance/compliance.rs::build_flaky_tests_report",
+        "generator": "crates/bijux-core-dev/src/maintainer/contracts/maintenance/compliance.rs::build_flaky_tests_report",
         "integrity_status": if scan_errors.is_empty() { "ok" } else { "degraded" },
         "scan_errors": scan_errors,
     })

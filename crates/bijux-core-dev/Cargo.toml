@@ -37,7 +37,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "bijux-dev-cli"
-path = "dev-cli/src/bin/bijux-dev-cli.rs"
+path = "src/maintainer/bin/bijux-dev-cli.rs"
 
 [[bin]]
 name = "bijux-dev-dag"
@@ -45,28 +45,28 @@ path = "src/main.rs"
 
 [[test]]
 name = "architecture_layout_contracts"
-path = "dev-cli/tests/architecture/layout_contracts.rs"
+path = "tests/maintainer/architecture/layout_contracts.rs"
 
 [[test]]
 name = "architecture_ownership_boundaries"
-path = "dev-cli/tests/architecture/ownership_boundaries.rs"
+path = "tests/maintainer/architecture/ownership_boundaries.rs"
 
 [[test]]
 name = "architecture_depth_limit"
-path = "dev-cli/tests/architecture/depth_limit.rs"
+path = "tests/maintainer/architecture/depth_limit.rs"
 
 [[test]]
 name = "contracts_status_inventory_contracts"
-path = "dev-cli/tests/contracts/status_inventory_contracts.rs"
+path = "tests/maintainer/contracts/status_inventory_contracts.rs"
 
 [[test]]
 name = "contracts_suite_catalog_contracts"
-path = "dev-cli/tests/contracts/suite_catalog_contracts.rs"
+path = "tests/maintainer/contracts/suite_catalog_contracts.rs"
 
 [[test]]
 name = "e2e_maintainer_routes"
-path = "dev-cli/tests/e2e/maintainer_routes.rs"
+path = "tests/maintainer/e2e/maintainer_routes.rs"
 
 [[test]]
 name = "e2e_contract_run_all"
-path = "dev-cli/tests/e2e/contract_run_all.rs"
+path = "tests/maintainer/e2e/contract_run_all.rs"

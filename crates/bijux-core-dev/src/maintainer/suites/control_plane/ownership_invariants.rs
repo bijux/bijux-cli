@@ -6,17 +6,17 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-MAINTAINER-INVARIANTS-REPORTS" => {
             let fixture = workspace_root.join(
-                "crates/bijux-core-dev/dev-cli/tests/data/fixtures/routing/maintainer_subcommands.txt",
+                "crates/bijux-core-dev/tests/maintainer/data/fixtures/routing/maintainer_subcommands.txt",
             );
             let bin_main = workspace_root.join("crates/bijux-cli/src/bin/bijux.rs");
             let runtime_entrypoint = workspace_root.join("crates/bijux-cli/src/bootstrap/run.rs");
             let runtime_dispatch =
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
-            let lib_source = workspace_root.join("crates/bijux-core-dev/dev-cli/src/lib.rs");
+            let lib_source = workspace_root.join("crates/bijux-core-dev/src/maintainer/lib.rs");
             let command_registry =
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/schema/command_registry.rs");
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/schema/command_registry.rs");
             let maintainer_root =
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/cli/routes/root.rs");
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/cli/routes/root.rs");
             let commands: Vec<Vec<String>> = fs::read_to_string(fixture)
                 .unwrap_or_default()
                 .lines()
@@ -152,9 +152,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
             let runtime_routing = workspace_root.join("crates/bijux-cli/src/routing/mod.rs");
             let maintainer_routes =
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/reports/runtime_surface/routes.rs");
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/reports/runtime_surface/routes.rs");
             let maintainer_registry =
-                workspace_root.join("crates/bijux-core-dev/dev-cli/src/reports/runtime_surface/registry.rs");
+                workspace_root.join("crates/bijux-core-dev/src/maintainer/reports/runtime_surface/registry.rs");
             let inventory = workspace_root
                 .join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs");
             let has = |path: &Path, token: &str| -> bool {

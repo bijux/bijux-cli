@@ -162,7 +162,7 @@ fn ensure_command_matrix(workspace_root: &Path) -> Value {
     let plugin_rows = groups.get("plugin").cloned().unwrap_or_default();
     let payload = json!({
         "generated_at": stable_generated_at(),
-        "generator": "crates/bijux-core-dev/dev-cli/src/parity.rs::ensure_command_matrix",
+        "generator": "crates/bijux-core-dev/src/maintainer/parity.rs::ensure_command_matrix",
         "commands": commands,
         "groups": groups,
         "plugin_lifecycle": {
@@ -213,7 +213,7 @@ fn ensure_parity_diffs(workspace_root: &Path, matrix: &Value) -> Value {
 
     let payload = json!({
         "generated_at": stable_generated_at(),
-        "generator": "crates/bijux-core-dev/dev-cli/src/parity.rs::ensure_parity_diffs",
+        "generator": "crates/bijux-core-dev/src/maintainer/parity.rs::ensure_parity_diffs",
         "diffs": rows,
     });
     write_json_if_changed(&path, &payload);
@@ -573,7 +573,7 @@ fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
         }
         let payload = json!({
             "generated_at": stable_generated_at(),
-            "generator": "crates/bijux-core-dev/dev-cli/src/parity.rs::ensure_law_reports",
+            "generator": "crates/bijux-core-dev/src/maintainer/parity.rs::ensure_law_reports",
             "rows": report_rows(name),
         });
         write_json_if_changed(&path, &payload);
@@ -611,7 +611,7 @@ fn ensure_law_reports(workspace_root: &Path, matrix: &Value, diffs: &Value) {
         });
         let payload = json!({
             "generated_at": stable_generated_at(),
-            "generator": "crates/bijux-core-dev/dev-cli/src/parity.rs::ensure_law_reports",
+            "generator": "crates/bijux-core-dev/src/maintainer/parity.rs::ensure_law_reports",
             "summary": {
                 "total_commands": rows.len(),
                 "surfaces": surfaces,

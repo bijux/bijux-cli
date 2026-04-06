@@ -2,17 +2,17 @@
 #![recursion_limit = "512"]
 //! Maintainer control-plane modules for `bijux-dev-cli ...` workflows.
 
-#[path = "../dev-cli/src/cli/mod.rs"]
+#[path = "maintainer/cli/mod.rs"]
 pub mod cli;
-#[path = "../dev-cli/src/contracts/mod.rs"]
+#[path = "maintainer/contracts/mod.rs"]
 pub mod contracts;
-#[path = "../dev-cli/src/infra/mod.rs"]
+#[path = "maintainer/infra/mod.rs"]
 pub mod infra;
-#[path = "../dev-cli/src/reports/mod.rs"]
+#[path = "maintainer/reports/mod.rs"]
 pub mod reports;
-#[path = "../dev-cli/src/runtime/mod.rs"]
+#[path = "maintainer/runtime/mod.rs"]
 pub mod runtime;
-#[path = "../dev-cli/src/schema/mod.rs"]
+#[path = "maintainer/schema/mod.rs"]
 pub mod schema;
-#[path = "../dev-cli/src/suites/mod.rs"]
+#[path = "maintainer/suites/mod.rs"]
 pub mod suites;

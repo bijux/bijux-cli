@@ -36,7 +36,7 @@ fn command_registry_entries_are_canonical_and_unique() {
 
 #[test]
 fn crate_scope_rejects_runtime_command_law_and_root_alias_reexports() {
-    let lib_source = include_str!("../../src/lib.rs");
+    let lib_source = include_str!("../../../src/maintainer/lib.rs");
     assert!(lib_source.contains("Runtime command law remains in runtime crates"));
     assert!(!lib_source.contains("pub use report"));
     assert!(!lib_source.contains("pub use contract_engine"));
@@ -51,11 +51,11 @@ fn crate_scope_rejects_runtime_command_law_and_root_alias_reexports() {
     ];
 
     for signature in runtime_law_signatures {
-        let present = include_str!("../../src/reports/control_plane.rs").contains(signature)
-            || include_str!("../../src/reports/repository_health/status/mod.rs")
+        let present = include_str!("../../../src/maintainer/reports/control_plane.rs").contains(signature)
+            || include_str!("../../../src/maintainer/reports/repository_health/status/mod.rs")
                 .contains(signature)
-            || include_str!("../../src/reports/runtime_surface/parity.rs").contains(signature)
-            || include_str!("../../src/reports/runtime_surface/runtime_identity.rs")
+            || include_str!("../../../src/maintainer/reports/runtime_surface/parity.rs").contains(signature)
+            || include_str!("../../../src/maintainer/reports/runtime_surface/runtime_identity.rs")
                 .contains(signature);
         assert!(
             !present,
