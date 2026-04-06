@@ -146,6 +146,8 @@ fn runtime_dependencies_match_runtime_allowed_list() {
 #[ignore = "legacy dependency allowlist contract reflects historical module partitioning"]
 fn dev_governance_dependencies_match_allowed_list() {
     let allowed: BTreeSet<String> = [
+        "anyhow",
+        "bijux-cli",
         "bijux-dag-artifacts",
         "bijux-dag-core",
         "bijux-dag-runtime",
@@ -156,15 +158,16 @@ fn dev_governance_dependencies_match_allowed_list() {
         "serde_json",
         "sha2",
         "tempfile",
+        "toml",
     ]
     .into_iter()
     .map(String::from)
     .collect();
-    let deps = direct_dependency_names("bijux-dev-dag");
+    let deps = direct_dependency_names("bijux-dev");
     for dep in &deps {
         assert!(
             allowed.contains(dep),
-            "bijux-dev-dag direct dependency is outside governance allowlist: {dep}"
+            "bijux-dev direct dependency is outside governance allowlist: {dep}"
         );
     }
 }
