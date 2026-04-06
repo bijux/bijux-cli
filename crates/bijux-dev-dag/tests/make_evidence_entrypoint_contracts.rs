@@ -33,10 +33,11 @@ fn collect_makefiles(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn root_make_includes_evidence_module() {
     let root = repo_root();
-    let root_mk = fs::read_to_string(root.join("make/root.mk")).expect("read make/root.mk");
+    let root_mk =
+        fs::read_to_string(root.join("makes/dag/root.mk")).expect("read makes/dag/root.mk");
     assert!(
-        root_mk.contains("include make/evidence.mk"),
-        "make/root.mk must include make/evidence.mk"
+        root_mk.contains("include $(DAG_MAKE_DIR)/evidence.mk"),
+        "makes/dag/root.mk must include DAG evidence module"
     );
 }
 
@@ -56,7 +57,7 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
 
         let has_evidence_verify = content.contains("verify evidence-")
             || content.contains("repo evidence-summary-report");
-        if has_evidence_verify && rel != "make/evidence.mk" {
+        if has_evidence_verify && rel != "makes/dag/evidence.mk" {
             violations.push(format!("{rel}: evidence verification command duplication"));
         }
 
@@ -65,9 +66,9 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
             if !trimmed.starts_with("evidence-") || !trimmed.contains(':') {
                 continue;
             }
-            if rel != "make/evidence.mk" {
+            if rel != "makes/dag/evidence.mk" {
                 violations.push(format!(
-                    "{rel}: evidence target defined outside make/evidence.mk"
+                    "{rel}: evidence target defined outside makes/dag/evidence.mk"
                 ));
             }
         }
@@ -75,7 +76,7 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
 
     assert!(
         violations.is_empty(),
-        "evidence make workflows must be declared in make/evidence.mk only: {}",
+        "evidence make workflows must be declared in makes/dag/evidence.mk only: {}",
         violations.join(" | ")
     );
 }

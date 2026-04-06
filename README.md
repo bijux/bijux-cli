@@ -7,7 +7,7 @@
 - `crates/bijux-cli`: primary runtime crate and `bijux` binary.
 - `crates/bijux-cli-python`: Python bridge and packaging surface.
 - `crates/bijux-dev-cli`: maintainer control-plane.
-- `bijux-dag/crates/*`: DAG core, runtime, app, CLI, testkit, and maintainer crates.
+- `crates/bijux-dag-*` and `crates/bijux-dev-dag`: DAG core, runtime, app, CLI, testkit, and maintainer crates.
 
 ## Workspace model
 
