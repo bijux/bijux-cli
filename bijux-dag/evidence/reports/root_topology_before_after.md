@@ -23,7 +23,7 @@ Governing top-level pillars:
 - `crates/`
 - `docs/`
 - `evidence/`
-- `configs/`
+- `configs/dag/`
 - `make/`
 
 Additional operational roots (`artifacts/`, `tests/`) remain for outputs and test code, not proof ownership.

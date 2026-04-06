@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/artifact_trace.schema.json",
+  "schema": "configs/dag/schema/operator/artifact_trace.schema.json",
   "example_type": "maximal",
   "data": {
     "artifact_id": "example",

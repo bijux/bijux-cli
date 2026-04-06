@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/run_tree.schema.json",
+  "schema": "configs/dag/schema/operator/run_tree.schema.json",
   "example_type": "minimal",
   "data": {
     "nodes": "example"

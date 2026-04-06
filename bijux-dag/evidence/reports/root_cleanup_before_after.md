@@ -15,7 +15,7 @@ Date: 2026-03-07
 - Root pillars are stable and minimal:
   - `crates/`
   - `docs/`
-  - `configs/`
+  - `configs/dag/`
   - `evidence/`
   - `make/`
 - `tests/` remains code-only with contract docs; no canonical scenario JSON ownership.

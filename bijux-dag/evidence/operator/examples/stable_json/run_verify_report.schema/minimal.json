@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/run_verify_report.schema.json",
+  "schema": "configs/dag/schema/operator/run_verify_report.schema.json",
   "example_type": "minimal",
   "data": {
     "status": "example",

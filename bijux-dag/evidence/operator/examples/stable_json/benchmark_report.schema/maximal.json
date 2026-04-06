@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/benchmarks/benchmark_report.schema.json",
+  "schema": "configs/dag/schema/benchmarks/benchmark_report.schema.json",
   "example_type": "maximal",
   "data": {
     "benchmark_format": "example",

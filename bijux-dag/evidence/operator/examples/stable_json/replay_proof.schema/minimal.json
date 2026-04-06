@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/replay_proof.schema.json",
+  "schema": "configs/dag/schema/operator/replay_proof.schema.json",
   "example_type": "minimal",
   "data": {
     "fidelity_level": "example",

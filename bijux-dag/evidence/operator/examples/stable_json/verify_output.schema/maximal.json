@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/verify_output.schema.json",
+  "schema": "configs/dag/schema/operator/verify_output.schema.json",
   "example_type": "maximal",
   "data": {
     "status": "example"

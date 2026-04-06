@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/prove_output.schema.json",
+  "schema": "configs/dag/schema/operator/prove_output.schema.json",
   "example_type": "minimal",
   "data": {
     "schema_version": "example",

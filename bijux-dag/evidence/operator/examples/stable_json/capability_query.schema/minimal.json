@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/capability_query.schema.json",
+  "schema": "configs/dag/schema/operator/capability_query.schema.json",
   "example_type": "minimal",
   "data": {
     "format": "example",

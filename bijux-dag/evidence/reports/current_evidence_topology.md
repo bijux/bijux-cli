@@ -14,7 +14,7 @@ Snapshot date: 2026-03-07
 | evidence/operator | 1 |
 | evidence/perf | 22 |
 | evidence/compare | 11 |
-| configs/schema/fixtures | 16 |
+| configs/dag/schema/fixtures | 16 |
 | crates/bijux-dag-runtime/tests/fixtures | 59 |
 | crates/bijux-dag-artifacts/tests/fixtures | 2 |
 

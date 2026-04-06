@@ -1,20 +1,20 @@
 # 
 
-- scope: `configs/schema/fixtures`
+- scope: `configs/dag/schema/fixtures`
 
-- configs/schema/fixtures/compat/negative/unsupported_future_graph.json
-- configs/schema/fixtures/compat/negative/unsupported_v0_0_graph.json
-- configs/schema/fixtures/compat/positive/v0_1_fanout_graph.json
-- configs/schema/fixtures/compat/positive/v0_1_legacy_graph.json
-- configs/schema/fixtures/v0.1/negative/future-required-behavior.json
-- configs/schema/fixtures/v0.1/negative/invalid-enum-container-engine.json
-- configs/schema/fixtures/v0.1/negative/invalid-output-path.json
-- configs/schema/fixtures/v0.1/negative/malformed-ref.json
-- configs/schema/fixtures/v0.1/negative/unknown-field.json
-- configs/schema/fixtures/v0.1/positive/diamond.json
-- configs/schema/fixtures/v0.1/positive/disconnected-groups.json
-- configs/schema/fixtures/v0.1/positive/empty-graph.json
-- configs/schema/fixtures/v0.1/positive/fan-in.json
-- configs/schema/fixtures/v0.1/positive/fan-out.json
-- configs/schema/fixtures/v0.1/positive/isolated-node.json
-- configs/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json
+- configs/dag/schema/fixtures/compat/negative/unsupported_future_graph.json
+- configs/dag/schema/fixtures/compat/negative/unsupported_v0_0_graph.json
+- configs/dag/schema/fixtures/compat/positive/v0_1_fanout_graph.json
+- configs/dag/schema/fixtures/compat/positive/v0_1_legacy_graph.json
+- configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json
+- configs/dag/schema/fixtures/v0.1/negative/invalid-enum-container-engine.json
+- configs/dag/schema/fixtures/v0.1/negative/invalid-output-path.json
+- configs/dag/schema/fixtures/v0.1/negative/malformed-ref.json
+- configs/dag/schema/fixtures/v0.1/negative/unknown-field.json
+- configs/dag/schema/fixtures/v0.1/positive/diamond.json
+- configs/dag/schema/fixtures/v0.1/positive/disconnected-groups.json
+- configs/dag/schema/fixtures/v0.1/positive/empty-graph.json
+- configs/dag/schema/fixtures/v0.1/positive/fan-in.json
+- configs/dag/schema/fixtures/v0.1/positive/fan-out.json
+- configs/dag/schema/fixtures/v0.1/positive/isolated-node.json
+- configs/dag/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json

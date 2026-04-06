@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/run_show.schema.json",
+  "schema": "configs/dag/schema/operator/run_show.schema.json",
   "example_type": "minimal",
   "data": {
     "run_id": "example",

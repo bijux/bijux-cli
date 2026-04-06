@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/run_doctor.schema.json",
+  "schema": "configs/dag/schema/operator/run_doctor.schema.json",
   "example_type": "minimal",
   "data": {
     "status": "example",

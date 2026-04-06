@@ -113,6 +113,6 @@
       "path": "evidence/_meta/maps"
     }
   ],
-  "source_policy": "configs/policy/evidence_structure.json",
+  "source_policy": "configs/dag/policy/evidence_structure.json",
   "version": "1"
 }

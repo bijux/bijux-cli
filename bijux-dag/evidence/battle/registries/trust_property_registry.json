@@ -1,7 +1,7 @@
 {
   "version": "1",
   "owner": "runtime-foundation",
-  "generated_from": "configs/policy/battle_trust_properties.json",
+  "generated_from": "configs/dag/policy/battle_trust_properties.json",
   "top_trust_properties": [
     "tp_deterministic_scheduling",
     "tp_failure_propagation",

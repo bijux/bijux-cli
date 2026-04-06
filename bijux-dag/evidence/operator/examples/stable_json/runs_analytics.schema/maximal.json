@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/runs_analytics.schema.json",
+  "schema": "configs/dag/schema/operator/runs_analytics.schema.json",
   "example_type": "maximal",
   "data": {
     "command": "example",

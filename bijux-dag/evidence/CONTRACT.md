@@ -15,7 +15,7 @@
 
 ## Asset classification
 - Evidence asset: executable scenario, fixture, or baseline that proves runtime, policy, compatibility, failure, operator, or performance behavior.
-- Schema fixture: syntax and schema-conformance fixture owned by schema policy under `configs/schema/**`.
+- Schema fixture: syntax and schema-conformance fixture owned by schema policy under `configs/dag/schema/**`.
 - Test helper: non-authoritative utility input used only to make a test executable, never as product truth.
 
 ## Canonical ownership rules

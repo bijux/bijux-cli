@@ -21,7 +21,7 @@ Date: 2026-03-07
 
 ## Governance Locks Added
 
-`configs/policy/evidence_governance.json` now forbids reintroduction of removed categories via `forbidden_globs`:
+`configs/dag/policy/evidence_governance.json` now forbids reintroduction of removed categories via `forbidden_globs`:
 
 - `benchmarks/fixtures/distributed/*`
 - `benchmarks/fixtures/infrastructure/backends/*`

@@ -13,7 +13,7 @@
     {"id": "protocol-serialization-schema", "coverage": ["serialization-schema", "compatibility"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
     {"id": "protocol-replay-safety", "coverage": ["replay-safety", "message-ordering"], "source": "docs/spec/REPLAY_CONTRACT.md"},
     {"id": "protocol-regression-fixtures", "coverage": ["regression-fixtures", "stress"], "source": "evidence/cache/backend_protocol/regression_corpus.json"},
-    {"id": "protocol-stress", "coverage": ["stress", "resilience"], "source": "configs/suites/distributed_execution_stress.json"},
+    {"id": "protocol-stress", "coverage": ["stress", "resilience"], "source": "configs/dag/suites/distributed_execution_stress.json"},
     {"id": "protocol-latency-benchmarks", "coverage": ["latency-benchmarks", "performance"], "source": "docs/reports/foundation/DISTRIBUTED_EXECUTION_BENCHMARKS.md"},
     {"id": "protocol-resilience-benchmarks", "coverage": ["resilience-benchmarks", "performance"], "source": "docs/reports/foundation/runtime_fault_tolerance_benchmarks.md"},
     {"id": "protocol-telemetry", "coverage": ["telemetry", "anomaly-detection"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},

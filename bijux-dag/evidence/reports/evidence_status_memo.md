@@ -5,8 +5,8 @@
 - `evidence/_meta/registries/evidence_registry.json` is the canonical evidence registry.
 - `evidence/ownership/evidence_ledger.json` is machine-normalized and ownership-governed.
 - `evidence/release/release_evidence_set.json` defines blocking and advisory release evidence.
-- `configs/schema/evidence_*.schema.json` define metadata and family schema contracts.
-- `configs/policy/evidence_suite_policy.json` defines evidence verification suite enforcement modes.
+- `configs/dag/schema/evidence_*.schema.json` define metadata and family schema contracts.
+- `configs/dag/policy/evidence_suite_policy.json` defines evidence verification suite enforcement modes.
 
 ## Enforced Governance Boundaries
 

@@ -1,5 +1,5 @@
 {
-  "schema": "configs/schema/operator/run_id_explain.schema.json",
+  "schema": "configs/dag/schema/operator/run_id_explain.schema.json",
   "example_type": "maximal",
   "data": {
     "created_unix_ms": "example",

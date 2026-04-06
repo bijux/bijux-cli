@@ -17,8 +17,8 @@
     {"id": "runtime-recovery-latency", "coverage": ["recovery-latency", "performance"], "source": "docs/reports/foundation/RUN_DIRECTORY_FILESYSTEM_RECOVERY_BENCHMARKS.md"},
     {"id": "runtime-recovery-regression-fixtures", "coverage": ["regression-fixtures", "failure-injection"], "source": "evidence/cache/failure/regression_corpus.json"},
     {"id": "runtime-crash-simulation-suite", "coverage": ["crash-simulation", "failure-injection"], "source": "crates/bijux-dag-runtime/tests/runtime_engine_invariants_contracts.rs"},
-    {"id": "runtime-failure-injection", "coverage": ["failure-injection", "failure-detection"], "source": "configs/suites/failure_recovery_injection_stress.json"},
+    {"id": "runtime-failure-injection", "coverage": ["failure-injection", "failure-detection"], "source": "configs/dag/suites/failure_recovery_injection_stress.json"},
     {"id": "runtime-resilience-telemetry", "coverage": ["resilience-telemetry", "anomaly-detection"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
-    {"id": "runtime-fault-tolerance-verification-suite", "coverage": ["verification-suite", "restart-determinism"], "source": "configs/suites/runtime_fault_tolerance_verification.json"}
+    {"id": "runtime-fault-tolerance-verification-suite", "coverage": ["verification-suite", "restart-determinism"], "source": "configs/dag/suites/runtime_fault_tolerance_verification.json"}
   ]
 }
