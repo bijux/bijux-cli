@@ -9,6 +9,24 @@ This repository is explicit about one important trust boundary:
 - plugins are not sandboxed
 - installing a plugin is a trust decision, not a security boundary
 
+## What This Policy Covers
+
+Security reports may cover:
+
+- this monorepo and shared tooling under `makes/`, `configs/`, and `docs/`
+- workspace crates under `crates/`, including `bijux-cli`, `bijux-cli-python`,
+  and DAG runtime crates
+- published artifacts produced from official tagged releases in this repository
+
+## What To Report
+
+Examples of in-scope reports include:
+
+- authentication or authorization bypass
+- unsafe defaults that expose data or execution surfaces
+- supply-chain weaknesses in build, publish, or artifact handling
+- secrets exposure in tracked files or generated release artifacts
+
 ## Supported Versions
 
 Security fixes are applied to the latest released `bijux-cli` runtime only.
