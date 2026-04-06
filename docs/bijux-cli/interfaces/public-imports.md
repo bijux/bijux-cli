@@ -1,7 +1,7 @@
 ---
 title: Public Imports
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,43 @@ last_reviewed: 2026-04-06
 
 # Public Imports
 
-This page defines interface expectations for **Public Imports** in `bijux-cli`.
+This page records preferred import paths for Rust callers that depend on
+`bijux-cli` runtime behavior.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Artifact contracts](artifact-contracts.md)
+```mermaid
+flowchart TB
+    caller["Rust caller"] --> api["use crate::api facade"]
+    api --> runtime["runtime interfaces"]
+    api --> parser["parser and routing interfaces"]
+    api --> output["output interfaces"]
+    caller -.avoid direct reliance on.-> internals["deep internal module paths"]
+```
 
-## Consolidated Operator Guidance
+## Preferred Imports
 
-This page incorporates the former user-guide material for interactive history,
-configuration/output interpretation, everyday commands, and plugin extension
-usage from an interface-contract perspective.
+- `bijux_cli::api::runtime::*`
+- `bijux_cli::api::parser::*`
+- `bijux_cli::api::routing::*`
+- `bijux_cli::api::output::*`
+- `bijux_cli::api::diagnostics::*`
+- `bijux_cli::api::repl::*`
+
+## Import Guidance
+
+- import from `api` when building tools or tests against runtime behavior
+- avoid importing private module internals that are not part of facade intent
+- when new facade exports are added, document them in this page
+
+## Code Anchors
+
+- `crates/bijux-cli/src/api/mod.rs`
+- `crates/bijux-cli/src/lib.rs`
+- `crates/bijux-cli/Cargo.toml`
+
+## Next Reads
+
+- [API Surface](api-surface.md)
+- [Compatibility Commitments](compatibility-commitments.md)
+- [Dependency Governance](../quality/dependency-governance.md)

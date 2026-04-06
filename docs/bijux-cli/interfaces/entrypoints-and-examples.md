@@ -1,23 +1,65 @@
 ---
-title: Entrypoints And Examples
+title: Entrypoints and Examples
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Entrypoints And Examples
+# Entrypoints and Examples
 
-This page defines interface expectations for **Entrypoints And Examples** in `bijux-cli`.
+This page documents the primary invocation entrypoints for users, scripts, and
+Rust callers, plus short examples that map directly to current behavior.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Artifact contracts](artifact-contracts.md)
+```mermaid
+flowchart TD
+    shell["shell invocation"] --> bin["src/bin/bijux.rs"]
+    rust["rust caller"] --> api["api::runtime::run_app"]
+    interactive["interactive user"] --> repl["api::repl and repl commands"]
+    bin --> dispatch["dispatch and handlers"]
+    api --> dispatch
+    repl --> dispatch
+```
 
-## Consolidated Operator Guidance
+## Entrypoints
 
-This page incorporates the former user-guide material for interactive history,
-configuration/output interpretation, everyday commands, and plugin extension
-usage from an interface-contract perspective.
+- process binary: `bijux` via `src/bin/bijux.rs`
+- Rust runtime API: `api::runtime::run_app` and `run_cli_from_env`
+- parser API: `api::parser::parse_intent`
+- REPL API: `api::repl::*`
+
+## Command Examples
+
+```bash
+bijux status --format json --no-pretty
+bijux config set theme=compact
+bijux plugins list
+bijux history --limit 20 --sort timestamp
+bijux repl
+```
+
+## Rust Caller Example
+
+```rust
+use bijux_cli::api::runtime::run_app;
+
+let argv = vec!["bijux".to_string(), "status".to_string()];
+let result = run_app(&argv)?;
+assert_eq!(result.exit_code, 0);
+```
+
+## Code Anchors
+
+- `crates/bijux-cli/src/bin/bijux.rs`
+- `crates/bijux-cli/src/api/runtime.rs`
+- `crates/bijux-cli/src/api/parser.rs`
+- `crates/bijux-cli/src/api/repl.rs`
+
+## Next Reads
+
+- [CLI Surface](cli-surface.md)
+- [Operator Workflows](operator-workflows.md)
+- [Local Development](../operations/local-development.md)
