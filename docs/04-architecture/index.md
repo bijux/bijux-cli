@@ -61,10 +61,11 @@ The mindmap shows the same canon grouped by topic instead of order. It helps a
 reader jump directly to runtime, packaging, or governance material once they
 already know the broad system shape.
 
-## The Ten Documents
+## The Eleven Documents
 
 1. [System Overview](system-overview.md)
 2. [Workspace Map](workspace-map.md)
+3. [Workspace Ownership Map](workspace-ownership-map.md)
 3. [Execution Pipeline](execution-pipeline.md)
 4. [Routing And Surfaces](routing-and-surfaces.md)
 5. [Configuration And State](configuration-and-state.md)
