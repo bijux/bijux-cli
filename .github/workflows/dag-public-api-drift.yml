@@ -36,7 +36,7 @@ jobs:
         with:
           toolchain: 1.85.0
       - name: install cargo-public-api
-        run: cargo install --locked cargo-public-api --version 0.50.2
+        run: cargo install --locked cargo-public-api --version 0.48.0
       - name: check public API
         run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- api public-surface
       - name: upload reports

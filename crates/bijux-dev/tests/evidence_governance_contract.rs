@@ -108,7 +108,8 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
             .expect("read evidence governance policy");
     let policy: Value = serde_json::from_str(&policy_payload).expect("parse evidence governance");
 
-    let ledger_payload = fs::read_to_string(evidence_ledger_path(&root)).expect("read evidence ledger");
+    let ledger_payload =
+        fs::read_to_string(evidence_ledger_path(&root)).expect("read evidence ledger");
     let ledger: Value = serde_json::from_str(&ledger_payload).expect("parse evidence ledger");
 
     let managed_roots = policy["managed_roots"].as_array().expect("managed_roots array");

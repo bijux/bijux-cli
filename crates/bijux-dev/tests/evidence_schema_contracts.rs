@@ -118,9 +118,10 @@ fn evidence_schema_files_exist() {
 #[ignore = "legacy evidence ledger schema contract enforces historical key set and paths"]
 fn evidence_ledger_entries_use_strict_schema_keys() {
     let root = repo_root();
-    let ledger: Value =
-        serde_json::from_str(&fs::read_to_string(evidence_ledger_path(&root)).expect("read ledger"))
-            .expect("parse ledger");
+    let ledger: Value = serde_json::from_str(
+        &fs::read_to_string(evidence_ledger_path(&root)).expect("read ledger"),
+    )
+    .expect("parse ledger");
     let entries = ledger["entries"].as_array().expect("entries array");
     for entry in entries {
         validate_asset_entry(entry).expect("entry should satisfy strict evidence schema");

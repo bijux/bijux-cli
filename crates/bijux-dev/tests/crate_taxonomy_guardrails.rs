@@ -40,10 +40,7 @@ fn only_cli_crate_declares_bin_target() {
         }
     }
 
-    assert!(
-        offenders.is_empty(),
-        "unexpected crates declare [[bin]] targets: {offenders:?}"
-    );
+    assert!(offenders.is_empty(), "unexpected crates declare [[bin]] targets: {offenders:?}");
 }
 
 #[test]

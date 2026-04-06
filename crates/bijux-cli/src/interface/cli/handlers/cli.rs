@@ -630,10 +630,7 @@ pub(crate) fn try_handle(
 mod tests {
     use tempfile::tempdir;
 
-    use super::{
-        completion_report, doctor_report, runtime_audit_report,
-        runtime_status_report,
-    };
+    use super::{completion_report, doctor_report, runtime_audit_report, runtime_status_report};
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
     use crate::shared::telemetry::TEST_ENV_LOCK;
 
@@ -838,5 +835,4 @@ mod tests {
         assert!(message.contains("legacy installer conflicts were found"));
         assert!(message.contains("wheel and binary versions do not match"));
     }
-
 }

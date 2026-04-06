@@ -272,9 +272,12 @@ pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
 /// `bijux-dev-cli rustdoc python-link-proof`
 #[must_use]
 pub fn build_python_link_proof_report(workspace_root: &Path) -> Value {
-    let legacy = read(&workspace_root.join("docs/06-reference/integrations-and-routed-runtimes.md"));
-    let core_distribution = read(&workspace_root.join("docs/bijux-core/architecture/distribution-model.md"));
-    let cli_entrypoints = read(&workspace_root.join("docs/bijux-cli/interfaces/entrypoints-and-examples.md"));
+    let legacy =
+        read(&workspace_root.join("docs/06-reference/integrations-and-routed-runtimes.md"));
+    let core_distribution =
+        read(&workspace_root.join("docs/bijux-core/architecture/distribution-model.md"));
+    let cli_entrypoints =
+        read(&workspace_root.join("docs/bijux-cli/interfaces/entrypoints-and-examples.md"));
     let docs = [legacy, core_distribution, cli_entrypoints].join("\n");
     let linked = docs.contains("Python package")
         && (docs.contains("Rust runtime") || docs.contains("runtime"));

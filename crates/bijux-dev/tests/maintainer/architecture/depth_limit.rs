@@ -145,8 +145,11 @@ fn artifact_directories_exist_only_under_workspace_artifacts_root() {
             // Allow source modules named `artifacts` (for example
             // `crates/*/src/artifacts`) while still enforcing that generated
             // artifact directories remain under workspace `artifacts/`.
-            let rel =
-                path.strip_prefix(&workspace_root).unwrap_or(path).to_string_lossy().replace('\\', "/");
+            let rel = path
+                .strip_prefix(&workspace_root)
+                .unwrap_or(path)
+                .to_string_lossy()
+                .replace('\\', "/");
             !rel.starts_with("crates/") || !rel.contains("/src/artifacts")
         })
         .filter_map(|path| {
