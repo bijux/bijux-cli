@@ -13,7 +13,7 @@
 ## Local verification path
 
 ```bash
-./crates/bijux-core-dev/scripts/verify-workspace-layout.sh
+cargo test -p bijux-core-dev --test source_layout_guardrails -- --nocapture
 cargo check --workspace --all-targets
 make dag-test
 make dag-contracts

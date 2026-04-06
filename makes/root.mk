@@ -9,7 +9,7 @@ include $(ROOT_MK_DIR)/gh.mk
 include $(ROOT_MK_DIR)/dag.mk
 
 workspace-verify: ## Verify unified workspace layout contracts
-	@./crates/bijux-core-dev/scripts/verify-workspace-layout.sh
+	 test -p bijux-core-dev --test source_layout_guardrails -- --nocapture
 
 repo-verify: workspace-verify ## Verify workspace layout and cargo health from repository root
 	@cargo metadata --no-deps --format-version 1 >/dev/null
