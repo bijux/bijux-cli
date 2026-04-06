@@ -1,7 +1,7 @@
 ---
 title: Configuration Surface
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-dag-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,47 @@ last_reviewed: 2026-04-06
 
 # Configuration Surface
 
-This page defines interface expectations for **Configuration Surface** in `bijux-dag`.
+DAG configuration controls runtime behavior, policy interpretation, cache mode,
+and execution materialization choices.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Data contracts](data-contracts.md)
+```mermaid
+flowchart LR
+    flags["run and replay flags"] --> resolve["effective config resolution"]
+    resolve --> policy["policy evaluation"]
+    policy --> runtime["runtime execution behavior"]
+    runtime --> diagnostics["effective config and policy explain outputs"]
+```
 
-## Consolidated Command Guidance
+## Configuration Inputs
 
-This page now carries former CLI-reference and user-guide coverage for command
-family behavior, operator flow, inspect/replay/diff interpretation, and bundle
-workflow expectations.
+- command flags (`jobs`, `cache`, `cache-dir`, `materialize-inputs`, policy toggles)
+- config command surfaces (`config ...`, `policy ...`)
+- environment and path resolution inputs where applicable
+
+## Policy-Relevant Controls
+
+- network/env/clock denial flags
+- hermetic and clean-env toggles
+- select/exclude node targeting
+- capability and backend selection where supported
+
+## Code Anchors
+
+- `crates/bijux-dag-app/src/commands/config_surface.rs`
+- `crates/bijux-dag-app/src/commands/config_resolution.rs`
+- `crates/bijux-dag-app/src/commands/mod.rs`
+- `crates/bijux-dag-runtime/src/policy/`
+
+## Configuration Rules
+
+- effective config must be inspectable and explainable
+- policy effects must be visible in replay/diff context
+- defaults must not silently weaken safety or determinism expectations
+
+## Next Reads
+
+- [State and Persistence](../architecture/state-and-persistence.md)
+- [Common Workflows](../operations/common-workflows.md)
+- [Change Validation](../quality/change-validation.md)
