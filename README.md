@@ -6,8 +6,8 @@
 
 - `crates/bijux-cli`: primary runtime crate and `bijux` binary.
 - `crates/bijux-cli-python`: Python bridge and packaging surface.
-- `crates/bijux-dev-cli`: maintainer control-plane.
-- `crates/bijux-dag-*` and `crates/bijux-dev-dag`: DAG core, runtime, app, CLI, testkit, and maintainer crates.
+- `crates/bijux-dev`: maintainer control-plane binaries and release governance tooling.
+- `crates/bijux-dag-*`: DAG core, runtime, app, CLI, and testkit crates.
 
 ## Workspace model
 
@@ -36,9 +36,9 @@ make dag-contracts
 ## Documentation
 
 - Runtime and control plane docs: `docs/`
-- DAG domain docs: `docs/dag/`
-- DAG config authority: `configs/dag/`
-- Workspace ownership map: `docs/04-architecture/workspace-ownership-map.md`
+- CLI handbook: `docs/bijux-cli/`
+- DAG handbook: `docs/bijux-dag/`
+- Core governance and architecture: `docs/bijux-core/`
 
 ## Design intent
 
