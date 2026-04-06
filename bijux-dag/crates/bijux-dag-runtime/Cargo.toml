@@ -1,0 +1,23 @@
+[package]
+name = "bijux-dag-runtime"
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+authors = ["Bijan Mousavi"]
+
+[lints]
+workspace = true
+
+[dependencies]
+bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.1.0" }
+bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.1.0" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ctrlc = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }

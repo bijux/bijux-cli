@@ -1,0 +1,7 @@
+{
+  "case": "incompatible_backend",
+  "run_a": "run-a-k8s",
+  "run_b": "run-b-hpc",
+  "expect": "incompatible_backend_error",
+  "reason": "backend compatibility contract does not allow replay across adapter families"
+}

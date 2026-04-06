@@ -1,0 +1,75 @@
+{
+  "policy_version": "1",
+  "suites": [
+    {
+      "id": "evidence-schema",
+      "verify_command": "verify evidence-schema",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-registry",
+      "verify_command": "verify evidence-registry",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-authoring",
+      "verify_command": "verify evidence-authoring",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-battle",
+      "verify_command": "verify evidence-battle",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-cache",
+      "verify_command": "verify evidence-cache",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-replay",
+      "verify_command": "verify evidence-replay",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-compat",
+      "verify_command": "verify evidence-compat",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-fault",
+      "verify_command": "verify evidence-fault",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-perf",
+      "verify_command": "verify evidence-perf",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-compare",
+      "verify_command": "verify evidence-compare",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-consumers",
+      "verify_command": "verify evidence-consumers",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-drift",
+      "verify_command": "verify evidence-drift",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-release-set",
+      "verify_command": "verify evidence-release-set",
+      "mode": "blocking"
+    },
+    {
+      "id": "evidence-foundation",
+      "verify_command": "verify evidence-foundation",
+      "mode": "blocking"
+    }
+  ]
+}

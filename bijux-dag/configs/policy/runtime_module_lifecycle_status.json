@@ -1,0 +1,46 @@
+{
+  "format": "runtime-module-lifecycle-status/v1",
+  "runtime_src_dir": "crates/bijux-dag-runtime/src",
+  "allowed_lifecycle_status": [
+    "core",
+    "adapter",
+    "operator-support",
+    "experimental",
+    "speculative"
+  ],
+  "status_by_prefix": [
+    { "prefix": "runtime_core/", "status": "core" },
+    { "prefix": "artifacts/", "status": "core" },
+    { "prefix": "cache/", "status": "core" },
+    { "prefix": "replay/", "status": "core" },
+    { "prefix": "backend/distributed/", "status": "speculative" },
+    { "prefix": "backend/runtime/", "status": "core" },
+    { "prefix": "backend/", "status": "operator-support" },
+    { "prefix": "builtins/", "status": "adapter" },
+    { "prefix": "adapters/", "status": "adapter" },
+    { "prefix": "diagnostics/", "status": "operator-support" },
+    { "prefix": "policy/", "status": "operator-support" },
+    { "prefix": "error/", "status": "operator-support" },
+    { "prefix": "internal/clock.rs", "status": "operator-support" },
+    { "prefix": "internal/io.rs", "status": "operator-support" },
+    { "prefix": "internal/selectors.rs", "status": "operator-support" },
+    { "prefix": "internal/control/", "status": "operator-support" },
+    { "prefix": "internal/testing/", "status": "operator-support" },
+    { "prefix": "internal/analysis/", "status": "speculative" },
+    { "prefix": "internal/ext/", "status": "experimental" },
+    { "prefix": "internal/identity/", "status": "speculative" },
+    { "prefix": "internal/workflow/", "status": "speculative" },
+    { "prefix": "internal/", "status": "operator-support" }
+  ],
+  "quarantine_prefixes": [
+    "internal/analysis/",
+    "internal/ext/",
+    "internal/identity/",
+    "internal/workflow/",
+    "backend/distributed/"
+  ],
+  "expiration_criteria": {
+    "experimental": "must define graduation owner and stable entry criteria before public exposure",
+    "speculative": "must define owner repository migration plan or removal deadline"
+  }
+}

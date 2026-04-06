@@ -1,0 +1,8 @@
+{
+  "scenario_id": "portability-success-rate",
+  "class": "import",
+  "size": "score",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/large_dag.json"
+}

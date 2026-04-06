@@ -1,0 +1,43 @@
+{
+  "bundle_version": "export-bundle/v0.1",
+  "format": "run-bundle/v1",
+  "export_mode": "with-files",
+  "manifest": {
+    "manifest_version": "run-manifest/v0.1",
+    "run_id": "run-maximal-001",
+    "parent_run_id": "run-parent-000"
+  },
+  "graph_snapshot": {
+    "spec": "bijux-dag/v0.1",
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "const",
+        "inputs": [],
+        "outputs": [{"name": "value", "path": "value.txt"}],
+        "params": {"value": "hello"}
+      }
+    ],
+    "edges": []
+  },
+  "node_traces": {
+    "n1": {"node_id": "n1", "status": "success", "attempt": 1}
+  },
+  "outputs": {
+    "n1": {
+      "node_id": "n1",
+      "files": [{"path": "value.txt", "sha256": "abc", "bytes": 5}],
+      "dirs": []
+    }
+  },
+  "files": {
+    "outputs/value.txt": "aGVsbG8="
+  },
+  "provenance": {
+    "source": "native-run",
+    "imported": false,
+    "source_run_id": "run-maximal-001",
+    "parent_run_id": "run-parent-000",
+    "lineage": ["run-parent-000", "run-maximal-001"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "format": "internal-contract-governance/v1",
+  "rules": {
+    "every_internal_contract_requires_direct_test_and_owner": true,
+    "stable_internal_contract_requires_docs_or_spec_link": true,
+    "contract_drift_detection_required": true
+  },
+  "domains": [
+    "app-route-service-boundaries",
+    "artifact-storage-boundaries",
+    "runtime-helper-boundaries",
+    "dev-dag-report-boundaries",
+    "backend-registry-boundaries"
+  ]
+}

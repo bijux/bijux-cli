@@ -1,0 +1,17 @@
+{
+  "benchmark_format": "benchmark-report/v1",
+  "commit_sha": "0000000000000000000000000000000000000000",
+  "rust_version": "rustc 1.81.0",
+  "machine": {
+    "os": "linux",
+    "arch": "x86_64",
+    "cpu": "example-cpu"
+  },
+  "scenario_results": [
+    {
+      "scenario_id": "tiny-parse-validate",
+      "class": "parse",
+      "elapsed_ms": 10.0
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "spec": "9.9",
+  "meta": {"name": "bad_unsupported_adapter_payload", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "ext", "kind": "external", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"plugin_payload": {"unknown": true}}}
+  ],
+  "edges": []
+}

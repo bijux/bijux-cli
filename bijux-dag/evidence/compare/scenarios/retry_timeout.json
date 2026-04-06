@@ -1,0 +1,6 @@
+{
+  "id": "retry-timeout",
+  "description": "Retry behavior under timeout boundary",
+  "shape": "single-with-retry",
+  "focus": ["retry", "timeout", "failure-diagnostics"]
+}

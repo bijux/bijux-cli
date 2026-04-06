@@ -1,0 +1,14 @@
+{
+  "name": "backfill_saturation",
+  "description": "Backfill window with constrained concurrency and retry pressure.",
+  "window_start_unix_ms": 1735689600000,
+  "window_end_unix_ms": 1735776000000,
+  "partition_by": "hour",
+  "max_parallelism": 6,
+  "queue_concurrency_cap": 8,
+  "runs": 24,
+  "expected": {
+    "policy_rejection_on_missing_cap": true,
+    "bounded_submission_volume": true
+  }
+}

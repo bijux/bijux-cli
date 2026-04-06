@@ -1,0 +1,16 @@
+{
+  "id": "advanced-explainability-regression",
+  "description": "Advanced explainability verification for consistency, completeness, anomaly detection, and deterministic ordering",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/environment_identity_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/advanced_explainability_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/explainability/regression_corpus.json",
+    "docs/reports/foundation/explainability_completeness_report.md",
+    "docs/reports/foundation/explainability_anomaly_detection_report.md",
+    "docs/reports/foundation/ADVANCED_EXPLAINABILITY_COVERAGE_REPORT.md"
+  ]
+}

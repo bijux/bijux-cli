@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-policy-denial-blocks-unsafe-execution",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "unsafe_execution_denied_by_policy",
+    "denial_reason_is_explicit",
+    "no_partial_artifact_commit_after_denial"
+  ]
+}

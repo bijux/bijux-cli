@@ -1,0 +1,16 @@
+{
+  "suite_id": "artifact-lifecycle-invariants",
+  "description": "Artifact lifecycle integrity, durability, lineage, and GC invariants.",
+  "owner": "dag-artifacts",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-artifacts/tests/artifact_storage_resilience_contracts.rs",
+    "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
+    "crates/bijux-dag-artifacts/tests/artifact_identity_and_lineage_contracts.rs",
+    "crates/bijux-dag-artifacts/tests/artifact_identity_lifecycle_completion_contracts.rs",
+    "crates/bijux-dag-artifacts/tests/artifact_io_store_hardening_expansion_contracts.rs",
+    "crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/artifact_durability_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/artifact_lineage_completion_contracts.rs"
+  ]
+}

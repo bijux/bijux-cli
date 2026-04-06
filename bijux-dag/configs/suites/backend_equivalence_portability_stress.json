@@ -1,0 +1,17 @@
+{
+  "id": "backend-equivalence-portability-stress",
+  "purpose": "backend-equivalence-portability-contracts",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-app --test replay_semantic_surface_contracts",
+    "cargo test -p bijux-dag-cli --test contract_surface equivalence_proof_surface_reports_for_two_runs",
+    "cargo test -p bijux-dag-runtime --test adapter_registry_capability_contracts",
+    "cargo test -p bijux-dev-dag --test backend_equivalence_contracts",
+    "cargo test -p bijux-dev-dag --test backend_equivalence_completion_contracts"
+  ],
+  "owner": "runtime-portability",
+  "notes": [
+    "Prioritize deterministic replay equivalence and downgrade diagnostics.",
+    "Use this suite for cross-backend portability drift detection before release."
+  ]
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "resource": "dag-registry",
+    "class": "RegionallyConsistent",
+    "rationale": "global visibility with regional activation"
+  },
+  {
+    "resource": "schedule-leases",
+    "class": "StronglyConsistent",
+    "rationale": "duplicate scheduling prevention requires strict coordination"
+  },
+  {
+    "resource": "artifact-replication-index",
+    "class": "EventuallyReplicated",
+    "rationale": "cross-region propagation tolerance"
+  }
+]

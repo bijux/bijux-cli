@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_fault_metadata.schema.json",
+  "type": "object",
+  "required": [
+    "version",
+    "owner",
+    "fault_catalog",
+    "fault_expectations",
+    "fault_profiles",
+    "corrupt_run_fixtures"
+  ],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "fault_catalog": { "type": "string", "minLength": 1 },
+    "fault_expectations": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "fault_profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["expected_fault_class", "expected_system_reaction"],
+        "properties": {
+          "expected_fault_class": { "type": "string", "minLength": 1 },
+          "expected_system_reaction": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "corrupt_run_fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}

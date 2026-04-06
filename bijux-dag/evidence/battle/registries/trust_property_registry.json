@@ -1,0 +1,87 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "generated_from": "configs/policy/battle_trust_properties.json",
+  "top_trust_properties": [
+    "tp_deterministic_scheduling",
+    "tp_failure_propagation",
+    "tp_replay_equivalence",
+    "tp_cache_integrity",
+    "tp_artifact_integrity",
+    "tp_policy_enforcement",
+    "tp_operator_observability",
+    "tp_plan_truth"
+  ],
+  "trust_properties": [
+    {
+      "id": "tp_deterministic_scheduling",
+      "name": "Deterministic scheduling under concurrency",
+      "description": "Ready-queue evolution and dispatch tie-breaking are deterministic for identical inputs."
+    },
+    {
+      "id": "tp_failure_propagation",
+      "name": "Failure propagation correctness",
+      "description": "Downstream node state and terminal run status reflect dependency failures without silent success."
+    },
+    {
+      "id": "tp_replay_equivalence",
+      "name": "Replay equivalence and divergence detection",
+      "description": "Equivalent runs are recognized and non-equivalent runs produce explicit mismatch evidence."
+    },
+    {
+      "id": "tp_cache_integrity",
+      "name": "Cache integrity and invalidation",
+      "description": "Cache hits require valid proofs and stale or corrupted entries are rejected."
+    },
+    {
+      "id": "tp_artifact_integrity",
+      "name": "Artifact integrity and lineage",
+      "description": "Artifact commits, lineage links, and manifest evidence remain coherent and tamper-visible."
+    },
+    {
+      "id": "tp_policy_enforcement",
+      "name": "Policy enforcement and safety denials",
+      "description": "Policy-denied operations fail safely and produce explicit policy-classified failures."
+    },
+    {
+      "id": "tp_operator_observability",
+      "name": "Operator observability quality",
+      "description": "Run inspection surfaces provide concise and complete debugging evidence under failure."
+    },
+    {
+      "id": "tp_import_export_compatibility",
+      "name": "Import/export and compatibility strictness",
+      "description": "Bundles and run artifacts round-trip only when schema and compatibility requirements hold."
+    },
+    {
+      "id": "tp_state_machine_legality",
+      "name": "State-machine transition legality",
+      "description": "Node and run states never regress through illegal transitions in terminal paths."
+    },
+    {
+      "id": "tp_timeout_retry_accounting",
+      "name": "Timeout and retry accounting",
+      "description": "Timeouts and retries are bounded, classified, and reflected in run outcomes."
+    },
+    {
+      "id": "tp_secret_redaction",
+      "name": "Secret redaction and leakage prevention",
+      "description": "Sensitive values are redacted in logs, traces, manifests, and panic payloads."
+    },
+    {
+      "id": "tp_run_dir_resilience",
+      "name": "Run-directory resilience under corruption",
+      "description": "Malformed or corrupted run directories are rejected with explicit diagnostics."
+    },
+    {
+      "id": "tp_plan_truth",
+      "name": "Plan truth and lowering determinism",
+      "description": "Semantically equivalent graphs lower to identical execution plans and unsupported requirements fail during planning."
+    },
+    {
+      "id": "tp_config_policy_determinism",
+      "name": "Config and policy determinism",
+      "description": "Config precedence, policy merge, and effective debug surfaces resolve deterministically across execution and inspection."
+    }
+  ]
+}

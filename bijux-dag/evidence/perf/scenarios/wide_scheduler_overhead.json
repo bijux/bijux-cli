@@ -1,0 +1,1 @@
+{"scenario_id":"wide-scheduler-overhead","class":"plan","graph":"evidence/perf/fixtures/scheduler_diamond_fanout.json","shape":"wide"}

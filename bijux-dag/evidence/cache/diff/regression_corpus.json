@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "equivalent-runs",
+      "expect_equivalent": true,
+      "cause_groups": []
+    },
+    {
+      "id": "manifest-environment-drift",
+      "expect_equivalent": false,
+      "cause_groups": ["manifest_drift"]
+    },
+    {
+      "id": "graph-fingerprint-drift",
+      "expect_equivalent": false,
+      "cause_groups": ["graph_semantics"]
+    },
+    {
+      "id": "node-status-drift",
+      "expect_equivalent": false,
+      "cause_groups": ["node_outcomes"]
+    },
+    {
+      "id": "artifact-payload-drift",
+      "expect_equivalent": false,
+      "cause_groups": ["artifact_payload"]
+    }
+  ]
+}

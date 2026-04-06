@@ -1,0 +1,14 @@
+{
+  "schema_version": "proof-bundle/v0.1",
+  "proof_id": "proof-run-1",
+  "run_id": "run-1",
+  "backend_origin": "native-run",
+  "status": "complete",
+  "complete": true,
+  "determinism": "verified",
+  "integrity": "verified",
+  "replay_evidence": {"available": true, "level": "complete"},
+  "integrity_evidence": {"available": true, "level": "complete"},
+  "incomplete_reasons": [],
+  "signing": {"signed": false, "signature_format": null, "signature": null, "trust_level": "unsigned"}
+}

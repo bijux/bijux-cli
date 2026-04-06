@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "domain": "system-conceptual-integrity",
+  "cases": [
+    {"id":"conceptual-architecture-overview","coverage":["conceptual-architecture-overview","documentation-generation"],"expected":"architecture-overview-present"},
+    {"id":"execution-model-overview","coverage":["execution-model-overview","conceptual-consistency"],"expected":"execution-model-present"},
+    {"id":"artifact-model-overview","coverage":["artifact-model-overview","conceptual-consistency"],"expected":"artifact-model-present"},
+    {"id":"replay-model-overview","coverage":["replay-model-overview","conceptual-consistency"],"expected":"replay-model-present"},
+    {"id":"diff-model-overview","coverage":["diff-model-overview","conceptual-consistency"],"expected":"diff-model-present"},
+    {"id":"provenance-model-overview","coverage":["provenance-model-overview","conceptual-consistency"],"expected":"provenance-model-present"},
+    {"id":"backend-abstraction-overview","coverage":["backend-abstraction-overview","architecture-conformance"],"expected":"backend-model-present"},
+    {"id":"runtime-execution-overview","coverage":["runtime-execution-overview","architecture-conformance"],"expected":"runtime-model-present"},
+    {"id":"scheduler-behavior-overview","coverage":["scheduler-behavior-overview","architecture-conformance"],"expected":"scheduler-model-present"},
+    {"id":"determinism-overview","coverage":["determinism-overview","conceptual-consistency"],"expected":"determinism-model-present"},
+    {"id":"conceptual-consistency-tests","coverage":["conceptual-consistency-tests","system-boundary-consistency"],"expected":"consistency-tests-present"},
+    {"id":"conceptual-drift-detection","coverage":["conceptual-drift-detection","anomaly-detection"],"expected":"drift-surface-present"},
+    {"id":"architecture-verification","coverage":["architecture-verification-tooling","architecture-verification-suite"],"expected":"verification-suite-present"}
+  ]
+}

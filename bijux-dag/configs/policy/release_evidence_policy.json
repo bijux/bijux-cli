@@ -1,0 +1,31 @@
+{
+  "policy_version": "1",
+  "release_set_source": "evidence/release/release_evidence_set.json",
+  "required_families": [
+    "battle",
+    "compat",
+    "cache",
+    "operator",
+    "fault",
+    "perf"
+  ],
+  "advisory_families": [
+    "compare"
+  ],
+  "legacy_roots_must_remain_deleted": [
+    "examples/",
+    "benchmarks/scenarios/",
+    "benchmarks/baselines/",
+    "comparisons/scenarios/",
+    "comparisons/bijux/baselines/"
+  ],
+  "evidence_family_extension_rule": {
+    "requires_contract_update": true,
+    "requires_registry_support": true,
+    "requires_control_plane_verify_surface": true
+  },
+  "evidence_pruning_review": {
+    "cadence": "quarterly",
+    "owner": "dag-control-plane"
+  }
+}

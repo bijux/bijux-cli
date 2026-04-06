@@ -1,0 +1,6 @@
+{
+  "measured_run_creation_latency_ms": 220.0,
+  "measured_dispatch_latency_ms": 470.0,
+  "measured_completion_reliability_ratio": 0.997,
+  "measured_artifact_availability_ratio": 0.9995
+}

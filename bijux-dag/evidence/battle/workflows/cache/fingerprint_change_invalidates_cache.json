@@ -1,0 +1,7 @@
+{
+  "scenario_id": "cache-fingerprint-change-invalidates-cache",
+  "assertions": [
+    "cache_miss_after_fingerprint_change",
+    "recompute_triggered"
+  ]
+}

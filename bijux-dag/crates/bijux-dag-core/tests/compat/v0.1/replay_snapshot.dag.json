@@ -1,0 +1,14 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {"greeting": "hello"},
+  "nodes": [
+    {
+      "id": "const1",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "out"}],
+      "params": {"value": {"graph_input": "greeting"}}
+    }
+  ],
+  "edges": []
+}

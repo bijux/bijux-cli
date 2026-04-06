@@ -1,0 +1,32 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {},
+  "nodes": [
+    {
+      "id": "s",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "argv": [
+          "echo",
+          "x"
+        ]
+      },
+      "effects": [
+        "filesystem",
+        "network"
+      ],
+      "retry": {
+        "max_attempts": 1,
+        "backoff_ms": 0
+      }
+    }
+  ],
+  "edges": []
+}

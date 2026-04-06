@@ -1,0 +1,8 @@
+{
+  "scenario_id": "operator-inspection-only",
+  "assertions": [
+    "inspect_without_ambient_repo",
+    "timeline_retry_and_cache_markers",
+    "integrity_state_reported"
+  ]
+}

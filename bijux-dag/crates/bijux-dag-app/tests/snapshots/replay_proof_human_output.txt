@@ -1,0 +1,3 @@
+run dir: <normalized>
+replay_proof_fidelity: diverged
+replay_proof_reasons: node status or fingerprint differs

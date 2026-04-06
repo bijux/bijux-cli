@@ -1,0 +1,27 @@
+{
+  "manifest_version": "run-manifest/v0.1",
+  "run_id": "run-minimal",
+  "created_unix_ms": 1,
+  "started_unix_ms": 1,
+  "finished_unix_ms": 1,
+  "graph_snapshot": "graph.snapshot.json",
+  "status": "success",
+  "spec": "bijux-dag/v0.1",
+  "graph_fingerprint": "g",
+  "tool_version": "0.1.0",
+  "jobs": 1,
+  "adapters": [],
+  "outputs": [],
+  "node_counts": {
+    "success": 0,
+    "failed": 0,
+    "skipped": 0,
+    "cached": 0
+  },
+  "policy": {
+    "deny_network": true,
+    "deny_env": true,
+    "deny_clock": true,
+    "clean_env": true
+  }
+}

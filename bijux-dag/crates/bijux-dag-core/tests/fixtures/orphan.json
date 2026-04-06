@@ -1,0 +1,18 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "orphan",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {}
+    }
+  ],
+  "edges": []
+}

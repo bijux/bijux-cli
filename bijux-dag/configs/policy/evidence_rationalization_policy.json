@@ -1,0 +1,178 @@
+{
+  "policy_version": "1",
+  "severity_classes": [
+    "release-critical",
+    "release-supporting",
+    "advisory"
+  ],
+  "governance_rules": {
+    "new_command_requires_audience_and_severity": true,
+    "new_output_requires_docs_mapping": true
+  },
+  "commands": [
+    {
+      "suite_id": "evidence-battle",
+      "verify_command": "verify evidence-battle",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/BATTLE_WORKFLOW_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-cache",
+      "verify_command": "verify evidence-cache",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/DETERMINISM_EVIDENCE_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-replay",
+      "verify_command": "verify evidence-replay",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/REPLAY_EVIDENCE_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-compat",
+      "verify_command": "verify evidence-compat",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/BUNDLE_SCHEMA_REFERENCE.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-fault",
+      "verify_command": "verify evidence-fault",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/TEST_TRUST_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-perf",
+      "verify_command": "verify evidence-perf",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/EVIDENCE_PUBLICATION_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-consumers",
+      "verify_command": "verify evidence-consumers",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-release-set",
+      "verify_command": "verify evidence-release-set",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/RELEASE_POLICY.md",
+      "must_run_in_green_paths": true
+    },
+    {
+      "suite_id": "evidence-schema",
+      "verify_command": "verify evidence-schema",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+      "must_run_in_green_paths": false
+    },
+    {
+      "suite_id": "evidence-registry",
+      "verify_command": "verify evidence-registry",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+      "must_run_in_green_paths": false
+    },
+    {
+      "suite_id": "evidence-authoring",
+      "verify_command": "verify evidence-authoring",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+      "must_run_in_green_paths": false
+    },
+    {
+      "suite_id": "evidence-drift",
+      "verify_command": "verify evidence-drift",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/spec/ANTI_DRIFT_POLICY.md",
+      "must_run_in_green_paths": false
+    },
+    {
+      "suite_id": "evidence-foundation",
+      "verify_command": "verify evidence-foundation",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/spec/RELEASE_POLICY.md",
+      "must_run_in_green_paths": false
+    },
+    {
+      "suite_id": "evidence-compare",
+      "verify_command": "verify evidence-compare",
+      "severity_class": "advisory",
+      "audience": "operators",
+      "docs_page": "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
+      "must_run_in_green_paths": false
+    }
+  ],
+  "reports": [
+    {
+      "report_path": "docs/reports/foundation/release_evidence_dashboard.json",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "report_path": "docs/reports/foundation/advisory_evidence_dashboard.json",
+      "severity_class": "advisory",
+      "audience": "operators",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "report_path": "docs/reports/foundation/release_critical_evidence_commands_only_report.md",
+      "severity_class": "release-critical",
+      "audience": "release-engineering",
+      "docs_page": "docs/reference/EVIDENCE_GOVERNANCE.md"
+    },
+    {
+      "report_path": "docs/reports/foundation/release_supporting_evidence_commands_report.md",
+      "severity_class": "release-supporting",
+      "audience": "maintainers",
+      "docs_page": "docs/reference/EVIDENCE_GOVERNANCE.md"
+    },
+    {
+      "report_path": "docs/reports/foundation/advisory_only_evidence_commands_report.md",
+      "severity_class": "advisory",
+      "audience": "operators",
+      "docs_page": "docs/reference/EVIDENCE_GOVERNANCE.md"
+    }
+  ],
+  "duplicate_signal_ownership": {
+    "release_decision_summary": {
+      "owner_output": "docs/reports/foundation/release_evidence_dashboard.json",
+      "duplicates_retired": [
+        "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md"
+      ]
+    },
+    "benchmark_signal_summary": {
+      "owner_output": "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md",
+      "duplicates_retired": [
+        "docs/reports/foundation/top_10_slowest_evidence_commands.md"
+      ]
+    },
+    "ownership_topology_summary": {
+      "owner_output": "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md",
+      "duplicates_retired": [
+        "evidence/reports/current_evidence_topology.md"
+      ]
+    }
+  }
+}

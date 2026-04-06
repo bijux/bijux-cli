@@ -1,0 +1,55 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "backend-equivalence-contracts",
+  "cases": [
+    {
+      "id": "local-vs-local-replay-equivalence",
+      "backends": ["local", "local-replay"],
+      "expectation": "equivalent",
+      "coverage": ["equivalence-proof-output", "cross-backend-replay-compatibility"]
+    },
+    {
+      "id": "local-vs-imported-local-equivalence",
+      "backends": ["local", "imported-local"],
+      "expectation": "equivalent",
+      "coverage": ["imported-run-equivalence", "run-diff-correctness"]
+    },
+    {
+      "id": "local-vs-kubernetes-supported-surface",
+      "backends": ["local", "kubernetes"],
+      "expectation": "fidelity-preserving",
+      "coverage": ["semantic-portability-reporting", "artifact-integrity-preservation"]
+    },
+    {
+      "id": "local-vs-hpc-supported-surface",
+      "backends": ["local", "hpc"],
+      "expectation": "fidelity-preserving",
+      "coverage": ["semantic-portability-reporting", "capability-mismatch-explanation"]
+    },
+    {
+      "id": "local-vs-remote-supported-surface",
+      "backends": ["local", "remote"],
+      "expectation": "fidelity-preserving",
+      "coverage": ["semantic-portability-reporting", "cross-backend-replay-compatibility"]
+    },
+    {
+      "id": "unsupported-backend-rejection",
+      "backends": ["local", "unknown"],
+      "expectation": "downgraded",
+      "coverage": ["unsupported-backend-rejection", "fidelity-downgrade-reporting"]
+    },
+    {
+      "id": "graph-identity-excludes-backend-metadata",
+      "backends": ["kubernetes", "hpc"],
+      "expectation": "equivalent",
+      "coverage": ["backend-metadata-excluded-from-graph-identity"]
+    },
+    {
+      "id": "run-identity-includes-declared-backend-context",
+      "backends": ["kubernetes", "hpc"],
+      "expectation": "fidelity-preserving",
+      "coverage": ["backend-metadata-included-in-run-identity"]
+    }
+  ]
+}

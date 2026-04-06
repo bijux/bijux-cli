@@ -1,0 +1,1 @@
+{"scenario":"version_compatibility_workflow","graph":"compat_replay","nodes":18,"focus":["version_matrix","replay_compatibility"],"expectations":{"terminal":"success","supported_versions_min":2,"unsupported_versions_rejected":true}}

@@ -1,0 +1,13 @@
+{
+  "suite_id": "explain-verification",
+  "description": "Explain determinism, schema lockstep, diagnostics, and operator smoke surfaces.",
+  "owner": "dag-app",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-app/tests/diff_explain_contract.rs",
+    "crates/bijux-dag-app/tests/plan_explain_inspect_output_contract.rs",
+    "crates/bijux-dag-app/tests/artifact_identity_explain_contract.rs",
+    "crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/advanced_explainability_completion_contracts.rs"
+  ]
+}

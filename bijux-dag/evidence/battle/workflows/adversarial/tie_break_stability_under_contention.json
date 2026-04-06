@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-tie-break-stability-under-contention",
+  "graph_fixture": "scheduler_parallel_64",
+  "assertions": [
+    "tie_break_order_is_stable",
+    "scheduler_trace_is_replayable",
+    "no_starvation_under_equal_priority"
+  ]
+}

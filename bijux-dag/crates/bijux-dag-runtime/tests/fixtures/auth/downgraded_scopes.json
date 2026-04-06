@@ -1,0 +1,6 @@
+{
+  "principal_id": "scheduler-1",
+  "original_scopes": ["run.submit", "run.cancel", "schedule.audit"],
+  "current_scopes": ["run.submit"],
+  "expected": "restricted"
+}

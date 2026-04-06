@@ -1,0 +1,23 @@
+[
+  {
+    "from_id": "dataset:sales-mart:v1",
+    "to_id": "report:weekly-sales:v1",
+    "dependency_class": "Data",
+    "relationship_type": "DerivedFrom",
+    "confidence": "ExactDeclared"
+  },
+  {
+    "from_id": "policy:release-gate:v3",
+    "to_id": "report:weekly-sales:v1",
+    "dependency_class": "Policy",
+    "relationship_type": "ValidatedBy",
+    "confidence": "ExactDeclared"
+  },
+  {
+    "from_id": "dataset:sales-mart:v1",
+    "to_id": "report:weekly-sales:v1",
+    "dependency_class": "Quality",
+    "relationship_type": "ApprovedBy",
+    "confidence": "InferredHigh"
+  }
+]

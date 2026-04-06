@@ -1,0 +1,6 @@
+{
+  "id": "operator-inspectability",
+  "description": "Run inspection completeness across summary tree and timeline",
+  "shape": "medium",
+  "focus": ["operator-ux", "observability"]
+}

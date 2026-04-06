@@ -1,0 +1,8 @@
+{
+  "scenario_id": "tenk-nodes-canonical",
+  "class": "execute-local",
+  "size": "10k-nodes",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/large_dag.json"
+}

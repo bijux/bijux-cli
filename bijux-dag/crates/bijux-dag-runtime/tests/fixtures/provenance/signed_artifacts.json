@@ -1,0 +1,14 @@
+[
+  {
+    "artifact_id": "artifact-001",
+    "digest": "sha256:aaa",
+    "signer_identity": "signer-prod-1",
+    "signature": "MEUCIQDdummy1"
+  },
+  {
+    "artifact_id": "artifact-002",
+    "digest": "sha256:bbb",
+    "signer_identity": "signer-prod-1",
+    "signature": "MEUCIQDdummy2"
+  }
+]

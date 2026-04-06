@@ -1,0 +1,12 @@
+{
+  "suite_id": "backend-equivalence-verification",
+  "description": "Cross-backend semantic equivalence, replay compatibility, and divergence diagnostics verification.",
+  "owner": "runtime-portability",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-cli/tests/contract_surface.rs",
+    "crates/bijux-dev-dag/tests/backend_equivalence_contracts.rs",
+    "crates/bijux-dev-dag/tests/backend_equivalence_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/replay_equivalence_completion_contracts.rs"
+  ]
+}

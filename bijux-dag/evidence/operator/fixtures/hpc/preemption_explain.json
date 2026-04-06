@@ -1,0 +1,10 @@
+{
+  "fixture": "hpc-preemption-explain",
+  "failure_code": "SLURM_PREEMPTED",
+  "runtime_failure_kind": "infrastructure",
+  "retryable": true,
+  "operator_explain": {
+    "summary": "job preempted by scheduler",
+    "recommended_action": "retry on allowed partition or queue"
+  }
+}

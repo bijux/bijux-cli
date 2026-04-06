@@ -1,0 +1,7 @@
+{
+  "spec": "v0.1x",
+  "nodes": [
+    {"id":"n","kind":"const","outputs":[{"name":"out","path":"n/out.txt"}]}
+  ],
+  "edges": []
+}

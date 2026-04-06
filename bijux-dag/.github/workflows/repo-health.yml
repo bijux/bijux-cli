@@ -1,0 +1,25 @@
+name: Repo Health
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  repo-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: generate hotspot reports
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo hotspot-reports
+      - name: generate planner hardening report
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo planner-hardening-report
+      - name: verify generated hotspot reports are committed
+        run: git diff --exit-code docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md docs/reports/foundation/dependency_cycle_report.md
+      - name: verify generated planner hardening report is committed
+        run: git diff --exit-code docs/reports/foundation/PLANNER_HARDENING_REPORT.md
+      - name: run repo health contract tests
+        run: cargo test -p bijux-dev-dag --test file_size_guardrails

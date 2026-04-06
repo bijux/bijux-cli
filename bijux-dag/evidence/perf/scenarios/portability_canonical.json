@@ -1,0 +1,8 @@
+{
+  "scenario_id": "portability-canonical",
+  "class": "export",
+  "size": "portability",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/large_dag.json"
+}

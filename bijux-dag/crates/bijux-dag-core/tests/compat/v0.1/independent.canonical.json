@@ -1,0 +1,59 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": null,
+  "inputs": {},
+  "nondeterminism_allowed": false,
+  "nodes": [
+    {
+      "id": "a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out_a",
+          "path": "out_a"
+        }
+      ],
+      "params": {
+        "value": 1
+      },
+      "container": null,
+      "timeout_ms": null,
+      "resources": null,
+      "tags": [],
+      "retry": {
+        "max_attempts": 0,
+        "backoff_ms": 0
+      },
+      "effects": [],
+      "env_allowlist": [],
+      "group": null
+    },
+    {
+      "id": "b",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out_b",
+          "path": "out_b"
+        }
+      ],
+      "params": {
+        "value": 2
+      },
+      "container": null,
+      "timeout_ms": null,
+      "resources": null,
+      "tags": [],
+      "retry": {
+        "max_attempts": 0,
+        "backoff_ms": 0
+      },
+      "effects": [],
+      "env_allowlist": [],
+      "group": null
+    }
+  ],
+  "edges": []
+}

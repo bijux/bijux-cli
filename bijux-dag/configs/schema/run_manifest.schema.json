@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/run-manifest/v0.1",
+  "title": "BijuxRunManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id", "created_unix_ms", "started_unix_ms", "finished_unix_ms",
+    "graph_snapshot", "status", "spec", "graph_fingerprint", "tool_version",
+    "jobs", "adapters", "node_counts", "policy"
+  ],
+  "properties": {
+    "manifest_version": {"type": "string"},
+    "run_id": {"type": "string"},
+    "created_unix_ms": {"type": "integer"},
+    "started_unix_ms": {"type": "integer"},
+    "finished_unix_ms": {"type": "integer"},
+    "graph_snapshot": {"type": "string"},
+    "status": {"type": "string"},
+    "spec": {"type": "string"},
+    "graph_fingerprint": {"type": "string"},
+    "tool_version": {"type": "string"},
+    "jobs": {"type": "integer"},
+    "adapters": {"type": "array"},
+    "outputs": {"type": "array"},
+    "node_counts": {"type": "object"},
+    "policy": {"type": "object"},
+    "cache_mode": {"type": ["string", "null"]},
+    "cache_dir": {"type": ["string", "null"]},
+    "run_timeout_ms": {"type": ["integer", "null"]},
+    "run_metadata": {"type": ["object", "null"]},
+    "run_summary": {"type": ["object", "null"]}
+  }
+}

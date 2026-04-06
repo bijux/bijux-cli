@@ -1,0 +1,10 @@
+{
+  "id": "release-first",
+  "description": "release-proof subset focused on blocking release evidence",
+  "commands": [
+    "cargo run -p bijux-dev-dag -- verify evidence-release-set",
+    "cargo run -p bijux-dev-dag -- verify evidence-foundation",
+    "cargo run -p bijux-dev-dag -- repo release-evidence-report"
+  ],
+  "report_focus": "release trust proof"
+}

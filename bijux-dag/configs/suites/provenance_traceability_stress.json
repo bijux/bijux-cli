@@ -1,0 +1,13 @@
+{
+  "id": "provenance-traceability-stress",
+  "description": "Stress and contract suite for provenance linkage, lineage traversal, and trace stability.",
+  "lane": "stress",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-app --test artifact_identity_explain_contract",
+    "cargo test -p bijux-dag-app --test replay_semantic_surface_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_identity_and_lineage_contracts",
+    "cargo test -p bijux-dag-runtime --test semantic_lineage_contracts",
+    "cargo test -p bijux-dev-dag --test provenance_traceability_completion_contracts"
+  ]
+}

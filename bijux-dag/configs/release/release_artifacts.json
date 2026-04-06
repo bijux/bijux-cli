@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "required_artifacts": [
+    "binaries",
+    "checksums",
+    "schemas_snapshot",
+    "docs_snapshot",
+    "benchmark_summary",
+    "resource_profile_summary",
+    "compatibility_matrix",
+    "known_limitations",
+    "release_readiness_report",
+    "release_evidence_bundle"
+  ]
+}

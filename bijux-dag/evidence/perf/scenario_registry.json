@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "entries": [
+    { "id": "artifact-lineage-completeness", "path": "evidence/perf/scenarios/artifact_lineage_completeness.json" },
+    { "id": "cache-heavy-canonical", "path": "evidence/perf/scenarios/cache_heavy_canonical.json" },
+    { "id": "deep-canonical", "path": "evidence/perf/scenarios/deep_canonical.json" },
+    { "id": "determinism-score", "path": "evidence/perf/scenarios/determinism_score.json" },
+    { "id": "diff-canonical", "path": "evidence/perf/scenarios/diff_canonical.json" },
+    { "id": "explainability-quality", "path": "evidence/perf/scenarios/explainability_quality.json" },
+    { "id": "failure-injection-canonical", "path": "evidence/perf/scenarios/failure_injection_canonical.json" },
+    { "id": "inspect-history-latency", "path": "evidence/perf/scenarios/inspect_history_latency.json" },
+    { "id": "large-artifact-canonical", "path": "evidence/perf/scenarios/large_artifact_canonical.json" },
+    { "id": "manifest-trace-write-amplification", "path": "evidence/perf/scenarios/manifest_trace_write_amplification.json" },
+    { "id": "many-small-nodes-scheduler-overhead", "path": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json" },
+    { "id": "medium-canonical", "path": "evidence/perf/scenarios/medium_canonical.json" },
+    { "id": "portability-canonical", "path": "evidence/perf/scenarios/portability_canonical.json" },
+    { "id": "portability-success-rate", "path": "evidence/perf/scenarios/portability_success_rate.json" },
+    { "id": "replay-canonical", "path": "evidence/perf/scenarios/replay_canonical.json" },
+    { "id": "replay-fidelity-score", "path": "evidence/perf/scenarios/replay_fidelity_score.json" },
+    { "id": "replay-verification-cost", "path": "evidence/perf/scenarios/replay_verification_cost.json" },
+    { "id": "tenk-nodes-canonical", "path": "evidence/perf/scenarios/tenk_nodes_canonical.json" },
+    { "id": "tiny-canonical", "path": "evidence/perf/scenarios/tiny_canonical.json" },
+    { "id": "wide-canonical", "path": "evidence/perf/scenarios/wide_canonical.json" }
+  ]
+}

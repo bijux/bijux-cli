@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-path-escape-via-declared-outputs-blocked",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "declared_output_path_escape_blocked",
+    "path_authorization_violation_classified",
+    "run_dir_integrity_unchanged_after_rejection"
+  ]
+}

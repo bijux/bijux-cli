@@ -1,0 +1,25 @@
+{
+  "id": "semantic-diff-verification",
+  "version": "v1",
+  "checks": [
+    "graph-diff-semantics",
+    "run-diff-semantics",
+    "artifact-diff-semantics",
+    "environment-diff-semantics",
+    "backend-capability-diff-semantics",
+    "correctness",
+    "classification-consistency",
+    "determinism-across-runs",
+    "determinism-across-platforms",
+    "regression-fixtures",
+    "fuzz-suite",
+    "anomaly-detection",
+    "performance-benchmarks",
+    "explainability",
+    "telemetry",
+    "visualization-data",
+    "diagnostics-tooling",
+    "documentation",
+    "verification-suite"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "run_creation_latency_ms": 250.0,
+  "dispatch_latency_ms": 500.0,
+  "completion_reliability_ratio": 0.995,
+  "artifact_availability_ratio": 0.999
+}

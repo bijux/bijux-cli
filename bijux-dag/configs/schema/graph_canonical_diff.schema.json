@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/graph_canonical_diff.schema.json",
+  "title": "Graph Canonical Diff Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "changed_paths",
+    "raw",
+    "canonical"
+  ],
+  "properties": {
+    "changed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "raw": {
+      "type": "object"
+    },
+    "canonical": {
+      "type": "object"
+    }
+  }
+}

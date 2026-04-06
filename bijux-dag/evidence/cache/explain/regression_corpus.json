@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "why-rerun-graph-drift",
+      "scenario": "why-rerun groups graph semantic drift under explain cause groups",
+      "source_test": "why_rerun_reports_graph_drift_group"
+    },
+    {
+      "id": "why-rerun-environment-drift",
+      "scenario": "why-rerun groups environment drift under manifest drift cause group",
+      "source_test": "why_rerun_reports_environment_drift_group"
+    },
+    {
+      "id": "why-rerun-artifact-drift",
+      "scenario": "why-rerun groups artifact hash drift under artifact payload cause group",
+      "source_test": "why_rerun_reports_artifact_drift_group"
+    },
+    {
+      "id": "why-rerun-ancestry-drift",
+      "scenario": "why-rerun groups replay ancestry drift under manifest drift cause group",
+      "source_test": "why_rerun_reports_replay_ancestry_drift_group"
+    },
+    {
+      "id": "why-cache-miss-corrupt-entry",
+      "scenario": "why-cache-missed reports corrupted cache entry verification failure",
+      "source_test": "explain_why_cache_missed_reports_corrupt_entry_verification_failure"
+    },
+    {
+      "id": "trace-artifact-replayed-provenance",
+      "scenario": "trace-artifact supports replayed run provenance context",
+      "source_test": "trace_artifact_supports_replayed_run_provenance_surface"
+    }
+  ]
+}

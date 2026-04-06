@@ -1,0 +1,17 @@
+{
+  "id": "determinism-hardening-regression",
+  "purpose": "execution-kernel-determinism-hardening",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-core --test graph_identity_kernel_contracts",
+    "cargo test -p bijux-dag-runtime --test runtime_scheduler_determinism_contracts",
+    "cargo test -p bijux-dag-runtime --test replay_determinism_fuzz_contracts",
+    "cargo test -p bijux-dag-app --test diff_semantic_completion_contracts",
+    "cargo test -p bijux-dev-dag --test determinism_hardening_completion_contracts"
+  ],
+  "owner": "execution-kernel",
+  "notes": [
+    "Focus on ordering and hash stability under repeated and fuzzed inputs.",
+    "Use as release drift detector for deterministic guarantees."
+  ]
+}

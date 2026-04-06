@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "domain": "replay-equivalence",
+  "cases": [
+    {"id":"replay-equivalence-detection","coverage":["equivalence-detection","correctness-guarantees"],"expected":"equivalence-verdict-stable"},
+    {"id":"replay-mismatch-classification","coverage":["mismatch-classification","anomaly-detection"],"expected":"mismatch-classified"},
+    {"id":"replay-fidelity-reporting","coverage":["fidelity-levels","telemetry"],"expected":"fidelity-reported"},
+    {"id":"replay-deterministic-planning","coverage":["deterministic-planning","correctness-guarantees"],"expected":"planning-deterministic"},
+    {"id":"replay-proof-verification","coverage":["proof-verification","diagnostics-tooling"],"expected":"proof-verified"},
+    {"id":"replay-environment-drift","coverage":["environment-drift-semantics","explainability"],"expected":"env-drift-explained"},
+    {"id":"replay-artifact-drift","coverage":["artifact-drift-semantics","explainability"],"expected":"artifact-drift-explained"},
+    {"id":"replay-regression-fixtures","coverage":["regression-fixtures","verification-suite"],"expected":"fixtures-present"},
+    {"id":"replay-fuzz","coverage":["fuzz-suite","anomaly-detection"],"expected":"fuzz-surface-present"},
+    {"id":"replay-performance","coverage":["performance-benchmarks","telemetry"],"expected":"benchmarks-present"},
+    {"id":"replay-diagnostics","coverage":["diagnostics-tooling","documentation"],"expected":"diagnostics-present"},
+    {"id":"replay-verification-suite","coverage":["verification-suite","documentation"],"expected":"suite-id-stable"}
+  ]
+}

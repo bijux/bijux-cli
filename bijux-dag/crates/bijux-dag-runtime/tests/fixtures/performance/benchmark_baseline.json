@@ -1,0 +1,6 @@
+{
+  "name": "planner-large-dag",
+  "throughput_per_sec": 1250.0,
+  "p95_latency_ms": 180.0,
+  "memory_mb": 640.0
+}

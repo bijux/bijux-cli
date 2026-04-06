@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProveOutput",
+  "type": "object",
+  "required": ["schema_version", "proof_id", "complete", "determinism"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "proof_id": { "type": "string" },
+    "complete": { "type": "boolean" },
+    "determinism": { "type": "string" }
+  },
+  "additionalProperties": true
+}

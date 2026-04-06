@@ -1,0 +1,15 @@
+{
+  "schema_version": "dag/v0.1",
+  "name": "migration-graph-source",
+  "nodes": [
+    {
+      "id": "prepare",
+      "command": "echo prepare"
+    },
+    {
+      "id": "build",
+      "command": "echo build",
+      "deps": ["prepare"]
+    }
+  ]
+}

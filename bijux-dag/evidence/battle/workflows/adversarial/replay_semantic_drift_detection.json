@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-replay-semantic-drift-detection",
+  "graph_fixture": "diamond",
+  "assertions": [
+    "semantic_drift_detected_with_same_shape",
+    "replay_diff_reports_trust_critical_fields",
+    "mismatch_is_operator_visible"
+  ]
+}

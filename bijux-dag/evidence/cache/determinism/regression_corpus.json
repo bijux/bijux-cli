@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "determinism-hardening-completion-contracts",
+  "cases": [
+    {"id": "repeated-run-results", "coverage": ["run-determinism", "failure-detection"]},
+    {"id": "node-ordering", "coverage": ["node-ordering", "planner-determinism"]},
+    {"id": "scheduler-ordering", "coverage": ["scheduler-determinism", "event-ordering"]},
+    {"id": "artifact-hash-stability", "coverage": ["artifact-hash", "cross-platform-path"]},
+    {"id": "diff-output-ordering", "coverage": ["diff-ordering", "json-ordering"]},
+    {"id": "replay-plan-ordering", "coverage": ["replay-determinism", "planner-determinism"]},
+    {"id": "provenance-traversal-ordering", "coverage": ["provenance-ordering", "query-stability"]},
+    {"id": "explain-ordering", "coverage": ["explain-ordering", "snapshot-stability"]},
+    {"id": "cli-json-ordering", "coverage": ["cli-json-ordering", "schema-lockstep"]},
+    {"id": "fuzz-dag-structure", "coverage": ["fuzz-dag", "drift-detection"]},
+    {"id": "fuzz-environment-variation", "coverage": ["fuzz-environment", "drift-detection"]},
+    {"id": "fuzz-artifact-path-ordering", "coverage": ["fuzz-artifact-path", "drift-detection"]},
+    {"id": "fuzz-scheduler", "coverage": ["fuzz-scheduler", "drift-detection"]},
+    {"id": "fuzz-runtime-events", "coverage": ["fuzz-runtime-events", "drift-detection"]}
+  ]
+}

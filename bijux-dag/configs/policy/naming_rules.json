@@ -1,0 +1,19 @@
+{
+  "runtime_module_banned_terms": [
+    "enterprise",
+    "ecosystem",
+    "intelligence",
+    "productization"
+  ],
+  "disallowed_transitional_terms": [
+    "phase",
+    "task"
+  ],
+  "required_docs": [
+    "docs/spec/NAMING_GUIDELINES.md",
+    "docs/spec/TERMINOLOGY_GLOSSARY.md",
+    "docs/spec/NAMING_PHILOSOPHY.md",
+    "docs/spec/NAMING_REVIEW_POLICY.md",
+    "docs/architecture/naming_audit.md"
+  ]
+}

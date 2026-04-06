@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "blocker_classes": [
+    "missing_contracts",
+    "missing_schemas",
+    "missing_e2e",
+    "unreviewed_perf_regression",
+    "undocumented_breaking_change"
+  ]
+}

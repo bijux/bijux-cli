@@ -1,0 +1,32 @@
+{
+  "format": "runtime-module-freeze/v2",
+  "runtime_src_dir": "crates/bijux-dag-runtime/src",
+  "allowed_modules": [],
+  "allowed_top_level_dirs": [
+    "adapters",
+    "artifacts",
+    "backend",
+    "builtins",
+    "cache",
+    "diagnostics",
+    "error",
+    "internal",
+    "policy",
+    "replay",
+    "runtime_core"
+  ],
+  "allowed_top_level_files": ["lib.rs"],
+  "sacred_modules": [
+    "engine",
+    "scheduler",
+    "run_state",
+    "state_machine",
+    "execution_plan",
+    "planner",
+    "node_result",
+    "run_context",
+    "store",
+    "trace"
+  ],
+  "scope_policy": "configs/policy/runtime_scope_v2.json"
+}

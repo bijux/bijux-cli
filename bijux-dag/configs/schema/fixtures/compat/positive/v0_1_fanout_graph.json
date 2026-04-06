@@ -1,0 +1,11 @@
+{
+  "spec": "v0.1",
+  "meta": {"name": "compat-fanout", "description": "legacy fanout", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "a", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "1"}},
+    {"id": "b", "kind": "shell", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"argv": ["/bin/true"]}, "effects": ["filesystem"]}
+  ],
+  "edges": [
+    {"from": {"node_id": "a", "port": "out"}, "to": {"node_id": "b", "port": "in"}}
+  ]
+}

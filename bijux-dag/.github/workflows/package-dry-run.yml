@@ -1,0 +1,25 @@
+name: Package Dry Run
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: package dry run
+        run: |
+          cargo package -p bijux-dag-core --allow-dirty --no-verify
+          cargo package -p bijux-dag-artifacts --allow-dirty --no-verify
+      - name: validate internal crate build surfaces
+        run: |
+          cargo check -p bijux-dag-runtime
+          cargo check -p bijux-dag-app
+          cargo check -p bijux-dag-cli
+          cargo check -p bijux-dev-dag

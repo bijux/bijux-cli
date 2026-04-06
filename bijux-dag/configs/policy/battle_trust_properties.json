@@ -1,0 +1,372 @@
+{
+  "version": "1",
+  "owners": {
+    "policy": "runtime-foundation",
+    "scenarios": "runtime-foundation",
+    "validation": "dev-control-plane"
+  },
+  "trust_properties": [
+    {
+      "id": "tp_deterministic_scheduling",
+      "name": "Deterministic scheduling under concurrency",
+      "description": "Ready-queue evolution and dispatch tie-breaking are deterministic for identical inputs."
+    },
+    {
+      "id": "tp_failure_propagation",
+      "name": "Failure propagation correctness",
+      "description": "Downstream node state and terminal run status reflect dependency failures without silent success."
+    },
+    {
+      "id": "tp_replay_equivalence",
+      "name": "Replay equivalence and divergence detection",
+      "description": "Equivalent runs are recognized and non-equivalent runs produce explicit mismatch evidence."
+    },
+    {
+      "id": "tp_cache_integrity",
+      "name": "Cache integrity and invalidation",
+      "description": "Cache hits require valid proofs and stale or corrupted entries are rejected."
+    },
+    {
+      "id": "tp_artifact_integrity",
+      "name": "Artifact integrity and lineage",
+      "description": "Artifact commits, lineage links, and manifest evidence remain coherent and tamper-visible."
+    },
+    {
+      "id": "tp_policy_enforcement",
+      "name": "Policy enforcement and safety denials",
+      "description": "Policy-denied operations fail safely and produce explicit policy-classified failures."
+    },
+    {
+      "id": "tp_operator_observability",
+      "name": "Operator observability quality",
+      "description": "Run inspection surfaces provide concise and complete debugging evidence under failure."
+    },
+    {
+      "id": "tp_import_export_compatibility",
+      "name": "Import/export and compatibility strictness",
+      "description": "Bundles and run artifacts round-trip only when schema and compatibility requirements hold."
+    },
+    {
+      "id": "tp_state_machine_legality",
+      "name": "State-machine transition legality",
+      "description": "Node and run states never regress through illegal transitions in terminal paths."
+    },
+    {
+      "id": "tp_timeout_retry_accounting",
+      "name": "Timeout and retry accounting",
+      "description": "Timeouts and retries are bounded, classified, and reflected in run outcomes."
+    },
+    {
+      "id": "tp_secret_redaction",
+      "name": "Secret redaction and leakage prevention",
+      "description": "Sensitive values are redacted in logs, traces, manifests, and panic payloads."
+    },
+    {
+      "id": "tp_run_dir_resilience",
+      "name": "Run-directory resilience under corruption",
+      "description": "Malformed or corrupted run directories are rejected with explicit diagnostics."
+    },
+    {
+      "id": "tp_plan_truth",
+      "name": "Plan truth and lowering determinism",
+      "description": "Semantically equivalent graphs lower to identical execution plans and unsupported requirements fail during planning."
+    },
+    {
+      "id": "tp_config_policy_determinism",
+      "name": "Config and policy determinism",
+      "description": "Config precedence, policy merge, and effective debug surfaces resolve deterministically across execution and inspection."
+    }
+  ],
+  "required_scenarios": [
+    "adversarial-cache-proof-corruption-plausible-outputs",
+    "adversarial-cancel-retry-bookkeeping-integrity",
+    "adversarial-concurrency-retry-determinism",
+    "adversarial-env-leakage-via-adapters-blocked",
+    "adversarial-import-export-semantic-loss-rejected",
+    "adversarial-missing-outputs-superficial-success-rejected",
+    "adversarial-operator-only-recovery-path",
+    "adversarial-path-escape-via-declared-outputs-blocked",
+    "adversarial-policy-denial-blocks-unsafe-execution",
+    "adversarial-post-success-artifact-corruption",
+    "adversarial-replay-semantic-drift-detection",
+    "adversarial-tie-break-stability-under-contention",
+    "artifact_heavy_workflow",
+    "branch_join_workflow",
+    "cache-fingerprint-change-invalidates-cache",
+    "cache-hit-second-run",
+    "cache_invalidation_workflow",
+    "container-execution-if-supported",
+    "corruption_workflow",
+    "e2e-minimal-parse-validate-run-inspect-replay",
+    "e2e_matrix",
+    "failure-missing-outputs-rejected",
+    "failure-node-failure-downstream-skipped",
+    "failure-retry-then-success-accounting",
+    "failure-timeout-error-classification",
+    "failure-validation-failure-no-partial-run-dir",
+    "failure_heavy_workflow",
+    "happy-diamond-outputs-and-manifest-totals",
+    "happy-parse-validate-run-inspect-replay",
+    "happy-real-world-orchestration-stress",
+    "import-export-metadata-only",
+    "import-export-with-files",
+    "import_export_workflow",
+    "large_dag_workflow",
+    "malformed_run_dir_workflow",
+    "medium_workflow",
+    "multi_root_workflow",
+    "operator_debugging_workflow",
+    "operator_inspection_workflow",
+    "policy-deny-env-clean-env-allowlist",
+    "policy_violation_workflow",
+    "replay-semantic-comparison",
+    "replay_divergence_workflow",
+    "resource_contention_workflow",
+    "retry_storm_workflow",
+    "scheduler_fairness_workflow",
+    "secret_leakage_workflow",
+    "selection-include-exclude-filters",
+    "timeout_workflow",
+    "ugly_realistic_dag_workflow",
+    "version_compatibility_workflow"
+  ],
+  "scenario_trust_map": {
+    "artifact_heavy_workflow": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "branch_join_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality"
+    ],
+    "cache_invalidation_workflow": [
+      "tp_cache_integrity",
+      "tp_deterministic_scheduling"
+    ],
+    "corruption_workflow": [
+      "tp_artifact_integrity",
+      "tp_run_dir_resilience"
+    ],
+    "failure_heavy_workflow": [
+      "tp_failure_propagation",
+      "tp_state_machine_legality"
+    ],
+    "import_export_workflow": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "large_dag_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_timeout_retry_accounting"
+    ],
+    "medium_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality",
+      "tp_plan_truth"
+    ],
+    "multi_root_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality"
+    ],
+    "operator_debugging_workflow": [
+      "tp_operator_observability",
+      "tp_failure_propagation"
+    ],
+    "operator_inspection_workflow": [
+      "tp_operator_observability",
+      "tp_run_dir_resilience"
+    ],
+    "policy_violation_workflow": [
+      "tp_policy_enforcement",
+      "tp_secret_redaction",
+      "tp_config_policy_determinism"
+    ],
+    "replay_divergence_workflow": [
+      "tp_replay_equivalence",
+      "tp_artifact_integrity"
+    ],
+    "resource_contention_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_timeout_retry_accounting"
+    ],
+    "retry_storm_workflow": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "scheduler_fairness_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_plan_truth"
+    ],
+    "secret_leakage_workflow": [
+      "tp_secret_redaction",
+      "tp_policy_enforcement"
+    ],
+    "timeout_workflow": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "version_compatibility_workflow": [
+      "tp_import_export_compatibility",
+      "tp_replay_equivalence"
+    ],
+    "malformed_run_dir_workflow": [
+      "tp_run_dir_resilience",
+      "tp_state_machine_legality"
+    ],
+    "ugly_realistic_dag_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_config_policy_determinism"
+    ],
+    "cache-hit-second-run": [
+      "tp_cache_integrity",
+      "tp_replay_equivalence"
+    ],
+    "cache-fingerprint-change-invalidates-cache": [
+      "tp_cache_integrity",
+      "tp_deterministic_scheduling"
+    ],
+    "failure-missing-outputs-rejected": [
+      "tp_failure_propagation",
+      "tp_artifact_integrity"
+    ],
+    "failure-node-failure-downstream-skipped": [
+      "tp_failure_propagation",
+      "tp_state_machine_legality"
+    ],
+    "failure-retry-then-success-accounting": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "failure-timeout-error-classification": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "failure-validation-failure-no-partial-run-dir": [
+      "tp_plan_truth",
+      "tp_run_dir_resilience"
+    ],
+    "happy-diamond-outputs-and-manifest-totals": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "happy-parse-validate-run-inspect-replay": [
+      "tp_plan_truth",
+      "tp_operator_observability",
+      "tp_replay_equivalence"
+    ],
+    "happy-real-world-orchestration-stress": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_config_policy_determinism"
+    ],
+    "import-export-metadata-only": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "import-export-with-files": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "policy-deny-env-clean-env-allowlist": [
+      "tp_policy_enforcement",
+      "tp_config_policy_determinism",
+      "tp_secret_redaction"
+    ],
+    "replay-semantic-comparison": [
+      "tp_replay_equivalence",
+      "tp_plan_truth"
+    ],
+    "selection-include-exclude-filters": [
+      "tp_plan_truth",
+      "tp_state_machine_legality"
+    ],
+    "container-execution-if-supported": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "e2e-minimal-parse-validate-run-inspect-replay": [
+      "tp_deterministic_scheduling",
+      "tp_replay_equivalence",
+      "tp_operator_observability"
+    ],
+    "e2e_matrix": [
+      "tp_plan_truth",
+      "tp_operator_observability"
+    ],
+    "adversarial-concurrency-retry-determinism": [
+      "tp_deterministic_scheduling",
+      "tp_timeout_retry_accounting"
+    ],
+    "adversarial-post-success-artifact-corruption": [
+      "tp_artifact_integrity",
+      "tp_run_dir_resilience"
+    ],
+    "adversarial-cache-proof-corruption-plausible-outputs": [
+      "tp_cache_integrity",
+      "tp_artifact_integrity"
+    ],
+    "adversarial-replay-semantic-drift-detection": [
+      "tp_replay_equivalence",
+      "tp_plan_truth"
+    ],
+    "adversarial-import-export-semantic-loss-rejected": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity",
+      "tp_replay_equivalence"
+    ],
+    "adversarial-operator-only-recovery-path": [
+      "tp_operator_observability",
+      "tp_run_dir_resilience"
+    ],
+    "adversarial-policy-denial-blocks-unsafe-execution": [
+      "tp_policy_enforcement",
+      "tp_secret_redaction"
+    ],
+    "adversarial-missing-outputs-superficial-success-rejected": [
+      "tp_failure_propagation",
+      "tp_artifact_integrity"
+    ],
+    "adversarial-tie-break-stability-under-contention": [
+      "tp_deterministic_scheduling",
+      "tp_plan_truth"
+    ],
+    "adversarial-cancel-retry-bookkeeping-integrity": [
+      "tp_timeout_retry_accounting",
+      "tp_state_machine_legality"
+    ],
+    "adversarial-path-escape-via-declared-outputs-blocked": [
+      "tp_artifact_integrity",
+      "tp_policy_enforcement"
+    ],
+    "adversarial-env-leakage-via-adapters-blocked": [
+      "tp_secret_redaction",
+      "tp_policy_enforcement"
+    ],
+    "adversarial-partial-run-dir-not-finalized": [
+      "tp_run_dir_resilience",
+      "tp_state_machine_legality"
+    ],
+    "adversarial-imported-runs-remain-visible": [
+      "tp_import_export_compatibility",
+      "tp_operator_observability"
+    ]
+  },
+  "release_top_trust_properties": [
+    "tp_deterministic_scheduling",
+    "tp_failure_propagation",
+    "tp_replay_equivalence",
+    "tp_cache_integrity",
+    "tp_artifact_integrity",
+    "tp_policy_enforcement",
+    "tp_operator_observability",
+    "tp_import_export_compatibility",
+    "tp_state_machine_legality",
+    "tp_timeout_retry_accounting",
+    "tp_secret_redaction",
+    "tp_run_dir_resilience",
+    "tp_plan_truth",
+    "tp_config_policy_determinism"
+  ]
+}

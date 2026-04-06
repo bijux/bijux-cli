@@ -1,0 +1,8 @@
+{
+  "scenario_id": "policy-deny-env-clean-env-allowlist",
+  "assertions": [
+    "deny_env_enforced",
+    "clean_env_enforced",
+    "allowlisted_vars_visible"
+  ]
+}

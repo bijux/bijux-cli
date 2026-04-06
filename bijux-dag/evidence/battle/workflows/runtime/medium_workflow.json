@@ -1,0 +1,1 @@
+{"scenario":"medium_workflow","graph":"diamond","nodes":24,"focus":["steady_throughput","deterministic_order"],"expectations":{"terminal":"success","max_retries":2}}

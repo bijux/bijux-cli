@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_timeline",
+  "type": "object",
+  "required": ["events"],
+  "properties": {
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "started_unix_ms", "finished_unix_ms", "status", "attempt", "cache_hit", "event_kind"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "started_unix_ms": {},
+          "finished_unix_ms": {},
+          "status": {},
+          "attempt": {"type": "integer", "minimum": 1},
+          "cache_hit": {"type": "boolean"},
+          "event_kind": {"type": "string", "enum": ["execution", "retry", "cache_hit"]}
+        }
+      }
+    }
+  }
+}

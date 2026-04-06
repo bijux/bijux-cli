@@ -1,0 +1,12 @@
+{
+  "spec": "v0.1",
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "outputs": [{"name": "out", "path": "out"}],
+      "params": {"value": "ok"}
+    }
+  ],
+  "edges": []
+}

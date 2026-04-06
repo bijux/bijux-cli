@@ -1,0 +1,45 @@
+{
+  "version": "1",
+  "scenario_extensions": [
+    "json",
+    "dag.json"
+  ],
+  "governed_roots": [
+    "evidence/authoring",
+    "evidence/battle",
+    "evidence/cache",
+    "evidence/compat",
+    "evidence/fault",
+    "evidence/operator",
+    "evidence/perf",
+    "evidence/compare",
+    "evidence/cache",
+    "evidence/compat",
+    "evidence/fault",
+    "evidence/cache/replay",
+    "crates/bijux-dag-core/tests/fixtures",
+    "crates/bijux-dag-artifacts/tests/fixtures",
+    "crates/bijux-dag-runtime/tests/fixtures"
+  ],
+  "schema_fixture_roots": [
+    "configs/schema/fixtures"
+  ],
+  "legacy_scenario_roots": [
+    "benchmarks/fixtures",
+    "benchmarks/scenarios",
+    "comparisons/scenarios",
+    "tests/e2e/compat",
+    "tests/e2e/container",
+    "tests/e2e/fixtures",
+    "tests/e2e/replay/fixtures",
+    "tests/compatibility/graph_schema",
+    "crates/bijux-dag-core/tests/compat",
+    "crates/bijux-dag-core/tests/snapshots"
+  ],
+  "helper_allowlist": [
+    "tests/integration_fixtures/*.sh",
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
+    "crates/bijux-dag-app/tests/fixtures/run_history_mixed_runs.json",
+    "crates/bijux-dag-app/tests/fixtures/git_for_computation_graphs_workflow.json"
+  ]
+}

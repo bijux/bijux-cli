@@ -1,0 +1,26 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "medium", "owners": ["ops"], "tags": ["retry", "selector"]},
+  "nodes": [
+    {
+      "id": "fetch",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "out/data.json"}],
+      "params": {"argv": ["/bin/sh", "-c", "printf '{\"ok\":true}' > ../outputs/out/data.json"]},
+      "effects": ["filesystem", "network"],
+      "resources": {"cpu": 1, "mem_mb": 256}
+    },
+    {
+      "id": "transform",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "out/transformed.json"}],
+      "params": {"argv": ["/bin/sh", "-c", "cat ../inputs/fetch/in > ../outputs/out/transformed.json"]},
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "fetch", "port": "out"}, "to": {"node_id": "transform", "port": "in"}}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "scenario_id": "e2e_matrix",
+  "matrix_id": "e2e-binary-and-crate-entrypoints",
+  "entries": [
+    {
+      "name": "crate-integration-entrypoint",
+      "command": "cargo test -p bijux-dag-app --test e2e_integration_scenarios"
+    },
+    {
+      "name": "local-binary-entrypoint",
+      "command": "cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json"
+    }
+  ]
+}

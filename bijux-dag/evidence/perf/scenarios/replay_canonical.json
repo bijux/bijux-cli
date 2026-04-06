@@ -1,0 +1,8 @@
+{
+  "scenario_id": "replay-canonical",
+  "class": "replay",
+  "size": "replay",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph":"evidence/perf/fixtures/large_dag.json"
+}

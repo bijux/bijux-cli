@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schemas/evidence-asset.schema.json",
+  "title": "Evidence Asset Metadata",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "owner",
+    "evidence_class",
+    "asset_kind",
+    "canonical_path",
+    "consumer_surfaces",
+    "trust_properties_protected",
+    "normative_level",
+    "authoring_mode"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+(\\.[0-9]+)*$"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_class": {
+      "type": "string",
+      "enum": [
+        "authoring",
+        "battle",
+        "cache",
+        "compat",
+        "fault",
+        "operator",
+        "perf",
+        "compare"
+      ]
+    },
+    "asset_kind": {
+      "type": "string",
+      "enum": [
+        "scenario",
+        "fixture",
+        "baseline",
+        "catalog",
+        "report"
+      ]
+    },
+    "canonical_path": {
+      "type": "string",
+      "pattern": "^evidence/"
+    },
+    "consumer_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "trust_properties_protected": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "normative_level": {
+      "type": "string",
+      "enum": [
+        "normative",
+        "derived"
+      ]
+    },
+    "authoring_mode": {
+      "type": "string",
+      "enum": [
+        "hand_authored",
+        "generated"
+      ]
+    },
+    "release_blocking": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

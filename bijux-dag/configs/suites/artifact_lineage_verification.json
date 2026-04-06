@@ -1,0 +1,22 @@
+{
+  "id": "artifact-lineage-verification",
+  "version": "v1",
+  "checks": [
+    "reconstruction-correctness",
+    "partial-run-completeness",
+    "replay-lineage-correctness",
+    "import-lineage-correctness",
+    "gc-lineage-correctness",
+    "serialization-stability",
+    "traversal-guarantees",
+    "traversal-benchmarks",
+    "consistency-checks",
+    "corruption-detection",
+    "regression-fixtures",
+    "fuzz-suite",
+    "anomaly-detection",
+    "explainability",
+    "visualization-data",
+    "verification-suite"
+  ]
+}

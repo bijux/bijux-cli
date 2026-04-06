@@ -1,0 +1,26 @@
+[
+  {
+    "dataset_id": "sales-mart",
+    "version_id": "v2026-03-07",
+    "schema_ref": "schema/sales/v1",
+    "owner": "analytics",
+    "freshness_minutes": 20,
+    "quality_state": "accepted"
+  },
+  {
+    "dataset_id": "sales-mart",
+    "version_id": "v2026-03-06",
+    "schema_ref": "schema/sales/v1",
+    "owner": "analytics",
+    "freshness_minutes": 1440,
+    "quality_state": "accepted"
+  },
+  {
+    "dataset_id": "risk-features",
+    "version_id": "v2026-03-07",
+    "schema_ref": "schema/risk/v2",
+    "owner": "risk",
+    "freshness_minutes": 45,
+    "quality_state": "pending"
+  }
+]

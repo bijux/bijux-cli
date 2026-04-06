@@ -1,0 +1,16 @@
+{
+  "name": "engineering-simplification-verification",
+  "description": "Verifies engineering de-awkwarding closure artifacts and end-state governance outputs.",
+  "tests": [
+    "internal_contract_governance_contracts",
+    "repository_tree_simplification_contracts",
+    "fixture_canonicalization_contracts",
+    "benchmark_minimalism_guarantees_contracts",
+    "evidence_signal_quality_contracts",
+    "dev_dag_surface_guarantees_contracts",
+    "operator_surface_guarantees_contracts",
+    "vocabulary_scope_honesty_guarantees_contracts",
+    "runtime_scope_contraction_guarantees_contracts",
+    "engineering_simplification_end_state_contracts"
+  ]
+}

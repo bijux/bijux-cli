@@ -1,0 +1,16 @@
+{
+  "suite_id": "run-history-invariants",
+  "description": "Run history ordering, schema, resilience, and diagnostics invariants.",
+  "owner": "dag-app",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-app/tests/run_history_contract.rs",
+    "crates/bijux-dag-app/tests/run_history_hardening_contract.rs",
+    "crates/bijux-dag-app/tests/run_history_reliability_contract.rs",
+    "crates/bijux-dag-app/tests/run_history_ancestry_contracts.rs",
+    "crates/bijux-dag-app/tests/run_history_identity_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/run_history_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/run_history_resilience_suite_contracts.rs",
+    "crates/bijux-dev-dag/tests/run_history_api_report_contracts.rs"
+  ]
+}

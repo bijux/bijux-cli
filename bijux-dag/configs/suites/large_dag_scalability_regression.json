@@ -1,0 +1,17 @@
+{
+  "id": "large-dag-scalability-regression",
+  "purpose": "large-dag-scalability-and-stress-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-core --test planner_scale_budget_contracts",
+    "cargo test -p bijux-dag-core --test validation_contracts_21_40 validation_stress_thousands_of_nodes",
+    "cargo test -p bijux-dag-runtime --test concurrency_contracts deterministic_stress_medium_graph_high_concurrency_stays_stable",
+    "cargo test -p bijux-dag-app --test run_history_identity_completion_contracts run_history_stress_suite_many_runs_is_deterministic",
+    "cargo test -p bijux-dev-dag --test large_dag_scalability_completion_contracts"
+  ],
+  "owner": "scalability-engineering",
+  "notes": [
+    "Provides release-facing coverage for large DAG planning, scheduling, and stress diagnostics.",
+    "Track trend deltas for latency and memory from generated reports."
+  ]
+}

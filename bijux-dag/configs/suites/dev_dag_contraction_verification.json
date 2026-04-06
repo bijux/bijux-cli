@@ -1,0 +1,10 @@
+{
+  "id": "dev-dag-contraction-verification",
+  "description": "Verification suite for dev-dag contraction, command pack integrity, and governance ownership.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test dev_dag_surface_guarantees_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_surface_contraction_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_contraction_coverage_progress_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_command_safety_contracts"
+  ]
+}

@@ -1,0 +1,1 @@
+{"scenario":"operator_debugging_workflow","graph":"diamond","nodes":17,"focus":["debug_bundle","causal_chain"],"expectations":{"terminal":"failed","debug_bundle_complete":true}}

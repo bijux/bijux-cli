@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-missing-outputs-superficial-success-rejected",
+  "graph_fixture": "fanout",
+  "assertions": [
+    "declared_outputs_must_exist",
+    "superficial_success_is_reclassified_to_failure",
+    "failure_reason_is_artifact_contract_violation"
+  ]
+}

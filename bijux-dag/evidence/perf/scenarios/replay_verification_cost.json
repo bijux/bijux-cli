@@ -1,0 +1,9 @@
+{
+  "scenario_id": "replay-verification-cost",
+  "class": "replay",
+  "size": "battle",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph":"evidence/perf/fixtures/large_dag.json",
+  "focus": "measure replay verification overhead"
+}

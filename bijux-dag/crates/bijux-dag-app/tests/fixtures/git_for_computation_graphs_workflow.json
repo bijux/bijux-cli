@@ -1,0 +1,19 @@
+{
+  "name": "git-for-computation-graphs-canonical-workflow",
+  "description": "Canonical end-to-end workflow fixture for validate-plan-run-inspect-replay-diff-export-import-proof surfaces.",
+  "steps": [
+    "validate",
+    "plan explain",
+    "run",
+    "status",
+    "replay",
+    "diff",
+    "export",
+    "import --verify-only",
+    "prove",
+    "verify",
+    "semantic-portability --backend hpc",
+    "capabilities --backend hpc"
+  ],
+  "intent": "Provide one stable e2e workflow fixture for Git-style computation graph operations."
+}

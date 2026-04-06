@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/artifact_trace.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "artifact_id": "example",
+    "lineage": "example",
+    "path": "example",
+    "provenance": "example"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "run-history-many-runs-stress",
+  "description": "Stress-oriented run history suite validating deterministic ordering and ancestry completeness over large run sets.",
+  "lane": "stress",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-app --test run_history_identity_completion_contracts run_history_stress_suite_many_runs_is_deterministic",
+    "cargo test -p bijux-dag-app --test run_history_identity_completion_contracts run_history_query_performance_contract_on_large_fixture_set"
+  ]
+}

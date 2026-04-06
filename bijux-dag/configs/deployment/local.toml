@@ -1,0 +1,16 @@
+[deployment]
+profile = "local"
+executor_backend = "local"
+registry_backend = "filesystem"
+artifact_store_backend = "filesystem"
+
+[runtime]
+max_parallelism = 4
+queue_partitioning = "single-tenant"
+network_isolation = false
+env_allowlist_enforced = true
+
+[scheduler]
+ha_enabled = false
+leader_election = "none"
+durable_queue = "local-fs"

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "migration_report",
+  "type": "object",
+  "required": ["source_version", "target_version", "status", "changed_fields", "dropped_fields"],
+  "properties": {
+    "source_version": {"type": "string"},
+    "target_version": {"type": "string"},
+    "status": {"type": "string", "enum": ["no-op", "applied", "rejected"]},
+    "changed_fields": {"type": "array", "items": {"type": "string"}},
+    "dropped_fields": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/benchmarks/benchmark_report.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "benchmark_format": "example",
+    "commit_sha": "example",
+    "rust_version": "example",
+    "machine": "example",
+    "scenario_results": "example"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "etl-constant-to-shell",
+    "description": "Extract-transform-style constants into a filtered text result",
+    "owners": ["platform"],
+    "tags": ["etl", "constants"]
+  },
+  "nodes": [
+    {
+      "id": "raw_line_a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "path": "raw_a.txt" }
+      ],
+      "params": { "value": "alpha\nbeta\ngamma" }
+    },
+    {
+      "id": "raw_line_b",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        { "name": "value", "path": "raw_b.txt" }
+      ],
+      "params": { "value": "delta\nalpha" }
+    },
+    {
+      "id": "normalize",
+      "kind": "shell",
+      "inputs": [
+        "raw_a_input",
+        "raw_b_input"
+      ],
+      "outputs": [
+        { "name": "value", "path": "normalized.txt" }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "cat ../inputs/raw_line_a/raw_a.txt ../inputs/raw_line_b/raw_b.txt | sort -u > ../outputs/normalized.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "report",
+      "kind": "shell",
+      "inputs": [
+        "lines"
+      ],
+      "outputs": [
+        { "name": "value", "path": "report.txt" }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "cat ../inputs/normalize/normalized.txt | tr '[:lower:]' '[:upper:]' > ../outputs/report.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "raw_line_a", "port": "value" },
+      "to": { "node_id": "normalize", "port": "raw_a_input" }
+    },
+    {
+      "from": { "node_id": "raw_line_b", "port": "value" },
+      "to": { "node_id": "normalize", "port": "raw_b_input" }
+    },
+    {
+      "from": { "node_id": "normalize", "port": "value" },
+      "to": { "node_id": "report", "port": "lines" }
+    }
+  ]
+}

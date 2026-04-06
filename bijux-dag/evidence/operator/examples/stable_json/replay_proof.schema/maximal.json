@@ -1,0 +1,13 @@
+{
+  "schema": "configs/schema/operator/replay_proof.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "cause_groups": "example",
+    "equivalent": "example",
+    "fidelity_level": "example",
+    "reason_report": "example",
+    "reasons": "example",
+    "replay_run_id": "example",
+    "source_run_id": "example"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_id_explain",
+  "type": "object",
+  "required": [
+    "run_id",
+    "run_dir",
+    "exists",
+    "manifest_exists",
+    "parent_run_id",
+    "source_run_id",
+    "immutability_contract"
+  ],
+  "properties": {
+    "run_id": {},
+    "run_dir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exists": {
+      "type": "boolean"
+    },
+    "manifest_exists": {
+      "type": "boolean"
+    },
+    "created_unix_ms": {},
+    "started_unix_ms": {},
+    "finished_unix_ms": {},
+    "submission_source": {},
+    "trigger_source": {},
+    "parent_run_id": {},
+    "source_run_id": {},
+    "immutability_contract": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

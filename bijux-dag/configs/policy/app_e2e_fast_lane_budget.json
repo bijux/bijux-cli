@@ -1,0 +1,6 @@
+{
+  "format": "app-e2e-fast-lane-budget/v1",
+  "max_runtime_seconds": 180,
+  "max_scenarios": 12,
+  "notes": "Fast app e2e lane must remain short and deterministic for developer feedback."
+}

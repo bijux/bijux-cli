@@ -1,0 +1,7 @@
+{
+  "case": "corruption",
+  "run_a": "run-a",
+  "run_b": "run-b-corrupt",
+  "expect": "verification_error",
+  "reason": "missing_authoritative_artifacts"
+}

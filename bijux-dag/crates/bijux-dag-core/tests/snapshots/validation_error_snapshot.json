@@ -1,0 +1,23 @@
+[
+  {
+    "code": "E1001",
+    "hint": "Use unique node ids",
+    "message": "duplicate node id: n1",
+    "path": "/nodes/n1",
+    "severity": "Error"
+  },
+  {
+    "code": "W2002",
+    "hint": null,
+    "message": "orphan node: n1",
+    "path": "/nodes/n1",
+    "severity": "Warning"
+  },
+  {
+    "code": "W2002",
+    "hint": null,
+    "message": "orphan node: n1",
+    "path": "/nodes/n1",
+    "severity": "Warning"
+  }
+]

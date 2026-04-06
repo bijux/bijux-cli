@@ -1,0 +1,11 @@
+{
+  "id": "app-weak-routes-fast",
+  "description": "Fast direct coverage checks for weak app route modules",
+  "commands": [
+    "cargo test -p bijux-dag-app --lib routes::inspect_routes::tests",
+    "cargo test -p bijux-dag-app --lib routes::plan_routes::tests",
+    "cargo test -p bijux-dag-app --lib routes::diagnostics_routes::tests",
+    "cargo test -p bijux-dag-app --lib routes::output_selection::tests",
+    "cargo test -p bijux-dag-app --lib routes::surface_routes::tests"
+  ]
+}

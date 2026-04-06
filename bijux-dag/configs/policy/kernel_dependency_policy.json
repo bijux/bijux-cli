@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "kernel_crates": [
+    "crates/bijux-dag-core/Cargo.toml",
+    "crates/bijux-dag-runtime/Cargo.toml"
+  ],
+  "forbidden_dependencies": [
+    "clap",
+    "bijux-dag-cli",
+    "bijux-dag-app",
+    "bijux-dev-dag"
+  ],
+  "forbidden_source_tokens": [
+    "evidence/reports/",
+    "docs/reports/"
+  ]
+}

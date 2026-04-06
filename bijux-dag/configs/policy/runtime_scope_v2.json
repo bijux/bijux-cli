@@ -1,0 +1,877 @@
+{
+  "format": "runtime-scope-v2",
+  "runtime_src_dir": "crates/bijux-dag-runtime/src",
+  "allowed_top_level_dirs": [
+    "adapters",
+    "artifacts",
+    "backend",
+    "builtins",
+    "cache",
+    "diagnostics",
+    "error",
+    "internal",
+    "policy",
+    "replay",
+    "runtime_core"
+  ],
+  "allowed_top_level_files": [
+    "lib.rs",
+    "simulated_platform.rs"
+  ],
+  "module_entries": [
+    {
+      "module": "simulated_platform.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "explicit quarantine facade for modeled platform surfaces that are not part of the stable runtime root"
+    },
+    {
+      "module": "adapters/adapter.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/api.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/async_adapter.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/builtins/const_value.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/builtins/container.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/builtins/mod.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/builtins/shell.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/conformance.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/contract.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/external.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/mod.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/registry.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/runtime_registry.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "adapters/sdk.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "artifacts/manifest.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "artifacts/mod.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "artifacts/storage/path_authorization.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "artifacts/storage/recovery.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "artifacts/storage/semantic_lineage.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "artifacts/storage/store.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "artifacts/storage/trace.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "artifacts/storage/upgrade_compatibility.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "artifacts/verifier.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "artifacts/writer.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "artifact write verify and storage semantics"
+    },
+    {
+      "module": "backend/capability.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime support module"
+    },
+    {
+      "module": "backend/contract.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime support module"
+    },
+    {
+      "module": "backend/distributed/coordination.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "distributed extension surface should be isolated from foundation runtime kernel"
+    },
+    {
+      "module": "backend/distributed/distributed.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "distributed extension surface should be isolated from foundation runtime kernel"
+    },
+    {
+      "module": "backend/distributed/distribution_readiness.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "distributed extension surface should be isolated from foundation runtime kernel"
+    },
+    {
+      "module": "backend/distributed/federated_scheduling.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "federated scheduling semantics should live outside foundation runtime core"
+    },
+    {
+      "module": "backend/distributed/geo_federation.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "future geo federation control plane capability should not expand foundation runtime"
+    },
+    {
+      "module": "backend/distributed/ha_scheduler.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "high-availability scheduler model belongs to future distributed execution scope"
+    },
+    {
+      "module": "backend/distributed/infrastructure.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "distributed extension surface should be isolated from foundation runtime kernel"
+    },
+    {
+      "module": "backend/fake.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime support module"
+    },
+    {
+      "module": "backend/local_process.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime support module"
+    },
+    {
+      "module": "backend/mod.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime support module"
+    },
+    {
+      "module": "backend/runtime/backend_cluster.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "backend capability and local execution integration surface"
+    },
+    {
+      "module": "backend/runtime/batch_execution.rs",
+      "classification": "backend",
+      "decision": "move",
+      "rationale": "batch execution support is future execution-mode boundary and should remain non-foundation",
+      "execution_mode_maturity": "simulated-only"
+    },
+    {
+      "module": "backend/runtime/container_execution.rs",
+      "classification": "backend",
+      "decision": "move",
+      "rationale": "container execution support is future execution-mode boundary and should remain non-foundation",
+      "execution_mode_maturity": "simulated-only"
+    },
+    {
+      "module": "backend/runtime/execution_backend.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "backend capability and local execution integration surface"
+    },
+    {
+      "module": "backend/runtime/local_executor.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "backend capability and local execution integration surface"
+    },
+    {
+      "module": "backend/runtime/remote_execution_model.rs",
+      "classification": "backend",
+      "decision": "move",
+      "rationale": "remote execution model is future-distributed boundary and should not define kernel scope",
+      "execution_mode_maturity": "future"
+    },
+    {
+      "module": "backend/runtime/remote_executor.rs",
+      "classification": "backend",
+      "decision": "move",
+      "rationale": "remote executor is future-distributed boundary and should not define kernel scope",
+      "execution_mode_maturity": "future"
+    },
+    {
+      "module": "backend/runtime/subprocess.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "backend capability and local execution integration surface"
+    },
+    {
+      "module": "builtins/const_adapter.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "builtins/container_adapter.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "builtins/mod.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "builtins/shell_adapter.rs",
+      "classification": "backend",
+      "decision": "keep",
+      "rationale": "adapter integration surface required for node execution"
+    },
+    {
+      "module": "cache/key.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "cache identity proof and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "cache/lineage.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "cache identity proof and storage semantics"
+    },
+    {
+      "module": "cache/mod.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "cache identity proof and storage semantics"
+    },
+    {
+      "module": "cache/proof.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "cache identity proof and storage semantics"
+    },
+    {
+      "module": "cache/store.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "cache identity proof and storage semantics",
+      "hard_keep": true
+    },
+    {
+      "module": "diagnostics/events.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/ids.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/mod.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/runtime/control_plane.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/runtime/control_plane_api.rs",
+      "classification": "wrong-crate",
+      "decision": "move",
+      "rationale": "control-plane api surface belongs in app/dev control plane layer"
+    },
+    {
+      "module": "diagnostics/runtime/observability.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/runtime/observability_deep.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "diagnostics/runtime/operations_governance.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "operations governance scorecard logic is non-foundation runtime scope"
+    },
+    {
+      "module": "diagnostics/timeline.rs",
+      "classification": "diagnostics",
+      "decision": "keep",
+      "rationale": "runtime diagnostics and eventing surface"
+    },
+    {
+      "module": "error/classify.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "runtime error model and classification"
+    },
+    {
+      "module": "error/codes.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "runtime error model and classification"
+    },
+    {
+      "module": "error/mod.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "runtime error model and classification"
+    },
+    {
+      "module": "internal/analysis/adaptive_scheduler.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "adaptive scheduler intelligence is beyond deterministic foundation scheduler scope"
+    },
+    {
+      "module": "internal/analysis/cost_optimization.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "cost optimization models are advisory platform concerns not core runtime semantics"
+    },
+    {
+      "module": "internal/analysis/dataset_semantics.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "dataset product semantics are higher-level than runtime execution kernel"
+    },
+    {
+      "module": "internal/clock.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "internal runtime support module"
+    },
+    {
+      "module": "internal/control/api.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/clock.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/config.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/io.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/runtime.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/selectors.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/services.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/task_contract.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/control/task_types.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime control helpers and typed surfaces"
+    },
+    {
+      "module": "internal/ext/extension_catalog.rs",
+      "classification": "support",
+      "decision": "move",
+      "rationale": "extension and catalog support should be isolated from runtime kernel"
+    },
+    {
+      "module": "internal/ext/formal_verification.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "verification helpers support invariants without changing runtime execution semantics"
+    },
+    {
+      "module": "internal/identity/auth_identity.rs",
+      "classification": "security",
+      "decision": "keep",
+      "rationale": "security and identity constraints used by runtime"
+    },
+    {
+      "module": "internal/identity/authz_policy.rs",
+      "classification": "security",
+      "decision": "keep",
+      "rationale": "security and identity constraints used by runtime"
+    },
+    {
+      "module": "internal/identity/provenance_compliance.rs",
+      "classification": "security",
+      "decision": "move",
+      "rationale": "provenance compliance policy should be isolated from runtime kernel surface"
+    },
+    {
+      "module": "internal/identity/secrets_security.rs",
+      "classification": "security",
+      "decision": "keep",
+      "rationale": "security and identity constraints used by runtime"
+    },
+    {
+      "module": "internal/identity/security_env.rs",
+      "classification": "security",
+      "decision": "keep",
+      "rationale": "security and identity constraints used by runtime"
+    },
+    {
+      "module": "internal/identity/supply_chain_trust.rs",
+      "classification": "security",
+      "decision": "move",
+      "rationale": "supply chain trust policy should be isolated from runtime kernel surface"
+    },
+    {
+      "module": "internal/identity/tenancy.rs",
+      "classification": "security",
+      "decision": "move",
+      "rationale": "tenancy policy should be isolated from core runtime kernel surface"
+    },
+    {
+      "module": "internal/io.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "internal runtime support module"
+    },
+    {
+      "module": "internal/mod.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "internal runtime support module"
+    },
+    {
+      "module": "internal/perf/performance_capacity.rs",
+      "classification": "support",
+      "decision": "move",
+      "rationale": "performance maturity reporting is governance support not kernel runtime"
+    },
+    {
+      "module": "internal/selectors.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "internal runtime support module"
+    },
+    {
+      "module": "internal/testing/adapter_contract_tests.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/invariants_tests.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/runtime_boundary_tests.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/runtime_policy_trace_tests.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/state_machine_tests.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/test_support.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/testing/tests_runtime.in.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "runtime-internal tests and support fixtures"
+    },
+    {
+      "module": "internal/workflow/ai_operator_assist.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "ai operator assist is non-foundation workflow augmentation"
+    },
+    {
+      "module": "internal/workflow/workflow_product.rs",
+      "classification": "speculative",
+      "decision": "move",
+      "rationale": "workflow productization scorecards are out of runtime kernel scope"
+    },
+    {
+      "module": "policy/evaluator.rs",
+      "classification": "policy",
+      "decision": "keep",
+      "rationale": "policy evaluation in execution path",
+      "hard_keep": true
+    },
+    {
+      "module": "policy/mod.rs",
+      "classification": "policy",
+      "decision": "keep",
+      "rationale": "policy evaluation in execution path"
+    },
+    {
+      "module": "policy/trace.rs",
+      "classification": "policy",
+      "decision": "keep",
+      "rationale": "policy evaluation in execution path",
+      "hard_keep": true
+    },
+    {
+      "module": "replay/diff.rs",
+      "classification": "replay",
+      "decision": "keep",
+      "rationale": "replay diff verification behavior",
+      "hard_keep": true
+    },
+    {
+      "module": "replay/explain.rs",
+      "classification": "replay",
+      "decision": "keep",
+      "rationale": "replay diff verification behavior",
+      "hard_keep": true
+    },
+    {
+      "module": "replay/mod.rs",
+      "classification": "replay",
+      "decision": "keep",
+      "rationale": "replay diff verification behavior"
+    },
+    {
+      "module": "replay/verifier.rs",
+      "classification": "replay",
+      "decision": "keep",
+      "rationale": "replay diff verification behavior",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/context.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/engine.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/engine_dispatch.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/engine_metrics.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/engine_observe.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/engine_finalize.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/engine_record.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/flow.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/node_result.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/run_context.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/run_state.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/scheduler.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/execution/scheduler_workload.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/execution/state_machine.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/governance/invariants.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/governance/sacred_execution.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/governance/semantics.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/mod.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/planning/execution_plan.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/planning/planner.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface",
+      "hard_keep": true
+    },
+    {
+      "module": "runtime_core/planning/planner_analysis.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/state/mod.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/state/node_state.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
+      "module": "runtime_core/state/run_state.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    }
+  ],
+  "hard_keep_modules": [
+    "artifacts/storage/path_authorization.rs",
+    "artifacts/storage/recovery.rs",
+    "artifacts/storage/store.rs",
+    "artifacts/storage/trace.rs",
+    "cache/key.rs",
+    "cache/store.rs",
+    "policy/evaluator.rs",
+    "policy/trace.rs",
+    "replay/diff.rs",
+    "replay/explain.rs",
+    "replay/verifier.rs",
+    "runtime_core/execution/engine.rs",
+    "runtime_core/execution/node_result.rs",
+    "runtime_core/execution/run_context.rs",
+    "runtime_core/execution/run_state.rs",
+    "runtime_core/execution/scheduler.rs",
+    "runtime_core/execution/state_machine.rs",
+    "runtime_core/planning/execution_plan.rs",
+    "runtime_core/planning/planner.rs"
+  ],
+  "named_decisions": {
+    "geo_federation": "move",
+    "ha_scheduler": "move",
+    "federated_scheduling": "move",
+    "control_plane_api": "move",
+    "operations_governance": "move",
+    "adaptive_scheduler": "move",
+    "cost_optimization": "move",
+    "dataset_semantics": "move",
+    "formal_verification": "keep",
+    "ai_operator_assist": "move",
+    "workflow_product": "move",
+    "tenancy": "move",
+    "provenance_compliance": "move",
+    "supply_chain_trust": "move",
+    "execution_plan_home": "runtime_core/planning/execution_plan.rs",
+    "planner_bridge_home": "runtime_core/planning/planner.rs"
+  }
+}

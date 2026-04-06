@@ -1,0 +1,121 @@
+{
+  "policy_version": "1",
+  "families": [
+    {
+      "name": "authoring",
+      "purpose": "authoring-quality",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "maintainer",
+      "source_of_truth_tag": "authoring-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/authoring"],
+      "ownership_docs": [
+        "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "battle",
+      "purpose": "runtime-correctness",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "maintainer",
+      "source_of_truth_tag": "battle-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/battle"],
+      "ownership_docs": [
+        "docs/spec/BATTLE_WORKFLOW_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "cache",
+      "purpose": "replay-and-cache-integrity",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "maintainer",
+      "source_of_truth_tag": "cache-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/cache"],
+      "ownership_docs": [
+        "docs/spec/DETERMINISM_EVIDENCE_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "compat",
+      "purpose": "schema-and-bundle-compatibility",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "operator",
+      "source_of_truth_tag": "compat-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/compat"],
+      "ownership_docs": [
+        "docs/spec/BUNDLE_SCHEMA_REFERENCE.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "fault",
+      "purpose": "fault-observability",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "operator",
+      "source_of_truth_tag": "fault-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/fault"],
+      "ownership_docs": [
+        "docs/spec/TEST_TRUST_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "operator",
+      "purpose": "operator-inspection",
+      "release_class": "blocking",
+      "severity_tag": "release-critical",
+      "audience_tag": "operator",
+      "source_of_truth_tag": "operator-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/operator"],
+      "ownership_docs": [
+        "docs/spec/TEST_TRUST_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "perf",
+      "purpose": "performance-signal",
+      "release_class": "blocking",
+      "severity_tag": "release-supporting",
+      "audience_tag": "maintainer",
+      "source_of_truth_tag": "perf-evidence-registry",
+      "used_by_release_review": true,
+      "canonical_roots": ["evidence/perf"],
+      "ownership_docs": [
+        "docs/spec/EVIDENCE_PUBLICATION_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    },
+    {
+      "name": "compare",
+      "purpose": "external-comparison-context",
+      "release_class": "advisory",
+      "severity_tag": "advisory",
+      "audience_tag": "maintainer",
+      "source_of_truth_tag": "compare-evidence-registry",
+      "used_by_release_review": false,
+      "canonical_roots": ["evidence/compare"],
+      "ownership_docs": [
+        "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
+        "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md"
+      ]
+    }
+  ],
+  "family_addition_rule": {
+    "requires_purpose_classification": true,
+    "requires_ownership_docs": true
+  }
+}

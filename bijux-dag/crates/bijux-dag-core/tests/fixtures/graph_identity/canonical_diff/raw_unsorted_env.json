@@ -1,0 +1,15 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "n",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name":"out","path":"n/out.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "cat in > out"]},
+      "effects": ["filesystem"],
+      "env_allowlist": ["Z","A"]
+    }
+  ],
+  "edges": []
+}

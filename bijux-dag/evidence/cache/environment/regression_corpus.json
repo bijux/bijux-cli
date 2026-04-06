@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "ordering-normalized",
+      "scenario": "environment identity remains stable when admitted environment keys are reordered",
+      "source_test": "clean_env_and_allowlist_contract_is_deterministic"
+    },
+    {
+      "id": "variable-change-drives-identity-change",
+      "scenario": "admitted variable value changes produce a different environment identity",
+      "source_test": "replay_diff_reports_environment_drift_as_manifest_drift"
+    },
+    {
+      "id": "denylist-precedence",
+      "scenario": "deny patterns override allowlist matches and remove denied keys",
+      "source_test": "env_pattern_matching_contract_works_for_exact_and_prefix"
+    },
+    {
+      "id": "container-shaping-contract",
+      "scenario": "container environment isolation enforces allowlist and denylist behavior",
+      "source_test": "container_env_isolation_respects_allowlist_and_denylist"
+    },
+    {
+      "id": "replay-flow-drift-reporting",
+      "scenario": "replay mismatch reports environment drift in reason grouping",
+      "source_test": "replay_diff_reports_environment_drift_as_manifest_drift"
+    },
+    {
+      "id": "imported-run-preservation",
+      "scenario": "imported bundle inspection preserves declared ancestry and environment preservation markers",
+      "source_test": "import_supports_offline_inspection_path_portability_and_line_endings"
+    }
+  ]
+}

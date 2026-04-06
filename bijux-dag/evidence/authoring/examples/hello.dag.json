@@ -1,0 +1,54 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "const1",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out_const",
+          "path": "out_const"
+        }
+      ],
+      "params": {
+        "value": "hello"
+      }
+    },
+    {
+      "id": "echo",
+      "kind": "shell",
+      "inputs": [
+        "in"
+      ],
+      "outputs": [
+        {
+          "name": "out_echo",
+          "path": "out_echo"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "echo from shell > ../outputs/out_echo"
+        ]
+      },
+      "effects": [
+        "filesystem"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node_id": "const1",
+        "port": "out_const"
+      },
+      "to": {
+        "node_id": "echo",
+        "port": "in"
+      }
+    }
+  ]
+}

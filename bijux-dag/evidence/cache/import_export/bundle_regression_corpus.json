@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "graph-only-roundtrip",
+      "scenario": "graph-only export and import preserve graph snapshot compatibility",
+      "source_test": "graph_snapshot_only_bundle_roundtrip_is_stable"
+    },
+    {
+      "id": "artifact-heavy-verify-only",
+      "scenario": "artifact-heavy bundle import in verify-only mode validates payload integrity",
+      "source_test": "artifact_heavy_bundle_roundtrip_verify_only_is_stable"
+    },
+    {
+      "id": "imported-replay-diff",
+      "scenario": "imported run supports replay and diff parity against source run",
+      "source_test": "imported_run_replay_and_diff_against_original_are_stable"
+    },
+    {
+      "id": "unsupported-version-rejection",
+      "scenario": "unsupported bundle version is rejected with a machine-readable error payload",
+      "source_test": "import_rejects_unsupported_bundle_version_fixture"
+    },
+    {
+      "id": "truncated-json-detection",
+      "scenario": "truncated bundle payload is rejected before import acceptance",
+      "source_test": "import_rejects_truncated_bundle_with_clear_failure"
+    },
+    {
+      "id": "corrupted-file-payload-detection",
+      "scenario": "corrupted file payload hash mismatch is rejected during import",
+      "source_test": "import_rejects_corrupted_file_payload_before_acceptance"
+    }
+  ]
+}

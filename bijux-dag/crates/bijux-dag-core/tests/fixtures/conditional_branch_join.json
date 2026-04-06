@@ -1,0 +1,56 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "conditional-branch-join",
+    "owners": ["platform"],
+    "tags": ["conditional", "join"]
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "start/out.json"}],
+      "params": {"value": {"flag": true}}
+    },
+    {
+      "id": "branch",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "branch/out.json"}],
+      "tags": ["decision-node"],
+      "params": {"argv": ["sh", "-c", "cat inputs/start/in > outputs/branch.json"]}
+    },
+    {
+      "id": "left",
+      "kind": "const",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "left/out.json"}],
+      "group": "true-branch",
+      "params": {"value": "left"}
+    },
+    {
+      "id": "right",
+      "kind": "const",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "right/out.json"}],
+      "group": "false-branch",
+      "params": {"value": "right"}
+    },
+    {
+      "id": "join",
+      "kind": "shell",
+      "inputs": ["left", "right"],
+      "outputs": [{"name": "out", "path": "join/out.json"}],
+      "tags": ["noop-join"],
+      "params": {"argv": ["sh", "-c", "echo joined > outputs/join.json"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "start", "port": "out"}, "to": {"node_id": "branch", "port": "in"}},
+    {"from": {"node_id": "branch", "port": "out"}, "to": {"node_id": "left", "port": "in"}},
+    {"from": {"node_id": "branch", "port": "out"}, "to": {"node_id": "right", "port": "in"}},
+    {"from": {"node_id": "left", "port": "out"}, "to": {"node_id": "join", "port": "left"}},
+    {"from": {"node_id": "right", "port": "out"}, "to": {"node_id": "join", "port": "right"}}
+  ]
+}

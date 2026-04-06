@@ -1,0 +1,7 @@
+{
+  "id": "diamond",
+  "description": "Diamond dependency shape",
+  "shape": "diamond",
+  "nodes": 4,
+  "focus": ["correctness", "scheduler-readiness"]
+}

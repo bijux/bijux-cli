@@ -1,0 +1,7 @@
+{
+  "schema": "configs/schema/operator/run_timeline.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "events": "example"
+  }
+}

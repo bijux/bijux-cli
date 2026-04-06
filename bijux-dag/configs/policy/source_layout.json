@@ -1,0 +1,25 @@
+{
+  "global": {
+    "max_rust_source_lines": 600,
+    "warning_rust_source_lines": 9000,
+    "hard_max_rust_source_lines": 10000,
+    "new_file_allowlist": []
+  },
+  "transitional_ceiling": {
+    "crates/bijux-dag-core/src/lib.rs": 1180,
+    "crates/bijux-dag-runtime/src/lib.rs": 2000,
+    "crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs": 820,
+    "crates/bijux-dag-runtime/src/internal/testing/tests_runtime.in.rs": 1250,
+    "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs": 1250,
+    "crates/bijux-dag-app/src/lib.rs": 2800,
+    "crates/bijux-dag-app/src/routes/inspect_routes.rs": 380,
+    "crates/bijux-dag-app/src/routes/plan_routes.rs": 260,
+    "crates/bijux-dev-dag/src/commands/mod.rs": 9000,
+    "crates/bijux-dev-dag/src/commands/cli.rs": 650,
+    "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs": 1000,
+    "crates/bijux-dag-cli/tests/contract_surface.rs": 800,
+    "crates/bijux-dag-core/src/lib.rs": 1350,
+    "crates/bijux-dag-runtime/src/backend/runtime/backend_cluster.rs": 750,
+    "crates/bijux-dev-dag/src/commands/suite_catalog_repo.rs": 700
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "fault_classes": [
+    {"id": "filesystem.permission_denied", "tested_by": ["fault_permission_denied_run_dir_creation"]},
+    {"id": "filesystem.disk_pressure_simulation", "tested_by": ["fault_disk_pressure_simulated_write_failure"]},
+    {"id": "filesystem.trace_write_failure", "tested_by": ["fault_trace_file_missing_detected"]},
+    {"id": "filesystem.index_write_failure", "tested_by": ["fault_outputs_index_corruption_detected"]},
+    {"id": "subprocess.non_zero_exit", "tested_by": ["fault_subprocess_non_zero_exit"]},
+    {"id": "subprocess.timeout", "tested_by": ["fault_subprocess_timeout_classification"]},
+    {"id": "subprocess.external_kill", "tested_by": ["fault_subprocess_killed_signal_like_failure"]},
+    {"id": "environment.missing_required", "tested_by": ["fault_missing_required_env_var"]},
+    {"id": "config.malformed", "tested_by": ["fault_malformed_graph_configuration"]},
+    {"id": "corruption.manifest_tamper", "tested_by": ["fault_manifest_tamper_after_completion"]},
+    {"id": "corruption.missing_trace", "tested_by": ["fault_missing_trace_referenced_by_manifest"]},
+    {"id": "corruption.cache_metadata_mismatch", "tested_by": ["fault_stale_cache_metadata_mismatch"]},
+    {"id": "concurrency.run_id_collision", "tested_by": ["fault_run_id_collision"]},
+    {"id": "concurrency.latest_alias_race", "tested_by": ["fault_latest_alias_race"]},
+    {"id": "artifact.half_valid_marker", "tested_by": ["fault_no_silent_half_valid_artifacts"]}
+  ]
+}

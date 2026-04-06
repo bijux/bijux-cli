@@ -1,0 +1,9 @@
+{
+  "scenario_id": "failure-node-failure-downstream-skipped",
+  "graph_fixture": "graph_failure",
+  "assertions": [
+    "failed_node_recorded",
+    "downstream_skipped",
+    "manifest_status_failed"
+  ]
+}

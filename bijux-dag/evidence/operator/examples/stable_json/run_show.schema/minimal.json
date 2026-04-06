@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/run_show.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "run_id": "example",
+    "status": "example",
+    "timing_ms": "example",
+    "integrity_state": "example"
+  }
+}

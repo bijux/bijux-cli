@@ -1,0 +1,12 @@
+{
+  "id": "foundation-now",
+  "description": "identity replay diff artifact and scheduler confidence subset",
+  "commands": [
+    "cargo test -p bijux-dag-core --test graph_identity_contracts",
+    "cargo test -p bijux-dag-app --test replay_diff_hardening_contract",
+    "cargo test -p bijux-dag-artifacts --test artifact_identity_and_lineage_contracts",
+    "cargo test -p bijux-dag-runtime --test scheduler_invariants_contracts",
+    "cargo test -p bijux-dag-cli --test smoke_pipeline"
+  ],
+  "report_focus": "foundation identity and execution confidence"
+}

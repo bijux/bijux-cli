@@ -1,0 +1,91 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "minimal-success",
+      "manifest": {
+        "manifest_version": "run-manifest/v0.1",
+        "run_id": "run-minimal",
+        "created_unix_ms": 1,
+        "started_unix_ms": 1,
+        "finished_unix_ms": 2,
+        "graph_snapshot": "graph.snapshot.json",
+        "status": "success",
+        "spec": "bijux-dag/v0.1",
+        "graph_fingerprint": "g-minimal",
+        "tool_version": "0.1.0",
+        "jobs": 1,
+        "adapters": [],
+        "outputs": [],
+        "node_counts": { "success": 1, "failed": 0, "skipped": 0, "cached": 0 },
+        "policy": {
+          "deny_network": true,
+          "deny_env": true,
+          "deny_clock": true,
+          "clean_env": true
+        }
+      }
+    },
+    {
+      "id": "replay-ancestry",
+      "manifest": {
+        "manifest_version": "run-manifest/v0.1",
+        "run_id": "run-replay",
+        "created_unix_ms": 10,
+        "started_unix_ms": 11,
+        "finished_unix_ms": 12,
+        "graph_snapshot": "graph.snapshot.json",
+        "status": "success",
+        "spec": "bijux-dag/v0.1",
+        "graph_fingerprint": "g-replay",
+        "tool_version": "0.1.0",
+        "jobs": 2,
+        "adapters": ["local"],
+        "outputs": [],
+        "node_counts": { "success": 2, "failed": 0, "skipped": 0, "cached": 1 },
+        "policy": {
+          "deny_network": true,
+          "deny_env": true,
+          "deny_clock": true,
+          "clean_env": true
+        },
+        "run_metadata": {
+          "submission_source": "replay",
+          "trigger_source": "cli",
+          "parent_run_id": "run-source",
+          "source_run_id": "run-source"
+        }
+      }
+    },
+    {
+      "id": "cancelled-partial",
+      "manifest": {
+        "manifest_version": "run-manifest/v0.1",
+        "run_id": "run-cancelled",
+        "created_unix_ms": 20,
+        "started_unix_ms": 21,
+        "finished_unix_ms": 21,
+        "graph_snapshot": "graph.snapshot.json",
+        "status": "cancelled",
+        "spec": "bijux-dag/v0.1",
+        "graph_fingerprint": "g-cancelled",
+        "tool_version": "0.1.0",
+        "jobs": 4,
+        "adapters": ["kubernetes"],
+        "outputs": [],
+        "node_counts": { "success": 1, "failed": 0, "skipped": 3, "cached": 0 },
+        "policy": {
+          "deny_network": true,
+          "deny_env": true,
+          "deny_clock": true,
+          "clean_env": true
+        },
+        "run_metadata": {
+          "submission_source": "manual",
+          "trigger_source": "cli"
+        }
+      }
+    }
+  ]
+}

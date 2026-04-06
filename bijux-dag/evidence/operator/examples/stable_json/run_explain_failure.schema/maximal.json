@@ -1,0 +1,9 @@
+{
+  "schema": "configs/schema/operator/run_explain_failure.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "failed_nodes": "example",
+    "propagated_or_skipped_nodes": "example",
+    "root_failure": "example"
+  }
+}

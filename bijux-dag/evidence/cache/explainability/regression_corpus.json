@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "domain": "advanced-explainability",
+  "cases": [
+    {"id": "node-level-execution-explain", "coverage": ["node-level", "explain-completeness"], "source": "crates/bijux-dag-app/tests/diff_explain_contract.rs"},
+    {"id": "scheduler-decision-explain", "coverage": ["scheduler-decision", "explain-consistency"], "source": "docs/spec/SCHEDULER_CONTRACT.md"},
+    {"id": "replay-decision-explain", "coverage": ["replay-decision", "explain-consistency"], "source": "docs/spec/REPLAY_CONTRACT.md"},
+    {"id": "cache-hit-explain", "coverage": ["cache-hit", "explain-consistency"], "source": "docs/spec/CACHE_CONTRACT.md"},
+    {"id": "cache-miss-explain", "coverage": ["cache-miss", "explain-consistency"], "source": "crates/bijux-dag-app/tests/diff_explain_contract.rs"},
+    {"id": "artifact-lineage-explain", "coverage": ["artifact-lineage", "dependency-chain"], "source": "crates/bijux-dag-app/tests/artifact_identity_explain_contract.rs"},
+    {"id": "dependency-chain-explain", "coverage": ["dependency-chain", "explain-completeness"], "source": "docs/spec/PROVENANCE_MODEL_CONTRACT.md"},
+    {"id": "environment-drift-explain", "coverage": ["environment-drift", "explain-consistency"], "source": "crates/bijux-dev-dag/tests/environment_identity_completion_contracts.rs"},
+    {"id": "backend-capability-mismatch-explain", "coverage": ["backend-capability-mismatch", "explain-consistency"], "source": "crates/bijux-dev-dag/tests/backend_equivalence_completion_contracts.rs"},
+    {"id": "explain-output-consistency", "coverage": ["output-consistency", "ordering-determinism"], "source": "crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs"},
+    {"id": "explain-json-schema-validation", "coverage": ["json-schema", "output-consistency"], "source": "configs/schema/operator/run_explain_failure.schema.json"},
+    {"id": "explain-text-snapshots", "coverage": ["text-snapshot", "output-consistency"], "source": "crates/bijux-dag-app/tests/snapshots/route_detailed_wording.txt"},
+    {"id": "explain-large-dag-stress", "coverage": ["large-dag-stress", "ordering-determinism"], "source": "configs/suites/explain_surface_stress.json"},
+    {"id": "explain-performance-benchmarks", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/EXPLAINABILITY_BENCHMARKS.md"},
+    {"id": "explain-regression-fixtures", "coverage": ["regression-fixtures", "explain-completeness"], "source": "evidence/cache/explain/regression_corpus.json"},
+    {"id": "explain-completeness-verification", "coverage": ["explain-completeness", "anomaly-detection"], "source": "docs/reports/foundation/explainability_completeness_report.md"},
+    {"id": "explain-anomaly-detection", "coverage": ["anomaly-detection", "output-consistency"], "source": "docs/reports/foundation/explainability_anomaly_detection_report.md"}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "scenario_id": "happy-parse-validate-run-inspect-replay",
+  "graph": "evidence/authoring/examples/hello.dag.json",
+  "assertions": [
+    "validate_success",
+    "run_manifest_exists",
+    "status_traces_present",
+    "node_explain_present",
+    "replay_success"
+  ]
+}

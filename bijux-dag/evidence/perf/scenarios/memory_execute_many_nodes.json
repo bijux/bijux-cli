@@ -1,0 +1,1 @@
+{"scenario_id":"memory-execute-many-nodes","class":"execute-local","resource_focus":"memory","graph":"evidence/perf/fixtures/scheduler_parallel_64.json"}

@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "domain": "adversarial-system",
+  "cases": [
+    {"id":"adversarial-dag-generator","coverage":["adversarial-dag-generator","stress"],"expected":"dag-generator-present"},
+    {"id":"adversarial-scheduler-stress","coverage":["scheduler-stress","scheduler-starvation"],"expected":"scheduler-stress-covered"},
+    {"id":"adversarial-artifact-store-stress","coverage":["artifact-store-stress","data-corruption"],"expected":"artifact-stress-covered"},
+    {"id":"adversarial-replay-mismatch","coverage":["replay-mismatch","determinism-drift"],"expected":"replay-mismatch-covered"},
+    {"id":"adversarial-backend-communication","coverage":["backend-communication","concurrency"],"expected":"backend-adversarial-covered"},
+    {"id":"adversarial-bundle-import","coverage":["bundle-import","data-corruption"],"expected":"bundle-import-covered"},
+    {"id":"adversarial-run-history-corruption","coverage":["run-history-corruption","recovery"],"expected":"run-history-corruption-covered"},
+    {"id":"adversarial-provenance-traversal","coverage":["provenance-traversal","stress"],"expected":"provenance-adversarial-covered"},
+    {"id":"adversarial-diff-explain","coverage":["diff-adversarial","explain-adversarial"],"expected":"diff-explain-covered"},
+    {"id":"adversarial-cache-poisoning","coverage":["cache-poisoning","cache-integrity"],"expected":"cache-poisoning-covered"},
+    {"id":"adversarial-env-drift","coverage":["environment-drift","determinism-drift"],"expected":"env-drift-covered"},
+    {"id":"adversarial-filesystem","coverage":["filesystem-behavior","data-corruption"],"expected":"filesystem-adversarial-covered"},
+    {"id":"adversarial-runtime-crash","coverage":["runtime-crash","recovery"],"expected":"runtime-crash-covered"},
+    {"id":"adversarial-fuzz-suite","coverage":["fuzzing","verification-suite"],"expected":"fuzz-suite-covered"},
+    {"id":"adversarial-resilience-suite","coverage":["verification-suite","stress"],"expected":"resilience-suite-declared"}
+  ]
+}

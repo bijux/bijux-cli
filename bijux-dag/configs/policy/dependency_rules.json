@@ -1,0 +1,24 @@
+{
+  "rules": [
+    {
+      "from": "bijux-dag-runtime",
+      "to": "bijux-dag-app",
+      "reason": "runtime must not depend on app orchestration"
+    },
+    {
+      "from": "bijux-dag-runtime",
+      "to": "bijux-dag-cli",
+      "reason": "runtime must not depend on cli wiring"
+    },
+    {
+      "from": "bijux-dag-core",
+      "to": "bijux-dag-runtime",
+      "reason": "core purity must not depend on runtime"
+    },
+    {
+      "from": "bijux-dev-dag",
+      "to": "bijux-dag-runtime",
+      "reason": "dev control plane must not depend on runtime internals"
+    }
+  ]
+}

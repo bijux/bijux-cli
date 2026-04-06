@@ -1,0 +1,7 @@
+{
+  "schema": "configs/schema/operator/replay_diff.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "replay_equivalence": "example"
+  }
+}

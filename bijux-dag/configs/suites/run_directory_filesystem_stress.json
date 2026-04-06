@@ -1,0 +1,16 @@
+{
+  "id": "run-directory-filesystem-stress",
+  "purpose": "run-directory-and-filesystem-resilience-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-app --test run_dir_import_export_contract",
+    "cargo test -p bijux-dag-app --test run_history_ancestry_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_storage_resilience_contracts",
+    "cargo test -p bijux-dev-dag --test run_directory_filesystem_completion_contracts"
+  ],
+  "owner": "run-directory-platform",
+  "notes": [
+    "Covers deterministic layout, corruption handling, portability, and recovery paths.",
+    "Use for release gating after filesystem or run-dir behavior changes."
+  ]
+}

@@ -1,0 +1,1 @@
+{"scenario":"retry_storm_workflow","graph":"fanout","nodes":28,"focus":["retry_budget","retry_backoff"],"expectations":{"terminal":"failed","retry_events_min":20}}

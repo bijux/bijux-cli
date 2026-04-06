@@ -1,0 +1,16 @@
+{
+  "schema": "configs/schema/operator/run_inspect.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "artifact_count": "example",
+    "cache_hits": "example",
+    "failed_nodes": "example",
+    "graph_fingerprint": "example",
+    "integrity_state": "example",
+    "node_counts": "example",
+    "retry_count": "example",
+    "run_id": "example",
+    "status": "example",
+    "timing_ms": "example"
+  }
+}

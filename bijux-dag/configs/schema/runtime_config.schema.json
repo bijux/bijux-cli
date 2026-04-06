@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux://schema/runtime_config/v1",
+  "title": "RuntimeConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "jobs": { "type": "integer", "minimum": 1 },
+    "cache_mode": { "type": "string", "enum": ["off", "read", "read-write"] },
+    "materialize_inputs": { "type": "string", "enum": ["none", "direct", "all"] },
+    "cache_dir": { "type": "string", "minLength": 1 },
+    "policy": { "$ref": "policy_config.schema.json" }
+  },
+  "required": ["jobs", "cache_mode", "materialize_inputs", "policy"]
+}

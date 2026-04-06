@@ -1,0 +1,14 @@
+{
+  "id": "core-artifact-direct-coverage-fast",
+  "description": "Fast direct-coverage suite for core graph/pipeline and artifact IO/storage product paths.",
+  "commands": [
+    "cargo test -p bijux-dag-core --test canonical_contract",
+    "cargo test -p bijux-dag-core --test direct_module_entrypoints_contracts",
+    "cargo test -p bijux-dag-core --test validation_coverage",
+    "cargo test -p bijux-dag-core --test graph_identity_property_contracts",
+    "cargo test -p bijux-dag-artifacts --test io_store_fs_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_io_expansion_contracts",
+    "cargo test -p bijux-dag-artifacts --test storage_services_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_storage_resilience_contracts"
+  ]
+}

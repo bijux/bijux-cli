@@ -1,0 +1,11 @@
+{
+  "id": "runtime-scope-contraction-verification",
+  "description": "Verification suite for runtime scope contraction governance, quarantine boundaries, and lifecycle declaration rules.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test runtime_scope_contraction_guarantees_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_scope_lifecycle_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_scope_reports_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_scope_v2_guardrails",
+    "cargo test -p bijux-dev-dag --test runtime_overreach_contracts"
+  ]
+}

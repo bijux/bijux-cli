@@ -1,0 +1,14 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {"x": 1},
+  "nodes": [
+    {
+      "id": "a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name":"out","path":"a/out"}],
+      "params": {"bad_ref": {"node_output": {"node_id": "missing", "path": "out"}}}
+    }
+  ],
+  "edges": []
+}

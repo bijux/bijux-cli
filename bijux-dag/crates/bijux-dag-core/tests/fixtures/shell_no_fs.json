@@ -1,0 +1,26 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "s",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "argv": [
+          "echo",
+          "x"
+        ]
+      },
+      "effects": [
+        "network"
+      ]
+    }
+  ],
+  "edges": []
+}

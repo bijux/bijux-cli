@@ -1,0 +1,8 @@
+{
+  "id": "app-e2e-slow-extended",
+  "description": "Slow-lane app e2e scenarios retained for full-lane depth and long-running resilience checks.",
+  "commands": [
+    "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/nextest/nextest.toml --user-config-file none --status-level all --final-status-level all --show-progress counter",
+    "cargo test -p bijux-dag-app --test run_dir_import_export_contract"
+  ]
+}

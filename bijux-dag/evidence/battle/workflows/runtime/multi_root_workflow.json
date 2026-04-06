@@ -1,0 +1,1 @@
+{"scenario":"multi_root_workflow","graph":"multi_root","nodes":22,"focus":["root_coordination","terminal_aggregation"],"expectations":{"terminal":"success","roots":3}}

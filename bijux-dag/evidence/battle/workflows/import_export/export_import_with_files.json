@@ -1,0 +1,8 @@
+{
+  "scenario_id": "import-export-with-files",
+  "assertions": [
+    "export_include_files_success",
+    "import_success",
+    "manifest_and_trace_identity_preserved"
+  ]
+}

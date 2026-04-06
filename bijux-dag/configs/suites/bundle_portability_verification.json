@@ -1,0 +1,13 @@
+{
+  "suite_id": "bundle-portability-verification",
+  "description": "Bundle export/import, corruption handling, replay compatibility, and fsck verification surfaces.",
+  "owner": "dag-app",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
+    "crates/bijux-dag-cli/tests/contract_surface.rs",
+    "crates/bijux-dev-dag/tests/bundle_portability_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/run_dir_import_export_hardening_contracts.rs",
+    "crates/bijux-dev-dag/tests/schema_governance_contracts.rs"
+  ]
+}

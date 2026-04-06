@@ -1,0 +1,50 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/bijux-dag-core",
+  "crates/bijux-dag-artifacts",
+  "crates/bijux-dag-runtime",
+  "crates/bijux-dag-app",
+  "crates/bijux-dag-cli",
+  "crates/bijux-dag-testkit",
+  "crates/bijux-dev-dag",
+]
+
+[workspace.package]
+version = "0.1.0"
+rust-version = "1.81"
+description = "A deterministic DAG runtime and artifact system with CLI tooling."
+repository = "https://github.com/bijanmousavi/bijux-dag"
+homepage = "https://github.com/bijanmousavi/bijux-dag"
+keywords = ["dag", "workflow", "runtime", "cli", "artifacts"]
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Bijan Mousavi"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+tempfile = "3"
+sha2 = "0.10"
+ctrlc = "3"
+hex = "0.4"
+tar = "0.4"
+flate2 = "1"
+base64 = "0.22"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_crate_dependencies = "deny"
+
+[workspace.lints.clippy]
+all = "allow"
+pedantic = "allow"
+unwrap_used = "allow"
+expect_used = "allow"
+todo = "deny"
+dbg_macro = "deny"
+print_stdout = "allow"
+print_stderr = "allow"

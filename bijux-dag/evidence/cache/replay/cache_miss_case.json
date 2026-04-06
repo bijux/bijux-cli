@@ -1,0 +1,9 @@
+{
+  "case": "cache_miss",
+  "run_a": "run-cache-source",
+  "run_b": "run-cache-replay-miss",
+  "expect": "not_equivalent",
+  "cache_result": "miss",
+  "cause_group": "artifact_payload",
+  "reason": "artifact payload hash mismatch invalidated cache reuse"
+}

@@ -1,0 +1,8 @@
+{
+  "scenario_id": "selection-include-exclude-filters",
+  "assertions": [
+    "selected_nodes_run",
+    "excluded_nodes_skipped",
+    "manifest_valid"
+  ]
+}

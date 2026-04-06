@@ -1,0 +1,10 @@
+{
+  "id": "graph-identity-regression-fast",
+  "description": "fast graph identity regression suite for deterministic and semantic identity checks",
+  "commands": [
+    "cargo test -p bijux-dag-core --test graph_identity_property_contracts",
+    "cargo test -p bijux-dag-core --test graph_identity_contract",
+    "cargo test -p bijux-dag-core --test graph_identity_expansion_contract"
+  ],
+  "report_focus": "graph identity determinism and semantic drift detection"
+}

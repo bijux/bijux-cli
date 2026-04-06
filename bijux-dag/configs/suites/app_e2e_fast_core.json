@@ -1,0 +1,9 @@
+{
+  "id": "app-e2e-fast-core",
+  "description": "Fast-lane app e2e scenarios promoted from slow portfolio for high-signal routed command coverage.",
+  "commands": [
+    "cargo test -p bijux-dag-app --test app_smoke_routed_workflows_contract",
+    "cargo test -p bijux-dag-app --test route_entrypoint_no_panic_contract",
+    "cargo test -p bijux-dag-app --test operator_input_no_panic_contracts"
+  ]
+}

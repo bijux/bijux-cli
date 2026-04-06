@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "manifest-env-drift",
+      "run_a": "run-a",
+      "run_b": "run-b",
+      "expect": "not_equivalent",
+      "cause_group": "manifest_drift",
+      "reason": "env policy drift"
+    },
+    {
+      "id": "graph-semantic-drift",
+      "run_a": "run-a",
+      "run_b": "run-c",
+      "expect": "not_equivalent",
+      "cause_group": "graph_semantics",
+      "reason": "graph fingerprint mismatch"
+    },
+    {
+      "id": "node-outcome-drift",
+      "run_a": "run-a",
+      "run_b": "run-d",
+      "expect": "not_equivalent",
+      "cause_group": "node_outcomes",
+      "reason": "node status mismatch"
+    },
+    {
+      "id": "artifact-payload-drift",
+      "run_a": "run-a",
+      "run_b": "run-e",
+      "expect": "not_equivalent",
+      "cause_group": "artifact_payload",
+      "reason": "output hash mismatch"
+    },
+    {
+      "id": "strict-equivalent",
+      "run_a": "run-a",
+      "run_b": "run-a-copy",
+      "expect": "equivalent",
+      "cause_group": "none",
+      "reason": "semantic replay equivalence"
+    }
+  ]
+}

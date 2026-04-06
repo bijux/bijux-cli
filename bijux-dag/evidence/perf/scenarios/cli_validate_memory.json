@@ -1,0 +1,10 @@
+{
+  "scenario_id": "cli-validate-memory",
+  "class": "cli-memory",
+  "size": "tiny",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "command": "dag validate",
+  "resource_focus": "memory",
+  "graph": "evidence/perf/fixtures/scheduler_linear_32.json"
+}

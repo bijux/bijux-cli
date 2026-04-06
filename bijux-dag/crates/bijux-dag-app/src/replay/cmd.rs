@@ -1,0 +1,11 @@
+use serde::Serialize;
+use std::path::PathBuf;
+
+#[derive(Debug, Serialize)]
+pub struct ReplayCommandResponse {
+    pub run_dir: Option<PathBuf>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dry_run_plan: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replay_proof: Option<serde_json::Value>,
+}

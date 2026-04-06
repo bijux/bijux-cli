@@ -1,0 +1,12 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"n1","kind":"const","inputs":[],"outputs":[{"name":"o","path":"o1.txt"}],"params":{"value":"1"}},
+    {"id":"n2","kind":"const","inputs":[],"outputs":[{"name":"o","path":"o2.txt"}],"params":{"value":"2"}},
+    {"id":"merge","kind":"shell","inputs":[{"node":"n1","output":"o"},{"node":"n2","output":"o"}],"outputs":[{"name":"out","path":"sum.txt"}],"params":{"cmd":["sh","-lc","cat o1.txt o2.txt > sum.txt"]}}
+  ],
+  "edges": [
+    {"from":{"node":"n1","output":"o"},"to":{"node":"merge","input":"in1"}},
+    {"from":{"node":"n2","output":"o"},"to":{"node":"merge","input":"in2"}}
+  ]
+}

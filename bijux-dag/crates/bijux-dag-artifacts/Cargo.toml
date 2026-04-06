@@ -1,0 +1,20 @@
+[package]
+name = "bijux-dag-artifacts"
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+authors = ["Bijan Mousavi"]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }

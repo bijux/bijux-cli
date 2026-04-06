@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "domain": "system-maintainability",
+  "cases": [
+    {"id":"maintainability-guidelines","coverage":["maintainability-guidelines","documentation"],"expected":"guidelines-present"},
+    {"id":"module-ownership-rules","coverage":["module-ownership-rules","architectural-boundaries"],"expected":"ownership-rules-enforced"},
+    {"id":"module-boundary-policies","coverage":["module-boundary-policies","architectural-boundaries"],"expected":"boundary-policies-enforced"},
+    {"id":"architectural-layering","coverage":["architectural-layering-guidelines","architectural-conformance"],"expected":"layering-guidelines-enforced"},
+    {"id":"dependency-hygiene","coverage":["dependency-hygiene-policies","dependency-cycle-detection"],"expected":"dependency-hygiene-enforced"},
+    {"id":"complexity-monitoring","coverage":["module-complexity-monitoring","telemetry-reporting"],"expected":"complexity-monitoring-present"},
+    {"id":"maintainability-regression-fixtures","coverage":["regression-fixtures","verification-suite"],"expected":"fixtures-present"},
+    {"id":"maintainability-telemetry","coverage":["telemetry-reporting","anomaly-detection"],"expected":"telemetry-present"},
+    {"id":"maintainability-anomaly-detection","coverage":["anomaly-detection","conformance-tests"],"expected":"anomaly-detection-present"},
+    {"id":"maintainability-review","coverage":["review-checklist","architecture-review"],"expected":"review-surface-present"},
+    {"id":"maintainability-visualization","coverage":["architecture-visualization-tooling","dashboard"],"expected":"visualization-present"},
+    {"id":"maintainability-benchmarks","coverage":["maintainability-benchmarks","conformance-tests"],"expected":"benchmarks-present"},
+    {"id":"maintainability-verification-suite","coverage":["verification-tools","verification-suite"],"expected":"suite-id-stable"}
+  ]
+}

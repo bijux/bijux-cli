@@ -1,0 +1,9 @@
+{
+  "scenario_id": "cli-validate-latency",
+  "class": "cli-latency",
+  "size": "tiny",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "command": "dag validate",
+  "graph": "evidence/perf/fixtures/scheduler_linear_32.json"
+}

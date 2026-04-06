@@ -1,0 +1,139 @@
+{
+  "format": "runtime-broad-surface-ownership/v1",
+  "generated_from": "crates/bijux-dag-runtime/src",
+  "entries": [
+    {
+      "module": "backend/distributed/coordination.rs",
+      "surface_status": "modeled",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "backend/distributed/distributed.rs",
+      "surface_status": "experimental",
+      "ownership_category": "runtime-extension",
+      "owner_repo": "bijux-runtime-extensions",
+      "decision": "quarantine"
+    },
+    {
+      "module": "backend/distributed/distribution_readiness.rs",
+      "surface_status": "docs-only",
+      "ownership_category": "governance",
+      "owner_repo": "bijux-dev-dag",
+      "decision": "quarantine"
+    },
+    {
+      "module": "backend/distributed/federated_scheduling.rs",
+      "surface_status": "modeled",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "backend/distributed/geo_federation.rs",
+      "surface_status": "modeled",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "backend/distributed/ha_scheduler.rs",
+      "surface_status": "modeled",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "diagnostics/runtime/control_plane.rs",
+      "surface_status": "experimental",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "diagnostics/runtime/control_plane_api.rs",
+      "surface_status": "modeled",
+      "ownership_category": "control-plane",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/analysis/adaptive_scheduler.rs",
+      "surface_status": "modeled",
+      "ownership_category": "runtime-extension",
+      "owner_repo": "bijux-runtime-extensions",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/analysis/cost_optimization.rs",
+      "surface_status": "modeled",
+      "ownership_category": "runtime-extension",
+      "owner_repo": "bijux-runtime-extensions",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/analysis/dataset_semantics.rs",
+      "surface_status": "modeled",
+      "ownership_category": "runtime-extension",
+      "owner_repo": "bijux-runtime-extensions",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/ext/extension_catalog.rs",
+      "surface_status": "experimental",
+      "ownership_category": "plugin-ecosystem",
+      "owner_repo": "bijux-plugin-sdk",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/identity/auth_identity.rs",
+      "surface_status": "modeled",
+      "ownership_category": "auth",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/identity/authz_policy.rs",
+      "surface_status": "modeled",
+      "ownership_category": "auth",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/identity/tenancy.rs",
+      "surface_status": "modeled",
+      "ownership_category": "auth",
+      "owner_repo": "bijux-control-plane",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/identity/provenance_compliance.rs",
+      "surface_status": "experimental",
+      "ownership_category": "governance",
+      "owner_repo": "bijux-dev-dag",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/workflow/ai_operator_assist.rs",
+      "surface_status": "modeled",
+      "ownership_category": "workflow-product",
+      "owner_repo": "bijux-operator-assist",
+      "decision": "quarantine"
+    },
+    {
+      "module": "internal/workflow/workflow_product.rs",
+      "surface_status": "modeled",
+      "ownership_category": "workflow-product",
+      "owner_repo": "bijux-workflow-product",
+      "decision": "quarantine"
+    },
+    {
+      "module": "artifacts/storage/semantic_lineage.rs",
+      "surface_status": "implemented",
+      "ownership_category": "runtime-kernel",
+      "owner_repo": "bijux-dag",
+      "decision": "keep"
+    }
+  ]
+}

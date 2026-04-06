@@ -1,0 +1,16 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out.txt"}]},
+    {"id":"b","kind":"const","outputs":[{"name":"out","path":"b/out.txt"}]},
+    {"id":"c","kind":"const","outputs":[{"name":"out","path":"c/out.txt"}]},
+    {"id":"d","kind":"const","outputs":[{"name":"out","path":"d/out.txt"}]},
+    {"id":"join","kind":"shell","inputs":["in_a","in_b","in_c","in_d"],"outputs":[{"name":"out","path":"join/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in_a in_b in_c in_d > join.out"]},"effects":["filesystem"]}
+  ],
+  "edges": [
+    {"from":{"node_id":"a","port":"out"},"to":{"node_id":"join","port":"in_a"}},
+    {"from":{"node_id":"b","port":"out"},"to":{"node_id":"join","port":"in_b"}},
+    {"from":{"node_id":"c","port":"out"},"to":{"node_id":"join","port":"in_c"}},
+    {"from":{"node_id":"d","port":"out"},"to":{"node_id":"join","port":"in_d"}}
+  ]
+}

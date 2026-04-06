@@ -1,0 +1,16 @@
+{
+  "schema": "configs/schema/operator/artifact_inspect.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "artifact_id": "example",
+    "artifact_sha256": "example",
+    "identity_explain": "example",
+    "lineage": "example",
+    "node_fingerprint": "example",
+    "node_id": "example",
+    "path": "example",
+    "payload_missing": "example",
+    "provenance": "example",
+    "size_bytes": "example"
+  }
+}

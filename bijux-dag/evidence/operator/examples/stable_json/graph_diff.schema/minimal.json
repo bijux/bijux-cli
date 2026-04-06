@@ -1,0 +1,9 @@
+{
+  "schema": "configs/schema/operator/graph_diff.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "changed_paths": "example",
+    "raw": "example",
+    "canonical": "example"
+  }
+}

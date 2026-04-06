@@ -1,0 +1,27 @@
+name: Rust Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: run architecture tests
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- tests run --domain governance --advisory
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: artifacts/reports
+          if-no-files-found: warn

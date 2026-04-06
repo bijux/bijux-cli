@@ -1,0 +1,13 @@
+{
+  "schema": "configs/schema/operator/run_id_explain.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "run_id": "example",
+    "run_dir": "example",
+    "exists": "example",
+    "manifest_exists": "example",
+    "parent_run_id": "example",
+    "source_run_id": "example",
+    "immutability_contract": "example"
+  }
+}

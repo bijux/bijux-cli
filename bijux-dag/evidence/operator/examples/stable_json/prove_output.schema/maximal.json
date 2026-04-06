@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/prove_output.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "complete": "example",
+    "determinism": "example",
+    "proof_id": "example",
+    "schema_version": "example"
+  }
+}

@@ -1,0 +1,7 @@
+run_id: "run-2"
+status: "failed"
+origin: imported
+integrity_state: null
+retry_count: 2
+cache_hits: 1
+artifact_count: 3

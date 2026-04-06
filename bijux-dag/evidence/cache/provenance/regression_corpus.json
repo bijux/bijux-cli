@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "run-node-artifact-linkage",
+      "scenario": "artifact inspect returns run and node provenance links",
+      "source_test": "artifact_identity_explain_covers_provenance_and_lineage_traversal"
+    },
+    {
+      "id": "replayed-provenance-surface",
+      "scenario": "trace-artifact supports replayed run provenance context",
+      "source_test": "trace_artifact_supports_replayed_run_provenance_surface"
+    },
+    {
+      "id": "imported-provenance-preservation",
+      "scenario": "imported bundles preserve provenance source and lineage markers",
+      "source_test": "import_supports_offline_inspection_path_portability_and_line_endings"
+    },
+    {
+      "id": "lineage-traversal-determinism",
+      "scenario": "repeated artifact lineage traversal returns deterministic upstream and downstream sets",
+      "source_test": "provenance_traversal_is_deterministic_across_repeated_inspection"
+    },
+    {
+      "id": "lineage-serialization-stability",
+      "scenario": "artifact inspect provenance payload is serialization-stable for unchanged snapshots",
+      "source_test": "provenance_serialization_is_stable_for_repeated_inspection"
+    },
+    {
+      "id": "provenance-query-latency",
+      "scenario": "provenance query latency remains bounded for large lineage snapshots",
+      "source_test": "provenance_query_latency_contract_on_large_lineage_snapshot"
+    }
+  ]
+}

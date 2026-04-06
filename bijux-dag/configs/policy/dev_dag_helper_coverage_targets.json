@@ -1,0 +1,12 @@
+{
+  "line_coverage_targets": {
+    "crates/bijux-dev-dag/src/commands/perf_evidence.rs": 0.60,
+    "crates/bijux-dev-dag/src/commands/suite_catalog.rs": 0.60,
+    "crates/bijux-dev-dag/src/repo/layout.rs": 0.80,
+    "crates/bijux-dev-dag/src/repo/root.rs": 0.80,
+    "crates/bijux-dev-dag/src/report/write.rs": 0.80,
+    "crates/bijux-dev-dag/src/tooling/cargo.rs": 0.80,
+    "crates/bijux-dev-dag/src/tooling/git.rs": 0.80,
+    "crates/bijux-dev-dag/src/tooling/mod.rs": 0.80
+  }
+}

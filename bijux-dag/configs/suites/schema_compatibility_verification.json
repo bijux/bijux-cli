@@ -1,0 +1,10 @@
+{
+  "id": "schema-compatibility-verification",
+  "description": "Verification suite for schema compatibility guarantees, drift diagnostics, and governance contracts.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test schema_governance_contracts",
+    "cargo test -p bijux-dev-dag --test schema_evolution_completion_contracts",
+    "cargo test -p bijux-dev-dag --test proof_schema_compatibility_contracts",
+    "cargo test -p bijux-dev-dag --test schema_compatibility_guarantees_contracts"
+  ]
+}

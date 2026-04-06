@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-concurrency-retry-determinism",
+  "graph_fixture": "scheduler_parallel_64",
+  "assertions": [
+    "stable_ready_queue_order_under_retry",
+    "retry_accounting_matches_attempt_events",
+    "deterministic_terminal_node_states"
+  ]
+}

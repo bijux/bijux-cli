@@ -1,0 +1,66 @@
+{
+  "version": "v1",
+  "domain": "system-invariants",
+  "cases": [
+    {
+      "id": "invariants-successful-run",
+      "coverage": ["successful-runs", "core-execution-invariants"],
+      "expected": "invariants-hold"
+    },
+    {
+      "id": "invariants-failed-run",
+      "coverage": ["failed-runs", "failure-logging"],
+      "expected": "failure-logged"
+    },
+    {
+      "id": "invariants-partial-run",
+      "coverage": ["partial-runs", "artifact-lineage-invariants"],
+      "expected": "partial-state-consistent"
+    },
+    {
+      "id": "invariants-replay",
+      "coverage": ["replay-operations", "replay-equivalence-invariants"],
+      "expected": "replay-invariants-hold"
+    },
+    {
+      "id": "invariants-import-export",
+      "coverage": ["import-export-flows", "run-identity-invariants"],
+      "expected": "import-export-invariants-hold"
+    },
+    {
+      "id": "invariants-diff-semantics",
+      "coverage": ["diff-semantic-invariants", "determinism-invariants"],
+      "expected": "diff-classification-consistent"
+    },
+    {
+      "id": "invariants-scheduler-fairness",
+      "coverage": ["scheduler-fairness-invariants", "determinism-invariants"],
+      "expected": "fairness-invariant-holds"
+    },
+    {
+      "id": "invariants-artifact-identity",
+      "coverage": ["artifact-identity-invariants", "artifact-lineage-invariants"],
+      "expected": "artifact-identity-coherent"
+    },
+    {
+      "id": "invariants-backend-equivalence",
+      "coverage": ["backend-equivalence-invariants", "determinism-invariants"],
+      "expected": "equivalence-verdict-stable"
+    },
+    {
+      "id": "invariants-tooling",
+      "coverage": ["invariant-verification-tooling", "verification-suite"],
+      "expected": "tooling-surface-present"
+    },
+    {
+      "id": "invariants-regression-fixtures",
+      "coverage": ["invariant-regression-fixtures", "verification-suite"],
+      "expected": "fixture-corpus-present"
+    },
+    {
+      "id": "invariants-drift-detection",
+      "coverage": ["invariant-drift-detection", "failure-logging"],
+      "expected": "drift-detection-surface-present"
+    }
+  ]
+}

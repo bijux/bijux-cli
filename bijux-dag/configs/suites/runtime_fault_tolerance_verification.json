@@ -1,0 +1,17 @@
+{
+  "id": "runtime-fault-tolerance-verification",
+  "description": "Runtime crash/restart recovery, failure-injection, resilience, and telemetry verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/failure_recovery_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/runtime_observability_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/runtime_fault_tolerance_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/runtime_fault_tolerance/regression_corpus.json",
+    "docs/reports/foundation/runtime_fault_tolerance_benchmarks.md",
+    "docs/reports/foundation/runtime_recovery_latency_report.md",
+    "docs/reports/foundation/runtime_fault_tolerance_telemetry_report.md",
+    "docs/reports/foundation/RUNTIME_FAULT_TOLERANCE_COVERAGE_REPORT.md"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "fixture": "kubernetes-pod-failure-explain",
+  "backend": "kubernetes",
+  "node_id": "train",
+  "failure_code": "K8S_IMAGE_PULL_BACKOFF",
+  "runtime_failure_kind": "configuration",
+  "retryable": false,
+  "operator_explain": {
+    "summary": "pod could not pull image",
+    "recommended_action": "verify image registry access and image digest"
+  }
+}

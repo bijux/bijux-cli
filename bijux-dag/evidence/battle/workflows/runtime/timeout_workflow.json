@@ -1,0 +1,1 @@
+{"scenario":"timeout_workflow","graph":"chain","nodes":12,"focus":["attempt_timeout","run_timeout"],"expectations":{"terminal":"failed","timeout_events_min":2}}

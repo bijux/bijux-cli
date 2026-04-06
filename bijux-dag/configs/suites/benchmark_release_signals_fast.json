@@ -1,0 +1,15 @@
+{
+  "suite": "benchmark-release-signals-fast",
+  "description": "Release-signal benchmark and governance contracts for identity, history, replay, diff, artifact, and bundle surfaces.",
+  "lane": "fast",
+  "tests": [
+    "crates/bijux-dev-dag/tests/benchmark_release_signal_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/benchmarks_and_lane_completion_contracts.rs",
+    "crates/bijux-dev-dag/tests/release_signal_benchmarks_completion_contracts.rs"
+  ],
+  "owners": [
+    "foundation",
+    "runtime",
+    "app"
+  ]
+}

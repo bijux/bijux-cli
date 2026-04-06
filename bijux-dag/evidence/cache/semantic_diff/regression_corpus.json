@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "domain": "semantic-diff",
+  "cases": [
+    {"id":"semantic-diff-graph","coverage":["graph-diff-semantics","correctness"],"expected":"graph-diff-correct"},
+    {"id":"semantic-diff-run","coverage":["run-diff-semantics","correctness"],"expected":"run-diff-correct"},
+    {"id":"semantic-diff-artifact","coverage":["artifact-diff-semantics","classification-consistency"],"expected":"artifact-diff-correct"},
+    {"id":"semantic-diff-environment","coverage":["environment-diff-semantics","classification-consistency"],"expected":"environment-diff-correct"},
+    {"id":"semantic-diff-backend","coverage":["backend-capability-diff-semantics","classification-consistency"],"expected":"backend-diff-correct"},
+    {"id":"semantic-diff-determinism-runs","coverage":["determinism-across-runs","correctness"],"expected":"run-determinism-holds"},
+    {"id":"semantic-diff-determinism-platforms","coverage":["determinism-across-platforms","correctness"],"expected":"platform-determinism-holds"},
+    {"id":"semantic-diff-regression-fixtures","coverage":["regression-fixtures","verification-suite"],"expected":"fixtures-present"},
+    {"id":"semantic-diff-fuzz","coverage":["fuzz-suite","anomaly-detection"],"expected":"fuzz-surface-present"},
+    {"id":"semantic-diff-performance","coverage":["performance-benchmarks","telemetry"],"expected":"benchmark-surfaces-present"},
+    {"id":"semantic-diff-explainability","coverage":["explainability","diagnostics-tooling"],"expected":"explain-surfaces-present"},
+    {"id":"semantic-diff-visualization","coverage":["visualization-data","documentation"],"expected":"visualization-surfaces-present"},
+    {"id":"semantic-diff-verification-suite","coverage":["verification-suite","telemetry"],"expected":"suite-id-stable"}
+  ]
+}

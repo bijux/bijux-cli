@@ -1,0 +1,23 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {},
+  "nodes": [
+    {
+      "id": "shell_no_env_effect",
+      "kind": "shell",
+      "effects": ["filesystem"],
+      "env_allowlist": ["SECRET_TOKEN"],
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "shell/out"
+        }
+      ],
+      "params": {
+        "cmd": "echo hi"
+      }
+    }
+  ],
+  "edges": []
+}

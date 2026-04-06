@@ -1,0 +1,9 @@
+{
+  "export_bundle_version": "export-bundle/v0.1",
+  "manifest": {
+    "manifest_version": "run-manifest/v0.1",
+    "spec": "0.1",
+    "run_id": "run-compat-1"
+  },
+  "node_traces": {}
+}

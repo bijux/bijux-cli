@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "sandbox-security-completion-contracts",
+  "cases": [
+    {"id": "container-isolation", "coverage": ["container-isolation", "sandbox-policy"]},
+    {"id": "shell-isolation", "coverage": ["shell-isolation", "privilege-restriction"]},
+    {"id": "remote-isolation", "coverage": ["remote-isolation", "sandbox-policy"]},
+    {"id": "environment-leakage-prevention", "coverage": ["env-leakage", "sanitization"]},
+    {"id": "filesystem-escape-prevention", "coverage": ["filesystem-boundary", "path-traversal"]},
+    {"id": "symlink-attack-prevention", "coverage": ["symlink-escape", "filesystem-boundary"]},
+    {"id": "command-injection-prevention", "coverage": ["command-injection", "argument-sanitization"]},
+    {"id": "artifact-write-boundary", "coverage": ["artifact-write-boundary", "sandbox-policy"]},
+    {"id": "artifact-read-boundary", "coverage": ["artifact-read-boundary", "sandbox-policy"]},
+    {"id": "backend-privilege-restriction", "coverage": ["privilege-restriction", "policy-enforcement"]},
+    {"id": "adversarial-execution", "coverage": ["adversarial", "failure-detection"]},
+    {"id": "sandbox-failure-detection", "coverage": ["failure-detection", "telemetry"]},
+    {"id": "sandbox-performance", "coverage": ["benchmark", "telemetry"]}
+  ]
+}

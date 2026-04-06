@@ -1,0 +1,21 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {},
+  "nodes": [
+    {
+      "id": "escape",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "../escape/out"
+        }
+      ],
+      "params": {
+        "value": "x"
+      }
+    }
+  ],
+  "edges": []
+}

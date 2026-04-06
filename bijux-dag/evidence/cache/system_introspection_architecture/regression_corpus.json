@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "domain": "system-introspection-architecture",
+  "cases": [
+    {"id":"introspection-command-correctness","coverage":["command-correctness","data-consistency"],"expected":"commands-correct"},
+    {"id":"introspection-schema-stability","coverage":["json-schema-stability","data-consistency"],"expected":"schema-stable"},
+    {"id":"introspection-determinism","coverage":["determinism","command-correctness"],"expected":"deterministic-output"},
+    {"id":"introspection-failure-behavior","coverage":["failure-behavior","diagnostics-tooling"],"expected":"failure-diagnostic"},
+    {"id":"introspection-regression-fixtures","coverage":["regression-fixtures","verification-suite"],"expected":"fixtures-present"},
+    {"id":"introspection-performance","coverage":["performance-benchmarks","telemetry-reporting"],"expected":"benchmark-surface-present"},
+    {"id":"introspection-anomaly","coverage":["anomaly-detection","diagnostics-tooling"],"expected":"anomaly-surface-present"},
+    {"id":"introspection-telemetry","coverage":["telemetry-reporting","data-consistency"],"expected":"telemetry-surface-present"},
+    {"id":"introspection-visualization","coverage":["visualization-data","documentation"],"expected":"visualization-surface-present"},
+    {"id":"introspection-fuzz","coverage":["fuzz-suite","failure-behavior"],"expected":"fuzz-surface-present"},
+    {"id":"introspection-stress","coverage":["stress-suite","reliability-tests"],"expected":"stress-surface-present"},
+    {"id":"introspection-reliability","coverage":["reliability-tests","architecture-review"],"expected":"reliability-surface-present"},
+    {"id":"introspection-verification-suite","coverage":["verification-suite","architecture-review"],"expected":"suite-id-stable"}
+  ]
+}

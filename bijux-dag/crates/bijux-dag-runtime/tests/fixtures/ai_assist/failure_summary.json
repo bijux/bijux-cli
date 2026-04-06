@@ -1,0 +1,7 @@
+{
+  "run_id": "run-2026-03-08-001",
+  "failed_nodes": ["node-transform", "node-validate"],
+  "stuck_nodes": ["node-load"],
+  "policy_denials": ["deny-export-prod"],
+  "artifact_mismatches": ["artifact-sales-report-v2"]
+}

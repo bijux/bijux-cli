@@ -1,0 +1,39 @@
+{
+  "policy_version": "1",
+  "release_critical_verify_commands": [
+    "verify evidence-battle",
+    "verify evidence-cache",
+    "verify evidence-replay",
+    "verify evidence-compat",
+    "verify evidence-fault",
+    "verify evidence-perf",
+    "verify evidence-consumers",
+    "verify evidence-release-set"
+  ],
+  "advisory_verify_commands": [
+    "verify evidence-compare"
+  ],
+  "fast_lane": {
+    "blocking": [
+      "verify evidence-battle",
+      "verify evidence-consumers"
+    ],
+    "advisory_blocking_default": false,
+    "advisory_opt_in_flag": "--advisory"
+  },
+  "full_lane": {
+    "blocking": [
+      "verify evidence-battle",
+      "verify evidence-cache",
+      "verify evidence-replay",
+      "verify evidence-compat",
+      "verify evidence-fault",
+      "verify evidence-perf",
+      "verify evidence-consumers",
+      "verify evidence-release-set"
+    ],
+    "advisory_non_blocking": [
+      "verify evidence-compare"
+    ]
+  }
+}

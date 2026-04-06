@@ -1,0 +1,118 @@
+{
+  "entries": [
+    {
+      "exists": true,
+      "path": "evidence/authoring"
+    },
+    {
+      "exists": true,
+      "path": "evidence/authoring/examples"
+    },
+    {
+      "exists": true,
+      "path": "evidence/authoring/patterns"
+    },
+    {
+      "exists": true,
+      "path": "evidence/authoring/negative"
+    },
+    {
+      "exists": true,
+      "path": "evidence/battle"
+    },
+    {
+      "exists": true,
+      "path": "evidence/battle/workflows"
+    },
+    {
+      "exists": true,
+      "path": "evidence/battle/registries"
+    },
+    {
+      "exists": true,
+      "path": "evidence/cache"
+    },
+    {
+      "exists": true,
+      "path": "evidence/cache/scenarios"
+    },
+    {
+      "exists": true,
+      "path": "evidence/cache/corrupt"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compat"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compat/graph_schema"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compat/export_bundle"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compat/run_dir"
+    },
+    {
+      "exists": true,
+      "path": "evidence/fault"
+    },
+    {
+      "exists": true,
+      "path": "evidence/fault/classes"
+    },
+    {
+      "exists": true,
+      "path": "evidence/operator"
+    },
+    {
+      "exists": true,
+      "path": "evidence/operator/scenarios"
+    },
+    {
+      "exists": true,
+      "path": "evidence/perf"
+    },
+    {
+      "exists": true,
+      "path": "evidence/perf/scenarios"
+    },
+    {
+      "exists": true,
+      "path": "evidence/perf/baselines"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compare"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compare/scenarios"
+    },
+    {
+      "exists": true,
+      "path": "evidence/compare/baselines"
+    },
+    {
+      "exists": true,
+      "path": "evidence/_meta"
+    },
+    {
+      "exists": true,
+      "path": "evidence/_meta/schemas"
+    },
+    {
+      "exists": true,
+      "path": "evidence/_meta/registries"
+    },
+    {
+      "exists": true,
+      "path": "evidence/_meta/maps"
+    }
+  ],
+  "source_policy": "configs/policy/evidence_structure.json",
+  "version": "1"
+}

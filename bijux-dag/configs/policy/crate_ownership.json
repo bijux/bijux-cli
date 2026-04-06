@@ -1,0 +1,75 @@
+{
+  "crates": [
+    {
+      "name": "bijux-dag-core",
+      "path": "crates/bijux-dag-core",
+      "domains": ["model"],
+      "public_modules": [
+        "compile",
+        "builder",
+        "canonical",
+        "edge",
+        "error",
+        "effects",
+        "fingerprint",
+        "graph",
+        "meta",
+        "model",
+        "node",
+        "parse",
+        "resolve",
+        "resources",
+        "semantics",
+        "topology",
+        "validate"
+      ]
+    },
+    {
+      "name": "bijux-dag-artifacts",
+      "path": "crates/bijux-dag-artifacts",
+      "domains": ["artifacts"],
+      "public_modules": [
+        "fs",
+        "hash",
+        "index",
+        "lineage",
+        "platform",
+        "proof",
+        "promotion",
+        "retention",
+        "schema",
+        "store"
+      ]
+    },
+    {
+      "name": "bijux-dag-runtime",
+      "path": "crates/bijux-dag-runtime",
+      "domains": ["execution"],
+      "public_modules": ["adapter_api", "adapter_conformance", "api", "config", "cache", "policy", "node_result", "run_context", "trace", "selectors", "subprocess", "builtins", "state_machine", "invariants"]
+    },
+    {
+      "name": "bijux-dag-app",
+      "path": "crates/bijux-dag-app",
+      "domains": ["app orchestration"],
+      "public_modules": []
+    },
+    {
+      "name": "bijux-dag-cli",
+      "path": "crates/bijux-dag-cli",
+      "domains": ["CLI"],
+      "public_modules": []
+    },
+    {
+      "name": "bijux-dag-testkit",
+      "path": "crates/bijux-dag-testkit",
+      "domains": ["repo governance"],
+      "public_modules": []
+    },
+    {
+      "name": "bijux-dev-dag",
+      "path": "crates/bijux-dev-dag",
+      "domains": ["repo governance"],
+      "public_modules": []
+    }
+  ]
+}

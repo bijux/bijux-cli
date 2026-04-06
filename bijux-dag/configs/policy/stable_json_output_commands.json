@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "commands": [
+    "dag.validate",
+    "dag.run",
+    "dag.replay",
+    "dag.diff",
+    "dag.capabilities",
+    "dag.semantic-portability",
+    "dag.equivalence-proof",
+    "dag.prove",
+    "dag.proof-summary"
+  ]
+}

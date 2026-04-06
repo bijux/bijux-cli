@@ -1,0 +1,81 @@
+{
+  "version": "v1",
+  "domain": "repository-structure",
+  "cases": [
+    {
+      "id": "repo-structure-largest-modules",
+      "coverage": ["largest-modules-report", "dashboard"],
+      "expected": "largest-modules-present"
+    },
+    {
+      "id": "repo-structure-highest-churn",
+      "coverage": ["highest-churn-report", "telemetry"],
+      "expected": "churn-hotspots-present"
+    },
+    {
+      "id": "repo-structure-lowest-coverage",
+      "coverage": ["lowest-coverage-report", "regression-fixtures"],
+      "expected": "low-coverage-hotspots-present"
+    },
+    {
+      "id": "repo-structure-duplicate-helpers",
+      "coverage": ["duplicate-helper-detection", "lint-rules"],
+      "expected": "duplicate-helper-report-present"
+    },
+    {
+      "id": "repo-structure-unused-modules",
+      "coverage": ["unused-module-detection", "architectural-conformance"],
+      "expected": "unused-module-report-present"
+    },
+    {
+      "id": "repo-structure-cycle-detection",
+      "coverage": ["cyclic-dependency-detection", "dependency-verification"],
+      "expected": "dependency-cycle-report-present"
+    },
+    {
+      "id": "repo-structure-dependency-graph",
+      "coverage": ["dependency-graph-visualization", "dependency-verification"],
+      "expected": "crate-graph-report-present"
+    },
+    {
+      "id": "repo-structure-ownership-map",
+      "coverage": ["module-ownership-mapping", "architectural-conformance"],
+      "expected": "ownership-map-present"
+    },
+    {
+      "id": "repo-structure-complexity-score",
+      "coverage": ["module-complexity-scoring", "complexity-benchmarks"],
+      "expected": "complexity-report-present"
+    },
+    {
+      "id": "repo-structure-refactor-candidates",
+      "coverage": ["refactoring-candidates-report", "dashboard"],
+      "expected": "refactoring-candidates-present"
+    },
+    {
+      "id": "repo-structure-doc-coverage",
+      "coverage": ["documentation-coverage-report", "dependency-drift-tests"],
+      "expected": "docs-coverage-report-present"
+    },
+    {
+      "id": "repo-structure-hygiene-fixtures",
+      "coverage": ["hygiene-regression-fixtures", "verification-suite"],
+      "expected": "fixture-governance-report-present"
+    },
+    {
+      "id": "repo-structure-dashboard",
+      "coverage": ["health-dashboard", "telemetry"],
+      "expected": "health-dashboard-present"
+    },
+    {
+      "id": "repo-structure-structural-lints",
+      "coverage": ["structural-lint-rules", "architectural-conformance"],
+      "expected": "hygiene-suite-guards-present"
+    },
+    {
+      "id": "repo-structure-verification-suite",
+      "coverage": ["verification-suite", "regression-fixtures"],
+      "expected": "suite-id-stable"
+    }
+  ]
+}

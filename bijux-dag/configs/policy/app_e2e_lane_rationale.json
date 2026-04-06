@@ -1,0 +1,55 @@
+{
+  "format": "app-e2e-lane-rationale/v1",
+  "tests": [
+    {
+      "name": "e2e_minimal_parse_validate_run_inspect_replay",
+      "lane": "full",
+      "rationale": "Spawns multiple end-to-end CLI commands through cargo run and is marked slow."
+    },
+    {
+      "name": "e2e_diamond_outputs_and_manifest_totals",
+      "lane": "full",
+      "rationale": "Validates broader manifest/output accounting with slower runtime setup."
+    },
+    {
+      "name": "e2e_failure_downstream_behavior",
+      "lane": "full",
+      "rationale": "Failure propagation scenario kept in full lane for resilience depth."
+    },
+    {
+      "name": "e2e_retry_accounting_present",
+      "lane": "full",
+      "rationale": "Retry-accounting path exercises heavier runtime behavior."
+    },
+    {
+      "name": "e2e_timeout_error_classification",
+      "lane": "full",
+      "rationale": "Timeout behavior is timing-sensitive and better isolated from fast lane."
+    },
+    {
+      "name": "e2e_missing_outputs_failure_handling",
+      "lane": "full",
+      "rationale": "Artifact failure-classification path remains in slow extended lane."
+    },
+    {
+      "name": "e2e_cache_hit_second_run_and_invalidation",
+      "lane": "full",
+      "rationale": "Cache warm/cold behavior includes repeated runtime work and filesystem churn."
+    },
+    {
+      "name": "e2e_replay_semantic_comparison_and_import_export",
+      "lane": "full",
+      "rationale": "Combines replay semantic comparison and import/export verification with broader artifact surface."
+    },
+    {
+      "name": "e2e_selection_policy_compat_validation_and_no_partial_run_dir",
+      "lane": "full",
+      "rationale": "Selection and compatibility validation behavior remains slow-lane for deeper policy guarantees."
+    },
+    {
+      "name": "e2e_container_and_real_world_orchestration",
+      "lane": "full",
+      "rationale": "Container and realistic orchestration path is intentionally full-lane due to environment variance."
+    }
+  ]
+}

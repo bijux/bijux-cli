@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/dag/v0.1",
+  "title": "BijuxDag",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec", "nodes", "edges"],
+  "properties": {
+    "spec": {"type": "string", "const": "bijux-dag/v0.1"},
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "description": {"type": ["string", "null"]},
+        "owners": {"type": "array", "items": {"type": "string"}},
+        "tags": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "inputs": {"type": "object"},
+    "nondeterminism_allowed": {"type": "boolean"},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "inputs", "outputs"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"type": "string"},
+          "inputs": {"type": "array", "items": {"type": "string"}},
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "path"],
+              "properties": {
+                "name": {"type": "string"},
+                "path": {"type": "string"}
+              }
+            }
+          },
+          "params": {},
+          "container": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["image", "argv", "engine"],
+            "properties": {
+              "image": {"type": "string"},
+              "argv": {"type": "array", "items": {"type": "string"}},
+              "env_allowlist": {"type": "array", "items": {"type": "string"}},
+              "workdir": {"type": ["string", "null"]},
+              "engine": {"type": "string", "enum": ["docker", "podman"]}
+            }
+          },
+          "timeout_ms": {"type": ["integer", "null"], "minimum": 0},
+          "resources": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["cpu", "mem_mb"],
+            "properties": {
+              "cpu": {"type": "integer", "minimum": 0},
+              "mem_mb": {"type": "integer", "minimum": 0}
+            }
+          },
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "retry": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["max_attempts", "backoff_ms"],
+            "properties": {
+              "max_attempts": {"type": "integer", "minimum": 0},
+              "backoff_ms": {"type": "integer", "minimum": 0}
+            }
+          },
+          "effects": {"type": "array", "items": {"type": "string"}},
+          "env_allowlist": {"type": "array", "items": {"type": "string"}},
+          "group": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node_id", "port"],
+            "properties": {
+              "node_id": {"type": "string"},
+              "port": {"type": "string"}
+            }
+          },
+          "to": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node_id", "port"],
+            "properties": {
+              "node_id": {"type": "string"},
+              "port": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

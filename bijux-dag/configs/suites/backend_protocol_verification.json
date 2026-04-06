@@ -1,0 +1,17 @@
+{
+  "id": "backend-protocol-verification",
+  "description": "Backend protocol handshake, negotiation, ordering, resilience, telemetry, and anomaly verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/remote_worker_protocol_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/distributed_execution_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/backend_protocol_stability_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/backend_protocol/regression_corpus.json",
+    "docs/reports/foundation/backend_protocol_benchmarks.md",
+    "docs/reports/foundation/backend_protocol_telemetry_report.md",
+    "docs/reports/foundation/backend_protocol_anomaly_report.md",
+    "docs/reports/foundation/BACKEND_PROTOCOL_COVERAGE_REPORT.md"
+  ]
+}

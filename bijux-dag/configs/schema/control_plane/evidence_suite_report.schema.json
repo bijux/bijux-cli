@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evidence Suite Summary Report",
+  "type": "object",
+  "required": [
+    "report_version",
+    "policy_source",
+    "blocking",
+    "advisory"
+  ],
+  "properties": {
+    "report_version": {
+      "type": "string"
+    },
+    "policy_source": {
+      "type": "string"
+    },
+    "blocking": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/suite"
+      }
+    },
+    "advisory": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/suite"
+      }
+    }
+  },
+  "definitions": {
+    "suite": {
+      "type": "object",
+      "required": [
+        "id",
+        "verify_command"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "verify_command": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

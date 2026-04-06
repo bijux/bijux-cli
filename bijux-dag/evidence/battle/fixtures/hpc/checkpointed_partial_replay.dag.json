@@ -1,0 +1,23 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "checkpoint",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "cp", "path": "checkpoint.txt"}],
+      "params": {"value": "checkpoint"}
+    },
+    {
+      "id": "resume",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "resumed", "path": "resumed.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "echo resumed > ../outputs/resumed.txt"]},
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "checkpoint", "port": "cp"}, "to": {"node_id": "resume", "port": "in"}}
+  ]
+}

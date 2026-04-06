@@ -1,0 +1,47 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "runtime-observability-completion-contracts",
+  "cases": [
+    {
+      "id": "node-duration-telemetry",
+      "coverage": ["node-duration", "telemetry-output-stability"]
+    },
+    {
+      "id": "run-duration-telemetry",
+      "coverage": ["run-duration", "telemetry-output-stability"]
+    },
+    {
+      "id": "scheduler-telemetry",
+      "coverage": ["scheduler", "partial-rerun"]
+    },
+    {
+      "id": "cache-hit-miss-telemetry",
+      "coverage": ["cache-hit", "cache-miss"]
+    },
+    {
+      "id": "replay-diff-telemetry",
+      "coverage": ["replay", "diff", "telemetry-json-schema"]
+    },
+    {
+      "id": "prove-verify-telemetry",
+      "coverage": ["prove", "verify", "telemetry-json-schema"]
+    },
+    {
+      "id": "artifact-io-telemetry",
+      "coverage": ["artifact-io", "backend-capability"]
+    },
+    {
+      "id": "failure-path-telemetry",
+      "coverage": ["failure-path", "diagnostics-snapshot"]
+    },
+    {
+      "id": "cancellation-path-telemetry",
+      "coverage": ["cancellation-path", "diagnostics-snapshot"]
+    },
+    {
+      "id": "partial-rerun-telemetry",
+      "coverage": ["partial-rerun", "diagnostics-snapshot"]
+    }
+  ]
+}

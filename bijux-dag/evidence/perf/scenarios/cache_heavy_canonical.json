@@ -1,0 +1,8 @@
+{
+  "scenario_id": "cache-heavy-canonical",
+  "class": "cache-lookup",
+  "size": "cache-heavy",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph":"evidence/perf/fixtures/scheduler_parallel_64.json"
+}

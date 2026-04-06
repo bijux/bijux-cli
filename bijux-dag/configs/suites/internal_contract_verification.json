@@ -1,0 +1,11 @@
+{
+  "id": "internal-contract-verification",
+  "description": "Verification suite for internal contract discipline, linkage completeness, and drift detection.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test internal_contract_governance_contracts",
+    "cargo test -p bijux-dev-dag --test dependency_boundary_contracts",
+    "cargo test -p bijux-dev-dag --test app_service_boundary_progress_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_scope_reports_contracts",
+    "cargo test -p bijux-dev-dag --test backend_adapter_scope_reports_contracts"
+  ]
+}

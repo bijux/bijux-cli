@@ -1,0 +1,21 @@
+{
+  "version": "2026-03-08",
+  "ownership_classes": [
+    {"prefix": "crates/bijux-dag-app/src/routes/", "class": "route"},
+    {"prefix": "crates/bijux-dag-app/src/inspect/", "class": "service"},
+    {"prefix": "crates/bijux-dag-app/src/replay/", "class": "service"},
+    {"prefix": "crates/bijux-dag-app/src/inspect/service.rs", "class": "service"},
+    {"prefix": "crates/bijux-dag-app/src/replay/service.rs", "class": "service"},
+    {"prefix": "crates/bijux-dag-app/src/routes/renderer.rs", "class": "renderer"},
+    {"prefix": "crates/bijux-dag-app/src/commands/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/cache/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/read/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/graph/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/explain/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/format/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/migrate/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/write/", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/lib.rs", "class": "support"},
+    {"prefix": "crates/bijux-dag-app/src/capability_matrix.rs", "class": "support"}
+  ]
+}

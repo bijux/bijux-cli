@@ -1,0 +1,53 @@
+{
+  "format": "crate-responsibility-guardrails/v1",
+  "generated_from": "workspace policy",
+  "checks": [
+    {
+      "id": "core-no-adapter-backend-impl",
+      "crate_path": "crates/bijux-dag-core/src",
+      "forbidden_tokens": [
+        "Adapter",
+        "execution_backend",
+        "backend_cluster",
+        "local_executor"
+      ]
+    },
+    {
+      "id": "artifacts-no-command-routing",
+      "crate_path": "crates/bijux-dag-artifacts/src",
+      "forbidden_tokens": [
+        "clap::",
+        "ArgMatches",
+        "Subcommand",
+        "Commands::"
+      ]
+    },
+    {
+      "id": "dev-dag-no-runtime-truth-authority",
+      "crate_path": "crates/bijux-dev-dag/src",
+      "forbidden_tokens": [
+        "runtime_core::state::",
+        "runtime_core::execution::run_state::",
+        "runtime_core::governance::invariants::"
+      ]
+    },
+    {
+      "id": "app-no-low-level-artifact-storage",
+      "crate_path": "crates/bijux-dag-app/src",
+      "forbidden_tokens": [
+        "write_outputs_index(",
+        "write_inputs_index(",
+        "ArtifactStoreBackend::"
+      ]
+    },
+    {
+      "id": "runtime-not-schema-authority-for-export-bundle",
+      "crate_path": "crates/bijux-dag-runtime/src",
+      "forbidden_tokens": [
+        "export-bundle/v0.1",
+        "run_summary.schema.json",
+        "run_history.schema.json"
+      ]
+    }
+  ]
+}

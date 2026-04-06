@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "domain": "runtime-fault-tolerance",
+  "cases": [
+    {"id": "runtime-crash-recovery", "coverage": ["crash-recovery", "partial-run-recovery"], "source": "crates/bijux-dag-runtime/tests/runtime_recovery_contracts.rs"},
+    {"id": "runtime-restart-continuation", "coverage": ["restart-continuation", "restart-determinism"], "source": "crates/bijux-dag-runtime/tests/formal_verification_contracts.rs"},
+    {"id": "runtime-state-persistence", "coverage": ["state-persistence", "event-log-recovery"], "source": "docs/spec/RUN_DIR_CONTRACT.md"},
+    {"id": "runtime-scheduler-restart", "coverage": ["scheduler-restart", "restart-determinism"], "source": "crates/bijux-dag-runtime/tests/runtime_scheduler_state_machine_invariants_contracts.rs"},
+    {"id": "runtime-worker-reconnect", "coverage": ["worker-reconnect", "failure-detection"], "source": "docs/spec/WORKER_PROTOCOL_CONTRACT.md"},
+    {"id": "runtime-artifact-recovery", "coverage": ["artifact-recovery", "partial-run-recovery"], "source": "docs/spec/ARTIFACT_STORAGE_LIFECYCLE_CONTRACT.md"},
+    {"id": "runtime-replay-after-crash", "coverage": ["replay-recovery", "restart-continuation"], "source": "docs/spec/REPLAY_CONTRACT.md"},
+    {"id": "runtime-cancellation-recovery", "coverage": ["cancellation-recovery", "failure-detection"], "source": "crates/bijux-dag-app/tests/fault_resilience_integration.rs"},
+    {"id": "runtime-event-log-recovery", "coverage": ["event-log-recovery", "state-persistence"], "source": "docs/spec/CONCURRENCY_MODEL.md"},
+    {"id": "runtime-partial-run-recovery", "coverage": ["partial-run-recovery", "recovery-required"], "source": "crates/bijux-dag-runtime/tests/runtime_recovery_contracts.rs"},
+    {"id": "runtime-failure-detection", "coverage": ["failure-detection", "recovery-required"], "source": "docs/spec/FAILURE_TAXONOMY_CONTRACT.md"},
+    {"id": "runtime-resilience-benchmarks", "coverage": ["resilience-benchmarks", "performance"], "source": "docs/reports/foundation/FAILURE_HANDLING_BENCHMARKS.md"},
+    {"id": "runtime-recovery-latency", "coverage": ["recovery-latency", "performance"], "source": "docs/reports/foundation/RUN_DIRECTORY_FILESYSTEM_RECOVERY_BENCHMARKS.md"},
+    {"id": "runtime-recovery-regression-fixtures", "coverage": ["regression-fixtures", "failure-injection"], "source": "evidence/cache/failure/regression_corpus.json"},
+    {"id": "runtime-crash-simulation-suite", "coverage": ["crash-simulation", "failure-injection"], "source": "crates/bijux-dag-runtime/tests/runtime_engine_invariants_contracts.rs"},
+    {"id": "runtime-failure-injection", "coverage": ["failure-injection", "failure-detection"], "source": "configs/suites/failure_recovery_injection_stress.json"},
+    {"id": "runtime-resilience-telemetry", "coverage": ["resilience-telemetry", "anomaly-detection"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
+    {"id": "runtime-fault-tolerance-verification-suite", "coverage": ["verification-suite", "restart-determinism"], "source": "configs/suites/runtime_fault_tolerance_verification.json"}
+  ]
+}

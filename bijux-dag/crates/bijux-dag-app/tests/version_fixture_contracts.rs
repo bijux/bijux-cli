@@ -1,0 +1,114 @@
+use base64 as _;
+use bijux_dag_app as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
+use clap as _;
+use flate2 as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tar as _;
+use tempfile as _;
+use thiserror as _;
+
+use bijux_dag_app::{dag_command, dag_run};
+use std::path::PathBuf;
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+#[test]
+fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
+    let root = repo_root();
+    let supported = root.join("evidence/compat/graph_schema/v0_1_supported/minimal.dag.json");
+    let unsupported_future =
+        root.join("evidence/compat/graph_schema/unsupported_future/minimal.dag.json");
+
+    let cmd = dag_command();
+    let ok_matches = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "version-inspect",
+            "--dag",
+            supported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args supported");
+    assert!(dag_run(&ok_matches).is_ok());
+
+    let bad_matches = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "version-inspect",
+            "--dag",
+            unsupported_future.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args unsupported");
+    assert!(dag_run(&bad_matches).is_err());
+}
+
+#[test]
+fn supported_and_unsupported_run_dir_formats_are_classified() {
+    let root = repo_root();
+    let supported = root.join("evidence/compat/run_dir/v0_1_supported");
+    let unsupported = root.join("evidence/compat/run_dir/unsupported_future");
+
+    let cmd = dag_command();
+    let ok_matches = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "version-inspect",
+            "--run-dir",
+            supported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args supported run");
+    assert!(dag_run(&ok_matches).is_ok());
+
+    let bad_matches = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "version-inspect",
+            "--run-dir",
+            unsupported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args unsupported run");
+    assert!(dag_run(&bad_matches).is_err());
+}
+
+#[test]
+fn supported_and_unsupported_export_bundle_versions_are_classified() {
+    let root = repo_root();
+    let supported = root.join("evidence/compat/export_bundle/v0_1_supported/bundle.json");
+    let unsupported = root.join("evidence/compat/export_bundle/unsupported_past/bundle.json");
+
+    let cmd = dag_command();
+    let ok_matches = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "import",
+            supported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args supported bundle");
+    assert!(dag_run(&ok_matches).is_ok());
+
+    let bad_matches = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "import",
+            unsupported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args unsupported bundle");
+    assert!(dag_run(&bad_matches).is_err());
+}

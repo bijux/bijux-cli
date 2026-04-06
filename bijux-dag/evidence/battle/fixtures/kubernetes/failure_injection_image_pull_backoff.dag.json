@@ -1,0 +1,13 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "image_pull_failure",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "value", "path": "failure.txt"}],
+      "params": {"value": "inject:K8S_IMAGE_PULL_BACKOFF"}
+    }
+  ],
+  "edges": []
+}

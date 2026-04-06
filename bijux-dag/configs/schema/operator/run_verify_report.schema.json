@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_verify_report",
+  "type": "object",
+  "required": ["status", "mode", "artifacts_checked", "errors", "invariant_violations"],
+  "properties": {
+    "status": { "type": "string", "enum": ["ok", "error"] },
+    "mode": { "type": "string", "enum": ["standard", "deep", "strict"] },
+    "artifacts_checked": {
+      "type": "object",
+      "required": ["manifest", "outputs_index", "outputs_files"],
+      "properties": {
+        "manifest": { "type": "boolean" },
+        "outputs_index": { "type": "boolean" },
+        "outputs_files": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "invariant_violations": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

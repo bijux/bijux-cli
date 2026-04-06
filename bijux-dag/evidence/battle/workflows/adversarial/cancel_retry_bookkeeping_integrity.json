@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-cancel-retry-bookkeeping-integrity",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "cancellation_does_not_duplicate_retry_accounting",
+    "terminal_state_reflects_cancel_vs_retry_outcome",
+    "attempt_counters_are_consistent"
+  ]
+}

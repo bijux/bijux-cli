@@ -1,0 +1,60 @@
+use base64 as _;
+use bijux_dag_app as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
+use clap as _;
+use flate2 as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tar as _;
+use tempfile as _;
+use thiserror as _;
+
+use std::path::PathBuf;
+use std::process::Command;
+
+fn repo_target_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("artifacts/target")
+}
+
+fn examples_file(file_name: &str) -> String {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples")
+        .join(file_name);
+    root.to_string_lossy().into_owned()
+}
+
+#[test]
+#[ignore = "slow"]
+fn json_error_output_contains_structured_fields() {
+    let output = Command::new("cargo")
+        .env("CARGO_TARGET_DIR", repo_target_dir())
+        .args([
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "lint",
+            "--strict",
+            "--json",
+            &examples_file("hello.dag.json"),
+        ])
+        .output()
+        .expect("run lint strict json");
+
+    assert!(!output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("parse json response");
+    assert_eq!(payload["ok"], false);
+    assert!(payload["error"].is_object());
+    assert!(payload["error"]["category"].is_string());
+    assert!(payload["error"]["code"].is_string());
+    assert!(payload["error"]["exit_code"].is_number());
+}

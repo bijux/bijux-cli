@@ -1,0 +1,16 @@
+{
+  "id": "runtime-observability-stress",
+  "purpose": "runtime-telemetry-and-diagnostics-regression",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-app --test operator_human_snapshot_contracts",
+    "cargo test -p bijux-dag-app --test fault_resilience_integration",
+    "cargo test -p bijux-dag-runtime --test runtime_execution_resilience_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_observability_completion_contracts"
+  ],
+  "owner": "runtime-observability",
+  "notes": [
+    "Prioritize telemetry schema stability and diagnostics behavior across failure paths.",
+    "Use this suite for observability drift checks in release verification."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "items": [
+    "public_api_review",
+    "run_dir_compatibility_review",
+    "import_export_compatibility_review",
+    "compatibility_matrix_review",
+    "benchmark_regression_review",
+    "resource_regression_review",
+    "known_limitations_updated",
+    "reproducibility_check",
+    "post_release_verification"
+  ]
+}

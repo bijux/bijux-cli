@@ -1,0 +1,9 @@
+{
+  "scenario_id": "failure-retry-then-success-accounting",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "attempt_count_recorded",
+    "retry_backoff_recorded",
+    "final_status_success"
+  ]
+}

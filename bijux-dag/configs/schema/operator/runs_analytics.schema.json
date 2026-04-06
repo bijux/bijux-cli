@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/operator/runs_analytics.schema.json",
+  "title": "Runs analytics command output",
+  "type": "object",
+  "required": [
+    "command",
+    "data"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "enum": [
+        "dag.runs.summary",
+        "dag.runs.compare",
+        "dag.runs.trend",
+        "dag.runs.failures",
+        "dag.runs.flakes"
+      ]
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,9 @@
+{
+  "scenario_id": "happy-diamond-outputs-and-manifest-totals",
+  "graph_fixture": "graph_diamond",
+  "assertions": [
+    "outputs_exist",
+    "trace_count_matches_nodes",
+    "manifest_run_summary_matches_trace_status_totals"
+  ]
+}

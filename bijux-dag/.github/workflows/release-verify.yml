@@ -1,0 +1,25 @@
+name: Release Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  release-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: verify release evidence set
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-release-set
+      - name: generate release proof reports
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo release-evidence-report
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-proof-report
+          path: artifacts/reports
+          if-no-files-found: warn

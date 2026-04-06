@@ -1,0 +1,22 @@
+{
+  "id": "system-introspection-architecture-verification",
+  "version": "v1",
+  "checks": [
+    "command-correctness",
+    "json-schema-stability",
+    "determinism",
+    "failure-behavior",
+    "regression-fixtures",
+    "performance-benchmarks",
+    "anomaly-detection",
+    "telemetry-reporting",
+    "diagnostics-tooling",
+    "visualization-data",
+    "documentation",
+    "fuzz-suite",
+    "stress-suite",
+    "reliability-tests",
+    "architecture-review",
+    "verification-suite"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "case": "missing_artifact",
+  "run_a": "run-a",
+  "run_b": "run-b-missing-artifact",
+  "expect": "verification_error",
+  "reason": "artifact payload missing from replay source"
+}

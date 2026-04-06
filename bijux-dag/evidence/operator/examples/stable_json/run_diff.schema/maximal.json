@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/operator/run_diff.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "graph_fingerprint": "example",
+    "manifest": "example",
+    "nodes": "example",
+    "outputs": "example",
+    "replay_equivalence": "example"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "scenario_id": "diff-canonical",
+  "class": "validate",
+  "size": "diff",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/scheduler_parallel_64.json"
+}

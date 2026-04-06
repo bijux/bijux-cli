@@ -1,0 +1,44 @@
+{
+  "version": "1",
+  "owner": "dag-control-plane",
+  "scope": {
+    "stable_source_roots": [
+      "crates"
+    ],
+    "excluded_path_patterns": [
+      "/tests/",
+      "/benches/",
+      ".in.rs"
+    ]
+  },
+  "forbidden_tokens": [
+    "todo!(",
+    "unimplemented!(",
+    "panic!(\"not implemented\"",
+    "panic!(\"Not implemented\""
+  ],
+  "forbidden_public_output_tokens": [
+    "not implemented",
+    "Not implemented",
+    "placeholder"
+  ],
+  "allowed_public_output_exceptions": [
+    {
+      "path": "crates/bijux-dag-artifacts/src/io/store.rs",
+      "contains": "object store backend is not implemented in this runtime",
+      "reason": "explicit runtime boundary declaration for unsupported execution backend"
+    }
+  ],
+  "retained_placeholders": [
+    {
+      "id": "runtime-object-store-boundary",
+      "owner": "dag-artifacts",
+      "status": "postpone-with-doc-only",
+      "deadline": "2026-12-31",
+      "paths": [
+        "crates/bijux-dag-artifacts/src/io/store.rs",
+        "docs/spec/STORAGE_CONTRACT.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "pattern_cache_heavy", "owners": [], "tags": ["cache"]},
+  "nodes": [
+    {"id": "const_payload", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "const_payload/out"}], "params": {"value": "stable"}}
+  ],
+  "edges": []
+}

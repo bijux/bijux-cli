@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "command": "dag.lint",
+  "error": {
+    "category": "validation",
+    "code": "BJX-VALIDATION-001",
+    "exit_code": 2
+  }
+}

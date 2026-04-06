@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/benchmarks/benchmark_report.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "benchmark_format": "example",
+    "commit_sha": "example",
+    "machine": "example",
+    "rust_version": "example",
+    "scenario_results": "example"
+  }
+}

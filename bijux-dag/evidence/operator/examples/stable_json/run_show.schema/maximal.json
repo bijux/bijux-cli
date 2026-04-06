@@ -1,0 +1,12 @@
+{
+  "schema": "configs/schema/operator/run_show.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "graph_fingerprint": "example",
+    "integrity_state": "example",
+    "node_counts": "example",
+    "run_id": "example",
+    "status": "example",
+    "timing_ms": "example"
+  }
+}

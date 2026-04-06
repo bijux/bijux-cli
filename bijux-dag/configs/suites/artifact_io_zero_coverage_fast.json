@@ -1,0 +1,11 @@
+{
+  "id": "artifact-io-zero-coverage-fast",
+  "description": "Fast artifact IO suite focused on direct io/store and io/fs hardening contracts.",
+  "commands": [
+    "cargo test -p bijux-dag-artifacts --test io_store_fs_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_io_expansion_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_storage_resilience_contracts",
+    "cargo test -p bijux-dag-artifacts --test storage_services_contracts",
+    "cargo test -p bijux-dag-app --test artifact_inspect_storage_contracts"
+  ]
+}

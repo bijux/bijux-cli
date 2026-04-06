@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "purpose": "release-blocking classification for strongest adversarial battle scenarios",
+  "release_blocking_scenarios": [
+    "adversarial-concurrency-retry-determinism",
+    "adversarial-post-success-artifact-corruption",
+    "adversarial-cache-proof-corruption-plausible-outputs",
+    "adversarial-replay-semantic-drift-detection",
+    "adversarial-import-export-semantic-loss-rejected",
+    "adversarial-operator-only-recovery-path",
+    "adversarial-policy-denial-blocks-unsafe-execution",
+    "adversarial-missing-outputs-superficial-success-rejected",
+    "adversarial-tie-break-stability-under-contention",
+    "adversarial-cancel-retry-bookkeeping-integrity",
+    "adversarial-path-escape-via-declared-outputs-blocked",
+    "adversarial-env-leakage-via-adapters-blocked"
+  ],
+  "advisory_scenarios": [
+    "adversarial-partial-run-dir-not-finalized",
+    "adversarial-imported-runs-remain-visible"
+  ]
+}

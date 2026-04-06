@@ -1,0 +1,28 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"root","kind":"const","inputs":[],"outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+    {"id":"b01","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b01/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b02","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b02/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b03","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b03/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b04","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b04/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b05","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b05/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b06","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b06/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b07","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b07/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b08","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b08/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b09","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b09/out"}],"params":{"argv":["echo","1"]}},
+    {"id":"b10","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b10/out"}],"params":{"argv":["echo","1"]}}
+  ],
+  "edges": [
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b01","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b02","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b03","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b04","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b05","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b06","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b07","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b08","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b09","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b10","port":"in"}}
+  ]
+}

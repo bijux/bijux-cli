@@ -1,0 +1,7 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"n","kind":"const","outputs":[{"name":"out","path":"safe/../escape.txt"}]}
+  ],
+  "edges": []
+}

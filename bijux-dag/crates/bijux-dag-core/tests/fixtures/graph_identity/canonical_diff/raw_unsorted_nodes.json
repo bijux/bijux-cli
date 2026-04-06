@@ -1,0 +1,8 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"b","kind":"const","outputs":[{"name":"out","path":"b/out.txt"}]},
+    {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out.txt"}]}
+  ],
+  "edges": []
+}

@@ -1,0 +1,11 @@
+{
+  "id": "system-readiness-dashboards-verification",
+  "description": "Verification suite for system confidence dashboards and readiness governance outputs.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test system_readiness_dashboard_contracts",
+    "cargo test -p bijux-dev-dag --test repo_health_contracts",
+    "cargo test -p bijux-dev-dag --test backend_semantic_equivalence_contracts",
+    "cargo test -p bijux-dev-dag --test cli_stability_guarantees_contracts",
+    "cargo test -p bijux-dev-dag --test schema_compatibility_guarantees_contracts"
+  ]
+}

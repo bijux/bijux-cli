@@ -1,0 +1,17 @@
+{
+  "id": "performance-optimization-regression",
+  "description": "Performance optimization benchmarks, profiling, and regression detection coverage",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/benchmark_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/perf_evidence_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/performance_optimization_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/performance_optimization/regression_corpus.json",
+    "docs/reports/foundation/PERFORMANCE_OPTIMIZATION_TELEMETRY_REPORT.md",
+    "docs/reports/foundation/performance_optimization_trend_report.md",
+    "docs/reports/foundation/performance_optimization_checklist.md",
+    "docs/reports/foundation/PERFORMANCE_REGRESSION_SUMMARY_REPORT.md"
+  ]
+}

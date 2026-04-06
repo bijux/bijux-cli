@@ -1,0 +1,14 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "stage",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [{"name": "stage_out", "path": "stage.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "echo staged > ../outputs/stage.txt"]},
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": []
+}

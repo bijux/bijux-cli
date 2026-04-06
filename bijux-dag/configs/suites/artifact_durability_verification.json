@@ -1,0 +1,17 @@
+{
+  "id": "artifact-durability-verification",
+  "description": "Artifact durability, corruption recovery, rebuild safety, retention correctness, and telemetry verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/system_health_diagnostics_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/artifact_durability_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/artifact_durability/regression_corpus.json",
+    "docs/reports/foundation/artifact_durability_benchmarks.md",
+    "docs/reports/foundation/artifact_durability_telemetry_report.md",
+    "docs/reports/foundation/artifact_durability_anomaly_report.md",
+    "docs/reports/foundation/ARTIFACT_DURABILITY_COVERAGE_REPORT.md"
+  ]
+}

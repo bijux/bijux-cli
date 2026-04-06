@@ -1,0 +1,9 @@
+{
+  "id": "replay-diff-semantic-fast",
+  "description": "Fast replay and semantic diff contracts for proof, mismatch grouping, and trace surfaces.",
+  "commands": [
+    "cargo test -p bijux-dag-app --test replay_proof_contract",
+    "cargo test -p bijux-dag-app --test replay_diff_hardening_contract",
+    "cargo test -p bijux-dag-app --test replay_semantic_surface_contracts"
+  ]
+}

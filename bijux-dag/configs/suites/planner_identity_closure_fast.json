@@ -1,0 +1,10 @@
+{
+  "id": "planner-identity-closure-fast",
+  "description": "Fast planner contracts for identity stability, dependency closure, and capability rejection.",
+  "commands": [
+    "cargo test -p bijux-dag-core --test planner_contract",
+    "cargo test -p bijux-dag-core --test planner_fixture_contracts",
+    "cargo test -p bijux-dag-core --test planner_validation_remaining_contracts",
+    "cargo test -p bijux-dag-core --test planner_error_and_schema_contracts"
+  ]
+}

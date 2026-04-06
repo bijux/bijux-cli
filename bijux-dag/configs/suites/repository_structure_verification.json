@@ -1,0 +1,27 @@
+{
+  "id": "repository-structure-verification",
+  "version": "v1",
+  "description": "Verification suite for repository structural health and hygiene guarantees.",
+  "checks": [
+    "largest-modules-report",
+    "highest-churn-report",
+    "lowest-coverage-report",
+    "duplicate-helper-detection",
+    "unused-module-detection",
+    "cyclic-dependency-detection",
+    "dependency-graph-visualization",
+    "module-ownership-mapping",
+    "module-complexity-scoring",
+    "refactoring-candidates-report",
+    "documentation-coverage-report",
+    "dependency-drift-tests",
+    "hygiene-regression-fixtures",
+    "health-dashboard",
+    "complexity-benchmarks",
+    "structural-lint-rules",
+    "dependency-verification",
+    "architectural-conformance",
+    "telemetry",
+    "verification-suite"
+  ]
+}

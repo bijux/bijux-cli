@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/operator/run_diff.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "manifest": "example",
+    "graph_fingerprint": "example",
+    "nodes": "example",
+    "outputs": "example",
+    "replay_equivalence": "example"
+  }
+}

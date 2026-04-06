@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "artifact_inspect",
+  "type": "object",
+  "required": [
+    "artifact_id",
+    "artifact_sha256",
+    "node_id",
+    "node_fingerprint",
+    "path",
+    "size_bytes",
+    "payload_missing",
+    "provenance",
+    "lineage",
+    "identity_explain"
+  ],
+  "properties": {
+    "artifact_id": { "type": "string" },
+    "artifact_sha256": { "type": "string" },
+    "node_id": { "type": "string" },
+    "node_fingerprint": { "type": "string" },
+    "path": { "type": "string" },
+    "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
+    "payload_missing": { "type": "boolean" },
+    "provenance": {
+      "type": "object",
+      "required": ["graph_fingerprint", "run_id", "attempt"],
+      "properties": {
+        "graph_fingerprint": { "type": "string" },
+        "run_id": { "type": "string" },
+        "attempt": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "required": ["upstream_artifact_ids", "downstream_artifact_ids"],
+      "properties": {
+        "upstream_artifact_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "downstream_artifact_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "identity_explain": {
+      "type": "object",
+      "required": ["artifact_id", "composed_from", "hash_algorithm", "identity_scope"],
+      "properties": {
+        "artifact_id": { "type": "string" },
+        "composed_from": {
+          "type": "object",
+          "required": ["run_id", "node_id", "node_fingerprint", "artifact_sha256", "path"],
+          "properties": {
+            "run_id": { "type": "string" },
+            "node_id": { "type": "string" },
+            "node_fingerprint": { "type": "string" },
+            "artifact_sha256": { "type": "string" },
+            "path": { "type": "string" }
+          }
+        },
+        "hash_algorithm": { "type": "string" },
+        "identity_scope": { "type": "string" }
+      }
+    }
+  }
+}

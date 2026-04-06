@@ -1,0 +1,7 @@
+{
+  "scenario_id": "import-export-metadata-only",
+  "assertions": [
+    "metadata_only_export_success",
+    "documented_file_materialization_limits"
+  ]
+}

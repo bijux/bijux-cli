@@ -1,0 +1,12 @@
+{
+  "schema": "configs/schema/operator/capability_query.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "backend": "example",
+    "capabilities": "example",
+    "format": "example",
+    "notes": "example",
+    "status": "example",
+    "version_metadata": "example"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "replay-equivalence-verification",
+  "version": "v1",
+  "checks": [
+    "equivalence-detection",
+    "correctness-guarantees",
+    "mismatch-classification",
+    "fidelity-levels",
+    "deterministic-planning",
+    "proof-verification",
+    "environment-drift-semantics",
+    "artifact-drift-semantics",
+    "regression-fixtures",
+    "fuzz-suite",
+    "anomaly-detection",
+    "performance-benchmarks",
+    "explainability",
+    "telemetry",
+    "diagnostics-tooling",
+    "documentation",
+    "verification-suite"
+  ]
+}

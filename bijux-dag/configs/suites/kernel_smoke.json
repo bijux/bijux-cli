@@ -1,0 +1,10 @@
+{
+  "suite_id": "kernel-smoke",
+  "description": "minimal kernel-boundary trust checks separated from broader suites",
+  "checks": [
+    "no-core-io",
+    "no-runtime-in-core",
+    "no-cli-in-runtime",
+    "kernel-boundary-contracts"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "artifact-io-hardening-fast",
+  "description": "Fast direct coverage suite for artifact fs/store/hardening/services integrity behaviors.",
+  "commands": [
+    "cargo test -p bijux-dag-artifacts --test io_store_fs_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_io_expansion_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_storage_resilience_contracts",
+    "cargo test -p bijux-dag-artifacts --test storage_services_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_io_store_hardening_expansion_contracts"
+  ]
+}

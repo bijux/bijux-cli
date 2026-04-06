@@ -1,0 +1,14 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "c1",
+      "kind": "container",
+      "inputs": [],
+      "outputs": [{"name":"out","path":"c1/out"}],
+      "container": {"image":"busybox","argv":["echo","ok"],"engine":"invalid-engine"},
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": []
+}

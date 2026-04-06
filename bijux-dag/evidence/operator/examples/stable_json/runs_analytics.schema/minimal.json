@@ -1,0 +1,8 @@
+{
+  "schema": "configs/schema/operator/runs_analytics.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "command": "example",
+    "data": "example"
+  }
+}

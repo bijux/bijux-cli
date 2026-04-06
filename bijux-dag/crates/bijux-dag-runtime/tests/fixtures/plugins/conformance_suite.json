@@ -1,0 +1,10 @@
+{
+  "required_checks": [
+    "metadata-complete",
+    "version-compatible",
+    "trust-policy-compliant",
+    "isolation-policy-compliant",
+    "determinism-policy-compliant"
+  ],
+  "boundaries": ["TaskAdapter", "ExecutorBackend", "ArtifactStore", "ObservabilitySink"]
+}

@@ -1,0 +1,19 @@
+{
+  "budget_format": "resource-budget/v1",
+  "scenarios": [
+    {
+      "scenario_id": "manifest-trace-volume-growth",
+      "max_run_dir_bytes": 20000000,
+      "max_manifest_bytes": 200000,
+      "max_trace_bytes_per_node": 120000
+    },
+    {
+      "scenario_id": "memory-execute-many-nodes",
+      "max_run_dir_bytes": 50000000,
+      "max_manifest_bytes": 300000,
+      "max_trace_bytes_per_node": 150000
+    }
+  ],
+  "memory_regression_threshold_ratio": 0.15,
+  "notes": "Warning mode by default; gate mode can be enabled by control-plane flag."
+}

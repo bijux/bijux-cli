@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "domain": "system-reliability",
+  "cases": [
+    {"id":"runtime-reliability-targets","coverage":["runtime-reliability-targets","reliability-target-tests"],"expected":"runtime-targets-covered"},
+    {"id":"artifact-reliability-targets","coverage":["artifact-reliability-targets","reliability-target-tests"],"expected":"artifact-targets-covered"},
+    {"id":"replay-reliability-targets","coverage":["replay-reliability-targets","reliability-target-tests"],"expected":"replay-targets-covered"},
+    {"id":"scheduler-reliability-targets","coverage":["scheduler-reliability-targets","reliability-target-tests"],"expected":"scheduler-targets-covered"},
+    {"id":"reliability-regression-fixtures","coverage":["regression-fixtures","verification-suite"],"expected":"fixtures-present"},
+    {"id":"reliability-stress","coverage":["stress-suite","monitoring-tests"],"expected":"stress-surface-present"},
+    {"id":"reliability-telemetry","coverage":["telemetry-reporting","anomaly-detection"],"expected":"telemetry-surface-present"},
+    {"id":"runtime-reliability-benchmarks","coverage":["runtime-reliability-benchmarks","diagnostics-tooling"],"expected":"runtime-benchmarks-present"},
+    {"id":"artifact-reliability-benchmarks","coverage":["artifact-reliability-benchmarks","diagnostics-tooling"],"expected":"artifact-benchmarks-present"},
+    {"id":"replay-reliability-benchmarks","coverage":["replay-reliability-benchmarks","diagnostics-tooling"],"expected":"replay-benchmarks-present"},
+    {"id":"reliability-failure-simulation","coverage":["failure-simulation-tests","anomaly-detection"],"expected":"failure-simulation-present"},
+    {"id":"reliability-architecture-review","coverage":["architecture-review","verification-tools"],"expected":"architecture-review-present"},
+    {"id":"reliability-verification-suite","coverage":["verification-suite","verification-tools"],"expected":"suite-id-stable"}
+  ]
+}

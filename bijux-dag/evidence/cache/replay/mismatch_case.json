@@ -1,0 +1,7 @@
+{
+  "case": "mismatch",
+  "run_a": "run-a",
+  "run_b": "run-b",
+  "expect": "not_equivalent",
+  "cause_group": "artifact_payload"
+}

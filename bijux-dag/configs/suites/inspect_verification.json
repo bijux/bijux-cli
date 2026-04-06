@@ -1,0 +1,14 @@
+{
+  "suite_id": "inspect-verification",
+  "description": "Inspect command stability, diagnostics behavior, schema lockstep, and no-panic verification.",
+  "owner": "dag-app",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-app/tests/plan_explain_inspect_output_contract.rs",
+    "crates/bijux-dag-app/tests/operator_ux_contract.rs",
+    "crates/bijux-dag-app/tests/artifact_inspect_storage_contracts.rs",
+    "crates/bijux-dag-app/tests/operator_input_no_panic_contracts.rs",
+    "crates/bijux-dag-app/tests/route_entrypoint_no_panic_contract.rs",
+    "crates/bijux-dag-app/tests/app_smoke_routed_workflows_contract.rs"
+  ]
+}

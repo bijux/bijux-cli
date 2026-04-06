@@ -1,0 +1,10 @@
+{
+  "policy_version": "1",
+  "max_regression_ratio": {
+    "app_hot_paths": 0.15,
+    "replay_diff_proof_hot_paths": 0.15,
+    "bundle_import_export": 0.15,
+    "history_queries": 0.15
+  },
+  "requires_raw_data_for_performance_claims": true
+}

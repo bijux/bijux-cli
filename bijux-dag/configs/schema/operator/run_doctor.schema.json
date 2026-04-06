@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_doctor",
+  "type": "object",
+  "required": ["status", "findings"],
+  "properties": {
+    "status": {"type": "string", "enum": ["ok", "corrupt"]},
+    "findings": {"type": "array", "items": {"type": "string"}}
+  }
+}

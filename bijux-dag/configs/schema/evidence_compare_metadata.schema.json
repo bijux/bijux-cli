@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_compare_metadata.schema.json",
+  "type": "object",
+  "required": ["version", "owner", "purpose", "scenarios", "baselines"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string", "minLength": 1 },
+    "scenarios": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "target_system",
+          "scenario_class",
+          "bijux_evidence_asset",
+          "scenario_equivalence_note",
+          "non_equivalence_limits",
+          "limitation_note",
+          "release_blocking",
+          "measured_bijux_side"
+        ],
+        "properties": {
+          "target_system": { "type": "string", "minLength": 1 },
+          "scenario_class": { "type": "string", "enum": ["factual", "descriptive"] },
+          "bijux_evidence_asset": { "type": "string", "minLength": 1 },
+          "scenario_equivalence_note": { "type": "string", "minLength": 1 },
+          "non_equivalence_limits": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "limitation_note": { "type": "string", "minLength": 1 },
+          "release_blocking": { "type": "boolean" },
+          "measured_bijux_side": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}

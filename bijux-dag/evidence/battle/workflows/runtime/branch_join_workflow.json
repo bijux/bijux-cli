@@ -1,0 +1,1 @@
+{"scenario":"branch_join_workflow","graph":"branch_join","nodes":20,"focus":["join_readiness","dependency_correctness"],"expectations":{"terminal":"success","joins":4}}

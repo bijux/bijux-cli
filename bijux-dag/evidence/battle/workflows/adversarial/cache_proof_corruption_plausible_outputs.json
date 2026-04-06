@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-cache-proof-corruption-plausible-outputs",
+  "graph_fixture": "fanout",
+  "assertions": [
+    "cache_hit_rejected_when_proof_invalid",
+    "plausible_outputs_do_not_bypass_proof_check",
+    "cache_integrity_violation_is_classified"
+  ]
+}
