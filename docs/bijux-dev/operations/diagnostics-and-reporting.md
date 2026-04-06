@@ -39,7 +39,7 @@ flowchart TD
 Run these before deep remediation to lock evidence:
 
 ```bash
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-pretty
 make docs-check

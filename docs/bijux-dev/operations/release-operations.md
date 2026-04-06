@@ -52,7 +52,7 @@ flowchart LR
 ## Standard Commands
 
 ```bash
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- release
 make docs-check
 ```
