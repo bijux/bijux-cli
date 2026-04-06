@@ -3,6 +3,6 @@
   "description": "Fast suite for shared fixture loader helpers and duplicate-loader governance.",
   "commands": [
     "cargo test -p bijux-dag-testkit --test fixture_loader_contracts",
-    "cargo test -p bijux-dev-dag --test fixture_loader_governance_contracts"
+    "cargo test -p bijux-dev --test fixture_loader_governance_contracts"
   ]
 }
