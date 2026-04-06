@@ -1,9 +1,23 @@
-name: Rust Test
+name: DAG Rust Test
 
 on:
   pull_request:
+    paths:
+      - "crates/bijux-dag-*/**"
+      - "crates/bijux-dev-dag/**"
+      - "configs/dag/**"
+      - "bijux-dag/**"
+      - "makes/dag/**"
+      - ".github/workflows/dag-*"
   push:
     branches: [main]
+    paths:
+      - "crates/bijux-dag-*/**"
+      - "crates/bijux-dev-dag/**"
+      - "configs/dag/**"
+      - "bijux-dag/**"
+      - "makes/dag/**"
+      - ".github/workflows/dag-*"
 
 jobs:
   test:
