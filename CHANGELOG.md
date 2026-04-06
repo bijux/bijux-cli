@@ -209,7 +209,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Structured output & flags**
 
-    * Added JSON/YAML output via `--format`, pretty printing, and deterministic global flag precedence ([ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)).
+    * Added JSON/YAML output via `--format`, pretty printing, and deterministic global flag precedence ([ADR-0002](https://bijux.io/bijux-core/bijux-cli/)).
 
 * **API contract validation & testing**
 
@@ -273,10 +273,10 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/bijux/bijux-cli/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/bijux/bijux-cli/compare/v0.1.3...v0.2.0
-[0.1.3]: https://github.com/bijux/bijux-cli/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/bijux/bijux-cli/releases/tag/v0.1.0
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/bijux/bijux-core/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/bijux/bijux-core/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/bijux/bijux-core/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/bijux/bijux-core/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/bijux/bijux-core/releases/tag/v0.1.0

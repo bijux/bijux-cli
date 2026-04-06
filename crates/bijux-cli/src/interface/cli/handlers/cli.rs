@@ -378,10 +378,11 @@ fn docs_inventory_report_at(workspace_root: &Path) -> Value {
     let docs_root = workspace_root.join("docs");
     let references = [
         ("overview", "README.md"),
-        ("first-run", "docs/01-introduction/first-run.md"),
-        ("plugins", "docs/03-user-guide/plugins-and-extensions.md"),
-        ("command-surface", "docs/06-reference/command-surface.md"),
-        ("plugin-contracts", "docs/07-contracts/plugin-contracts.md"),
+        ("cli-handbook", "docs/bijux-cli/index.md"),
+        ("installation", "docs/bijux-cli/operations/installation-and-setup.md"),
+        ("plugin-workflows", "docs/bijux-cli/interfaces/operator-workflows.md"),
+        ("compatibility", "docs/bijux-cli/interfaces/compatibility-commitments.md"),
+        ("quality-review", "docs/bijux-cli/quality/review-checklist.md"),
     ]
     .into_iter()
     .map(|(name, relative)| {
@@ -404,7 +405,7 @@ fn docs_inventory_report_at(workspace_root: &Path) -> Value {
 
     json!({
         "status": if docs_available && missing_references.is_empty() { "ok" } else { "warning" },
-        "site_url": "https://bijux.github.io/bijux-cli/",
+        "site_url": "https://bijux.io/bijux-core/bijux-cli/",
         "local_docs_root": docs_root,
         "local_docs_available": docs_available,
         "references": references,

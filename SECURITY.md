@@ -21,7 +21,7 @@ tooling are reviewed on a best-effort basis.
 ## Reporting a Vulnerability
 
 Preferred:
-- GitHub private report: https://github.com/bijux/bijux-cli/security/advisories/new
+- GitHub private report: https://github.com/bijux/bijux-core/security/advisories/new
 
 Fallback:
 - Email: [mousavi.bijan@gmail.com](mailto:mousavi.bijan@gmail.com)

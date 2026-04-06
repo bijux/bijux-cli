@@ -2,7 +2,7 @@ INHERIT: mkdocs.shared.yml
 
 site_name: bijux-core
 site_description: Unified Bijux CLI and DAG runtime workspace.
-site_url: !ENV [SITE_URL, https://bijux.github.io/bijux-core/]
+site_url: !ENV [SITE_URL, https://bijux.io/bijux-core/]
 site_author: Bijan Mousavi
 repo_url: https://github.com/bijux/bijux-core
 repo_name: bijux/bijux-core

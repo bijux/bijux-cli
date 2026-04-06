@@ -18,8 +18,8 @@ Optional tools for some Rust targets:
 ## Setup
 
 ```bash
-git clone https://github.com/bijux/bijux-cli.git
-cd bijux-cli
+git clone https://github.com/bijux/bijux-core.git
+cd bijux-core
 make bootstrap
 ```
 

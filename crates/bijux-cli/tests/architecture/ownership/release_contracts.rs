@@ -72,15 +72,12 @@ fn crate_manifests_declare_clear_publish_metadata() {
             ],
         ),
         (
-            "crates/bijux-dev-cli/Cargo.toml",
+            "crates/bijux-dev/Cargo.toml",
             vec![
                 "description = ",
                 "homepage",
-                "documentation = ",
                 "readme = ",
-                "keywords = [",
-                "categories = [",
-                "ownership contracts",
+                "Unified maintainer control plane",
             ],
         ),
     ] {
@@ -96,15 +93,15 @@ fn crate_documentation_links_match_current_public_docs() {
     for (path, expected) in [
         (
             "crates/bijux-cli/Cargo.toml",
-            "https://bijux.github.io/bijux-cli/04-architecture/runtime-and-distribution/",
+            "https://bijux.io/bijux-core/bijux-cli/",
         ),
         (
             "crates/bijux-cli-python/Cargo.toml",
-            "https://bijux.github.io/bijux-cli/06-reference/integrations-and-routed-runtimes/",
+            "https://bijux.io/bijux-core/bijux-cli/",
         ),
         (
-            "crates/bijux-dev-cli/Cargo.toml",
-            "https://bijux.github.io/bijux-cli/04-architecture/maintainer-control-plane/",
+            "crates/bijux-dev/Cargo.toml",
+            "https://github.com/bijux/bijux-core",
         ),
     ] {
         let manifest = read_repo_file(path);

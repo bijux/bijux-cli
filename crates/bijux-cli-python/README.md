@@ -18,8 +18,8 @@ Git checkout builds derive runtime identity from the latest real `v*` tag in Git
 [![Rust Docs](https://img.shields.io/badge/docs-Rust%20Docs-blue)](https://docs.rs/bijux-cli/latest/bijux_cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
-[![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.io/bijux-core/bijux-cli/)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions)
 
 Python package: [PyPI](https://pypi.org/project/bijux-cli/)
 Rust crate: [crates.io](https://crates.io/crates/bijux-cli)
@@ -299,7 +299,7 @@ global switch.
 |        5 | `--pretty / --no-pretty`     | Formatting toggle                      |
 |        6 | `--log-level <level>`        | Logging threshold                      |
 
-See the execution model in the [Introduction docs](https://bijux.github.io/bijux-cli/01-introduction/command-model/).
+See the execution model in the [Introduction docs](https://bijux.io/bijux-core/bijux-cli/).
 
 ---
 
@@ -421,11 +421,11 @@ contracts/      Repository contracts and registries
 
 ## Docs & Resources
 
-* Documentation home: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
-* Command reference: [https://bijux.github.io/bijux-cli/06-reference/command-surface/](https://bijux.github.io/bijux-cli/06-reference/command-surface/)
-* Plugin guide: [https://bijux.github.io/bijux-cli/03-user-guide/plugins-and-extensions/](https://bijux.github.io/bijux-cli/03-user-guide/plugins-and-extensions/)
-* Artifacts: [https://bijux.github.io/bijux-cli/artifacts/](https://bijux.github.io/bijux-cli/artifacts/)
-* Repository: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
+* Documentation home: [https://bijux.io/bijux-core/bijux-cli/](https://bijux.io/bijux-core/bijux-cli/)
+* Command reference: [https://bijux.io/bijux-core/bijux-cli/](https://bijux.io/bijux-core/bijux-cli/)
+* Plugin guide: [https://bijux.io/bijux-core/bijux-cli/](https://bijux.io/bijux-core/bijux-cli/)
+* Artifacts: [https://bijux.io/bijux-core/](https://bijux.io/bijux-core/)
+* Repository: [https://github.com/bijux/bijux-core](https://github.com/bijux/bijux-core)
 
 ---
 
