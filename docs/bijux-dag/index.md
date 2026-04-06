@@ -14,6 +14,17 @@ last_reviewed: 2026-04-06
 Read this handbook when the question is about graph behavior, run identity,
 replay fidelity, diff semantics, or DAG backend operations.
 
+## Handbook Structure Contract
+
+`docs/bijux-dag/` keeps one durable layout:
+
+- exactly five section directories: `foundation`, `architecture`,
+  `interfaces`, `operations`, `quality`
+- each section contains exactly ten pages
+- no additional nested chapter trees under `docs/bijux-dag/`
+
+This keeps DAG documentation stable and easy to review across releases.
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)
