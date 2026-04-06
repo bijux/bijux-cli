@@ -38,6 +38,18 @@ make docs-check
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
 ```
 
+## Gate Failure Triage
+
+When a gate fails, classify first before retrying:
+
+1. `layout/docs` failure
+2. `contract/schema` failure
+3. `runtime/test` failure
+4. `automation/workflow` failure
+
+Classification controls which maintainer commands and handbook pages to use
+next.
+
 ## Code Anchors
 
 - `makes/rust.mk`

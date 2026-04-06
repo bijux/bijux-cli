@@ -34,6 +34,17 @@ flowchart TD
 - summary language must match observed evidence
 - unresolved failures must not be collapsed into generic success
 
+## First-Response Commands
+
+Run these before deep remediation to lock evidence:
+
+```bash
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-pretty
+make docs-check
+```
+
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/reporting.rs`

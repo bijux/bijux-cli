@@ -36,6 +36,13 @@ flowchart TD
 - track temporary exceptions with expiration
 - publish post-incident notes for recurring failure classes
 
+## First 15 Minutes
+
+1. capture failing command output and workflow link
+2. run local verification to separate environment-specific failures
+3. classify incident (`release`, `compatibility`, `docs`, `layout`)
+4. freeze evidence artifacts before cleanup or reruns
+
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/ops.rs`
