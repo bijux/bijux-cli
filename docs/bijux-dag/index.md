@@ -11,6 +11,9 @@ last_reviewed: 2026-04-06
 
 `bijux-dag` owns DAG modeling, execution, replay, and artifact semantics.
 
+Read this handbook when the question is about graph behavior, run identity,
+replay fidelity, diff semantics, or DAG backend operations.
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)

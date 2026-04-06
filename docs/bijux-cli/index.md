@@ -12,6 +12,9 @@ last_reviewed: 2026-04-06
 `bijux-cli` owns the human-facing command experience and output contracts for
 workspace operations.
 
+Read this handbook when the question is about command UX, compatibility of
+output envelopes, or plugin/operator workflows.
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)

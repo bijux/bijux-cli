@@ -9,11 +9,11 @@ last_reviewed: 2026-04-06
 
 # bijux-core
 
-`bijux-core` brings the CLI program, DAG runtime, repository-wide contracts,
-and maintainer tooling into one workspace with explicit ownership boundaries.
+`bijux-core` is split on purpose. Repository governance, CLI behavior, DAG
+runtime behavior, and maintainer automation are separate handbooks so each
+surface stays reviewable and stable.
 
-Use this landing page to route quickly to the right handbook and avoid
-cross-project context switching overhead.
+This landing page is only for routing.
 
 ## Handbooks
 
@@ -22,13 +22,12 @@ cross-project context switching overhead.
 - [DAG Handbook](bijux-dag/index.md)
 - [Maintainer Handbook](bijux-dev/index.md)
 
-## Reading Order
+## Start Here
 
-1. Start with [Repository Handbook](bijux-core/index.md) for repository-wide
-   boundaries, governance, and shared contracts.
-2. Continue with [CLI Handbook](bijux-cli/index.md) for command UX and operator
-   behavior.
-3. Continue with [DAG Handbook](bijux-dag/index.md) for graph execution,
-   replay, artifact, and runtime semantics.
-4. Use [Maintainer Handbook](bijux-dev/index.md) for maintainer-only automation
-   and contributor workflows.
+- Use [Repository Handbook](bijux-core/index.md) when the question crosses
+  CLI/DAG boundaries or touches shared contracts.
+- Use [CLI Handbook](bijux-cli/index.md) for operator-facing command behavior.
+- Use [DAG Handbook](bijux-dag/index.md) for graph, run, replay, and artifact
+  semantics.
+- Use [Maintainer Handbook](bijux-dev/index.md) for maintainer-only automation
+  and release workflow operations.

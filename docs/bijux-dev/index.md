@@ -12,6 +12,9 @@ last_reviewed: 2026-04-06
 `bijux-dev` documents maintainer-only automation, release hygiene, and
 repository health checks.
 
+Read this handbook when the work changes repository operations, guardrails,
+automation checks, or release maintenance tasks.
+
 ## Pages In This Section
 
 - [Package Overview](package-overview.md)
