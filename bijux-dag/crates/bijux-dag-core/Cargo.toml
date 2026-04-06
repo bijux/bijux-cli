@@ -27,3 +27,6 @@ serde_yaml = "0.9"
 [[bench]]
 name = "micro_parse_validate"
 harness = false
+
+[lints.rust]
+missing_docs = "allow"

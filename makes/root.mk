@@ -7,3 +7,6 @@ include $(ROOT_MK_DIR)/python.mk
 include $(ROOT_MK_DIR)/docs.mk
 include $(ROOT_MK_DIR)/gh.mk
 include $(ROOT_MK_DIR)/dag.mk
+
+workspace-verify: ## Verify unified workspace layout contracts
+	@./scripts/verify-workspace-layout.sh

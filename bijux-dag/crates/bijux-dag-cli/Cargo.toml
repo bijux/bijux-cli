@@ -23,3 +23,6 @@ serde_json = { workspace = true }
 [[bin]]
 name = "bijux"
 path = "src/main.rs"
+
+[lints.rust]
+missing_docs = "allow"
