@@ -1,84 +1,40 @@
-# bijux-core
+# bijux-cli Python Package
 
-`bijux-core` is the canonical repository for the Bijux platform.
-It contains two real products built and governed together:
+`bijux-cli` is the Python distribution for installing and launching the Bijux
+command runtime.
 
-- `bijux-cli`: the operator-facing command runtime.
-- `bijux-dag`: the deterministic graph execution and evidence system.
+This package provides:
 
-The goal of this repository is simple: ship both products from one audited source of truth, with clear boundaries, strong contracts, and release-grade traceability for both humans and machines.
+- the `bijux` console entrypoint,
+- a native Rust bridge module (`bijux_cli_py._native`) when available,
+- a Python facade fallback for portability and compatibility checks.
 
-## Products
+## What This Package Is
 
-| Product | What it does | Primary users | Runtime entrypoint |
-|---|---|---|---|
-| `bijux-cli` | Runs automation and interactive workflows with structured output, plugin routing, and stable command semantics. | Operators, developers, automation systems | `bijux` |
-| `bijux-dag` | Defines, validates, executes, replays, and diffs computation graphs with deterministic artifact and evidence behavior. | DAG authors, platform teams, governance workflows | `bijux-dag dag ...` |
+- A packaging and bridge layer for the `bijux` runtime.
+- The canonical PyPI surface for `bijux-cli`.
+- A compatibility boundary between Python callers and the Rust runtime.
 
-## Release State
+## What This Package Is Not
 
-Current release line: **`v0.3.4`**.
+- It does not define independent runtime semantics.
+- It does not publish maintainer control-plane commands.
+- It does not replace repository-level governance docs.
 
-- `bijux-cli` is the active public release surface at `v0.3.4`.
-- `bijux-cli-python` is the Python packaging bridge for the same CLI runtime.
-- `bijux-dag` remains an internal workspace product until the coordinated public release target at `v0.4.0`.
-
-## Repository Structure
-
-- `crates/bijux-cli`: Rust runtime crate behind the `bijux` executable.
-- `crates/bijux-cli-python`: Python bridge package and native extension surface for CLI runtime distribution.
-- `crates/bijux-dag-core`: DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
-- `crates/bijux-dag-runtime`: DAG execution engine and run lifecycle behavior.
-- `crates/bijux-dag-app`: DAG command orchestration, response modeling, and render flows.
-- `crates/bijux-dag-cli`: thin binary entrypoint for `bijux-dag`.
-- `crates/bijux-dag-artifacts`: artifact and persistence utilities for DAG evidence handling.
-- `crates/bijux-dag-testkit`: fixtures and helpers for DAG contract testing.
-- `crates/bijux-dev`: maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
-- `docs/`: canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
-- `makes/`: make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
-
-## Quick Start
-
-From repository root:
+## Quick Usage
 
 ```bash
-cargo check --workspace
-cargo test --workspace
+python -m pip install bijux-cli
+bijux --help
+python -m bijux_cli_py --help
 ```
 
-Inspect product command surfaces:
+## Source of Truth
 
-```bash
-cargo run -p bijux-cli --bin bijux -- --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- dag --help
-```
-
-## Maintainer Workflows
-
-```bash
-make help
-make dag-help
-make dag-test
-make dag-contracts
-```
-
-## Documentation Map
-
-- Repository handbook: `docs/bijux-core/`
-- CLI handbook: `docs/bijux-cli/`
-- DAG handbook: `docs/bijux-dag/`
-- Maintainer handbook: `docs/bijux-dev/`
-- Release history: `CHANGELOG.md`
-
-## Why Unified Ownership
-
-`bijux-cli` and `bijux-dag` are developed as separate products with explicit ownership boundaries, but they share one governance and release backbone.
-This repository model keeps:
-
-- product behavior reviewable at crate boundaries,
-- compatibility decisions tied to code and tests,
-- release evidence and documentation aligned with tagged source.
+- Runtime crate: `crates/bijux-cli`
+- Python bridge crate: `crates/bijux-cli-python`
+- Package changelog: `crates/bijux-cli-python/CHANGELOG.md`
+- Repository handbook: `docs/bijux-cli/`
 
 ## License
 

@@ -32,8 +32,8 @@ def _load_cargo_manifest() -> dict[str, object]:
     return tomllib.loads(manifest.read_text(encoding="utf-8"))
 
 
-def _load_workspace_root_readme() -> str:
-    return _project_root().parents[1].joinpath("README.md").read_text(encoding="utf-8")
+def _load_package_readme() -> str:
+    return _project_root().joinpath("README.md").read_text(encoding="utf-8")
 
 
 def _runtime_binary() -> str:
@@ -118,10 +118,11 @@ def test_project_metadata_is_consistent_for_wheel_builds() -> None:
     assert "Framework :: Pytest" not in classifiers
 
 
-def test_python_package_readme_tracks_workspace_root_readme() -> None:
-    project_root = _project_root()
-    package_readme = (project_root / "README.md").read_text(encoding="utf-8")
-    assert package_readme == _load_workspace_root_readme()
+def test_python_package_readme_describes_package_scope() -> None:
+    package_readme = _load_package_readme()
+    assert "# bijux-cli Python Package" in package_readme
+    assert "Python distribution for installing and launching the Bijux" in package_readme
+    assert "crates/bijux-cli-python/CHANGELOG.md" in package_readme
 
 
 def test_native_extension_uses_abi3_for_supported_python_range() -> None:
@@ -158,7 +159,7 @@ def test_source_distribution_supports_metadata_generation_from_the_published_lay
             text=True,
         )
         sdist_root = next(extracted_dir.iterdir())
-        assert (sdist_root / "README.md").read_text(encoding="utf-8") == _load_workspace_root_readme()
+        assert (sdist_root / "README.md").read_text(encoding="utf-8") == _load_package_readme()
         maturin_bin = Path(sys.executable).with_name("maturin")
         metadata = subprocess.run(
             [
