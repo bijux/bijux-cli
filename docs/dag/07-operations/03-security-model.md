@@ -78,6 +78,6 @@ Recommended baseline controls:
 
 ## Next reading
 
-- [Trust boundaries](docs/07-operations/04-trust-boundaries.md)
-- [Run model contract](docs/06-specification/02-run-model.md)
-- [Artifact model contract](docs/06-specification/03-artifact-model.md)
+- [Trust boundaries](04-trust-boundaries.md)
+- [Run model contract](../06-specification/02-run-model.md)
+- [Artifact model contract](../06-specification/03-artifact-model.md)

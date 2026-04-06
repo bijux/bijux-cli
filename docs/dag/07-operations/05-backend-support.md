@@ -74,6 +74,6 @@ When non-equivalence appears, operators must classify it explicitly and avoid st
 
 ## Next reading
 
-- [Adapters architecture](docs/05-system-architecture/05-adapters.md)
-- [Portability architecture](docs/05-system-architecture/10-portability.md)
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [Adapters architecture](../05-system-architecture/05-adapters.md)
+- [Portability architecture](../05-system-architecture/10-portability.md)
+- [Replay semantics contract](../06-specification/07-replay-semantics.md)

@@ -96,6 +96,6 @@ Avoid these patterns:
 
 ## Next reading
 
-- [Reproducible builds](docs/07-operations/02-reproducible-builds.md)
-- [Security model](docs/07-operations/03-security-model.md)
-- [Trust boundaries](docs/07-operations/04-trust-boundaries.md)
+- [Reproducible builds](02-reproducible-builds.md)
+- [Security model](03-security-model.md)
+- [Trust boundaries](04-trust-boundaries.md)

@@ -71,6 +71,6 @@ import bundle -> verify integrity/provenance -> inspect lineage completeness
 
 ## Next reading
 
-- [Security model](docs/07-operations/03-security-model.md)
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
-- [Portability architecture](docs/05-system-architecture/10-portability.md)
+- [Security model](03-security-model.md)
+- [Replay semantics contract](../06-specification/07-replay-semantics.md)
+- [Portability architecture](../05-system-architecture/10-portability.md)

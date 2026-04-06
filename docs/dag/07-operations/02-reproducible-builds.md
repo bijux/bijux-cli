@@ -66,6 +66,6 @@ Before promotion:
 
 ## Next reading
 
-- [CI integration](docs/07-operations/01-ci-integration.md)
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
-- [Backend support](docs/07-operations/05-backend-support.md)
+- [CI integration](01-ci-integration.md)
+- [Replay semantics contract](../06-specification/07-replay-semantics.md)
+- [Backend support](05-backend-support.md)
