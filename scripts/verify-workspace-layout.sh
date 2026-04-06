@@ -11,13 +11,13 @@ required_members=(
   "crates/bijux-cli"
   "crates/bijux-cli-python"
   "crates/bijux-dev-cli"
-  "bijux-dag/crates/bijux-dag-core"
-  "bijux-dag/crates/bijux-dag-artifacts"
-  "bijux-dag/crates/bijux-dag-runtime"
-  "bijux-dag/crates/bijux-dag-app"
-  "bijux-dag/crates/bijux-dag-cli"
-  "bijux-dag/crates/bijux-dag-testkit"
-  "bijux-dag/crates/bijux-dev-dag"
+  "crates/bijux-dag-core"
+  "crates/bijux-dag-artifacts"
+  "crates/bijux-dag-runtime"
+  "crates/bijux-dag-app"
+  "crates/bijux-dag-cli"
+  "crates/bijux-dag-testkit"
+  "crates/bijux-dev-dag"
 )
 
 for member in "${required_members[@]}"; do
