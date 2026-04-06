@@ -15,3 +15,8 @@ Primary references:
 
 - [CLI introduction](../introduction/index.md)
 - [CLI user guide](../user-guide/index.md)
+
+## Consolidated Command Model
+
+The CLI maps one request path to one explicit command family and output
+envelope, so command intent and machine-readable behavior stay aligned.

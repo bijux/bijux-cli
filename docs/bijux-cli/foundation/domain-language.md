@@ -15,3 +15,9 @@ Primary references:
 
 - [CLI introduction](../introduction/index.md)
 - [CLI user guide](../user-guide/index.md)
+
+## Consolidated Terms
+
+Use stable terms for command family, output envelope, plugin boundary, contract
+surface, and compatibility window to keep design and operations discussions
+unambiguous.

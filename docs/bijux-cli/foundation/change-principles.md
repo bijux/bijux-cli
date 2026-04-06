@@ -15,3 +15,8 @@ Primary references:
 
 - [CLI introduction](../introduction/index.md)
 - [CLI user guide](../user-guide/index.md)
+
+## Consolidated Guarantees
+
+Behavior changes must preserve envelope compatibility, explicit exit semantics,
+and contract clarity for both human and machine consumers.

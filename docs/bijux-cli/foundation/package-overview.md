@@ -15,3 +15,8 @@ Primary references:
 
 - [CLI introduction](../introduction/index.md)
 - [CLI user guide](../user-guide/index.md)
+
+## Consolidated Orientation
+
+`bijux-cli` exists to provide a stable operator command surface for workspace
+inspection, execution control, and integration handoffs.

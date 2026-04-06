@@ -15,3 +15,9 @@ Primary references:
 
 - [CLI introduction](../introduction/index.md)
 - [CLI user guide](../user-guide/index.md)
+
+## Consolidated First-Run Path
+
+Lifecycle starts with install verification, continues through first-command
+execution, then shifts to repeatable operator workflows and release-safe change
+validation.
