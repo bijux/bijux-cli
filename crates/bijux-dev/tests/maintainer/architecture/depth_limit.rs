@@ -141,6 +141,14 @@ fn artifact_directories_exist_only_under_workspace_artifacts_root() {
     let violations: Vec<String> = artifact_dirs
         .into_iter()
         .filter(|path| path != &allowed_root && !path.starts_with(&allowed_root))
+        .filter(|path| {
+            // Allow source modules named `artifacts` (for example
+            // `crates/*/src/artifacts`) while still enforcing that generated
+            // artifact directories remain under workspace `artifacts/`.
+            let rel =
+                path.strip_prefix(&workspace_root).unwrap_or(path).to_string_lossy().replace('\\', "/");
+            !rel.starts_with("crates/") || !rel.contains("/src/artifacts")
+        })
         .filter_map(|path| {
             path.strip_prefix(&workspace_root).ok().map(|relative| relative.display().to_string())
         })
