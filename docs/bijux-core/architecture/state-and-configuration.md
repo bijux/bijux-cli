@@ -46,4 +46,4 @@ flowchart TD
 
 - [Artifact and Contract Flow](artifact-and-contract-flow.md)
 - [Testing and Validation](../governance/testing-and-validation.md)
-- [Known Limitations](../governance/risk-and-exceptions.md)
+- [Risk and Exceptions](../governance/risk-and-exceptions.md)

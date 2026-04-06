@@ -48,5 +48,5 @@ flowchart LR
 ## Next Reads
 
 - [Maintainer Control Plane](maintainer-control-plane.md)
-- [Dependency Governance](../governance/testing-and-validation.md)
+- [Testing and Validation](../governance/testing-and-validation.md)
 - [Change Management](../governance/change-management.md)
