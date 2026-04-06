@@ -27,7 +27,7 @@ flowchart LR
 
 - CLI surfaces provide command routing, plugin lifecycle, and config behavior
 - DAG surfaces provide validate, run, replay, diff, status, and inspect flows
-- output envelopes should keep machine and human formats semantically aligned
+- output envelopes must keep machine and human formats semantically aligned
 - command behavior changes require corresponding docs and compatibility evidence
 
 ## Code Anchors

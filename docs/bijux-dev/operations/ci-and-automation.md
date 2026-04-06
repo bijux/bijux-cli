@@ -30,9 +30,9 @@ flowchart TD
 
 ## Alignment Rules
 
-- local make targets should mirror CI gate composition
+- local make targets must mirror CI gate composition
 - path filters must reflect real ownership boundaries
-- failure messages should name owning surface and remediation path
+- failure messages must name owning surface and remediation path
 
 ## Code Anchors
 

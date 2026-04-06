@@ -9,7 +9,7 @@ last_reviewed: 2026-04-06
 
 # Incident Response
 
-Incident response for `bijux-core` should preserve evidence, isolate impact,
+Incident response for `bijux-core` must preserve evidence, isolate impact,
 and restore reliable gates quickly.
 
 ## Visual Summary

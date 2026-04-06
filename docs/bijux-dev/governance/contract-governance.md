@@ -26,7 +26,7 @@ flowchart LR
 
 - contract changes require matching tests and docs updates
 - breaking contract changes need explicit compatibility notes
-- contract files should remain machine-checkable and human-reviewable
+- contract files must remain machine-checkable and human-reviewable
 
 ## Contract Families
 

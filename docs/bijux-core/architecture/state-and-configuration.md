@@ -9,7 +9,7 @@ last_reviewed: 2026-04-06
 
 # State and Configuration
 
-State and configuration should be resolved deterministically so command behavior
+State and configuration must be resolved deterministically so command behavior
 is reproducible and diagnosable.
 
 ## Visual Summary

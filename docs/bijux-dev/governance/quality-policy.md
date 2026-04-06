@@ -25,8 +25,8 @@ flowchart TD
 
 - quality claims require executable evidence
 - diagnostics must identify failing surfaces and likely remediation path
-- governance commands should be predictable and scriptable
-- policy drift should be detected through suites, not manual memory
+- governance commands must be predictable and scriptable
+- policy drift must be detected through suites, not manual memory
 
 ## Quality Signals
 

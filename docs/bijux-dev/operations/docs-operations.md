@@ -25,7 +25,7 @@ flowchart LR
 
 - handbook structures must match documented section contracts
 - MkDocs navigation must include all canonical pages
-- docs changes should ship with behavior changes in the same pull request
+- docs changes must ship with behavior changes in the same pull request
 
 ## Standard Commands
 

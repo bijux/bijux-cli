@@ -33,7 +33,7 @@ flowchart LR
 
 - ownership claims must map to real crate/module paths
 - cross-crate changes require coordination in all owning docs
-- no package should silently redefine another package's public contract
+- packages must not silently redefine another package's public contract
 
 ## Code Anchors
 

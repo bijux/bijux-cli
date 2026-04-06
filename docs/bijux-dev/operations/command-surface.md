@@ -32,8 +32,8 @@ flowchart LR
 ## Command Design Rules
 
 - commands must return actionable diagnostics
-- machine-readable output should remain stable for automation
-- command semantics should map to explicit ownership in code and docs
+- machine-readable output must remain stable for automation
+- command semantics must map to explicit ownership in code and docs
 
 ## Code Anchors
 
