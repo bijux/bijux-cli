@@ -27,6 +27,15 @@ flowchart LR
 - MkDocs navigation must include all canonical pages
 - docs changes must ship with behavior changes in the same pull request
 
+## Documentation Preflight
+
+Before merging docs-heavy changes:
+
+1. run `make docs-check`
+2. confirm nav entries match filesystem paths
+3. confirm no page links reference retired documents
+4. confirm style and tone follow handbook standards
+
 ## Standard Commands
 
 ```bash

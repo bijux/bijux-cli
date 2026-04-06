@@ -29,6 +29,19 @@ flowchart LR
 - ensure docs navigation and links are valid before publishing
 - verify post-release health and rollback readiness
 
+## Preflight Checklist
+
+- required tests and maintainer verification commands are green
+- compatibility notes are prepared for changed public behavior
+- documentation tree and MkDocs navigation are synchronized
+- release owner and rollback owner are explicitly assigned
+
+## Postflight Checklist
+
+- published artifacts match tagged commit identity
+- docs site builds and serves expected handbook routes
+- no new unresolved failures in release-monitoring workflows
+
 ## Standard Commands
 
 ```bash

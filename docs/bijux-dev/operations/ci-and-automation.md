@@ -34,6 +34,14 @@ flowchart TD
 - path filters must reflect real ownership boundaries
 - failure messages must name owning surface and remediation path
 
+## Pipeline Ownership Rule
+
+Every required workflow must declare:
+
+- owning maintainer role
+- owning handbook page for remediation guidance
+- escalation path when the owner is unavailable
+
 ## Code Anchors
 
 - `.github/workflows/`
