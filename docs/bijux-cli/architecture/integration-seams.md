@@ -13,5 +13,5 @@ This architecture page anchors **Integration Seams** for CLI.
 
 Related references:
 
-- [Execution pipeline](../../../bijux-core/architecture/execution-pipeline.md)
-- [CLI command model](../../introduction/command-model.md)
+- [Execution pipeline](../../bijux-core/architecture/execution-pipeline.md)
+- [CLI command model](../introduction/command-model.md)

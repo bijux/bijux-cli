@@ -13,5 +13,5 @@ This page defines the CLI foundation contract for **Domain Language**.
 
 Primary references:
 
-- [CLI introduction](../../introduction/index.md)
-- [CLI user guide](../../user-guide/index.md)
+- [CLI introduction](../introduction/index.md)
+- [CLI user guide](../user-guide/index.md)
