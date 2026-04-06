@@ -13,7 +13,7 @@ Defines the make surface for `bijux-dag`.
 
 ## Authority boundaries
 - Makefiles are wrapper and orchestration surfaces only.
-- Behavioral authority for repository governance remains in `crates/bijux-dev-dag`.
+- Behavioral authority for repository governance remains in `crates/bijux-core-dev`.
 - Rust workflow authority remains in cargo commands and workspace crate code.
 
 ## Invariants

@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -30,11 +30,11 @@ jobs:
         with:
           toolchain: 1.81
       - name: generate schema changelog
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo schema-changelog
+        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- repo schema-changelog
       - name: verify changelog is committed
         run: git diff --exit-code docs/reports/foundation/SCHEMA_CHANGELOG.md
       - name: schema governance contract tests
-        run: cargo test -p bijux-dev-dag --test evidence_schema_contracts
+        run: cargo test -p bijux-core-dev --test evidence_schema_contracts
       - name: upload schema report
         uses: actions/upload-artifact@v4
         with:

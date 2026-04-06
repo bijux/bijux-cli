@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -30,7 +30,7 @@ jobs:
         with:
           toolchain: 1.81
       - name: check compatibility fixtures
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- contracts run --domain compat --advisory
+        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- contracts run --domain compat --advisory
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

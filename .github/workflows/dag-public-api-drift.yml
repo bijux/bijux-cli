@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -33,7 +33,7 @@ jobs:
         run: cargo install cargo-public-api --locked
       - name: check public API
         continue-on-error: true
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- api public-surface
+        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- api public-surface
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

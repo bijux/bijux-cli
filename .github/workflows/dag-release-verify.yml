@@ -14,9 +14,9 @@ jobs:
         with:
           toolchain: 1.81
       - name: verify release evidence set
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-release-set
+        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- verify evidence-release-set
       - name: generate release proof reports
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo release-evidence-report
+        run: cargo run -p bijux-core-dev --bin bijux-dev-dag -- repo release-evidence-report
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

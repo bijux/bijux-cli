@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"

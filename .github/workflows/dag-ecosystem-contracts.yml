@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -14,7 +14,7 @@ on:
     branches: [main]
     paths:
       - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev-dag/**"
+      - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/dag/**"
       - "docs/dag/**"
@@ -30,4 +30,4 @@ jobs:
         with:
           toolchain: 1.81
       - name: ecosystem contract tests
-        run: cargo test -p bijux-dev-dag --test control_plane_contracts --test evidence_control_plane_suites_contracts
+        run: cargo test -p bijux-core-dev --test control_plane_contracts --test evidence_control_plane_suites_contracts

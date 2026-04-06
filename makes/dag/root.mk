@@ -7,7 +7,7 @@ CARGO_TARGET_DIR ?= $(CURDIR)/artifacts/target
 NEXTEST_CACHE_DIR ?= $(CURDIR)/artifacts/target/nextest
 LLVM_PROFILE_FILE ?= $(CURDIR)/artifacts/coverage/profraw/default_%m_%p.profraw
 
-DEV_TOOL := LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" RUSTFLAGS="-Aunused-crate-dependencies" cargo run -p bijux-dev-dag --bin bijux-dev-dag --
+DEV_TOOL := LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" RUSTFLAGS="-Aunused-crate-dependencies" cargo run -p bijux-core-dev --bin bijux-dev-dag --
 RUN_DIR := artifacts/runs
 REPORT_DIR := artifacts/reports
 TARGET_DIR := artifacts/target
@@ -130,10 +130,10 @@ release-verify: ## Run release verification
 	$(call run_or_fail,Run release verification,$(DEV_TOOL) release verify)
 
 module-hygiene-drift: ## Run module hygiene drift gate
-	$(call run_or_fail,Run module hygiene drift gate,cargo test -p bijux-dev-dag --test module_hygiene_governance_contracts -- --nocapture)
+	$(call run_or_fail,Run module hygiene drift gate,cargo test -p bijux-core-dev --test module_hygiene_governance_contracts -- --nocapture)
 
 docs-truth-drift: ## Run documentation truth-boundary drift gate
-	$(call run_or_fail,Run docs truth drift gate,cargo test -p bijux-dev-dag --test docs_truth_drift_contracts -- --nocapture)
+	$(call run_or_fail,Run docs truth drift gate,cargo test -p bijux-core-dev --test docs_truth_drift_contracts -- --nocapture)
 
 repo-deps: ## Run repository dependency checks
 	$(call run_or_fail,Run dependency policy suite,$(DEV_TOOL) repo deps)
