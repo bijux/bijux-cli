@@ -7,7 +7,7 @@ on:
       - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
-      - "docs/dag/**"
+      - "docs/bijux-dag/**"
       - "evidence/dag/**"
       - ".github/workflows/dag-*"
   push:
@@ -17,7 +17,7 @@ on:
       - "crates/bijux-core-dev/**"
       - "configs/dag/**"
       - "makes/*.mk"
-      - "docs/dag/**"
+      - "docs/bijux-dag/**"
       - "evidence/dag/**"
       - ".github/workflows/dag-*"
 
