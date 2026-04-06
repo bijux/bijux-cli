@@ -1,7 +1,7 @@
 ---
 title: Extensibility Model
 audience: mixed
-type: architecture
+type: explanation
 status: canonical
 owner: bijux-dag-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,42 @@ last_reviewed: 2026-04-06
 
 # Extensibility Model
 
-This architecture page anchors **Extensibility Model** for `bijux-dag`.
+DAG extensibility centers on adapter boundaries and capability negotiation, not
+on unrestricted runtime mutation.
 
-Related references:
+## Visual Summary
 
-- [Module map](module-map.md)
-- [Execution model](execution-model.md)
+```mermaid
+flowchart LR
+    request["planned node execution"] --> registry["adapter registry lookup"]
+    registry --> capability["capability negotiation"]
+    capability --> execute["adapter execution contract"]
+    execute --> normalize["normalized runtime outcome"]
+```
 
-## Consolidated Technical Model
+## Extensibility Surfaces
 
-This page now absorbs former system-architecture and specification chapter
-coverage for DAG execution semantics, identity behavior, replay/diff fidelity,
-and artifact persistence contracts.
+- adapter SDK and plugin contract descriptors
+- backend capability descriptors and negotiation policies
+- extension catalog and compatibility issue detection
+- simulated-platform quarantined surfaces for non-stable experiments
+
+## Code Anchors
+
+- `crates/bijux-dag-runtime/src/adapters/sdk.rs`
+- `crates/bijux-dag-runtime/src/adapters/registry.rs`
+- `crates/bijux-dag-runtime/src/backend/capability.rs`
+- `crates/bijux-dag-runtime/src/internal/ext/extension_catalog.rs`
+- `crates/bijux-dag-runtime/src/simulated_platform.rs`
+
+## Extensibility Constraints
+
+- extensions must not bypass core semantic contracts
+- capability downgrade must remain explicit and observable
+- unstable platform simulations must stay out of stable root behavior
+
+## Next Reads
+
+- [Artifact Contracts](../interfaces/artifact-contracts.md)
+- [Security and Safety](../operations/security-and-safety.md)
+- [Known Limitations](../quality/known-limitations.md)
