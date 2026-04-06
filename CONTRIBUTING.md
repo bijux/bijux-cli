@@ -78,6 +78,7 @@ cargo test -p bijux-cli
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit --format json --no-pretty
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 ```
 
 Direct DAG verification that is useful for graph/runtime behavior and DAG docs
