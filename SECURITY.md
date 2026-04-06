@@ -1,8 +1,7 @@
 # Security Policy
 
-Last updated: 2026-03-14
-
-We use coordinated disclosure. Please report security issues privately.
+This repository uses coordinated vulnerability disclosure. Security reports are
+handled privately until we understand impact and have a remediation path.
 
 This repository is explicit about one important trust boundary:
 
@@ -24,7 +23,7 @@ Preferred:
 - GitHub private report: https://github.com/bijux/bijux-core/security/advisories/new
 
 Fallback:
-- Email: [mousavi.bijan@gmail.com](mailto:mousavi.bijan@gmail.com)
+- Email: [bijan@bijux.io](mailto:bijan@bijux.io)
 
 Please include:
 - affected version and install method
@@ -42,8 +41,8 @@ Do not include secrets or private user data in reports.
 This project is maintained on a best-effort basis.
 
 Current targets:
-- acknowledgement within 3 business days
-- triage/update within 7 business days
+- acknowledgement within 48 hours
+- initial assessment within 5 business days
 
 Complex issues can take longer to fix.
 
