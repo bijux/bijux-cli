@@ -17,10 +17,13 @@ so governance automation does not distort product command behavior.
 ```mermaid
 flowchart LR
     user[user-facing runtime] --> cli[bijux and bijux dag commands]
-    maintainer[maintainer workflows] --> dev[bijux-dev-cli commands]
-    dev --> reports[evidence and governance reports]
+    maintainer[maintainer workflows] --> dev_cli[bijux-dev-cli commands]
+    maintainer --> dev_dag[bijux-dev-dag commands]
+    dev_cli --> reports[evidence and governance reports]
+    dev_dag --> reports
     cli --> runtime[product runtime contracts]
-    dev --> runtime
+    dev_cli --> runtime
+    dev_dag --> runtime
 ```
 
 ## Control-Plane Responsibilities

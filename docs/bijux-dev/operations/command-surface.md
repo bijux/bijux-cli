@@ -9,16 +9,17 @@ last_reviewed: 2026-04-06
 
 # Command Surface
 
-`bijux-dev-cli` provides maintainer-only command surfaces for governance,
-reporting, release readiness, and evidence verification.
+`bijux-dev-cli` and `bijux-dev-dag` provide maintainer-only command surfaces
+for governance, reporting, release readiness, and evidence verification.
 
 ## Visual Summary
 
 ```mermaid
 flowchart LR
     maintainer[maintainer user] --> dev_cli[bijux-dev-cli]
-    dev_cli --> verify[verify and suite commands]
-    dev_cli --> reports[report generators]
+    maintainer --> dev_dag[bijux-dev-dag]
+    dev_cli --> verify[workspace checks and reports]
+    dev_dag --> evidence[dag evidence and release checks]
     dev_cli --> release[release and compatibility commands]
 ```
 
@@ -40,6 +41,7 @@ flowchart LR
 - `crates/bijux-dev/src/cli.rs`
 - `crates/bijux-dev/src/commands/mod.rs`
 - `crates/bijux-dev/src/bin/bijux-dev-cli.rs`
+- `crates/bijux-dev/src/main.rs`
 
 ## Next Reads
 
