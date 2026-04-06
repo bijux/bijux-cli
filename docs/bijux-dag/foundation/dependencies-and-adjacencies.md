@@ -13,5 +13,5 @@ This page defines the DAG foundation contract for **Dependencies And Adjacencies
 
 Primary references:
 
-- [DAG introduction](../../program/01-introduction/01-what-is-bijux-dag.md)
-- [DAG specification](../../program/06-specification/01-dag-model.md)
+- [DAG foundation index](index.md)
+- [DAG data contracts](../interfaces/data-contracts.md)

@@ -7,7 +7,7 @@
 - Crates: `crates/bijux-dag-*`, `crates/bijux-dev`
 - Config: `configs/dag/`
 - Automation modules: `makes/`
-- DAG documentation and evidence assets: `docs/bijux-dag/program/`, `evidence/dag/`
+- DAG documentation and evidence assets: `docs/bijux-dag/`, `evidence/dag/`
 - DAG GitHub workflows: `.github/workflows/dag-*.yml`
 
 ## Local verification path

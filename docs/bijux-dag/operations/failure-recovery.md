@@ -13,8 +13,8 @@ This page captures the DAG operational contract for **Failure Recovery**.
 
 Start with:
 
-- [DAG installation](../../program/02-getting-started/01-installation.md)
-- [DAG troubleshooting](../../program/02-getting-started/05-basic-troubleshooting.md)
+- [Installation and setup](installation-and-setup.md)
+- [Failure recovery](failure-recovery.md)
 
 ## Consolidated Runtime Operations
 

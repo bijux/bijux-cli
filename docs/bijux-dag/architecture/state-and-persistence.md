@@ -13,8 +13,8 @@ This architecture page anchors **State And Persistence** for `bijux-dag`.
 
 Related references:
 
-- [System architecture](../../program/05-system-architecture/01-system-overview.md)
-- [Execution engine](../../program/05-system-architecture/03-execution-engine.md)
+- [Module map](module-map.md)
+- [Execution model](execution-model.md)
 
 ## Consolidated Technical Model
 

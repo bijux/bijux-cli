@@ -13,8 +13,8 @@ This page defines interface expectations for **Entrypoints And Examples** in `bi
 
 Primary references:
 
-- [DAG CLI reference](../../program/04-cli-reference/01-cli-overview.md)
-- [DAG specification](../../program/06-specification/01-dag-model.md)
+- [CLI surface](cli-surface.md)
+- [Data contracts](data-contracts.md)
 
 ## Consolidated Command Guidance
 

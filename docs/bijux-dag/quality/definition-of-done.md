@@ -13,8 +13,8 @@ This page defines quality expectations for **Definition Of Done** in `bijux-dag`
 
 Validation references:
 
-- [DAG development testing strategy](../../program/08-development/02-testing-strategy.md)
-- [DAG replay semantics](../../program/06-specification/07-replay-semantics.md)
+- [Test strategy](test-strategy.md)
+- [Change validation](change-validation.md)
 
 ## Consolidated Development Governance
 
