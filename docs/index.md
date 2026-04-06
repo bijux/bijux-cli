@@ -1,8 +1,10 @@
 # Docs Index
 
-This is the canonical documentation home for `bijux-cli`.
+This is the canonical documentation home for `bijux-core`.
 
 ## Canonical Sections
+
+- [DAG docs entrypoint](08-dag/index.md)
 
 - [Introduction](01-introduction/index.md)
 - [Getting started](02-getting-started/index.md)
