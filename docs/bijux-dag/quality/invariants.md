@@ -9,15 +9,40 @@ last_reviewed: 2026-04-06
 
 # Invariants
 
-This page defines quality expectations for **Invariants** in `bijux-dag`.
+Invariants protect the meaning of DAG execution and must not drift silently.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart TB
+    identity[identity invariants] --> trust[behavioral trust]
+    replay[replay invariants] --> trust
+    diff[diff invariants] --> trust
+    artifacts[artifact invariants] --> trust
+```
 
-## Consolidated Development Governance
+## Core Invariants
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+- canonical graph identity is stable for equivalent definitions
+- run/replay identities remain attributable and non-ambiguous
+- diff classifications preserve mismatch semantics and group boundaries
+- artifact indexes/proofs remain internally consistent and verifiable
+
+## Invariant Breach Signals
+
+- same graph yields different canonical fingerprint without rule change
+- replay changes fidelity class without environment or input explanation
+- diff reason-code meanings mutate without compatibility notice
+- integrity validation accepts tampered or incomplete evidence
+
+## Code Anchors
+
+- `crates/bijux-dag-core/src/analysis/fingerprint.rs`
+- `crates/bijux-dag-runtime/src/replay/`
+- `crates/bijux-dag-artifacts/src/integrity/`
+
+## Next Reads
+
+- [Test Strategy](test-strategy.md)
+- [Risk Register](risk-register.md)
+- [Compatibility Commitments](../interfaces/compatibility-commitments.md)

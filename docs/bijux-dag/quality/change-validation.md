@@ -9,15 +9,42 @@ last_reviewed: 2026-04-06
 
 # Change Validation
 
-This page defines quality expectations for **Change Validation** in `bijux-dag`.
+Every DAG change must ship with evidence that behavior is understood, tested,
+and documented.
 
-Validation references:
+## Visual Summary
 
-- [Test strategy](test-strategy.md)
-- [Change validation](change-validation.md)
+```mermaid
+flowchart LR
+    proposal[proposed change] --> scope[scope impact]
+    scope --> tests[run relevant tests]
+    tests --> replay[replay and diff checks]
+    replay --> docs[update docs and risks]
+    docs --> merge[merge decision]
+```
 
-## Consolidated Development Governance
+## Validation Checklist
 
-This page now includes former development chapter expectations for contributor
-workflow discipline, adapter-change review depth, and evidence-backed
-verification gates.
+1. classify impact: interface, runtime, artifact, or docs-only
+2. run focused and contract-level tests for impacted area
+3. verify replay/diff behavior for compatibility-sensitive changes
+4. update docs where behavior or operator guidance changed
+5. record remaining risks and mitigations
+
+## Minimum Evidence
+
+- test output tied to changed components
+- replay/diff evidence for semantic-impacting updates
+- docs updates with stable links and code anchors
+
+## Code Anchors
+
+- `crates/bijux-dag-app/tests/`
+- `crates/bijux-dag-core/tests/`
+- `crates/bijux-dag-runtime/tests/`
+
+## Next Reads
+
+- [Definition of Done](definition-of-done.md)
+- [Review Checklist](review-checklist.md)
+- [Release and Versioning](../operations/release-and-versioning.md)
