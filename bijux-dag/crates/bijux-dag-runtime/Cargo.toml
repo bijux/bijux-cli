@@ -2,15 +2,18 @@
 name = "bijux-dag-runtime"
 version.workspace = true
 edition.workspace = true
-license = "Apache-2.0"
-authors = ["Bijan Mousavi"]
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.1.0" }
-bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.1.0" }
+bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core" }
+bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

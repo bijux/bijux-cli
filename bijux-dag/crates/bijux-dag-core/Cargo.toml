@@ -2,8 +2,11 @@
 name = "bijux-dag-core"
 version.workspace = true
 edition.workspace = true
-license = "Apache-2.0"
-authors = ["Bijan Mousavi"]
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true

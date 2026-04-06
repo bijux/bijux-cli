@@ -2,8 +2,11 @@
 name = "bijux-dev-dag"
 version.workspace = true
 edition.workspace = true
-license = "Apache-2.0"
-authors = ["Bijan Mousavi"]
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true
@@ -14,9 +17,9 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
-bijux-dag-core = { path = "../bijux-dag-core", version = "0.1.0" }
-bijux-dag-artifacts = { path = "../bijux-dag-artifacts", version = "0.1.0" }
-bijux-dag-runtime = { path = "../bijux-dag-runtime", version = "0.1.0" }
+bijux-dag-core = { path = "../bijux-dag-core" }
+bijux-dag-artifacts = { path = "../bijux-dag-artifacts" }
+bijux-dag-runtime = { path = "../bijux-dag-runtime" }
 tempfile = { workspace = true }
 
 [dev-dependencies]
