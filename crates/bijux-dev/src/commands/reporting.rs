@@ -42,10 +42,7 @@ pub(crate) fn run_text_or_json_report(
     }
 
     if context.json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&report).expect("json print")
-        );
+        println!("{}", serde_json::to_string_pretty(&report).expect("json print"));
     } else if include_data_on_success || status == "error" {
         let value = report.to_string();
         println!("[{command}] {status} ({effect}): {value}",);
@@ -57,11 +54,7 @@ pub(crate) fn run_text_or_json_report(
         let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
         fs::write(report_path, output).map_err(|err| err.to_string())?;
     }
-    if std::env::var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND")
-        .ok()
-        .as_deref()
-        != Some("1")
-    {
+    if std::env::var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND").ok().as_deref() != Some("1") {
         let _ = append_control_plane_audit(command_name, status, effect);
     }
 
@@ -101,10 +94,7 @@ mod tests {
     fn report_shape_is_stable_for_success_case() {
         let temp = tempfile::tempdir().expect("tmp");
         let report_path = temp.path().join("report.json");
-        let context = CommandContext {
-            json: false,
-            report: Some(report_path.clone()),
-        };
+        let context = CommandContext { json: false, report: Some(report_path.clone()) };
         std::env::set_var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND", "1");
         run_text_or_json_report(
             &context,

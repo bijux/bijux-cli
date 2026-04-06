@@ -68,10 +68,7 @@ fn lineage_utilities_are_stable() {
     assert_eq!(dependents, vec!["a.final".to_string()]);
 
     let assist = build_replay_assist(&snapshot, ArtifactId("a.final".to_string()));
-    assert_eq!(
-        assist.required_upstream_artifacts,
-        vec![ArtifactId("a.mid".to_string())]
-    );
+    assert_eq!(assist.required_upstream_artifacts, vec![ArtifactId("a.mid".to_string())]);
     assert_eq!(assist.required_nodes, vec!["node.final".to_string()]);
 }
 

@@ -72,11 +72,7 @@ pub fn cancel_batch_attempt(state: &mut BatchAttemptState) {
     state.events.push(BatchLifecycleEvent {
         scheduler_id: state.metadata.scheduler_id.clone(),
         status: "cancel-requested".to_string(),
-        unix_ms: state
-            .events
-            .last()
-            .map(|e| e.unix_ms.saturating_add(1))
-            .unwrap_or(1),
+        unix_ms: state.events.last().map(|e| e.unix_ms.saturating_add(1)).unwrap_or(1),
     });
 }
 
@@ -87,11 +83,7 @@ pub fn heartbeat_stale(last: &BatchHeartbeat, now_unix_ms: u128, max_age_ms: u12
 pub fn duplicate_status_delivery_detected(events: &[BatchLifecycleEvent]) -> bool {
     let mut seen = BTreeMap::new();
     for event in events {
-        let key = (
-            event.scheduler_id.clone(),
-            event.status.clone(),
-            event.unix_ms,
-        );
+        let key = (event.scheduler_id.clone(), event.status.clone(), event.unix_ms);
         let count = seen.entry(key).or_insert(0usize);
         *count += 1;
         if *count > 1 {

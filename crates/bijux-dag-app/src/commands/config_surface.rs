@@ -105,10 +105,8 @@ pub fn policy_evaluation_trace(policy: &PolicySurfaceConfig) -> Vec<String> {
         "rule:deny_network decision:{}",
         if policy.deny_network { "deny" } else { "allow" }
     ));
-    events.push(format!(
-        "rule:deny_env decision:{}",
-        if policy.deny_env { "deny" } else { "allow" }
-    ));
+    events
+        .push(format!("rule:deny_env decision:{}", if policy.deny_env { "deny" } else { "allow" }));
     events.push(format!(
         "rule:deny_clock decision:{}",
         if policy.deny_clock { "deny" } else { "allow" }
@@ -180,10 +178,7 @@ mod tests {
         let effective = resolve_effective_config(cli, explicit, env_cfg, defaults);
         assert_eq!(effective.jobs, 4);
         assert_eq!(effective.cache_mode, CacheModeSurface::Read);
-        assert_eq!(
-            effective.materialize_inputs,
-            MaterializeInputsSurface::Direct
-        );
+        assert_eq!(effective.materialize_inputs, MaterializeInputsSurface::Direct);
     }
 
     #[test]

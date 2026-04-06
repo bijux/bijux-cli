@@ -173,10 +173,7 @@ pub fn evaluate_pause_state(
     running_count: usize,
 ) -> BTreeMap<&'static str, bool> {
     let mut result = BTreeMap::new();
-    result.insert(
-        "freeze_dispatch",
-        matches!(policy.mode, RunPauseMode::PauseAllNewDispatch),
-    );
+    result.insert("freeze_dispatch", matches!(policy.mode, RunPauseMode::PauseAllNewDispatch));
     result.insert(
         "freeze_ready_queue",
         matches!(
@@ -273,10 +270,7 @@ pub fn check_run_consistency(
     if summary.counts.cached != cached_count {
         mismatches.push("summary cached count mismatch".to_string());
     }
-    let artifact_set = artifact_nodes
-        .iter()
-        .cloned()
-        .collect::<std::collections::BTreeSet<_>>();
+    let artifact_set = artifact_nodes.iter().cloned().collect::<std::collections::BTreeSet<_>>();
     let all_success_nodes_have_artifacts = node_states
         .iter()
         .filter(|(_, state)| *state == NodeState::Success)

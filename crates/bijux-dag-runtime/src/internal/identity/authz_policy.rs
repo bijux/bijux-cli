@@ -234,10 +234,8 @@ pub fn validate_custom_role(role: &CustomRoleDefinition) -> Result<(), String> {
     let unsupported_combo = role.permissions.iter().any(|p| p == "platform.administer")
         && role.permissions.iter().any(|p| p == "tenant.manage");
     if unsupported_combo {
-        return Err(
-            "custom role cannot combine platform.administer and tenant.manage in one role"
-                .to_string(),
-        );
+        return Err("custom role cannot combine platform.administer and tenant.manage in one role"
+            .to_string());
     }
     Ok(())
 }
@@ -274,9 +272,7 @@ pub fn decision_cache_key(
 }
 
 pub fn invalidate_decision_cache(cache: &mut PolicyDecisionCache, policy_bundle_version: &str) {
-    cache
-        .entries
-        .retain(|entry| entry.policy_bundle_version == policy_bundle_version);
+    cache.entries.retain(|entry| entry.policy_bundle_version == policy_bundle_version);
 }
 
 pub fn evaluate_dry_run(

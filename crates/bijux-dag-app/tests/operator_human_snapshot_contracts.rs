@@ -27,18 +27,19 @@ fn dag_command(root: &Path) -> Command {
         .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
         .unwrap_or_else(|| "cargo".to_string());
     let mut command = Command::new(cargo_bin);
-    command
-        .current_dir(root)
-        .env("CARGO_TARGET_DIR", root.join("artifacts/target"))
-        .args(["run", "--quiet", "-p", "bijux-dag-cli", "--", "dag"]);
+    command.current_dir(root).env("CARGO_TARGET_DIR", root.join("artifacts/target")).args([
+        "run",
+        "--quiet",
+        "-p",
+        "bijux-dag-cli",
+        "--",
+        "dag",
+    ]);
     command
 }
 
 fn run_human(root: &Path, args: &[&str]) -> String {
-    let output = dag_command(root)
-        .args(args)
-        .output()
-        .expect("run dag command");
+    let output = dag_command(root).args(args).output().expect("run dag command");
     assert_eq!(
         output.status.code().unwrap_or(1),
         0,
@@ -52,17 +53,7 @@ fn write_run_with_fixed_id(root: &Path, graph: &Path, out_dir: &Path, run_id: &s
     fs::create_dir_all(out_dir).expect("create run output root");
     let graph_arg = graph.to_string_lossy().to_string();
     let out_arg = out_dir.to_string_lossy().to_string();
-    run_human(
-        root,
-        &[
-            "run",
-            graph_arg.as_str(),
-            "--out",
-            out_arg.as_str(),
-            "--run-id",
-            run_id,
-        ],
-    );
+    run_human(root, &["run", graph_arg.as_str(), "--out", out_arg.as_str(), "--run-id", run_id]);
     out_dir.join(format!("run-{run_id}"))
 }
 
@@ -84,10 +75,7 @@ fn validate_human_output_snapshot_is_stable() {
 fn plan_human_output_snapshot_is_stable() {
     let root = repo_root();
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
-    let out = run_human(
-        &root,
-        &["plan", "explain", graph.to_string_lossy().as_ref()],
-    );
+    let out = run_human(&root, &["plan", "explain", graph.to_string_lossy().as_ref()]);
     assert_eq!(out, include_str!("snapshots/plan_human_output.txt"));
 }
 
@@ -125,10 +113,7 @@ fn inspect_human_output_snapshot_is_stable() {
         "timing_ms":{"started":1000u64,"finished":1010u64}
     });
     let text = bijux_dag_app::format_inspect_human(&summary);
-    assert_eq!(
-        text.trim_end(),
-        include_str!("snapshots/inspect_human_output.txt").trim_end()
-    );
+    assert_eq!(text.trim_end(), include_str!("snapshots/inspect_human_output.txt").trim_end());
 }
 
 #[test]
@@ -139,23 +124,13 @@ fn history_human_output_snapshot_is_stable() {
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let history = run_human(
-        &root,
-        &[
-            "runs",
-            "history",
-            "--root",
-            out_dir.to_string_lossy().as_ref(),
-        ],
-    );
+    let history =
+        run_human(&root, &["runs", "history", "--root", out_dir.to_string_lossy().as_ref()]);
     let mut payload: serde_json::Value =
         serde_json::from_str(&history).expect("history payload should be json");
     payload["runs"][0]["created_unix_ms"] = serde_json::json!(0);
     let rendered = serde_json::to_string_pretty(&payload).expect("render normalized history");
-    assert_eq!(
-        format!("{rendered}\n"),
-        include_str!("snapshots/history_human_output.txt")
-    );
+    assert_eq!(format!("{rendered}\n"), include_str!("snapshots/history_human_output.txt"));
 }
 
 #[test]
@@ -179,10 +154,7 @@ fn replay_human_output_snapshot_is_stable() {
         ],
     );
     let normalized = normalize_paths(&replay, tmp.path());
-    assert_eq!(
-        normalized,
-        include_str!("snapshots/replay_human_output_contract.txt")
-    );
+    assert_eq!(normalized, include_str!("snapshots/replay_human_output_contract.txt"));
 }
 
 #[test]
@@ -202,10 +174,7 @@ fn diff_human_output_snapshot_is_stable() {
             "--explain",
         ],
     );
-    assert_eq!(
-        diff,
-        include_str!("snapshots/diff_human_output_contract.txt")
-    );
+    assert_eq!(diff, include_str!("snapshots/diff_human_output_contract.txt"));
 }
 
 #[test]
@@ -217,10 +186,7 @@ fn prove_human_output_snapshot_is_stable() {
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
     let prove = run_human(&root, &["prove", run_dir.to_string_lossy().as_ref()]);
-    assert_eq!(
-        prove,
-        include_str!("snapshots/prove_human_output_contract.txt")
-    );
+    assert_eq!(prove, include_str!("snapshots/prove_human_output_contract.txt"));
 }
 
 #[test]
@@ -232,10 +198,7 @@ fn verify_human_output_snapshot_is_stable() {
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
     let verify = run_human(&root, &["verify", run_dir.to_string_lossy().as_ref()]);
-    assert_eq!(
-        verify,
-        include_str!("snapshots/verify_human_output_contract.txt")
-    );
+    assert_eq!(verify, include_str!("snapshots/verify_human_output_contract.txt"));
 }
 
 #[test]
@@ -254,23 +217,11 @@ fn artifact_inspect_human_output_snapshot_is_stable() {
     let artifact_id = format!(
         "{}:{}",
         first["node_id"].as_str().expect("node id"),
-        first["path"]
-            .as_str()
-            .expect("path")
-            .rsplit('/')
-            .next()
-            .expect("file name")
+        first["path"].as_str().expect("path").rsplit('/').next().expect("file name")
     );
     let out = run_human(
         &root,
-        &[
-            "artifact-inspect",
-            run_dir.to_string_lossy().as_ref(),
-            artifact_id.as_str(),
-        ],
+        &["artifact-inspect", run_dir.to_string_lossy().as_ref(), artifact_id.as_str()],
     );
-    assert_eq!(
-        out,
-        include_str!("snapshots/artifact_inspect_human_output.txt")
-    );
+    assert_eq!(out, include_str!("snapshots/artifact_inspect_human_output.txt"));
 }

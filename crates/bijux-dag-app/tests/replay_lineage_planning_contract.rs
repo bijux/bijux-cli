@@ -92,10 +92,7 @@ fn replay_manifest_keeps_parent_run_ancestry_chain() {
     let replay_run = run_dir_from_response(&replay);
     let source_manifest = read_manifest(&source_run);
     let replay_manifest = read_manifest(&replay_run);
-    assert_eq!(
-        replay_manifest["run_metadata"]["parent_run_id"],
-        source_manifest["run_id"]
-    );
+    assert_eq!(replay_manifest["run_metadata"]["parent_run_id"], source_manifest["run_id"]);
 }
 
 #[test]

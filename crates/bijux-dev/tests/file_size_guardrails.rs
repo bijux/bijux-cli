@@ -44,10 +44,7 @@ fn source_files_stay_under_size_budget() {
             let entry = entry.expect("dir entry");
             let path = entry.path();
             if path.is_dir() {
-                let name = path
-                    .file_name()
-                    .and_then(|value| value.to_str())
-                    .unwrap_or("");
+                let name = path.file_name().and_then(|value| value.to_str()).unwrap_or("");
                 if matches!(name, "target" | "artifacts") {
                     continue;
                 }
@@ -68,10 +65,7 @@ fn source_files_stay_under_size_budget() {
                     "warning: rust source exceeds warning LOC budget: {rel} has {count} lines (warning {warning_budget})"
                 );
             }
-            assert!(
-                count <= hard_budget,
-                "{rel} has {count} lines (hard max {hard_budget})"
-            );
+            assert!(count <= hard_budget, "{rel} has {count} lines (hard max {hard_budget})");
             let max_lines = policy
                 .transitional_ceiling
                 .get(&rel)

@@ -11,10 +11,8 @@ use thiserror as _;
 use unicode_normalization as _;
 
 fn fixture(name: &str) -> String {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("fixtures")
-        .join(name);
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join("fixtures").join(name);
     std::fs::read_to_string(path).expect("read fixture")
 }
 
@@ -33,9 +31,7 @@ fn detects_cycle_dependencies() {
 fn detects_unreachable_nodes() {
     let graph = parse_graph_strict(&fixture("unreachable.json")).expect("parse graph");
     let diags = graph.validate_with_warnings();
-    assert!(diags
-        .iter()
-        .any(|d| d.code == "W2001" && d.severity == Severity::Warning));
+    assert!(diags.iter().any(|d| d.code == "W2001" && d.severity == Severity::Warning));
 }
 
 #[test]
@@ -140,16 +136,11 @@ fn validation_diagnostic_schema_is_stable() {
     let graph = parse_graph_strict(&fixture("invalid_ref.json")).expect("parse graph");
     let diags = graph.validate_with_warnings();
     let payload = diagnostics_json(&diags);
-    let first = payload
-        .as_array()
-        .and_then(|items| items.first())
-        .expect("diagnostic entry");
+    let first = payload.as_array().and_then(|items| items.first()).expect("diagnostic entry");
 
     let keys: BTreeSet<String> = first.as_object().expect("object").keys().cloned().collect();
-    let expected: BTreeSet<String> = ["code", "message", "path", "hint", "severity"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    let expected: BTreeSet<String> =
+        ["code", "message", "path", "hint", "severity"].iter().map(|s| s.to_string()).collect();
     assert_eq!(keys, expected);
 }
 
@@ -174,14 +165,8 @@ fn validation_fuzz_invariants_hold_for_generated_graphs() {
         let graph = random_dag(nodes, &mut seed);
         let diags = graph.validate_with_warnings();
 
-        let errs = diags
-            .iter()
-            .filter(|d| d.severity == Severity::Error)
-            .count();
-        assert!(
-            errs == 0,
-            "generated acyclic graph should be valid: {diags:?}"
-        );
+        let errs = diags.iter().filter(|d| d.severity == Severity::Error).count();
+        assert!(errs == 0, "generated acyclic graph should be valid: {diags:?}");
     }
 }
 
@@ -276,8 +261,6 @@ fn long_chain_graph(nodes: usize) -> Graph {
 }
 
 fn lcg(seed: &mut u64) -> u64 {
-    *seed = seed
-        .wrapping_mul(6364136223846793005)
-        .wrapping_add(1442695040888963407);
+    *seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
     *seed
 }

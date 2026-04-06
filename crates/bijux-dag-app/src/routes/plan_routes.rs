@@ -9,10 +9,7 @@ fn concise_plan_lines(plan: &bijux_dag_core::ExecutionPlan) -> Vec<String> {
     let mut lines = Vec::new();
     for node in &plan.nodes {
         if node.deps.is_empty() {
-            lines.push(format!(
-                "{}: included as graph root (no dependencies)",
-                node.id
-            ));
+            lines.push(format!("{}: included as graph root (no dependencies)", node.id));
         } else {
             lines.push(format!(
                 "{}: included because it depends on {}",

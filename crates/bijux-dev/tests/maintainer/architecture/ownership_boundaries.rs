@@ -51,10 +51,12 @@ fn crate_scope_rejects_runtime_command_law_and_root_alias_reexports() {
     ];
 
     for signature in runtime_law_signatures {
-        let present = include_str!("../../../src/maintainer/reports/control_plane.rs").contains(signature)
+        let present = include_str!("../../../src/maintainer/reports/control_plane.rs")
+            .contains(signature)
             || include_str!("../../../src/maintainer/reports/repository_health/status/mod.rs")
                 .contains(signature)
-            || include_str!("../../../src/maintainer/reports/runtime_surface/parity.rs").contains(signature)
+            || include_str!("../../../src/maintainer/reports/runtime_surface/parity.rs")
+                .contains(signature)
             || include_str!("../../../src/maintainer/reports/runtime_surface/runtime_identity.rs")
                 .contains(signature);
         assert!(

@@ -30,10 +30,7 @@ fn runtime_helper_fast_suite_covers_helper_invariant_targets() {
         "planner_analysis_contract",
     ] {
         assert!(
-            commands
-                .iter()
-                .filter_map(|v| v.as_str())
-                .any(|cmd| cmd.contains(required)),
+            commands.iter().filter_map(|v| v.as_str()).any(|cmd| cmd.contains(required)),
             "runtime helper fast suite missing {required}"
         );
     }

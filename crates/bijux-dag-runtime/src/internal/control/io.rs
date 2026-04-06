@@ -78,10 +78,7 @@ impl Fs for StdFs {
         {
             let _ = from;
             let _ = to;
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "symlink not supported",
-            ))
+            Err(io::Error::new(io::ErrorKind::Other, "symlink not supported"))
         }
     }
 

@@ -86,11 +86,7 @@ pub(crate) fn collect_output_files(
             let mut entries = index.files.clone();
             entries.sort_by(|a, b| a.path.cmp(&b.path));
             for file in entries {
-                let path = run_dir
-                    .join("nodes")
-                    .join(&node_id)
-                    .join("outputs")
-                    .join(&file.path);
+                let path = run_dir.join("nodes").join(&node_id).join("outputs").join(&file.path);
                 let bytes = fs::read(path).map_err(|_| ExitCode::from(3))?;
                 let encoded = BASE64.encode(bytes);
                 files.insert(file.path, encoded);

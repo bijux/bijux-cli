@@ -18,9 +18,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn repo_target_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("artifacts/target")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").join("artifacts/target")
 }
 
 fn examples_file(file_name: &str) -> String {

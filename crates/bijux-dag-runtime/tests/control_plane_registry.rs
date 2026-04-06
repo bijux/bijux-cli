@@ -86,11 +86,8 @@ fn selects_latest_pinned_and_compatible_versions() {
         .expect("registration should succeed");
     }
 
-    let latest = select_dag_version(
-        &registry,
-        "artifact-release",
-        &DagVersionSelectionPolicy::RunLatest,
-    );
+    let latest =
+        select_dag_version(&registry, "artifact-release", &DagVersionSelectionPolicy::RunLatest);
     assert_eq!(
         latest,
         CompatibilityDecision::Selected {
@@ -102,9 +99,7 @@ fn selects_latest_pinned_and_compatible_versions() {
     let pinned = select_dag_version(
         &registry,
         "artifact-release",
-        &DagVersionSelectionPolicy::RunPinned {
-            version_id: "2026.03.01".to_string(),
-        },
+        &DagVersionSelectionPolicy::RunPinned { version_id: "2026.03.01".to_string() },
     );
     assert_eq!(
         pinned,
@@ -117,9 +112,7 @@ fn selects_latest_pinned_and_compatible_versions() {
     let compatible = select_dag_version(
         &registry,
         "artifact-release",
-        &DagVersionSelectionPolicy::RunCompatible {
-            compatibility_line: "v0.1".to_string(),
-        },
+        &DagVersionSelectionPolicy::RunCompatible { compatibility_line: "v0.1".to_string() },
     );
     assert_eq!(
         compatible,
@@ -145,10 +138,7 @@ fn resolves_environment_values_with_parent_and_overrides() {
         overrides: BTreeMap::from([("JOBS".to_string(), "8".to_string())]),
     };
     let resolved = resolve_environment_values(&child, Some(&parent));
-    assert_eq!(
-        resolved.get("CACHE_DIR"),
-        Some(&"artifacts/cache".to_string())
-    );
+    assert_eq!(resolved.get("CACHE_DIR"), Some(&"artifacts/cache".to_string()));
     assert_eq!(resolved.get("LOG_LEVEL"), Some(&"info".to_string()));
     assert_eq!(resolved.get("JOBS"), Some(&"8".to_string()));
 }

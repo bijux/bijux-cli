@@ -156,10 +156,7 @@ pub fn verification_gate_passed(
 }
 
 pub fn machine_checkable_invariants(invariants: &[InvariantDefinition]) -> BTreeMap<String, bool> {
-    invariants
-        .iter()
-        .map(|inv| (inv.id.clone(), inv.machine_checkable))
-        .collect()
+    invariants.iter().map(|inv| (inv.id.clone(), inv.machine_checkable)).collect()
 }
 
 pub fn lineage_invariants_hold(proof: &LineageInvariantProof) -> bool {

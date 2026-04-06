@@ -58,10 +58,7 @@ fn lineage_policy_artifact_and_replay_invariants_hold_when_flags_are_true() {
     };
     assert!(lineage_invariants_hold(&lineage));
 
-    let policy = PolicyInvariantProof {
-        deny_never_bypassed: true,
-        fallback_paths_checked: true,
-    };
+    let policy = PolicyInvariantProof { deny_never_bypassed: true, fallback_paths_checked: true };
     assert!(policy_invariants_hold(&policy));
 
     let artifact = ArtifactIntegrityInvariant {

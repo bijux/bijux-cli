@@ -74,10 +74,7 @@ impl RunDir {
         let staging = out_base.as_ref().join(format!("run.tmp-{}", run_id));
         let final_path = out_base.as_ref().join(format!("run-{}", run_id));
         std_fs::create_dir_all(staging.join("nodes"))?;
-        Ok(Self {
-            staging_path: staging,
-            final_path,
-        })
+        Ok(Self { staging_path: staging, final_path })
     }
 
     pub fn staging_path(&self) -> &Path {
@@ -229,10 +226,7 @@ pub fn write_inputs_index(dir: impl AsRef<Path>, index: &InputsIndex) -> Result<
 }
 
 pub fn now_unix_ms() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
 }
 
 fn generate_run_id() -> String {

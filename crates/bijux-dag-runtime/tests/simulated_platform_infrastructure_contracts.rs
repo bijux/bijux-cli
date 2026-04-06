@@ -36,10 +36,7 @@ fn modeled_infrastructure_types_live_under_simulated_platform_surface() {
         tenant_id: Some("tenant-a".to_string()),
         max_concurrency: 4,
     };
-    let scaling = SchedulerScalingPlan {
-        worker_count: 3,
-        sharding_key: "tenant".to_string(),
-    };
+    let scaling = SchedulerScalingPlan { worker_count: 3, sharding_key: "tenant".to_string() };
     let ha = HighAvailabilitySchedulerPlan {
         enabled: true,
         leader_election: "lease".to_string(),
@@ -57,12 +54,6 @@ fn modeled_infrastructure_types_live_under_simulated_platform_surface() {
     assert_eq!(scaling.worker_count, 3);
     assert!(ha.enabled);
     assert!(secret.redaction_required);
-    assert_eq!(
-        ArtifactStoreBackend::ObjectStorage,
-        ArtifactStoreBackend::ObjectStorage
-    );
-    assert_eq!(
-        RegistryPersistenceBackend::Database,
-        RegistryPersistenceBackend::Database
-    );
+    assert_eq!(ArtifactStoreBackend::ObjectStorage, ArtifactStoreBackend::ObjectStorage);
+    assert_eq!(RegistryPersistenceBackend::Database, RegistryPersistenceBackend::Database);
 }

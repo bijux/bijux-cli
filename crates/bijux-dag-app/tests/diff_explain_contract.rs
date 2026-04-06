@@ -61,10 +61,7 @@ fn why_rerun_and_trace_artifact_commands_are_json_capable() {
             run_b.to_string_lossy().as_ref(),
         ])
         .expect("parse why-rerun");
-    assert_eq!(
-        dag_run(&why).expect("why-rerun"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&why).expect("why-rerun"), std::process::ExitCode::SUCCESS);
 
     let trace = dag_command()
         .try_get_matches_from([
@@ -75,10 +72,7 @@ fn why_rerun_and_trace_artifact_commands_are_json_capable() {
             "extract:data.txt",
         ])
         .expect("parse trace-artifact");
-    assert_eq!(
-        dag_run(&trace).expect("trace-artifact"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&trace).expect("trace-artifact"), std::process::ExitCode::SUCCESS);
 }
 
 #[test]
@@ -100,10 +94,7 @@ fn why_cache_missed_command_is_json_capable() {
             cache_dir.to_string_lossy().as_ref(),
         ])
         .expect("parse why-cache-missed");
-    assert_eq!(
-        dag_run(&cmd).expect("why-cache-missed"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&cmd).expect("why-cache-missed"), std::process::ExitCode::SUCCESS);
 }
 
 #[test]

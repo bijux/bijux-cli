@@ -26,11 +26,8 @@ use std::time::Instant;
 
 #[test]
 fn scheduler_tick_order_is_reproducible_across_runs() {
-    let base = vec![
-        sub("sched-z", "r2", 200),
-        sub("sched-a", "r1", 100),
-        sub("sched-a", "r0", 100),
-    ];
+    let base =
+        vec![sub("sched-z", "r2", 200), sub("sched-a", "r1", 100), sub("sched-a", "r0", 100)];
     let first = deterministic_tick_order(base.clone());
     let second = deterministic_tick_order(base);
     assert_eq!(first, second);
@@ -105,11 +102,7 @@ fn scheduler_queue_depth_and_grouping_metrics_are_visible() {
     ]);
     let grouped = run_batches(
         queue,
-        &RunBatchPolicy {
-            allow_grouping: true,
-            max_group_size: 2,
-            require_same_dag: true,
-        },
+        &RunBatchPolicy { allow_grouping: true, max_group_size: 2, require_same_dag: true },
     );
     assert_eq!(grouped.len(), 2);
     assert_eq!(grouped[0].len(), 2);
@@ -136,10 +129,7 @@ fn scheduler_trace_capture_contains_retry_and_ready_events() {
     state.requeue_retries();
 
     let log = scheduler_debug_event_log(&state);
-    let kinds = log
-        .iter()
-        .map(|e| format!("{:?}", e.kind))
-        .collect::<Vec<_>>();
+    let kinds = log.iter().map(|e| format!("{:?}", e.kind)).collect::<Vec<_>>();
     assert!(kinds.iter().any(|k| k.contains("NodeReady")));
     assert!(kinds.iter().any(|k| k.contains("NodeRetryQueued")));
     assert!(kinds.iter().any(|k| k.contains("NodeRetryRequeued")));
@@ -162,10 +152,7 @@ fn scheduler_performance_regression_guard_for_large_ready_sets() {
     let elapsed = start.elapsed();
 
     assert_eq!(ordered.len(), 20_000);
-    assert!(
-        elapsed.as_millis() < 6_000,
-        "scheduler ordering too slow: {elapsed:?}"
-    );
+    assert!(elapsed.as_millis() < 6_000, "scheduler ordering too slow: {elapsed:?}");
 }
 
 #[test]
@@ -194,10 +181,7 @@ fn scheduler_regression_corpus_ordering_remains_stable() {
         .collect::<Vec<_>>();
 
     let ordered = deterministic_tick_order(submissions);
-    let got = ordered
-        .iter()
-        .map(|s| format!("{}:{}", s.schedule_id, s.run_id))
-        .collect::<Vec<_>>();
+    let got = ordered.iter().map(|s| format!("{}:{}", s.schedule_id, s.run_id)).collect::<Vec<_>>();
 
     assert_eq!(got, expected);
 
@@ -260,10 +244,7 @@ fn scheduler_materialization_and_trigger_dedup_helpers_are_consistent() {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
         },
-        queue: QueueIdentity {
-            queue_name: "default".to_string(),
-            tenant: None,
-        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::Standard,
         concurrency: ConcurrencyPolicyLayers {
             per_dag: Some(1),
@@ -271,10 +252,7 @@ fn scheduler_materialization_and_trigger_dedup_helpers_are_consistent() {
             per_tenant: None,
             per_node_group: None,
         },
-        catch_up: CatchUpPolicy {
-            enabled: false,
-            max_catch_up_runs: 0,
-        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
     };
 
     let preview = materialize_next_runs(&definition, 1_000, 3);

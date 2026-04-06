@@ -34,10 +34,7 @@ pub struct DagBuilder {
 
 impl DagBuilder {
     pub fn new() -> Self {
-        Self {
-            spec: crate::SPEC_VERSION.to_string(),
-            ..Self::default()
-        }
+        Self { spec: crate::SPEC_VERSION.to_string(), ..Self::default() }
     }
 
     pub fn graph_meta(mut self, meta: GraphMeta) -> Self {
@@ -62,14 +59,8 @@ impl DagBuilder {
 
     pub fn edge(mut self, from_node: &str, from_port: &str, to_node: &str, to_port: &str) -> Self {
         self.edges.push(Edge {
-            from: PortRef {
-                node_id: from_node.to_string(),
-                port: from_port.to_string(),
-            },
-            to: PortRef {
-                node_id: to_node.to_string(),
-                port: to_port.to_string(),
-            },
+            from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
+            to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
         });
         self
     }
@@ -127,11 +118,7 @@ impl Default for NodeBuilder {
 
 impl NodeBuilder {
     pub fn new(id: &str, kind: NodeKind) -> Self {
-        Self {
-            id: id.to_string(),
-            kind,
-            ..Self::default()
-        }
+        Self { id: id.to_string(), kind, ..Self::default() }
     }
 
     pub fn input(mut self, name: &str) -> Self {
@@ -140,10 +127,7 @@ impl NodeBuilder {
     }
 
     pub fn output(mut self, name: &str, path: &str) -> Self {
-        self.outputs.push(FileOutput {
-            name: name.to_string(),
-            path: path.to_string(),
-        });
+        self.outputs.push(FileOutput { name: name.to_string(), path: path.to_string() });
         self
     }
 
@@ -223,9 +207,7 @@ pub fn simulate_graph(graph: &Graph) -> Vec<String> {
     }
     for edge in &graph.edges {
         *indegree.entry(edge.to.node_id.clone()).or_insert(0) += 1;
-        adj.entry(edge.from.node_id.clone())
-            .or_default()
-            .push(edge.to.node_id.clone());
+        adj.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
     }
     let mut ready: BTreeSet<String> = indegree
         .iter()
@@ -251,10 +233,7 @@ pub fn dry_run_preview(graph: &Graph) -> DagDryRunPreview {
     let diagnostics = compile_result
         .as_ref()
         .map(|r| {
-            r.diagnostics
-                .iter()
-                .map(|d| format!("{}: {}", d.code, d.message))
-                .collect::<Vec<_>>()
+            r.diagnostics.iter().map(|d| format!("{}: {}", d.code, d.message)).collect::<Vec<_>>()
         })
         .unwrap_or_else(|err: &crate::GraphError| vec![err.to_string()]);
     DagDryRunPreview {

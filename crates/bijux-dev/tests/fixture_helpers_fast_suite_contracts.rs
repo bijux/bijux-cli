@@ -30,9 +30,6 @@ fn fixture_helpers_fast_suite_covers_shared_loader_and_governance_contracts() {
         "cargo test -p bijux-dag-testkit --test fixture_loader_contracts",
         "cargo test -p bijux-dev --test fixture_loader_governance_contracts",
     ] {
-        assert!(
-            commands.contains(required),
-            "fixture helper fast suite missing {required}"
-        );
+        assert!(commands.contains(required), "fixture helper fast suite missing {required}");
     }
 }

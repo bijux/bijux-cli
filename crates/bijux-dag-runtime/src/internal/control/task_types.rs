@@ -147,11 +147,7 @@ pub fn default_task_type_registry() -> TaskTypeRegistry {
             ScalarType::Boolean,
             ScalarType::Bytes,
         ],
-        collection_types: vec![
-            CollectionType::List,
-            CollectionType::Map,
-            CollectionType::Set,
-        ],
+        collection_types: vec![CollectionType::List, CollectionType::Map, CollectionType::Set],
         versioned_rules: vec![
             VersionedTypeRule {
                 type_id: "string".to_string(),
@@ -202,11 +198,8 @@ pub fn validate_cross_node_compatibility(
     producer: &TaskContract,
     consumer: &TaskContract,
 ) -> Vec<TaskContractDiagnostic> {
-    let producer_outputs: BTreeMap<String, String> = producer
-        .outputs
-        .iter()
-        .map(|o| (o.name.clone(), o.schema_name.clone()))
-        .collect();
+    let producer_outputs: BTreeMap<String, String> =
+        producer.outputs.iter().map(|o| (o.name.clone(), o.schema_name.clone())).collect();
     let mut diagnostics = Vec::new();
     for input in &consumer.inputs {
         let compatible = producer_outputs
@@ -255,10 +248,7 @@ pub fn compatibility_score_for_contract(
 ) -> CompatibilityScore {
     let penalty = diagnostics.len() as f64 * 0.15;
     let base = 1.0;
-    CompatibilityScore {
-        node_id: contract.node_id.clone(),
-        score: (base - penalty).max(0.0),
-    }
+    CompatibilityScore { node_id: contract.node_id.clone(), score: (base - penalty).max(0.0) }
 }
 
 pub fn generate_task_contract_markdown(contract: &TaskContract) -> String {
@@ -266,30 +256,13 @@ pub fn generate_task_contract_markdown(contract: &TaskContract) -> String {
     lines.push(format!("# Task contract {}", contract.node_id));
     lines.push(String::new());
     lines.push("## Inputs".to_string());
-    for TaskInputDescriptor {
-        name,
-        value_type,
-        required,
-    } in &contract.inputs
-    {
-        lines.push(format!(
-            "- {}: {} (required: {})",
-            name, value_type, required
-        ));
+    for TaskInputDescriptor { name, value_type, required } in &contract.inputs {
+        lines.push(format!("- {}: {} (required: {})", name, value_type, required));
     }
     lines.push(String::new());
     lines.push("## Outputs".to_string());
-    for TaskOutputDescriptor {
-        name,
-        path,
-        schema_name,
-        schema_version,
-    } in &contract.outputs
-    {
-        lines.push(format!(
-            "- {}: {} (schema: {} {})",
-            name, path, schema_name, schema_version
-        ));
+    for TaskOutputDescriptor { name, path, schema_name, schema_version } in &contract.outputs {
+        lines.push(format!("- {}: {} (schema: {} {})", name, path, schema_name, schema_version));
     }
     lines.join("\n")
 }
@@ -301,10 +274,9 @@ pub fn compatibility_matrix_report(
     let mut relationships = Vec::new();
     let mut scores = Vec::new();
     for edge in &graph.edges {
-        if let (Some(producer), Some(consumer)) = (
-            contracts.get(&edge.from.node_id),
-            contracts.get(&edge.to.node_id),
-        ) {
+        if let (Some(producer), Some(consumer)) =
+            (contracts.get(&edge.from.node_id), contracts.get(&edge.to.node_id))
+        {
             let diagnostics = validate_cross_node_compatibility(producer, consumer);
             relationships.push(TaskCompatibilityRelationship {
                 producer_node_id: producer.node_id.clone(),
@@ -319,8 +291,5 @@ pub fn compatibility_matrix_report(
             scores.push(compatibility_score_for_contract(consumer, &diagnostics));
         }
     }
-    TaskCompatibilityMatrixReport {
-        relationships,
-        scores,
-    }
+    TaskCompatibilityMatrixReport { relationships, scores }
 }

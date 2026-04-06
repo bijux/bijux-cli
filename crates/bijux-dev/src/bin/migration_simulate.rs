@@ -24,9 +24,8 @@ struct SimulationInput {
 }
 
 fn main() -> ExitCode {
-    let input_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "migration-simulate-input.json".to_string());
+    let input_path =
+        std::env::args().nth(1).unwrap_or_else(|| "migration-simulate-input.json".to_string());
 
     match run_simulation(&input_path) {
         Ok(report) => {
@@ -34,10 +33,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&json!({"error": error})).expect("json")
-            );
+            println!("{}", serde_json::to_string_pretty(&json!({"error": error})).expect("json"));
             ExitCode::from(1)
         }
     }

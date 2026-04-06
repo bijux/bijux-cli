@@ -69,10 +69,7 @@ fn concurrent_trace_write_and_summary_updates_are_consistent() {
         let c = Arc::clone(&shared);
         handles.push(thread::spawn(move || {
             c.mark_success();
-            c.register_trace_write(
-                &format!("node-{idx}"),
-                format!("trace/node-{idx}.json").into(),
-            );
+            c.register_trace_write(&format!("node-{idx}"), format!("trace/node-{idx}.json").into());
         }));
     }
     for h in handles {
@@ -91,11 +88,7 @@ fn concurrent_cache_claim_has_single_winner_per_fingerprint() {
         let c = Arc::clone(&coordination);
         handles.push(thread::spawn(move || c.claim_cache_fingerprint("fp-1")));
     }
-    let winners = handles
-        .into_iter()
-        .map(|h| h.join().unwrap())
-        .filter(|v| *v)
-        .count();
+    let winners = handles.into_iter().map(|h| h.join().unwrap()).filter(|v| *v).count();
     assert_eq!(winners, 1);
 }
 
@@ -141,14 +134,10 @@ fn latest_link_update_registration_handles_parallel_updates() {
 fn import_export_read_is_rejected_for_in_progress_run() {
     let coordination = RuntimeCoordinationState::default();
     assert!(coordination.begin_run("run-123"));
-    let error = coordination
-        .reject_read_during_active_run("run-123")
-        .unwrap_err();
+    let error = coordination.reject_read_during_active_run("run-123").unwrap_err();
     assert!(error.contains("in progress"));
     coordination.end_run("run-123");
-    assert!(coordination
-        .reject_read_during_active_run("run-123")
-        .is_ok());
+    assert!(coordination.reject_read_during_active_run("run-123").is_ok());
 }
 
 #[test]

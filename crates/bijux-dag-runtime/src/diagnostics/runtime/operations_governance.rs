@@ -166,10 +166,7 @@ pub fn evaluate_slo(
     if indicators.measured_artifact_availability_ratio < objective.artifact_availability_ratio {
         violations.push("artifact availability SLO missed".to_string());
     }
-    SloEvaluation {
-        passed: violations.is_empty(),
-        violations,
-    }
+    SloEvaluation { passed: violations.is_empty(), violations }
 }
 
 pub fn release_policy_allows(release: &ReleaseGovernancePolicy) -> bool {

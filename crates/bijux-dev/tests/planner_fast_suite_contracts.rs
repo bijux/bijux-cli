@@ -32,9 +32,6 @@ fn planner_fast_suite_covers_identity_closure_and_capability_rejection() {
         "planner_validation_remaining_contracts",
         "planner_error_and_schema_contracts",
     ] {
-        assert!(
-            commands.contains(required),
-            "planner fast suite missing {required}"
-        );
+        assert!(commands.contains(required), "planner fast suite missing {required}");
     }
 }

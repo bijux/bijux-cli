@@ -102,15 +102,7 @@ pub fn build_run_diff(
         let fp_a = a.and_then(|v| v.get("fingerprint")).cloned();
         let fp_b = b.and_then(|v| v.get("fingerprint")).cloned();
         if status_a != status_b || fp_a != fp_b {
-            node_diff.insert(
-                node_id,
-                NodeDiff {
-                    status_a,
-                    status_b,
-                    fp_a,
-                    fp_b,
-                },
-            );
+            node_diff.insert(node_id, NodeDiff { status_a, status_b, fp_a, fp_b });
         }
     }
 
@@ -159,14 +151,7 @@ pub fn build_run_diff(
         removed.sort();
         changed.sort();
         if !(added.is_empty() && removed.is_empty() && changed.is_empty()) {
-            out_diff.insert(
-                node_id,
-                OutputDiff {
-                    added,
-                    removed,
-                    changed,
-                },
-            );
+            out_diff.insert(node_id, OutputDiff { added, removed, changed });
         }
     }
 
@@ -213,11 +198,7 @@ pub fn build_run_diff(
         replay_equivalence: ReplayEquivalenceReport {
             equivalent: reasons.is_empty(),
             reasons,
-            reason_report: ReplayReasonReport {
-                summary,
-                compared_dimensions,
-                mismatch_dimensions,
-            },
+            reason_report: ReplayReasonReport { summary, compared_dimensions, mismatch_dimensions },
             cause_groups,
         },
     }
@@ -299,13 +280,7 @@ mod tests {
         assert_eq!(d.changed, vec!["a.txt"]);
         assert!(!diff.replay_equivalence.equivalent);
         assert!(!diff.replay_equivalence.reasons.is_empty());
-        assert_eq!(
-            diff.replay_equivalence
-                .cause_groups
-                .get("artifact_payload")
-                .copied(),
-            Some(1)
-        );
+        assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload").copied(), Some(1));
     }
 
     #[test]
@@ -351,10 +326,7 @@ mod tests {
             &HashMap::new(),
         );
         assert!(!diff.replay_equivalence.equivalent);
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("manifest_drift"),
-            Some(&1usize)
-        );
+        assert_eq!(diff.replay_equivalence.cause_groups.get("manifest_drift"), Some(&1usize));
     }
 
     #[test]
@@ -396,10 +368,7 @@ mod tests {
             &outputs_b,
         );
         assert!(!diff.replay_equivalence.equivalent);
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("artifact_payload"),
-            Some(&1usize)
-        );
+        assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1usize));
     }
 
     #[test]
@@ -426,14 +395,8 @@ mod tests {
         let manifest_b = json!({"spec":"v","jobs":2});
         let mut nodes_a = HashMap::new();
         let mut nodes_b = HashMap::new();
-        nodes_a.insert(
-            "n1".to_string(),
-            json!({"status":"success","fingerprint":"fp1"}),
-        );
-        nodes_b.insert(
-            "n1".to_string(),
-            json!({"status":"failed","fingerprint":"fp1"}),
-        );
+        nodes_a.insert("n1".to_string(), json!({"status":"success","fingerprint":"fp1"}));
+        nodes_b.insert("n1".to_string(), json!({"status":"failed","fingerprint":"fp1"}));
         let mut outputs_a = HashMap::new();
         let mut outputs_b = HashMap::new();
         outputs_a.insert("n1".to_string(), index(vec![("n1/out", "aaa")]));
@@ -450,22 +413,10 @@ mod tests {
             &outputs_b,
         );
         assert!(!diff.replay_equivalence.equivalent);
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("manifest_drift"),
-            Some(&1)
-        );
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("graph_semantics"),
-            Some(&1)
-        );
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("node_outcomes"),
-            Some(&1)
-        );
-        assert_eq!(
-            diff.replay_equivalence.cause_groups.get("artifact_payload"),
-            Some(&1)
-        );
+        assert_eq!(diff.replay_equivalence.cause_groups.get("manifest_drift"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("graph_semantics"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("node_outcomes"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1));
     }
 
     #[test]

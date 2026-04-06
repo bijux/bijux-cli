@@ -23,10 +23,7 @@ fn base_graph() -> Graph {
                 id: "a".to_string(),
                 kind: NodeKind::Const,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -41,10 +38,7 @@ fn base_graph() -> Graph {
                 id: "b".to_string(),
                 kind: NodeKind::Const,
                 inputs: vec!["in".to_string()],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -57,14 +51,8 @@ fn base_graph() -> Graph {
             },
         ],
         edges: vec![Edge {
-            from: PortRef {
-                node_id: "a".to_string(),
-                port: "out".to_string(),
-            },
-            to: PortRef {
-                node_id: "b".to_string(),
-                port: "in".to_string(),
-            },
+            from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
+            to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
         }],
     }
 }
@@ -74,10 +62,7 @@ fn fingerprint_stable_under_reorder() {
     let graph = base_graph();
     let mut reordered = base_graph();
     reordered.nodes.reverse();
-    assert_eq!(
-        graph.graph_fingerprint().unwrap(),
-        reordered.graph_fingerprint().unwrap()
-    );
+    assert_eq!(graph.graph_fingerprint().unwrap(), reordered.graph_fingerprint().unwrap());
 }
 
 #[test]
@@ -98,15 +83,11 @@ fn canonicalization_stable_over_many_reorders() {
 fn fingerprint_changes_on_param() {
     let mut graph = base_graph();
     graph.nodes[0].params = ParamValue::Object(
-        [("x".to_string(), ParamValue::Literal(Value::from(1)))]
-            .into_iter()
-            .collect(),
+        [("x".to_string(), ParamValue::Literal(Value::from(1)))].into_iter().collect(),
     );
     let baseline = graph.graph_fingerprint().unwrap();
     graph.nodes[0].params = ParamValue::Object(
-        [("x".to_string(), ParamValue::Literal(Value::from(2)))]
-            .into_iter()
-            .collect(),
+        [("x".to_string(), ParamValue::Literal(Value::from(2)))].into_iter().collect(),
     );
     assert_ne!(baseline, graph.graph_fingerprint().unwrap());
 }
@@ -140,10 +121,8 @@ fn canonicalization_stable_under_random_ordering() {
 fn resolver_determinism() {
     let mut graph = base_graph();
     graph.inputs.insert("x".to_string(), serde_json::json!(1));
-    graph.nodes[0].params = ParamValue::Ref(RefSpec {
-        graph_input: Some("x".to_string()),
-        node_output: None,
-    });
+    graph.nodes[0].params =
+        ParamValue::Ref(RefSpec { graph_input: Some("x".to_string()), node_output: None });
     let left = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     let right = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     assert_eq!(left, right);

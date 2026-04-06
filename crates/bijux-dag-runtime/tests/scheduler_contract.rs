@@ -37,22 +37,14 @@ fn graph_text() -> &'static str {
 fn deterministic_scheduler_preserves_stable_dispatch_order() {
     let graph = parse_graph_strict(graph_text()).unwrap();
     let mut options = RuntimeConfig::default();
-    options.scheduler_policy = SchedulerPolicy {
-        max_parallelism: 2,
-        cpu_budget: Some(2),
-        ..SchedulerPolicy::default()
-    };
+    options.scheduler_policy =
+        SchedulerPolicy { max_parallelism: 2, cpu_budget: Some(2), ..SchedulerPolicy::default() };
     let plan = build_plan(&graph, &options);
     let dep_counter = DependencyCounter::from_plan(&plan);
     let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
     let mut scheduler = build_scheduler(&options.scheduler_policy);
-    let decision = scheduler.next_batch(
-        &graph,
-        &mut ready,
-        &options,
-        std::time::Instant::now(),
-        false,
-    );
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
     assert_eq!(decision.batch, vec!["a".to_string()]);
 }
 
@@ -87,10 +79,7 @@ fn scheduler_contract_profile_is_explicit_and_stable() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(
-        format!("{:?}", profile.ready_tie_break),
-        "LexicographicNodeId"
-    );
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
 }
 
 #[test]
@@ -103,10 +92,7 @@ fn ready_queue_evolution_is_deterministic_for_fixed_event_sequence() {
     assert_eq!(state.ready_snapshot(), vec!["a".to_string()]);
     let newly_ready = state.complete_success("a");
     assert_eq!(newly_ready, vec!["b".to_string()]);
-    assert_eq!(
-        state.ready_snapshot(),
-        vec!["a".to_string(), "b".to_string()]
-    );
+    assert_eq!(state.ready_snapshot(), vec!["a".to_string(), "b".to_string()]);
     state.complete_success("b");
     assert!(state.ready_snapshot().contains(&"c".to_string()));
     assert!(scheduler_invariants_hold(&state));
@@ -177,16 +163,12 @@ fn failure_propagation_modes_drive_downstream_readiness_policy() {
     let mut fail_fast = SchedulerState::from_plan(&plan);
     let unlocked = fail_fast.complete_failed("a", FailurePropagationMode::FailFast);
     assert!(unlocked.is_empty());
-    assert!(!failure_allows_downstream_readiness(
-        FailurePropagationMode::FailFast
-    ));
+    assert!(!failure_allows_downstream_readiness(FailurePropagationMode::FailFast));
 
     let mut isolate = SchedulerState::from_plan(&plan);
     let unlocked_isolate = isolate.complete_failed("a", FailurePropagationMode::IsolateBranch);
     assert_eq!(unlocked_isolate, vec!["b".to_string()]);
-    assert!(failure_allows_downstream_readiness(
-        FailurePropagationMode::IsolateBranch
-    ));
+    assert!(failure_allows_downstream_readiness(FailurePropagationMode::IsolateBranch));
 }
 
 #[test]
@@ -201,16 +183,10 @@ fn changing_concurrency_budget_does_not_change_node_set_semantics() {
 
     let plan_low = build_plan(&graph, &low);
     let plan_high = build_plan(&graph, &high);
-    let nodes_low = plan_low
-        .nodes
-        .iter()
-        .map(|n| n.id.clone())
-        .collect::<std::collections::BTreeSet<_>>();
-    let nodes_high = plan_high
-        .nodes
-        .iter()
-        .map(|n| n.id.clone())
-        .collect::<std::collections::BTreeSet<_>>();
+    let nodes_low =
+        plan_low.nodes.iter().map(|n| n.id.clone()).collect::<std::collections::BTreeSet<_>>();
+    let nodes_high =
+        plan_high.nodes.iter().map(|n| n.id.clone()).collect::<std::collections::BTreeSet<_>>();
     assert_eq!(nodes_low, nodes_high);
 }
 
@@ -222,13 +198,8 @@ fn cancellation_prevents_new_scheduling_batches() {
     let dep_counter = DependencyCounter::from_plan(&plan);
     let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
     let mut scheduler = build_scheduler(&options.scheduler_policy);
-    let decision = scheduler.next_batch(
-        &graph,
-        &mut ready,
-        &options,
-        std::time::Instant::now(),
-        true,
-    );
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), true);
     assert!(decision.batch.is_empty());
     assert!(decision.cancelled);
 }
@@ -270,11 +241,7 @@ fn simultaneous_predecessor_completions_do_not_duplicate_enqueue() {
     let mut state = SchedulerState::from_plan(&plan);
     let _ = state.complete_success("a");
     let _ = state.complete_success("b");
-    let ready_c_count = state
-        .ready_snapshot()
-        .into_iter()
-        .filter(|n| n == "c")
-        .count();
+    let ready_c_count = state.ready_snapshot().into_iter().filter(|n| n == "c").count();
     assert_eq!(ready_c_count, 1);
 }
 

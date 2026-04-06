@@ -45,18 +45,8 @@ fn tiny_graph() -> bijux_dag_core::Graph {
 #[test]
 fn scheduler_equal_priority_ready_sets_are_deterministic() {
     let nodes = vec![
-        ReadyNode {
-            node_id: "b".to_string(),
-            priority: 5,
-            attempt: 0,
-            ready_unix_ms: 100,
-        },
-        ReadyNode {
-            node_id: "a".to_string(),
-            priority: 5,
-            attempt: 0,
-            ready_unix_ms: 100,
-        },
+        ReadyNode { node_id: "b".to_string(), priority: 5, attempt: 0, ready_unix_ms: 100 },
+        ReadyNode { node_id: "a".to_string(), priority: 5, attempt: 0, ready_unix_ms: 100 },
     ];
 
     let ordered = deterministic_schedule_order(nodes, &BTreeMap::new());
@@ -67,18 +57,8 @@ fn scheduler_equal_priority_ready_sets_are_deterministic() {
 #[test]
 fn scheduler_mixed_cache_and_fresh_paths_keep_order_stable() {
     let nodes = vec![
-        ReadyNode {
-            node_id: "fresh".to_string(),
-            priority: 4,
-            attempt: 0,
-            ready_unix_ms: 100,
-        },
-        ReadyNode {
-            node_id: "cached".to_string(),
-            priority: 4,
-            attempt: 1,
-            ready_unix_ms: 100,
-        },
+        ReadyNode { node_id: "fresh".to_string(), priority: 4, attempt: 0, ready_unix_ms: 100 },
+        ReadyNode { node_id: "cached".to_string(), priority: 4, attempt: 1, ready_unix_ms: 100 },
     ];
 
     let ordered = deterministic_schedule_order(nodes, &BTreeMap::new());
@@ -89,18 +69,8 @@ fn scheduler_mixed_cache_and_fresh_paths_keep_order_stable() {
 #[test]
 fn scheduler_retry_influenced_paths_prioritize_starved_nodes() {
     let nodes = vec![
-        ReadyNode {
-            node_id: "retry-a".to_string(),
-            priority: 1,
-            attempt: 3,
-            ready_unix_ms: 100,
-        },
-        ReadyNode {
-            node_id: "new-b".to_string(),
-            priority: 9,
-            attempt: 0,
-            ready_unix_ms: 100,
-        },
+        ReadyNode { node_id: "retry-a".to_string(), priority: 1, attempt: 3, ready_unix_ms: 100 },
+        ReadyNode { node_id: "new-b".to_string(), priority: 9, attempt: 0, ready_unix_ms: 100 },
     ];
     let starvation = BTreeMap::from([("retry-a".to_string(), 20)]);
 
@@ -128,31 +98,15 @@ fn scheduler_workload_bounded_queueing_decisions_remain_stable() {
     let queue = VecDeque::from(vec!["a".to_string(), "b".to_string(), "c".to_string()]);
     let grouped = run_batches(
         queue,
-        &RunBatchPolicy {
-            allow_grouping: true,
-            max_group_size: 2,
-            require_same_dag: true,
-        },
+        &RunBatchPolicy { allow_grouping: true, max_group_size: 2, require_same_dag: true },
     );
-    assert_eq!(
-        grouped,
-        vec![
-            vec!["a".to_string(), "b".to_string()],
-            vec!["c".to_string()]
-        ]
-    );
+    assert_eq!(grouped, vec![vec!["a".to_string(), "b".to_string()], vec!["c".to_string()]]);
 }
 
 #[test]
 fn state_machine_cancel_after_start_transition_is_allowed() {
-    assert!(node_transition_allowed(
-        NodeLifecycleState::Running,
-        NodeLifecycleState::Cancelled
-    ));
-    assert!(run_transition_allowed(
-        RunLifecycleState::Running,
-        RunLifecycleState::Cancelled
-    ));
+    assert!(node_transition_allowed(NodeLifecycleState::Running, NodeLifecycleState::Cancelled));
+    assert!(run_transition_allowed(RunLifecycleState::Running, RunLifecycleState::Cancelled));
 }
 
 #[test]
@@ -169,9 +123,7 @@ fn state_machine_partial_rerun_closure_stays_dependency_complete() {
         &graph,
         &RuntimeConfig::default(),
         &SelectorSet::default(),
-        &PlannerGuardrails {
-            allow_semantic_optimizations: true,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: true },
     )
     .expect("analysis");
 
@@ -183,11 +135,8 @@ fn state_machine_partial_rerun_closure_stays_dependency_complete() {
 
 #[test]
 fn semantics_governance_sacred_rules_match_trace_expectations() {
-    let policy = RetryPolicySemantics {
-        max_attempts: 3,
-        initial_backoff_ms: 10,
-        exponential: true,
-    };
+    let policy =
+        RetryPolicySemantics { max_attempts: 3, initial_backoff_ms: 10, exponential: true };
     assert!(bijux_dag_runtime::retry_allowed(1, &policy));
     assert!(!bijux_dag_runtime::retry_allowed(3, &policy));
     assert!(!failure_propagation_is_deterministic(true, true));
@@ -200,9 +149,7 @@ fn planner_analysis_diagnostics_and_fingerprints_are_deterministic() {
     let graph = tiny_graph();
     let config = RuntimeConfig::default();
     let selector = SelectorSet::default();
-    let guardrails = PlannerGuardrails {
-        allow_semantic_optimizations: true,
-    };
+    let guardrails = PlannerGuardrails { allow_semantic_optimizations: true };
 
     let first = build_planner_analysis(&graph, &config, &selector, &guardrails).expect("first");
     let second = build_planner_analysis(&graph, &config, &selector, &guardrails).expect("second");
@@ -216,9 +163,7 @@ fn planner_analysis_diagnostics_and_fingerprints_are_deterministic() {
     assert!(diff.changed_annotations.is_empty());
 
     let explain = explain_plan(&first);
-    assert!(explain
-        .phases
-        .contains(&PlannerPhase::ScheduleReadyTransform));
+    assert!(explain.phases.contains(&PlannerPhase::ScheduleReadyTransform));
     let fp = fingerprint_plan(&first.plan, &first.annotations).expect("fp");
     assert_eq!(fp, first.plan_fingerprint);
 }
@@ -233,10 +178,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
         },
-        queue: bijux_dag_runtime::QueueIdentity {
-            queue_name: "default".to_string(),
-            tenant: None,
-        },
+        queue: bijux_dag_runtime::QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::Standard,
         concurrency: bijux_dag_runtime::ConcurrencyPolicyLayers {
             per_dag: Some(1),
@@ -244,15 +186,10 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
             per_tenant: None,
             per_node_group: None,
         },
-        catch_up: bijux_dag_runtime::CatchUpPolicy {
-            enabled: false,
-            max_catch_up_runs: 0,
-        },
+        catch_up: bijux_dag_runtime::CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
     };
 
-    let registry = ScheduleRegistry {
-        definitions: vec![schedule],
-    };
+    let registry = ScheduleRegistry { definitions: vec![schedule] };
     validate_schedule_registry(&registry).expect("registry");
     validate_cron_expression("* * * * *").expect("cron");
 
@@ -272,13 +209,8 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(
-        format!("{:?}", profile.ready_tie_break),
-        "LexicographicNodeId"
-    );
-    assert!(failure_allows_downstream_readiness(
-        FailurePropagationMode::ContinueIndependent
-    ));
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert!(failure_allows_downstream_readiness(FailurePropagationMode::ContinueIndependent));
 
     let graph = tiny_graph();
     let plan = build_plan(&graph, &RuntimeConfig::default());

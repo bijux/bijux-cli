@@ -54,10 +54,7 @@ pub fn execute(
             .file_name()
             .map(|v| v.to_string_lossy().to_string())
             .unwrap_or_default();
-        dir_name
-            .strip_prefix("run-")
-            .unwrap_or(dir_name.as_str())
-            .to_string()
+        dir_name.strip_prefix("run-").unwrap_or(dir_name.as_str()).to_string()
     });
 
     let started_unix_ms = runtime.clock.now_unix_ms();
@@ -76,12 +73,7 @@ pub fn execute(
         jobs: options.jobs.max(1),
         adapters: registered_adapters(),
         outputs: Vec::new(),
-        node_counts: NodeCounts {
-            success: 0,
-            failed: 0,
-            skipped: 0,
-            cached: 0,
-        },
+        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
@@ -89,9 +81,7 @@ pub fn execute(
             clean_env: options.policy.clean_env,
         },
         cache_mode: cache_mode_string(&options.cache_mode),
-        cache_dir: effective_cache_dir
-            .as_ref()
-            .map(|p| p.display().to_string()),
+        cache_dir: effective_cache_dir.as_ref().map(|p| p.display().to_string()),
         run_timeout_ms: options.run_timeout_ms,
         run_metadata: None,
         run_summary: None,
@@ -153,15 +143,8 @@ pub fn execute(
     let resolved = graph.resolve_graph()?;
     let mut base_fps = HashMap::new();
     for node in &graph.nodes {
-        let params = resolved
-            .resolved_params
-            .get(&node.id)
-            .cloned()
-            .unwrap_or(Value::Null);
-        base_fps.insert(
-            node.id.clone(),
-            graph.node_fingerprint_with_params(node, &params)?,
-        );
+        let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+        base_fps.insert(node.id.clone(), graph.node_fingerprint_with_params(node, &params)?);
     }
     let resolved_params: HashMap<String, Value> = resolved.resolved_params.into_iter().collect();
     let graph_fingerprint = Arc::new(Mutex::new(base_fps.clone()));
@@ -195,29 +178,17 @@ pub fn execute(
         trigger_source: options.trigger_source.clone(),
         operator: options.operator.clone(),
         labels: options.labels.clone(),
-        parent_run_id: options
-            .parent_run_id
-            .as_deref()
-            .and_then(|v| RunId::parse(v).ok()),
+        parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
         selected_nodes,
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
-        replay_source_run_id: options
-            .parent_run_id
-            .as_deref()
-            .and_then(|v| RunId::parse(v).ok()),
+        replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
-    let _ = ctx.fs.write(
-        &run_snapshot_path,
-        &serde_json::to_vec_pretty(&run_snapshot)?,
-    );
+    let _ = ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?);
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
-        parent_run_id: options
-            .parent_run_id
-            .as_deref()
-            .and_then(|v| RunId::parse(v).ok()),
+        parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
         reason: if options.parent_run_id.is_some() {
             "replay_or_retry".to_string()
         } else {
@@ -225,10 +196,7 @@ pub fn execute(
         },
     };
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
-    let _ = ctx.fs.write(
-        &run_attempts_path,
-        &serde_json::to_vec_pretty(&vec![run_attempt])?,
-    );
+    let _ = ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?);
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
@@ -340,11 +308,7 @@ pub fn execute(
                 .find(|n| n.id == *node_id)
                 .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
                 .clone();
-            let resolved_params = ctx
-                .resolved_params
-                .get(&node.id)
-                .cloned()
-                .unwrap_or(Value::Null);
+            let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
 
             if node.retry.max_attempts > 0
                 && (node.effects.contains(&Effect::Clock)
@@ -366,9 +330,7 @@ pub fn execute(
                         "reason": "network",
                     }),
                 )?;
-                return Err(RuntimeError::Executor(
-                    "network effect denied by policy".to_string(),
-                ));
+                return Err(RuntimeError::Executor("network effect denied by policy".to_string()));
             }
             if options.policy.deny_env && node.effects.contains(&Effect::Env) {
                 crate::append_event(
@@ -380,9 +342,7 @@ pub fn execute(
                         "reason": "env",
                     }),
                 )?;
-                return Err(RuntimeError::Executor(
-                    "env effect denied by policy".to_string(),
-                ));
+                return Err(RuntimeError::Executor("env effect denied by policy".to_string()));
             }
             if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
                 crate::append_event(
@@ -394,9 +354,7 @@ pub fn execute(
                         "reason": "clock",
                     }),
                 )?;
-                return Err(RuntimeError::Executor(
-                    "clock effect denied by policy".to_string(),
-                ));
+                return Err(RuntimeError::Executor("clock effect denied by policy".to_string()));
             }
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let required = adapter.required_effects();
@@ -406,9 +364,7 @@ pub fn execute(
                 || required.network && !declared.network
                 || required.clock && !declared.clock
             {
-                return Err(RuntimeError::Executor(
-                    "missing required effects".to_string(),
-                ));
+                return Err(RuntimeError::Executor("missing required effects".to_string()));
             }
 
             let adapter_id = adapter.id();
@@ -482,10 +438,8 @@ pub fn execute(
                 .unwrap_or(NodeKind::Const);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node_kind);
             let aschema = runtime.adapter_schema_for_kind(&node_kind);
-            let adapter_hash = runtime
-                .adapter_for_kind(&node_kind)
-                .ok()
-                .and_then(|a| a.binary_hash());
+            let adapter_hash =
+                runtime.adapter_for_kind(&node_kind).ok().and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
             sacred_execution::run_write_trace(
                 &ctx,
@@ -502,9 +456,7 @@ pub fn execute(
                 &aschema,
                 None,
                 adapter_hash,
-                Some(bijux_dag_artifacts::SkipReason {
-                    reason: reason.clone(),
-                }),
+                Some(bijux_dag_artifacts::SkipReason { reason: reason.clone() }),
                 Some("SelectionFiltered".to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
@@ -541,11 +493,7 @@ pub fn execute(
             started_ids.push(node_id.clone());
         }
         started_ids.sort();
-        let schedule_reason = if forced_batch {
-            "ready"
-        } else {
-            "budget_available"
-        };
+        let schedule_reason = if forced_batch { "ready" } else { "budget_available" };
         for node_id in &started_ids {
             scheduler_hook.on_node_scheduled(node_id);
             crate::append_event(
@@ -573,10 +521,9 @@ pub fn execute(
             generated_unix_ms: ctx.clock.now_unix_ms(),
         };
         let checkpoint_path = ctx.run_dir.staging_path().join("scheduler.checkpoint.json");
-        let _ = ctx.fs.write(
-            &checkpoint_path,
-            &serde_json::to_vec_pretty(&checkpoint).unwrap_or_default(),
-        );
+        let _ = ctx
+            .fs
+            .write(&checkpoint_path, &serde_json::to_vec_pretty(&checkpoint).unwrap_or_default());
         for node_id in &started_ids {
             crate::append_event(
                 &mut run_log,
@@ -598,10 +545,8 @@ pub fn execute(
             status_map.insert(node_id.clone(), NodeStatus::Cached);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
-            let adapter_hash = runtime
-                .adapter_for_kind(&node.kind)
-                .ok()
-                .and_then(|a| a.binary_hash());
+            let adapter_hash =
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
             sacred_execution::run_write_trace(
                 &ctx,
@@ -707,10 +652,8 @@ pub fn execute(
                     sacred_execution::guard_terminal_node_status(&result.status)?;
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
-                    let adapter_hash = runtime
-                        .adapter_for_kind(&node.kind)
-                        .ok()
-                        .and_then(|a| a.binary_hash());
+                    let adapter_hash =
+                        runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
                     let trace_failure = result.failure.clone();
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     for attempt in &result.attempt_events {
@@ -854,10 +797,8 @@ pub fn execute(
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     status_map.insert(node_id.clone(), NodeStatus::Failed);
                     let cache_proof = cache_proofs.get(&node_id).cloned();
-                    let adapter_hash = runtime
-                        .adapter_for_kind(&node.kind)
-                        .ok()
-                        .and_then(|a| a.binary_hash());
+                    let adapter_hash =
+                        runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
                     sacred_execution::run_write_trace(
                         &ctx,
                         graph,
@@ -928,10 +869,8 @@ pub fn execute(
             }
         }
 
-        if matches!(
-            options.failure_propagation,
-            crate::FailurePropagationMode::FailFast
-        ) && status_map.values().any(|s| *s == NodeStatus::Failed)
+        if matches!(options.failure_propagation, crate::FailurePropagationMode::FailFast)
+            && status_map.values().any(|s| *s == NodeStatus::Failed)
         {
             break;
         }
@@ -963,13 +902,8 @@ pub fn execute(
                     &aver,
                     &aschema,
                     None,
-                    runtime
-                        .adapter_for_kind(&node.kind)
-                        .ok()
-                        .and_then(|a| a.binary_hash()),
-                    Some(bijux_dag_artifacts::SkipReason {
-                        reason: "cancelled".to_string(),
-                    }),
+                    runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                    Some(bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() }),
                     Some("CancelRequested".to_string()),
                     Some(ReplayProvenance {
                         node_action: "skipped".to_string(),
@@ -1031,9 +965,7 @@ pub fn execute(
         &lineage_snapshot,
     );
     let _ = bijux_dag_artifacts::lineage::export_lineage_visualization(
-        ctx.run_dir
-            .staging_path()
-            .join("observability.lineage-visualization.json"),
+        ctx.run_dir.staging_path().join("observability.lineage-visualization.json"),
         &lineage_snapshot,
     );
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
@@ -1059,15 +991,9 @@ pub fn execute(
     }));
     let mut structured_events: Vec<EventRecord> = Vec::new();
     for entry in &run_log_index {
-        let name = entry
-            .get("event")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown");
+        let name = entry.get("event").and_then(|v| v.as_str()).unwrap_or("unknown");
         let unix_ms = entry.get("ts").and_then(|v| v.as_u64()).unwrap_or(0) as u128;
-        let node_id = entry
-            .get("node_id")
-            .and_then(|v| v.as_str())
-            .map(ToString::to_string);
+        let node_id = entry.get("node_id").and_then(|v| v.as_str()).map(ToString::to_string);
         let details = entry.clone();
         structured_events.push(EventRecord {
             category: category_from_runtime_event_name(name),
@@ -1112,16 +1038,12 @@ pub fn execute(
             .collect(),
     };
     let _ = write_timeline_export(
-        ctx.run_dir
-            .staging_path()
-            .join("observability.timeline.json"),
+        ctx.run_dir.staging_path().join("observability.timeline.json"),
         &timeline,
     );
     let root_causes = summarize_failure_root_causes(&structured_events);
     let _ = ctx.fs.write(
-        &ctx.run_dir
-            .staging_path()
-            .join("observability.root-causes.json"),
+        &ctx.run_dir.staging_path().join("observability.root-causes.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
     );
     let _ = ctx.fs.write(
@@ -1129,9 +1051,7 @@ pub fn execute(
         &serde_json::to_vec_pretty(&structured_events)?,
     );
     let _ = ctx.fs.write(
-        &ctx.run_dir
-            .staging_path()
-            .join("observability.metrics.json"),
+        &ctx.run_dir.staging_path().join("observability.metrics.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "node": metrics_registry.node_metrics,
             "run": metrics_registry.run_metrics,

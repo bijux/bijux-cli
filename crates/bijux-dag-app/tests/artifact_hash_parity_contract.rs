@@ -69,10 +69,6 @@ fn run_dag_json(args: &[&str], cwd: &Path) -> serde_json::Value {
         .args(args)
         .output()
         .expect("run dag");
-    assert!(
-        out.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&out.stderr)
-    );
+    assert!(out.status.success(), "stderr={}", String::from_utf8_lossy(&out.stderr));
     serde_json::from_slice(&out.stdout).expect("json stdout")
 }

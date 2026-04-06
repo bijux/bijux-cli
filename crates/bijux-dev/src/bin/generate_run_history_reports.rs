@@ -14,10 +14,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("workspace root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn required_fields(schema_path: &Path) -> Vec<String> {
@@ -26,13 +23,7 @@ fn required_fields(schema_path: &Path) -> Vec<String> {
     schema
         .get("required")
         .and_then(Value::as_array)
-        .map(|items| {
-            items
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
+        .map(|items| items.iter().filter_map(Value::as_str).map(str::to_string).collect::<Vec<_>>())
         .unwrap_or_default()
 }
 
@@ -58,9 +49,6 @@ fn main() {
 
     let out = root.join("docs/reports/foundation/run_history_api_report.json");
     fs::create_dir_all(out.parent().expect("report parent")).expect("mkdir report parent");
-    fs::write(
-        &out,
-        serde_json::to_vec_pretty(&report).expect("encode report"),
-    )
-    .expect("write report");
+    fs::write(&out, serde_json::to_vec_pretty(&report).expect("encode report"))
+        .expect("write report");
 }

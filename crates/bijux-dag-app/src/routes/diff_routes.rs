@@ -26,15 +26,9 @@ pub(crate) fn handle_diff_command(
         println!("explain: node fingerprint changes indicate recomputation scope");
         println!("replay_equivalent: {}", diff.replay_equivalence.equivalent);
         if !diff.replay_equivalence.reasons.is_empty() {
-            println!(
-                "replay_difference_reasons: {:?}",
-                diff.replay_equivalence.reasons
-            );
+            println!("replay_difference_reasons: {:?}", diff.replay_equivalence.reasons);
         }
-        println!(
-            "replay_reason: {}",
-            diff.replay_equivalence.reason_report.summary
-        );
+        println!("replay_reason: {}", diff.replay_equivalence.reason_report.summary);
         if !diff.replay_equivalence.cause_groups.is_empty() {
             println!(
                 "replay_cause_groups: {}",

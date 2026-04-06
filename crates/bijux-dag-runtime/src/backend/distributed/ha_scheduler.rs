@@ -132,10 +132,7 @@ pub fn is_stale_leader(leader: &LeaderElectionState, now_unix_ms: u128) -> bool 
 }
 
 pub fn next_epoch(current: &SchedulerEpoch) -> SchedulerEpoch {
-    SchedulerEpoch {
-        replica_id: current.replica_id.clone(),
-        epoch: current.epoch + 1,
-    }
+    SchedulerEpoch { replica_id: current.replica_id.clone(), epoch: current.epoch + 1 }
 }
 
 pub fn idempotent_run_creation(
@@ -212,10 +209,5 @@ pub fn evaluate_ha_conformance(
     if !sequencing_preserved {
         failures.push("run submission sequencing violated".to_string());
     }
-    HaConformanceReport {
-        no_duplicate_runs,
-        stale_leader_fenced,
-        sequencing_preserved,
-        failures,
-    }
+    HaConformanceReport { no_duplicate_runs, stale_leader_fenced, sequencing_preserved, failures }
 }

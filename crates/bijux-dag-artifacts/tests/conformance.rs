@@ -74,10 +74,7 @@ fn lineage_snapshot_write_is_deterministic() {
 
 #[test]
 fn metadata_normalization_and_dedup_metrics_are_stable() {
-    let pairs = vec![
-        ("b".to_string(), "2".to_string()),
-        ("a".to_string(), "1".to_string()),
-    ];
+    let pairs = vec![("b".to_string(), "2".to_string()), ("a".to_string(), "1".to_string())];
     let normalized = normalize_metadata_pairs(pairs);
     assert_eq!(normalized[0].0, "a");
     assert_eq!(normalized[1].0, "b");
@@ -102,10 +99,8 @@ fn proof_and_pack_contract_types_serialize() {
         pack_manifest_version: "v0.1".to_string(),
         artifacts: vec![bijux_dag_artifacts::index::ArtifactId("a1".to_string())],
     };
-    let detection = CorruptionDetectionResult {
-        corrupt_detected: false,
-        reason: "verified".to_string(),
-    };
+    let detection =
+        CorruptionDetectionResult { corrupt_detected: false, reason: "verified".to_string() };
     let repair = CorruptionRepairPolicy {
         attempt_rebuild_from_cache: true,
         attempt_replay: true,

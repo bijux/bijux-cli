@@ -23,13 +23,7 @@ impl Graph {
 
         let mut ready = indegree
             .iter()
-            .filter_map(|(node_id, degree)| {
-                if *degree == 0 {
-                    Some(node_id.clone())
-                } else {
-                    None
-                }
-            })
+            .filter_map(|(node_id, degree)| if *degree == 0 { Some(node_id.clone()) } else { None })
             .collect::<BTreeSet<_>>();
         let mut order = Vec::new();
 

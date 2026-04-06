@@ -189,16 +189,8 @@ fn operator_timing_summary_is_trace_coherent() {
     assert!(finished >= started);
     let timeline = run_timeline(&run).expect("timeline");
     let events = timeline["events"].as_array().unwrap();
-    let min_start = events
-        .iter()
-        .filter_map(|e| e["started_unix_ms"].as_u64())
-        .min()
-        .unwrap();
-    let max_finish = events
-        .iter()
-        .filter_map(|e| e["finished_unix_ms"].as_u64())
-        .max()
-        .unwrap();
+    let min_start = events.iter().filter_map(|e| e["started_unix_ms"].as_u64()).min().unwrap();
+    let max_finish = events.iter().filter_map(|e| e["finished_unix_ms"].as_u64()).max().unwrap();
     assert!(min_start >= started);
     assert!(max_finish <= finished);
 }

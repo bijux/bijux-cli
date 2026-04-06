@@ -58,12 +58,6 @@ fn backend_request_and_completion_have_stable_serialization_shape() {
     };
     let request_json = serde_json::to_value(&request).expect("request should serialize");
     let completion_json = serde_json::to_value(&completion).expect("completion should serialize");
-    assert_eq!(
-        request_json.get("run_id").and_then(|v| v.as_str()),
-        Some("run-20260306")
-    );
-    assert_eq!(
-        completion_json.get("status").and_then(|v| v.as_str()),
-        Some("success")
-    );
+    assert_eq!(request_json.get("run_id").and_then(|v| v.as_str()), Some("run-20260306"));
+    assert_eq!(completion_json.get("status").and_then(|v| v.as_str()), Some("success"));
 }

@@ -159,9 +159,7 @@ pub struct RuntimeState {
 
 impl RuntimeState {
     pub fn new() -> Self {
-        Self {
-            cancellation_requested: Arc::new(AtomicBool::new(false)),
-        }
+        Self { cancellation_requested: Arc::new(AtomicBool::new(false)) }
     }
 
     pub fn request_cancellation(&self) {

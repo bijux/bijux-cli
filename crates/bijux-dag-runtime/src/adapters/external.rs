@@ -39,20 +39,13 @@ pub struct ExternalAdapter {
 
 impl ExternalAdapter {
     pub fn new(path: PathBuf, info: ExternalAdapterInfo, binary_hash: Option<String>) -> Self {
-        Self {
-            path,
-            info,
-            binary_hash,
-        }
+        Self { path, info, binary_hash }
     }
 }
 
 impl Adapter for ExternalAdapter {
     fn id(&self) -> AdapterId {
-        AdapterId {
-            id: self.info.id.clone(),
-            version: self.info.version.clone(),
-        }
+        AdapterId { id: self.info.id.clone(), version: self.info.version.clone() }
     }
 
     fn supported_kinds(&self) -> Vec<String> {
@@ -119,8 +112,7 @@ impl Adapter for ExternalAdapter {
         }
         let output = crate::command_output_with_timeout(
             &mut cmd,
-            node.timeout_ms
-                .or_else(|| ctx.params.get("timeout_ms").and_then(|v| v.as_u64())),
+            node.timeout_ms.or_else(|| ctx.params.get("timeout_ms").and_then(|v| v.as_u64())),
         )?;
 
         exec.fs.write(&stdout_path, &output.stdout)?;
@@ -156,11 +148,7 @@ impl Adapter for ExternalAdapter {
         };
 
         Ok(NodeResult {
-            status: if success {
-                crate::NodeStatus::Success
-            } else {
-                crate::NodeStatus::Failed
-            },
+            status: if success { crate::NodeStatus::Success } else { crate::NodeStatus::Failed },
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),

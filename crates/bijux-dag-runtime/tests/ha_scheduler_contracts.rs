@@ -30,11 +30,8 @@ fn idempotent_run_creation_and_replica_dedup_are_stable() {
         run_key: "run-1".to_string(),
         epoch: 1,
     }];
-    let proposed = ScheduleDedupRecord {
-        dedup_key: "k2".to_string(),
-        run_key: "run-2".to_string(),
-        epoch: 1,
-    };
+    let proposed =
+        ScheduleDedupRecord { dedup_key: "k2".to_string(), run_key: "run-2".to_string(), epoch: 1 };
     assert!(deduplicate_across_replicas(&existing, &proposed));
 }
 
@@ -58,10 +55,7 @@ fn failover_ordering_and_fencing_contracts_hold() {
     ]);
     assert_eq!(ordered[0].run_key, "run-a");
 
-    let epoch = SchedulerEpoch {
-        replica_id: "replica-a".to_string(),
-        epoch: 3,
-    };
+    let epoch = SchedulerEpoch { replica_id: "replica-a".to_string(), epoch: 3 };
     let token = SchedulerFenceToken {
         replica_id: "replica-a".to_string(),
         epoch: 3,
@@ -72,10 +66,8 @@ fn failover_ordering_and_fencing_contracts_hold() {
 
 #[test]
 fn recovery_objectives_and_conformance_reports_are_explicit() {
-    let objectives = SchedulerRecoveryObjectives {
-        cold_restart_rto_ms: 30_000,
-        failover_rto_ms: 5_000,
-    };
+    let objectives =
+        SchedulerRecoveryObjectives { cold_restart_rto_ms: 30_000, failover_rto_ms: 5_000 };
     assert!(failover_recovery_passes(25_000, 3_000, &objectives));
 
     let report = evaluate_ha_conformance(&["run-1".to_string(), "run-2".to_string()], true, true);

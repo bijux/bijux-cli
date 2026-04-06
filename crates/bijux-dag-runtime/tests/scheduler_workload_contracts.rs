@@ -26,10 +26,7 @@ fn cron_schedule(id: &str, expression: &str) -> ScheduleDefinition {
             expression: expression.to_string(),
             timezone: "UTC".to_string(),
         },
-        queue: QueueIdentity {
-            queue_name: "default".to_string(),
-            tenant: None,
-        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::Standard,
         concurrency: ConcurrencyPolicyLayers {
             per_dag: Some(4),
@@ -37,10 +34,7 @@ fn cron_schedule(id: &str, expression: &str) -> ScheduleDefinition {
             per_tenant: None,
             per_node_group: None,
         },
-        catch_up: CatchUpPolicy {
-            enabled: true,
-            max_catch_up_runs: 10,
-        },
+        catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 10 },
     }
 }
 
@@ -53,10 +47,7 @@ fn cron_conflict_detection_groups_equal_expressions() {
     ];
     let conflicts = detect_cron_conflicts(&defs);
     assert_eq!(conflicts.len(), 1);
-    assert_eq!(
-        conflicts[0].schedule_ids,
-        vec!["s1".to_string(), "s2".to_string()]
-    );
+    assert_eq!(conflicts[0].schedule_ids, vec!["s1".to_string(), "s2".to_string()]);
 }
 
 #[test]

@@ -46,18 +46,13 @@ fn environment_and_dry_run_decisions_are_deterministic() {
             kind: SubjectKind::User,
             tenant_id: Some("tenant_alpha".to_string()),
         },
-        action: Action {
-            name: "run.submit".to_string(),
-            kind: ActionKind::Execute,
-        },
+        action: Action { name: "run.submit".to_string(), kind: ActionKind::Execute },
         resource: ResourceRef {
             kind: ResourceKind::Run,
             id: "run_1".to_string(),
             tenant_id: Some("tenant_alpha".to_string()),
         },
-        scope: ResourceScope::Tenant {
-            tenant_id: "tenant_alpha".to_string(),
-        },
+        scope: ResourceScope::Tenant { tenant_id: "tenant_alpha".to_string() },
         environment: "prod".to_string(),
     };
 
@@ -65,16 +60,8 @@ fn environment_and_dry_run_decisions_are_deterministic() {
         environment: "prod".to_string(),
         denied_actions: vec!["policy.manage".to_string()],
     }];
-    assert!(is_action_allowed_in_environment(
-        "run.submit",
-        "prod",
-        &rules
-    ));
-    assert!(!is_action_allowed_in_environment(
-        "policy.manage",
-        "prod",
-        &rules
-    ));
+    assert!(is_action_allowed_in_environment("run.submit", "prod", &rules));
+    assert!(!is_action_allowed_in_environment("policy.manage", "prod", &rules));
 
     let dry_run = evaluate_dry_run(&request, &["run.submit".to_string()], "2026.03");
     assert!(dry_run.would_allow);
@@ -89,10 +76,7 @@ fn cache_invalidation_and_acceptance_checks_hold() {
             kind: SubjectKind::Worker,
             tenant_id: Some("tenant_alpha".to_string()),
         },
-        action: Action {
-            name: "artifact.upload".to_string(),
-            kind: ActionKind::Write,
-        },
+        action: Action { name: "artifact.upload".to_string(), kind: ActionKind::Write },
         resource: ResourceRef {
             kind: ResourceKind::Artifact,
             id: "a1".to_string(),

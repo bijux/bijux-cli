@@ -151,10 +151,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let runtime_dispatch =
                 workspace_root.join("crates/bijux-cli/src/interface/cli/dispatch.rs");
             let runtime_routing = workspace_root.join("crates/bijux-cli/src/routing/mod.rs");
-            let maintainer_routes =
-                workspace_root.join("crates/bijux-dev/src/maintainer/reports/runtime_surface/routes.rs");
-            let maintainer_registry =
-                workspace_root.join("crates/bijux-dev/src/maintainer/reports/runtime_surface/registry.rs");
+            let maintainer_routes = workspace_root
+                .join("crates/bijux-dev/src/maintainer/reports/runtime_surface/routes.rs");
+            let maintainer_registry = workspace_root
+                .join("crates/bijux-dev/src/maintainer/reports/runtime_surface/registry.rs");
             let inventory = workspace_root
                 .join("crates/bijux-cli/src/features/diagnostics/routing_inventory.rs");
             let has = |path: &Path, token: &str| -> bool {

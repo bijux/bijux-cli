@@ -36,12 +36,8 @@ pub(crate) fn handle_run_command(
     let input = read_file(req.dag)?;
     let graph = parse_graph(&input)?;
     let runtime = Runtime::new();
-    let (deny_network, deny_clock, clean_env) = effective_policy_flags(
-        req.deny_network,
-        req.deny_clock,
-        req.clean_env,
-        req.hermetic,
-    );
+    let (deny_network, deny_clock, clean_env) =
+        effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
     let deny_env = req.deny_env;
     let selectors = parse_selectors(req.select, req.exclude)?;
     let options = RuntimeConfig {
@@ -59,18 +55,11 @@ pub(crate) fn handle_run_command(
         remote_cache_dir: req.remote_cache_dir,
         run_id: req.run_id,
         latest_symlink: req.latest,
-        policy: bijux_dag_runtime::PolicyConfig {
-            deny_network,
-            deny_env,
-            deny_clock,
-            clean_env,
-        },
+        policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
         selectors,
         ..RuntimeConfig::default()
     };
-    let run_path = runtime
-        .run(&graph, req.out, options)
-        .map_err(|_| ExitCode::from(3))?;
+    let run_path = runtime.run(&graph, req.out, options).map_err(|_| ExitCode::from(3))?;
 
     if cli.json {
         return emit_json(
@@ -108,17 +97,11 @@ mod tests {
 
     #[test]
     fn hermetic_forces_isolation_flags() {
-        assert_eq!(
-            effective_policy_flags(false, false, false, true),
-            (true, true, true)
-        );
+        assert_eq!(effective_policy_flags(false, false, false, true), (true, true, true));
     }
 
     #[test]
     fn non_hermetic_preserves_network_clock_and_normalizes_clean_env() {
-        assert_eq!(
-            effective_policy_flags(true, false, false, false),
-            (true, false, true)
-        );
+        assert_eq!(effective_policy_flags(true, false, false, false), (true, false, true));
     }
 }

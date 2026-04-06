@@ -18,10 +18,8 @@ use bijux_dag_app::{dag_command, dag_run};
 
 #[test]
 fn dag_help_command_tree_snapshot_is_stable() {
-    let mut names = dag_command()
-        .get_subcommands()
-        .map(|c| c.get_name().to_string())
-        .collect::<Vec<_>>();
+    let mut names =
+        dag_command().get_subcommands().map(|c| c.get_name().to_string()).collect::<Vec<_>>();
     names.sort();
     let rendered = format!("{}\n", names.join("\n"));
     let expected = include_str!("snapshots/dag_command_tree.txt");

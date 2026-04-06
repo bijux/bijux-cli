@@ -51,10 +51,8 @@ fn atomic_durable_write_replaces_previous_json_payload() {
 #[test]
 fn gc_explain_and_cleanup_plan_are_dry_run_safe_and_retention_aligned() {
     let referenced = vec![ArtifactId("extract:data.csv".to_string())];
-    let all = vec![
-        ArtifactId("extract:data.csv".to_string()),
-        ArtifactId("train:model.bin".to_string()),
-    ];
+    let all =
+        vec![ArtifactId("extract:data.csv".to_string()), ArtifactId("train:model.bin".to_string())];
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-1");
     assert_eq!(explain.lineage_snapshot_id, "lineage-1");
     assert!(explain
@@ -64,11 +62,8 @@ fn gc_explain_and_cleanup_plan_are_dry_run_safe_and_retention_aligned() {
 
     let policy = RetentionPolicy::default();
     let retain_prefixes = policy.retain_prefixes();
-    let entries = vec![
-        "run-2026-03-01".to_string(),
-        "cache-abc".to_string(),
-        "scratch-temp".to_string(),
-    ];
+    let entries =
+        vec!["run-2026-03-01".to_string(), "cache-abc".to_string(), "scratch-temp".to_string()];
     let plan = build_cleanup_plan(&entries, &retain_prefixes);
     assert!(plan.retained.iter().any(|e| e.starts_with("run-")));
     assert!(plan.retained.iter().any(|e| e.starts_with("cache-")));

@@ -42,10 +42,7 @@ fn diagnostics_and_root_cause_graph_are_stable() {
     let diagnostics = build_diagnostics(&events);
     assert_eq!(diagnostics.len(), 2);
     let graph = root_cause_graph(&events);
-    assert_eq!(
-        graph.get("load").cloned().unwrap_or_default(),
-        vec!["transform".to_string()]
-    );
+    assert_eq!(graph.get("load").cloned().unwrap_or_default(), vec!["transform".to_string()]);
 }
 
 #[test]
@@ -99,11 +96,7 @@ fn redaction_sampling_bundle_and_drift_contracts() {
 
     let sampled = sample_events(
         &[event.clone(), event.clone(), event.clone(), event.clone()],
-        &SamplingPolicy {
-            enabled: true,
-            max_spans_per_run: 10,
-            max_events_per_run: 2,
-        },
+        &SamplingPolicy { enabled: true, max_spans_per_run: 10, max_events_per_run: 2 },
     );
     assert_eq!(sampled.len(), 2);
 

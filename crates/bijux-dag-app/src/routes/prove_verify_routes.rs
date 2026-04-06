@@ -24,11 +24,7 @@ pub(crate) fn handle_verify_command(
     strict: bool,
 ) -> Result<ExitCode, ExitCode> {
     let report = verify_run(run_dir, deep, strict)?;
-    let ok = report
-        .get("status")
-        .and_then(|v| v.as_str())
-        .map(|v| v == "ok")
-        .unwrap_or(false);
+    let ok = report.get("status").and_then(|v| v.as_str()).map(|v| v == "ok").unwrap_or(false);
     if cli.json {
         return emit_json(
             cli,
@@ -36,11 +32,7 @@ pub(crate) fn handle_verify_command(
             ok,
             report,
             Vec::new(),
-            if ok {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(3)
-            },
+            if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
         );
     }
     if output_selection(cli) == OutputSelection::Human {
@@ -76,11 +68,7 @@ pub(crate) fn handle_fsck_command(
         )
     } else {
         let report = verify_run(run_dir, true, strict)?;
-        let ok = report
-            .get("status")
-            .and_then(|v| v.as_str())
-            .map(|v| v == "ok")
-            .unwrap_or(false);
+        let ok = report.get("status").and_then(|v| v.as_str()).map(|v| v == "ok").unwrap_or(false);
         (report, ok)
     };
     if cli.json {
@@ -90,11 +78,7 @@ pub(crate) fn handle_fsck_command(
             ok,
             report,
             Vec::new(),
-            if ok {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(3)
-            },
+            if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
         );
     }
     if output_selection(cli) == OutputSelection::Human {

@@ -1,4 +1,3 @@
-
 use crate::policy::policy_allows_effects;
 use crate::trace::trace_status_label;
 use crate::{NodeStatus, PolicyConfig};

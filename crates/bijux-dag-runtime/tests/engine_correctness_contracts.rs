@@ -19,18 +19,8 @@ use std::collections::BTreeMap;
 #[test]
 fn engine_correctness_uses_deterministic_dispatch_contract() {
     let nodes = vec![
-        ReadyNode {
-            node_id: "load".to_string(),
-            priority: 1,
-            attempt: 1,
-            ready_unix_ms: 2,
-        },
-        ReadyNode {
-            node_id: "extract".to_string(),
-            priority: 1,
-            attempt: 1,
-            ready_unix_ms: 2,
-        },
+        ReadyNode { node_id: "load".to_string(), priority: 1, attempt: 1, ready_unix_ms: 2 },
+        ReadyNode { node_id: "extract".to_string(), priority: 1, attempt: 1, ready_unix_ms: 2 },
     ];
     let order = deterministic_schedule_order(nodes, &BTreeMap::new());
     assert_eq!(order[0].node_id, "extract");

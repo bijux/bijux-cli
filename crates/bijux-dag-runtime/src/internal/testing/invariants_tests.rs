@@ -1,4 +1,3 @@
-
 use crate::invariants::{
     run_summary_invariant_ok, terminal_run_has_terminal_node, trace_time_order_ok, RunNodeCounts,
     INVARIANT_REGISTRY,

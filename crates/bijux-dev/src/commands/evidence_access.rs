@@ -102,14 +102,7 @@ pub fn load_registry_release_assets(
             .ok_or_else(|| format!("registry asset `{id}` missing release_blocking bool"))?;
         map.insert(
             id.clone(),
-            RegistryReleaseAsset {
-                id,
-                kind,
-                owner,
-                consumers,
-                trust_properties,
-                release_blocking,
-            },
+            RegistryReleaseAsset { id, kind, owner, consumers, trust_properties, release_blocking },
         );
     }
     Ok(map)
@@ -162,13 +155,7 @@ pub fn parse_registry_assets(registry: &Value) -> Result<Vec<EvidenceAsset>, Str
         if !ids.insert(id.clone()) {
             return Err(format!("duplicate evidence asset id: `{id}`"));
         }
-        parsed.push(EvidenceAsset {
-            id,
-            kind,
-            canonical_path,
-            consumers,
-            trust_properties,
-        });
+        parsed.push(EvidenceAsset { id, kind, canonical_path, consumers, trust_properties });
     }
     parsed.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(parsed)
@@ -269,10 +256,7 @@ pub fn verify_registry_access_bypass(root: &Path) -> Result<(), String> {
             "read_to_string(repo_root.join(\"evidence/_meta/registries/evidence_registry.json\"))",
             "read_to_string(&repo_root.join(\"evidence/_meta/registries/evidence_registry.json\"))",
         ];
-        if direct_read_patterns
-            .iter()
-            .any(|pattern| content.contains(pattern))
-        {
+        if direct_read_patterns.iter().any(|pattern| content.contains(pattern)) {
             violations.push(rel);
         }
     }
@@ -295,15 +279,9 @@ pub fn render_assets_to_consumers_report(assets: &[EvidenceAsset]) -> String {
     lines.push("| Asset ID | Family | Consumers |".to_string());
     lines.push("| --- | --- | --- |".to_string());
     for asset in assets {
-        let consumers = if asset.consumers.is_empty() {
-            "-".to_string()
-        } else {
-            asset.consumers.join(", ")
-        };
-        lines.push(format!(
-            "| `{}` | `{}` | `{}` |",
-            asset.id, asset.kind, consumers
-        ));
+        let consumers =
+            if asset.consumers.is_empty() { "-".to_string() } else { asset.consumers.join(", ") };
+        lines.push(format!("| `{}` | `{}` | `{}` |", asset.id, asset.kind, consumers));
     }
     lines.push(String::new());
     lines.join("\n")
@@ -313,9 +291,7 @@ pub fn render_consumers_to_families_report(assets: &[EvidenceAsset]) -> String {
     let mut map: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for asset in assets {
         for consumer in &asset.consumers {
-            map.entry(consumer.clone())
-                .or_default()
-                .insert(asset.kind.clone());
+            map.entry(consumer.clone()).or_default().insert(asset.kind.clone());
         }
     }
 
@@ -418,10 +394,7 @@ mod tests {
             ]
         });
         let err = parse_registry_assets(&payload).expect_err("must reject duplicate ids");
-        assert!(
-            err.contains("duplicate evidence asset id"),
-            "unexpected error: {err}"
-        );
+        assert!(err.contains("duplicate evidence asset id"), "unexpected error: {err}");
     }
 
     #[test]
@@ -448,10 +421,7 @@ mod tests {
         });
         let assets = parse_registry_assets(&payload).expect("parse");
         let err = resolve_asset_by_id(&assets, "missing").expect_err("must fail");
-        assert!(
-            err.contains("evidence asset id not found: `missing`"),
-            "unexpected error: {err}"
-        );
+        assert!(err.contains("evidence asset id not found: `missing`"), "unexpected error: {err}");
     }
 
     #[test]

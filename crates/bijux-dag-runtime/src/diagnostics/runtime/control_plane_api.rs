@@ -240,15 +240,8 @@ pub fn paginate<T: Clone>(items: &[T], pagination: &Pagination) -> Page<T> {
         .unwrap_or(0)
         .min(items.len());
     let end = (start + pagination.limit.max(1)).min(items.len());
-    let next_cursor = if end < items.len() {
-        Some(end.to_string())
-    } else {
-        None
-    };
-    Page {
-        items: items[start..end].to_vec(),
-        next_cursor,
-    }
+    let next_cursor = if end < items.len() { Some(end.to_string()) } else { None };
+    Page { items: items[start..end].to_vec(), next_cursor }
 }
 
 pub fn filter_resources<T>(
@@ -264,9 +257,7 @@ pub fn filter_resources<T>(
 
 pub fn authorize(auth: &AuthContext, action: &str, rules: &[AuthorizationRule]) -> bool {
     rules.iter().any(|rule| {
-        auth.scopes
-            .iter()
-            .any(|scope| scope.starts_with(&rule.resource_prefix))
+        auth.scopes.iter().any(|scope| scope.starts_with(&rule.resource_prefix))
             && rule.allowed_actions.iter().any(|a| a == action)
     })
 }

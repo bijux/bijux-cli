@@ -43,16 +43,9 @@ fn write_basic_run(run: &Path, run_id: &str, extras: Value) {
             manifest[k] = v.clone();
         }
     }
-    fs::write(
-        run.join("manifest.json"),
-        serde_json::to_vec_pretty(&manifest).expect("manifest"),
-    )
-    .expect("write manifest");
-    fs::write(
-        run.join("graph.snapshot.json"),
-        "{\"graph_fingerprint\":\"g\"}",
-    )
-    .expect("snapshot");
+    fs::write(run.join("manifest.json"), serde_json::to_vec_pretty(&manifest).expect("manifest"))
+        .expect("write manifest");
+    fs::write(run.join("graph.snapshot.json"), "{\"graph_fingerprint\":\"g\"}").expect("snapshot");
     fs::write(
         run.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({

@@ -21,9 +21,7 @@ pub(crate) fn hash_run_dir(run_dir: &Path) -> Result<String, ExitCode> {
 }
 
 pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
-    let (node_id, file_name) = artifact_id
-        .split_once(':')
-        .ok_or_else(|| ExitCode::from(2))?;
+    let (node_id, file_name) = artifact_id.split_once(':').ok_or_else(|| ExitCode::from(2))?;
     let manifest_raw = read_file(&run_dir.join("manifest.json"))?;
     let manifest: Manifest = serde_json::from_str(&manifest_raw).map_err(|_| ExitCode::from(3))?;
     let run_outputs_raw = read_file(&run_dir.join("outputs").join("index.json"))?;
@@ -151,10 +149,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         }
         for file in index.files {
             if deep && !bijux_dag_artifacts::paths::is_normalized_relative_path(&file.path) {
-                errors.push(format!(
-                    "output path is not normalized relative path: {}",
-                    file.path
-                ));
+                errors.push(format!("output path is not normalized relative path: {}", file.path));
             }
             let path = run_dir.join(&file.path);
             if !path.exists() {
@@ -180,10 +175,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         for entry in entries {
             let trace_path = entry.path().join("trace.json");
             if !trace_path.exists() {
-                errors.push(format!(
-                    "missing trace: {}",
-                    entry.file_name().to_string_lossy()
-                ));
+                errors.push(format!("missing trace: {}", entry.file_name().to_string_lossy()));
                 continue;
             }
             let data = fs::read_to_string(&trace_path).map_err(|_| ExitCode::from(3))?;
@@ -207,13 +199,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
                     ));
                 }
             }
-            for key in [
-                "node_id",
-                "status",
-                "started_unix_ms",
-                "finished_unix_ms",
-                "fingerprint",
-            ] {
+            for key in ["node_id", "status", "started_unix_ms", "finished_unix_ms", "fingerprint"] {
                 if val.get(key).is_none() {
                     errors.push(format!(
                         "trace missing {}: {}",
@@ -223,14 +209,8 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
                 }
             }
             if deep {
-                let started = val
-                    .get("started_unix_ms")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                let finished = val
-                    .get("finished_unix_ms")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
+                let started = val.get("started_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
+                let finished = val.get("finished_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
                 if !invariants::trace_time_order_ok(started, finished) {
                     invariant_violations.push(format!(
                         "INV-TRACE-TIME-001 violation in {}",
@@ -269,10 +249,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
     if strict {
         for rel in ["graph.snapshot.json", "nodes"] {
             if !run_dir.join(rel).exists() {
-                errors.push(format!(
-                    "strict verify missing required run artifact: {}",
-                    rel
-                ));
+                errors.push(format!("strict verify missing required run artifact: {}", rel));
             }
         }
         if manifest.manifest_version != "run-manifest/v0.1" {
@@ -280,10 +257,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         }
         for rel in ["observability.timeline.json", "observability.events.json"] {
             if !run_dir.join(rel).exists() {
-                errors.push(format!(
-                    "strict verify missing required run artifact: {}",
-                    rel
-                ));
+                errors.push(format!("strict verify missing required run artifact: {}", rel));
             }
         }
         if manifest.status == "failed" && !run_dir.join("observability.root-causes.json").exists() {
@@ -296,9 +270,8 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
     if deep || strict {
         let manifest_json: Value =
             serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
-        if let Some(summary) = manifest_json
-            .get("run_metadata")
-            .and_then(|m| m.get("environment_summary"))
+        if let Some(summary) =
+            manifest_json.get("run_metadata").and_then(|m| m.get("environment_summary"))
         {
             let summary_bytes = serde_json::to_vec(summary).map_err(|_| ExitCode::from(3))?;
             let expected = sha256_bytes(&summary_bytes);
@@ -313,11 +286,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         }
     }
 
-    let status = if errors.is_empty() && invariant_violations.is_empty() {
-        "ok"
-    } else {
-        "error"
-    };
+    let status = if errors.is_empty() && invariant_violations.is_empty() { "ok" } else { "error" };
     Ok(json!({
         "status": status,
         "mode": if strict {

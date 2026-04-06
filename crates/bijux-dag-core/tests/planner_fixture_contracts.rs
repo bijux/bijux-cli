@@ -16,10 +16,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn snapshot_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("snapshots")
-        .join(name)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("snapshots").join(name)
 }
 
 fn load_graph(name: &str) -> bijux_dag_core::Graph {
@@ -41,10 +38,7 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
 
     let retry_plan =
         lower_graph_to_execution_plan(&retry_heavy, PlanOptions::default()).expect("retry lowers");
-    assert!(retry_plan
-        .nodes
-        .iter()
-        .any(|node| node.retry.max_attempts > 0));
+    assert!(retry_plan.nodes.iter().any(|node| node.retry.max_attempts > 0));
 
     let replay_plan = lower_graph_to_execution_plan(&replay_oriented, PlanOptions::default())
         .expect("replay oriented lowers");
@@ -54,9 +48,7 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
     let imported_plan =
         lower_graph_to_execution_plan(&imported_bundle_replay, PlanOptions::default())
             .expect("imported bundle replay lowers");
-    assert!(imported_plan
-        .ordering
-        .contains(&"hydrate_import".to_string()));
+    assert!(imported_plan.ordering.contains(&"hydrate_import".to_string()));
     assert!(imported_plan.ordering.contains(&"replay_check".to_string()));
 
     let selective_plan = lower_graph_to_execution_plan(
@@ -87,10 +79,7 @@ fn planner_capability_restrictions_and_dependency_closure_are_enforced() {
     only_const.insert("const".to_string());
     let err = lower_graph_to_execution_plan(
         &replay_oriented,
-        PlanOptions {
-            supported_kinds: only_const,
-            ..PlanOptions::default()
-        },
+        PlanOptions { supported_kinds: only_const, ..PlanOptions::default() },
     )
     .expect_err("shell node should be rejected when shell is unsupported");
     assert!(matches!(err, PlannerError::UnsupportedNodeKind(kind) if kind == "shell"));
@@ -100,18 +89,12 @@ fn planner_capability_restrictions_and_dependency_closure_are_enforced() {
     selected.insert("replay_check".to_string());
     let plan = lower_graph_to_execution_plan(
         &replay_oriented,
-        PlanOptions {
-            selected_nodes: selected,
-            ..PlanOptions::default()
-        },
+        PlanOptions { selected_nodes: selected, ..PlanOptions::default() },
     )
     .expect("selected plan");
 
-    let replay_node = plan
-        .nodes
-        .iter()
-        .find(|node| node.id == "replay_check")
-        .expect("selected node present");
+    let replay_node =
+        plan.nodes.iter().find(|node| node.id == "replay_check").expect("selected node present");
     assert_eq!(replay_node.deps, vec!["source".to_string()]);
 }
 
@@ -129,10 +112,7 @@ fn planner_json_dump_and_schema_compatibility_are_stable() {
         .join("../../configs/dag/schema/execution_plan.schema.json");
     let schema_text = fs::read_to_string(schema_path).expect("schema file");
     let schema: Value = serde_json::from_str(&schema_text).expect("schema parse");
-    let required = schema
-        .get("required")
-        .and_then(Value::as_array)
-        .expect("required fields");
+    let required = schema.get("required").and_then(Value::as_array).expect("required fields");
 
     let plan_value = serde_json::to_value(&first).expect("plan json");
     for field in required.iter().filter_map(Value::as_str) {

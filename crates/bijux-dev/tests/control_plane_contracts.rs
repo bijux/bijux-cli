@@ -24,10 +24,7 @@ fn control_plane_schemas_are_valid_json_schema_objects() {
     ] {
         let payload = fs::read_to_string(root.join(rel)).expect("read schema file");
         let value: Value = serde_json::from_str(&payload).expect("parse schema json");
-        assert_eq!(
-            value["$schema"].as_str(),
-            Some("https://json-schema.org/draft/2020-12/schema")
-        );
+        assert_eq!(value["$schema"].as_str(), Some("https://json-schema.org/draft/2020-12/schema"));
         assert!(value["title"].as_str().is_some());
     }
 }
@@ -41,10 +38,7 @@ fn suite_run_contract_exposes_advisory_and_why_flags() {
         source.contains("advisory: bool"),
         "suite run command should support advisory execution mode"
     );
-    assert!(
-        source.contains("why: bool"),
-        "suite run command should support why explanation mode"
-    );
+    assert!(source.contains("why: bool"), "suite run command should support why explanation mode");
     assert!(
         source.contains("CommandLine::Foundation"),
         "foundation super-suite command should be present"

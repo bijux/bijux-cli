@@ -181,10 +181,7 @@ pub fn validate_plugin_conformance(
         failures.push("signature-required plugins need allowlisted publishers".to_string());
     }
     if isolation.require_deterministic_mode
-        && !metadata
-            .policy_requirements
-            .iter()
-            .any(|r| r == "deterministic")
+        && !metadata.policy_requirements.iter().any(|r| r == "deterministic")
     {
         failures.push("plugin must require deterministic policy".to_string());
     }
@@ -242,10 +239,7 @@ pub fn register_extension(
 ) -> Result<(), String> {
     validate_extension_descriptor(&descriptor)?;
     if registry.contains_key(&descriptor.plugin_name) {
-        return Err(format!(
-            "extension registration conflict for {}",
-            descriptor.plugin_name
-        ));
+        return Err(format!("extension registration conflict for {}", descriptor.plugin_name));
     }
     registry.insert(descriptor.plugin_name.clone(), descriptor);
     Ok(())
@@ -261,10 +255,7 @@ pub fn detect_extension_compatibility_issues(
         if !supported_contract_versions.contains(&descriptor.contract_version) {
             issues.push(ExtensionCompatibilityIssue {
                 plugin_name: descriptor.plugin_name.clone(),
-                reason: format!(
-                    "unsupported contract version {}",
-                    descriptor.contract_version
-                ),
+                reason: format!("unsupported contract version {}", descriptor.contract_version),
             });
         }
         for capability in required_capabilities {

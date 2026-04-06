@@ -43,14 +43,8 @@ fn serde_roundtrip_node_model() {
 #[test]
 fn serde_roundtrip_edge_and_port_models() {
     let edge = Edge {
-        from: PortRef {
-            node_id: "a".to_string(),
-            port: "out".to_string(),
-        },
-        to: PortRef {
-            node_id: "b".to_string(),
-            port: "in".to_string(),
-        },
+        from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
+        to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
     };
     let encoded = serde_json::to_string(&edge).unwrap();
     let decoded: Edge = serde_json::from_str(&encoded).unwrap();
@@ -59,10 +53,7 @@ fn serde_roundtrip_edge_and_port_models() {
 
 #[test]
 fn serde_roundtrip_file_output_model() {
-    let output = FileOutput {
-        name: "result".to_string(),
-        path: "out/result.txt".to_string(),
-    };
+    let output = FileOutput { name: "result".to_string(), path: "out/result.txt".to_string() };
     let encoded = serde_json::to_string(&output).unwrap();
     let decoded: FileOutput = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded, output);
@@ -84,10 +75,7 @@ fn serde_roundtrip_graph_meta_model() {
 
 #[test]
 fn serde_roundtrip_resources_model() {
-    let resources = Resources {
-        cpu: 2,
-        mem_mb: 128,
-    };
+    let resources = Resources { cpu: 2, mem_mb: 128 };
     let encoded = serde_json::to_string(&resources).unwrap();
     let decoded: Resources = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded.cpu, resources.cpu);
@@ -96,10 +84,7 @@ fn serde_roundtrip_resources_model() {
 
 #[test]
 fn serde_roundtrip_retry_policy_model() {
-    let policy = RetryPolicy {
-        max_attempts: 3,
-        backoff_ms: 20,
-    };
+    let policy = RetryPolicy { max_attempts: 3, backoff_ms: 20 };
     let encoded = serde_json::to_string(&policy).unwrap();
     let decoded: RetryPolicy = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded.max_attempts, policy.max_attempts);
@@ -124,10 +109,7 @@ fn serde_roundtrip_container_spec_model() {
 fn serde_roundtrip_ref_models() {
     let ref_spec = RefSpec {
         graph_input: None,
-        node_output: Some(NodeOutputRef {
-            node_id: "src".to_string(),
-            path: "out".to_string(),
-        }),
+        node_output: Some(NodeOutputRef { node_id: "src".to_string(), path: "out".to_string() }),
     };
     let encoded = serde_json::to_string(&ref_spec).unwrap();
     let decoded: RefSpec = serde_json::from_str(&encoded).unwrap();
@@ -140,10 +122,7 @@ fn serde_roundtrip_ref_models() {
 fn serde_roundtrip_param_value_model() {
     let params = ParamValue::Object(
         [
-            (
-                "value".to_string(),
-                ParamValue::Literal(serde_json::json!(1)),
-            ),
+            ("value".to_string(), ParamValue::Literal(serde_json::json!(1))),
             (
                 "list".to_string(),
                 ParamValue::Array(vec![ParamValue::Literal(serde_json::json!(2))]),
@@ -225,16 +204,13 @@ fn core_public_api_contract_snapshot_stable() {
 #[test]
 fn strict_parse_then_validation_diagnostics_separation() {
     let mut graph = sample_graph();
-    graph.nodes[0].outputs.push(FileOutput {
-        name: "dup".to_string(),
-        path: "out/result.txt".to_string(),
-    });
+    graph.nodes[0]
+        .outputs
+        .push(FileOutput { name: "dup".to_string(), path: "out/result.txt".to_string() });
     let text = serde_json::to_string(&graph).unwrap();
     let parsed = bijux_dag_core::parse_graph_strict(&text).unwrap();
     let diags = parsed.validate_with_warnings();
-    assert!(diags
-        .iter()
-        .any(|diag| matches!(diag.code.as_str(), "E1008" | "W2001" | "W2002")));
+    assert!(diags.iter().any(|diag| matches!(diag.code.as_str(), "E1008" | "W2001" | "W2002")));
 }
 
 fn sample_graph() -> Graph {

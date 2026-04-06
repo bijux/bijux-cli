@@ -58,13 +58,7 @@ fn prove_reports_complete_bundle_for_valid_run() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &[
-            "run",
-            "--json",
-            &output_path_string(&graph),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -84,13 +78,7 @@ fn prove_reports_incomplete_for_corrupt_run() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &[
-            "run",
-            "--json",
-            &output_path_string(&graph),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -98,10 +86,7 @@ fn prove_reports_incomplete_for_corrupt_run() {
 
     let (code, stdout, _stderr) =
         run_dag(&["prove", "--json", &output_path_string(&run_dir)], &root);
-    assert_ne!(
-        code, 0,
-        "corrupt run proof should be incomplete and non-zero"
-    );
+    assert_ne!(code, 0, "corrupt run proof should be incomplete and non-zero");
     let proof: Value = serde_json::from_str(&stdout).expect("parse proof payload");
     assert_eq!(proof["command"], "dag.prove");
     assert_eq!(proof["ok"], false);
@@ -118,13 +103,7 @@ fn prove_reports_backend_origin_and_unsigned_trust_boundary() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &[
-            "run",
-            "--json",
-            &output_path_string(&graph),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -148,13 +127,7 @@ fn prove_reports_incomplete_for_hash_corruption() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &[
-            "run",
-            "--json",
-            &output_path_string(&graph),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -162,18 +135,13 @@ fn prove_reports_incomplete_for_hash_corruption() {
     let mut index: Value =
         serde_json::from_str(&fs::read_to_string(&outputs_index).expect("read outputs"))
             .expect("parse outputs");
-    if let Some(first) = index
-        .get_mut("files")
-        .and_then(Value::as_array_mut)
-        .and_then(|v| v.first_mut())
+    if let Some(first) =
+        index.get_mut("files").and_then(Value::as_array_mut).and_then(|v| v.first_mut())
     {
         first["sha256"] = Value::String("deadbeef".to_string());
     }
-    fs::write(
-        &outputs_index,
-        serde_json::to_vec_pretty(&index).expect("encode outputs"),
-    )
-    .expect("write outputs");
+    fs::write(&outputs_index, serde_json::to_vec_pretty(&index).expect("encode outputs"))
+        .expect("write outputs");
 
     let (code, stdout, _stderr) =
         run_dag(&["prove", "--json", &output_path_string(&run_dir)], &root);

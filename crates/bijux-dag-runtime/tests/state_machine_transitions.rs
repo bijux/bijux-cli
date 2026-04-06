@@ -30,11 +30,7 @@ fn accepts_legal_node_transitions() {
         (NodeState::Running, NodeState::Cancelled),
     ];
     for (from, to) in legal {
-        let transition = NodeTransition {
-            from,
-            to,
-            cause: TransitionCause::SchedulerQueued,
-        };
+        let transition = NodeTransition { from, to, cause: TransitionCause::SchedulerQueued };
         assert!(validate_node_transition(&transition).is_ok());
     }
 }
@@ -48,11 +44,7 @@ fn rejects_illegal_node_transitions() {
         (NodeState::Skipped, NodeState::Running),
     ];
     for (from, to) in illegal {
-        let transition = NodeTransition {
-            from,
-            to,
-            cause: TransitionCause::ExecutionStarted,
-        };
+        let transition = NodeTransition { from, to, cause: TransitionCause::ExecutionStarted };
         assert!(validate_node_transition(&transition).is_err());
     }
 }
@@ -73,11 +65,7 @@ fn accepts_legal_run_transitions() {
         (RunState::Running, RunState::Succeeded),
     ];
     for (from, to) in legal {
-        let transition = RunTransition {
-            from,
-            to,
-            cause: TransitionCause::PlanningCompleted,
-        };
+        let transition = RunTransition { from, to, cause: TransitionCause::PlanningCompleted };
         assert!(validate_run_transition(&transition).is_ok());
     }
 }
@@ -91,11 +79,7 @@ fn rejects_illegal_run_transitions() {
         (RunState::Cancelled, RunState::Running),
     ];
     for (from, to) in illegal {
-        let transition = RunTransition {
-            from,
-            to,
-            cause: TransitionCause::ExecutionFailed,
-        };
+        let transition = RunTransition { from, to, cause: TransitionCause::ExecutionFailed };
         assert!(validate_run_transition(&transition).is_err());
     }
 }

@@ -24,10 +24,7 @@ fn validate_capability_match(
         ));
     }
     if declaration.require_replay && !found.supports_replay {
-        return Err(format!(
-            "backend `{}` must support replay",
-            declaration.backend
-        ));
+        return Err(format!("backend `{}` must support replay", declaration.backend));
     }
     Ok(())
 }

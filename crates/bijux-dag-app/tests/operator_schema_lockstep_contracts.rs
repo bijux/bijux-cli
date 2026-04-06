@@ -27,18 +27,19 @@ fn dag_command(root: &Path) -> Command {
         .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
         .unwrap_or_else(|| "cargo".to_string());
     let mut command = Command::new(cargo_bin);
-    command
-        .current_dir(root)
-        .env("CARGO_TARGET_DIR", root.join("artifacts/target"))
-        .args(["run", "--quiet", "-p", "bijux-dag-cli", "--", "dag"]);
+    command.current_dir(root).env("CARGO_TARGET_DIR", root.join("artifacts/target")).args([
+        "run",
+        "--quiet",
+        "-p",
+        "bijux-dag-cli",
+        "--",
+        "dag",
+    ]);
     command
 }
 
 fn run_json(root: &Path, args: &[&str]) -> serde_json::Value {
-    let output = dag_command(root)
-        .args(args)
-        .output()
-        .expect("run dag command");
+    let output = dag_command(root).args(args).output().expect("run dag command");
     assert_eq!(
         output.status.code().unwrap_or(1),
         0,
@@ -68,10 +69,7 @@ fn capability_query_output_schema_lockstep() {
     let payload = run_json(&root, &["--json", "capabilities", "--backend", "hpc"]);
     let data = payload["data"].as_object().expect("capability data object");
     for field in required_fields("configs/dag/schema/operator/capability_query.schema.json") {
-        assert!(
-            data.contains_key(&field),
-            "capability output missing required field: {field}"
-        );
+        assert!(data.contains_key(&field), "capability output missing required field: {field}");
     }
 }
 
@@ -97,18 +95,11 @@ fn verify_output_schema_lockstep() {
     );
     let verify = run_json(
         &root,
-        &[
-            "--json",
-            "verify",
-            out_dir.join("run-run-fixed").to_string_lossy().as_ref(),
-        ],
+        &["--json", "verify", out_dir.join("run-run-fixed").to_string_lossy().as_ref()],
     );
     let data = verify["data"].as_object().expect("verify data");
     for field in required_fields("configs/dag/schema/operator/verify_output.schema.json") {
-        assert!(
-            data.contains_key(&field),
-            "verify missing required field: {field}"
-        );
+        assert!(data.contains_key(&field), "verify missing required field: {field}");
     }
 }
 
@@ -134,18 +125,11 @@ fn prove_output_schema_lockstep() {
     );
     let prove = run_json(
         &root,
-        &[
-            "--json",
-            "prove",
-            out_dir.join("run-run-fixed").to_string_lossy().as_ref(),
-        ],
+        &["--json", "prove", out_dir.join("run-run-fixed").to_string_lossy().as_ref()],
     );
     let data = prove["data"].as_object().expect("prove data");
     for field in required_fields("configs/dag/schema/operator/prove_output.schema.json") {
-        assert!(
-            data.contains_key(&field),
-            "prove missing required field: {field}"
-        );
+        assert!(data.contains_key(&field), "prove missing required field: {field}");
     }
 }
 
@@ -183,10 +167,7 @@ fn export_summary_schema_lockstep() {
     );
     let data = export["data"].as_object().expect("export data");
     for field in required_fields("configs/dag/schema/operator/export_summary.schema.json") {
-        assert!(
-            data.contains_key(&field),
-            "export missing required field: {field}"
-        );
+        assert!(data.contains_key(&field), "export missing required field: {field}");
     }
 }
 
@@ -201,20 +182,10 @@ fn import_summary_schema_lockstep() {
         r#"{"bundle_version":"export-bundle/v0.1","export_mode":"manifest-only","manifest":{},"graph_snapshot":{},"outputs":{},"node_traces":{},"provenance":{"source":"native-run","lineage":[],"source_run_id":"r1"}}"#,
     )
     .expect("write bundle");
-    let import = run_json(
-        &root,
-        &[
-            "--json",
-            "import",
-            bundle.to_string_lossy().as_ref(),
-            "--verify-only",
-        ],
-    );
+    let import =
+        run_json(&root, &["--json", "import", bundle.to_string_lossy().as_ref(), "--verify-only"]);
     let data = import["data"].as_object().expect("import data");
     for field in required_fields("configs/dag/schema/operator/import_summary.schema.json") {
-        assert!(
-            data.contains_key(&field),
-            "import missing required field: {field}"
-        );
+        assert!(data.contains_key(&field), "import missing required field: {field}");
     }
 }

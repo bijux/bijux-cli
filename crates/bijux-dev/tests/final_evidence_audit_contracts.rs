@@ -32,10 +32,7 @@ fn final_evidence_audit_reports_exist() {
         "evidence/reports/evidence_architecture_freeze_review_cycle.md",
         "evidence/reports/evidence_roast_memo_2026-03-07.md",
     ] {
-        assert!(
-            root.join(required).exists(),
-            "missing final evidence audit report: {required}"
-        );
+        assert!(root.join(required).exists(), "missing final evidence audit report: {required}");
     }
 }
 
@@ -52,10 +49,7 @@ fn evidence_audit_report_covers_counts_and_strength_lists() {
         "Weakest evidence assets still present (top 20)",
         "Deletions in this audit wave",
     ] {
-        assert!(
-            text.contains(token),
-            "evidence audit report missing token: {token}"
-        );
+        assert!(text.contains(token), "evidence audit report missing token: {token}");
     }
 }
 
@@ -70,10 +64,7 @@ fn roast_memo_is_honest_about_shallow_and_fraudulent_patterns() {
         "Required next hardening moves",
         "advisory compare/perf assets",
     ] {
-        assert!(
-            text.contains(token),
-            "roast memo missing required honesty token: {token}"
-        );
+        assert!(text.contains(token), "roast memo missing required honesty token: {token}");
     }
 }
 

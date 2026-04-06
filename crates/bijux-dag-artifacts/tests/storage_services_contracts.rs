@@ -13,10 +13,7 @@ struct NoopStore {
 
 impl RunArtifactStore for NoopStore {
     fn write_manifest(&self, run_dir: &RunDir, _manifest: &Manifest) -> Result<(), ArtifactError> {
-        self.writes
-            .lock()
-            .expect("lock")
-            .push(run_dir.final_path().display().to_string());
+        self.writes.lock().expect("lock").push(run_dir.final_path().display().to_string());
         Ok(())
     }
 }
@@ -28,9 +25,7 @@ impl RunArtifactVerifier for NoopVerifier {
         if run_dir.join("manifest.json").exists() {
             Ok(())
         } else {
-            Err(ArtifactError::PathViolation(
-                "manifest missing during verification".to_string(),
-            ))
+            Err(ArtifactError::PathViolation("manifest missing during verification".to_string()))
         }
     }
 }
@@ -63,9 +58,7 @@ fn run_artifact_store_trait_is_usable_as_authority_boundary() {
     let store = NoopStore::default();
     let out = tempfile::tempdir().expect("tmp");
     let run_dir = RunDir::create_with_id(out.path(), "run-1").expect("run dir");
-    store
-        .write_manifest(&run_dir, &sample_manifest())
-        .expect("write should succeed");
+    store.write_manifest(&run_dir, &sample_manifest()).expect("write should succeed");
 
     let writes = store.writes.lock().expect("lock");
     assert_eq!(writes.len(), 1);
@@ -77,13 +70,9 @@ fn run_artifact_verifier_trait_reports_missing_manifest() {
     let verifier = NoopVerifier;
     let dir = tempfile::tempdir().expect("tmp");
 
-    let err = verifier
-        .verify_run_dir(dir.path())
-        .expect_err("missing manifest should fail");
+    let err = verifier.verify_run_dir(dir.path()).expect_err("missing manifest should fail");
     assert!(err.to_string().contains("manifest missing"));
 
     std::fs::write(dir.path().join("manifest.json"), "{}").expect("write manifest marker");
-    verifier
-        .verify_run_dir(dir.path())
-        .expect("manifest presence should pass");
+    verifier.verify_run_dir(dir.path()).expect("manifest presence should pass");
 }

@@ -213,24 +213,14 @@ pub fn normalize_semantic_graph(
 pub fn semantic_diff(before: &Graph, after: &Graph) -> SemanticDiffReport {
     let before_nodes: BTreeSet<String> = before.nodes.iter().map(|n| n.id.clone()).collect();
     let after_nodes: BTreeSet<String> = after.nodes.iter().map(|n| n.id.clone()).collect();
-    let changed_nodes = before_nodes
-        .symmetric_difference(&after_nodes)
-        .cloned()
-        .collect::<Vec<_>>();
-    let before_edges: BTreeSet<String> = before
-        .edges
-        .iter()
-        .map(|e| format!("{}->{}", e.from.node_id, e.to.node_id))
-        .collect();
-    let after_edges: BTreeSet<String> = after
-        .edges
-        .iter()
-        .map(|e| format!("{}->{}", e.from.node_id, e.to.node_id))
-        .collect();
-    let changed_edges = before_edges
-        .symmetric_difference(&after_edges)
-        .cloned()
-        .collect::<Vec<_>>();
+    let changed_nodes =
+        before_nodes.symmetric_difference(&after_nodes).cloned().collect::<Vec<_>>();
+    let before_edges: BTreeSet<String> =
+        before.edges.iter().map(|e| format!("{}->{}", e.from.node_id, e.to.node_id)).collect();
+    let after_edges: BTreeSet<String> =
+        after.edges.iter().map(|e| format!("{}->{}", e.from.node_id, e.to.node_id)).collect();
+    let changed_edges =
+        before_edges.symmetric_difference(&after_edges).cloned().collect::<Vec<_>>();
     if !changed_nodes.is_empty() || !changed_edges.is_empty() {
         return SemanticDiffReport {
             class: SemanticDiffClass::Topology,
@@ -307,11 +297,7 @@ pub fn explain_graph(graph: &Graph) -> GraphExplainabilityModel {
             }
         })
         .collect();
-    GraphExplainabilityModel {
-        node_explanations,
-        edge_explanations,
-        ordering_explanations,
-    }
+    GraphExplainabilityModel { node_explanations, edge_explanations, ordering_explanations }
 }
 
 pub fn static_analysis(graph: &Graph) -> StaticAnalysisReport {
@@ -321,9 +307,7 @@ pub fn static_analysis(graph: &Graph) -> StaticAnalysisReport {
         graph.nodes.iter().map(|n| (n.id.clone(), vec![])).collect();
     for edge in &graph.edges {
         *indegree.entry(edge.to.node_id.clone()).or_insert(0) += 1;
-        adj.entry(edge.from.node_id.clone())
-            .or_default()
-            .push(edge.to.node_id.clone());
+        adj.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
     }
     let mut queue: VecDeque<String> = indegree
         .iter()
@@ -359,11 +343,7 @@ pub fn static_analysis(graph: &Graph) -> StaticAnalysisReport {
         .filter(|n| n.tags.iter().any(|t| t == "noop-join"))
         .map(|n| n.id.clone())
         .collect::<Vec<_>>();
-    StaticAnalysisReport {
-        unreachable_nodes,
-        dead_branch_nodes,
-        noop_join_nodes,
-    }
+    StaticAnalysisReport { unreachable_nodes, dead_branch_nodes, noop_join_nodes }
 }
 
 pub fn complexity_score(graph: &Graph) -> GraphComplexityScore {
@@ -380,11 +360,5 @@ pub fn complexity_score(graph: &Graph) -> GraphComplexityScore {
     };
     let depth_estimate = graph.topo_order().map(|o| o.len()).unwrap_or(node_count);
     let score = node_count as f64 + edge_count as f64 * 1.5 + branch_factor * 2.0;
-    GraphComplexityScore {
-        node_count,
-        edge_count,
-        branch_factor,
-        depth_estimate,
-        score,
-    }
+    GraphComplexityScore { node_count, edge_count, branch_factor, depth_estimate, score }
 }

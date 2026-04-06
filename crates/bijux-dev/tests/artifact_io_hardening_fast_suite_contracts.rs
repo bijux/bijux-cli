@@ -30,10 +30,7 @@ fn artifact_io_hardening_fast_suite_covers_direct_contract_targets() {
         "artifact_io_store_hardening_expansion_contracts",
     ] {
         assert!(
-            commands
-                .iter()
-                .filter_map(|v| v.as_str())
-                .any(|cmd| cmd.contains(required)),
+            commands.iter().filter_map(|v| v.as_str()).any(|cmd| cmd.contains(required)),
             "artifact io hardening fast suite missing {required}"
         );
     }

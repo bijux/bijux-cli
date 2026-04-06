@@ -46,10 +46,7 @@ fn resolver_commands_are_wired_in_cli() {
         "EvidenceResolveByConsumer",
         "EvidenceConsumerReports",
     ] {
-        assert!(
-            source.contains(command),
-            "missing resolver command wiring: {command}"
-        );
+        assert!(source.contains(command), "missing resolver command wiring: {command}");
     }
 }
 
@@ -69,11 +66,8 @@ fn registry_access_uses_approved_helpers_only() {
         "crates/bijux-dag-testkit/src/lib.rs".to_string(),
     ]);
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         if !rel.ends_with(".rs") {
             continue;
         }
@@ -88,9 +82,7 @@ fn registry_access_uses_approved_helpers_only() {
             "read_to_string(&repo_root.join(\"evidence/_meta/registries/evidence_registry.json\"))",
         ];
         assert!(
-            !direct_read_patterns
-                .iter()
-                .any(|pattern| content.contains(pattern)),
+            !direct_read_patterns.iter().any(|pattern| content.contains(pattern)),
             "registry bypass found outside approved access helpers: {rel}"
         );
     }
@@ -110,11 +102,8 @@ fn no_legacy_scenario_roots_are_referenced_by_runtime_sources() {
 
     let mut violations = Vec::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         if !rel.ends_with(".rs") {
             continue;
         }
@@ -160,10 +149,7 @@ fn consumer_reports_exist_and_cover_registry_consumers() {
         }
     }
     for consumer in consumers {
-        assert!(
-            assets_report.contains(&consumer),
-            "assets report missing consumer: {consumer}"
-        );
+        assert!(assets_report.contains(&consumer), "assets report missing consumer: {consumer}");
         assert!(
             consumers_report.contains(&consumer),
             "consumers report missing consumer: {consumer}"

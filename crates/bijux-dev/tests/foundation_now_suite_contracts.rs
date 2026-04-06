@@ -19,11 +19,7 @@ fn foundation_now_suite_lists_identity_replay_artifact_and_scheduler_checks() {
 
     assert_eq!(suite["id"], "foundation-now");
     let commands = suite["commands"].as_array().expect("commands array");
-    let command_text = commands
-        .iter()
-        .filter_map(|v| v.as_str())
-        .collect::<Vec<_>>()
-        .join("\n");
+    let command_text = commands.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join("\n");
 
     for required in [
         "graph_identity_contracts",
@@ -32,9 +28,6 @@ fn foundation_now_suite_lists_identity_replay_artifact_and_scheduler_checks() {
         "scheduler_invariants_contracts",
         "smoke_pipeline",
     ] {
-        assert!(
-            command_text.contains(required),
-            "foundation-now suite must include {required}"
-        );
+        assert!(command_text.contains(required), "foundation-now suite must include {required}");
     }
 }

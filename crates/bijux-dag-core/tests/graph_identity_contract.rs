@@ -56,15 +56,9 @@ fn graph_id_path_and_line_ending_normalization_contracts_hold() {
         r#"{{"spec":"{}","nodes":[{{"id":"n","kind":"const","outputs":[{{"name":"out","path":"dir/out.txt"}}]}}],"edges":[]}}"#,
         SPEC_VERSION
     ));
-    assert_eq!(
-        with_backslash.graph_id().unwrap(),
-        with_slash.graph_id().unwrap()
-    );
+    assert_eq!(with_backslash.graph_id().unwrap(), with_slash.graph_id().unwrap());
 
-    let lf = format!(
-        "{{\"spec\":\"{}\",\n\"nodes\":[],\n\"edges\":[]\n}}\n",
-        SPEC_VERSION
-    );
+    let lf = format!("{{\"spec\":\"{}\",\n\"nodes\":[],\n\"edges\":[]\n}}\n", SPEC_VERSION);
     let crlf = lf.replace('\n', "\r\n");
     let g_lf = parse_graph(&lf);
     let g_crlf = parse_graph(&crlf);
@@ -100,9 +94,7 @@ fn selected_subgraph_identity_is_deterministic() {
 
     let mut sub_a = graph.clone();
     sub_a.nodes.retain(|n| n.id == "a" || n.id == "b");
-    sub_a
-        .edges
-        .retain(|e| e.from.node_id != "a" || e.to.node_id != "c");
+    sub_a.edges.retain(|e| e.from.node_id != "a" || e.to.node_id != "c");
 
     let mut sub_b = sub_a.clone();
     sub_b.nodes.swap(0, 1);
@@ -112,10 +104,7 @@ fn selected_subgraph_identity_is_deterministic() {
 
 #[test]
 fn graph_fingerprint_explain_output_is_machine_readable() {
-    let graph = parse_graph(&format!(
-        r#"{{"spec":"{}","nodes":[],"edges":[]}}"#,
-        SPEC_VERSION
-    ));
+    let graph = parse_graph(&format!(r#"{{"spec":"{}","nodes":[],"edges":[]}}"#, SPEC_VERSION));
     let explain = graph.graph_fingerprint_explain().expect("explain");
     assert_eq!(explain.hash_algorithm, "sha256");
     assert!(!explain.graph_id.as_str().is_empty());

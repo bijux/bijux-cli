@@ -30,18 +30,8 @@ fn scheduler_workload_helpers_are_exercised_for_coverage_gate() {
 
     let ordered = deterministic_schedule_order(
         vec![
-            ReadyNode {
-                node_id: "a".to_string(),
-                priority: 1,
-                attempt: 1,
-                ready_unix_ms: 20,
-            },
-            ReadyNode {
-                node_id: "b".to_string(),
-                priority: 3,
-                attempt: 1,
-                ready_unix_ms: 10,
-            },
+            ReadyNode { node_id: "a".to_string(), priority: 1, attempt: 1, ready_unix_ms: 20 },
+            ReadyNode { node_id: "b".to_string(), priority: 3, attempt: 1, ready_unix_ms: 10 },
         ],
         &BTreeMap::new(),
     );
@@ -50,19 +40,13 @@ fn scheduler_workload_helpers_are_exercised_for_coverage_gate() {
 
     assert!(bijux_dag_runtime::retry_allowed(
         1,
-        &RetryPolicySemantics {
-            max_attempts: 3,
-            initial_backoff_ms: 100,
-            exponential: true,
-        },
+        &RetryPolicySemantics { max_attempts: 3, initial_backoff_ms: 100, exponential: true },
     ));
-    assert!(cache_entry_valid(
-        &bijux_dag_runtime::CacheValidationInput {
-            fingerprint_matches: true,
-            schema_matches: true,
-            proof_present: true,
-        }
-    ));
+    assert!(cache_entry_valid(&bijux_dag_runtime::CacheValidationInput {
+        fingerprint_matches: true,
+        schema_matches: true,
+        proof_present: true,
+    }));
 }
 
 #[test]
@@ -83,9 +67,7 @@ fn planner_analysis_helpers_are_exercised_for_coverage_gate() {
         &graph,
         &RuntimeConfig::default(),
         &SelectorSet::default(),
-        &PlannerGuardrails {
-            allow_semantic_optimizations: true,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: true },
     )
     .expect("planner build");
 

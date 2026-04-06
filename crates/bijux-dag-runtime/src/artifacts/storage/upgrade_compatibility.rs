@@ -199,10 +199,7 @@ pub fn evaluate_release_gate(
     if !acceptance_suites_passed {
         reasons.push("required compatibility acceptance suites not passed".to_string());
     }
-    ReleaseGateOutcome {
-        passed: reasons.is_empty(),
-        reasons,
-    }
+    ReleaseGateOutcome { passed: reasons.is_empty(), reasons }
 }
 
 pub fn build_compatibility_dashboard(
@@ -221,10 +218,7 @@ pub fn build_compatibility_dashboard(
         policy,
         rule_count: rules.len(),
         features_by_state,
-        suites_required: suites
-            .iter()
-            .filter(|suite| suite.required_for_release)
-            .count(),
+        suites_required: suites.iter().filter(|suite| suite.required_for_release).count(),
         downgrade_risk_blocking: downgrade_risk.blocking,
     }
 }

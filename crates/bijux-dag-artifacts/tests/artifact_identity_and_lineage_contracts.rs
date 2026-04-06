@@ -72,10 +72,7 @@ fn outputs_index_preserves_nested_paths_and_empty_file_identity() {
         dir.path(),
         "node-a",
         "fp-a",
-        &[
-            "nested/deeper/data.txt".to_string(),
-            "nested/deeper/empty.txt".to_string(),
-        ],
+        &["nested/deeper/data.txt".to_string(), "nested/deeper/empty.txt".to_string()],
     )
     .expect("write index");
     let index_raw = fs::read_to_string(dir.path().join("index.json")).expect("read index");
@@ -121,10 +118,7 @@ fn gc_plan_and_explain_outputs_stay_consistent() {
         ArtifactId("train:model.bin".to_string()),
     ];
     let plan = plan_lineage_safe_gc(&referenced, &all, "lineage-snapshot-1");
-    assert_eq!(
-        plan.preserved_artifacts,
-        vec![ArtifactId("transform:clean.csv".to_string())]
-    );
+    assert_eq!(plan.preserved_artifacts, vec![ArtifactId("transform:clean.csv".to_string())]);
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-snapshot-1");
     assert_eq!(explain.lineage_snapshot_id, "lineage-snapshot-1");
     assert_eq!(explain.entries.len(), 3);
@@ -138,22 +132,14 @@ fn gc_plan_and_explain_outputs_stay_consistent() {
 fn artifact_store_capabilities_use_typed_support_levels() {
     let fs_store = FilesystemArtifactStore::new(".");
     let fs_caps = fs_store.capabilities();
-    assert_eq!(
-        fs_caps.support_level,
-        ArtifactStoreSupportLevel::Implemented
-    );
+    assert_eq!(fs_caps.support_level, ArtifactStoreSupportLevel::Implemented);
     assert!(fs_caps.can_write_bytes);
     assert!(fs_caps.can_read_bytes);
 
-    let object_store = ObjectArtifactStore {
-        bucket: "demo".to_string(),
-        prefix: "artifacts/".to_string(),
-    };
+    let object_store =
+        ObjectArtifactStore { bucket: "demo".to_string(), prefix: "artifacts/".to_string() };
     let object_caps = object_store.capabilities();
-    assert_eq!(
-        object_caps.support_level,
-        ArtifactStoreSupportLevel::ModeledOnly
-    );
+    assert_eq!(object_caps.support_level, ArtifactStoreSupportLevel::ModeledOnly);
     assert!(!object_caps.can_write_bytes);
     assert!(!object_caps.can_read_bytes);
 }

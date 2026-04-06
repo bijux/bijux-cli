@@ -41,8 +41,5 @@ fn graph_meta_fields_affect_graph_fingerprint() {
         SPEC_VERSION
     ));
 
-    assert_ne!(
-        a.graph_fingerprint().expect("graph fp"),
-        b.graph_fingerprint().expect("graph fp")
-    );
+    assert_ne!(a.graph_fingerprint().expect("graph fp"), b.graph_fingerprint().expect("graph fp"));
 }

@@ -50,9 +50,8 @@ fn load_ledger(root: &Path) -> TestTrustLedger {
     let mut value: serde_json::Value =
         serde_json::from_str(&payload).expect("test trust ledger should parse as json");
     // rename reserved key for serde field mapping
-    for rule in value["classification_rules"]
-        .as_array_mut()
-        .expect("classification_rules should be array")
+    for rule in
+        value["classification_rules"].as_array_mut().expect("classification_rules should be array")
     {
         if let Some(map) = rule.as_object_mut() {
             if let Some(matched) = map.remove("match") {
@@ -72,10 +71,7 @@ fn runtime_test_files(root: &Path) -> Vec<String> {
             continue;
         }
         files.push(
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .expect("utf8 filename")
-                .to_string(),
+            path.file_name().and_then(|name| name.to_str()).expect("utf8 filename").to_string(),
         );
     }
     files.sort();
@@ -104,11 +100,8 @@ fn runtime_tests_are_classified_and_must_never_break_is_strict() {
     let ledger = load_ledger(&root);
     let tests = runtime_test_files(&root);
 
-    let classes: BTreeSet<String> = ledger
-        .classification_rules
-        .iter()
-        .map(|rule| rule.class.clone())
-        .collect();
+    let classes: BTreeSet<String> =
+        ledger.classification_rules.iter().map(|rule| rule.class.clone()).collect();
     for required in ["critical", "useful", "shallow", "cosmetic", "duplicate"] {
         assert!(classes.contains(required), "missing class `{required}`");
     }
@@ -128,10 +121,7 @@ fn runtime_tests_are_classified_and_must_never_break_is_strict() {
     }
 
     for file in &ledger.must_never_break {
-        assert!(
-            tests.contains(file),
-            "must-never-break file missing: {file}"
-        );
+        assert!(tests.contains(file), "must-never-break file missing: {file}");
         let class = classified
             .get(file)
             .unwrap_or_else(|| panic!("must-never-break file not classified: {file}"));
@@ -158,10 +148,7 @@ fn semantic_surfaces_and_trust_families_are_complete() {
     }
 
     for (family, files) in &ledger.trust_coverage_families {
-        assert!(
-            !files.is_empty(),
-            "trust family `{family}` must not be empty"
-        );
+        assert!(!files.is_empty(), "trust family `{family}` must not be empty");
         for file in files {
             assert!(
                 tests.contains(file),
@@ -203,8 +190,8 @@ fn snapshot_assertions_are_restricted_to_allowlist() {
 #[test]
 fn foundation_repo_suite_keeps_test_trust_cleanup_guard() {
     let root = repo_root();
-    let repo_suites = fs::read_to_string(root.join("crates/bijux-dev/src/suites/repo.rs"))
-        .expect("repo suites");
+    let repo_suites =
+        fs::read_to_string(root.join("crates/bijux-dev/src/suites/repo.rs")).expect("repo suites");
     assert!(
         repo_suites.contains("\"test-trust-cleanup\""),
         "repo suite must keep test-trust-cleanup guard"
@@ -224,10 +211,7 @@ fn collect_test_files(dir: &Path, out: &mut Vec<PathBuf>) {
         if path.extension().and_then(|ext| ext.to_str()) != Some("rs") {
             continue;
         }
-        if path
-            .components()
-            .any(|component| component.as_os_str() == "tests")
-        {
+        if path.components().any(|component| component.as_os_str() == "tests") {
             out.push(path);
         }
     }

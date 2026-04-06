@@ -35,11 +35,8 @@ fn cli_validate_smoke_accepts_valid_graph() {
       ],
       "edges":[]
     });
-    std::fs::write(
-        &graph_path,
-        serde_json::to_vec_pretty(&graph).expect("encode"),
-    )
-    .expect("write graph");
+    std::fs::write(&graph_path, serde_json::to_vec_pretty(&graph).expect("encode"))
+        .expect("write graph");
 
     let matches = dag_command()
         .try_get_matches_from(["dag", "validate", graph_path.to_string_lossy().as_ref()])

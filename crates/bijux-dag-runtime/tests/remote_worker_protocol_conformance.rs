@@ -21,29 +21,17 @@ use std::collections::BTreeSet;
 
 #[test]
 fn conformance_heartbeat_classification_is_stable() {
-    let policy = HeartbeatSemantics {
-        interval_ms: 1_000,
-        timeout_ms: 5_000,
-        delayed_threshold_ms: 2_500,
-    };
+    let policy =
+        HeartbeatSemantics { interval_ms: 1_000, timeout_ms: 5_000, delayed_threshold_ms: 2_500 };
     let hb = WorkerHeartbeat {
         worker_id: "worker-x".to_string(),
         unix_ms: 10_000,
         inflight_nodes: vec!["n1".to_string()],
     };
 
-    assert_eq!(
-        classify_heartbeat(&hb, 11_000, &policy),
-        HeartbeatClass::Healthy
-    );
-    assert_eq!(
-        classify_heartbeat(&hb, 13_000, &policy),
-        HeartbeatClass::Delayed
-    );
-    assert_eq!(
-        classify_heartbeat(&hb, 16_000, &policy),
-        HeartbeatClass::Lost
-    );
+    assert_eq!(classify_heartbeat(&hb, 11_000, &policy), HeartbeatClass::Healthy);
+    assert_eq!(classify_heartbeat(&hb, 13_000, &policy), HeartbeatClass::Delayed);
+    assert_eq!(classify_heartbeat(&hb, 16_000, &policy), HeartbeatClass::Lost);
 }
 
 #[test]

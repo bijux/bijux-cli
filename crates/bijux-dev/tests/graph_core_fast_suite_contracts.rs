@@ -30,10 +30,7 @@ fn graph_core_fast_suite_covers_canonical_topology_validate_scope() {
         "planner_validation_remaining_contracts",
     ] {
         assert!(
-            commands
-                .iter()
-                .filter_map(|v| v.as_str())
-                .any(|cmd| cmd.contains(required)),
+            commands.iter().filter_map(|v| v.as_str()).any(|cmd| cmd.contains(required)),
             "graph core fast suite missing {required}"
         );
     }

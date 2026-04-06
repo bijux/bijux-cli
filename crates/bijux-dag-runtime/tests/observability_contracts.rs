@@ -41,10 +41,7 @@ fn required_runtime_event_names_are_present_for_reference_sequence() {
     ];
     let missing = validate_required_event_names(&events);
     assert!(missing.is_empty(), "missing events: {missing:?}");
-    assert!(event_names_emitted_once(
-        &events,
-        &["run_started", "run_finished"]
-    ));
+    assert!(event_names_emitted_once(&events, &["run_started", "run_finished"]));
 }
 
 #[test]

@@ -80,11 +80,8 @@ fn node_start_to_timeout_transition_is_classified_as_timeout_failure() {
 
 #[test]
 fn node_retry_lifecycle_respects_policy_budget() {
-    let policy = RetryPolicySemantics {
-        max_attempts: 3,
-        initial_backoff_ms: 50,
-        exponential: true,
-    };
+    let policy =
+        RetryPolicySemantics { max_attempts: 3, initial_backoff_ms: 50, exponential: true };
     assert!(retry_allowed(0, &policy));
     assert!(retry_allowed(1, &policy));
     assert!(retry_allowed(2, &policy));
@@ -92,11 +89,8 @@ fn node_retry_lifecycle_respects_policy_budget() {
 
 #[test]
 fn node_retry_exhaustion_is_enforced() {
-    let policy = RetryPolicySemantics {
-        max_attempts: 2,
-        initial_backoff_ms: 10,
-        exponential: false,
-    };
+    let policy =
+        RetryPolicySemantics { max_attempts: 2, initial_backoff_ms: 10, exponential: false };
     assert!(!retry_allowed(2, &policy));
     assert!(!retry_allowed(3, &policy));
 }
@@ -171,10 +165,7 @@ fn run_partial_completion_requires_consistency_guardrails() {
         0,
     );
     assert!(!report.valid);
-    assert!(report
-        .violations
-        .iter()
-        .any(|v| v.contains("non-terminal node")));
+    assert!(report.violations.iter().any(|v| v.contains("non-terminal node")));
 }
 
 #[test]
@@ -221,10 +212,7 @@ fn runtime_event_ordering_is_stable_and_required_names_are_present() {
 
     assert!(events.windows(2).all(|w| w[0].unix_ms <= w[1].unix_ms));
     assert!(validate_required_event_names(&events).is_empty());
-    assert!(event_names_emitted_once(
-        &events,
-        &["run_started", "run_finished"]
-    ));
+    assert!(event_names_emitted_once(&events, &["run_started", "run_finished"]));
 }
 
 #[test]

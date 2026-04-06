@@ -51,10 +51,7 @@ pub fn compile_graph_with_defaults(
         .nodes
         .iter()
         .cloned()
-        .map(|node| TypedNode {
-            interface: derive_interface(&node),
-            node,
-        })
+        .map(|node| TypedNode { interface: derive_interface(&node), node })
         .collect();
     let registry = NodeTypeRegistry::default_registry();
     registry

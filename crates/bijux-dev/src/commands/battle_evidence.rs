@@ -104,10 +104,7 @@ pub(super) fn run_battle_scenarios_by_trust_report() -> Result<(), String> {
             }
         }
         scenarios.sort_by(|a, b| {
-            a["scenario"]
-                .as_str()
-                .unwrap_or("")
-                .cmp(b["scenario"].as_str().unwrap_or(""))
+            a["scenario"].as_str().unwrap_or("").cmp(b["scenario"].as_str().unwrap_or(""))
         });
         by_trust.push(json!({
             "trust_property_id": trust_id,
@@ -149,10 +146,7 @@ pub(super) fn run_battle_trust_by_scenario_report() -> Result<(), String> {
         }));
     }
     rows.sort_by(|a, b| {
-        a["scenario"]
-            .as_str()
-            .unwrap_or("")
-            .cmp(b["scenario"].as_str().unwrap_or(""))
+        a["scenario"].as_str().unwrap_or("").cmp(b["scenario"].as_str().unwrap_or(""))
     });
     println!(
         "{}",
@@ -191,10 +185,8 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
     let records = load_battle_scenario_records(&root)?;
 
     for (scenario, _) in &records {
-        let mapped = scenario_trust_map
-            .get(scenario)
-            .and_then(Value::as_array)
-            .ok_or_else(|| {
+        let mapped =
+            scenario_trust_map.get(scenario).and_then(Value::as_array).ok_or_else(|| {
                 format!("battle scenario `{scenario}` is missing trust-property mapping")
             })?;
         if mapped.is_empty() {
@@ -220,10 +212,7 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
         }
     }
 
-    let known: BTreeSet<&str> = records
-        .iter()
-        .map(|(scenario, _)| scenario.as_str())
-        .collect();
+    let known: BTreeSet<&str> = records.iter().map(|(scenario, _)| scenario.as_str()).collect();
     for mapped in scenario_trust_map.keys() {
         if !known.contains(mapped.as_str()) {
             return Err(format!("battle trust map has orphan scenario `{mapped}`"));
@@ -238,18 +227,13 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
                 .unwrap_or(false)
         });
         if !covered {
-            return Err(format!(
-                "top trust property `{trust}` has no mapped battle scenario"
-            ));
+            return Err(format!("top trust property `{trust}` has no mapped battle scenario"));
         }
     }
 
     let registry_path = root.join("evidence/battle/registries/scenario_registry.json");
     if !registry_path.exists() {
-        return Err(format!(
-            "missing battle scenario registry: {}",
-            registry_path.display()
-        ));
+        return Err(format!("missing battle scenario registry: {}", registry_path.display()));
     }
     let registry: Value =
         serde_json::from_str(&fs::read_to_string(&registry_path).map_err(|err| err.to_string())?)
@@ -273,9 +257,7 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
             ));
         }
         if !root.join(path).exists() {
-            return Err(format!(
-                "battle scenario registry path missing for `{scenario}`: {path}"
-            ));
+            return Err(format!("battle scenario registry path missing for `{scenario}`: {path}"));
         }
     }
 
@@ -291,18 +273,14 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
         .get("required_scenarios")
         .and_then(Value::as_array)
         .ok_or_else(|| "battle trust policy missing required_scenarios".to_string())?;
-    let required_set: BTreeSet<&str> = required_scenarios
-        .iter()
-        .filter_map(Value::as_str)
-        .collect();
+    let required_set: BTreeSet<&str> =
+        required_scenarios.iter().filter_map(Value::as_str).collect();
     for scenario in known {
         let metadata_entry = scenarios.get(scenario).ok_or_else(|| {
             format!("battle metadata missing scenario entry `{scenario}` in evidence/battle/metadata.json")
         })?;
-        let release_blocking = metadata_entry
-            .get("release_blocking")
-            .and_then(Value::as_bool)
-            .ok_or_else(|| {
+        let release_blocking =
+            metadata_entry.get("release_blocking").and_then(Value::as_bool).ok_or_else(|| {
                 format!("battle metadata `{scenario}` missing release_blocking boolean")
             })?;
         if release_blocking {
@@ -315,10 +293,8 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
                 .get(scenario)
                 .and_then(Value::as_array)
                 .ok_or_else(|| format!("battle scenario `{scenario}` missing trust mapping"))?;
-            let protects_top = mapped
-                .iter()
-                .filter_map(Value::as_str)
-                .any(|trust| top_trust.contains(trust));
+            let protects_top =
+                mapped.iter().filter_map(Value::as_str).any(|trust| top_trust.contains(trust));
             if !protects_top {
                 return Err(format!(
                     "release-blocking battle scenario `{scenario}` must protect at least one top trust property"
@@ -398,11 +374,8 @@ pub(super) fn run_battle_coverage_report(
         }
     }
 
-    let gaps_path = if gaps_out.is_absolute() {
-        PathBuf::from(gaps_out)
-    } else {
-        root.join(gaps_out)
-    };
+    let gaps_path =
+        if gaps_out.is_absolute() { PathBuf::from(gaps_out) } else { root.join(gaps_out) };
     if let Some(parent) = gaps_path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }

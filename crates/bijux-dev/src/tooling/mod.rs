@@ -28,20 +28,13 @@ mod tests {
     #[test]
     fn process_command_runner_executes_successful_command() {
         let runner = ProcessCommandRunner;
-        runner
-            .run("cargo", &["--version"])
-            .expect("cargo --version should succeed");
+        runner.run("cargo", &["--version"]).expect("cargo --version should succeed");
     }
 
     #[test]
     fn process_command_runner_reports_non_zero_exit_consistently() {
         let runner = ProcessCommandRunner;
-        let error = runner
-            .run("sh", &["-c", "exit 9"])
-            .expect_err("must fail on non-zero exit");
-        assert!(
-            error.contains("command failed: sh -c exit 9"),
-            "unexpected error: {error}"
-        );
+        let error = runner.run("sh", &["-c", "exit 9"]).expect_err("must fail on non-zero exit");
+        assert!(error.contains("command failed: sh -c exit 9"), "unexpected error: {error}");
     }
 }

@@ -228,12 +228,6 @@ pub fn render_adaptive_explanation(
     decision_kind: &str,
     evidence_map: &BTreeMap<String, String>,
 ) -> AdaptiveExplanation {
-    let evidence = evidence_map
-        .iter()
-        .map(|(key, value)| format!("{key}={value}"))
-        .collect();
-    AdaptiveExplanation {
-        decision_kind: decision_kind.to_string(),
-        evidence,
-    }
+    let evidence = evidence_map.iter().map(|(key, value)| format!("{key}={value}")).collect();
+    AdaptiveExplanation { decision_kind: decision_kind.to_string(), evidence }
 }

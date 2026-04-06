@@ -13,10 +13,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn snapshot_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("snapshots")
-        .join(name)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("snapshots").join(name)
 }
 
 #[test]

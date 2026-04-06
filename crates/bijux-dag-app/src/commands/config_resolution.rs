@@ -155,10 +155,7 @@ mod tests {
 
     #[test]
     fn mapping_functions_translate_cli_modes() {
-        assert_eq!(
-            map_cache_mode_surface(CacheModeArg::Readwrite),
-            CacheModeSurface::ReadWrite
-        );
+        assert_eq!(map_cache_mode_surface(CacheModeArg::Readwrite), CacheModeSurface::ReadWrite);
         assert_eq!(
             map_materialize_surface(MaterializeModeArg::Hardlink),
             MaterializeInputsSurface::Direct
@@ -191,10 +188,7 @@ mod tests {
         })
         .expect("policy payload");
         assert!(payload.get("trace").and_then(|v| v.as_array()).is_some());
-        assert!(payload
-            .get("config_fingerprint")
-            .and_then(|v| v.as_str())
-            .is_some());
+        assert!(payload.get("config_fingerprint").and_then(|v| v.as_str()).is_some());
     }
 
     #[test]

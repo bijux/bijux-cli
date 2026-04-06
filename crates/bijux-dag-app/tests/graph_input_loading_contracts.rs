@@ -79,12 +79,7 @@ fn import_and_replay_graph_load_flows_fail_cleanly_when_inputs_are_incomplete() 
     .expect("write bundle");
 
     let import_matches = dag_command()
-        .try_get_matches_from([
-            "dag",
-            "import",
-            bundle.to_string_lossy().as_ref(),
-            "--verify-only",
-        ])
+        .try_get_matches_from(["dag", "import", bundle.to_string_lossy().as_ref(), "--verify-only"])
         .expect("parse import args");
     let import_result = dag_run(&import_matches);
     assert_eq!(import_result, Err(ExitCode::from(3)));
@@ -130,9 +125,8 @@ fn graph_read_failure_happens_before_command_execution_paths() {
 
 #[test]
 fn doctor_command_handles_missing_engine_binaries_with_fallback() {
-    let matches = dag_command()
-        .try_get_matches_from(["dag", "--json", "doctor"])
-        .expect("parse doctor args");
+    let matches =
+        dag_command().try_get_matches_from(["dag", "--json", "doctor"]).expect("parse doctor args");
     let result = dag_run(&matches);
     assert_eq!(result, Ok(ExitCode::SUCCESS));
 }

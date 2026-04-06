@@ -344,12 +344,8 @@ pub fn normalize_status_events(
     let mut duplicates = Vec::new();
     let mut seen = BTreeSet::new();
     for event in sorted {
-        let key = (
-            event.run_id.clone(),
-            event.node_id.clone(),
-            event.sequence,
-            event.status.clone(),
-        );
+        let key =
+            (event.run_id.clone(), event.node_id.clone(), event.sequence, event.status.clone());
         if seen.insert(key) {
             deduped.push(event);
         } else {
@@ -395,10 +391,7 @@ pub fn worker_pool_satisfies_capability_request(
         return false;
     }
     if let Some(profile) = &request.required_sandbox_profile {
-        return worker
-            .supports_sandbox_profiles
-            .iter()
-            .any(|p| p == profile);
+        return worker.supports_sandbox_profiles.iter().any(|p| p == profile);
     }
     true
 }
@@ -410,10 +403,7 @@ pub struct MockRemoteBackend {
 
 impl MockRemoteBackend {
     pub fn submissions(&self) -> Vec<DistributedExecutionRequest> {
-        self.submissions
-            .lock()
-            .map(|g| g.clone())
-            .unwrap_or_default()
+        self.submissions.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     pub fn submit_distributed(

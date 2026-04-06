@@ -76,10 +76,7 @@ fn every_evidence_asset_appears_exactly_once_in_registry() {
     let mut registry_paths = BTreeSet::new();
     for asset in assets {
         let path = asset["canonical_path"].as_str().expect("canonical path");
-        assert!(
-            registry_paths.insert(path.to_string()),
-            "duplicate path in registry: {path}"
-        );
+        assert!(registry_paths.insert(path.to_string()), "duplicate path in registry: {path}");
     }
 
     let mut files = Vec::new();
@@ -87,11 +84,7 @@ fn every_evidence_asset_appears_exactly_once_in_registry() {
     let fs_paths: BTreeSet<String> = files
         .into_iter()
         .filter_map(|file| {
-            let rel = file
-                .strip_prefix(&root)
-                .ok()?
-                .to_string_lossy()
-                .replace('\\', "/");
+            let rel = file.strip_prefix(&root).ok()?.to_string_lossy().replace('\\', "/");
             if is_registry_asset_path(&rel) {
                 Some(rel)
             } else {
@@ -116,10 +109,7 @@ fn no_two_assets_claim_same_canonical_identity() {
     let mut canonical = BTreeSet::new();
     for asset in assets {
         let path = asset["canonical_path"].as_str().expect("canonical path");
-        assert!(
-            canonical.insert(path.to_string()),
-            "duplicate canonical identity: {path}"
-        );
+        assert!(canonical.insert(path.to_string()), "duplicate canonical identity: {path}");
     }
 }
 
@@ -129,27 +119,15 @@ fn consumer_and_reference_links_resolve_to_existing_assets() {
     let registry = load_registry(&root);
     let assets = registry["assets"].as_array().expect("assets array");
 
-    let ids: BTreeSet<String> = assets
-        .iter()
-        .map(|asset| asset["id"].as_str().expect("id").to_string())
-        .collect();
+    let ids: BTreeSet<String> =
+        assets.iter().map(|asset| asset["id"].as_str().expect("id").to_string()).collect();
     let keys: BTreeSet<String> = assets
         .iter()
-        .map(|asset| {
-            asset["registry_key"]
-                .as_str()
-                .expect("registry key")
-                .to_string()
-        })
+        .map(|asset| asset["registry_key"].as_str().expect("registry key").to_string())
         .collect();
     let paths: BTreeSet<String> = assets
         .iter()
-        .map(|asset| {
-            asset["canonical_path"]
-                .as_str()
-                .expect("canonical path")
-                .to_string()
-        })
+        .map(|asset| asset["canonical_path"].as_str().expect("canonical path").to_string())
         .collect();
 
     for asset in assets {
@@ -170,10 +148,7 @@ fn consumer_and_reference_links_resolve_to_existing_assets() {
             if let Some(target) = text.strip_prefix("asset:") {
                 let resolves =
                     ids.contains(target) || keys.contains(target) || paths.contains(target);
-                assert!(
-                    resolves,
-                    "consumer reference for {id} does not resolve: {text}"
-                );
+                assert!(resolves, "consumer reference for {id} does not resolve: {text}");
             }
         }
     }
@@ -187,31 +162,17 @@ fn registry_generation_is_deterministic() {
 
     let mut seen = BTreeMap::new();
     for asset in assets {
-        let key = asset["registry_key"]
-            .as_str()
-            .expect("registry key")
-            .to_string();
-        let canonical = asset["canonical_path"]
-            .as_str()
-            .expect("canonical path")
-            .to_string();
+        let key = asset["registry_key"].as_str().expect("registry key").to_string();
+        let canonical = asset["canonical_path"].as_str().expect("canonical path").to_string();
         seen.insert(key, canonical);
     }
 
     let sorted_keys: Vec<String> = seen.keys().cloned().collect();
     let registry_keys: Vec<String> = assets
         .iter()
-        .map(|asset| {
-            asset["registry_key"]
-                .as_str()
-                .expect("registry key")
-                .to_string()
-        })
+        .map(|asset| asset["registry_key"].as_str().expect("registry key").to_string())
         .collect();
-    assert_eq!(
-        registry_keys, sorted_keys,
-        "registry keys must be stably sorted"
-    );
+    assert_eq!(registry_keys, sorted_keys, "registry keys must be stably sorted");
 }
 
 #[test]

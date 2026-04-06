@@ -108,9 +108,7 @@ use std::process::ExitCode;
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command()
-        .name(dag_command_name())
-        .subcommand_required(false)
+    DagCli::command().name(dag_command_name()).subcommand_required(false)
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
@@ -183,18 +181,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Validate {
-            dag,
-            strict,
-            print_fingerprints,
-            explain,
-        } => routes::validate_routes::handle_validate_command(
-            &cli,
-            dag,
-            *strict,
-            *print_fingerprints,
-            *explain,
-        ),
+        Commands::Validate { dag, strict, print_fingerprints, explain } => {
+            routes::validate_routes::handle_validate_command(
+                &cli,
+                dag,
+                *strict,
+                *print_fingerprints,
+                *explain,
+            )
+        }
         Commands::Canonicalize { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -219,15 +214,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
-                let diagnostics: Vec<Value> = lint
-                    .iter()
-                    .map(|d| serde_json::to_value(d).unwrap())
-                    .collect();
-                let code = if strict && has_warnings {
-                    ExitCode::from(2)
-                } else {
-                    ExitCode::SUCCESS
-                };
+                let diagnostics: Vec<Value> =
+                    lint.iter().map(|d| serde_json::to_value(d).unwrap()).collect();
+                let code =
+                    if strict && has_warnings { ExitCode::from(2) } else { ExitCode::SUCCESS };
                 return emit_json(
                     &cli,
                     "dag.lint",
@@ -252,15 +242,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
-                let diagnostics: Vec<Value> = lint
-                    .iter()
-                    .map(|d| serde_json::to_value(d).unwrap())
-                    .collect();
-                let code = if *strict && has_warnings {
-                    ExitCode::from(2)
-                } else {
-                    ExitCode::SUCCESS
-                };
+                let diagnostics: Vec<Value> =
+                    lint.iter().map(|d| serde_json::to_value(d).unwrap()).collect();
+                let code =
+                    if *strict && has_warnings { ExitCode::from(2) } else { ExitCode::SUCCESS };
                 return emit_json(
                     &cli,
                     "dag.graph-lint",
@@ -281,9 +266,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Fingerprint { dag, explain } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let explained = graph
-                .graph_fingerprint_explain()
-                .map_err(|_| ExitCode::from(3))?;
+            let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     &cli,
@@ -301,10 +284,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 if *explain {
                     println!("{}", explained.graph_id.as_str());
                     println!("hash_algorithm={}", explained.hash_algorithm);
-                    println!(
-                        "canonical_json_bytes_len={}",
-                        explained.canonical_json_bytes_len
-                    );
+                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
                 } else {
                     println!("{}", explained.graph_id.as_str());
                 }
@@ -315,9 +295,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             HashCommands::Graph { dag, explain } => {
                 let input = read_file(dag)?;
                 let graph = parse_graph(&input)?;
-                let explained = graph
-                    .graph_fingerprint_explain()
-                    .map_err(|_| ExitCode::from(3))?;
+                let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -335,10 +313,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("{}", explained.graph_id.as_str());
                 if *explain {
                     println!("hash_algorithm={}", explained.hash_algorithm);
-                    println!(
-                        "canonical_json_bytes_len={}",
-                        explained.canonical_json_bytes_len
-                    );
+                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
                 }
                 Ok(ExitCode::SUCCESS)
             }
@@ -377,16 +352,13 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
         },
-        Commands::ArtifactInspect {
-            run_dir,
-            artifact_id,
-        } => routes::artifact_routes::handle_artifact_inspect_command(&cli, run_dir, artifact_id),
+        Commands::ArtifactInspect { run_dir, artifact_id } => {
+            routes::artifact_routes::handle_artifact_inspect_command(&cli, run_dir, artifact_id)
+        }
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let bytes = graph
-                .canonical_json_bytes()
-                .map_err(|_| ExitCode::from(3))?;
+            let bytes = graph.canonical_json_bytes().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     &cli,
@@ -536,12 +508,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::prove_verify_routes::handle_proof_summary_command(&cli, run_dir)
         }
         Commands::Runs { command } => routes::runs_routes::handle_runs_command(&cli, command),
-        Commands::Diff {
-            run_a,
-            run_b,
-            mode: _mode,
-            explain,
-        } => routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff"),
+        Commands::Diff { run_a, run_b, mode: _mode, explain } => {
+            routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff")
+        }
         Commands::WhyRerun { run_a, run_b } => {
             routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)
         }
@@ -577,10 +546,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::TraceArtifact {
-            run_dir,
-            artifact_id,
-        } => routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id),
+        Commands::TraceArtifact { run_dir, artifact_id } => {
+            routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
+        }
         Commands::Run {
             dag,
             out,
@@ -634,21 +602,16 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Status { run_dir } => {
             routes::inspect_routes::handle_status_command(&cli, run_dir)
         }
-        Commands::Verify {
-            run_dir,
-            deep,
-            strict,
-        } => routes::prove_verify_routes::handle_verify_command(&cli, run_dir, *deep, *strict),
+        Commands::Verify { run_dir, deep, strict } => {
+            routes::prove_verify_routes::handle_verify_command(&cli, run_dir, *deep, *strict)
+        }
         Commands::Fsck { run_dir, strict } => {
             routes::prove_verify_routes::handle_fsck_command(&cli, run_dir, *strict)
         }
         Commands::Doctor => {
             let report = doctor_report()?;
-            let ok = report
-                .get("status")
-                .and_then(|v| v.as_str())
-                .map(|v| v == "ok")
-                .unwrap_or(false);
+            let ok =
+                report.get("status").and_then(|v| v.as_str()).map(|v| v == "ok").unwrap_or(false);
             if cli.json {
                 return emit_json(
                     &cli,
@@ -656,11 +619,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     ok,
                     report,
                     Vec::new(),
-                    if ok {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
                 );
             } else {
                 println!("status: {}", report["status"]);
@@ -672,12 +631,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::Migrate { command } => {
             let msg = match command {
-                MigrateCommands::Dag {
-                    file,
-                    from,
-                    to,
-                    dry_run,
-                } => {
+                MigrateCommands::Dag { file, from, to, dry_run } => {
                     let result = migrate_dag(file, from, to)?;
                     if *dry_run {
                         format!("dry-run: {result}")
@@ -685,12 +639,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         result
                     }
                 }
-                MigrateCommands::Run {
-                    run_dir,
-                    from,
-                    to,
-                    dry_run,
-                } => {
+                MigrateCommands::Run { run_dir, from, to, dry_run } => {
                     let result = migrate_run(run_dir, from, to)?;
                     if *dry_run {
                         format!("dry-run: {result}")
@@ -715,10 +664,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::Cache { command } => match command {
             CacheCommands::Ls { cache_dir } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let mut entries_vec = Vec::new();
                 if dir.exists() {
                     for entry in fs::read_dir(dir).map_err(|_| ExitCode::from(3))? {
@@ -743,15 +689,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 }
                 Ok(ExitCode::SUCCESS)
             }
-            CacheCommands::Pack {
-                node_fp,
-                out,
-                cache_dir,
-            } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+            CacheCommands::Pack { node_fp, out, cache_dir } => {
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let entry = dir.join(node_fp);
                 if !entry.exists() {
                     return Err(ExitCode::from(3));
@@ -772,10 +711,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             CacheCommands::Unpack { pack, cache_dir } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 unpack_cache_entry(pack, &dir)?;
                 if cli.json {
                     return emit_json(
@@ -792,10 +728,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             CacheCommands::Gc { cache_dir } => {
-                let _dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let _dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -810,10 +743,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             CacheCommands::Verify { cache_dir, remote } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let report = verify_cache_dirs(&dir, remote.as_ref().map(|v| v.as_path()))?;
                 let corrupt = report["corrupt_total"].as_u64().unwrap_or(0);
                 if cli.json {
@@ -823,11 +753,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         corrupt == 0,
                         report,
                         Vec::new(),
-                        if corrupt == 0 {
-                            ExitCode::SUCCESS
-                        } else {
-                            ExitCode::from(3)
-                        },
+                        if corrupt == 0 { ExitCode::SUCCESS } else { ExitCode::from(3) },
                     );
                 } else {
                     println!("local_checked: {}", report["local"]["checked"]);
@@ -858,10 +784,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 expected_adapter_id,
                 expected_adapter_version,
             } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let report = explain_cache_key(
                     &dir,
                     key,
@@ -886,10 +809,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             CacheCommands::Stats { cache_dir } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let report = cache_stats(&dir)?;
                 if cli.json {
                     return emit_json(
@@ -905,10 +825,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             CacheCommands::PruneSimulate { cache_dir } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let report = cache_prune_simulate(&dir)?;
                 if cli.json {
                     return emit_json(
@@ -923,15 +840,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
                 Ok(ExitCode::SUCCESS)
             }
-            CacheCommands::Diff {
-                cache_dir,
-                key_a,
-                key_b,
-            } => {
-                let dir = cache_dir
-                    .clone()
-                    .or_else(env_cache_dir)
-                    .ok_or(ExitCode::from(3))?;
+            CacheCommands::Diff { cache_dir, key_a, key_b } => {
+                let dir = cache_dir.clone().or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
                 let report = cache_diff(&dir, &key_a, &key_b)?;
                 let comparable = report["comparable"].as_bool().unwrap_or(false);
                 if cli.json {
@@ -965,10 +875,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     );
                 } else {
                     for a in adapters {
-                        println!(
-                            "{} {} effects={:?}",
-                            a.adapter_id, a.adapter_version, a.effects
-                        );
+                        println!("{} {} effects={:?}", a.adapter_id, a.adapter_version, a.effects);
                     }
                 }
                 Ok(ExitCode::SUCCESS)
@@ -985,10 +892,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         ExitCode::SUCCESS,
                     );
                 }
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&data).map_err(|_| ExitCode::from(3))?
-                );
+                println!("{}", serde_json::to_string_pretty(&data).map_err(|_| ExitCode::from(3))?);
                 Ok(ExitCode::SUCCESS)
             }
             AdaptersCommands::Doctor => {
@@ -1011,11 +915,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         ok,
                         json!({ "docker": docker, "podman": podman }),
                         Vec::new(),
-                        if ok {
-                            ExitCode::SUCCESS
-                        } else {
-                            ExitCode::from(3)
-                        },
+                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
                     );
                 } else {
                     println!("docker: {}", docker["status"]);
@@ -1079,19 +979,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::SemanticPortability { backend } => {
             routes::surface_routes::handle_semantic_portability_command(&cli, backend)
         }
-        Commands::EquivalenceProof {
-            run_a,
-            run_b,
-            backend_a,
-            backend_b,
-        } => routes::surface_routes::handle_equivalence_proof_command(
-            &cli, run_a, run_b, backend_a, backend_b,
-        ),
-        Commands::VersionInspect {
-            dag,
-            run_dir,
-            export_bundle,
-        } => {
+        Commands::EquivalenceProof { run_a, run_b, backend_a, backend_b } => {
+            routes::surface_routes::handle_equivalence_proof_command(
+                &cli, run_a, run_b, backend_a, backend_b,
+            )
+        }
+        Commands::VersionInspect { dag, run_dir, export_bundle } => {
             let provided =
                 dag.is_some() as u8 + run_dir.is_some() as u8 + export_bundle.is_some() as u8;
             if provided != 1 {
@@ -1203,12 +1096,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Config { command } => match command {
-            ConfigCommands::ShowEffective {
-                config,
-                jobs,
-                cache_mode,
-                materialize_inputs,
-            } => {
+            ConfigCommands::ShowEffective { config, jobs, cache_mode, materialize_inputs } => {
                 let effective = show_effective_config(ShowEffectiveConfigRequest {
                     config_path: config.as_deref(),
                     jobs: *jobs,
@@ -1317,11 +1205,8 @@ fn collect_json_diff_paths(path: &str, left: &Value, right: &Value, out: &mut Ve
             keys.extend(a.keys().cloned());
             keys.extend(b.keys().cloned());
             for key in keys {
-                let child = if path.is_empty() {
-                    format!("/{}", key)
-                } else {
-                    format!("{}/{}", path, key)
-                };
+                let child =
+                    if path.is_empty() { format!("/{}", key) } else { format!("{}/{}", path, key) };
                 match (a.get(&key), b.get(&key)) {
                     (Some(lv), Some(rv)) => collect_json_diff_paths(&child, lv, rv, out),
                     _ => out.push(child),
@@ -1331,11 +1216,8 @@ fn collect_json_diff_paths(path: &str, left: &Value, right: &Value, out: &mut Ve
         (Value::Array(a), Value::Array(b)) => {
             let max = a.len().max(b.len());
             for idx in 0..max {
-                let child = if path.is_empty() {
-                    format!("/{}", idx)
-                } else {
-                    format!("{}/{}", path, idx)
-                };
+                let child =
+                    if path.is_empty() { format!("/{}", idx) } else { format!("{}/{}", path, idx) };
                 match (a.get(idx), b.get(idx)) {
                     (Some(lv), Some(rv)) => collect_json_diff_paths(&child, lv, rv, out),
                     _ => out.push(child),
@@ -1344,11 +1226,7 @@ fn collect_json_diff_paths(path: &str, left: &Value, right: &Value, out: &mut Ve
         }
         _ => {
             if left != right {
-                out.push(if path.is_empty() {
-                    "/".to_string()
-                } else {
-                    path.to_string()
-                });
+                out.push(if path.is_empty() { "/".to_string() } else { path.to_string() });
             }
         }
     }
@@ -1372,11 +1250,7 @@ pub(crate) fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String
     if bundle.get("graph_snapshot").is_none() {
         violations.push("INV-EXPORT-VERIFY-001 missing graph_snapshot".to_string());
     }
-    if bundle
-        .get("node_traces")
-        .and_then(|v| v.as_object())
-        .is_none()
-    {
+    if bundle.get("node_traces").and_then(|v| v.as_object()).is_none() {
         violations.push("INV-EXPORT-VERIFY-001 missing node_traces map".to_string());
     }
     if bundle.get("outputs").and_then(|v| v.as_object()).is_none() {
@@ -1420,10 +1294,7 @@ pub(crate) fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String
         }
     }
     if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("without-artifacts") {
-        if !bundle
-            .get("outputs")
-            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
-        {
+        if !bundle.get("outputs").is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty())) {
             violations.push(
                 "INV-EXPORT-MODE-001 without-artifacts bundle must include empty outputs map"
                     .to_string(),
@@ -1437,19 +1308,13 @@ pub(crate) fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String
         }
     }
     if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("provenance-only") {
-        if !bundle
-            .get("node_traces")
-            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
-        {
+        if !bundle.get("node_traces").is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty())) {
             violations.push(
                 "INV-EXPORT-MODE-001 provenance-only bundle must include empty node_traces map"
                     .to_string(),
             );
         }
-        if !bundle
-            .get("outputs")
-            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
-        {
+        if !bundle.get("outputs").is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty())) {
             violations.push(
                 "INV-EXPORT-MODE-001 provenance-only bundle must include empty outputs map"
                     .to_string(),
@@ -1478,21 +1343,10 @@ pub(crate) fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String
 
 pub(crate) fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
     let report = verify_run(run_dir, true, true)?;
-    let status = report
-        .get("status")
-        .and_then(Value::as_str)
-        .unwrap_or("error")
-        .to_string();
-    let errors = report
-        .get("errors")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let invariant_violations = report
-        .get("invariant_violations")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let status = report.get("status").and_then(Value::as_str).unwrap_or("error").to_string();
+    let errors = report.get("errors").and_then(Value::as_array).cloned().unwrap_or_default();
+    let invariant_violations =
+        report.get("invariant_violations").and_then(Value::as_array).cloned().unwrap_or_default();
     let has_manifest = run_dir.join("manifest.json").exists();
     let has_snapshot = run_dir.join("graph.snapshot.json").exists();
     let has_outputs = run_dir.join("outputs").join("index.json").exists();
@@ -1520,11 +1374,7 @@ pub(crate) fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value
     let backend_origin = if provenance_path.exists() {
         let raw = read_file(&provenance_path).unwrap_or_default();
         let value: Value = serde_json::from_str(&raw).unwrap_or_default();
-        value
-            .get("source")
-            .and_then(Value::as_str)
-            .unwrap_or("native-run")
-            .to_string()
+        value.get("source").and_then(Value::as_str).unwrap_or("native-run").to_string()
     } else {
         "native-run".to_string()
     };
@@ -1592,12 +1442,8 @@ mod invariant_bundle_tests {
         });
         let violations = verify_bundle_invariants(&bundle);
         assert!(!violations.is_empty());
-        assert!(violations
-            .iter()
-            .any(|v| v.contains("INV-EXPORT-VERIFY-001")));
-        assert!(violations
-            .iter()
-            .any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
+        assert!(violations.iter().any(|v| v.contains("INV-EXPORT-VERIFY-001")));
+        assert!(violations.iter().any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
     }
 }
 
@@ -1625,9 +1471,7 @@ mod cache_archive_hardening_tests {
             header.set_size(payload.len() as u64);
             header.set_mode(0o644);
             header.set_cksum();
-            builder
-                .append_data(&mut header, "meta.json", payload.as_slice())
-                .expect("append");
+            builder.append_data(&mut header, "meta.json", payload.as_slice()).expect("append");
             let enc = builder.into_inner().expect("encoder");
             enc.finish().expect("finish");
         }
@@ -1645,9 +1489,7 @@ mod cache_archive_hardening_tests {
             header.set_size(0);
             header.set_mode(0o644);
             header.set_cksum();
-            builder
-                .append_link(&mut header, "bad-link", "/tmp/escape")
-                .expect("append symlink");
+            builder.append_link(&mut header, "bad-link", "/tmp/escape").expect("append symlink");
             let enc = builder.into_inner().expect("encoder");
             enc.finish().expect("finish");
         }
@@ -1666,18 +1508,14 @@ mod cache_archive_hardening_tests {
             dir_header.set_size(0);
             dir_header.set_mode(0o755);
             dir_header.set_cksum();
-            builder
-                .append_data(&mut dir_header, "node", std::io::empty())
-                .expect("dir");
+            builder.append_data(&mut dir_header, "node", std::io::empty()).expect("dir");
 
             let mut file_header = Header::new_gnu();
             let body = br#"{"node_fingerprint":"k"}"#;
             file_header.set_size(body.len() as u64);
             file_header.set_mode(0o644);
             file_header.set_cksum();
-            builder
-                .append_data(&mut file_header, "meta.json", &body[..])
-                .expect("file");
+            builder.append_data(&mut file_header, "meta.json", &body[..]).expect("file");
 
             let enc = builder.into_inner().expect("encoder");
             enc.finish().expect("finish");

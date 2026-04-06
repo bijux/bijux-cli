@@ -133,14 +133,7 @@ fn run_identity_projection_changes_when_graph_environment_or_ancestry_changes() 
 fn run_summary_and_detail_output_fields_are_schema_lockstep_stable() {
     let tmp = tempfile::tempdir().expect("tmp");
     let root = tmp.path().join("runs");
-    write_manifest(
-        &root.join("run-detail"),
-        "run-detail",
-        "graph-x",
-        "env-x",
-        None,
-        None,
-    );
+    write_manifest(&root.join("run-detail"), "run-detail", "graph-x", "env-x", None, None);
 
     let summary = inspect_summary(&root.join("run-detail")).expect("inspect summary");
     for field in required_fields("configs/dag/schema/operator/run_inspect.schema.json") {

@@ -61,9 +61,7 @@ fn fixture_unreachable() {
     let input = fixture("unreachable.json");
     let graph = parse_graph_strict(&input).unwrap();
     let diags = graph.validate_with_warnings();
-    assert!(diags
-        .iter()
-        .any(|d| d.code == "W2001" && d.severity == Severity::Warning));
+    assert!(diags.iter().any(|d| d.code == "W2001" && d.severity == Severity::Warning));
 }
 
 #[test]
@@ -71,9 +69,7 @@ fn fixture_orphan() {
     let input = fixture("orphan.json");
     let graph = parse_graph_strict(&input).unwrap();
     let diags = graph.validate_with_warnings();
-    assert!(diags
-        .iter()
-        .any(|d| d.code == "W2002" && d.severity == Severity::Warning));
+    assert!(diags.iter().any(|d| d.code == "W2002" && d.severity == Severity::Warning));
 }
 
 #[test]

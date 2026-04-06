@@ -39,10 +39,7 @@ fn run() -> Result<(), String> {
     }
     std::fs::write(
         &out,
-        format!(
-            "{}\n",
-            serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-        ),
+        format!("{}\n", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?),
     )
     .map_err(|err| err.to_string())
 }

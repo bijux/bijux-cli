@@ -74,11 +74,7 @@ impl ReconciledState {
 }
 
 fn ev(node_id: &str, seq: u64, status: RemoteStatus) -> RemoteEvent {
-    RemoteEvent {
-        node_id: node_id.to_string(),
-        seq,
-        status,
-    }
+    RemoteEvent { node_id: node_id.to_string(), seq, status }
 }
 
 #[test]
@@ -138,14 +134,9 @@ fn inconsistent_snapshot_after_terminal_is_ignored() {
 
 #[test]
 fn controller_restart_reconciles_partially_completed_remote_state() {
-    let pre_restart = vec![
-        ev("n1", 1, RemoteStatus::Running),
-        ev("n2", 1, RemoteStatus::Failed),
-    ];
-    let post_restart = vec![
-        ev("n1", 2, RemoteStatus::Succeeded),
-        ev("n2", 2, RemoteStatus::Running),
-    ];
+    let pre_restart = vec![ev("n1", 1, RemoteStatus::Running), ev("n2", 1, RemoteStatus::Failed)];
+    let post_restart =
+        vec![ev("n1", 2, RemoteStatus::Succeeded), ev("n2", 2, RemoteStatus::Running)];
 
     let mut state = ReconciledState::default();
     for event in pre_restart {

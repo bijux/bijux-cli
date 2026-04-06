@@ -60,16 +60,8 @@ pub(crate) fn handle_replay_command(
     }
     let selectors = parse_selectors(select, exclude)?;
     if dry_run {
-        let dry_select = selectors
-            .include
-            .iter()
-            .map(selector_cli_string)
-            .collect::<Vec<_>>();
-        let dry_exclude = selectors
-            .exclude
-            .iter()
-            .map(selector_cli_string)
-            .collect::<Vec<_>>();
+        let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
+        let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
         let plan = json!({
             "source_run_dir": run_dir,
             "target_out_dir": out,
@@ -120,9 +112,7 @@ pub(crate) fn handle_replay_command(
         selectors,
         ..RuntimeConfig::default()
     };
-    let run_path = runtime
-        .run(&snapshot.graph, out, options)
-        .map_err(|_| ExitCode::from(3))?;
+    let run_path = runtime.run(&snapshot.graph, out, options).map_err(|_| ExitCode::from(3))?;
     let replay_proof = if prove {
         let diff = crate::replay_service::run_diff_from_dirs(run_dir, &run_path)?;
         Some(json!({
@@ -137,11 +127,8 @@ pub(crate) fn handle_replay_command(
     } else {
         None
     };
-    let response = ReplayCommandResponse {
-        run_dir: Some(run_path.clone()),
-        dry_run_plan: None,
-        replay_proof,
-    };
+    let response =
+        ReplayCommandResponse { run_dir: Some(run_path.clone()), dry_run_plan: None, replay_proof };
     if cli.json {
         return emit_json(
             cli,
@@ -157,20 +144,13 @@ pub(crate) fn handle_replay_command(
         if let Some(proof) = &response.replay_proof {
             println!(
                 "replay_proof_fidelity: {}",
-                proof
-                    .get("fidelity_level")
-                    .and_then(Value::as_str)
-                    .unwrap_or("unknown")
+                proof.get("fidelity_level").and_then(Value::as_str).unwrap_or("unknown")
             );
             if let Some(reasons) = proof.get("reasons").and_then(Value::as_array) {
                 if !reasons.is_empty() {
                     println!(
                         "replay_proof_reasons: {}",
-                        reasons
-                            .iter()
-                            .filter_map(Value::as_str)
-                            .collect::<Vec<_>>()
-                            .join(", ")
+                        reasons.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(", ")
                     );
                 }
             }
@@ -181,10 +161,7 @@ pub(crate) fn handle_replay_command(
 
 pub(crate) fn handle_prove_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
     let proof = build_run_proof_bundle(run_dir)?;
-    let complete = proof
-        .get("complete")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
+    let complete = proof.get("complete").and_then(Value::as_bool).unwrap_or(false);
     if cli.json {
         return emit_json(
             cli,
@@ -192,11 +169,7 @@ pub(crate) fn handle_prove_command(cli: &DagCli, run_dir: &Path) -> Result<ExitC
             complete,
             proof,
             Vec::new(),
-            if complete {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(3)
-            },
+            if complete { ExitCode::SUCCESS } else { ExitCode::from(3) },
         );
     }
     println!("proof id: {}", proof["proof_id"]);
@@ -220,32 +193,19 @@ pub(crate) fn handle_proof_summary_command(
     run_dir: &Path,
 ) -> Result<ExitCode, ExitCode> {
     let proof = build_run_proof_bundle(run_dir)?;
-    let complete = proof
-        .get("complete")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let status = proof
-        .get("status")
-        .and_then(Value::as_str)
-        .unwrap_or("incomplete");
-    let determinism = proof
-        .get("determinism")
-        .and_then(Value::as_str)
-        .unwrap_or("insufficient-evidence");
-    let integrity = proof
-        .get("integrity")
-        .and_then(Value::as_str)
-        .unwrap_or("insufficient-evidence");
+    let complete = proof.get("complete").and_then(Value::as_bool).unwrap_or(false);
+    let status = proof.get("status").and_then(Value::as_str).unwrap_or("incomplete");
+    let determinism =
+        proof.get("determinism").and_then(Value::as_str).unwrap_or("insufficient-evidence");
+    let integrity =
+        proof.get("integrity").and_then(Value::as_str).unwrap_or("insufficient-evidence");
     let replay_level = proof
         .get("replay_evidence")
         .and_then(|v| v.get("level"))
         .and_then(Value::as_str)
         .unwrap_or("partial");
-    let incomplete_reasons = proof
-        .get("incomplete_reasons")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let incomplete_reasons =
+        proof.get("incomplete_reasons").and_then(Value::as_array).cloned().unwrap_or_default();
     let summary = json!({
         "proof_id": proof.get("proof_id").cloned().unwrap_or(Value::Null),
         "run_id": proof.get("run_id").cloned().unwrap_or(Value::Null),
@@ -263,11 +223,7 @@ pub(crate) fn handle_proof_summary_command(
             complete,
             summary,
             Vec::new(),
-            if complete {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(3)
-            },
+            if complete { ExitCode::SUCCESS } else { ExitCode::from(3) },
         );
     }
 

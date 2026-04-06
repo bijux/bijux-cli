@@ -11,9 +11,7 @@ mod tests {
 
     #[test]
     fn export_command_response_serializes_stably() {
-        let response = ExportCommandResponse {
-            output: "bundle.json".to_string(),
-        };
+        let response = ExportCommandResponse { output: "bundle.json".to_string() };
         let value = serde_json::to_value(&response).expect("serialize export response");
         assert_eq!(value["output"], "bundle.json");
     }

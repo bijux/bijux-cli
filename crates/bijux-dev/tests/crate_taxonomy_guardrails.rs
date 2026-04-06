@@ -38,27 +38,18 @@ fn only_cli_crate_declares_bin_target() {
         }
     }
 
-    assert!(
-        offenders.is_empty(),
-        "non-cli crates declare [[bin]]: {offenders:?}"
-    );
+    assert!(offenders.is_empty(), "non-cli crates declare [[bin]]: {offenders:?}");
 }
 
 #[test]
 fn core_and_artifacts_do_not_depend_on_clap_or_process_execution_crates() {
     let forbidden = ["clap", "assert_cmd", "duct", "xshell"];
-    let manifests = [
-        "crates/bijux-dag-core/Cargo.toml",
-        "crates/bijux-dag-artifacts/Cargo.toml",
-    ];
+    let manifests = ["crates/bijux-dag-core/Cargo.toml", "crates/bijux-dag-artifacts/Cargo.toml"];
 
     for manifest in manifests {
         let text = cargo_toml(manifest);
         for dep in forbidden {
-            assert!(
-                !text.contains(&format!("{dep} =")),
-                "{manifest} must not depend on {dep}"
-            );
+            assert!(!text.contains(&format!("{dep} =")), "{manifest} must not depend on {dep}");
         }
     }
 }
@@ -67,10 +58,7 @@ fn core_and_artifacts_do_not_depend_on_clap_or_process_execution_crates() {
 fn dev_crate_does_not_depend_on_runtime_crates() {
     let text = cargo_toml("crates/bijux-dev/Cargo.toml");
     for forbidden in ["bijux-dag-app"] {
-        assert!(
-            !text.contains(forbidden),
-            "bijux-dev-dag must not depend on {forbidden}"
-        );
+        assert!(!text.contains(forbidden), "bijux-dev-dag must not depend on {forbidden}");
     }
 }
 
@@ -79,10 +67,7 @@ fn cli_main_stays_thin_wiring_only() {
     let cli_main = root().join("crates/bijux-dag-cli/src/main.rs");
     let text = fs::read_to_string(cli_main).expect("read cli main");
     let lines = text.lines().count();
-    assert!(
-        lines <= 120,
-        "cli main grew beyond thin wiring budget: {lines}"
-    );
+    assert!(lines <= 120, "cli main grew beyond thin wiring budget: {lines}");
     assert!(
         !text.contains("std::fs::") && !text.contains("Command::new("),
         "cli main must not contain business logic side-effect plumbing"

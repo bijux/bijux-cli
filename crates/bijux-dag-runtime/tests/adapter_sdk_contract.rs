@@ -21,10 +21,7 @@ fn plugin_manifest_has_stable_shape() {
         contract_version: "v0.1".to_string(),
     };
     let payload = serde_json::to_value(&manifest).expect("manifest should serialize");
-    assert_eq!(
-        payload.get("plugin_name").and_then(|v| v.as_str()),
-        Some("example-adapter")
-    );
+    assert_eq!(payload.get("plugin_name").and_then(|v| v.as_str()), Some("example-adapter"));
 }
 
 #[test]

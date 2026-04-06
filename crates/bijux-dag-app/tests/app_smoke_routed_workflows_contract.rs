@@ -18,9 +18,7 @@ use thiserror as _;
 
 fn run_ok(args: &[String]) {
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    let matches = dag_command()
-        .try_get_matches_from(refs)
-        .expect("parse command");
+    let matches = dag_command().try_get_matches_from(refs).expect("parse command");
     let code = dag_run(&matches).expect("run command");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
@@ -41,11 +39,7 @@ fn first_run_dir(root: &Path) -> PathBuf {
 }
 
 fn run_alias_of(run_dir: &Path) -> String {
-    run_dir
-        .file_name()
-        .and_then(|v| v.to_str())
-        .unwrap_or("run")
-        .to_string()
+    run_dir.file_name().and_then(|v| v.to_str()).unwrap_or("run").to_string()
 }
 
 fn first_artifact_ref(run_dir: &Path) -> (String, PathBuf) {
@@ -57,10 +51,7 @@ fn first_artifact_ref(run_dir: &Path) -> (String, PathBuf) {
         .expect("at least one output file");
     let node_id = file["node_id"].as_str().expect("node id");
     let path = file["path"].as_str().expect("path");
-    let name = Path::new(path)
-        .file_name()
-        .and_then(|v| v.to_str())
-        .expect("artifact file name");
+    let name = Path::new(path).file_name().and_then(|v| v.to_str()).expect("artifact file name");
     (format!("{node_id}:{name}"), run_dir.join(path))
 }
 
@@ -72,11 +63,7 @@ fn smoke_validate_plan_run_inspect_replay_diff() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_chain());
 
-    run_ok(&[
-        "dag".to_string(),
-        "validate".to_string(),
-        graph_path.display().to_string(),
-    ]);
+    run_ok(&["dag".to_string(), "validate".to_string(), graph_path.display().to_string()]);
     run_ok(&[
         "dag".to_string(),
         "plan".to_string(),
@@ -92,11 +79,7 @@ fn smoke_validate_plan_run_inspect_replay_diff() {
     ]);
 
     let first = first_run_dir(&runs_root);
-    run_ok(&[
-        "dag".to_string(),
-        "status".to_string(),
-        first.display().to_string(),
-    ]);
+    run_ok(&["dag".to_string(), "status".to_string(), first.display().to_string()]);
     run_ok(&[
         "dag".to_string(),
         "replay".to_string(),
@@ -178,11 +161,7 @@ fn smoke_export_import_verify_only_and_fsck() {
         bundle.display().to_string(),
         "--verify-only".to_string(),
     ]);
-    run_ok(&[
-        "dag".to_string(),
-        "fsck".to_string(),
-        run_dir.display().to_string(),
-    ]);
+    run_ok(&["dag".to_string(), "fsck".to_string(), run_dir.display().to_string()]);
 }
 
 #[test]
@@ -248,16 +227,8 @@ fn smoke_prove_verify_and_surface_queries() {
         runs_root.display().to_string(),
     ]);
     let run_dir = first_run_dir(&runs_root);
-    run_ok(&[
-        "dag".to_string(),
-        "prove".to_string(),
-        run_dir.display().to_string(),
-    ]);
-    run_ok(&[
-        "dag".to_string(),
-        "verify".to_string(),
-        run_dir.display().to_string(),
-    ]);
+    run_ok(&["dag".to_string(), "prove".to_string(), run_dir.display().to_string()]);
+    run_ok(&["dag".to_string(), "verify".to_string(), run_dir.display().to_string()]);
     run_ok(&[
         "dag".to_string(),
         "semantic-portability".to_string(),

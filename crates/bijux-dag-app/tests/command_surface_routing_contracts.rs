@@ -47,10 +47,7 @@ fn lib_routes_command_families_through_route_modules() {
         "routes::surface_routes::handle_capabilities_command",
         "routes::surface_routes::handle_semantic_portability_command",
     ] {
-        assert!(
-            app_lib.contains(token),
-            "missing route delegation token: {token}"
-        );
+        assert!(app_lib.contains(token), "missing route delegation token: {token}");
     }
 }
 
@@ -69,9 +66,6 @@ fn extracted_route_modules_exist_for_command_families() {
         "crates/bijux-dag-app/src/routes/surface_routes.rs",
         "crates/bijux-dag-app/src/routes/validate_routes.rs",
     ] {
-        assert!(
-            root.join(rel).exists(),
-            "missing extracted route module: {rel}"
-        );
+        assert!(root.join(rel).exists(), "missing extracted route module: {rel}");
     }
 }

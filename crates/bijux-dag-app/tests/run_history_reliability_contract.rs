@@ -81,10 +81,7 @@ fn missing_traces_referenced_by_manifest_are_reported_cleanly() {
     let report = doctor_run(&run);
     let findings = report["findings"].as_array().expect("findings");
     assert!(
-        findings
-            .iter()
-            .filter_map(|v| v.as_str())
-            .any(|v| v.contains("trace")),
+        findings.iter().filter_map(|v| v.as_str()).any(|v| v.contains("trace")),
         "doctor should report missing traces when manifest indicates executed nodes"
     );
 }
@@ -103,10 +100,7 @@ fn latest_alias_updates_do_not_corrupt_history_rows() {
     fs::write(&latest, "run-1").expect("update alias file");
     let after = runs_history(&root).expect("history after");
 
-    assert_eq!(
-        before, after,
-        "latest alias changes must not mutate history"
-    );
+    assert_eq!(before, after, "latest alias changes must not mutate history");
 }
 
 #[test]
@@ -137,10 +131,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
             "source-run",
         ])
         .expect("parse run");
-    assert_eq!(
-        dag_run(&run_matches).expect("run"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&run_matches).expect("run"), std::process::ExitCode::SUCCESS);
 
     let replay_matches = dag_command()
         .try_get_matches_from([
@@ -153,10 +144,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
             "replay-run",
         ])
         .expect("parse replay");
-    assert_eq!(
-        dag_run(&replay_matches).expect("replay"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&replay_matches).expect("replay"), std::process::ExitCode::SUCCESS);
 
     let replay_manifest: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(out.join("run-replay-run").join("manifest.json")).expect("manifest"),
@@ -179,10 +167,7 @@ fn run_history_remains_stable_after_workspace_relocation() {
     fs::rename(&source_root, &relocated_root).expect("relocate runs root");
 
     let after = runs_history(&relocated_root).expect("history after relocation");
-    assert_eq!(
-        before, after,
-        "run history should be path-relocation stable"
-    );
+    assert_eq!(before, after, "run history should be path-relocation stable");
 }
 
 #[test]

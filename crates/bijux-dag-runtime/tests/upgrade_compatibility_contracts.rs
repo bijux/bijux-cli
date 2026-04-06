@@ -82,10 +82,7 @@ fn compatibility_dashboard_counts_states_and_required_suites() {
     let suites = vec![CompatibilityAcceptanceSuite {
         suite_name: "cross-version-read".to_string(),
         required_for_release: true,
-        checks: vec![
-            "run-manifest-read".to_string(),
-            "artifact-manifest-read".to_string(),
-        ],
+        checks: vec!["run-manifest-read".to_string(), "artifact-manifest-read".to_string()],
     }];
 
     let risk = DowngradeRiskReport {

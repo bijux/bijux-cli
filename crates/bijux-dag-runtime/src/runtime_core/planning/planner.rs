@@ -83,10 +83,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .collect::<Vec<_>>(),
                 plan.edges
                     .iter()
-                    .map(|edge| PlannedDependency {
-                        from: edge.from.clone(),
-                        to: edge.to.clone(),
-                    })
+                    .map(|edge| PlannedDependency { from: edge.from.clone(), to: edge.to.clone() })
                     .collect::<Vec<_>>(),
                 plan.ordering,
                 {
@@ -129,11 +126,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                         to: edge.to.node_id.clone(),
                     })
                     .collect::<Vec<_>>(),
-                canonical
-                    .nodes
-                    .iter()
-                    .map(|node| node.id.clone())
-                    .collect::<Vec<_>>(),
+                canonical.nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>(),
                 diagnostics,
             )
         }
@@ -179,9 +172,7 @@ fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
 fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {
     let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
     for edge in &graph.edges {
-        map.entry(edge.to.node_id.clone())
-            .or_default()
-            .insert(edge.from.node_id.clone());
+        map.entry(edge.to.node_id.clone()).or_default().insert(edge.from.node_id.clone());
     }
     map
 }
@@ -209,9 +200,7 @@ fn build_graph_index(graph: &Graph) -> (HashMap<String, usize>, HashMap<String, 
 fn build_dep_map_from_plan(plan_deps: &[PlannedDependency]) -> HashMap<String, BTreeSet<String>> {
     let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
     for edge in plan_deps {
-        map.entry(edge.to.clone())
-            .or_default()
-            .insert(edge.from.clone());
+        map.entry(edge.to.clone()).or_default().insert(edge.from.clone());
     }
     map
 }
@@ -239,18 +228,11 @@ fn build_graph_index_from_plan(
 
 fn filter_reason(node: &Node, selectors: &SelectorSet) -> Option<String> {
     if !selectors.include.is_empty()
-        && !selectors
-            .include
-            .iter()
-            .any(|sel| selector_matches(node, sel))
+        && !selectors.include.iter().any(|sel| selector_matches(node, sel))
     {
         return Some("filtered".to_string());
     }
-    if selectors
-        .exclude
-        .iter()
-        .any(|sel| selector_matches(node, sel))
-    {
+    if selectors.exclude.iter().any(|sel| selector_matches(node, sel)) {
         return Some("filtered".to_string());
     }
     None
@@ -295,10 +277,7 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "out".to_string(),
-                    }],
+                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                     params: Default::default(),
                     container: None,
                     timeout_ms: None,
@@ -313,10 +292,7 @@ mod tests {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "out".to_string(),
-                    }],
+                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                     params: Default::default(),
                     container: None,
                     timeout_ms: None,

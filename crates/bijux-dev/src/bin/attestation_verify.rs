@@ -23,9 +23,8 @@ struct VerifyInput {
 }
 
 fn main() -> ExitCode {
-    let input_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "attestation-input.json".to_string());
+    let input_path =
+        std::env::args().nth(1).unwrap_or_else(|| "attestation-input.json".to_string());
 
     match verify_file(&input_path) {
         Ok(report) => {

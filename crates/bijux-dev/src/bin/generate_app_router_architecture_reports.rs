@@ -81,21 +81,13 @@ fn responsibilities_report(root: &Path) -> Result<String, String> {
         "export_import_routes",
     ] {
         let delegated = lib.contains(&format!("routes::{family}::"));
-        lines.push(format!(
-            "- `{family}`: {}",
-            if delegated { "delegated" } else { "missing" }
-        ));
+        lines.push(format!("- `{family}`: {}", if delegated { "delegated" } else { "missing" }));
     }
     Ok(format!("{}\n", lines.join("\n")))
 }
 
 fn business_logic_residue_report(routes_dir: &Path) -> Result<String, String> {
-    let heavy_tokens = [
-        "Runtime::new()",
-        "build_plan(",
-        "verify_run(",
-        "inspect_artifact(",
-    ];
+    let heavy_tokens = ["Runtime::new()", "build_plan(", "verify_run(", "inspect_artifact("];
     let mut lines = vec![
         "# App Route Business Logic Residue Report".to_string(),
         "".to_string(),
@@ -114,9 +106,7 @@ fn business_logic_residue_report(routes_dir: &Path) -> Result<String, String> {
         }
         lines.push(format!(
             "| `{}` | {} |",
-            path.file_name()
-                .and_then(|v| v.to_str())
-                .unwrap_or("unknown"),
+            path.file_name().and_then(|v| v.to_str()).unwrap_or("unknown"),
             count
         ));
     }
@@ -145,9 +135,7 @@ fn complexity_report(routes_dir: &Path) -> Result<String, String> {
         let score = line_count + branches * 8;
         lines.push(format!(
             "| `{}` | {} | {} | {} |",
-            path.file_name()
-                .and_then(|v| v.to_str())
-                .unwrap_or("unknown"),
+            path.file_name().and_then(|v| v.to_str()).unwrap_or("unknown"),
             line_count,
             branches,
             score
@@ -186,11 +174,7 @@ fn dependency_graph_report(app_src: &Path, routes_dir: &Path) -> Result<String, 
         if path.extension().and_then(|v| v.to_str()) != Some("rs") {
             continue;
         }
-        let file = path
-            .file_name()
-            .and_then(|v| v.to_str())
-            .unwrap_or("unknown")
-            .to_string();
+        let file = path.file_name().and_then(|v| v.to_str()).unwrap_or("unknown").to_string();
         let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
         for line in content.lines() {
             if let Some(rest) = line.trim().strip_prefix("use crate::") {

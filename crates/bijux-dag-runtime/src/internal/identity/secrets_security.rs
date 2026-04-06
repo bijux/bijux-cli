@@ -172,10 +172,7 @@ pub fn select_secret_version(
     }
     if rotation.allow_latest {
         let latest = available_versions.iter().max()?.clone();
-        return Some(SecretVersionSelection {
-            selected_version: latest,
-            pinned: false,
-        });
+        return Some(SecretVersionSelection { selected_version: latest, pinned: false });
     }
     None
 }
@@ -242,11 +239,7 @@ pub fn secret_readiness(
 }
 
 pub fn incident_response_actions(incident: &SecretLeakIncident) -> BTreeSet<String> {
-    incident
-        .containment_actions
-        .iter()
-        .cloned()
-        .collect::<BTreeSet<_>>()
+    incident.containment_actions.iter().cloned().collect::<BTreeSet<_>>()
 }
 
 pub fn secure_cleanup_required(
@@ -264,10 +257,7 @@ pub fn summarize_sensitive_classes(
 ) -> BTreeMap<String, (u32, bool)> {
     let mut map = BTreeMap::new();
     for r in restrictions {
-        map.insert(
-            format!("{:?}", r.class),
-            (r.min_retention_days, r.export_requires_approval),
-        );
+        map.insert(format!("{:?}", r.class), (r.min_retention_days, r.export_requires_approval));
     }
     map
 }

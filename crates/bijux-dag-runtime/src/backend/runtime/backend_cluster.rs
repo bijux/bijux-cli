@@ -322,11 +322,7 @@ pub fn matches_placement_policy(
 ) -> bool {
     required_capability == backend_descriptor.cpu_class
         || required_capability == backend_descriptor.memory_class
-        || backend_descriptor
-            .gpu_class
-            .as_ref()
-            .map(|g| g == required_capability)
-            .unwrap_or(false)
+        || backend_descriptor.gpu_class.as_ref().map(|g| g == required_capability).unwrap_or(false)
         || required_capability == backend_descriptor.ephemeral_storage_class
         || required_capability == backend_descriptor.network_class
 }
@@ -335,10 +331,7 @@ pub fn normalize_backend_failure(
     backend_error_code: &str,
     rules: &[BackendFailureMappingRule],
 ) -> Option<BackendFailureMappingRule> {
-    rules
-        .iter()
-        .find(|rule| rule.backend_error_code == backend_error_code)
-        .cloned()
+    rules.iter().find(|rule| rule.backend_error_code == backend_error_code).cloned()
 }
 
 pub fn backend_ready_for_admission(
@@ -372,10 +365,7 @@ pub fn map_node_resources_to_k8s(node: &NodeExecutionContract) -> K8sResourceMap
     let limit_cpu = request_cpu.saturating_mul(2);
     let limit_mem = ((request_mem as u64 * 3) / 2) as u32;
     K8sResourceMapping {
-        requests: K8sResourceRequest {
-            cpu_millis: request_cpu,
-            memory_mib: request_mem,
-        },
+        requests: K8sResourceRequest { cpu_millis: request_cpu, memory_mib: request_mem },
         limits: K8sResourceRequest {
             cpu_millis: limit_cpu,
             memory_mib: limit_mem.max(request_mem),
@@ -463,14 +453,12 @@ pub fn artifact_collection_state(expected: usize, collected: usize) -> ArtifactC
 
 pub fn workdir_semantics(kind: WorkdirVolumeKind) -> WorkdirSemantics {
     match kind {
-        WorkdirVolumeKind::EmptyDir => WorkdirSemantics {
-            survives_pod_restart: false,
-            survives_reschedule: false,
-        },
-        WorkdirVolumeKind::PersistentVolumeClaim => WorkdirSemantics {
-            survives_pod_restart: true,
-            survives_reschedule: true,
-        },
+        WorkdirVolumeKind::EmptyDir => {
+            WorkdirSemantics { survives_pod_restart: false, survives_reschedule: false }
+        }
+        WorkdirVolumeKind::PersistentVolumeClaim => {
+            WorkdirSemantics { survives_pod_restart: true, survives_reschedule: true }
+        }
     }
 }
 
@@ -512,13 +500,7 @@ pub fn k8s_capability_declaration() -> K8sCapabilityDeclaration {
 }
 
 pub fn reject_unsupported_k8s_fields(fields: &[String]) -> Result<(), String> {
-    let blocked = [
-        "hostNetwork",
-        "hostPID",
-        "privileged",
-        "hostPath",
-        "runtimeClassName",
-    ];
+    let blocked = ["hostNetwork", "hostPID", "privileged", "hostPath", "runtimeClassName"];
     for field in fields {
         if blocked.iter().any(|blocked_name| field == blocked_name) {
             return Err(format!(
@@ -535,10 +517,7 @@ pub fn map_node_to_hpc_queue_partition(
     default_partition: &str,
 ) -> HpcQueuePartitionMapping {
     HpcQueuePartitionMapping {
-        queue: node
-            .requested_queue
-            .clone()
-            .unwrap_or_else(|| default_queue.to_string()),
+        queue: node.requested_queue.clone().unwrap_or_else(|| default_queue.to_string()),
         partition: node
             .requested_partition
             .clone()
@@ -605,15 +584,8 @@ pub fn hpc_poll_response_recovered(last_poll_age_seconds: u32, timeout_seconds: 
 }
 
 pub fn hpc_log_collection_semantics(chunks_collected: u32) -> HpcLogCollectionSemantics {
-    let mode = if chunks_collected > 0 {
-        "streaming-chunked"
-    } else {
-        "no-logs"
-    };
-    HpcLogCollectionSemantics {
-        mode: mode.to_string(),
-        chunks_collected,
-    }
+    let mode = if chunks_collected > 0 { "streaming-chunked" } else { "no-logs" };
+    HpcLogCollectionSemantics { mode: mode.to_string(), chunks_collected }
 }
 
 pub fn staged_input_cleanup_required(run_succeeded: bool) -> bool {

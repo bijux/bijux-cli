@@ -98,9 +98,7 @@ fn compat_and_fault_metadata_have_strict_family_semantics() {
             .expect("read compat metadata"),
     )
     .expect("parse compat metadata");
-    let matrix = compat["decision_matrix"]
-        .as_object()
-        .expect("compat decision matrix");
+    let matrix = compat["decision_matrix"].as_object().expect("compat decision matrix");
     for (path, entry) in matrix {
         assert!(
             path.starts_with("evidence/compat/"),
@@ -108,13 +106,7 @@ fn compat_and_fault_metadata_have_strict_family_semantics() {
         );
         let decision = entry["decision"].as_str().expect("decision string");
         assert!(
-            [
-                "supported",
-                "unsupported_future",
-                "unsupported_past",
-                "corrupt"
-            ]
-            .contains(&decision),
+            ["supported", "unsupported_future", "unsupported_past", "corrupt"].contains(&decision),
             "compat decision is invalid: {decision}"
         );
     }
@@ -124,9 +116,7 @@ fn compat_and_fault_metadata_have_strict_family_semantics() {
             .expect("read fault metadata"),
     )
     .expect("parse fault metadata");
-    let fault_expectations = fault["fault_expectations"]
-        .as_object()
-        .expect("fault expectations");
+    let fault_expectations = fault["fault_expectations"].as_object().expect("fault expectations");
     let fault_profiles = fault["fault_profiles"].as_object().expect("fault profiles");
     for fault_class in fault_expectations.keys() {
         assert!(

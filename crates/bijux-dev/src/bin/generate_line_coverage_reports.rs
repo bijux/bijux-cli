@@ -29,10 +29,7 @@ impl FileCoverage {
 }
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("workspace root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn to_repo_relative(root: &Path, raw: &str) -> String {
@@ -58,10 +55,9 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
     for line in content.lines() {
         if let Some(sf) = line.strip_prefix("SF:") {
             if let Some(file) = current_file.take() {
-                let entry = map.entry(file).or_insert(FileCoverage {
-                    covered_lines: 0,
-                    instrumented_lines: 0,
-                });
+                let entry = map
+                    .entry(file)
+                    .or_insert(FileCoverage { covered_lines: 0, instrumented_lines: 0 });
                 entry.covered_lines += covered;
                 entry.instrumented_lines += total;
             }
@@ -86,10 +82,9 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
         }
         if line == "end_of_record" {
             if let Some(file) = current_file.take() {
-                let entry = map.entry(file).or_insert(FileCoverage {
-                    covered_lines: 0,
-                    instrumented_lines: 0,
-                });
+                let entry = map
+                    .entry(file)
+                    .or_insert(FileCoverage { covered_lines: 0, instrumented_lines: 0 });
                 entry.covered_lines += covered;
                 entry.instrumented_lines += total;
             }
@@ -99,10 +94,8 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
     }
 
     if let Some(file) = current_file.take() {
-        let entry = map.entry(file).or_insert(FileCoverage {
-            covered_lines: 0,
-            instrumented_lines: 0,
-        });
+        let entry =
+            map.entry(file).or_insert(FileCoverage { covered_lines: 0, instrumented_lines: 0 });
         entry.covered_lines += covered;
         entry.instrumented_lines += total;
     }
@@ -176,16 +169,12 @@ fn read_allowlist(path: &Path) -> Result<BTreeSet<String>, String> {
         .map_err(|err| format!("failed to read allowlist {}: {err}", path.display()))?;
     let parsed: serde_json::Value =
         serde_json::from_str(&payload).map_err(|err| format!("invalid allowlist json: {err}"))?;
-    let arr = parsed["protected_zero_coverage_allowlist"]
-        .as_array()
-        .ok_or_else(|| {
-            "allowlist must contain `protected_zero_coverage_allowlist` array".to_string()
-        })?;
+    let arr = parsed["protected_zero_coverage_allowlist"].as_array().ok_or_else(|| {
+        "allowlist must contain `protected_zero_coverage_allowlist` array".to_string()
+    })?;
     let mut out = BTreeSet::new();
     for item in arr {
-        let s = item
-            .as_str()
-            .ok_or_else(|| "allowlist entries must be strings".to_string())?;
+        let s = item.as_str().ok_or_else(|| "allowlist entries must be strings".to_string())?;
         out.insert(s.to_string());
     }
     Ok(out)
@@ -227,10 +216,8 @@ fn render_app_route_support_below_target_report(
         "| --- | ---: | ---: | --- |".to_string(),
     ];
 
-    let by_path: BTreeMap<_, _> = rows
-        .iter()
-        .map(|(path, cov)| (path.clone(), cov.pct()))
-        .collect();
+    let by_path: BTreeMap<_, _> =
+        rows.iter().map(|(path, cov)| (path.clone(), cov.pct())).collect();
 
     let mut emitted = 0usize;
     for (path, target) in targets {
@@ -248,11 +235,8 @@ fn render_app_route_support_below_target_report(
             } else {
                 route_rows.iter().sum::<f64>() / route_rows.len() as f64
             };
-            let status = if aggregate < (*target * 100.0) {
-                "below target"
-            } else {
-                "meets target"
-            };
+            let status =
+                if aggregate < (*target * 100.0) { "below target" } else { "meets target" };
             lines.push(format!(
                 "| {} | {:.2} | {:.2} | {} |",
                 path,
@@ -265,18 +249,8 @@ fn render_app_route_support_below_target_report(
         }
 
         let actual = by_path.get(path).copied().unwrap_or(100.0);
-        let status = if actual < (*target * 100.0) {
-            "below target"
-        } else {
-            "meets target"
-        };
-        lines.push(format!(
-            "| {} | {:.2} | {:.2} | {} |",
-            path,
-            actual,
-            target * 100.0,
-            status
-        ));
+        let status = if actual < (*target * 100.0) { "below target" } else { "meets target" };
+        lines.push(format!("| {} | {:.2} | {:.2} | {} |", path, actual, target * 100.0, status));
         emitted += 1;
     }
 

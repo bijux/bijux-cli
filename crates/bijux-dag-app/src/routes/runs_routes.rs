@@ -91,14 +91,7 @@ pub(crate) fn handle_runs_command(
         RunsCommands::Tree { run_id, root } => {
             let tree = inspect_service::run_tree_for_id(root, run_id)?;
             if cli.json {
-                return emit_json(
-                    cli,
-                    "dag.runs.tree",
-                    true,
-                    tree,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
+                return emit_json(cli, "dag.runs.tree", true, tree, Vec::new(), ExitCode::SUCCESS);
             }
             println!("{}", serde_json::to_string_pretty(&tree).unwrap());
             Ok(ExitCode::SUCCESS)
@@ -118,12 +111,7 @@ pub(crate) fn handle_runs_command(
             println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::Diff {
-            run_a,
-            run_b,
-            mode: _mode,
-            explain,
-        } => {
+        RunsCommands::Diff { run_a, run_b, mode: _mode, explain } => {
             let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
             if cli.json {
                 return emit_json(
@@ -138,10 +126,7 @@ pub(crate) fn handle_runs_command(
             print_human_diff(&serde_json::to_value(&diff).unwrap());
             if *explain {
                 println!("explain: graph fingerprint change implies cache invalidation");
-                println!(
-                    "replay_reason: {}",
-                    diff.replay_equivalence.reason_report.summary
-                );
+                println!("replay_reason: {}", diff.replay_equivalence.reason_report.summary);
                 if !diff.replay_equivalence.cause_groups.is_empty() {
                     println!(
                         "replay_cause_groups: {}",
@@ -151,19 +136,11 @@ pub(crate) fn handle_runs_command(
             }
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::Verify {
-            run_id,
-            root,
-            deep,
-            strict,
-        } => {
+        RunsCommands::Verify { run_id, root, deep, strict } => {
             let run_dir = resolve_run_dir(root, run_id);
             let report = verify_run(&run_dir, *deep, *strict)?;
-            let ok = report
-                .get("status")
-                .and_then(|v| v.as_str())
-                .map(|v| v == "ok")
-                .unwrap_or(false);
+            let ok =
+                report.get("status").and_then(|v| v.as_str()).map(|v| v == "ok").unwrap_or(false);
             if cli.json {
                 return emit_json(
                     cli,
@@ -171,11 +148,7 @@ pub(crate) fn handle_runs_command(
                     ok,
                     report,
                     Vec::new(),
-                    if ok {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
                 );
             }
             println!("status: {}", if ok { "ok" } else { "invalid" });
@@ -194,11 +167,7 @@ pub(crate) fn handle_runs_command(
                     ok,
                     report,
                     Vec::new(),
-                    if ok {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
@@ -310,11 +279,7 @@ mod tests {
     use std::path::Path;
 
     fn quiet_json_cli() -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: true, quiet: true, command: Commands::Version }
     }
 
     fn write_run(root: &Path, run_id: &str, imported: bool) {
@@ -366,21 +331,13 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tmp");
         write_run(tmp.path(), "run-a", false);
         let cli = quiet_json_cli();
-        let list = handle_runs_command(
-            &cli,
-            &RunsCommands::List {
-                root: tmp.path().to_path_buf(),
-            },
-        )
-        .expect("list");
+        let list =
+            handle_runs_command(&cli, &RunsCommands::List { root: tmp.path().to_path_buf() })
+                .expect("list");
         assert_eq!(list, ExitCode::SUCCESS);
-        let summary = handle_runs_command(
-            &cli,
-            &RunsCommands::Summary {
-                root: tmp.path().to_path_buf(),
-            },
-        )
-        .expect("summary");
+        let summary =
+            handle_runs_command(&cli, &RunsCommands::Summary { root: tmp.path().to_path_buf() })
+                .expect("summary");
         assert_eq!(summary, ExitCode::SUCCESS);
     }
 
@@ -391,10 +348,7 @@ mod tests {
         let cli = quiet_json_cli();
         let tree = handle_runs_command(
             &cli,
-            &RunsCommands::Tree {
-                run_id: "run-tree".to_string(),
-                root: tmp.path().to_path_buf(),
-            },
+            &RunsCommands::Tree { run_id: "run-tree".to_string(), root: tmp.path().to_path_buf() },
         )
         .expect("tree");
         assert_eq!(tree, ExitCode::SUCCESS);

@@ -30,12 +30,7 @@ pub enum ExecutionModeStatus {
 }
 
 pub fn validate_remote_identity(identity: &RemoteExecutionIdentity) -> Result<(), String> {
-    for value in [
-        &identity.run_id,
-        &identity.node_id,
-        &identity.attempt_id,
-        &identity.backend_id,
-    ] {
+    for value in [&identity.run_id, &identity.node_id, &identity.attempt_id, &identity.backend_id] {
         if value.trim().is_empty() {
             return Err("remote identity fields must be non-empty".to_string());
         }

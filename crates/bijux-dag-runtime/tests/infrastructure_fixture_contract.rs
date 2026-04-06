@@ -18,14 +18,9 @@ fn backend_conformance_fixture_has_expected_shape() {
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", fixture_path.display()));
     let value: serde_json::Value = serde_json::from_str(&payload)
         .unwrap_or_else(|err| panic!("failed to parse {}: {err}", fixture_path.display()));
-    assert_eq!(
-        value.get("schema_version").and_then(|v| v.as_str()),
-        Some("v0.1")
-    );
-    let backends = value
-        .get("backends")
-        .and_then(|v| v.as_array())
-        .expect("backends array should exist");
+    assert_eq!(value.get("schema_version").and_then(|v| v.as_str()), Some("v0.1"));
+    let backends =
+        value.get("backends").and_then(|v| v.as_array()).expect("backends array should exist");
     assert!(!backends.is_empty());
     for backend in backends {
         assert!(backend.get("backend").and_then(|v| v.as_str()).is_some());

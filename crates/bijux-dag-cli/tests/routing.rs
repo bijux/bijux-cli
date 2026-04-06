@@ -16,10 +16,7 @@ fn dag_validate_routes() {
         .join("authoring")
         .join("examples")
         .join("hello.dag.json");
-    let out = Command::new(bin)
-        .args(["dag", "validate", dag.to_str().unwrap()])
-        .output()
-        .unwrap();
+    let out = Command::new(bin).args(["dag", "validate", dag.to_str().unwrap()]).output().unwrap();
     assert!(out.status.success());
 }
 

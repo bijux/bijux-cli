@@ -31,10 +31,7 @@ fn worker_liveness_and_reassignment_follow_contract() {
         unix_ms: 1000,
         inflight_nodes: vec!["n1".to_string()],
     };
-    let policy = LivenessPolicy {
-        heartbeat_timeout_ms: 500,
-        grace_retries: 2,
-    };
+    let policy = LivenessPolicy { heartbeat_timeout_ms: 500, grace_retries: 2 };
     assert!(worker_alive(&heartbeat, 1300, &policy));
     assert!(!worker_alive(&heartbeat, 2000, &policy));
 
@@ -61,9 +58,8 @@ fn mock_backend_accepts_typed_submissions() {
         env: BTreeMap::new(),
         attempt: 1,
     };
-    let result = backend
-        .submit_distributed(distributed)
-        .expect("distributed submission should succeed");
+    let result =
+        backend.submit_distributed(distributed).expect("distributed submission should succeed");
     assert_eq!(result.status, "accepted");
 
     let legacy = backend
@@ -116,11 +112,8 @@ fn task_lease_and_heartbeat_semantics_are_typed_and_enforced() {
         unix_ms: 10_000,
         inflight_nodes: vec!["n1".to_string()],
     };
-    let heartbeat_semantics = HeartbeatSemantics {
-        interval_ms: 500,
-        timeout_ms: 2_000,
-        delayed_threshold_ms: 1_000,
-    };
+    let heartbeat_semantics =
+        HeartbeatSemantics { interval_ms: 500, timeout_ms: 2_000, delayed_threshold_ms: 1_000 };
     assert_eq!(
         classify_heartbeat(&heartbeat, 10_700, &heartbeat_semantics),
         HeartbeatClass::Healthy
@@ -129,10 +122,7 @@ fn task_lease_and_heartbeat_semantics_are_typed_and_enforced() {
         classify_heartbeat(&heartbeat, 11_500, &heartbeat_semantics),
         HeartbeatClass::Delayed
     );
-    assert_eq!(
-        classify_heartbeat(&heartbeat, 12_500, &heartbeat_semantics),
-        HeartbeatClass::Lost
-    );
+    assert_eq!(classify_heartbeat(&heartbeat, 12_500, &heartbeat_semantics), HeartbeatClass::Lost);
 }
 
 #[test]
@@ -144,10 +134,7 @@ fn worker_identity_and_version_mismatch_are_validated() {
         labels: BTreeMap::new(),
     };
     assert!(validate_worker_identity(&identity).is_ok());
-    let invalid = WorkerIdentity {
-        worker_id: String::new(),
-        ..identity
-    };
+    let invalid = WorkerIdentity { worker_id: String::new(), ..identity };
     assert!(validate_worker_identity(&invalid).is_err());
 
     let rule = WorkerVersionCompatibilityRule {
@@ -197,10 +184,7 @@ fn worker_crash_paths_and_network_partition_are_classified() {
         upload_id: "u-1".to_string(),
         committed: false,
     };
-    let committed = RemoteArtifactCommitContract {
-        committed: true,
-        ..uncommitted.clone()
-    };
+    let committed = RemoteArtifactCommitContract { committed: true, ..uncommitted.clone() };
 
     assert!(
         !artifact_upload_can_commit(&upload, &uncommitted),
@@ -211,14 +195,8 @@ fn worker_crash_paths_and_network_partition_are_classified() {
     assert!(verify_remote_artifact_integrity("abc123", "abc123"));
     assert!(!verify_remote_artifact_integrity("abc123", "def456"));
 
-    assert_eq!(
-        classify_status_reporting(1_000, 1_300, 500),
-        StatusReportingClass::Healthy
-    );
-    assert_eq!(
-        classify_status_reporting(1_000, 2_000, 500),
-        StatusReportingClass::Partitioned
-    );
+    assert_eq!(classify_status_reporting(1_000, 1_300, 500), StatusReportingClass::Healthy);
+    assert_eq!(classify_status_reporting(1_000, 2_000, 500), StatusReportingClass::Partitioned);
 }
 
 #[test]
@@ -279,8 +257,5 @@ fn cancellation_delivery_and_pool_capability_negotiation_are_checked() {
         required_sandbox_profile: Some("unavailable".to_string()),
         ..request
     };
-    assert!(!worker_pool_satisfies_capability_request(
-        &caps,
-        &impossible
-    ));
+    assert!(!worker_pool_satisfies_capability_request(&caps, &impossible));
 }

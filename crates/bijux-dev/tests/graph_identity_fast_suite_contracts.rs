@@ -16,8 +16,10 @@ fn graph_identity_fast_suite_includes_property_and_regression_contracts() {
         .canonicalize()
         .expect("workspace root");
     let payload: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(root.join("configs/dag/suites/graph_identity_regression_fast.json"))
-            .expect("read suite"),
+        &std::fs::read_to_string(
+            root.join("configs/dag/suites/graph_identity_regression_fast.json"),
+        )
+        .expect("read suite"),
     )
     .expect("parse suite");
     assert_eq!(payload["id"], "graph-identity-regression-fast");
@@ -33,9 +35,6 @@ fn graph_identity_fast_suite_includes_property_and_regression_contracts() {
         "graph_identity_contract",
         "graph_identity_expansion_contract",
     ] {
-        assert!(
-            commands.contains(required),
-            "graph identity fast suite missing {required}"
-        );
+        assert!(commands.contains(required), "graph identity fast suite missing {required}");
     }
 }

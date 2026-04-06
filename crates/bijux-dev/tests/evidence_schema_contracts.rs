@@ -17,18 +17,9 @@ fn repo_root() -> PathBuf {
 }
 
 fn validate_asset_entry(entry: &Value) -> Result<(), String> {
-    let object = entry
-        .as_object()
-        .ok_or_else(|| "evidence entry must be object".to_string())?;
+    let object = entry.as_object().ok_or_else(|| "evidence entry must be object".to_string())?;
 
-    for required in [
-        "id",
-        "kind",
-        "owner",
-        "status",
-        "canonical_path",
-        "consumers",
-    ] {
+    for required in ["id", "kind", "owner", "status", "canonical_path", "consumers"] {
         if !object.contains_key(required) {
             return Err(format!("missing required field `{required}`"));
         }
@@ -65,53 +56,31 @@ fn validate_asset_entry(entry: &Value) -> Result<(), String> {
         return Err(format!("consumers is empty for {id}"));
     }
 
-    let allowed_kinds = [
-        "authoring",
-        "battle",
-        "cache",
-        "compat",
-        "fault",
-        "operator",
-        "perf",
-        "compare",
-    ];
+    let allowed_kinds =
+        ["authoring", "battle", "cache", "compat", "fault", "operator", "perf", "compare"];
     if !allowed_kinds.contains(&kind) {
         return Err(format!("unknown evidence kind `{kind}` for {id}"));
     }
 
-    let release_blocking = entry
-        .get("release_blocking")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let trust_properties = entry
-        .get("trust_properties")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+    let release_blocking = entry.get("release_blocking").and_then(Value::as_bool).unwrap_or(false);
+    let trust_properties =
+        entry.get("trust_properties").and_then(Value::as_array).cloned().unwrap_or_default();
     if release_blocking && trust_properties.is_empty() {
-        return Err(format!(
-            "release-blocking evidence must declare trust_properties for {id}"
-        ));
+        return Err(format!("release-blocking evidence must declare trust_properties for {id}"));
     }
 
     if entry.get("status").and_then(Value::as_str) == Some("duplicate") {
         let duplicate_of = entry.get("duplicate_of").unwrap_or(&Value::Null);
         if duplicate_of.is_null()
-            || duplicate_of
-                .as_str()
-                .map_or(true, |value| value.trim().is_empty())
+            || duplicate_of.as_str().map_or(true, |value| value.trim().is_empty())
         {
-            return Err(format!(
-                "duplicate asset must declare duplicate_of for {id}"
-            ));
+            return Err(format!("duplicate asset must declare duplicate_of for {id}"));
         }
     }
 
     let derived_from = entry.get("derived_from").unwrap_or(&Value::Null);
     if !derived_from.is_null()
-        && derived_from
-            .as_str()
-            .map_or(true, |value| value.trim().is_empty())
+        && derived_from.as_str().map_or(true, |value| value.trim().is_empty())
     {
         return Err(format!("derived asset linkage is invalid for {id}"));
     }
@@ -133,10 +102,7 @@ fn evidence_schema_files_exist() {
         "configs/dag/schema/evidence_fault_metadata.schema.json",
         "configs/dag/schema/evidence_authoring_metadata.schema.json",
     ] {
-        assert!(
-            root.join(rel).exists(),
-            "missing evidence schema file: {rel}"
-        );
+        assert!(root.join(rel).exists(), "missing evidence schema file: {rel}");
     }
 }
 

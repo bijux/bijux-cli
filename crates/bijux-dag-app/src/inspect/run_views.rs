@@ -48,9 +48,8 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     let manifest = read_json(&run_dir.join("manifest.json"))?;
     let integrity_state = inspect_integrity_state(run_dir, &manifest);
     let traces = read_node_traces(run_dir)?;
-    let (retry_total, failed_nodes, cache_hits) = traces.iter().fold(
-        (0usize, Vec::<String>::new(), 0usize),
-        |mut acc, (node_id, trace)| {
+    let (retry_total, failed_nodes, cache_hits) =
+        traces.iter().fold((0usize, Vec::<String>::new(), 0usize), |mut acc, (node_id, trace)| {
             if trace.get("status").and_then(Value::as_str) == Some("failed") {
                 acc.1.push(node_id.clone());
             }
@@ -63,8 +62,7 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
                 acc.2 += 1;
             }
             acc
-        },
-    );
+        });
     let artifact_count = read_outputs_count(run_dir);
     Ok(json!({
         "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
@@ -92,10 +90,7 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
 pub fn explain_run_id(root: &Path, run_id: &str) -> Result<Value, std::io::Error> {
     let run_dir = resolve_run_dir(root, run_id);
     let manifest = read_json(&run_dir.join("manifest.json"))?;
-    let run_metadata = manifest
-        .get("run_metadata")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
+    let run_metadata = manifest.get("run_metadata").cloned().unwrap_or_else(|| json!({}));
     Ok(json!({
         "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
         "run_dir": run_dir.display().to_string(),
@@ -127,10 +122,7 @@ pub fn runs_history_query(
     for run_id in run_ids {
         let run_dir = resolve_run_dir(root, &run_id);
         let manifest = read_json(&run_dir.join("manifest.json"))?;
-        let metadata = manifest
-            .get("run_metadata")
-            .cloned()
-            .unwrap_or_else(|| json!({}));
+        let metadata = manifest.get("run_metadata").cloned().unwrap_or_else(|| json!({}));
         let row = json!({
             "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
             "status": manifest.get("status").cloned().unwrap_or(Value::Null),
@@ -190,17 +182,11 @@ pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
     let traces = read_node_traces(run_dir)?;
     let mut items = Vec::new();
     for node in nodes {
-        let node_id = node
-            .get("id")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown")
-            .to_string();
+        let node_id = node.get("id").and_then(Value::as_str).unwrap_or("unknown").to_string();
         let parents: Vec<String> = edges
             .iter()
             .filter_map(|e| {
-                if e.get("to")
-                    .and_then(|to| to.get("node_id"))
-                    .and_then(Value::as_str)
+                if e.get("to").and_then(|to| to.get("node_id")).and_then(Value::as_str)
                     == Some(node_id.as_str())
                 {
                     e.get("from")
@@ -227,16 +213,10 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
     let mut events = Vec::new();
     for (node_id, trace) in traces {
         let start = trace.get("started_unix_ms").cloned().unwrap_or(Value::Null);
-        let finish = trace
-            .get("finished_unix_ms")
-            .cloned()
-            .unwrap_or(Value::Null);
+        let finish = trace.get("finished_unix_ms").cloned().unwrap_or(Value::Null);
         let status = trace.get("status").cloned().unwrap_or(Value::Null);
         let attempt = trace.get("attempt").and_then(Value::as_u64).unwrap_or(1);
-        let cache_hit = trace
-            .get("cache_hit")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        let cache_hit = trace.get("cache_hit").and_then(Value::as_bool).unwrap_or(false);
         let event_kind = if cache_hit {
             "cache_hit"
         } else if attempt > 1 {
@@ -254,11 +234,7 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
             "event_kind": event_kind
         }));
     }
-    events.sort_by_key(|e| {
-        e.get("started_unix_ms")
-            .and_then(Value::as_u64)
-            .unwrap_or(0)
-    });
+    events.sort_by_key(|e| e.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0));
     Ok(json!({"events": events}))
 }
 
@@ -267,11 +243,7 @@ pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
     let mut failed = Vec::new();
     let mut skipped = Vec::new();
     for (node_id, trace) in traces {
-        match trace
-            .get("status")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown")
-        {
+        match trace.get("status").and_then(Value::as_str).unwrap_or("unknown") {
             "failed" => failed.push(node_id),
             "skipped" => skipped.push(node_id),
             _ => {}
@@ -298,9 +270,7 @@ pub fn doctor_run(run_dir: &Path) -> Value {
         .and_then(Value::as_object)
         .map(|counts| counts.values().filter_map(Value::as_u64).sum::<u64>() as usize)
         .unwrap_or(0);
-    let observed_trace_nodes = read_node_traces(run_dir)
-        .map(|traces| traces.len())
-        .unwrap_or(0);
+    let observed_trace_nodes = read_node_traces(run_dir).map(|traces| traces.len()).unwrap_or(0);
     if expected_trace_nodes > 0 && observed_trace_nodes == 0 {
         findings.push(
             "missing node traces referenced by manifest node_counts (expected non-zero traces)"
@@ -323,35 +293,18 @@ pub fn runs_summary(root: &Path) -> Result<Value, std::io::Error> {
     let mut failed_run_count = 0usize;
     for run_id in &run_ids {
         let summary = inspect_summary(&resolve_run_dir(root, run_id))?;
-        let status = summary
-            .get("status")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown")
-            .to_string();
+        let status = summary.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
         *statuses.entry(status).or_insert(0) += 1;
         if summary.get("status").and_then(Value::as_str) == Some("failed") {
             failed_run_count += 1;
         }
-        if summary
-            .get("retry_count")
-            .and_then(Value::as_u64)
-            .unwrap_or(0)
-            == 0
-        {
+        if summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) == 0 {
             replay_equivalent_runs += 1;
         }
-        total_retries += summary
-            .get("retry_count")
-            .and_then(Value::as_u64)
-            .unwrap_or(0) as usize;
-        total_cache_hits += summary
-            .get("cache_hits")
-            .and_then(Value::as_u64)
-            .unwrap_or(0) as usize;
-        total_artifacts += summary
-            .get("artifact_count")
-            .and_then(Value::as_u64)
-            .unwrap_or(0) as usize;
+        total_retries += summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) as usize;
+        total_cache_hits += summary.get("cache_hits").and_then(Value::as_u64).unwrap_or(0) as usize;
+        total_artifacts +=
+            summary.get("artifact_count").and_then(Value::as_u64).unwrap_or(0) as usize;
     }
     let run_count = run_ids.len();
     let exact_reports = json!({
@@ -439,11 +392,7 @@ pub fn runs_flakes(root: &Path) -> Result<Value, std::io::Error> {
             .and_then(Value::as_str)
             .unwrap_or("unknown")
             .to_string();
-        let status = summary
-            .get("status")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown")
-            .to_string();
+        let status = summary.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
         by_graph.entry(graph).or_default().push(status);
     }
     let mut flaky = Vec::new();
@@ -457,10 +406,7 @@ pub fn runs_flakes(root: &Path) -> Result<Value, std::io::Error> {
 }
 
 pub fn render_run_summary(summary: &Value) -> String {
-    let origin = match summary
-        .get("submission_source")
-        .and_then(Value::as_str)
-        .unwrap_or("manual")
+    let origin = match summary.get("submission_source").and_then(Value::as_str).unwrap_or("manual")
     {
         "import" => "imported",
         _ => "native",
@@ -498,11 +444,7 @@ fn read_outputs_count(run_dir: &Path) -> usize {
             v.get("files")
                 .and_then(Value::as_array)
                 .map(|arr| arr.len())
-                .or_else(|| {
-                    v.get("outputs")
-                        .and_then(Value::as_array)
-                        .map(|arr| arr.len())
-                })
+                .or_else(|| v.get("outputs").and_then(Value::as_array).map(|arr| arr.len()))
         })
         .unwrap_or(0)
 }

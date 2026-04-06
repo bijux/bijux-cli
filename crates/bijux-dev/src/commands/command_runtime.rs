@@ -7,11 +7,8 @@ pub(crate) fn run_status(cmd: &str, args: &[&str]) -> Result<(), String> {
 }
 
 pub(crate) fn run_status_in_dir(dir: &Path, cmd: &str, args: &[&str]) -> Result<(), String> {
-    let status = Command::new(cmd)
-        .args(args)
-        .current_dir(dir)
-        .status()
-        .map_err(|err| err.to_string())?;
+    let status =
+        Command::new(cmd).args(args).current_dir(dir).status().map_err(|err| err.to_string())?;
     if status.success() {
         Ok(())
     } else {
@@ -39,11 +36,8 @@ pub(crate) fn run_status_and_json(root: &Path, args: &[&str]) -> Result<Value, S
 }
 
 pub(crate) fn run_stdout_and_json(root: &Path, cmd: &str, args: &[&str]) -> Result<String, String> {
-    let output = Command::new(cmd)
-        .args(args)
-        .current_dir(root)
-        .output()
-        .map_err(|err| err.to_string())?;
+    let output =
+        Command::new(cmd).args(args).current_dir(root).output().map_err(|err| err.to_string())?;
     if !output.status.success() {
         return Err(format!("command failed: {} {}", cmd, args.join(" ")));
     }
@@ -51,11 +45,8 @@ pub(crate) fn run_stdout_and_json(root: &Path, cmd: &str, args: &[&str]) -> Resu
 }
 
 pub(crate) fn command_stdout(root: &Path, bin: &str, args: &[&str]) -> Result<String, String> {
-    let output = Command::new(bin)
-        .args(args)
-        .current_dir(root)
-        .output()
-        .map_err(|err| err.to_string())?;
+    let output =
+        Command::new(bin).args(args).current_dir(root).output().map_err(|err| err.to_string())?;
     if !output.status.success() {
         return Err(format!(
             "command failed: {} {}",

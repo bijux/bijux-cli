@@ -40,10 +40,7 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
             let entry = entry.expect("entry");
             let path = entry.path();
             if path.is_dir() {
-                let name = path
-                    .file_name()
-                    .and_then(|v| v.to_str())
-                    .unwrap_or_default();
+                let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
                 if matches!(name, "target" | "artifacts" | ".git") {
                     continue;
                 }
@@ -91,11 +88,8 @@ fn stable_sources_reject_todo_and_unimplemented_markers() {
 
     let mut violations = Vec::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         if is_excluded(&rel) {
             continue;
         }
@@ -134,11 +128,8 @@ fn public_output_placeholder_text_requires_policy_exception() {
 
     let mut violations = Vec::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         if rel.contains("/tests/") || rel.contains("/benches/") {
             continue;
         }
@@ -158,9 +149,8 @@ fn public_output_placeholder_text_requires_policy_exception() {
                 if !line.contains(token) {
                     continue;
                 }
-                let allowed = exceptions
-                    .iter()
-                    .any(|(path, snippet)| path == &rel && line.contains(snippet));
+                let allowed =
+                    exceptions.iter().any(|(path, snippet)| path == &rel && line.contains(snippet));
                 if !allowed {
                     violations.push(format!("{} -> {}", rel, line.trim()));
                 }
@@ -216,11 +206,8 @@ fn battle_scenarios_are_placeholder_free() {
 
     let mut violations = Vec::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         let text = fs::read_to_string(&file).expect("read battle scenario");
         for token in ["placeholder", "TODO", "TBD"] {
             if text.contains(token) {
@@ -262,11 +249,8 @@ fn operator_command_surfaces_are_placeholder_free() {
 
     let mut violations = Vec::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         if !(rel.contains("/commands/") || rel.ends_with("src/lib.rs")) {
             continue;
         }

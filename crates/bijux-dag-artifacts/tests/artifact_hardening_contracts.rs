@@ -114,11 +114,7 @@ fn corruption_fixtures_are_detected_and_cleanup_plan_is_bounded() {
     assert!(parsed.get("manifest_version").is_none());
 
     let plan = build_cleanup_plan(
-        &[
-            "run-1".to_string(),
-            "scratch-file".to_string(),
-            "cache-abc".to_string(),
-        ],
+        &["run-1".to_string(), "scratch-file".to_string(), "cache-abc".to_string()],
         &["run-", "cache-"],
     );
     assert_eq!(plan.retained.len(), 2);

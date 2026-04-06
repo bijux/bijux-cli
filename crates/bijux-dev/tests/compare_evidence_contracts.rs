@@ -26,13 +26,8 @@ fn comparison_scenarios_link_to_bijux_executable_evidence() {
 
     let scenarios = metadata["scenarios"].as_object().expect("scenarios object");
     for (path, scenario) in scenarios {
-        assert!(
-            root.join(path).exists(),
-            "comparison scenario file missing from metadata: {path}"
-        );
-        let bijux_asset = scenario["bijux_evidence_asset"]
-            .as_str()
-            .expect("bijux_evidence_asset");
+        assert!(root.join(path).exists(), "comparison scenario file missing from metadata: {path}");
+        let bijux_asset = scenario["bijux_evidence_asset"].as_str().expect("bijux_evidence_asset");
         assert!(
             root.join(bijux_asset).exists(),
             "comparison scenario points to missing bijux executable evidence asset: {path} -> {bijux_asset}"
@@ -50,9 +45,8 @@ fn comparison_scenarios_declare_non_equivalence_limits() {
     .expect("parse compare metadata");
     let scenarios = metadata["scenarios"].as_object().expect("scenarios object");
     for (path, scenario) in scenarios {
-        let limits = scenario["non_equivalence_limits"]
-            .as_array()
-            .expect("non_equivalence_limits array");
+        let limits =
+            scenario["non_equivalence_limits"].as_array().expect("non_equivalence_limits array");
         assert!(
             !limits.is_empty(),
             "comparison scenario must define non-equivalence limits: {path}"
@@ -85,8 +79,7 @@ fn comparison_scenarios_do_not_claim_unmeasured_release_blocking_parity() {
 fn comparison_fact_vs_interpretation_report_exists() {
     let root = repo_root();
     assert!(
-        root.join("evidence/reports/comparison_fact_vs_interpretation.md")
-            .exists(),
+        root.join("evidence/reports/comparison_fact_vs_interpretation.md").exists(),
         "comparison fact-vs-interpretation report must exist"
     );
 }

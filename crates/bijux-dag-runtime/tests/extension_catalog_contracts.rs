@@ -101,12 +101,8 @@ fn unknown_extension_versions_and_missing_capabilities_are_reported() {
     let supported = BTreeSet::from(["v0.1".to_string()]);
     let required = BTreeSet::from(["observe".to_string()]);
     let issues = detect_extension_compatibility_issues(&descriptors, &supported, &required);
-    assert!(issues
-        .iter()
-        .any(|i| i.reason.contains("unsupported contract version")));
-    assert!(issues
-        .iter()
-        .any(|i| i.reason.contains("missing required capability")));
+    assert!(issues.iter().any(|i| i.reason.contains("unsupported contract version")));
+    assert!(issues.iter().any(|i| i.reason.contains("missing required capability")));
 }
 
 #[test]

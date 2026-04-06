@@ -17,7 +17,8 @@ fn parse(text: &str) -> bijux_dag_core::Graph {
 
 #[test]
 fn parse_rejects_unknown_fields_fixture() {
-    let payload = include_str!("../../../configs/dag/schema/fixtures/v0.1/negative/unknown-field.json");
+    let payload =
+        include_str!("../../../configs/dag/schema/fixtures/v0.1/negative/unknown-field.json");
     assert!(parse_graph_strict(payload).is_err());
 }
 
@@ -69,10 +70,7 @@ fn diagnostics_order_and_message_stability() {
 }}"#,
         SPEC_VERSION
     ));
-    graph.nodes[0].retry = RetryPolicy {
-        max_attempts: 1,
-        backoff_ms: 0,
-    };
+    graph.nodes[0].retry = RetryPolicy { max_attempts: 1, backoff_ms: 0 };
     graph.nodes[0].effects = vec![];
     graph.nodes[0].params = ParamValue::Literal(json!({"argv":["echo","ok"]}));
 
@@ -119,8 +117,5 @@ fn canonicalization_stable_across_path_separator_variants() {
         a.to_canonical_json().expect("canonical"),
         b.to_canonical_json().expect("canonical")
     );
-    assert_eq!(
-        a.graph_fingerprint().expect("fp"),
-        b.graph_fingerprint().expect("fp")
-    );
+    assert_eq!(a.graph_fingerprint().expect("fp"), b.graph_fingerprint().expect("fp"));
 }

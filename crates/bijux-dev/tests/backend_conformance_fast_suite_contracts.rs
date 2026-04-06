@@ -33,9 +33,6 @@ fn backend_conformance_fast_suite_covers_local_and_modeled_capability_surfaces()
         "adapter_registry_capability_contracts",
         "backend_capability_docs_generation_contracts",
     ] {
-        assert!(
-            commands.contains(required),
-            "backend conformance fast suite missing {required}"
-        );
+        assert!(commands.contains(required), "backend conformance fast suite missing {required}");
     }
 }

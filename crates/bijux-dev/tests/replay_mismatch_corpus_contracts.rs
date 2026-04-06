@@ -23,12 +23,7 @@ fn replay_mismatch_fixture_corpus_is_structured_for_regression_reuse() {
     let cases = payload["cases"].as_array().expect("cases");
     assert!(cases.len() >= 5);
 
-    for cause in [
-        "manifest_drift",
-        "graph_semantics",
-        "node_outcomes",
-        "artifact_payload",
-    ] {
+    for cause in ["manifest_drift", "graph_semantics", "node_outcomes", "artifact_payload"] {
         assert!(
             cases.iter().any(|case| case["cause_group"] == cause),
             "missing cause group fixture: {cause}"

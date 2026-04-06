@@ -13,9 +13,8 @@ use tempfile as _;
 
 #[test]
 fn core_has_no_io_imports() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("crates/bijux-dag-core/src");
+    let root =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join("crates/bijux-dag-core/src");
     let mut offenders = Vec::new();
     for entry in fs::read_dir(root).unwrap() {
         let entry = entry.unwrap();

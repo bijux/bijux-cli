@@ -14,12 +14,8 @@ use thiserror as _;
 fn filesystem_store_roundtrip_and_capability_flags_are_implemented() {
     let dir = tempfile::tempdir().expect("tmp");
     let store = FilesystemArtifactStore::new(dir.path());
-    store
-        .write_bytes("runs/run-1/nodes/a/out.bin", b"payload")
-        .expect("write");
-    let data = store
-        .read_bytes("runs/run-1/nodes/a/out.bin")
-        .expect("read");
+    store.write_bytes("runs/run-1/nodes/a/out.bin", b"payload").expect("write");
+    let data = store.read_bytes("runs/run-1/nodes/a/out.bin").expect("read");
     assert_eq!(data, b"payload");
 
     let caps = store.capabilities();
@@ -30,16 +26,11 @@ fn filesystem_store_roundtrip_and_capability_flags_are_implemented() {
 
 #[test]
 fn object_store_surfaces_modeled_only_errors() {
-    let store = ObjectArtifactStore {
-        bucket: "demo".to_string(),
-        prefix: "artifacts/".to_string(),
-    };
-    let write_err = store
-        .write_bytes("x", b"payload")
-        .expect_err("modeled store write should fail");
-    let read_err = store
-        .read_bytes("x")
-        .expect_err("modeled store read should fail");
+    let store =
+        ObjectArtifactStore { bucket: "demo".to_string(), prefix: "artifacts/".to_string() };
+    let write_err =
+        store.write_bytes("x", b"payload").expect_err("modeled store write should fail");
+    let read_err = store.read_bytes("x").expect_err("modeled store read should fail");
 
     assert!(write_err.contains("not implemented"));
     assert!(read_err.contains("modeled-only"));

@@ -14,10 +14,7 @@ impl Graph {
             resolved_params.insert(node.id.clone(), value);
         }
 
-        Ok(ResolvedGraph {
-            graph: self.clone(),
-            resolved_params,
-        })
+        Ok(ResolvedGraph { graph: self.clone(), resolved_params })
     }
 }
 
@@ -55,15 +52,8 @@ fn resolve_ref(reference: &RefSpec, graph: &Graph) -> Result<Value, GraphError> 
     }
 
     if let Some(node_output) = &reference.node_output {
-        if let Some(node) = graph
-            .nodes
-            .iter()
-            .find(|node| node.id == node_output.node_id)
-        {
-            if let Some(output) = node
-                .outputs
-                .iter()
-                .find(|output| output.name == node_output.path)
+        if let Some(node) = graph.nodes.iter().find(|node| node.id == node_output.node_id) {
+            if let Some(output) = node.outputs.iter().find(|output| output.name == node_output.path)
             {
                 return Ok(Value::String(output.path.clone()));
             }

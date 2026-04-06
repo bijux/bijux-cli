@@ -21,10 +21,8 @@ pub(super) fn run_evidence_ledger_normalize(check: bool) -> Result<(), String> {
         let id_b = b["id"].as_str().unwrap_or("");
         (kind_a, id_a).cmp(&(kind_b, id_b))
     });
-    let normalized = format!(
-        "{}\n",
-        serde_json::to_string_pretty(&ledger).map_err(|err| err.to_string())?
-    );
+    let normalized =
+        format!("{}\n", serde_json::to_string_pretty(&ledger).map_err(|err| err.to_string())?);
     let current = fs::read_to_string(&ledger_path).map_err(|err| err.to_string())?;
     if check {
         if current != normalized {
@@ -71,19 +69,11 @@ mod tests {
 
     #[test]
     fn registry_asset_path_classifier_accepts_governed_roots_only() {
-        assert!(is_registry_asset_path(
-            "evidence/authoring/examples/example.dag.json"
-        ));
-        assert!(is_registry_asset_path(
-            "evidence/perf/scenarios/latency.json"
-        ));
-        assert!(!is_registry_asset_path(
-            "evidence/ownership/evidence_ledger.json"
-        ));
+        assert!(is_registry_asset_path("evidence/authoring/examples/example.dag.json"));
+        assert!(is_registry_asset_path("evidence/perf/scenarios/latency.json"));
+        assert!(!is_registry_asset_path("evidence/ownership/evidence_ledger.json"));
         assert!(!is_registry_asset_path("evidence/perf/scenarios/readme.md"));
-        assert!(!is_registry_asset_path(
-            "docs/reports/foundation/anything.json"
-        ));
+        assert!(!is_registry_asset_path("docs/reports/foundation/anything.json"));
     }
 
     #[test]
@@ -172,21 +162,14 @@ fn build_evidence_registry(root: &Path) -> Result<Value, String> {
             .get("consumers")
             .and_then(Value::as_array)
             .ok_or_else(|| format!("entry missing consumers for path {path}"))?;
-        let trust_properties = entry
-            .get("trust_properties")
-            .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        let release_blocking = entry
-            .get("release_blocking")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        let trust_properties =
+            entry.get("trust_properties").and_then(Value::as_array).cloned().unwrap_or_default();
+        let release_blocking =
+            entry.get("release_blocking").and_then(Value::as_bool).unwrap_or(false);
         let duplicate_of = entry.get("duplicate_of").cloned().unwrap_or(Value::Null);
         let derived_from = entry.get("derived_from").cloned().unwrap_or(Value::Null);
-        let simulation_status = entry
-            .get("simulation_status")
-            .and_then(Value::as_str)
-            .unwrap_or("implemented");
+        let simulation_status =
+            entry.get("simulation_status").and_then(Value::as_str).unwrap_or("implemented");
 
         assets.push(json!({
             "registry_key": format!("{kind}:{id}"),
@@ -205,10 +188,7 @@ fn build_evidence_registry(root: &Path) -> Result<Value, String> {
     }
 
     assets.sort_by(|a, b| {
-        a["registry_key"]
-            .as_str()
-            .unwrap_or("")
-            .cmp(b["registry_key"].as_str().unwrap_or(""))
+        a["registry_key"].as_str().unwrap_or("").cmp(b["registry_key"].as_str().unwrap_or(""))
     });
 
     Ok(json!({
@@ -286,10 +266,7 @@ pub(super) fn run_evidence_registry_orphans() -> Result<(), String> {
     if orphans.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "evidence registry orphans detected: {}",
-            orphans.join(", ")
-        ))
+        Err(format!("evidence registry orphans detected: {}", orphans.join(", ")))
     }
 }
 
@@ -305,10 +282,7 @@ pub(super) fn run_evidence_registry_missing() -> Result<(), String> {
     if missing.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "evidence registry entries missing files: {}",
-            missing.join(", ")
-        ))
+        Err(format!("evidence registry entries missing files: {}", missing.join(", ")))
     }
 }
 
@@ -332,9 +306,7 @@ pub(super) fn run_evidence_registry_verify() -> Result<(), String> {
         let key = asset["registry_key"]
             .as_str()
             .ok_or_else(|| "registry asset missing registry_key".to_string())?;
-        let id = asset["id"]
-            .as_str()
-            .ok_or_else(|| "registry asset missing id".to_string())?;
+        let id = asset["id"].as_str().ok_or_else(|| "registry asset missing id".to_string())?;
         let path = asset["canonical_path"]
             .as_str()
             .ok_or_else(|| "registry asset missing canonical_path".to_string())?;

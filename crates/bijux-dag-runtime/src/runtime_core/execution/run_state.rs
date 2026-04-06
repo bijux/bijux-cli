@@ -10,10 +10,7 @@ impl RunId {
         if value.is_empty() {
             return Err("run id must not be empty".to_string());
         }
-        if !value
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        {
+        if !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
             return Err("run id contains invalid characters".to_string());
         }
         Ok(Self(value.to_string()))
@@ -162,10 +159,7 @@ pub struct RunCompactionPolicy {
 
 impl Default for RunCompactionPolicy {
     fn default() -> Self {
-        Self {
-            max_event_count_before_compaction: 10_000,
-            keep_latest_attempts: 5,
-        }
+        Self { max_event_count_before_compaction: 10_000, keep_latest_attempts: 5 }
     }
 }
 
@@ -280,10 +274,7 @@ pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), Strin
     } else {
         let inv = node_transition_invariant_id(transition.from.clone(), transition.to.clone())
             .unwrap_or("INV-NODE-TRANSITION-UNKNOWN");
-        Err(format!(
-            "{inv} illegal node transition: {:?} -> {:?}",
-            transition.from, transition.to
-        ))
+        Err(format!("{inv} illegal node transition: {:?} -> {:?}", transition.from, transition.to))
     }
 }
 
@@ -308,10 +299,7 @@ pub fn validate_run_transition(transition: &RunTransition) -> Result<(), String>
     } else {
         let inv = run_transition_invariant_id(transition.from.clone(), transition.to.clone())
             .unwrap_or("INV-RUN-TRANSITION-UNKNOWN");
-        Err(format!(
-            "{inv} illegal run transition: {:?} -> {:?}",
-            transition.from, transition.to
-        ))
+        Err(format!("{inv} illegal run transition: {:?} -> {:?}", transition.from, transition.to))
     }
 }
 
@@ -325,15 +313,10 @@ pub fn verify_post_run_state_consistency(
         violations.push("cancelled run has no cancelled nodes".to_string());
     }
     if run_state == RunState::Failed && causal_failure_count == 0 {
-        violations.push(format!(
-            "{} failed run has no causal failure",
-            INV_RUN_FAILED_CAUSAL_FAILURE
-        ));
+        violations
+            .push(format!("{} failed run has no causal failure", INV_RUN_FAILED_CAUSAL_FAILURE));
     }
-    if matches!(
-        run_state,
-        RunState::Succeeded | RunState::Failed | RunState::Cancelled
-    ) {
+    if matches!(run_state, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
         let non_terminal = node_states.iter().any(|s| {
             !matches!(
                 s,
@@ -348,10 +331,7 @@ pub fn verify_post_run_state_consistency(
             violations.push("terminal run contains non-terminal node".to_string());
         }
     }
-    StateConsistencyReport {
-        valid: violations.is_empty(),
-        violations,
-    }
+    StateConsistencyReport { valid: violations.is_empty(), violations }
 }
 
 pub fn imported_run_distinguishable(snapshot: &RunSnapshot) -> bool {
@@ -379,10 +359,7 @@ pub fn terminal_transition_audit_events(
         }
     }
     for transition in run_transitions {
-        if matches!(
-            transition.to,
-            RunState::Succeeded | RunState::Failed | RunState::Cancelled
-        ) {
+        if matches!(transition.to, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
             out.push(TransitionAuditEvent {
                 invariant_id: run_transition_invariant_id(
                     transition.from.clone(),

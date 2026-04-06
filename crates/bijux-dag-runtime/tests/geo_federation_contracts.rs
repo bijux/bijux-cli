@@ -34,14 +34,8 @@ fn region_write_routing_allows_only_configured_regions() {
         ]),
     };
 
-    assert!(region_write_allowed(
-        &rule,
-        &RegionId("eu-north".to_string())
-    ));
-    assert!(!region_write_allowed(
-        &rule,
-        &RegionId("ap-south".to_string())
-    ));
+    assert!(region_write_allowed(&rule, &RegionId("eu-north".to_string())));
+    assert!(!region_write_allowed(&rule, &RegionId("ap-south".to_string())));
 }
 
 #[test]
@@ -64,10 +58,7 @@ fn geo_ready_gate_requires_all_domains() {
     };
     assert!(geo_ready(&gate));
 
-    let blocked = GeoReadyAcceptanceGate {
-        observability_ready: false,
-        ..gate
-    };
+    let blocked = GeoReadyAcceptanceGate { observability_ready: false, ..gate };
     assert!(!geo_ready(&blocked));
 }
 
@@ -75,10 +66,7 @@ fn geo_ready_gate_requires_all_domains() {
 fn split_brain_mitigation_is_fencing_first() {
     let mitigation = default_split_brain_mitigation();
     assert!(mitigation.fencing_required);
-    assert!(mitigation
-        .detection_signals
-        .iter()
-        .any(|signal| signal.contains("dual-leader")));
+    assert!(mitigation.detection_signals.iter().any(|signal| signal.contains("dual-leader")));
 }
 
 #[test]
@@ -86,8 +74,5 @@ fn builds_consistency_catalog_for_reporting() {
     let boundaries = load_consistency_boundaries();
     let catalog = build_consistency_catalog(&boundaries);
     assert_eq!(catalog.len(), 3);
-    assert_eq!(
-        catalog.get("schedule-leases"),
-        Some(&ConsistencyClass::StronglyConsistent)
-    );
+    assert_eq!(catalog.get("schedule-leases"), Some(&ConsistencyClass::StronglyConsistent));
 }

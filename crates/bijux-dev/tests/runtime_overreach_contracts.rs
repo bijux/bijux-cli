@@ -67,9 +67,7 @@ fn overreach_policy_entries_are_complete_and_valid() {
             "overreach entry reason must be set: {}",
             entry.module
         );
-        let module_path = root
-            .join("crates/bijux-dag-runtime/src")
-            .join(&entry.module);
+        let module_path = root.join("crates/bijux-dag-runtime/src").join(&entry.module);
         assert!(
             module_path.exists(),
             "runtime overreach module path missing: {}",
@@ -87,11 +85,8 @@ fn release_evidence_set_does_not_depend_on_overreach_modules() {
     )
     .expect("parse runtime overreach policy");
 
-    let overreach_tokens: Vec<String> = policy
-        .overreach_modules
-        .into_iter()
-        .map(|entry| entry.module.replace('/', "::"))
-        .collect();
+    let overreach_tokens: Vec<String> =
+        policy.overreach_modules.into_iter().map(|entry| entry.module.replace('/', "::")).collect();
 
     let release = fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
         .expect("read release evidence set");
@@ -146,11 +141,8 @@ fn runtime_scope_policy_marks_overreach_modules_as_move_or_retain() {
             "runtime scope missing module_entries decision for overreach module: {}",
             entry.module
         );
-        let expected_scope_decision = if entry.decision == "retain" {
-            "keep"
-        } else {
-            entry.decision.as_str()
-        };
+        let expected_scope_decision =
+            if entry.decision == "retain" { "keep" } else { entry.decision.as_str() };
         assert_eq!(
             entry_scope_decision.as_deref(),
             Some(expected_scope_decision),

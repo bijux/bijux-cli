@@ -28,24 +28,12 @@ pub struct CacheKeyExplanation {
 
 pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
     let intentional_inputs = vec![
-        (
-            "node_fingerprint".to_string(),
-            input.node_fingerprint.clone(),
-        ),
+        ("node_fingerprint".to_string(), input.node_fingerprint.clone()),
         ("adapter_id".to_string(), input.adapter_id.clone()),
         ("adapter_version".to_string(), input.adapter_version.clone()),
-        (
-            "output_schema_version".to_string(),
-            input.output_schema_version.clone(),
-        ),
-        (
-            "policy_fingerprint".to_string(),
-            input.policy_fingerprint.clone(),
-        ),
-        (
-            "config_fingerprint".to_string(),
-            input.config_fingerprint.clone(),
-        ),
+        ("output_schema_version".to_string(), input.output_schema_version.clone()),
+        ("policy_fingerprint".to_string(), input.policy_fingerprint.clone()),
+        ("config_fingerprint".to_string(), input.config_fingerprint.clone()),
         ("backend_class".to_string(), input.backend_class.clone()),
     ];
     let mut hasher = Sha256::new();
@@ -56,22 +44,13 @@ pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
         hasher.update(b";");
     }
     let key = hex::encode(hasher.finalize());
-    CacheKeyExplanation {
-        key,
-        intentional_inputs,
-        accidental_inputs: Vec::new(),
-    }
+    CacheKeyExplanation { key, intentional_inputs, accidental_inputs: Vec::new() }
 }
 
 pub fn cache_entry_has_required_proof(meta: &serde_json::Value) -> bool {
-    meta.get("node_fingerprint")
-        .and_then(|v| v.as_str())
-        .is_some()
+    meta.get("node_fingerprint").and_then(|v| v.as_str()).is_some()
         && meta.get("adapter_id").and_then(|v| v.as_str()).is_some()
-        && meta
-            .get("adapter_version")
-            .and_then(|v| v.as_str())
-            .is_some()
+        && meta.get("adapter_version").and_then(|v| v.as_str()).is_some()
 }
 
 pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {

@@ -60,10 +60,7 @@ impl RuntimeCoordinationState {
 
     pub fn register_trace_write(&self, node_id: &str, trace_path: PathBuf) {
         if let Ok(mut writes) = self.trace_writes.lock() {
-            writes.push(TraceWriteRecord {
-                node_id: node_id.to_string(),
-                trace_path,
-            });
+            writes.push(TraceWriteRecord { node_id: node_id.to_string(), trace_path });
         }
     }
 
@@ -94,44 +91,22 @@ impl RuntimeCoordinationState {
     }
 
     pub fn reject_read_during_active_run(&self, run_id: &str) -> Result<(), String> {
-        let set = self
-            .in_progress_runs
-            .lock()
-            .map_err(|_| "coordination lock poisoned".to_string())?;
+        let set =
+            self.in_progress_runs.lock().map_err(|_| "coordination lock poisoned".to_string())?;
         if set.contains(run_id) {
-            Err(format!(
-                "run directory access rejected while run is in progress: {run_id}"
-            ))
+            Err(format!("run directory access rejected while run is in progress: {run_id}"))
         } else {
             Ok(())
         }
     }
 
     pub fn snapshot(&self) -> RuntimeCoordinationSnapshot {
-        let summary = self
-            .summary
-            .lock()
-            .ok()
-            .map(|v| v.clone())
-            .unwrap_or_default();
-        let trace_writes = self
-            .trace_writes
-            .lock()
-            .ok()
-            .map(|v| v.clone())
-            .unwrap_or_default();
-        let cache_claimed_fingerprints = self
-            .cache_claims
-            .lock()
-            .ok()
-            .map(|v| v.iter().cloned().collect())
-            .unwrap_or_default();
-        let latest_link_updates = self
-            .latest_link_updates
-            .lock()
-            .ok()
-            .map(|v| v.clone())
-            .unwrap_or_default();
+        let summary = self.summary.lock().ok().map(|v| v.clone()).unwrap_or_default();
+        let trace_writes = self.trace_writes.lock().ok().map(|v| v.clone()).unwrap_or_default();
+        let cache_claimed_fingerprints =
+            self.cache_claims.lock().ok().map(|v| v.iter().cloned().collect()).unwrap_or_default();
+        let latest_link_updates =
+            self.latest_link_updates.lock().ok().map(|v| v.clone()).unwrap_or_default();
         RuntimeCoordinationSnapshot {
             summary,
             trace_writes,

@@ -64,10 +64,7 @@ mod tests {
     #[test]
     fn local_and_modeled_capability_queries_are_stable() {
         assert_eq!(local_backend_capability(), local_backend_capability());
-        assert_eq!(
-            kubernetes_backend_capability(),
-            kubernetes_backend_capability()
-        );
+        assert_eq!(kubernetes_backend_capability(), kubernetes_backend_capability());
         assert_eq!(hpc_backend_capability(), hpc_backend_capability());
         assert_eq!(remote_backend_capability(), remote_backend_capability());
     }

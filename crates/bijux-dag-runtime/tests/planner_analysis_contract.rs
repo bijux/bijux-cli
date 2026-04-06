@@ -40,9 +40,7 @@ fn planner_builds_phased_result_and_fingerprint() {
         &graph,
         &options,
         &SelectorSet::default(),
-        &PlannerGuardrails {
-            allow_semantic_optimizations: true,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: true },
     )
     .expect("planner build should succeed");
     assert!(!result.phases.is_empty());
@@ -64,18 +62,14 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
         &graph,
         &RuntimeConfig::default(),
         &SelectorSet::default(),
-        &PlannerGuardrails {
-            allow_semantic_optimizations: false,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: false },
     )
     .expect("before planner should succeed");
     let after = build_planner_analysis(
         &graph,
         &options,
         &options.selectors,
-        &PlannerGuardrails {
-            allow_semantic_optimizations: true,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: true },
     )
     .expect("after planner should succeed");
     let closure = compute_partial_run_closure(&after.plan, &["c".to_string()]);
@@ -107,9 +101,7 @@ fn planner_rejects_unsupported_runtime_capability_during_lowering() {
         &graph,
         &RuntimeConfig::default(),
         &SelectorSet::default(),
-        &PlannerGuardrails {
-            allow_semantic_optimizations: true,
-        },
+        &PlannerGuardrails { allow_semantic_optimizations: true },
     )
     .expect_err("planner must fail for unsupported capability requirements");
     assert!(err.contains("unsupported runtime capability"));

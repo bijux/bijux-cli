@@ -106,21 +106,14 @@ pub fn verify_run_dir(
         }
     }
 
-    Ok(RunDirAuditReport {
-        run_dir: run_dir.to_path_buf(),
-        valid: anomalies.is_empty(),
-        anomalies,
-    })
+    Ok(RunDirAuditReport { run_dir: run_dir.to_path_buf(), valid: anomalies.is_empty(), anomalies })
 }
 
 pub fn build_cleanup_plan(entries: &[String], retain_prefixes: &[&str]) -> ArtifactCleanupPlan {
     let mut retained = Vec::new();
     let mut prunable = Vec::new();
     for entry in entries {
-        if retain_prefixes
-            .iter()
-            .any(|prefix| entry.starts_with(prefix))
-        {
+        if retain_prefixes.iter().any(|prefix| entry.starts_with(prefix)) {
             retained.push(entry.clone());
         } else {
             prunable.push(entry.clone());

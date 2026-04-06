@@ -103,14 +103,8 @@ mod tests {
         fs::create_dir_all(&run_b).expect("create run-b");
         write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
         write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
-        write(
-            &run_a.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &run_b.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
+        write(&run_a.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_b.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
 
         let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
         assert!(diff.replay_equivalence.equivalent);
@@ -126,14 +120,8 @@ mod tests {
         fs::create_dir_all(&run_b).expect("create run-b");
         write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
         write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
-        write(
-            &run_a.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &run_b.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-2"}"#,
-        );
+        write(&run_a.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_b.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-2"}"#);
 
         let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
         assert!(!diff.replay_equivalence.equivalent);
@@ -159,14 +147,8 @@ mod tests {
             &replay.join("manifest.json"),
             r#"{"status":"completed","run_metadata":{"submission_source":"manual"}}"#,
         );
-        write(
-            &imported.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &replay.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
+        write(&imported.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&replay.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
         let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
         assert!(diff.replay_equivalence.equivalent);
         assert!(diff.replay_equivalence.reasons.is_empty());
@@ -187,14 +169,8 @@ mod tests {
             &current.join("manifest.json"),
             r#"{"manifest_version":"run-manifest/v0.1","status":"completed"}"#,
         );
-        write(
-            &old.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &current.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
+        write(&old.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&current.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
         let diff = run_diff_from_dirs(&old, &current).expect("build run diff");
         assert!(diff.replay_equivalence.equivalent);
     }
@@ -208,29 +184,14 @@ mod tests {
         fs::create_dir_all(run_b.join("nodes/n1")).expect("create nodes b");
         write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
         write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
-        write(
-            &run_a.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &run_b.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-1"}"#,
-        );
-        write(
-            &run_a.join("nodes/n1/trace.json"),
-            r#"{"status":"success"}"#,
-        );
+        write(&run_a.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_b.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_a.join("nodes/n1/trace.json"), r#"{"status":"success"}"#);
         write(&run_b.join("nodes/n1/trace.json"), r#"{"status":"failed"}"#);
 
         let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
         assert!(!diff.replay_equivalence.equivalent);
-        assert_eq!(
-            diff.replay_equivalence
-                .cause_groups
-                .get("node_outcomes")
-                .copied(),
-            Some(1)
-        );
+        assert_eq!(diff.replay_equivalence.cause_groups.get("node_outcomes").copied(), Some(1));
     }
 
     #[test]
@@ -248,14 +209,8 @@ mod tests {
             &replay.join("manifest.json"),
             r#"{"status":"completed","run_metadata":{"submission_source":"manual"}}"#,
         );
-        write(
-            &imported.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-import"}"#,
-        );
-        write(
-            &replay.join("graph.snapshot.json"),
-            r#"{"graph_fingerprint":"fp-local"}"#,
-        );
+        write(&imported.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-import"}"#);
+        write(&replay.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-local"}"#);
         let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
         assert!(!diff.replay_equivalence.equivalent);
         assert!(diff

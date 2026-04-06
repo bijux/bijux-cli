@@ -9,10 +9,7 @@ impl TenantId {
         if value.trim().is_empty() {
             return Err("tenant id must not be empty".to_string());
         }
-        if !value
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        {
+        if !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
             return Err("tenant id contains invalid characters".to_string());
         }
         Ok(Self(value.to_string()))
@@ -197,29 +194,15 @@ pub fn scope_lineage_query(
     requested_artifact_ids: &[String],
     scope: &TenantLineageScope,
 ) -> Vec<String> {
-    let allowed = scope
-        .allowed_artifact_ids
-        .iter()
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    requested_artifact_ids
-        .iter()
-        .filter(|id| allowed.contains(*id))
-        .cloned()
-        .collect()
+    let allowed = scope.allowed_artifact_ids.iter().cloned().collect::<BTreeSet<_>>();
+    requested_artifact_ids.iter().filter(|id| allowed.contains(*id)).cloned().collect()
 }
 
 pub fn tenant_provisioning_bootstrap(spec: &TenantProvisioningSpec) -> Vec<String> {
     vec![
         format!("create namespace {}", spec.namespace),
-        format!(
-            "initialize registry partition {}",
-            spec.registry_partition.storage_partition
-        ),
-        format!(
-            "configure queue isolation {}",
-            spec.default_queue_isolation.queue_names.join(",")
-        ),
+        format!("initialize registry partition {}", spec.registry_partition.storage_partition),
+        format!("configure queue isolation {}", spec.default_queue_isolation.queue_names.join(",")),
         format!(
             "attach policy bundle {}:{}",
             spec.default_policy_bundle.policy_bundle_id,

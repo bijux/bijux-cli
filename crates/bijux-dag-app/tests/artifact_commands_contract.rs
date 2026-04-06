@@ -64,15 +64,10 @@ fn hash_artifact_and_artifact_inspect_are_json_capable() {
             "--json",
             "hash",
             "artifact",
-            run.join("nodes/extract/outputs/data.csv")
-                .to_string_lossy()
-                .as_ref(),
+            run.join("nodes/extract/outputs/data.csv").to_string_lossy().as_ref(),
         ])
         .expect("parse hash artifact");
-    assert_eq!(
-        dag_run(&hash).expect("hash artifact run"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&hash).expect("hash artifact run"), std::process::ExitCode::SUCCESS);
 
     let inspect = dag_command()
         .try_get_matches_from([
@@ -83,8 +78,5 @@ fn hash_artifact_and_artifact_inspect_are_json_capable() {
             "extract:data.csv",
         ])
         .expect("parse artifact inspect");
-    assert_eq!(
-        dag_run(&inspect).expect("artifact inspect run"),
-        std::process::ExitCode::SUCCESS
-    );
+    assert_eq!(dag_run(&inspect).expect("artifact inspect run"), std::process::ExitCode::SUCCESS);
 }

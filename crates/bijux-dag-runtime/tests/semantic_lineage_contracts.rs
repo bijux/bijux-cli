@@ -62,16 +62,7 @@ fn replay_recommendation_returns_direct_upstream_dependencies() {
 
 #[test]
 fn export_formats_map_to_expected_media_types() {
-    assert_eq!(
-        export_lineage_format(&LineageExportFormat::Json),
-        "application/json"
-    );
-    assert_eq!(
-        export_lineage_format(&LineageExportFormat::JsonLines),
-        "application/x-ndjson"
-    );
-    assert_eq!(
-        export_lineage_format(&LineageExportFormat::GraphMl),
-        "application/graphml+xml"
-    );
+    assert_eq!(export_lineage_format(&LineageExportFormat::Json), "application/json");
+    assert_eq!(export_lineage_format(&LineageExportFormat::JsonLines), "application/x-ndjson");
+    assert_eq!(export_lineage_format(&LineageExportFormat::GraphMl), "application/graphml+xml");
 }

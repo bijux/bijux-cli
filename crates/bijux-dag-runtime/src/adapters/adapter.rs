@@ -85,10 +85,7 @@ mod tests {
 
     impl Adapter for NoopAdapter {
         fn id(&self) -> AdapterId {
-            AdapterId {
-                id: "noop".to_string(),
-                version: "0.1".to_string(),
-            }
+            AdapterId { id: "noop".to_string(), version: "0.1".to_string() }
         }
 
         fn supported_kinds(&self) -> Vec<String> {
@@ -108,9 +105,7 @@ mod tests {
         }
 
         fn execute(&self, _ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
-            Err(RuntimeError::Executor(
-                "not executed in this contract".to_string(),
-            ))
+            Err(RuntimeError::Executor("not executed in this contract".to_string()))
         }
     }
 

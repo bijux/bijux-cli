@@ -59,14 +59,7 @@ pub(crate) fn handle_capabilities_command(
         payload
     };
     if cli.json {
-        return emit_json(
-            cli,
-            "dag.capabilities",
-            true,
-            payload,
-            Vec::new(),
-            ExitCode::SUCCESS,
-        );
+        return emit_json(cli, "dag.capabilities", true, payload, Vec::new(), ExitCode::SUCCESS);
     }
     println!("{}", serde_json::to_string_pretty(&payload).unwrap());
     Ok(ExitCode::SUCCESS)
@@ -113,19 +106,11 @@ pub(crate) fn handle_semantic_portability_command(
                     json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"}),
                 ]
             },
-            if supported {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(2)
-            },
+            if supported { ExitCode::SUCCESS } else { ExitCode::from(2) },
         );
     }
     println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-    Ok(if supported {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(2)
-    })
+    Ok(if supported { ExitCode::SUCCESS } else { ExitCode::from(2) })
 }
 
 pub(crate) fn handle_equivalence_proof_command(
@@ -167,19 +152,11 @@ pub(crate) fn handle_equivalence_proof_command(
             } else {
                 Vec::new()
             },
-            if status == "downgraded" {
-                ExitCode::from(2)
-            } else {
-                ExitCode::SUCCESS
-            },
+            if status == "downgraded" { ExitCode::from(2) } else { ExitCode::SUCCESS },
         );
     }
     println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-    Ok(if status == "downgraded" {
-        ExitCode::from(2)
-    } else {
-        ExitCode::SUCCESS
-    })
+    Ok(if status == "downgraded" { ExitCode::from(2) } else { ExitCode::SUCCESS })
 }
 
 #[cfg(test)]
@@ -190,11 +167,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn quiet_json_cli() -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: true, quiet: true, command: Commands::Version }
     }
 
     #[test]
@@ -216,10 +189,7 @@ mod tests {
         let cli = DagCli {
             json: true,
             quiet: true,
-            command: Commands::Fsck {
-                run_dir: PathBuf::from("."),
-                strict: false,
-            },
+            command: Commands::Fsck { run_dir: PathBuf::from("."), strict: false },
         };
         let code = handle_semantic_portability_command(&cli, "hpc").unwrap();
         assert_eq!(code, ExitCode::SUCCESS);

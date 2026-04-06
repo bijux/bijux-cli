@@ -240,8 +240,5 @@ pub fn recommended_replay_set(
         .map(|relation| relation.from_id.clone())
         .collect();
 
-    ReplayRecommendation {
-        target_id: target_id.to_string(),
-        minimal_recompute_upstream: upstream,
-    }
+    ReplayRecommendation { target_id: target_id.to_string(), minimal_recompute_upstream: upstream }
 }

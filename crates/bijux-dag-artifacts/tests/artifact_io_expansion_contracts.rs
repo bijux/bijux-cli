@@ -21,9 +21,7 @@ use thiserror as _;
 fn local_store_roundtrip_and_typed_capabilities_hold_for_io_store() {
     let dir = tempfile::tempdir().expect("tmp");
     let store = FilesystemArtifactStore::new(dir.path());
-    store
-        .write_bytes("cas/aa/blob.bin", b"payload")
-        .expect("write");
+    store.write_bytes("cas/aa/blob.bin", b"payload").expect("write");
     let loaded = store.read_bytes("cas/aa/blob.bin").expect("read");
     assert_eq!(loaded, b"payload");
 
@@ -50,10 +48,7 @@ fn fs_materialization_rejects_traversal_and_non_normalized_paths() {
     assert!(!is_normalized_relative_path("../escape.txt"));
     assert!(!is_normalized_relative_path("nested\\win.txt"));
     assert!(is_normalized_relative_path("nested/ok.txt"));
-    assert_eq!(
-        node_output_relpath("extract", "a.txt"),
-        "nodes/extract/outputs/a.txt"
-    );
+    assert_eq!(node_output_relpath("extract", "a.txt"), "nodes/extract/outputs/a.txt");
 }
 
 #[test]
@@ -76,10 +71,7 @@ fn nested_tree_export_style_index_and_empty_payload_identity_are_stable() {
         dir.path(),
         "pack",
         "fp-pack",
-        &[
-            "nested/deeper/data.bin".to_string(),
-            "nested/deeper/empty.bin".to_string(),
-        ],
+        &["nested/deeper/data.bin".to_string(), "nested/deeper/empty.bin".to_string()],
     )
     .expect("index");
     let parsed: OutputsIndex =
@@ -130,14 +122,8 @@ fn retention_and_gc_explain_decisions_cover_retained_and_collectable_sets() {
     ];
 
     let plan = plan_lineage_safe_gc(&referenced, &all, "lineage-io-1");
-    assert!(plan
-        .preserved_artifacts
-        .iter()
-        .any(|id| id.0 == "root:keep.bin"));
-    assert!(plan
-        .collectable_artifacts
-        .iter()
-        .any(|id| id.0 == "tmp:drop.log"));
+    assert!(plan.preserved_artifacts.iter().any(|id| id.0 == "root:keep.bin"));
+    assert!(plan.collectable_artifacts.iter().any(|id| id.0 == "tmp:drop.log"));
 
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-io-1");
     assert!(explain
@@ -178,10 +164,7 @@ fn content_address_identity_is_stable_for_binary_empty_and_large_streaming_paylo
 
 #[test]
 fn modeled_object_store_rejects_io_without_silent_partial_state() {
-    let store = ObjectArtifactStore {
-        bucket: "model".to_string(),
-        prefix: "artifact".to_string(),
-    };
+    let store = ObjectArtifactStore { bucket: "model".to_string(), prefix: "artifact".to_string() };
     assert!(store.write_bytes("x", b"payload").is_err());
     assert!(store.read_bytes("x").is_err());
 }

@@ -63,16 +63,7 @@ fn operational_group(class: RuntimeFailureClass) -> &'static str {
 #[test]
 fn failure_taxonomy_transient_and_permanent_mapping_is_explicit() {
     assert_eq!(operational_group(RuntimeFailureClass::Timeout), "transient");
-    assert_eq!(
-        operational_group(RuntimeFailureClass::AdapterFailure),
-        "transient"
-    );
-    assert_eq!(
-        operational_group(RuntimeFailureClass::PolicyViolation),
-        "permanent"
-    );
-    assert_eq!(
-        operational_group(RuntimeFailureClass::ArtifactCorruption),
-        "permanent"
-    );
+    assert_eq!(operational_group(RuntimeFailureClass::AdapterFailure), "transient");
+    assert_eq!(operational_group(RuntimeFailureClass::PolicyViolation), "permanent");
+    assert_eq!(operational_group(RuntimeFailureClass::ArtifactCorruption), "permanent");
 }

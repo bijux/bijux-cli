@@ -51,10 +51,7 @@ fn generated_chain_graphs_preserve_acyclic_unique_and_deterministic_plan() {
         let plan_b = build_plan(&graph, &options);
         let a = serde_json::to_value(plan_a).expect("serialize a");
         let b = serde_json::to_value(plan_b).expect("serialize b");
-        assert_eq!(
-            a, b,
-            "plan should be deterministic for generated graph size {size}"
-        );
+        assert_eq!(a, b, "plan should be deterministic for generated graph size {size}");
     }
 }
 
@@ -93,18 +90,8 @@ fn canonical_order_is_stable_for_diamond_and_fanout_shapes() {
 
     for payload in [diamond, fanout] {
         let graph = parse_graph_strict(&payload).expect("parse");
-        let order_a = graph
-            .canonicalize()
-            .nodes
-            .into_iter()
-            .map(|n| n.id)
-            .collect::<Vec<_>>();
-        let order_b = graph
-            .canonicalize()
-            .nodes
-            .into_iter()
-            .map(|n| n.id)
-            .collect::<Vec<_>>();
+        let order_a = graph.canonicalize().nodes.into_iter().map(|n| n.id).collect::<Vec<_>>();
+        let order_b = graph.canonicalize().nodes.into_iter().map(|n| n.id).collect::<Vec<_>>();
         assert_eq!(order_a, order_b, "canonical order must be stable");
     }
 }

@@ -27,12 +27,8 @@ pub(crate) fn handle_explain_command(
     if let Some(node_id) = node.as_ref() {
         let snapshot = load_snapshot(run_dir)?;
         let trace = read_file(&node_trace_path(run_dir, node_id))?;
-        let node_info = snapshot
-            .graph
-            .nodes
-            .iter()
-            .find(|n| n.id == *node_id)
-            .ok_or(ExitCode::from(3))?;
+        let node_info =
+            snapshot.graph.nodes.iter().find(|n| n.id == *node_id).ok_or(ExitCode::from(3))?;
         let deps = snapshot
             .graph
             .edges
@@ -41,13 +37,8 @@ pub(crate) fn handle_explain_command(
             .map(|e| e.from.node_id.clone())
             .collect::<Vec<_>>();
         let outputs_index = read_file(&node_outputs_index_path(run_dir, node_id)).ok();
-        let resolved_params = read_file(
-            &run_dir
-                .join("nodes")
-                .join(node_id)
-                .join("resolved_params.json"),
-        )
-        .ok();
+        let resolved_params =
+            read_file(&run_dir.join("nodes").join(node_id).join("resolved_params.json")).ok();
         let outputs = node_info.outputs.clone();
         let inputs = node_info.inputs.clone();
         if cli.json {
@@ -64,14 +55,7 @@ pub(crate) fn handle_explain_command(
                 "trace": serde_json::from_str::<serde_json::Value>(&trace).ok(),
                 "fingerprint": snapshot.graph.node_fingerprint(node_info).ok(),
             });
-            return emit_json(
-                cli,
-                "dag.explain",
-                true,
-                data,
-                Vec::new(),
-                ExitCode::SUCCESS,
-            );
+            return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
         } else {
             println!("node: {}", node_id);
             println!("deps: {:?}", deps);
@@ -85,10 +69,7 @@ pub(crate) fn handle_explain_command(
             if let Some(o) = outputs_index {
                 println!("outputs_index:\n{}", o);
             }
-            println!(
-                "fingerprint: {:?}",
-                snapshot.graph.node_fingerprint(node_info).ok()
-            );
+            println!("fingerprint: {:?}", snapshot.graph.node_fingerprint(node_info).ok());
             println!("trace:\n{}", trace);
         }
     } else if cli.json {
@@ -113,14 +94,7 @@ pub(crate) fn handle_explain_command(
             "node_counts": counts,
             "failed_nodes": failed,
         });
-        return emit_json(
-            cli,
-            "dag.explain",
-            true,
-            data,
-            Vec::new(),
-            ExitCode::SUCCESS,
-        );
+        return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
     } else {
         let m: serde_json::Value = read_manifest_json(run_dir).unwrap_or_default();
         let status = m.get("status").cloned().unwrap_or_default();
@@ -137,10 +111,7 @@ pub(crate) fn handle_explain_command(
                 }
             })
             .collect();
-        println!(
-            "{}",
-            concise_explain_human(&status, &graph_fp, &counts, &failed)
-        );
+        println!("{}", concise_explain_human(&status, &graph_fp, &counts, &failed));
     }
     Ok(ExitCode::SUCCESS)
 }
@@ -210,19 +181,11 @@ mod tests {
     use std::path::Path;
 
     fn quiet_json_cli() -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: true, quiet: true, command: Commands::Version }
     }
 
     fn quiet_human_cli() -> DagCli {
-        DagCli {
-            json: false,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: false, quiet: true, command: Commands::Version }
     }
 
     fn write_run_fixture(imported: bool, malformed_manifest: bool) -> tempfile::TempDir {
@@ -267,16 +230,9 @@ mod tests {
             .expect("snapshot"),
         )
         .expect("write snapshot");
-        fs::write(
-            run.join("nodes/extract/trace.json"),
-            b"{\"status\":\"success\"}",
-        )
-        .expect("trace");
-        fs::write(
-            run.join("nodes/extract/outputs/index.json"),
-            b"{\"files\":[]}",
-        )
-        .expect("index");
+        fs::write(run.join("nodes/extract/trace.json"), b"{\"status\":\"success\"}")
+            .expect("trace");
+        fs::write(run.join("nodes/extract/outputs/index.json"), b"{\"files\":[]}").expect("index");
         dir
     }
 

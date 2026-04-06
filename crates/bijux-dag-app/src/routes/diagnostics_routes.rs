@@ -22,14 +22,7 @@ pub(crate) fn handle_why_rerun_command(
 ) -> Result<ExitCode, ExitCode> {
     let payload = why_rerun_payload(run_a, run_b)?;
     if cli.json {
-        return emit_json(
-            cli,
-            "dag.why-rerun",
-            true,
-            payload,
-            Vec::new(),
-            ExitCode::SUCCESS,
-        );
+        return emit_json(cli, "dag.why-rerun", true, payload, Vec::new(), ExitCode::SUCCESS);
     }
     print_pretty_json(&payload);
     Ok(ExitCode::SUCCESS)
@@ -55,14 +48,7 @@ pub(crate) fn handle_trace_artifact_command(
 ) -> Result<ExitCode, ExitCode> {
     let payload = trace_artifact_payload(run_dir, artifact_id)?;
     if cli.json {
-        return emit_json(
-            cli,
-            "dag.trace-artifact",
-            true,
-            payload,
-            Vec::new(),
-            ExitCode::SUCCESS,
-        );
+        return emit_json(cli, "dag.trace-artifact", true, payload, Vec::new(), ExitCode::SUCCESS);
     }
     print_pretty_json(&payload);
     Ok(ExitCode::SUCCESS)
@@ -82,11 +68,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     fn quiet_json_cli() -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: true, quiet: true, command: Commands::Version }
     }
 
     #[test]

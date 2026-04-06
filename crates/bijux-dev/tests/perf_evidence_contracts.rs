@@ -61,20 +61,13 @@ fn advisory_and_experimental_perf_assets_are_not_release_evidence() {
 fn release_relevant_set_is_small_and_core() {
     let root = repo_root();
     let metadata = load_perf_metadata(&root);
-    let release_set = metadata["release_relevant_set"]
-        .as_array()
-        .expect("release_relevant_set");
-    assert!(
-        release_set.len() <= 8,
-        "release_relevant_set should remain small and focused"
-    );
+    let release_set = metadata["release_relevant_set"].as_array().expect("release_relevant_set");
+    assert!(release_set.len() <= 8, "release_relevant_set should remain small and focused");
 
     let scenarios = metadata["scenarios"].as_object().expect("scenarios object");
     for item in release_set {
         let path = item.as_str().expect("release set path");
-        let entry = scenarios
-            .get(path)
-            .expect("release set entry must exist in scenarios");
+        let entry = scenarios.get(path).expect("release set entry must exist in scenarios");
         assert_eq!(
             entry["scenario_class"].as_str().unwrap_or(""),
             "core",
@@ -91,9 +84,7 @@ fn release_relevant_set_is_small_and_core() {
         "evidence/perf/scenarios/manifest_trace_write_amplification.json",
     ] {
         assert!(
-            release_set
-                .iter()
-                .any(|item| item.as_str().is_some_and(|value| value == required)),
+            release_set.iter().any(|item| item.as_str().is_some_and(|value| value == required)),
             "release_relevant_set missing required canonical scenario: {required}"
         );
     }
@@ -110,14 +101,10 @@ fn perf_commands_and_reports_are_wired() {
         "repo.perf-evidence-summary",
         "repo.perf-release-set",
     ] {
-        assert!(
-            source.contains(token),
-            "missing perf evidence command token: {token}"
-        );
+        assert!(source.contains(token), "missing perf evidence command token: {token}");
     }
     assert!(
-        root.join("evidence/reports/perf_obsolete_candidates.md")
-            .exists(),
+        root.join("evidence/reports/perf_obsolete_candidates.md").exists(),
         "missing perf obsolete candidate report"
     );
 }
@@ -140,10 +127,7 @@ fn benchmark_registry_covers_required_scenarios_and_metadata_links() {
         let path = entry["path"].as_str().expect("path");
         assert!(ids.insert(id.to_string()), "duplicate registry id {id}");
         paths.insert(path.to_string());
-        assert!(
-            scenarios.contains_key(path),
-            "registry path missing in perf metadata: {path}"
-        );
+        assert!(scenarios.contains_key(path), "registry path missing in perf metadata: {path}");
     }
 
     for required in [
@@ -164,9 +148,6 @@ fn benchmark_registry_covers_required_scenarios_and_metadata_links() {
         "portability-success-rate",
         "inspect-history-latency",
     ] {
-        assert!(
-            ids.contains(required),
-            "registry missing required id: {required}"
-        );
+        assert!(ids.contains(required), "registry missing required id: {required}");
     }
 }

@@ -43,14 +43,8 @@ fn run_manifest_version_migration_fixtures_classify_supported_and_unsupported_ve
     );
 
     assert_eq!(supported["manifest_version"], "run-manifest/v0.1");
-    assert_ne!(
-        supported["manifest_version"],
-        unsupported_past["manifest_version"]
-    );
-    assert_ne!(
-        supported["manifest_version"],
-        unsupported_future["manifest_version"]
-    );
+    assert_ne!(supported["manifest_version"], unsupported_past["manifest_version"]);
+    assert_ne!(supported["manifest_version"], unsupported_future["manifest_version"]);
 }
 
 #[test]

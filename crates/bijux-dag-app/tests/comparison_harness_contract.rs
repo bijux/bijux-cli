@@ -22,7 +22,11 @@ use std::path::Path;
 #[test]
 fn comparison_scenarios_have_required_ids_and_unique_names() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let scenarios_dir = root.join("evidence/compare/scenarios");
+    let scenarios_dir = if root.join("evidence/compare/scenarios").is_dir() {
+        root.join("evidence/compare/scenarios")
+    } else {
+        root.join("evidence/dag/compare/scenarios")
+    };
     let entries = fs::read_dir(&scenarios_dir).expect("read scenarios dir");
     let mut ids = BTreeSet::new();
     for entry in entries {
@@ -48,23 +52,21 @@ fn comparison_scenarios_have_required_ids_and_unique_names() {
         "scheduler-tiny-tasks-overhead",
         "artifact-inspectability",
     ] {
-        assert!(
-            ids.contains(required),
-            "missing required scenario id {required}"
-        );
+        assert!(ids.contains(required), "missing required scenario id {required}");
     }
 }
 
 #[test]
 fn bijux_baseline_covers_all_scenarios() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let baseline_path = root.join("evidence/compare/baselines/bijux_v1.json");
+    let baseline_path = if root.join("evidence/compare/baselines/bijux_v1.json").is_file() {
+        root.join("evidence/compare/baselines/bijux_v1.json")
+    } else {
+        root.join("evidence/dag/compare/baselines/bijux_v1.json")
+    };
     let baseline_payload = fs::read_to_string(baseline_path).expect("read baseline");
     let baseline: Value = serde_json::from_str(&baseline_payload).expect("parse baseline");
-    let items = baseline
-        .get("scenarios")
-        .and_then(Value::as_array)
-        .expect("scenarios");
+    let items = baseline.get("scenarios").and_then(Value::as_array).expect("scenarios");
     let mut ids = BTreeSet::new();
     for item in items {
         let id = item.get("id").and_then(Value::as_str).expect("id");

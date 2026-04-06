@@ -77,16 +77,7 @@ fn includes_non_negotiable_invariants() {
 #[test]
 fn integrated_lane_covers_required_domains() {
     let lane = integrated_verification_lane_default();
-    assert!(lane
-        .required_domains
-        .iter()
-        .any(|item| item == "multi-tenant"));
-    assert!(lane
-        .required_domains
-        .iter()
-        .any(|item| item == "compatibility-governance"));
-    assert!(lane
-        .required_evidence
-        .iter()
-        .any(|item| item == "attestation-verification-report"));
+    assert!(lane.required_domains.iter().any(|item| item == "multi-tenant"));
+    assert!(lane.required_domains.iter().any(|item| item == "compatibility-governance"));
+    assert!(lane.required_evidence.iter().any(|item| item == "attestation-verification-report"));
 }

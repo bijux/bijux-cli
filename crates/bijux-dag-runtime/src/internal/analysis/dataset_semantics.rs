@@ -160,9 +160,7 @@ pub fn dataset_consumption_satisfied(
 }
 
 pub fn dataset_ready_for_schedule(gates: &[DatasetReadinessGate]) -> bool {
-    gates
-        .iter()
-        .all(|gate| !gate.required_for_schedule || gate.accepted)
+    gates.iter().all(|gate| !gate.required_for_schedule || gate.accepted)
 }
 
 pub fn dataset_diff(
@@ -171,11 +169,7 @@ pub fn dataset_diff(
     from_schema: &str,
     to_schema: &str,
 ) -> DatasetDiffReport {
-    let compatibility = if from_schema == to_schema {
-        "compatible"
-    } else {
-        "migration-required"
-    };
+    let compatibility = if from_schema == to_schema { "compatible" } else { "migration-required" };
 
     let mut differences = Vec::new();
     if from_schema != to_schema {
@@ -196,28 +190,13 @@ pub fn dataset_catalog_query(
 ) -> Vec<DatasetCatalogEntry> {
     entries
         .iter()
+        .filter(|entry| query.schema_ref.as_ref().is_none_or(|value| &entry.schema_ref == value))
+        .filter(|entry| query.owner.as_ref().is_none_or(|value| &entry.owner == value))
         .filter(|entry| {
-            query
-                .schema_ref
-                .as_ref()
-                .is_none_or(|value| &entry.schema_ref == value)
+            query.freshness_max_minutes.is_none_or(|value| entry.freshness_minutes <= value)
         })
         .filter(|entry| {
-            query
-                .owner
-                .as_ref()
-                .is_none_or(|value| &entry.owner == value)
-        })
-        .filter(|entry| {
-            query
-                .freshness_max_minutes
-                .is_none_or(|value| entry.freshness_minutes <= value)
-        })
-        .filter(|entry| {
-            query
-                .quality_state
-                .as_ref()
-                .is_none_or(|value| &entry.quality_state == value)
+            query.quality_state.as_ref().is_none_or(|value| &entry.quality_state == value)
         })
         .cloned()
         .collect()

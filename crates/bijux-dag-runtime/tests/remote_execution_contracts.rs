@@ -25,10 +25,7 @@ fn remote_identity_requires_run_node_attempt_backend_fields() {
     };
     assert!(validate_remote_identity(&identity).is_ok());
 
-    let missing_backend = RemoteExecutionIdentity {
-        backend_id: String::new(),
-        ..identity
-    };
+    let missing_backend = RemoteExecutionIdentity { backend_id: String::new(), ..identity };
     assert!(validate_remote_identity(&missing_backend).is_err());
 }
 
@@ -49,20 +46,8 @@ fn remote_handoff_requires_artifact_and_observability_fields() {
 
 #[test]
 fn execution_mode_status_is_explicit_for_container_and_kubernetes() {
-    assert_eq!(
-        execution_mode_status("local"),
-        ExecutionModeStatus::Implemented
-    );
-    assert_eq!(
-        execution_mode_status("container"),
-        ExecutionModeStatus::Simulated
-    );
-    assert_eq!(
-        execution_mode_status("kubernetes"),
-        ExecutionModeStatus::NotImplemented
-    );
-    assert_eq!(
-        execution_mode_status("hpc"),
-        ExecutionModeStatus::NotImplemented
-    );
+    assert_eq!(execution_mode_status("local"), ExecutionModeStatus::Implemented);
+    assert_eq!(execution_mode_status("container"), ExecutionModeStatus::Simulated);
+    assert_eq!(execution_mode_status("kubernetes"), ExecutionModeStatus::NotImplemented);
+    assert_eq!(execution_mode_status("hpc"), ExecutionModeStatus::NotImplemented);
 }

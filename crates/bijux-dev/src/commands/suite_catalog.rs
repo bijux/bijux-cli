@@ -19,17 +19,7 @@ pub(super) const CHECK_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || {
             run_status("cargo", &["fmt", "--all", "--", "--check"])?;
-            run_status(
-                "cargo",
-                &[
-                    "clippy",
-                    "--workspace",
-                    "--all-targets",
-                    "--",
-                    "-D",
-                    "warnings",
-                ],
-            )
+            run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])
         },
     },
     SuiteDef {
@@ -99,12 +89,7 @@ pub(super) const CONTRACT_SUITES: &[SuiteDef] = &[
         slow: false,
         internal: false,
         effect: CommandEffect::ReadWrite,
-        run: || {
-            run_status(
-                "cargo",
-                &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"],
-            )
-        },
+        run: || run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
     },
     SuiteDef {
         id: "golden",
@@ -169,15 +154,7 @@ pub(super) const CONTRACT_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || {
-            run_status(
-                "cargo",
-                &[
-                    "test",
-                    "-p",
-                    "bijux-dag-runtime",
-                    "execution_backend_contract",
-                ],
-            )
+            run_status("cargo", &["test", "-p", "bijux-dag-runtime", "execution_backend_contract"])
         },
     },
     SuiteDef {

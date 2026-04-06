@@ -103,13 +103,9 @@ pub fn build_planner_analysis(
     validate_impossible_run_requirements(&normalized_graph)?;
 
     let mut plan = crate::planner::build_plan(&normalized_graph, options);
-    if plan
-        .diagnostics
-        .iter()
-        .any(|d| d.contains("P4013") || d.contains("P4021"))
-    {
+    if plan.diagnostics.iter().any(|d| d.contains("P4013") || d.contains("P4021")) {
         return Err(
-            "planner lowering rejected unsupported runtime capability requirements".to_string(),
+            "planner lowering rejected unsupported runtime capability requirements".to_string()
         );
     }
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
@@ -144,9 +140,7 @@ fn apply_optimizer_rules(
         }
     }
     for node_id in no_op_nodes {
-        plan.filter_reasons
-            .entry(node_id.clone())
-            .or_insert_with(|| "optimized_noop".to_string());
+        plan.filter_reasons.entry(node_id.clone()).or_insert_with(|| "optimized_noop".to_string());
         if let Some(ann) = annotations.iter_mut().find(|ann| ann.node_id == node_id) {
             ann.selected = false;
             ann.reason = "optimized_noop".to_string();
@@ -169,10 +163,8 @@ pub fn fingerprint_plan(
 pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> PlannerPlanDiff {
     let before_order: BTreeSet<String> = before.plan.order.iter().cloned().collect();
     let after_order: BTreeSet<String> = after.plan.order.iter().cloned().collect();
-    let changed_order_nodes = before_order
-        .symmetric_difference(&after_order)
-        .cloned()
-        .collect::<Vec<_>>();
+    let changed_order_nodes =
+        before_order.symmetric_difference(&after_order).cloned().collect::<Vec<_>>();
 
     let mut changed_filter_reasons = Vec::new();
     for (k, v) in &after.plan.filter_reasons {
@@ -181,22 +173,15 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
         }
     }
 
-    let before_ann: BTreeMap<String, String> = before
-        .annotations
-        .iter()
-        .map(|a| (a.node_id.clone(), a.reason.clone()))
-        .collect();
+    let before_ann: BTreeMap<String, String> =
+        before.annotations.iter().map(|a| (a.node_id.clone(), a.reason.clone())).collect();
     let mut changed_annotations = Vec::new();
     for ann in &after.annotations {
         if before_ann.get(&ann.node_id) != Some(&ann.reason) {
             changed_annotations.push(format!("{}:{}", ann.node_id, ann.reason));
         }
     }
-    PlannerPlanDiff {
-        changed_order_nodes,
-        changed_filter_reasons,
-        changed_annotations,
-    }
+    PlannerPlanDiff { changed_order_nodes, changed_filter_reasons, changed_annotations }
 }
 
 pub fn explain_plan(result: &PlannerBuildResult) -> PlannerExplainReport {
@@ -264,11 +249,7 @@ pub fn build_backfill_plan(
     window_end_unix_ms: u128,
     partition_keys: Vec<String>,
 ) -> PlannerBackfillPlan {
-    PlannerBackfillPlan {
-        window_start_unix_ms,
-        window_end_unix_ms,
-        partition_keys,
-    }
+    PlannerBackfillPlan { window_start_unix_ms, window_end_unix_ms, partition_keys }
 }
 
 fn annotate_plan(
@@ -305,19 +286,11 @@ fn annotate_plan(
 }
 
 fn estimate_resources(nodes: &[Node]) -> PlannerResourceEstimate {
-    let total_cpu = nodes
-        .iter()
-        .map(|n| n.resources.as_ref().map(|r| r.cpu as u64).unwrap_or(1))
-        .sum();
-    let total_mem_mb = nodes
-        .iter()
-        .map(|n| n.resources.as_ref().map(|r| r.mem_mb as u64).unwrap_or(256))
-        .sum();
-    PlannerResourceEstimate {
-        total_cpu,
-        total_mem_mb,
-        max_parallelism_hint: nodes.len().max(1),
-    }
+    let total_cpu =
+        nodes.iter().map(|n| n.resources.as_ref().map(|r| r.cpu as u64).unwrap_or(1)).sum();
+    let total_mem_mb =
+        nodes.iter().map(|n| n.resources.as_ref().map(|r| r.mem_mb as u64).unwrap_or(256)).sum();
+    PlannerResourceEstimate { total_cpu, total_mem_mb, max_parallelism_hint: nodes.len().max(1) }
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {

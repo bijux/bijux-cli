@@ -5,11 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 fn quiet_json_cli() -> DagCli {
-    DagCli {
-        json: true,
-        quiet: true,
-        command: Commands::Version,
-    }
+    DagCli { json: true, quiet: true, command: Commands::Version }
 }
 
 fn write_graph_fixture() -> (tempfile::TempDir, PathBuf) {
@@ -73,15 +69,10 @@ fn plan_command_rejects_malformed_input_without_panic() {
     let result = std::panic::catch_unwind(|| {
         handle_plan_command(
             &cli,
-            &PlanCommands::Explain {
-                dag: PathBuf::from("/no/such/graph.json"),
-            },
+            &PlanCommands::Explain { dag: PathBuf::from("/no/such/graph.json") },
         )
     });
-    assert!(
-        result.is_ok(),
-        "plan route should not panic on malformed input"
-    );
+    assert!(result.is_ok(), "plan route should not panic on malformed input");
     assert!(result.expect("result").is_err());
 }
 
@@ -91,15 +82,10 @@ fn plan_diagnostics_rejects_malformed_input_without_panic() {
     let result = std::panic::catch_unwind(|| {
         handle_plan_command(
             &cli,
-            &PlanCommands::Diagnostics {
-                dag: PathBuf::from("/no/such/graph.json"),
-            },
+            &PlanCommands::Diagnostics { dag: PathBuf::from("/no/such/graph.json") },
         )
     });
-    assert!(
-        result.is_ok(),
-        "plan diagnostics should not panic on malformed input"
-    );
+    assert!(result.is_ok(), "plan diagnostics should not panic on malformed input");
     assert!(result.expect("result").is_err());
 }
 
@@ -150,8 +136,5 @@ fn plan_explain_dump_flow_is_stable_for_valid_graph() {
     let graph = crate::parse_graph(&raw).expect("graph");
     let plan =
         crate::lower_graph_to_execution_plan(&graph, crate::PlanOptions::default()).expect("plan");
-    assert!(
-        !plan.ordering.is_empty(),
-        "plan ordering should not be empty"
-    );
+    assert!(!plan.ordering.is_empty(), "plan ordering should not be empty");
 }

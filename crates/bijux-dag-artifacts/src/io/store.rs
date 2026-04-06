@@ -32,9 +32,7 @@ pub struct FilesystemArtifactStore {
 
 impl FilesystemArtifactStore {
     pub fn new(root: impl AsRef<Path>) -> Self {
-        Self {
-            root: root.as_ref().to_path_buf(),
-        }
+        Self { root: root.as_ref().to_path_buf() }
     }
 }
 
@@ -87,19 +85,15 @@ mod tests {
     fn filesystem_artifact_store_roundtrips_bytes() {
         let dir = tempfile::tempdir().expect("tempdir");
         let store = FilesystemArtifactStore::new(dir.path());
-        store
-            .write_bytes("cas/aa/payload", b"hello")
-            .expect("write");
+        store.write_bytes("cas/aa/payload", b"hello").expect("write");
         let loaded = store.read_bytes("cas/aa/payload").expect("read");
         assert_eq!(loaded, b"hello");
     }
 
     #[test]
     fn object_artifact_store_reports_modeled_only_capabilities() {
-        let store = ObjectArtifactStore {
-            bucket: "bucket".to_string(),
-            prefix: "prefix".to_string(),
-        };
+        let store =
+            ObjectArtifactStore { bucket: "bucket".to_string(), prefix: "prefix".to_string() };
         let caps = store.capabilities();
         assert_eq!(caps.support_level, ArtifactStoreSupportLevel::ModeledOnly);
         assert!(!caps.can_write_bytes);

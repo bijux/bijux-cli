@@ -17,116 +17,28 @@ pub struct ValidationRule {
 }
 
 const VALIDATION_RULES: &[ValidationRule] = &[
-    ValidationRule {
-        id: "E1001",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1002",
-        severity: Severity::Error,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "E1003",
-        severity: Severity::Error,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "E1004",
-        severity: Severity::Error,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "E1005",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1006",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1007",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1008",
-        severity: Severity::Error,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "E1009",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1010",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1011",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1013",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1020",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1021",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1022",
-        severity: Severity::Error,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "E1023",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1024",
-        severity: Severity::Error,
-        domain: ValidationDomain::Semantic,
-    },
-    ValidationRule {
-        id: "E1025",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1026",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "E1027",
-        severity: Severity::Error,
-        domain: ValidationDomain::Schema,
-    },
-    ValidationRule {
-        id: "W2001",
-        severity: Severity::Warning,
-        domain: ValidationDomain::Topology,
-    },
-    ValidationRule {
-        id: "W2002",
-        severity: Severity::Warning,
-        domain: ValidationDomain::Topology,
-    },
+    ValidationRule { id: "E1001", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1002", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1003", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1004", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1006", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1007", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1008", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1009", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1010", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1011", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1013", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1020", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1021", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1022", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1023", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1024", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1025", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1026", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1027", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
+    ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
 
 pub fn validation_rule_registry() -> &'static [ValidationRule] {
@@ -317,18 +229,11 @@ impl Graph {
             let from_node = from_node.expect("checked above");
             let to_node = to_node.expect("checked above");
 
-            if !from_node
-                .outputs
-                .iter()
-                .any(|output| output.name == edge.from.port)
-            {
+            if !from_node.outputs.iter().any(|output| output.name == edge.from.port) {
                 emit_rule(
                     &mut diagnostics,
                     "E1003",
-                    format!(
-                        "dangling port reference: {}.{}",
-                        edge.from.node_id, edge.from.port
-                    ),
+                    format!("dangling port reference: {}.{}", edge.from.node_id, edge.from.port),
                     format!("/edges/from/{}/{}", edge.from.node_id, edge.from.port),
                     None,
                 );
@@ -337,10 +242,7 @@ impl Graph {
                 emit_rule(
                     &mut diagnostics,
                     "E1003",
-                    format!(
-                        "dangling port reference: {}.{}",
-                        edge.to.node_id, edge.to.port
-                    ),
+                    format!("dangling port reference: {}.{}", edge.to.node_id, edge.to.port),
                     format!("/edges/to/{}/{}", edge.to.node_id, edge.to.port),
                     None,
                 );
@@ -442,10 +344,7 @@ impl Graph {
 
     pub fn validate_strict(&self) -> Result<Vec<ValidationDiagnostic>, GraphError> {
         let diagnostics = self.validate_with_warnings();
-        if diagnostics
-            .iter()
-            .any(|diag| diag.severity == Severity::Error)
-        {
+        if diagnostics.iter().any(|diag| diag.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed);
         }
         Ok(diagnostics)
@@ -455,23 +354,14 @@ impl Graph {
         let mut diagnostics = Vec::new();
         let mut adjacency: HashMap<&str, Vec<&str>> = HashMap::new();
         for edge in &self.edges {
-            adjacency
-                .entry(edge.from.node_id.as_str())
-                .or_default()
-                .push(edge.to.node_id.as_str());
+            adjacency.entry(edge.from.node_id.as_str()).or_default().push(edge.to.node_id.as_str());
         }
 
         let mut visited = BTreeSet::new();
         let mut stack: Vec<&str> = self
             .nodes
             .iter()
-            .filter_map(|node| {
-                if node.inputs.is_empty() {
-                    Some(node.id.as_str())
-                } else {
-                    None
-                }
-            })
+            .filter_map(|node| if node.inputs.is_empty() { Some(node.id.as_str()) } else { None })
             .collect();
 
         while let Some(node_id) = stack.pop() {
@@ -579,10 +469,7 @@ pub fn validate_schema(graph: &Graph) -> Vec<ValidationDiagnostic> {
     validate_graph(graph)
         .into_iter()
         .filter(|diag| {
-            matches!(
-                classify_rule_domain(diag.code.as_str()),
-                Some(ValidationDomain::Schema)
-            )
+            matches!(classify_rule_domain(diag.code.as_str()), Some(ValidationDomain::Schema))
         })
         .collect()
 }
@@ -591,10 +478,7 @@ pub fn validate_semantics(graph: &Graph) -> Vec<ValidationDiagnostic> {
     validate_graph(graph)
         .into_iter()
         .filter(|diag| {
-            matches!(
-                classify_rule_domain(diag.code.as_str()),
-                Some(ValidationDomain::Semantic)
-            )
+            matches!(classify_rule_domain(diag.code.as_str()), Some(ValidationDomain::Semantic))
         })
         .collect()
 }
@@ -603,10 +487,7 @@ pub fn validate_topology(graph: &Graph) -> Vec<ValidationDiagnostic> {
     validate_graph(graph)
         .into_iter()
         .filter(|diag| {
-            matches!(
-                classify_rule_domain(diag.code.as_str()),
-                Some(ValidationDomain::Topology)
-            )
+            matches!(classify_rule_domain(diag.code.as_str()), Some(ValidationDomain::Topology))
         })
         .collect()
 }
@@ -633,10 +514,8 @@ fn validate_param_value(
                 }
             }
             if let Some(node_output) = &spec.node_output {
-                let target = graph
-                    .nodes
-                    .iter()
-                    .find(|candidate| candidate.id == node_output.node_id);
+                let target =
+                    graph.nodes.iter().find(|candidate| candidate.id == node_output.node_id);
                 if target.is_none()
                     || !target
                         .expect("checked above")
@@ -655,10 +534,9 @@ fn validate_param_value(
                         None,
                     );
                 }
-                if let (Some(&source_index), Some(&current_index)) = (
-                    order.get(node_output.node_id.as_str()),
-                    order.get(node.id.as_str()),
-                ) {
+                if let (Some(&source_index), Some(&current_index)) =
+                    (order.get(node_output.node_id.as_str()), order.get(node.id.as_str()))
+                {
                     if source_index >= current_index {
                         emit_rule(
                             diagnostics,
@@ -703,8 +581,5 @@ fn validate_param_value(
 }
 
 fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {
-    validation_rule_registry()
-        .iter()
-        .find(|rule| rule.id == code)
-        .map(|rule| rule.domain)
+    validation_rule_registry().iter().find(|rule| rule.id == code).map(|rule| rule.domain)
 }

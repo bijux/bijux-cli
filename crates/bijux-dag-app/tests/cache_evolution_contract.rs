@@ -28,11 +28,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
 fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
     let entry = base.join(key);
     fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
-    let content = if valid {
-        b"ok".to_vec()
-    } else {
-        b"bad".to_vec()
-    };
+    let content = if valid { b"ok".to_vec() } else { b"bad".to_vec() };
     fs::write(entry.join("outputs/out.txt"), &content).expect("write output");
     let index = json!({
         "files": [{
@@ -48,11 +44,8 @@ fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
     )
     .expect("write index");
     let meta = json!({"node_fingerprint": key, "adapter_id": "shell", "adapter_version": "1"});
-    fs::write(
-        entry.join("meta.json"),
-        serde_json::to_vec_pretty(&meta).expect("meta json"),
-    )
-    .expect("write meta");
+    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta).expect("meta json"))
+        .expect("write meta");
 }
 
 #[test]
@@ -136,9 +129,8 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
 
 #[test]
 fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
-    let fixture_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("evidence/cache");
+    let fixture_root =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").join("evidence/cache");
     for rel in [
         "corrupt/missing_meta.json",
         "corrupt/hash_mismatch.json",
@@ -153,7 +145,5 @@ fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
         fs::read_to_string(fixture_root.join("scenarios/warm_cold.json")).expect("read warm_cold");
     let parsed: serde_json::Value = serde_json::from_str(&warm_cold).expect("parse warm_cold");
     let expectations = parsed["expectations"].as_array().expect("expectation list");
-    assert!(expectations
-        .iter()
-        .any(|v| v == "warm_and_cold_outputs_semantically_equal"));
+    assert!(expectations.iter().any(|v| v == "warm_and_cold_outputs_semantically_equal"));
 }

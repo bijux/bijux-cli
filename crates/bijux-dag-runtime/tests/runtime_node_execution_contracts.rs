@@ -15,11 +15,8 @@ use std::collections::BTreeSet;
 
 #[test]
 fn node_execution_requires_dependencies_and_retry_budget() {
-    let retry = RetryPolicySemantics {
-        max_attempts: 2,
-        initial_backoff_ms: 10,
-        exponential: false,
-    };
+    let retry =
+        RetryPolicySemantics { max_attempts: 2, initial_backoff_ms: 10, exponential: false };
     assert!(retry_allowed(1, &retry));
     assert!(!retry_allowed(2, &retry));
 

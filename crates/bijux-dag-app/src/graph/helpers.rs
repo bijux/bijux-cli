@@ -10,10 +10,7 @@ pub(crate) fn parse_selectors(
     include: &[String],
     exclude: &[String],
 ) -> Result<SelectorSet, ExitCode> {
-    let mut set = SelectorSet {
-        include: Vec::new(),
-        exclude: Vec::new(),
-    };
+    let mut set = SelectorSet { include: Vec::new(), exclude: Vec::new() };
     for raw in include {
         set.include.push(parse_selector(raw)?);
     }
@@ -138,11 +135,7 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
         fs::hard_link(&a, &b).is_ok()
     };
 
-    let status = if cache_status["status"] == "error" {
-        "error"
-    } else {
-        "ok"
-    };
+    let status = if cache_status["status"] == "error" { "error" } else { "ok" };
 
     Ok(json!({
         "status": status,
@@ -157,16 +150,10 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
 pub(crate) fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let input = read_file(path)?;
     let graph = parse_graph(&input)?;
-    let from_normalized = if from == "0.1" || from == "v0.1" {
-        SPEC_VERSION.to_string()
-    } else {
-        from.to_string()
-    };
-    let to_normalized = if to == "0.1" || to == "v0.1" {
-        SPEC_VERSION.to_string()
-    } else {
-        to.to_string()
-    };
+    let from_normalized =
+        if from == "0.1" || from == "v0.1" { SPEC_VERSION.to_string() } else { from.to_string() };
+    let to_normalized =
+        if to == "0.1" || to == "v0.1" { SPEC_VERSION.to_string() } else { to.to_string() };
     if graph.spec != from_normalized {
         return Err(ExitCode::from(3));
     }
@@ -178,16 +165,10 @@ pub(crate) fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, E
 
 pub(crate) fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let snapshot = load_snapshot(path)?;
-    let from_normalized = if from == "0.1" || from == "v0.1" {
-        SPEC_VERSION.to_string()
-    } else {
-        from.to_string()
-    };
-    let to_normalized = if to == "0.1" || to == "v0.1" {
-        SPEC_VERSION.to_string()
-    } else {
-        to.to_string()
-    };
+    let from_normalized =
+        if from == "0.1" || from == "v0.1" { SPEC_VERSION.to_string() } else { from.to_string() };
+    let to_normalized =
+        if to == "0.1" || to == "v0.1" { SPEC_VERSION.to_string() } else { to.to_string() };
     if snapshot.graph.spec != from_normalized {
         return Err(ExitCode::from(3));
     }
@@ -204,10 +185,8 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
         return Ok(json!({"status":"ok","errors":[]}));
     }
     let mut errors = Vec::new();
-    let mut entries: Vec<_> = fs::read_dir(&base)
-        .map_err(|_| ExitCode::from(3))?
-        .filter_map(|e| e.ok())
-        .collect();
+    let mut entries: Vec<_> =
+        fs::read_dir(&base).map_err(|_| ExitCode::from(3))?.filter_map(|e| e.ok()).collect();
     entries.sort_by_key(|e| e.file_name());
     for entry in entries {
         let path = entry.path();
@@ -219,11 +198,7 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
         {
             continue;
         }
-        let stem = path
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .replace(".dag.json", "");
+        let stem = path.file_name().unwrap().to_string_lossy().replace(".dag.json", "");
         let canonical_path = base.join(format!("{}.canonical.json", stem));
         let graph_fp_path = base.join(format!("{}.graph_fingerprint", stem));
         let node_fp_path = base.join(format!("{}.node_fingerprints.json", stem));
@@ -236,10 +211,7 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
             errors.push(format!("canonical mismatch: {}", stem));
         }
         let fp = graph.graph_fingerprint().map_err(|_| ExitCode::from(3))?;
-        let expected_fp = read_file(&graph_fp_path)
-            .unwrap_or_default()
-            .trim()
-            .to_string();
+        let expected_fp = read_file(&graph_fp_path).unwrap_or_default().trim().to_string();
         if fp != expected_fp {
             errors.push(format!("graph fingerprint mismatch: {}", stem));
         }

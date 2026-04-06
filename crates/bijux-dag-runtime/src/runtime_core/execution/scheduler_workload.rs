@@ -201,11 +201,7 @@ pub fn compute_partition_backfill_batches(
     orchestration: &PartitionBackfillOrchestration,
 ) -> Vec<Vec<String>> {
     let width = orchestration.max_inflight_partitions.max(1) as usize;
-    orchestration
-        .partition_keys
-        .chunks(width)
-        .map(|chunk| chunk.to_vec())
-        .collect()
+    orchestration.partition_keys.chunks(width).map(|chunk| chunk.to_vec()).collect()
 }
 
 pub fn apply_backfill_throttling(
@@ -267,20 +263,14 @@ pub fn materialize_next_runs(
         }
         _ => {}
     }
-    MaterializedRunPreview {
-        schedule_id: definition.id.clone(),
-        next_run_unix_ms: next,
-    }
+    MaterializedRunPreview { schedule_id: definition.id.clone(), next_run_unix_ms: next }
 }
 
 pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConflict> {
     let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for d in definitions {
         if let TriggerSpec::Cron { expression, .. } = &d.trigger {
-            grouped
-                .entry(expression.clone())
-                .or_default()
-                .push(d.id.clone());
+            grouped.entry(expression.clone()).or_default().push(d.id.clone());
         }
     }
     grouped
@@ -288,10 +278,7 @@ pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConf
         .filter(|(_, ids)| ids.len() > 1)
         .map(|(expression, mut ids)| {
             ids.sort();
-            CronConflict {
-                schedule_ids: ids,
-                expression,
-            }
+            CronConflict { schedule_ids: ids, expression }
         })
         .collect()
 }
@@ -343,14 +330,10 @@ pub fn evaluate_sla_metrics(
     queue_saturation_count: u64,
     fairness_drift_count: u64,
 ) -> SchedulerSlaMetrics {
-    let missed_expected_start = starts
-        .iter()
-        .filter(|(actual, expected)| actual > expected)
-        .count() as u64;
-    let missed_expected_finish = finishes
-        .iter()
-        .filter(|(actual, expected)| actual > expected)
-        .count() as u64;
+    let missed_expected_start =
+        starts.iter().filter(|(actual, expected)| actual > expected).count() as u64;
+    let missed_expected_finish =
+        finishes.iter().filter(|(actual, expected)| actual > expected).count() as u64;
     SchedulerSlaMetrics {
         missed_expected_start,
         missed_expected_finish,

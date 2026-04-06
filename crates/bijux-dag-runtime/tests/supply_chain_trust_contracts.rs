@@ -51,21 +51,9 @@ fn promotion_policy_enforces_label_and_completeness() {
         require_completeness: true,
     };
 
-    assert!(can_promote_artifact(
-        &ArtifactTrustLabel::Approved,
-        true,
-        &policy
-    ));
-    assert!(!can_promote_artifact(
-        &ArtifactTrustLabel::Verified,
-        true,
-        &policy
-    ));
-    assert!(!can_promote_artifact(
-        &ArtifactTrustLabel::Attested,
-        false,
-        &policy
-    ));
+    assert!(can_promote_artifact(&ArtifactTrustLabel::Approved, true, &policy));
+    assert!(!can_promote_artifact(&ArtifactTrustLabel::Verified, true, &policy));
+    assert!(!can_promote_artifact(&ArtifactTrustLabel::Attested, false, &policy));
 }
 
 #[test]
@@ -131,10 +119,6 @@ fn regulated_reference_requires_signed_attested_release_path() {
     let reference = regulated_workflow_reference_example();
     assert!(reference.requires_signed_artifacts);
     assert!(reference.requires_attested_promotion);
-    assert!(reference
-        .required_labels
-        .contains(&ArtifactTrustLabel::Attested));
-    assert!(reference
-        .required_labels
-        .contains(&ArtifactTrustLabel::Approved));
+    assert!(reference.required_labels.contains(&ArtifactTrustLabel::Attested));
+    assert!(reference.required_labels.contains(&ArtifactTrustLabel::Approved));
 }

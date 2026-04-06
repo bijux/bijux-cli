@@ -39,11 +39,7 @@ fn fixture_files() -> Vec<PathBuf> {
 fn runtime_fixture_scenarios() -> BTreeSet<String> {
     fixture_files()
         .into_iter()
-        .filter_map(|path| {
-            path.file_stem()
-                .and_then(|s| s.to_str())
-                .map(ToOwned::to_owned)
-        })
+        .filter_map(|path| path.file_stem().and_then(|s| s.to_str()).map(ToOwned::to_owned))
         .collect()
 }
 
@@ -82,9 +78,10 @@ struct ScenarioMetadata {
 }
 
 fn load_policy() -> BattleTrustPolicy {
-    let raw =
-        fs::read_to_string(workspace_root().join("configs/dag/policy/battle_trust_properties.json"))
-            .expect("battle trust policy should exist");
+    let raw = fs::read_to_string(
+        workspace_root().join("configs/dag/policy/battle_trust_properties.json"),
+    )
+    .expect("battle trust policy should exist");
     serde_json::from_str(&raw).expect("battle trust policy should parse")
 }
 
@@ -131,15 +128,9 @@ fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
     assert_eq!(metadata.owner, "runtime-foundation");
     assert!(metadata.review_interval_days >= 30);
 
-    let property_ids: BTreeSet<String> = policy
-        .trust_properties
-        .iter()
-        .map(|property| property.id.clone())
-        .collect();
-    assert!(
-        property_ids.len() >= 12,
-        "battle trust property set must contain at least 12 ids"
-    );
+    let property_ids: BTreeSet<String> =
+        policy.trust_properties.iter().map(|property| property.id.clone()).collect();
+    assert!(property_ids.len() >= 12, "battle trust property set must contain at least 12 ids");
     assert!(
         property_ids.contains("tp_plan_truth"),
         "battle trust property set must include tp_plan_truth"
@@ -160,10 +151,7 @@ fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
             .file_stem()
             .and_then(|stem| stem.to_str())
             .expect("scenario fixture file name must be utf8");
-        assert_eq!(
-            scenario, file_stem,
-            "scenario id must match fixture file name"
-        );
+        assert_eq!(scenario, file_stem, "scenario id must match fixture file name");
         scenario_ids_from_files.insert(scenario.clone());
 
         let scenario_metadata = metadata

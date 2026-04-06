@@ -144,10 +144,7 @@ fn lcg(seed: &mut u64) -> u64 {
 }
 
 fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
-    let mut graph = parse_graph(&format!(
-        r#"{{"spec":"{}","nodes":[],"edges":[]}}"#,
-        SPEC_VERSION
-    ));
+    let mut graph = parse_graph(&format!(r#"{{"spec":"{}","nodes":[],"edges":[]}}"#, SPEC_VERSION));
 
     for i in 0..nodes {
         let id = format!("n{:03}", i);
@@ -221,10 +218,7 @@ fn canonicalization_is_idempotent_property() {
         let g = make_random_graph(seed, 9);
         let once = g.canonicalize();
         let twice = once.canonicalize();
-        assert_eq!(
-            once.to_canonical_json().unwrap(),
-            twice.to_canonical_json().unwrap()
-        );
+        assert_eq!(once.to_canonical_json().unwrap(), twice.to_canonical_json().unwrap());
         assert_eq!(once.graph_id().unwrap(), twice.graph_id().unwrap());
     }
 }
@@ -237,9 +231,6 @@ fn graph_schema_failure_corpus_rejects_invalid_inputs() {
     ];
 
     for payload in fixtures {
-        assert!(
-            parse_graph_strict(payload).is_err(),
-            "schema failure fixture must be rejected"
-        );
+        assert!(parse_graph_strict(payload).is_err(), "schema failure fixture must be rejected");
     }
 }

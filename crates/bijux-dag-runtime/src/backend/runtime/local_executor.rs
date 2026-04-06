@@ -9,11 +9,7 @@ pub struct LocalExecutor {
 
 impl LocalExecutor {
     pub fn new(capacity: usize) -> Self {
-        Self {
-            capacity: capacity.max(1),
-            inflight: 0,
-            queue: VecDeque::new(),
-        }
+        Self { capacity: capacity.max(1), inflight: 0, queue: VecDeque::new() }
     }
 
     pub fn submit(&mut self, node_id: String) -> Result<(), String> {

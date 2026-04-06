@@ -41,33 +41,15 @@ fn scheduler_profile_contract_values_match_reported_surface() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(
-        format!("{:?}", profile.ready_tie_break),
-        "LexicographicNodeId"
-    );
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
 }
 
 #[test]
 fn deterministic_submission_order_is_stable_for_mixed_readiness_groups() {
     let nodes = vec![
-        ReadyNode {
-            node_id: "b".to_string(),
-            priority: 2,
-            attempt: 1,
-            ready_unix_ms: 1_000,
-        },
-        ReadyNode {
-            node_id: "a".to_string(),
-            priority: 2,
-            attempt: 1,
-            ready_unix_ms: 1_000,
-        },
-        ReadyNode {
-            node_id: "z".to_string(),
-            priority: 1,
-            attempt: 2,
-            ready_unix_ms: 900,
-        },
+        ReadyNode { node_id: "b".to_string(), priority: 2, attempt: 1, ready_unix_ms: 1_000 },
+        ReadyNode { node_id: "a".to_string(), priority: 2, attempt: 1, ready_unix_ms: 1_000 },
+        ReadyNode { node_id: "z".to_string(), priority: 1, attempt: 2, ready_unix_ms: 900 },
     ];
     let first = deterministic_schedule_order(nodes.clone(), &BTreeMap::new());
     let second = deterministic_schedule_order(nodes, &BTreeMap::new());
@@ -109,21 +91,15 @@ fn trace_timestamps_remain_monotonic_under_high_event_volume() {
 fn terminal_run_requires_terminal_node_presence() {
     let report = verify_post_run_state_consistency(RunState::Succeeded, &[NodeState::Running], 0);
     assert!(!report.valid);
-    assert!(report
-        .violations
-        .iter()
-        .any(|line| line.contains("non-terminal node")));
+    assert!(report.violations.iter().any(|line| line.contains("non-terminal node")));
 }
 
 #[test]
 fn scheduler_emits_backpressure_when_cpu_budget_is_exceeded() {
     let graph = parse_graph_strict(cpu_budget_graph()).expect("graph");
     let mut options = RuntimeConfig::default();
-    options.scheduler_policy = SchedulerPolicy {
-        max_parallelism: 2,
-        cpu_budget: Some(2),
-        ..SchedulerPolicy::default()
-    };
+    options.scheduler_policy =
+        SchedulerPolicy { max_parallelism: 2, cpu_budget: Some(2), ..SchedulerPolicy::default() };
     let plan = build_plan(&graph, &options);
     let dep_counter = DependencyCounter::from_plan(&plan);
     let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());

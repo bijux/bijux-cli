@@ -95,14 +95,8 @@ fn canonical_and_topology_entrypoints_are_directly_covered() {
 #[test]
 fn edge_and_validate_entrypoints_are_directly_covered() {
     let edge = Edge {
-        from: bijux_dag_core::PortRef {
-            node_id: "a".to_string(),
-            port: "out".to_string(),
-        },
-        to: bijux_dag_core::PortRef {
-            node_id: "b".to_string(),
-            port: "in".to_string(),
-        },
+        from: bijux_dag_core::PortRef { node_id: "a".to_string(), port: "out".to_string() },
+        to: bijux_dag_core::PortRef { node_id: "b".to_string(), port: "in".to_string() },
     };
     let typed: TypedEdge = edge.into();
     assert_eq!(typed.dependency, EdgeDependencyKind::Data);

@@ -50,10 +50,7 @@ fn task_contract_supports_all_isolation_modes() {
         ),
         container: None,
         timeout_ms: None,
-        resources: Some(bijux_dag_core::Resources {
-            cpu: 1,
-            mem_mb: 128,
-        }),
+        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 128 }),
         tags: vec![],
         retry: bijux_dag_core::RetryPolicy::default(),
         effects: vec![bijux_dag_core::Effect::Filesystem],
@@ -77,10 +74,7 @@ fn task_contract_supports_all_isolation_modes() {
             engine: "docker".to_string(),
         }),
         timeout_ms: None,
-        resources: Some(bijux_dag_core::Resources {
-            cpu: 1,
-            mem_mb: 128,
-        }),
+        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 128 }),
         tags: vec![],
         retry: bijux_dag_core::RetryPolicy::default(),
         effects: vec![bijux_dag_core::Effect::Filesystem],
@@ -98,10 +92,7 @@ fn task_contract_supports_all_isolation_modes() {
         params: bijux_dag_core::ParamValue::default(),
         container: None,
         timeout_ms: None,
-        resources: Some(bijux_dag_core::Resources {
-            cpu: 1,
-            mem_mb: 128,
-        }),
+        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 128 }),
         tags: vec![],
         retry: bijux_dag_core::RetryPolicy::default(),
         effects: vec![bijux_dag_core::Effect::Filesystem],
@@ -146,10 +137,7 @@ fn task_result_envelope_json_shape_is_stable() {
     assert_eq!(value["status"], json!("success"));
     assert_eq!(value["attempts"], json!(1));
     assert_eq!(value["failure_reason"], json!("Execution"));
-    assert_eq!(
-        value["provenance"]["executable_identity"],
-        json!("runtime/local")
-    );
+    assert_eq!(value["provenance"]["executable_identity"], json!("runtime/local"));
     assert_eq!(value["provenance"]["adapter_identity"], json!("const@0.1"));
     assert!(value["provenance"]["resolved_task_contract"].is_object());
 }

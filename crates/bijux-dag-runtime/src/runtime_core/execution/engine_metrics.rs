@@ -64,10 +64,7 @@ fn count_runtime_events(run_log_index: &[Value], name: &str) -> u64 {
 }
 
 pub fn count_cache_hits(status_map: &std::collections::HashMap<String, NodeStatus>) -> u64 {
-    status_map
-        .values()
-        .filter(|status| matches!(status, NodeStatus::Cached))
-        .count() as u64
+    status_map.values().filter(|status| matches!(status, NodeStatus::Cached)).count() as u64
 }
 
 #[cfg(test)]
@@ -80,12 +77,7 @@ mod tests {
 
     #[test]
     fn run_metrics_shape_is_stable_for_finished_run() {
-        let counts = NodeCounts {
-            success: 3,
-            failed: 1,
-            skipped: 0,
-            cached: 2,
-        };
+        let counts = NodeCounts { success: 3, failed: 1, skipped: 0, cached: 2 };
         let metrics = build_run_metrics(&counts, 6, &RuntimeConfig::default(), 1_500, 1_000, 2, 4);
         assert_eq!(metrics.makespan_ms, 500);
         assert_eq!(metrics.execution_ms, 500);
@@ -95,12 +87,7 @@ mod tests {
 
     #[test]
     fn scheduler_metrics_counts_events_and_budget_starvation() {
-        let counts = NodeCounts {
-            success: 2,
-            failed: 1,
-            skipped: 1,
-            cached: 1,
-        };
+        let counts = NodeCounts { success: 2, failed: 1, skipped: 1, cached: 1 };
         let log = vec![
             json!({"event":"node_attempt_started"}),
             json!({"event":"cache_hit"}),

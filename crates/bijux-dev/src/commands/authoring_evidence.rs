@@ -58,10 +58,7 @@ fn has_speculative_keywords(payload: &str) -> bool {
 
 fn collect_doc_references(root: &Path) -> Result<BTreeSet<String>, String> {
     let mut refs = BTreeSet::new();
-    let docs = [
-        "docs/spec/AUTHORING_UX_CONTRACT.md",
-        "docs/user/AUTHORING_GUIDE.md",
-    ];
+    let docs = ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/user/AUTHORING_GUIDE.md"];
     for rel in docs {
         let text = fs::read_to_string(root.join(rel)).map_err(|err| err.to_string())?;
         for token in text.split_whitespace() {
@@ -98,23 +95,13 @@ pub(super) fn run_validate_all_authoring() -> Result<(), String> {
             return Err(format!("authoring asset missing on disk: {rel}"));
         }
         if !rel.starts_with("evidence/authoring/") {
-            return Err(format!(
-                "authoring metadata contains non-authoring path: {rel}"
-            ));
+            return Err(format!("authoring metadata contains non-authoring path: {rel}"));
         }
         if rel.starts_with("evidence/battle/") {
-            return Err(format!(
-                "battle workflow cannot masquerade as authoring evidence: {rel}"
-            ));
+            return Err(format!("battle workflow cannot masquerade as authoring evidence: {rel}"));
         }
-        if !matches!(
-            asset.group.as_str(),
-            "minimal" | "patterns" | "negative" | "examples"
-        ) {
-            return Err(format!(
-                "authoring asset has unsupported group `{}`: {rel}",
-                asset.group
-            ));
+        if !matches!(asset.group.as_str(), "minimal" | "patterns" | "negative" | "examples") {
+            return Err(format!("authoring asset has unsupported group `{}`: {rel}", asset.group));
         }
         if !matches!(asset.authoring_mode.as_str(), "normative" | "illustrative") {
             return Err(format!(
@@ -128,10 +115,7 @@ pub(super) fn run_validate_all_authoring() -> Result<(), String> {
                 asset.expected_validation
             ));
         }
-        if !matches!(
-            asset.expected_lowering.as_str(),
-            "required" | "optional" | "none"
-        ) {
+        if !matches!(asset.expected_lowering.as_str(), "required" | "optional" | "none") {
             return Err(format!(
                 "authoring asset has unsupported expected_lowering `{}`: {rel}",
                 asset.expected_lowering
@@ -209,9 +193,7 @@ pub(super) fn run_validate_all_authoring() -> Result<(), String> {
 
     for required in ["minimal", "patterns", "negative", "examples"] {
         if !groups_seen.contains(required) {
-            return Err(format!(
-                "authoring metadata does not cover required group `{required}`"
-            ));
+            return Err(format!("authoring metadata does not cover required group `{required}`"));
         }
     }
     if !missing_doc_refs.is_empty() {
@@ -242,22 +224,14 @@ pub(super) fn run_show_effective_all_authoring() -> Result<(), String> {
             })
         })
         .collect();
-    assets.sort_by(|a, b| {
-        a["path"]
-            .as_str()
-            .unwrap_or("")
-            .cmp(b["path"].as_str().unwrap_or(""))
-    });
+    assets.sort_by(|a, b| a["path"].as_str().unwrap_or("").cmp(b["path"].as_str().unwrap_or("")));
     let payload = json!({
         "version": metadata.version,
         "owner": metadata.owner,
         "asset_count": assets.len(),
         "assets": assets
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -272,11 +246,8 @@ pub(super) fn run_authoring_coverage_report(out: &Path, unused_out: &Path) -> Re
     let mut unused = Vec::new();
     for path in &all_assets {
         let referenced = refs.contains(path);
-        let commands = metadata
-            .assets
-            .get(path)
-            .map(|a| a.command_surfaces.join(", "))
-            .unwrap_or_default();
+        let commands =
+            metadata.assets.get(path).map(|a| a.command_surfaces.join(", ")).unwrap_or_default();
         coverage_rows.push((path.clone(), referenced, commands));
         if !referenced {
             unused.push(path.clone());
@@ -305,21 +276,14 @@ pub(super) fn run_authoring_coverage_report(out: &Path, unused_out: &Path) -> Re
         }
     }
 
-    let coverage_path = if out.is_absolute() {
-        PathBuf::from(out)
-    } else {
-        root.join(out)
-    };
+    let coverage_path = if out.is_absolute() { PathBuf::from(out) } else { root.join(out) };
     if let Some(parent) = coverage_path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
     fs::write(&coverage_path, coverage).map_err(|err| err.to_string())?;
 
-    let unused_path = if unused_out.is_absolute() {
-        PathBuf::from(unused_out)
-    } else {
-        root.join(unused_out)
-    };
+    let unused_path =
+        if unused_out.is_absolute() { PathBuf::from(unused_out) } else { root.join(unused_out) };
     if let Some(parent) = unused_path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }

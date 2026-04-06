@@ -37,18 +37,11 @@ fn load_metrics() -> FixtureMetrics {
 #[test]
 fn adaptive_concurrency_respects_bounds() {
     let m = load_metrics();
-    let bounds = AdaptiveBoundsPolicy {
-        min_parallelism: 2,
-        max_parallelism: 12,
-        max_priority_boost: 4,
-    };
+    let bounds =
+        AdaptiveBoundsPolicy { min_parallelism: 2, max_parallelism: 12, max_priority_boost: 4 };
 
-    let decision = decide_adaptive_parallelism(
-        m.queue_pressure,
-        m.saturation,
-        m.current_parallelism,
-        &bounds,
-    );
+    let decision =
+        decide_adaptive_parallelism(m.queue_pressure, m.saturation, m.current_parallelism, &bounds);
     assert!(decision.next_parallelism <= 12);
     assert!(decision.next_parallelism >= 2);
 }
@@ -69,10 +62,7 @@ fn drift_detection_and_fallback_trigger_when_regression_is_large() {
     let drift = detect_adaptive_drift(m.baseline_score, m.adaptive_score);
     assert!(drift.degraded);
 
-    let guard = AdaptiveControlLoopGuard {
-        max_parallelism_step: 2,
-        rollback_threshold: 0.05,
-    };
+    let guard = AdaptiveControlLoopGuard { max_parallelism_step: 2, rollback_threshold: 0.05 };
     assert!(adaptive_fallback_needed(&drift, &guard));
 }
 
@@ -80,10 +70,7 @@ fn drift_detection_and_fallback_trigger_when_regression_is_large() {
 fn prefetch_hints_require_replay_heavy_signal_and_confidence() {
     let hints = choose_prefetch_hints(
         true,
-        &[
-            ("artifact-a".to_string(), 0.9),
-            ("artifact-b".to_string(), 0.4),
-        ],
+        &[("artifact-a".to_string(), 0.9), ("artifact-b".to_string(), 0.4)],
     );
     assert_eq!(hints.len(), 1);
     assert_eq!(hints[0].artifact_id, "artifact-a");

@@ -73,12 +73,7 @@ fn crate_manifests_declare_clear_publish_metadata() {
         ),
         (
             "crates/bijux-dev/Cargo.toml",
-            vec![
-                "description = ",
-                "homepage",
-                "readme = ",
-                "Unified maintainer control plane",
-            ],
+            vec!["description = ", "homepage", "readme = ", "Unified maintainer control plane"],
         ),
     ] {
         let manifest = read_repo_file(path);
@@ -91,18 +86,9 @@ fn crate_manifests_declare_clear_publish_metadata() {
 #[test]
 fn crate_documentation_links_match_current_public_docs() {
     for (path, expected) in [
-        (
-            "crates/bijux-cli/Cargo.toml",
-            "https://bijux.io/bijux-core/bijux-cli/",
-        ),
-        (
-            "crates/bijux-cli-python/Cargo.toml",
-            "https://bijux.io/bijux-core/bijux-cli/",
-        ),
-        (
-            "crates/bijux-dev/Cargo.toml",
-            "https://github.com/bijux/bijux-core",
-        ),
+        ("crates/bijux-cli/Cargo.toml", "https://bijux.io/bijux-core/bijux-cli/"),
+        ("crates/bijux-cli-python/Cargo.toml", "https://bijux.io/bijux-core/bijux-cli/"),
+        ("crates/bijux-dev/Cargo.toml", "https://github.com/bijux/bijux-core"),
     ] {
         let manifest = read_repo_file(path);
         assert!(

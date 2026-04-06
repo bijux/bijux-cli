@@ -111,18 +111,8 @@ fn run_and_replay_with_prove(
     source: &str,
     replay: &str,
 ) -> Value {
-    let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(graph),
-            "--out",
-            &out(out_dir),
-            "--run-id",
-            source,
-        ],
-        root,
-    );
+    let _ =
+        run_json(&["run", "--json", &out(graph), "--out", &out(out_dir), "--run-id", source], root);
     let source_run = out_dir.join(format!("run-{source}"));
     run_json(
         &[
@@ -150,15 +140,7 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "mismatch-source",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "mismatch-source"],
         &root,
     );
     let source_run = out_dir.join("run-mismatch-source");
@@ -189,10 +171,7 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
 
     let proof = &proved["data"]["replay_proof"];
     for field in required_fields("configs/dag/schema/operator/replay_proof.schema.json") {
-        assert!(
-            proof.get(&field).is_some(),
-            "replay proof missing required field `{field}`"
-        );
+        assert!(proof.get(&field).is_some(), "replay proof missing required field `{field}`");
     }
     assert_eq!(proof["fidelity_level"], "diverged");
     assert!(proof["cause_groups"].is_object());
@@ -216,10 +195,7 @@ fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
         let proved = run_and_replay_with_prove(&root, &graph, &out_dir, source, replay);
         assert!(proved["data"]["replay_proof"]["fidelity_level"].is_string());
         if shape != "cache" {
-            assert_eq!(
-                proved["data"]["replay_proof"]["fidelity_level"],
-                "strict_equivalent"
-            );
+            assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "strict_equivalent");
         }
     }
 }
@@ -235,15 +211,7 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
     write_const_graph(&graph, "diamond");
 
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "import-src",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "import-src"],
         &root,
     );
     let source_run = out_dir.join("run-import-src");
@@ -265,14 +233,7 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
 
     let bundle = tmp.path().join("bundle.json");
     let _ = run_json(
-        &[
-            "export",
-            "--json",
-            &out(&source_run),
-            "--out",
-            &out(&bundle),
-            "--manifest-only",
-        ],
+        &["export", "--json", &out(&source_run), "--out", &out(&bundle), "--manifest-only"],
         &root,
     );
     let imported = run_json(&["import", "--json", &out(&bundle)], &root);
@@ -290,15 +251,7 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "drift-src",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "drift-src"],
         &root,
     );
     let source_run = out_dir.join("run-drift-src");
@@ -311,11 +264,7 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
             first["sha256"] = json!("deadbeef");
         }
     }
-    fs::write(
-        &outputs_index,
-        serde_json::to_vec_pretty(&index).expect("encode"),
-    )
-    .expect("write");
+    fs::write(&outputs_index, serde_json::to_vec_pretty(&index).expect("encode")).expect("write");
 
     let first_node_dir = fs::read_dir(source_run.join("nodes"))
         .expect("read nodes")
@@ -327,11 +276,7 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     let mut trace: Value =
         serde_json::from_str(&fs::read_to_string(&trace_path).expect("trace")).expect("json");
     trace["status"] = json!("failed");
-    fs::write(
-        &trace_path,
-        serde_json::to_vec_pretty(&trace).expect("encode"),
-    )
-    .expect("write");
+    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode")).expect("write");
 
     let mut manifest: Value = serde_json::from_str(
         &fs::read_to_string(source_run.join("manifest.json")).expect("manifest"),
@@ -372,27 +317,11 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     write_const_graph(&graph, "diamond");
 
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "diff-a",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "diff-a"],
         &root,
     );
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "diff-b",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "diff-b"],
         &root,
     );
     let run_a = out_dir.join("run-diff-a");
@@ -400,26 +329,17 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
 
     let run_diff = run_json(&["diff", "--json", &out(&run_a), &out(&run_b)], &root);
     for field in required_fields("configs/dag/schema/operator/run_diff.schema.json") {
-        assert!(
-            run_diff["data"].get(&field).is_some(),
-            "run diff missing field `{field}`"
-        );
+        assert!(run_diff["data"].get(&field).is_some(), "run diff missing field `{field}`");
     }
 
     let canonical_diff = run_json(&["canonical-diff", "--json", &out(&graph)], &root);
     for field in required_fields("configs/dag/schema/operator/graph_diff.schema.json") {
-        assert!(
-            canonical_diff["data"].get(&field).is_some(),
-            "graph diff missing field `{field}`"
-        );
+        assert!(canonical_diff["data"].get(&field).is_some(), "graph diff missing field `{field}`");
     }
 
     let trace = run_json(&["trace-artifact", "--json", &out(&run_a), "a:out"], &root);
     for field in required_fields("configs/dag/schema/operator/artifact_trace.schema.json") {
-        assert!(
-            trace["data"].get(&field).is_some(),
-            "artifact trace missing field `{field}`"
-        );
+        assert!(trace["data"].get(&field).is_some(), "artifact trace missing field `{field}`");
     }
 }
 
@@ -434,15 +354,7 @@ fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &[
-            "run",
-            "--json",
-            &out(&graph),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "fail-source",
-        ],
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "fail-source"],
         &root,
     );
     let run_dir = out_dir.join("run-fail-source");
@@ -457,48 +369,24 @@ fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     let mut trace: Value =
         serde_json::from_str(&fs::read_to_string(&trace_path).expect("trace")).expect("json");
     trace["status"] = json!("failed");
-    fs::write(
-        &trace_path,
-        serde_json::to_vec_pretty(&trace).expect("encode"),
-    )
-    .expect("write");
+    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode")).expect("write");
 
     let explain = run_json(
-        &[
-            "--json",
-            "runs",
-            "explain-failure",
-            "fail-source",
-            "--root",
-            &out(&out_dir),
-        ],
+        &["--json", "runs", "explain-failure", "fail-source", "--root", &out(&out_dir)],
         &root,
     );
     for field in required_fields("configs/dag/schema/operator/run_explain_failure.schema.json") {
-        assert!(
-            explain["data"].get(&field).is_some(),
-            "explain-failure missing field `{field}`"
-        );
+        assert!(explain["data"].get(&field).is_some(), "explain-failure missing field `{field}`");
     }
 
-    let (_code_diff, stdout_diff, stderr_diff) = run_dag(
-        &["diff", &out(&run_dir), &out(&run_dir), "--explain"],
-        &root,
-    );
+    let (_code_diff, stdout_diff, stderr_diff) =
+        run_dag(&["diff", &out(&run_dir), &out(&run_dir), "--explain"], &root);
     let _ = stderr_diff;
     let expected_diff = include_str!("snapshots/replay_diff_human_output.txt");
     assert_eq!(stdout_diff, expected_diff);
 
     let (_code_replay, stdout_replay, stderr_replay) = run_dag(
-        &[
-            "replay",
-            &out(&run_dir),
-            "--out",
-            &out(&out_dir),
-            "--run-id",
-            "human-proof",
-            "--prove",
-        ],
+        &["replay", &out(&run_dir), "--out", &out(&out_dir), "--run-id", "human-proof", "--prove"],
         &root,
     );
     let _ = stderr_replay;

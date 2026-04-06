@@ -90,10 +90,7 @@ fn graph_identity_fixture_families_parse_and_hash() {
     ] {
         let graph = parse_fixture(&root.join(file));
         let id = graph.graph_id().expect("graph id");
-        assert!(
-            !id.as_str().is_empty(),
-            "graph id must be non-empty for {file}"
-        );
+        assert!(!id.as_str().is_empty(), "graph id must be non-empty for {file}");
     }
 }
 
@@ -170,10 +167,7 @@ fn default_resource_values_normalize_to_same_identity() {
         r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"n","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > out"]},"effects":["filesystem"],"resources":{"cpu":0,"mem_mb":0}}],"edges":[]}"#,
     )
     .expect("zero resources");
-    assert_eq!(
-        no_resources.graph_id().unwrap(),
-        explicit_zero.graph_id().unwrap()
-    );
+    assert_eq!(no_resources.graph_id().unwrap(), explicit_zero.graph_id().unwrap());
 }
 
 #[test]
@@ -210,19 +204,13 @@ fn execution_affecting_metadata_changes_identity() {
         r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"n","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > out"]},"effects":["filesystem"],"timeout_ms":2000}],"edges":[]}"#,
     )
     .expect("changed timeout");
-    assert_ne!(
-        base.graph_id().unwrap(),
-        changed_timeout.graph_id().unwrap()
-    );
+    assert_ne!(base.graph_id().unwrap(), changed_timeout.graph_id().unwrap());
 }
 
 #[test]
 fn invalid_but_close_canonicalization_fixtures_fail_parse() {
     let root = fixtures_root().join("invalid_close");
-    for file in [
-        "invalid_spec_alias_typo.json",
-        "path_traversal_near_valid.json",
-    ] {
+    for file in ["invalid_spec_alias_typo.json", "path_traversal_near_valid.json"] {
         let payload = std::fs::read_to_string(root.join(file)).expect("invalid fixture");
         let err = parse_graph_strict(&payload).expect_err("must fail");
         match err {

@@ -19,7 +19,11 @@ use std::path::Path;
 #[test]
 fn replay_fixture_family_exists() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let root = repo.join("evidence/cache/replay");
+    let root = if repo.join("evidence/cache/replay").is_dir() {
+        repo.join("evidence/cache/replay")
+    } else {
+        repo.join("evidence/dag/cache/replay")
+    };
     for rel in [
         "match_case.json",
         "mismatch_case.json",
@@ -94,9 +98,7 @@ fn replay_regression_corpus_covers_core_replay_paths() {
     ] {
         assert!(
             cases.iter().any(|case| {
-                case["coverage"]
-                    .as_array()
-                    .is_some_and(|cov| cov.iter().any(|v| v == coverage_key))
+                case["coverage"].as_array().is_some_and(|cov| cov.iter().any(|v| v == coverage_key))
             }),
             "replay regression corpus missing coverage: {coverage_key}"
         );

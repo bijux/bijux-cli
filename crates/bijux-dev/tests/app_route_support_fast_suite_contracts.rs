@@ -12,10 +12,7 @@ use std::path::Path;
 use tempfile as _;
 
 fn repo_root() -> &'static Path {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).expect("repo root")
 }
 
 #[test]
@@ -29,16 +26,11 @@ fn app_route_support_fast_suite_is_defined() {
             .expect("parse suite");
     assert_eq!(payload["id"], "app-route-support-fast");
     let commands = payload["commands"].as_array().expect("commands array");
-    for required in [
-        "routes::output_selection::tests",
-        "routes::response::tests",
-        "routes::run_lookup::tests",
-    ] {
+    for required in
+        ["routes::output_selection::tests", "routes::response::tests", "routes::run_lookup::tests"]
+    {
         assert!(
-            commands
-                .iter()
-                .filter_map(|v| v.as_str())
-                .any(|cmd| cmd.contains(required)),
+            commands.iter().filter_map(|v| v.as_str()).any(|cmd| cmd.contains(required)),
             "app route-support fast suite missing {required}"
         );
     }

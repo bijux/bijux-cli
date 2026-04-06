@@ -14,10 +14,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repo root")
 }
 
 fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
@@ -47,10 +44,8 @@ fn extract_helper_name(line: &str) -> Option<String> {
         return None;
     }
     let after_fn = trimmed.strip_prefix("fn ")?;
-    let name: String = after_fn
-        .chars()
-        .take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '_')
-        .collect();
+    let name: String =
+        after_fn.chars().take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '_').collect();
     if name.is_empty() {
         None
     } else {
@@ -83,18 +78,12 @@ fn main() -> Result<(), String> {
 
     let mut occurrences: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .map_err(|e| e.to_string())?
-            .to_string_lossy()
-            .to_string();
+        let rel =
+            file.strip_prefix(&root).map_err(|e| e.to_string())?.to_string_lossy().to_string();
         let content = fs::read_to_string(&file).map_err(|e| e.to_string())?;
         for (idx, line) in content.lines().enumerate() {
             if let Some(name) = extract_helper_name(line) {
-                occurrences
-                    .entry(name)
-                    .or_default()
-                    .push(format!("{rel}:{}", idx + 1));
+                occurrences.entry(name).or_default().push(format!("{rel}:{}", idx + 1));
             }
         }
     }
@@ -108,11 +97,7 @@ fn main() -> Result<(), String> {
     markdown.push_str("| --- | --- | --- |\n");
 
     for (name, locs) in &occurrences {
-        let joined = locs
-            .iter()
-            .map(|s| format!("`{s}`"))
-            .collect::<Vec<_>>()
-            .join("<br>");
+        let joined = locs.iter().map(|s| format!("`{s}`")).collect::<Vec<_>>().join("<br>");
         markdown.push_str(&format!("| `{name}` | {} | {joined} |\n", locs.len()));
     }
 

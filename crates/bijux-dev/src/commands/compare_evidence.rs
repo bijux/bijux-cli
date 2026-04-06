@@ -34,9 +34,7 @@ pub(super) fn run_compare_evidence_policy_verify() -> Result<(), String> {
             .as_str()
             .ok_or_else(|| format!("scenario_class missing for {scenario_path}"))?;
         if !["factual", "descriptive"].contains(&scenario_class) {
-            return Err(format!(
-                "invalid scenario_class `{scenario_class}` for {scenario_path}"
-            ));
+            return Err(format!("invalid scenario_class `{scenario_class}` for {scenario_path}"));
         }
         if scenario_class == "factual" {
             factual_count += 1;
@@ -196,11 +194,8 @@ pub(super) fn run_comparison_evidence_report() -> Result<(), String> {
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
-    let baseline_count = baseline
-        .get("scenarios")
-        .and_then(Value::as_array)
-        .map(|v| v.len())
-        .unwrap_or(0);
+    let baseline_count =
+        baseline.get("scenarios").and_then(Value::as_array).map(|v| v.len()).unwrap_or(0);
 
     let payload = json!({
         "purpose": metadata["purpose"],
@@ -209,10 +204,7 @@ pub(super) fn run_comparison_evidence_report() -> Result<(), String> {
         "bijux_baseline_entries": baseline_count,
         "fact_vs_interpretation_report": "evidence/reports/comparison_fact_vs_interpretation.md"
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 

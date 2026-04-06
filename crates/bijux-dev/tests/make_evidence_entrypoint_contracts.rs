@@ -48,11 +48,8 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
     let mut violations = Vec::new();
 
     for file in files {
-        let rel = file
-            .strip_prefix(&root)
-            .expect("strip prefix")
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel =
+            file.strip_prefix(&root).expect("strip prefix").to_string_lossy().replace('\\', "/");
         let content = fs::read_to_string(&file).expect("read file");
 
         let has_evidence_verify = content.contains("verify evidence-")
@@ -67,9 +64,8 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
                 continue;
             }
             if rel != "makes/dag/evidence.mk" {
-                violations.push(format!(
-                    "{rel}: evidence target defined outside makes/dag/evidence.mk"
-                ));
+                violations
+                    .push(format!("{rel}: evidence target defined outside makes/dag/evidence.mk"));
             }
         }
     }

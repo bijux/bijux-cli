@@ -155,9 +155,7 @@ pub fn artifact_lineage_complete(
     outputs: &[String],
     lineage_index: &BTreeMap<String, String>,
 ) -> bool {
-    outputs
-        .iter()
-        .all(|output| lineage_index.contains_key(output))
+    outputs.iter().all(|output| lineage_index.contains_key(output))
 }
 
 pub fn classify_failure(

@@ -132,14 +132,8 @@ fn artifact_identity_explain_covers_provenance_and_lineage_traversal() {
 
     assert_eq!(inspected["node_id"], "extract");
     assert_eq!(inspected["provenance"]["run_id"], "run-1");
-    assert_eq!(
-        inspected["lineage"]["upstream_artifact_ids"][0],
-        "source:input.csv"
-    );
-    assert_eq!(
-        inspected["lineage"]["downstream_artifact_ids"][0],
-        "train:model.bin"
-    );
+    assert_eq!(inspected["lineage"]["upstream_artifact_ids"][0], "source:input.csv");
+    assert_eq!(inspected["lineage"]["downstream_artifact_ids"][0], "train:model.bin");
 
     let explain = &inspected["identity_explain"];
     assert_eq!(explain["artifact_id"], "extract:data.csv");
@@ -251,8 +245,5 @@ fn provenance_query_latency_contract_on_large_lineage_snapshot() {
     let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
     let elapsed_ms = start.elapsed().as_millis();
     assert_eq!(inspected["artifact_id"], "extract:data.csv");
-    assert!(
-        elapsed_ms < 2000,
-        "provenance query latency exceeded contract bound: {elapsed_ms}ms"
-    );
+    assert!(elapsed_ms < 2000, "provenance query latency exceeded contract bound: {elapsed_ms}ms");
 }

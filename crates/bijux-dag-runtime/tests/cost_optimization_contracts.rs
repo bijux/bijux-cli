@@ -18,18 +18,9 @@ use bijux_dag_runtime::simulated_platform::{
 
 #[test]
 fn profile_selection_balances_latency_and_budget() {
-    assert_eq!(
-        choose_cost_profile(true, false),
-        CostPerformanceProfile::FastestSafe
-    );
-    assert_eq!(
-        choose_cost_profile(false, true),
-        CostPerformanceProfile::CheapestSafe
-    );
-    assert_eq!(
-        choose_cost_profile(false, false),
-        CostPerformanceProfile::Balanced
-    );
+    assert_eq!(choose_cost_profile(true, false), CostPerformanceProfile::FastestSafe);
+    assert_eq!(choose_cost_profile(false, true), CostPerformanceProfile::CheapestSafe);
+    assert_eq!(choose_cost_profile(false, false), CostPerformanceProfile::Balanced);
 }
 
 #[test]
@@ -43,10 +34,7 @@ fn cache_reuse_scoring_prefers_lower_cost_path() {
 
 #[test]
 fn run_budget_and_tenant_policy_controls_apply() {
-    let budget = RunBudget {
-        hard_ceiling: Some(100.0),
-        soft_ceiling: Some(80.0),
-    };
+    let budget = RunBudget { hard_ceiling: Some(100.0), soft_ceiling: Some(80.0) };
     assert!(run_budget_allows(95.0, &budget));
     assert!(!run_budget_allows(120.0, &budget));
 
@@ -79,10 +67,7 @@ fn cost_optimization_never_bypasses_safety_constraints() {
     };
     assert!(cost_optimization_allowed(&safe));
 
-    let unsafe_policy = CostSafetyPolicy {
-        preserve_trust_constraints: false,
-        ..safe
-    };
+    let unsafe_policy = CostSafetyPolicy { preserve_trust_constraints: false, ..safe };
     assert!(!cost_optimization_allowed(&unsafe_policy));
 }
 
@@ -95,9 +80,6 @@ fn cost_maturity_scorecard_requires_all_dimensions() {
     };
     assert!(scorecard_ready(&ready));
 
-    let not_ready = PlatformCostMaturityScorecard {
-        optimization_safety_ready: false,
-        ..ready
-    };
+    let not_ready = PlatformCostMaturityScorecard { optimization_safety_ready: false, ..ready };
     assert!(!scorecard_ready(&not_ready));
 }

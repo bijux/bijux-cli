@@ -31,12 +31,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         jobs: 1,
         adapters: Vec::new(),
         outputs: Vec::new(),
-        node_counts: NodeCounts {
-            success: 0,
-            failed: 0,
-            skipped: 0,
-            cached: 0,
-        },
+        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 },
         policy: PolicyInfo {
             deny_network: false,
             deny_env: false,
@@ -65,9 +60,7 @@ fn artifact_store_atomic_write_and_manifest_validation_work() {
     let run_dir = Arc::new(RunDir::create(temp.path()).unwrap());
     let store = ArtifactStore::with_std_fs(run_dir.clone());
     run_dir.write_manifest(&sample_manifest("run-1")).unwrap();
-    store
-        .write_atomic_json("test.json", br#"{"ok":true}"#)
-        .unwrap();
+    store.write_atomic_json("test.json", br#"{"ok":true}"#).unwrap();
     let manifest = store.read_validated_run_manifest().unwrap();
     assert_eq!(manifest["run_id"], "run-1");
 }

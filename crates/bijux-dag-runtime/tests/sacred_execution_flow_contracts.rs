@@ -36,9 +36,7 @@ fn engine_flow_executes_minimal_graph_and_materializes_run_dir() {
     let graph = parse_graph_strict(graph_json).expect("parse graph");
     let out = tempfile::tempdir().expect("tmp");
     let runtime = Runtime::new();
-    let run_dir = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("run succeeds");
+    let run_dir = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run succeeds");
     assert!(run_dir.join("manifest.json").exists());
     assert!(run_dir.join("graph.snapshot.json").exists());
 }
@@ -54,14 +52,8 @@ fn scheduler_profile_is_deterministic_and_lexicographic() {
 
 #[test]
 fn run_state_machine_guards_block_illegal_terminal_regressions() {
-    assert!(run_transition_allowed(
-        RunLifecycleState::Queued,
-        RunLifecycleState::Ready
-    ));
-    assert!(!run_transition_allowed(
-        RunLifecycleState::Succeeded,
-        RunLifecycleState::Running
-    ));
+    assert!(run_transition_allowed(RunLifecycleState::Queued, RunLifecycleState::Ready));
+    assert!(!run_transition_allowed(RunLifecycleState::Succeeded, RunLifecycleState::Running));
 }
 
 #[test]
@@ -83,10 +75,7 @@ fn engine_uses_centralized_sacred_hooks_without_direct_bypass_calls() {
         "sacred_execution::run_cache_write",
         "sacred_execution::resolve_dependencies",
     ] {
-        assert!(
-            source.contains(required),
-            "engine missing sacred hook `{required}`"
-        );
+        assert!(source.contains(required), "engine missing sacred hook `{required}`");
     }
     for forbidden in [
         "crate::try_cache_read(",

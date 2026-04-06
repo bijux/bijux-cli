@@ -43,11 +43,7 @@ pub(crate) fn handle_export_command(
     }
     let manifest = read_file(&resolved_run_dir.join("manifest.json"))?;
     let snapshot = read_file(&resolved_run_dir.join("graph.snapshot.json"))?;
-    let nodes = if provenance_only {
-        HashMap::new()
-    } else {
-        read_node_traces(&resolved_run_dir)?
-    };
+    let nodes = if provenance_only { HashMap::new() } else { read_node_traces(&resolved_run_dir)? };
     let outputs = if without_artifacts || provenance_only {
         Default::default()
     } else {
@@ -67,11 +63,8 @@ pub(crate) fn handle_export_command(
     } else {
         "manifest-only"
     };
-    let source_run_dir = if redact {
-        Value::String("[redacted]".to_string())
-    } else {
-        json!(resolved_run_dir)
-    };
+    let source_run_dir =
+        if redact { Value::String("[redacted]".to_string()) } else { json!(resolved_run_dir) };
     let bundle = json!({
         "bundle_version": "export-bundle/v0.1",
         "export_mode": export_mode,
@@ -148,11 +141,7 @@ pub(crate) fn handle_import_command(
                 && !v.starts_with("INV-EXPORT-VERIFY-001 missing outputs map")
         });
     }
-    let nodes = val
-        .get("node_traces")
-        .and_then(|v| v.as_object())
-        .map(|o| o.len())
-        .unwrap_or(0);
+    let nodes = val.get("node_traces").and_then(|v| v.as_object()).map(|o| o.len()).unwrap_or(0);
     let failed = val
         .get("node_traces")
         .and_then(|v| v.as_object())
@@ -168,18 +157,10 @@ pub(crate) fn handle_import_command(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
-    let preservation_lineage = val
-        .get("provenance")
-        .and_then(|v| v.get("lineage"))
-        .is_some();
-    let preservation_run_ancestry = val
-        .get("provenance")
-        .and_then(|v| v.get("parent_run_id"))
-        .is_some()
-        || val
-            .get("provenance")
-            .and_then(|v| v.get("source_run_id"))
-            .is_some();
+    let preservation_lineage = val.get("provenance").and_then(|v| v.get("lineage")).is_some();
+    let preservation_run_ancestry =
+        val.get("provenance").and_then(|v| v.get("parent_run_id")).is_some()
+            || val.get("provenance").and_then(|v| v.get("source_run_id")).is_some();
     let preservation_graph_identity = val.get("graph_snapshot").is_some();
     let preservation_artifact_identity = val.get("outputs").and_then(|v| v.as_object()).is_some();
     let mut fidelity_downgrade_reasons: Vec<String> = Vec::new();
@@ -225,32 +206,15 @@ pub(crate) fn handle_import_command(
         },
         "invariant_violations": invariant_violations,
     });
-    if !summary["invariant_violations"]
-        .as_array()
-        .is_some_and(|v| v.is_empty())
-    {
+    if !summary["invariant_violations"].as_array().is_some_and(|v| v.is_empty()) {
         if cli.json {
-            return emit_json(
-                cli,
-                "dag.import",
-                false,
-                summary,
-                Vec::new(),
-                ExitCode::from(3),
-            );
+            return emit_json(cli, "dag.import", false, summary, Vec::new(), ExitCode::from(3));
         }
         println!("import summary: {}", summary);
         return Err(ExitCode::from(3));
     }
     if cli.json {
-        return emit_json(
-            cli,
-            "dag.import",
-            true,
-            summary,
-            Vec::new(),
-            ExitCode::SUCCESS,
-        );
+        return emit_json(cli, "dag.import", true, summary, Vec::new(), ExitCode::SUCCESS);
     } else {
         println!("import summary: {}", summary);
     }
@@ -265,11 +229,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn quiet_json_cli() -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: Commands::Version,
-        }
+        DagCli { json: true, quiet: true, command: Commands::Version }
     }
 
     #[test]
@@ -296,11 +256,8 @@ mod tests {
     fn import_rejects_unsupported_bundle_version() {
         let cli = quiet_json_cli();
         let tmp = tempfile::NamedTempFile::new().expect("tmp file");
-        std::fs::write(
-            tmp.path(),
-            r#"{"bundle_version":"export-bundle/v9.9","manifest":{}}"#,
-        )
-        .expect("write");
+        std::fs::write(tmp.path(), r#"{"bundle_version":"export-bundle/v9.9","manifest":{}}"#)
+            .expect("write");
         let code = handle_import_command(&cli, tmp.path(), true).expect_err("unsupported version");
         assert_eq!(code, ExitCode::from(3));
     }

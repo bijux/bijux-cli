@@ -252,10 +252,7 @@ pub fn explain_lineage_safe_gc(
             });
         }
     }
-    ArtifactGarbageCollectionExplain {
-        lineage_snapshot_id: lineage_snapshot_id.into(),
-        entries,
-    }
+    ArtifactGarbageCollectionExplain { lineage_snapshot_id: lineage_snapshot_id.into(), entries }
 }
 
 pub fn lineage_dependencies(snapshot: &ArtifactLineageSnapshot, artifact_id: &str) -> Vec<String> {
@@ -273,11 +270,7 @@ pub fn lineage_dependencies(snapshot: &ArtifactLineageSnapshot, artifact_id: &st
 pub fn lineage_dependents(snapshot: &ArtifactLineageSnapshot, artifact_id: &str) -> Vec<String> {
     let mut dependents = Vec::new();
     for edge in &snapshot.edges {
-        if edge
-            .upstream_artifact_ids
-            .iter()
-            .any(|up| up == artifact_id)
-        {
+        if edge.upstream_artifact_ids.iter().any(|up| up == artifact_id) {
             dependents.push(edge.artifact_id.clone());
         }
     }

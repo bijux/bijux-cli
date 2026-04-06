@@ -50,9 +50,10 @@ fn repo_root() -> Result<PathBuf, String> {
 }
 
 fn load_catalog(root: &Path) -> Result<SurfaceCatalog, String> {
-    let raw =
-        std::fs::read_to_string(root.join("configs/dag/policy/runtime_adapter_surface_catalog.json"))
-            .map_err(|err| err.to_string())?;
+    let raw = std::fs::read_to_string(
+        root.join("configs/dag/policy/runtime_adapter_surface_catalog.json"),
+    )
+    .map_err(|err| err.to_string())?;
     serde_json::from_str(&raw).map_err(|err| err.to_string())
 }
 
@@ -96,11 +97,7 @@ fn write_backend_capability_matrix(root: &Path) -> Result<(), String> {
             row.supports_stream_capture
         ));
     }
-    write_report(
-        root,
-        "docs/reports/foundation/backend_capability_matrix.md",
-        &lines.join("\n"),
-    )
+    write_report(root, "docs/reports/foundation/backend_capability_matrix.md", &lines.join("\n"))
 }
 
 fn write_backend_support_matrix(root: &Path) -> Result<(), String> {
@@ -120,11 +117,7 @@ fn write_backend_support_matrix(root: &Path) -> Result<(), String> {
     for item in mode.aspirational {
         lines.push(format!("| {} | aspirational |", item));
     }
-    write_report(
-        root,
-        "docs/reports/foundation/backend_support_matrix.md",
-        &lines.join("\n"),
-    )
+    write_report(root, "docs/reports/foundation/backend_support_matrix.md", &lines.join("\n"))
 }
 
 fn write_unsupported_capability_approximations(root: &Path) -> Result<(), String> {
@@ -174,11 +167,7 @@ fn write_backend_mode_lists(root: &Path) -> Result<(), String> {
         "docs/reports/foundation/implemented_backend_surfaces_report.md",
         &implemented,
     )?;
-    write_report(
-        root,
-        "docs/reports/foundation/simulated_backend_surfaces_report.md",
-        &simulated,
-    )
+    write_report(root, "docs/reports/foundation/simulated_backend_surfaces_report.md", &simulated)
 }
 
 fn write_report(root: &Path, rel: &str, content: &str) -> Result<(), String> {

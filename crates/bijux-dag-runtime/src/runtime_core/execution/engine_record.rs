@@ -21,11 +21,8 @@ mod tests {
     fn appends_to_log_and_keeps_index_in_sync() {
         let file = NamedTempFile::new().expect("tmp file");
         let path = file.path().to_path_buf();
-        let mut log = std::fs::OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(&path)
-            .expect("open log");
+        let mut log =
+            std::fs::OpenOptions::new().append(true).create(true).open(&path).expect("open log");
         let mut index = Vec::new();
         let event = json!({"event":"node_started","node_id":"n1"});
 

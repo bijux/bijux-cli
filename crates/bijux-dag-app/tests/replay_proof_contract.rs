@@ -139,10 +139,7 @@ fn replay_prove_reports_strict_equivalent_on_exact_pair() {
         &root,
     );
     assert_eq!(proved["ok"], true);
-    assert_eq!(
-        proved["data"]["replay_proof"]["fidelity_level"],
-        "strict_equivalent"
-    );
+    assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "strict_equivalent");
 }
 
 #[test]
@@ -177,11 +174,8 @@ fn replay_prove_reports_diverged_on_corrupt_source_pair() {
         serde_json::from_str(&fs::read_to_string(&trace_path).expect("read trace"))
             .expect("parse trace");
     trace["status"] = Value::String("failed".to_string());
-    fs::write(
-        &trace_path,
-        serde_json::to_vec_pretty(&trace).expect("encode trace"),
-    )
-    .expect("write trace");
+    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode trace"))
+        .expect("write trace");
 
     let proved = run_json(
         &[

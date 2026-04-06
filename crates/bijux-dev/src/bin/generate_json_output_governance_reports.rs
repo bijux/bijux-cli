@@ -13,10 +13,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repo root")
 }
 
 fn write_file(path: &Path, body: &str) -> Result<(), String> {
@@ -27,10 +24,7 @@ fn write_file(path: &Path, body: &str) -> Result<(), String> {
 }
 
 fn schema_to_example_dir(schema_rel: &str) -> String {
-    let stem = Path::new(schema_rel)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("schema");
+    let stem = Path::new(schema_rel).file_stem().and_then(|s| s.to_str()).unwrap_or("schema");
     format!("evidence/operator/examples/stable_json/{stem}")
 }
 
@@ -49,8 +43,9 @@ fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 fn main() -> Result<(), String> {
     let root = repo_root();
-    let policy_raw = fs::read_to_string(root.join("configs/dag/policy/json_output_governance.json"))
-        .map_err(|e| e.to_string())?;
+    let policy_raw =
+        fs::read_to_string(root.join("configs/dag/policy/json_output_governance.json"))
+            .map_err(|e| e.to_string())?;
     let policy: serde_json::Value = serde_json::from_str(&policy_raw).map_err(|e| e.to_string())?;
 
     let out_dir = root.join("docs/reports/foundation");
@@ -80,16 +75,10 @@ fn main() -> Result<(), String> {
         fs::create_dir_all(&example_dir).map_err(|e| e.to_string())?;
 
         let mut minimal_data = serde_json::Map::new();
-        for req in schema_json["required"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-        {
+        for req in schema_json["required"].as_array().cloned().unwrap_or_default() {
             if let Some(k) = req.as_str() {
-                minimal_data.insert(
-                    k.to_string(),
-                    serde_json::Value::String("example".to_string()),
-                );
+                minimal_data
+                    .insert(k.to_string(), serde_json::Value::String("example".to_string()));
             }
         }
         let minimal =
@@ -104,16 +93,10 @@ fn main() -> Result<(), String> {
         let maximal =
             serde_json::json!({"schema": schema, "example_type":"maximal", "data": maximal_data});
 
-        fs::write(
-            example_dir.join("minimal.json"),
-            serde_json::to_vec_pretty(&minimal).unwrap(),
-        )
-        .map_err(|e| e.to_string())?;
-        fs::write(
-            example_dir.join("maximal.json"),
-            serde_json::to_vec_pretty(&maximal).unwrap(),
-        )
-        .map_err(|e| e.to_string())?;
+        fs::write(example_dir.join("minimal.json"), serde_json::to_vec_pretty(&minimal).unwrap())
+            .map_err(|e| e.to_string())?;
+        fs::write(example_dir.join("maximal.json"), serde_json::to_vec_pretty(&maximal).unwrap())
+            .map_err(|e| e.to_string())?;
     }
 
     let mut inv_a = String::from("# JSON Command to Schema Inventory Report\n\n| Family | Command | Schema |\n| --- | --- | --- |\n");
@@ -131,10 +114,7 @@ fn main() -> Result<(), String> {
             }
         }
     }
-    write_file(
-        &out_dir.join("JSON_COMMAND_SCHEMA_INVENTORY_REPORT.md"),
-        &inv_a,
-    )?;
+    write_file(&out_dir.join("JSON_COMMAND_SCHEMA_INVENTORY_REPORT.md"), &inv_a)?;
 
     let mut inv_b = String::from("# Schema to Command and Test Inventory Report\n\n| Schema | Family | Commands | Lockstep markers |\n| --- | --- | --- | --- |\n");
     for fam in families {
@@ -162,10 +142,7 @@ fn main() -> Result<(), String> {
             ));
         }
     }
-    write_file(
-        &out_dir.join("SCHEMA_COMMAND_TEST_INVENTORY_REPORT.md"),
-        &inv_b,
-    )?;
+    write_file(&out_dir.join("SCHEMA_COMMAND_TEST_INVENTORY_REPORT.md"), &inv_b)?;
 
     let mut missing_examples = String::from("# Schemas Without Example Output Report\n\n| Schema | Missing minimal | Missing maximal |\n| --- | --- | --- |\n");
     let mut missing_example_count = 0usize;
@@ -174,19 +151,13 @@ fn main() -> Result<(), String> {
         let min_missing = !dir.join("minimal.json").exists();
         let max_missing = !dir.join("maximal.json").exists();
         if min_missing || max_missing {
-            missing_examples.push_str(&format!(
-                "| `{schema}` | `{min_missing}` | `{max_missing}` |\n"
-            ));
+            missing_examples
+                .push_str(&format!("| `{schema}` | `{min_missing}` | `{max_missing}` |\n"));
             missing_example_count += 1;
         }
     }
-    missing_examples.push_str(&format!(
-        "\nMissing schema examples: {missing_example_count}\n"
-    ));
-    write_file(
-        &out_dir.join("schema_without_example_output_report.md"),
-        &missing_examples,
-    )?;
+    missing_examples.push_str(&format!("\nMissing schema examples: {missing_example_count}\n"));
+    write_file(&out_dir.join("schema_without_example_output_report.md"), &missing_examples)?;
 
     let mut rs_files = Vec::new();
     collect_rs_files(&root.join("crates/bijux-dag-app/tests"), &mut rs_files);
@@ -204,10 +175,7 @@ fn main() -> Result<(), String> {
     for fam in families {
         let family = fam["family"].as_str().unwrap_or("");
         let commands = fam["commands"].as_array().cloned().unwrap_or_default();
-        let markers = fam["lockstep_markers"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default();
+        let markers = fam["lockstep_markers"].as_array().cloned().unwrap_or_default();
         for (idx, cmd) in commands.iter().enumerate() {
             let marker = markers.get(idx).and_then(|v| v.as_str()).unwrap_or("");
             if marker.is_empty() || !test_sources.contains(marker) {
@@ -219,20 +187,13 @@ fn main() -> Result<(), String> {
             }
         }
     }
-    missing_lock.push_str(&format!(
-        "\nCommands missing lockstep tests: {missing_lock_count}\n"
-    ));
-    write_file(
-        &out_dir.join("commands_without_json_lockstep_report.md"),
-        &missing_lock,
-    )?;
+    missing_lock.push_str(&format!("\nCommands missing lockstep tests: {missing_lock_count}\n"));
+    write_file(&out_dir.join("commands_without_json_lockstep_report.md"), &missing_lock)?;
 
     let mut schema_registry = String::from("# Schema Registry\n\nGenerated from `configs/dag/policy/json_output_governance.json`.\n\n| Schema | Example directory |\n| --- | --- |\n");
     for schema in &all_schemas {
-        schema_registry.push_str(&format!(
-            "| `{schema}` | `{}` |\n",
-            schema_to_example_dir(schema)
-        ));
+        schema_registry
+            .push_str(&format!("| `{schema}` | `{}` |\n", schema_to_example_dir(schema)));
     }
     write_file(&ref_dir.join("SCHEMA_REGISTRY.md"), &schema_registry)?;
 
@@ -249,10 +210,7 @@ fn main() -> Result<(), String> {
             .join(", ");
         command_registry.push_str(&format!("| `{family}` | `{commands}` |\n"));
     }
-    write_file(
-        &ref_dir.join("STABLE_JSON_OUTPUT_COMMAND_REGISTRY.md"),
-        &command_registry,
-    )?;
+    write_file(&ref_dir.join("STABLE_JSON_OUTPUT_COMMAND_REGISTRY.md"), &command_registry)?;
 
     Ok(())
 }

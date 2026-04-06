@@ -17,10 +17,6 @@ pub struct TypedEdge {
 
 impl From<Edge> for TypedEdge {
     fn from(value: Edge) -> Self {
-        Self {
-            from: value.from,
-            to: value.to,
-            dependency: EdgeDependencyKind::Data,
-        }
+        Self { from: value.from, to: value.to, dependency: EdgeDependencyKind::Data }
     }
 }

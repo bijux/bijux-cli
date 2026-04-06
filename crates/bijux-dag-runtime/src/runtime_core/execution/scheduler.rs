@@ -18,22 +18,10 @@ pub struct SchedulerPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TriggerSpec {
     Manual,
-    Cron {
-        expression: String,
-        timezone: String,
-    },
-    Event {
-        event_type: String,
-        source: String,
-    },
-    Dependency {
-        dag_name: String,
-        on_status: String,
-    },
-    Signal {
-        signal_name: String,
-        payload_schema: Option<String>,
-    },
+    Cron { expression: String, timezone: String },
+    Event { event_type: String, source: String },
+    Dependency { dag_name: String, on_status: String },
+    Signal { signal_name: String, payload_schema: Option<String> },
     Backfill(BackfillRequest),
 }
 
@@ -305,8 +293,7 @@ impl SchedulerState {
             node_id,
             Some(format!("mode={}", failure_mode_name(&mode))),
         );
-        self.completion_by_node
-            .insert(node_id.to_string(), "failed".to_string());
+        self.completion_by_node.insert(node_id.to_string(), "failed".to_string());
         if failure_allows_downstream_readiness(mode) {
             self.release_downstream(node_id)
         } else {
@@ -334,8 +321,7 @@ impl SchedulerState {
     }
 
     fn mark_completion(&mut self, node_id: &str, status: &str) -> Vec<String> {
-        self.completion_by_node
-            .insert(node_id.to_string(), status.to_string());
+        self.completion_by_node.insert(node_id.to_string(), status.to_string());
         self.release_downstream(node_id)
     }
 
@@ -455,10 +441,7 @@ pub struct DependencyCounter {
 
 impl DependencyCounter {
     pub fn from_plan(plan: &ExecutionPlan) -> Self {
-        Self {
-            indegree: plan.indegree.clone(),
-            adj: plan.adj.clone(),
-        }
+        Self { indegree: plan.indegree.clone(), adj: plan.adj.clone() }
     }
 
     pub fn indegree_map(&self) -> &HashMap<String, usize> {
@@ -533,11 +516,7 @@ impl Scheduler for DeterministicScheduler {
         let mut candidates = ready_queue.snapshot_sorted();
         for id in candidates.drain(..) {
             if batch.len()
-                >= options
-                    .scheduler_policy
-                    .max_parallelism
-                    .max(1)
-                    .min(options.jobs.max(1))
+                >= options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
             {
                 blocked.push(id);
                 continue;
@@ -556,12 +535,7 @@ impl Scheduler for DeterministicScheduler {
                 batch.push(id);
             }
         }
-        ScheduleDecision {
-            batch,
-            blocked_by_budget: blocked,
-            timed_out: false,
-            cancelled: false,
-        }
+        ScheduleDecision { batch, blocked_by_budget: blocked, timed_out: false, cancelled: false }
     }
 }
 
@@ -589,11 +563,7 @@ impl Scheduler for ThroughputScheduler {
         let mut blocked = Vec::new();
         while !ready_queue.is_empty()
             && batch.len()
-                < options
-                    .scheduler_policy
-                    .max_parallelism
-                    .max(1)
-                    .min(options.jobs.max(1))
+                < options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
         {
             let id = match ready_queue.pop_fifo() {
                 Some(v) => v,
@@ -610,12 +580,7 @@ impl Scheduler for ThroughputScheduler {
         for id in blocked.clone() {
             ready_queue.insert(id);
         }
-        ScheduleDecision {
-            batch,
-            blocked_by_budget: blocked,
-            timed_out: false,
-            cancelled: false,
-        }
+        ScheduleDecision { batch, blocked_by_budget: blocked, timed_out: false, cancelled: false }
     }
 }
 
@@ -647,10 +612,7 @@ pub fn scheduler_invariants_hold(state: &SchedulerState) -> bool {
             return false;
         }
     }
-    let retry_conflict = state
-        .retry_queue
-        .iter()
-        .any(|id| state.ready.ordered.contains(id));
+    let retry_conflict = state.retry_queue.iter().any(|id| state.ready.ordered.contains(id));
     !retry_conflict
 }
 

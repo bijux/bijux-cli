@@ -74,10 +74,7 @@ fn battle_fixture_ids(root: &Path) -> BTreeSet<String> {
             .expect("scenario id")
             .to_string();
         if doc.get("scenario").is_some() {
-            let stem = path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .expect("file stem utf8");
+            let stem = path.file_stem().and_then(|s| s.to_str()).expect("file stem utf8");
             assert_eq!(scenario, stem, "scenario id must match filename");
         }
         ids.insert(scenario);
@@ -122,15 +119,9 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
     )
     .expect("battle metadata parse");
 
-    let trust_property_ids: BTreeSet<String> = policy
-        .trust_properties
-        .iter()
-        .map(|property| property.id.clone())
-        .collect();
-    assert!(
-        trust_property_ids.len() >= 12,
-        "battle trust property count must remain at least 12"
-    );
+    let trust_property_ids: BTreeSet<String> =
+        policy.trust_properties.iter().map(|property| property.id.clone()).collect();
+    assert!(trust_property_ids.len() >= 12, "battle trust property count must remain at least 12");
     assert!(
         trust_property_ids.contains("tp_plan_truth"),
         "battle trust properties must include tp_plan_truth"
@@ -148,25 +139,16 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
             .scenario_trust_map
             .values()
             .any(|mapped| mapped.iter().any(|trust| trust == top));
-        assert!(
-            covered,
-            "top trust property has no scenario coverage: {top}"
-        );
+        assert!(covered, "top trust property has no scenario coverage: {top}");
     }
 
     let fixture_ids = battle_fixture_ids(&root);
     for scenario in &policy.required_scenarios {
-        assert!(
-            fixture_ids.contains(scenario),
-            "required scenario missing: {scenario}"
-        );
+        assert!(fixture_ids.contains(scenario), "required scenario missing: {scenario}");
     }
 
     for (scenario, mapped) in &policy.scenario_trust_map {
-        assert!(
-            fixture_ids.contains(scenario),
-            "orphan trust mapping: {scenario}"
-        );
+        assert!(fixture_ids.contains(scenario), "orphan trust mapping: {scenario}");
         assert!(!mapped.is_empty(), "empty trust mapping: {scenario}");
         assert!(
             mapped.len() <= 3,
@@ -182,10 +164,7 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
     }
 
     for (scenario, scenario_metadata) in &metadata.scenarios {
-        assert!(
-            fixture_ids.contains(scenario),
-            "orphan metadata entry: {scenario}"
-        );
+        assert!(fixture_ids.contains(scenario), "orphan metadata entry: {scenario}");
         assert_eq!(scenario_metadata.grade, "battle");
         assert!(!scenario_metadata.why_exists.trim().is_empty());
         assert_eq!(scenario_metadata.delete_review, "retain");
@@ -200,30 +179,20 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
         assert!(!scenario_metadata.owning_family.trim().is_empty());
         assert!(!scenario_metadata.expected_outcome_class.trim().is_empty());
         assert!(!scenario_metadata.expected_invariant_classes.is_empty());
-        assert!(!scenario_metadata
-            .expected_operator_inspection_surfaces
-            .is_empty());
-        let mapped = policy
-            .scenario_trust_map
-            .get(scenario)
-            .expect("scenario trust map entry");
-        let protects_top = mapped
-            .iter()
-            .any(|trust| policy.release_top_trust_properties.contains(trust));
+        assert!(!scenario_metadata.expected_operator_inspection_surfaces.is_empty());
+        let mapped = policy.scenario_trust_map.get(scenario).expect("scenario trust map entry");
+        let protects_top =
+            mapped.iter().any(|trust| policy.release_top_trust_properties.contains(trust));
         assert!(
             protects_top,
             "release-blocking scenario must protect at least one top trust property: {scenario}"
         );
         assert_eq!(
-            scenario_metadata
-                .replay_cache_implications
-                .replay_equivalence_expected,
+            scenario_metadata.replay_cache_implications.replay_equivalence_expected,
             mapped.iter().any(|id| id == "tp_replay_equivalence")
         );
         assert_eq!(
-            scenario_metadata
-                .replay_cache_implications
-                .cache_integrity_expected,
+            scenario_metadata.replay_cache_implications.cache_integrity_expected,
             mapped.iter().any(|id| id == "tp_cache_integrity")
         );
     }
@@ -232,8 +201,8 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
 #[test]
 fn foundation_repo_suite_keeps_battle_guard() {
     let root = repo_root();
-    let repo_suites = fs::read_to_string(root.join("crates/bijux-dev/src/suites/repo.rs"))
-        .expect("repo suites");
+    let repo_suites =
+        fs::read_to_string(root.join("crates/bijux-dev/src/suites/repo.rs")).expect("repo suites");
     assert!(
         repo_suites.contains("\"battle-suite-mandatory\""),
         "repo suite must keep battle-suite-mandatory guard"
@@ -252,10 +221,7 @@ fn battle_query_commands_are_wired() {
         "repo.battle-trust-by-scenario",
         "repo.battle-coverage-report",
     ] {
-        assert!(
-            source.contains(token),
-            "missing battle query/report command token: {token}"
-        );
+        assert!(source.contains(token), "missing battle query/report command token: {token}");
     }
 }
 

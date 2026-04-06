@@ -17,12 +17,8 @@ use bijux_dag_runtime::{
 
 #[test]
 fn deny_flags_block_declared_effects() {
-    let policy = PolicyConfig {
-        deny_network: true,
-        deny_env: true,
-        deny_clock: true,
-        clean_env: true,
-    };
+    let policy =
+        PolicyConfig { deny_network: true, deny_env: true, deny_clock: true, clean_env: true };
     assert!(!policy_allows_effects(&policy, &[Effect::Network]));
     assert!(!policy_allows_effects(&policy, &[Effect::Env]));
     assert!(!policy_allows_effects(&policy, &[Effect::Clock]));

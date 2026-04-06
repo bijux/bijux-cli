@@ -19,12 +19,9 @@ use std::collections::BTreeSet;
 #[test]
 fn fake_backend_can_exercise_engine_without_subprocesses() {
     let backend = FakeBackend::default();
-    let outcome = execute_with_backend(
-        &backend,
-        BackendKind::Shell,
-        &["a".to_string(), "b".to_string()],
-    )
-    .expect("fake backend run");
+    let outcome =
+        execute_with_backend(&backend, BackendKind::Shell, &["a".to_string(), "b".to_string()])
+            .expect("fake backend run");
     assert_eq!(outcome.attempts.len(), 2);
     assert!(outcome.attempts.iter().all(|a| a.attempt == 1));
 }
@@ -283,12 +280,8 @@ fn backend_output_collection_rejects_undeclared_outputs() {
 #[test]
 fn backend_registry_includes_capability_descriptors() {
     let registry = backend_registry();
-    assert!(registry
-        .iter()
-        .any(|row| row.backend_name == "fake-backend"));
-    assert!(registry
-        .iter()
-        .any(|row| row.backend_name == "process-like-backend"));
+    assert!(registry.iter().any(|row| row.backend_name == "fake-backend"));
+    assert!(registry.iter().any(|row| row.backend_name == "process-like-backend"));
     assert!(registry.iter().all(|row| row.supports_env_shaping
         && row.supports_timeout
         && row.supports_stream_capture));

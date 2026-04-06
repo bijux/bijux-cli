@@ -171,20 +171,14 @@ pub fn require_provenance_completeness(
         errors.push("signed artifacts are required".to_string());
     }
 
-    AttestationVerificationResult {
-        passed: errors.is_empty(),
-        errors,
-    }
+    AttestationVerificationResult { passed: errors.is_empty(), errors }
 }
 
 pub fn verify_attestation_or_fail(result: AttestationVerificationResult) -> Result<(), String> {
     if result.passed {
         Ok(())
     } else {
-        Err(format!(
-            "attestation verification failed: {}",
-            result.errors.join("; ")
-        ))
+        Err(format!("attestation verification failed: {}", result.errors.join("; ")))
     }
 }
 
@@ -263,10 +257,7 @@ pub fn replay_trust_warnings(
     if baseline.plugins != candidate.plugins {
         warnings.push("plugin provenance changed".to_string());
     }
-    ReplayTrustWarning {
-        run_id: run_id.to_string(),
-        warnings,
-    }
+    ReplayTrustWarning { run_id: run_id.to_string(), warnings }
 }
 
 pub fn regulated_workflow_reference_example() -> RegulatedWorkflowReference {

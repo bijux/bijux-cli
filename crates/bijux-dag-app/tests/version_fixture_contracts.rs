@@ -93,22 +93,12 @@ fn supported_and_unsupported_export_bundle_versions_are_classified() {
     let cmd = dag_command();
     let ok_matches = cmd
         .clone()
-        .try_get_matches_from([
-            "dag",
-            "--json",
-            "import",
-            supported.to_string_lossy().as_ref(),
-        ])
+        .try_get_matches_from(["dag", "--json", "import", supported.to_string_lossy().as_ref()])
         .expect("parse args supported bundle");
     assert!(dag_run(&ok_matches).is_ok());
 
     let bad_matches = cmd
-        .try_get_matches_from([
-            "dag",
-            "--json",
-            "import",
-            unsupported.to_string_lossy().as_ref(),
-        ])
+        .try_get_matches_from(["dag", "--json", "import", unsupported.to_string_lossy().as_ref()])
         .expect("parse args unsupported bundle");
     assert!(dag_run(&bad_matches).is_err());
 }

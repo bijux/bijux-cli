@@ -133,11 +133,7 @@ pub fn derive_autoscaling_hint(
 }
 
 pub fn forecast_storage_growth(daily_gb: f64) -> StorageGrowthForecast {
-    StorageGrowthForecast {
-        daily_gb,
-        monthly_gb: daily_gb * 30.0,
-        annual_gb: daily_gb * 365.0,
-    }
+    StorageGrowthForecast { daily_gb, monthly_gb: daily_gb * 30.0, annual_gb: daily_gb * 365.0 }
 }
 
 pub fn build_cost_model(
@@ -227,10 +223,5 @@ pub fn build_performance_maturity_report(
     utilization_trend: f64,
     cost_trend: f64,
 ) -> PerformanceMaturityReport {
-    PerformanceMaturityReport {
-        throughput_trend,
-        latency_trend,
-        utilization_trend,
-        cost_trend,
-    }
+    PerformanceMaturityReport { throughput_trend, latency_trend, utilization_trend, cost_trend }
 }

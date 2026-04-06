@@ -11,10 +11,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repo root")
 }
 
 #[test]

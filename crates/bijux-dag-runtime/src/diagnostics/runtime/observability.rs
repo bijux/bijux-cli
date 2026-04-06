@@ -42,11 +42,7 @@ pub const REQUIRED_RUNTIME_EVENT_NAMES: &[&str] = &[
 pub fn required_event_fields_present(event: &EventRecord) -> bool {
     !event.name.trim().is_empty()
         && event.unix_ms > 0
-        && event
-            .run_id
-            .as_ref()
-            .map(|v| !v.is_empty())
-            .unwrap_or(false)
+        && event.run_id.as_ref().map(|v| !v.is_empty()).unwrap_or(false)
 }
 
 pub fn validate_required_event_names(events: &[EventRecord]) -> Vec<String> {
@@ -60,9 +56,7 @@ pub fn validate_required_event_names(events: &[EventRecord]) -> Vec<String> {
 }
 
 pub fn event_names_emitted_once(events: &[EventRecord], names: &[&str]) -> bool {
-    names
-        .iter()
-        .all(|name| events.iter().filter(|event| event.name == *name).count() == 1)
+    names.iter().all(|name| events.iter().filter(|event| event.name == *name).count() == 1)
 }
 
 pub fn event_contains_sensitive_material(event: &EventRecord) -> bool {
@@ -189,9 +183,7 @@ pub struct FileEventSink {
 
 impl FileEventSink {
     pub fn new(path: impl AsRef<Path>) -> Self {
-        Self {
-            path: path.as_ref().to_path_buf(),
-        }
+        Self { path: path.as_ref().to_path_buf() }
     }
 }
 
@@ -234,11 +226,8 @@ pub fn summarize_failure_root_causes(events: &[EventRecord]) -> Vec<String> {
     for event in events {
         if event.category == EventCategory::Failure {
             if let Some(node_id) = event.node_id.as_ref() {
-                let reason = event
-                    .details
-                    .get("reason")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("unspecified");
+                let reason =
+                    event.details.get("reason").and_then(|v| v.as_str()).unwrap_or("unspecified");
                 roots.push(format!("{node_id}:{reason}"));
             }
         }

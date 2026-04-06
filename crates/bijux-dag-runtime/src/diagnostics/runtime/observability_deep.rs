@@ -224,10 +224,7 @@ pub fn build_topology_overlay(entries: &[TimelineEntry]) -> TopologyOverlay {
             }
         }
     }
-    TopologyOverlay {
-        schema_version: "v0.1".to_string(),
-        nodes: nodes.into_values().collect(),
-    }
+    TopologyOverlay { schema_version: "v0.1".to_string(), nodes: nodes.into_values().collect() }
 }
 
 pub fn observability_contract_status(
@@ -268,13 +265,7 @@ pub fn sample_events(events: &[EventRecord], policy: &SamplingPolicy) -> Vec<Eve
     events
         .iter()
         .enumerate()
-        .filter_map(|(idx, event)| {
-            if idx % stride == 0 {
-                Some(event.clone())
-            } else {
-                None
-            }
-        })
+        .filter_map(|(idx, event)| if idx % stride == 0 { Some(event.clone()) } else { None })
         .take(policy.max_events_per_run)
         .collect()
 }
@@ -284,9 +275,7 @@ pub fn build_investigation_bundle(run_id: &str, run_dir: &str) -> InvestigationB
         run_id: run_id.to_string(),
         event_paths: vec![format!("{run_dir}/observability.events.json")],
         manifest_paths: vec![format!("{run_dir}/manifest.json")],
-        lineage_paths: vec![format!(
-            "{run_dir}/observability.lineage-visualization.json"
-        )],
+        lineage_paths: vec![format!("{run_dir}/observability.lineage-visualization.json")],
         log_paths: vec![format!("{run_dir}/nodes/*/stderr.log")],
         summary_paths: vec![format!("{run_dir}/observability.root-causes.json")],
     }

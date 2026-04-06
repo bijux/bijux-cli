@@ -131,56 +131,34 @@ pub fn entry_main() -> ExitCode {
 }
 
 fn run(cli: Cli) -> Result<(), String> {
-    let context = CommandContext {
-        json: cli.json,
-        report: cli.report,
-    };
+    let context = CommandContext { json: cli.json, report: cli.report };
     match cli.command {
-        CommandLine::Fmt => run_command_reported(
-            &context,
-            "fmt",
-            CommandEffect::Validation,
-            json!({}),
-            || run_status("cargo", &["fmt", "--all"]),
-        ),
-        CommandLine::Lint => run_command_reported(
-            &context,
-            "lint",
-            CommandEffect::Validation,
-            json!({}),
-            || {
+        CommandLine::Fmt => {
+            run_command_reported(&context, "fmt", CommandEffect::Validation, json!({}), || {
+                run_status("cargo", &["fmt", "--all"])
+            })
+        }
+        CommandLine::Lint => {
+            run_command_reported(&context, "lint", CommandEffect::Validation, json!({}), || {
                 run_status("cargo", &["fmt", "--all", "--", "--check"])?;
                 run_status(
                     "cargo",
-                    &[
-                        "clippy",
-                        "--workspace",
-                        "--all-targets",
-                        "--",
-                        "-D",
-                        "warnings",
-                    ],
+                    &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"],
                 )
-            },
-        ),
-        CommandLine::Security => run_command_reported(
-            &context,
-            "security",
-            CommandEffect::Validation,
-            json!({}),
-            || run_status("cargo", &["audit"]),
-        ),
-        CommandLine::Sanity => run_command_reported(
-            &context,
-            "sanity",
-            CommandEffect::ReadWrite,
-            json!({}),
-            || {
+            })
+        }
+        CommandLine::Security => {
+            run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
+                run_status("cargo", &["audit"])
+            })
+        }
+        CommandLine::Sanity => {
+            run_command_reported(&context, "sanity", CommandEffect::ReadWrite, json!({}), || {
                 run_status("cargo", &["metadata", "--no-deps"])?;
                 run_status("cargo", &["test", "-q"])?;
                 run_status("cargo", &["fmt", "--all", "--", "--check"])
-            },
-        ),
+            })
+        }
         CommandLine::Checks { command } => match command {
             ControlCommand::Run {
                 domain,
@@ -404,10 +382,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "check": check }),
                 || run_evidence_ledger_normalize(check),
             ),
-            RepoCommand::EvidenceDirectoryMap {
-                out,
-                create_missing,
-            } => run_command_reported(
+            RepoCommand::EvidenceDirectoryMap { out, create_missing } => run_command_reported(
                 &context,
                 "repo.evidence-directory-map",
                 CommandEffect::ReadWrite,
@@ -463,10 +438,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({}),
                 || run_battle_trust_by_scenario_report(),
             ),
-            RepoCommand::BattleCoverageReport {
-                gaps_out,
-                overloaded_out,
-            } => run_command_reported(
+            RepoCommand::BattleCoverageReport { gaps_out, overloaded_out } => run_command_reported(
                 &context,
                 "repo.battle-coverage-report",
                 CommandEffect::ReadWrite,
@@ -522,20 +494,16 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "consumer": consumer }),
                 || run_evidence_resolve_by_consumer(&consumer),
             ),
-            RepoCommand::EvidenceConsumerReports {
-                assets_out,
-                consumers_out,
-            } => run_command_reported(
-                &context,
-                "repo.evidence-consumer-reports",
-                CommandEffect::ReadWrite,
-                json!({ "assets_out": assets_out, "consumers_out": consumers_out }),
-                || run_evidence_consumer_reports(&assets_out, &consumers_out),
-            ),
-            RepoCommand::EvidenceSummaryReport {
-                json_out,
-                markdown_out,
-            } => run_command_reported(
+            RepoCommand::EvidenceConsumerReports { assets_out, consumers_out } => {
+                run_command_reported(
+                    &context,
+                    "repo.evidence-consumer-reports",
+                    CommandEffect::ReadWrite,
+                    json!({ "assets_out": assets_out, "consumers_out": consumers_out }),
+                    || run_evidence_consumer_reports(&assets_out, &consumers_out),
+                )
+            }
+            RepoCommand::EvidenceSummaryReport { json_out, markdown_out } => run_command_reported(
                 &context,
                 "repo.evidence-summary-report",
                 CommandEffect::ReadWrite,
@@ -566,23 +534,20 @@ fn run(cli: Cli) -> Result<(), String> {
                     )
                 },
             ),
-            RepoCommand::HotspotReports {
-                file_out,
-                function_out,
-                api_out,
-                dep_out,
-            } => run_command_reported(
-                &context,
-                "repo.hotspot-reports",
-                CommandEffect::ReadWrite,
-                json!({
-                    "file_out": file_out,
-                    "function_out": function_out,
-                    "api_out": api_out,
-                    "dep_out": dep_out
-                }),
-                || run_repo_hotspot_reports(&file_out, &function_out, &api_out, &dep_out),
-            ),
+            RepoCommand::HotspotReports { file_out, function_out, api_out, dep_out } => {
+                run_command_reported(
+                    &context,
+                    "repo.hotspot-reports",
+                    CommandEffect::ReadWrite,
+                    json!({
+                        "file_out": file_out,
+                        "function_out": function_out,
+                        "api_out": api_out,
+                        "dep_out": dep_out
+                    }),
+                    || run_repo_hotspot_reports(&file_out, &function_out, &api_out, &dep_out),
+                )
+            }
             RepoCommand::SchemaChangelog { out, schema_root } => run_command_reported(
                 &context,
                 "repo.schema-changelog",
@@ -627,16 +592,15 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "out": out }),
                 || run_repo_planner_hardening_report(&out),
             ),
-            RepoCommand::ArtifactCapabilityReports {
-                matrix_out,
-                model_out,
-            } => run_command_reported(
-                &context,
-                "repo.artifact-capability-reports",
-                CommandEffect::ReadWrite,
-                json!({ "matrix_out": matrix_out, "model_out": model_out }),
-                || run_repo_artifact_capability_reports(&matrix_out, &model_out),
-            ),
+            RepoCommand::ArtifactCapabilityReports { matrix_out, model_out } => {
+                run_command_reported(
+                    &context,
+                    "repo.artifact-capability-reports",
+                    CommandEffect::ReadWrite,
+                    json!({ "matrix_out": matrix_out, "model_out": model_out }),
+                    || run_repo_artifact_capability_reports(&matrix_out, &model_out),
+                )
+            }
         },
         CommandLine::Verify { command } => match command {
             VerifyCommand::EvidenceFoundation => run_command_reported(
@@ -888,20 +852,14 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({"run_dir": run_dir}),
                 || run_dag_run_inspect(&run_dir),
             ),
-            DagCommand::ExplainArtifact {
-                run_dir,
-                artifact_id,
-            } => run_command_reported(
+            DagCommand::ExplainArtifact { run_dir, artifact_id } => run_command_reported(
                 &context,
                 "dag.explain-artifact",
                 CommandEffect::Validation,
                 json!({"run_dir": run_dir, "artifact_id": artifact_id}),
                 || run_dag_explain_artifact(&run_dir, &artifact_id),
             ),
-            DagCommand::ExplainSchedule {
-                run_dir,
-                schedule_id,
-            } => run_command_reported(
+            DagCommand::ExplainSchedule { run_dir, schedule_id } => run_command_reported(
                 &context,
                 "dag.explain-schedule",
                 CommandEffect::Validation,
@@ -940,23 +898,17 @@ fn run(cli: Cli) -> Result<(), String> {
                 },
             ),
         },
-        CommandLine::Doctor => run_command_reported(
-            &context,
-            "doctor",
-            CommandEffect::ReadWrite,
-            json!({}),
-            || {
+        CommandLine::Doctor => {
+            run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
                 run_env_summary()?;
                 run_verify_tools()
-            },
-        ),
-        CommandLine::Golden => run_command_reported(
-            &context,
-            "golden",
-            CommandEffect::ReadWrite,
-            json!({}),
-            || run_golden(),
-        ),
+            })
+        }
+        CommandLine::Golden => {
+            run_command_reported(&context, "golden", CommandEffect::ReadWrite, json!({}), || {
+                run_golden()
+            })
+        }
         CommandLine::PublicApi => run_command_reported(
             &context,
             "public-api",
@@ -1013,21 +965,19 @@ fn run(cli: Cli) -> Result<(), String> {
             json!({}),
             || run_benchmark_baseline(),
         ),
-        CommandLine::BenchmarkCompare {
-            current,
-            baseline,
-            max_regression_ratio,
-        } => run_command_reported(
-            &context,
-            "benchmark-compare",
-            CommandEffect::Validation,
-            json!({
-                "current": current,
-                "baseline": baseline,
-                "max_regression_ratio": max_regression_ratio
-            }),
-            || run_benchmark_compare(&current, &baseline, max_regression_ratio),
-        ),
+        CommandLine::BenchmarkCompare { current, baseline, max_regression_ratio } => {
+            run_command_reported(
+                &context,
+                "benchmark-compare",
+                CommandEffect::Validation,
+                json!({
+                    "current": current,
+                    "baseline": baseline,
+                    "max_regression_ratio": max_regression_ratio
+                }),
+                || run_benchmark_compare(&current, &baseline, max_regression_ratio),
+            )
+        }
         CommandLine::ResourceProfileSummary { report } => run_command_reported(
             &context,
             "resource-profile-summary",
@@ -1211,9 +1161,7 @@ fn run(cli: Cli) -> Result<(), String> {
             || run_foundation_review_report(),
         ),
         CommandLine::Ci => {
-            run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
-                run_ci()
-            })
+            run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || run_ci())
         }
         CommandLine::Foundation {
             domain,
@@ -1246,11 +1194,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 )
             },
         ),
-        CommandLine::FoundationHardening {
-            fail_fast,
-            advisory,
-            why,
-        } => run_command_reported(
+        CommandLine::FoundationHardening { fail_fast, advisory, why } => run_command_reported(
             &context,
             "foundation-hardening",
             CommandEffect::Validation,
@@ -1261,18 +1205,11 @@ fn run(cli: Cli) -> Result<(), String> {
             }),
             || run_foundation_hardening_suite(&context, fail_fast, advisory, why),
         ),
-        CommandLine::Compat => run_command_reported(
-            &context,
-            "compat",
-            CommandEffect::ReadWrite,
-            json!({}),
-            || {
-                run_status(
-                    "cargo",
-                    &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"],
-                )
-            },
-        ),
+        CommandLine::Compat => {
+            run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
+                run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
+            })
+        }
         CommandLine::Api { command } => match command {
             ApiCommand::PublicSurface => run_command_reported(
                 &context,
@@ -1287,26 +1224,13 @@ fn run(cli: Cli) -> Result<(), String> {
 
 fn run_ci() -> Result<(), String> {
     run_status("cargo", &["fmt", "--all"])?;
-    run_status(
-        "cargo",
-        &[
-            "clippy",
-            "--workspace",
-            "--all-targets",
-            "--",
-            "-D",
-            "warnings",
-        ],
-    )?;
+    run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])?;
     run_dep_guard()?;
     run_resolve_check()?;
     run_missing_workspace_dependency_checks()?;
     run_status("cargo", &["test", "--workspace"])?;
     run_golden()?;
-    run_status(
-        "cargo",
-        &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"],
-    )?;
+    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])?;
 
     let root = repo_root()?;
     let scratch = std::env::temp_dir().join(format!("bijux-dag-ci-{}", now_secs()));
@@ -1331,15 +1255,7 @@ fn run_ci() -> Result<(), String> {
     run_status_in_dir(
         &root,
         "cargo",
-        &[
-            "run",
-            "-p",
-            "bijux-dag-cli",
-            "--",
-            "dag",
-            "verify",
-            run_dir.to_str().expect("utf-8"),
-        ],
+        &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
     )
 }
 
@@ -1446,10 +1362,7 @@ fn run_foundation_hardening_suite(
     if failed.is_empty() || advisory {
         Ok(())
     } else {
-        Err(format!(
-            "foundation hardening failed: {}",
-            failed.join(", ")
-        ))
+        Err(format!("foundation hardening failed: {}", failed.join(", ")))
     }
 }
 
@@ -1520,10 +1433,7 @@ fn run_release_readiness_report() -> Result<(), String> {
     });
     let path = root.join("artifacts/release/readiness_report.json");
     write_pretty_json(&path, &report)?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1569,10 +1479,7 @@ fn run_release_compatibility_matrix() -> Result<(), String> {
     });
     let out = root.join("artifacts/release/compatibility_matrix.json");
     write_pretty_json(&out, &matrix)?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&matrix).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&matrix).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1582,31 +1489,15 @@ fn run_post_release_verify(binary: Option<&Path>) -> Result<(), String> {
     let dag_dir = tmp_dir.path();
     let runs_dir = dag_dir.join("runs");
     let bin_path = binary
-        .map(|p| {
-            if p.is_absolute() {
-                p.to_path_buf()
-            } else {
-                root.join(p)
-            }
-        })
+        .map(|p| if p.is_absolute() { p.to_path_buf() } else { root.join(p) })
         .unwrap_or_else(|| root.join("target/debug/bijux"));
-    let bin = bin_path
-        .to_str()
-        .ok_or_else(|| "non-utf8 release binary path".to_string())?;
+    let bin = bin_path.to_str().ok_or_else(|| "non-utf8 release binary path".to_string())?;
 
+    run_with_root(&root, bin, &["dag", "init", "--dir", dag_dir.to_string_lossy().as_ref()])?;
     run_with_root(
         &root,
         bin,
-        &["dag", "init", "--dir", dag_dir.to_string_lossy().as_ref()],
-    )?;
-    run_with_root(
-        &root,
-        bin,
-        &[
-            "dag",
-            "validate",
-            dag_dir.join("dag.json").to_string_lossy().as_ref(),
-        ],
+        &["dag", "validate", dag_dir.join("dag.json").to_string_lossy().as_ref()],
     )?;
     run_with_root(
         &root,
@@ -1619,11 +1510,7 @@ fn run_post_release_verify(binary: Option<&Path>) -> Result<(), String> {
             runs_dir.to_string_lossy().as_ref(),
         ],
     )?;
-    run_with_root(
-        &root,
-        bin,
-        &["dag", "status", runs_dir.to_string_lossy().as_ref()],
-    )?;
+    run_with_root(&root, bin, &["dag", "status", runs_dir.to_string_lossy().as_ref()])?;
     Ok(())
 }
 
@@ -1638,24 +1525,14 @@ fn run_release_reproducibility_check(tag: &str) -> Result<(), String> {
             tag_sha.trim()
         ));
     }
-    println!(
-        "reproducibility check passed: {} -> {}",
-        tag,
-        tag_sha.trim()
-    );
+    println!("reproducibility check passed: {} -> {}", tag, tag_sha.trim());
     Ok(())
 }
 
 fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
     let root = repo_root()?;
     let output = out
-        .map(|p| {
-            if p.is_absolute() {
-                p.to_path_buf()
-            } else {
-                root.join(p)
-            }
-        })
+        .map(|p| if p.is_absolute() { p.to_path_buf() } else { root.join(p) })
         .unwrap_or_else(|| root.join("artifacts/release/evidence_bundle.json"));
 
     let readiness_path = root.join("artifacts/release/readiness_report.json");
@@ -1683,10 +1560,7 @@ fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
     });
 
     write_pretty_json(&output, &bundle)?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1695,12 +1569,8 @@ fn check_contract_coverage_ready(root: &Path) -> Value {
 }
 
 fn check_schema_coverage_ready(root: &Path) -> Value {
-    let positive = root
-        .join("configs/dag/schema/fixtures/compat/positive")
-        .exists();
-    let negative = root
-        .join("configs/dag/schema/fixtures/compat/negative")
-        .exists();
+    let positive = root.join("configs/dag/schema/fixtures/compat/positive").exists();
+    let negative = root.join("configs/dag/schema/fixtures/compat/negative").exists();
     json!({"ok": positive && negative})
 }
 
@@ -1774,15 +1644,9 @@ fn run_schedule_preview(file: &Path) -> Result<(), String> {
         .ok_or_else(|| "schedule registry must contain a 'definitions' array".to_string())?;
     let now = now_millis();
     for definition in definitions {
-        let id = definition
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("<unknown>");
+        let id = definition.get("id").and_then(|v| v.as_str()).unwrap_or("<unknown>");
         let trigger = definition.get("trigger").unwrap_or(&Value::Null);
-        let kind = trigger
-            .get("kind")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown");
+        let kind = trigger.get("kind").and_then(|v| v.as_str()).unwrap_or("unknown");
         let preview = if kind == "cron" { now + 60_000 } else { now };
         println!("schedule={id} trigger={kind} preview_unix_ms={preview}");
     }
@@ -1795,10 +1659,7 @@ fn run_dag_lint(graph: &Path) -> Result<(), String> {
     let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
     let findings = bijux_dag_core::lint_graph(&parsed);
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&findings).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&findings).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1807,10 +1668,7 @@ fn run_dag_unit_harness(graph: &Path) -> Result<(), String> {
     let path = root.join(graph);
     let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     let preview = bijux_dag_core::DagUnitHarness::dry_run(&input).map_err(|err| err.to_string())?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1820,10 +1678,7 @@ fn run_dag_simulate(graph: &Path) -> Result<(), String> {
     let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
     let order = bijux_dag_core::simulate_graph(&parsed);
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&order).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&order).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1833,10 +1688,7 @@ fn run_dag_dry_run(graph: &Path) -> Result<(), String> {
     let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
     let preview = bijux_dag_core::dry_run_preview(&parsed);
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1852,10 +1704,7 @@ fn run_dag_plan_dump(graph: &Path, select: &[String]) -> Result<(), String> {
     let plan = bijux_dag_core::lower_graph_to_execution_plan(&parsed, options)
         .map_err(|err| err.to_string())?;
     validate_execution_plan_shape(&root, &plan)?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&plan).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&plan).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1873,9 +1722,7 @@ fn validate_execution_plan_shape(
     let plan_value = serde_json::to_value(plan).map_err(|err| err.to_string())?;
     for key in required.iter().filter_map(Value::as_str) {
         if plan_value.get(key).is_none() {
-            return Err(format!(
-                "execution plan missing schema-required field `{key}`"
-            ));
+            return Err(format!("execution plan missing schema-required field `{key}`"));
         }
     }
     Ok(())
@@ -1883,9 +1730,7 @@ fn validate_execution_plan_shape(
 
 fn run_dag_visualize(run_dir: &Path) -> Result<(), String> {
     let root = repo_root()?;
-    let path = root
-        .join(run_dir)
-        .join("observability.graph-visualization.json");
+    let path = root.join(run_dir).join("observability.graph-visualization.json");
     let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     println!("{payload}");
     Ok(())
@@ -1903,11 +1748,7 @@ fn run_dag_scheduler_timeline(run_dir: &Path) -> Result<(), String> {
     let timeline_path = root.join(run_dir).join("observability.timeline.json");
     let payload = fs::read_to_string(&timeline_path).map_err(|err| err.to_string())?;
     let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
-    let entries = parsed
-        .get("entries")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
+    let entries = parsed.get("entries").and_then(|v| v.as_array()).cloned().unwrap_or_default();
     let scheduler_entries = entries
         .into_iter()
         .filter(|row| {
@@ -1928,10 +1769,7 @@ fn run_dag_scheduler_timeline(run_dir: &Path) -> Result<(), String> {
         "scheduler_entry_count": scheduler_entries.len(),
         "entries": scheduler_entries,
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -1941,11 +1779,7 @@ fn run_dag_verify_state(run_dir: &Path) -> Result<(), String> {
     let manifest_path = run_path.join("manifest.json");
     let manifest_text = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
     let manifest: Value = serde_json::from_str(&manifest_text).map_err(|err| err.to_string())?;
-    let run_state = match manifest
-        .get("status")
-        .and_then(Value::as_str)
-        .unwrap_or("failed")
-    {
+    let run_state = match manifest.get("status").and_then(Value::as_str).unwrap_or("failed") {
         "success" => bijux_dag_runtime::RunState::Succeeded,
         "failed" => bijux_dag_runtime::RunState::Failed,
         "cancelled" => bijux_dag_runtime::RunState::Cancelled,
@@ -1962,11 +1796,7 @@ fn run_dag_verify_state(run_dir: &Path) -> Result<(), String> {
             }
             let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
             let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
-            let state = match parsed
-                .get("status")
-                .and_then(Value::as_str)
-                .unwrap_or("failed")
-            {
+            let state = match parsed.get("status").and_then(Value::as_str).unwrap_or("failed") {
                 "success" => bijux_dag_runtime::NodeState::Success,
                 "failed" => bijux_dag_runtime::NodeState::Failed,
                 "cached" => bijux_dag_runtime::NodeState::Cached,
@@ -1982,15 +1812,9 @@ fn run_dag_verify_state(run_dir: &Path) -> Result<(), String> {
     let report = bijux_dag_runtime::verify_post_run_state_consistency(
         run_state,
         &node_states,
-        node_states
-            .iter()
-            .filter(|s| matches!(s, bijux_dag_runtime::NodeState::Failed))
-            .count(),
+        node_states.iter().filter(|s| matches!(s, bijux_dag_runtime::NodeState::Failed)).count(),
     );
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2005,10 +1829,7 @@ fn run_dag_debug(graph: &Path) -> Result<(), String> {
         "blocked_nodes": [],
         "policy_reasons": []
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2030,17 +1851,10 @@ fn run_dag_explain_validation(graph: &Path) -> Result<(), String> {
                     })
                 })
                 .collect::<Vec<_>>();
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&explain).map_err(|err| err.to_string())?
-            );
+            println!("{}", serde_json::to_string_pretty(&explain).map_err(|err| err.to_string())?);
             Ok(())
         }
-        Err(err) => Err(format!(
-            "validation parse failed for {}: {}",
-            path.display(),
-            err
-        )),
+        Err(err) => Err(format!("validation parse failed for {}: {}", path.display(), err)),
     }
 }
 
@@ -2056,10 +1870,7 @@ fn run_dag_explain_node(run_dir: &Path, node_id: &str) -> Result<(), String> {
         .into_iter()
         .filter(|row| row.get("node_id").and_then(|v| v.as_str()) == Some(node_id))
         .collect::<Vec<_>>();
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&reasons).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&reasons).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2085,11 +1896,8 @@ fn run_dag_schema_export(out: &Path) -> Result<(), String> {
             "edges": {"type": "array"}
         }
     });
-    fs::write(
-        path,
-        serde_json::to_vec_pretty(&schema).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())
+    fs::write(path, serde_json::to_vec_pretty(&schema).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())
 }
 
 fn run_dag_repair_run(run_dir: &Path, apply: bool) -> Result<(), String> {
@@ -2106,11 +1914,8 @@ fn run_dag_repair_run(run_dir: &Path, apply: bool) -> Result<(), String> {
             "reason": "manifest was missing and reconstructed",
             "generated_unix_ms": now_millis(),
         });
-        fs::write(
-            &manifest,
-            serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?,
-        )
-        .map_err(|err| err.to_string())?;
+        fs::write(&manifest, serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
     }
     if !index_exists && apply {
         let payload = json!({
@@ -2133,10 +1938,7 @@ fn run_dag_repair_run(run_dir: &Path, apply: bool) -> Result<(), String> {
         "manifest_repaired": !manifest_exists && apply,
         "metadata_index_repaired": !index_exists && apply
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2159,10 +1961,7 @@ fn run_dag_simulate_recovery(scenario: &Path) -> Result<(), String> {
         "simulated": true,
         "evaluated_unix_ms": now_millis(),
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2179,20 +1978,14 @@ fn run_dag_recovery_accept(suite: &Path) -> Result<(), String> {
         .get("required_scenarios")
         .and_then(|v| v.as_array())
         .ok_or_else(|| "required_scenarios array is required".to_string())?;
-    let strict = suite_json
-        .get("strict")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
+    let strict = suite_json.get("strict").and_then(|v| v.as_bool()).unwrap_or(true);
     let report = json!({
         "suite_id": suite_id,
         "required_scenario_count": required_scenarios.len(),
         "strict": strict,
         "accepted": !required_scenarios.is_empty(),
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2208,10 +2001,7 @@ fn run_dag_explain_run(run_dir: &Path) -> Result<(), String> {
         "why_happened": root_causes,
         "what_next": ["inspect failed nodes", "run artifact verification", "review scheduler policy"]
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2253,18 +2043,13 @@ fn run_dag_run_inspect(run_dir: &Path) -> Result<(), String> {
             "root_causes": root_causes_path.strip_prefix(&root).map_err(|err| err.to_string())?,
         }
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
     Ok(())
 }
 
 fn run_dag_explain_artifact(run_dir: &Path, artifact_id: &str) -> Result<(), String> {
     let root = repo_root()?;
-    let path = root
-        .join(run_dir)
-        .join("observability.lineage-visualization.json");
+    let path = root.join(run_dir).join("observability.lineage-visualization.json");
     let lineage = fs::read_to_string(&path)
         .ok()
         .and_then(|v| serde_json::from_str::<Value>(&v).ok())
@@ -2275,10 +2060,7 @@ fn run_dag_explain_artifact(run_dir: &Path, artifact_id: &str) -> Result<(), Str
         "lineage_data": lineage,
         "reproducible": true
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2301,10 +2083,7 @@ fn run_dag_explain_schedule(run_dir: &Path, schedule_id: &str) -> Result<(), Str
         "created_run": !matching.is_empty(),
         "records": matching
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2319,10 +2098,7 @@ fn run_dag_investigation_bundle(run_dir: &Path, run_id: &str) -> Result<(), Stri
         "log_paths": [run_path.join("nodes")],
         "summary_paths": [run_path.join("observability.root-causes.json")]
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2358,10 +2134,7 @@ fn run_dag_drift_report(
         "baseline_name": baseline_name,
         "drift_findings": drift
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2369,10 +2142,7 @@ fn run_artifacts_clean() -> Result<(), String> {
     let root = repo_root()?;
     let artifacts_target = root.join("artifacts").join("target");
     if !artifacts_target.exists() {
-        println!(
-            "artifacts target path is already clean: {}",
-            artifacts_target.display()
-        );
+        println!("artifacts target path is already clean: {}", artifacts_target.display());
         return Ok(());
     }
     fs::remove_dir_all(&artifacts_target).map_err(|err| err.to_string())?;
@@ -2382,10 +2152,7 @@ fn run_artifacts_clean() -> Result<(), String> {
 
 fn run_env_summary() -> Result<(), String> {
     println!("repo_root={}", repo_root()?.display());
-    println!(
-        "cwd={}",
-        env::current_dir().map_err(|err| err.to_string())?.display()
-    );
+    println!("cwd={}", env::current_dir().map_err(|err| err.to_string())?.display());
     print_command_version("rustc");
     print_command_version("cargo");
     print_command_version("cargo-audit");
@@ -2403,11 +2170,7 @@ fn print_command_version(command: &str) {
     let output = Command::new(command).arg("--version").output().ok();
     if let Some(output) = output {
         if output.status.success() {
-            println!(
-                "{}={}",
-                command,
-                String::from_utf8_lossy(&output.stdout).trim()
-            );
+            println!("{}={}", command, String::from_utf8_lossy(&output.stdout).trim());
         } else {
             println!("{}=<unavailable>", command);
         }
@@ -2445,10 +2208,7 @@ fn run_resolve_check() -> Result<(), String> {
         .output()
         .map_err(|err| format!("cargo metadata failed: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "cargo metadata failed with status {}",
-            output.status
-        ));
+        return Err(format!("cargo metadata failed with status {}", output.status));
     }
     let payload = String::from_utf8_lossy(&output.stdout);
     if payload.contains("\"packages\"") {
@@ -2465,21 +2225,9 @@ fn run_benchmark_baseline() -> Result<(), String> {
     let runs_dir = out_dir.join("runs");
     fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
     let fixtures = [
-        (
-            "large-dag",
-            "execute-local",
-            "evidence/perf/fixtures/large_dag.json",
-        ),
-        (
-            "linear-32",
-            "plan",
-            "evidence/perf/fixtures/scheduler_linear_32.json",
-        ),
-        (
-            "parallel-64",
-            "plan",
-            "evidence/perf/fixtures/scheduler_parallel_64.json",
-        ),
+        ("large-dag", "execute-local", "evidence/perf/fixtures/large_dag.json"),
+        ("linear-32", "plan", "evidence/perf/fixtures/scheduler_linear_32.json"),
+        ("parallel-64", "plan", "evidence/perf/fixtures/scheduler_parallel_64.json"),
         (
             "diamond-fanout",
             "manifest-finalize",
@@ -2501,9 +2249,7 @@ fn run_benchmark_baseline() -> Result<(), String> {
                 "run",
                 fixture,
                 "--out",
-                runs_dir
-                    .to_str()
-                    .ok_or_else(|| "non-utf8 runs path".to_string())?,
+                runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
             ],
         )?;
         let end_ms = now_millis();
@@ -2586,11 +2332,7 @@ fn run_observability_report() -> Result<(), String> {
         if !run_path.is_dir() {
             continue;
         }
-        let name = run_path
-            .file_name()
-            .and_then(|v| v.to_str())
-            .unwrap_or_default()
-            .to_string();
+        let name = run_path.file_name().and_then(|v| v.to_str()).unwrap_or_default().to_string();
         if !name.starts_with("run-") {
             continue;
         }
@@ -2619,10 +2361,7 @@ fn run_artifact_verify() -> Result<(), String> {
     let root = repo_root()?;
     let runs_root = root.join("artifacts").join("runs");
     if !runs_root.exists() {
-        println!(
-            "no artifact runs directory found at {}",
-            runs_root.display()
-        );
+        println!("no artifact runs directory found at {}", runs_root.display());
         return Ok(());
     }
 
@@ -2633,11 +2372,7 @@ fn run_artifact_verify() -> Result<(), String> {
         if !run_path.is_dir() {
             continue;
         }
-        let name = run_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or_default()
-            .to_string();
+        let name = run_path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
         if !name.starts_with("run-") {
             continue;
         }
@@ -2649,29 +2384,13 @@ fn run_artifact_verify() -> Result<(), String> {
         let manifest_text = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
         let manifest: serde_json::Value =
             serde_json::from_str(&manifest_text).map_err(|err| err.to_string())?;
-        let outputs = manifest
-            .get("outputs")
-            .and_then(|v| v.as_array())
-            .cloned()
-            .unwrap_or_default();
+        let outputs =
+            manifest.get("outputs").and_then(|v| v.as_array()).cloned().unwrap_or_default();
         for output in outputs {
-            let node_id = output
-                .get("node_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            let file = output
-                .get("file")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            let expected_sha = output
-                .get("sha256")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            let file_path = run_path
-                .join("nodes")
-                .join(node_id)
-                .join("outputs")
-                .join(file);
+            let node_id = output.get("node_id").and_then(|v| v.as_str()).unwrap_or_default();
+            let file = output.get("file").and_then(|v| v.as_str()).unwrap_or_default();
+            let expected_sha = output.get("sha256").and_then(|v| v.as_str()).unwrap_or_default();
+            let file_path = run_path.join("nodes").join(node_id).join("outputs").join(file);
             if !file_path.exists() {
                 failures.push(format!("{name}: missing output {}", file_path.display()));
                 continue;
@@ -2690,10 +2409,7 @@ fn run_artifact_verify() -> Result<(), String> {
         println!("artifact verification passed");
         Ok(())
     } else {
-        Err(format!(
-            "artifact verification failed: {}",
-            failures.join(", ")
-        ))
+        Err(format!("artifact verification failed: {}", failures.join(", ")))
     }
 }
 
@@ -2775,23 +2491,16 @@ fn run_golden() -> Result<(), String> {
 }
 
 fn run_public_api() -> Result<(), String> {
-    if Command::new("cargo-public-api")
-        .arg("--version")
-        .status()
-        .is_err()
-    {
+    if Command::new("cargo-public-api").arg("--version").status().is_err() {
         return Ok(());
     }
     let root = repo_root()?;
     let docs_api = root.join("docs/api");
     fs::create_dir_all(&docs_api).map_err(|err| err.to_string())?;
 
-    for crate_name in [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-    ] {
+    for crate_name in
+        ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"]
+    {
         let output = run_stdout_and_json(&root, "cargo", &["public-api", "-p", crate_name])?;
         let out_txt = docs_api.join(format!("{crate_name}.txt"));
         if out_txt.exists() {
@@ -2818,10 +2527,7 @@ fn run_dep_guard() -> Result<(), String> {
 
     for rule in &policy.rules {
         if edges.contains(&(rule.from.clone(), rule.to.clone())) {
-            eprintln!(
-                "forbidden dependency edge {} -> {} ({})",
-                rule.from, rule.to, rule.reason
-            );
+            eprintln!("forbidden dependency edge {} -> {} ({})", rule.from, rule.to, rule.reason);
             failed = true;
         }
     }
@@ -2849,28 +2555,18 @@ fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
         .output()
         .map_err(|err| format!("cargo metadata failed: {err}"))?;
     if !output.status.success() {
-        return Err(format!(
-            "cargo metadata failed with status {}",
-            output.status
-        ));
+        return Err(format!("cargo metadata failed with status {}", output.status));
     }
     let payload: Value = serde_json::from_slice(&output.stdout)
         .map_err(|err| format!("invalid metadata JSON: {err}"))?;
     let mut edges: BTreeSet<(String, String)> = BTreeSet::new();
     if let Some(packages) = payload.get("packages").and_then(Value::as_array) {
         for package in packages {
-            let from = package
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_string();
+            let from = package.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
             if let Some(deps) = package.get("dependencies").and_then(Value::as_array) {
                 for dep in deps {
-                    let to = dep
-                        .get("name")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .to_string();
+                    let to =
+                        dep.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
                     if !from.is_empty() && !to.is_empty() {
                         edges.insert((from.clone(), to));
                     }
@@ -2899,7 +2595,7 @@ fn run_workspace_manifest_policy_guard() -> Result<(), String> {
         || !app_manifest.contains("bijux_dag_artifacts")
     {
         return Err(
-            "bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into(),
+            "bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into()
         );
     }
     Ok(())
@@ -2962,10 +2658,7 @@ fn run_crate_ownership_guard() -> Result<(), String> {
     if violations.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "crate ownership guard failed: {}",
-            violations.join(", ")
-        ))
+        Err(format!("crate ownership guard failed: {}", violations.join(", ")))
     }
 }
 
@@ -2981,12 +2674,8 @@ fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
             continue;
         }
         let raw = trimmed.trim_start_matches("pub mod ").trim();
-        let name = raw
-            .trim_end_matches(';')
-            .split_whitespace()
-            .next()
-            .unwrap_or_default()
-            .to_string();
+        let name =
+            raw.trim_end_matches(';').split_whitespace().next().unwrap_or_default().to_string();
         if !name.is_empty() {
             modules.insert(name);
         }
@@ -3057,20 +2746,14 @@ fn run_docs_guarantee_guard() -> Result<(), String> {
                     || line.contains("artifacts/benchmarks/")
                     || line.contains("artifacts/memory/"));
             if !has_link {
-                violations.push(format!(
-                    "{rel}:{} guarantee claim missing proof link",
-                    idx + 1
-                ));
+                violations.push(format!("{rel}:{} guarantee claim missing proof link", idx + 1));
             }
         }
     }
     if violations.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "docs guarantee guard failed: {}",
-            violations.join(", ")
-        ))
+        Err(format!("docs guarantee guard failed: {}", violations.join(", ")))
     }
 }
 
@@ -3179,10 +2862,7 @@ fn run_root_directory_guard() -> Result<(), String> {
         if path.is_dir() {
             continue;
         }
-        let name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or_default();
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
         if !allowed.contains(&name) {
             violations.push(name.to_string());
         }
@@ -3190,10 +2870,7 @@ fn run_root_directory_guard() -> Result<(), String> {
     if violations.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "root directory contains non-contract files: {}",
-            violations.join(", ")
-        ))
+        Err(format!("root directory contains non-contract files: {}", violations.join(", ")))
     }
 }
 
@@ -3213,10 +2890,7 @@ fn run_executable_guard() -> Result<(), String> {
                 .map_err(|err| err.to_string())?
                 .to_string_lossy()
                 .replace('\\', "/");
-            let mode = fs::metadata(&file)
-                .map_err(|err| err.to_string())?
-                .permissions()
-                .mode();
+            let mode = fs::metadata(&file).map_err(|err| err.to_string())?.permissions().mode();
             let executable = mode & 0o111 != 0;
             if executable {
                 violations.push(rel);
@@ -3249,9 +2923,7 @@ fn run_repo_manifests_guard() -> Result<(), String> {
         let manifest = root.join("crates").join(crate_name).join("Cargo.toml");
         let text = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;
         if !text.contains("[lints]") || !text.contains("workspace = true") {
-            return Err(format!(
-                "{crate_name} manifest missing workspace lint contract"
-            ));
+            return Err(format!("{crate_name} manifest missing workspace lint contract"));
         }
     }
     Ok(())
@@ -3269,9 +2941,7 @@ fn run_repo_api_guard() -> Result<(), String> {
         "bijux-dag-cli",
     ] {
         if !docs.contains(crate_name) {
-            return Err(format!(
-                "crate api policy missing coverage mention for {crate_name}"
-            ));
+            return Err(format!("crate api policy missing coverage mention for {crate_name}"));
         }
     }
     Ok(())
@@ -3322,9 +2992,7 @@ fn assert_empty_diff(diff: &Value) -> Result<(), String> {
     if diff.get("ok").and_then(Value::as_bool) != Some(true) {
         return Err(format!("expected ok=true: {diff}"));
     }
-    let payload = diff
-        .get("data")
-        .ok_or_else(|| "missing data field".to_string())?;
+    let payload = diff.get("data").ok_or_else(|| "missing data field".to_string())?;
     let is_empty_object = |key: &str| {
         payload
             .get(key)
@@ -3335,11 +3003,7 @@ fn assert_empty_diff(diff: &Value) -> Result<(), String> {
     if !is_empty_object("manifest") {
         return Err(format!("manifest not empty: {payload}"));
     }
-    if payload
-        .get("graph_fingerprint")
-        .and_then(Value::as_null)
-        .is_none()
-    {
+    if payload.get("graph_fingerprint").and_then(Value::as_null).is_none() {
         return Err(format!("graph_fingerprint not null: {payload}"));
     }
     if !is_empty_object("nodes") {

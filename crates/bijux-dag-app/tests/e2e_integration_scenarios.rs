@@ -48,10 +48,7 @@ fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
     let (code, stdout, stderr) = run_dag(args, cwd);
-    assert!(
-        code == 0 || code == 2 || code == 3,
-        "command failed: code={code} stderr={stderr}"
-    );
+    assert!(code == 0 || code == 2 || code == 3, "command failed: code={code} stderr={stderr}");
     serde_json::from_str(&stdout).expect("parse json envelope")
 }
 
@@ -127,12 +124,7 @@ fn e2e_failure_downstream_behavior() {
     fs::create_dir_all(&out_dir).expect("create runs");
 
     let (code, _stdout, _stderr) = run_dag(
-        &[
-            "run",
-            &output_path_string(&graph_path),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", &output_path_string(&graph_path), "--out", &output_path_string(&out_dir)],
         &root,
     );
     assert!(code == 0 || code == 2 || code == 3);
@@ -185,12 +177,7 @@ fn e2e_timeout_error_classification() {
     fs::create_dir_all(&out_dir).expect("create runs");
 
     let (code, _stdout, _stderr) = run_dag(
-        &[
-            "run",
-            &output_path_string(&graph_path),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", &output_path_string(&graph_path), "--out", &output_path_string(&out_dir)],
         &root,
     );
     assert!(code == 0 || code == 2 || code == 3);
@@ -212,12 +199,7 @@ fn e2e_missing_outputs_failure_handling() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
     let (code, _, _) = run_dag(
-        &[
-            "run",
-            &output_path_string(&graph_path),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", &output_path_string(&graph_path), "--out", &output_path_string(&out_dir)],
         &root,
     );
     assert!(code == 0 || code == 2 || code == 3);
@@ -274,10 +256,7 @@ fn e2e_cache_hit_second_run_and_invalidation() {
             .expect("read second manifest"),
     )
     .expect("parse second manifest");
-    assert_eq!(
-        first_manifest["graph_fingerprint"],
-        second_manifest["graph_fingerprint"]
-    );
+    assert_eq!(first_manifest["graph_fingerprint"], second_manifest["graph_fingerprint"]);
 
     graph.nodes[0].params =
         bijux_dag_core::ParamValue::Object(std::collections::BTreeMap::from([(
@@ -304,10 +283,7 @@ fn e2e_cache_hit_second_run_and_invalidation() {
             .expect("read changed manifest"),
     )
     .expect("parse changed manifest");
-    assert_ne!(
-        second_manifest["graph_fingerprint"],
-        changed_manifest["graph_fingerprint"]
-    );
+    assert_ne!(second_manifest["graph_fingerprint"], changed_manifest["graph_fingerprint"]);
 }
 
 #[test]
@@ -367,10 +343,7 @@ fn e2e_replay_semantic_comparison_and_import_export() {
         ],
         &root,
     );
-    let _ = run_json(
-        &["import", "--json", &output_path_string(&export_path)],
-        &root,
-    );
+    let _ = run_json(&["import", "--json", &output_path_string(&export_path)], &root);
 
     let export_meta = temp.path().join("bundle-meta.json");
     let _ = run_json(
@@ -383,10 +356,7 @@ fn e2e_replay_semantic_comparison_and_import_export() {
         ],
         &root,
     );
-    let _ = run_json(
-        &["import", "--json", &output_path_string(&export_meta)],
-        &root,
-    );
+    let _ = run_json(&["import", "--json", &output_path_string(&export_meta)], &root);
 }
 
 #[test]
@@ -427,18 +397,10 @@ fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
     );
 
     let invalid_graph = temp.path().join("invalid.json");
-    fs::write(
-        &invalid_graph,
-        "{\"spec\":\"dag/v0.1\",\"nodes\":[],\"edges\":[]}",
-    )
-    .expect("write invalid graph");
+    fs::write(&invalid_graph, "{\"spec\":\"dag/v0.1\",\"nodes\":[],\"edges\":[]}")
+        .expect("write invalid graph");
     let (code, _, _) = run_dag(
-        &[
-            "run",
-            &output_path_string(&invalid_graph),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", &output_path_string(&invalid_graph), "--out", &output_path_string(&out_dir)],
         &root,
     );
     assert_ne!(code, 0);
@@ -454,9 +416,7 @@ fn e2e_container_and_real_world_orchestration() {
         .map(|out| out.status.success())
         .unwrap_or(false);
     if docker_available {
-        let _ = Command::new("true")
-            .status()
-            .expect("container scenario placeholder");
+        let _ = Command::new("true").status().expect("container scenario placeholder");
     }
 
     let temp = tempfile::tempdir().expect("tempdir");
@@ -470,11 +430,7 @@ fn e2e_container_and_real_world_orchestration() {
     graph.edges.clear();
     for idx in 0..20 {
         let id = format!("n{idx}");
-        let mut node = if idx == 0 {
-            const_template.clone()
-        } else {
-            shell_template.clone()
-        };
+        let mut node = if idx == 0 { const_template.clone() } else { shell_template.clone() };
         node.id = id.clone();
         node.kind = if idx == 0 {
             bijux_dag_core::NodeKind::Const
@@ -492,22 +448,14 @@ fn e2e_container_and_real_world_orchestration() {
                     node_id: format!("n{}", idx - 1),
                     port: "out".to_string(),
                 },
-                to: bijux_dag_core::PortRef {
-                    node_id: id,
-                    port: "in".to_string(),
-                },
+                to: bijux_dag_core::PortRef { node_id: id, port: "in".to_string() },
             });
         }
     }
     let graph_path = temp.path().join("real-world.json");
     write_graph(&graph_path, &graph);
     let (code, _, _) = run_dag(
-        &[
-            "run",
-            &output_path_string(&graph_path),
-            "--out",
-            &output_path_string(&out_dir),
-        ],
+        &["run", &output_path_string(&graph_path), "--out", &output_path_string(&out_dir)],
         &root,
     );
     assert!(code == 0 || code == 2 || code == 3);

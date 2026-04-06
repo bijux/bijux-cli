@@ -10,9 +10,7 @@ pub struct AdapterRegistry {
 
 impl AdapterRegistry {
     pub fn new() -> Self {
-        Self {
-            by_kind: HashMap::new(),
-        }
+        Self { by_kind: HashMap::new() }
     }
 
     pub fn register_adapter(&mut self, adapter: Arc<dyn Adapter>) -> Result<(), RuntimeError> {
@@ -28,9 +26,7 @@ impl AdapterRegistry {
         adapter: Arc<dyn Adapter>,
     ) -> Result<(), RuntimeError> {
         if kind.trim().is_empty() {
-            return Err(RuntimeError::Executor(
-                "adapter kind must not be empty".to_string(),
-            ));
+            return Err(RuntimeError::Executor("adapter kind must not be empty".to_string()));
         }
         if self.by_kind.contains_key(&kind) {
             return Err(RuntimeError::Executor(format!(
@@ -67,11 +63,7 @@ impl AdapterRegistry {
             if req.clock {
                 effects.push("clock".to_string());
             }
-            list.push(AdapterInfo {
-                adapter_id: id.id,
-                adapter_version: id.version,
-                effects,
-            });
+            list.push(AdapterInfo { adapter_id: id.id, adapter_version: id.version, effects });
         }
         list.sort_by(|a, b| a.adapter_id.cmp(&b.adapter_id));
         list
@@ -105,10 +97,7 @@ mod tests {
 
     impl Adapter for DummyAdapter {
         fn id(&self) -> AdapterId {
-            AdapterId {
-                id: self.id.to_string(),
-                version: self.version.to_string(),
-            }
+            AdapterId { id: self.id.to_string(), version: self.version.to_string() }
         }
 
         fn supported_kinds(&self) -> Vec<String> {

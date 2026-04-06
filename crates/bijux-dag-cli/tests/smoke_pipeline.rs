@@ -30,19 +30,8 @@ fn dag_command() -> Command {
         .unwrap_or_else(|| "cargo".to_string());
     let mut command = Command::new(cargo_bin);
     command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
-    command.env(
-        "LLVM_PROFILE_FILE",
-        root.join("artifacts/coverage/profraw/default_%m_%p.profraw"),
-    );
-    command.args([
-        "run",
-        "--quiet",
-        "-p",
-        "bijux-dag-cli",
-        "--bin",
-        "bijux",
-        "--",
-    ]);
+    command.env("LLVM_PROFILE_FILE", root.join("artifacts/coverage/profraw/default_%m_%p.profraw"));
+    command.args(["run", "--quiet", "-p", "bijux-dag-cli", "--bin", "bijux", "--"]);
     command
 }
 
@@ -85,11 +74,7 @@ fn newest_run_dir(base: &std::path::Path) -> PathBuf {
 }
 
 fn run_id_from_run_dir(run_dir: &std::path::Path) -> String {
-    run_dir
-        .file_name()
-        .and_then(|name| name.to_str())
-        .expect("run id")
-        .to_string()
+    run_dir.file_name().and_then(|name| name.to_str()).expect("run id").to_string()
 }
 
 fn first_artifact_id(run_dir: &std::path::Path) -> String {
@@ -98,10 +83,8 @@ fn first_artifact_id(run_dir: &std::path::Path) -> String {
     let payload: serde_json::Value = serde_json::from_str(&index).expect("parse outputs index");
     let node_id = payload["files"][0]["node_id"].as_str().expect("node_id");
     let path = payload["files"][0]["path"].as_str().expect("path");
-    let output_name = std::path::Path::new(path)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .expect("output name");
+    let output_name =
+        std::path::Path::new(path).file_name().and_then(|name| name.to_str()).expect("output name");
     format!("{node_id}:{output_name}")
 }
 
@@ -118,11 +101,7 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
     assert!(validate.status.success(), "validate failed");
 
     let plan = dag_command()
-        .args([
-            "dag",
-            "show-effective-plan",
-            dag.to_str().expect("dag path"),
-        ])
+        .args(["dag", "show-effective-plan", dag.to_str().expect("dag path")])
         .output()
         .expect("plan output");
     assert!(plan.status.success(), "show-effective-plan failed");
@@ -215,13 +194,7 @@ fn cli_smoke_artifact_inspect_and_verify() {
     assert!(inspect.status.success(), "artifact-inspect failed");
 
     let verify = dag_command()
-        .args([
-            "dag",
-            "verify",
-            run_dir.to_str().expect("run dir path"),
-            "--deep",
-            "--json",
-        ])
+        .args(["dag", "verify", run_dir.to_str().expect("run dir path"), "--deep", "--json"])
         .output()
         .expect("verify output");
     assert!(verify.status.success(), "verify failed");
@@ -273,12 +246,7 @@ fn cli_smoke_export_import_and_fsck_verify_only() {
     assert!(import.status.success(), "import verify-only failed");
 
     let fsck = dag_command()
-        .args([
-            "dag",
-            "fsck",
-            bundle_file.to_str().expect("bundle path"),
-            "--json",
-        ])
+        .args(["dag", "fsck", bundle_file.to_str().expect("bundle path"), "--json"])
         .output()
         .expect("fsck output");
     assert!(fsck.status.success(), "bundle fsck failed");

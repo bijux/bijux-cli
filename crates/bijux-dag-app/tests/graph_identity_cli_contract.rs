@@ -29,11 +29,7 @@ fn hash_graph_and_fingerprint_explain_commands_are_wired() {
 fn fingerprint_explain_json_matches_contract_shape() {
     let temp = tempfile::tempdir().expect("tmp");
     let dag_path = temp.path().join("g.dag.json");
-    fs::write(
-        &dag_path,
-        r#"{"spec":"bijux-dag/v0.1","nodes":[],"edges":[]}"#,
-    )
-    .expect("write dag");
+    fs::write(&dag_path, r#"{"spec":"bijux-dag/v0.1","nodes":[],"edges":[]}"#).expect("write dag");
 
     let matches = dag_command()
         .try_get_matches_from([

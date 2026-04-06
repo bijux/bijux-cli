@@ -10,9 +10,7 @@ pub fn required_contract_files() -> &'static [&'static str] {
 }
 
 pub fn all_required_present(root: &Path) -> bool {
-    required_contract_files()
-        .iter()
-        .all(|file| root.join(file).exists())
+    required_contract_files().iter().all(|file| root.join(file).exists())
 }
 
 #[cfg(test)]

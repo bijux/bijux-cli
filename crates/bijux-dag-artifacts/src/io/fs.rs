@@ -8,9 +8,6 @@ mod tests {
 
     #[test]
     fn node_output_relpath_uses_nodes_outputs_layout() {
-        assert_eq!(
-            node_output_relpath("node-a", "result.bin"),
-            "nodes/node-a/outputs/result.bin"
-        );
+        assert_eq!(node_output_relpath("node-a", "result.bin"), "nodes/node-a/outputs/result.bin");
     }
 }

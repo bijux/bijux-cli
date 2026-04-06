@@ -86,14 +86,8 @@ fn analytics_commands_return_expected_aggregates() {
 
     let summary = runs_summary(tmp.path()).expect("summary");
     assert_eq!(summary["runs"], 3);
-    assert_eq!(
-        summary["reports"]["cache_usefulness"]["total_cache_hits"],
-        2
-    );
-    assert_eq!(
-        summary["reports"]["replay_equivalence"]["replay_equivalent_runs"],
-        2
-    );
+    assert_eq!(summary["reports"]["cache_usefulness"]["total_cache_hits"], 2);
+    assert_eq!(summary["reports"]["replay_equivalence"]["replay_equivalent_runs"], 2);
 
     let compare = runs_compare(tmp.path(), "run-a", "run-b").expect("compare");
     assert_eq!(compare["run_a"], "run-a");
@@ -115,15 +109,8 @@ fn analytics_tolerate_incomplete_or_corrupt_history() {
     fs::create_dir_all(tmp.path().join("run-x")).expect("mkdir");
     fs::write(tmp.path().join("run-x").join("manifest.json"), "{bad").expect("manifest");
     fs::create_dir_all(tmp.path().join("run-x").join("nodes").join("n1")).expect("nodes");
-    fs::write(
-        tmp.path()
-            .join("run-x")
-            .join("nodes")
-            .join("n1")
-            .join("trace.json"),
-        "{bad",
-    )
-    .expect("trace");
+    fs::write(tmp.path().join("run-x").join("nodes").join("n1").join("trace.json"), "{bad")
+        .expect("trace");
 
     let summary = runs_summary(tmp.path()).expect("summary");
     assert_eq!(summary["runs"], 1);

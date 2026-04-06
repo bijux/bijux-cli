@@ -18,10 +18,7 @@ pub(crate) fn handle_validate_command(
     let has_warnings = diags.iter().any(|d| d.severity == Severity::Warning);
     let fail = has_errors || (strict && has_warnings);
 
-    let diagnostics: Vec<Value> = diags
-        .iter()
-        .map(|d| serde_json::to_value(d).unwrap())
-        .collect();
+    let diagnostics: Vec<Value> = diags.iter().map(|d| serde_json::to_value(d).unwrap()).collect();
     let mut data = json!({});
     if print_fingerprints || explain {
         data["graph_fingerprint"] = json!(graph.graph_fingerprint().unwrap());
@@ -39,23 +36,13 @@ pub(crate) fn handle_validate_command(
     }
     if explain {
         let canonical = graph.canonicalize();
-        let order = canonical
-            .nodes
-            .iter()
-            .map(|n| n.id.clone())
-            .collect::<Vec<_>>();
+        let order = canonical.nodes.iter().map(|n| n.id.clone()).collect::<Vec<_>>();
         data["canonical_order"] = json!(order);
-        data["resolved_params"] = json!(graph
-            .resolve_graph()
-            .map(|g| g.resolved_params)
-            .unwrap_or_default());
+        data["resolved_params"] =
+            json!(graph.resolve_graph().map(|g| g.resolved_params).unwrap_or_default());
     }
     if cli.json {
-        let code = if fail {
-            ExitCode::from(2)
-        } else {
-            ExitCode::SUCCESS
-        };
+        let code = if fail { ExitCode::from(2) } else { ExitCode::SUCCESS };
         return emit_json(cli, "dag.validate", !fail, data, diagnostics, code);
     } else if !cli.quiet {
         for d in &diags {
@@ -75,19 +62,12 @@ pub(crate) fn handle_validate_command(
         }
         if explain {
             let canonical = graph.canonicalize();
-            let order = canonical
-                .nodes
-                .iter()
-                .map(|n| n.id.clone())
-                .collect::<Vec<_>>();
+            let order = canonical.nodes.iter().map(|n| n.id.clone()).collect::<Vec<_>>();
             println!("canonical_order: {:?}", order);
             println!(
                 "resolved_params: {}",
                 serde_json::to_string_pretty(
-                    &graph
-                        .resolve_graph()
-                        .map(|g| g.resolved_params)
-                        .unwrap_or_default()
+                    &graph.resolve_graph().map(|g| g.resolved_params).unwrap_or_default()
                 )
                 .unwrap()
             );

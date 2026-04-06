@@ -175,10 +175,7 @@ pub fn can_renew_credential(renewal_count: u32, lifecycle: &CredentialLifecycle)
 }
 
 pub fn revoked_principals_set(revocations: &[CredentialRevocation]) -> BTreeSet<String> {
-    revocations
-        .iter()
-        .map(|r| r.principal_id.clone())
-        .collect::<BTreeSet<_>>()
+    revocations.iter().map(|r| r.principal_id.clone()).collect::<BTreeSet<_>>()
 }
 
 pub fn local_dev_bypass_allowed(environment: &str, rule: &LocalDevAuthBypassRule) -> bool {
@@ -213,9 +210,8 @@ pub fn readiness_for_federation(
     short_lived_worker_creds_supported: bool,
     auth_events: &[AuthenticationEvent],
 ) -> IdentityFederationReadiness {
-    let local_auth_isolated = local_bypass_rules
-        .iter()
-        .all(|r| r.environment == "local" || !r.enabled);
+    let local_auth_isolated =
+        local_bypass_rules.iter().all(|r| r.environment == "local" || !r.enabled);
     let kinds: BTreeSet<_> = auth_events.iter().map(|e| e.kind.clone()).collect();
     let audit_events_complete = kinds.contains(&AuthenticationEventKind::Login)
         && kinds.contains(&AuthenticationEventKind::Refresh)

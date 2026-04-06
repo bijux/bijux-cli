@@ -12,10 +12,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repo root")
 }
 
 fn collect_files(path: &Path, out: &mut Vec<PathBuf>) {
@@ -69,15 +66,7 @@ fn write_file(path: &Path, body: &str) -> Result<(), String> {
 }
 
 fn all_text_sources(root: &Path) -> Vec<PathBuf> {
-    let roots = [
-        "crates",
-        "configs",
-        "docs",
-        "make",
-        ".github",
-        "Cargo.toml",
-        "Makefile",
-    ];
+    let roots = ["crates", "configs", "docs", "make", ".github", "Cargo.toml", "Makefile"];
     let mut files = Vec::new();
     for rel in roots {
         let p = root.join(rel);
@@ -101,10 +90,7 @@ fn main() -> Result<(), String> {
     let mut family_to_files: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     for family_obj in families {
-        let family = family_obj["family"]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_string();
+        let family = family_obj["family"].as_str().unwrap_or("unknown").to_string();
         let owner_suite = family_obj["owner_suite"].as_str().unwrap_or("");
         let owner_crate = family_obj["owner_crate"].as_str().unwrap_or("");
         let purpose = family_obj["fixture_purpose"].as_str().unwrap_or("");
@@ -128,10 +114,7 @@ fn main() -> Result<(), String> {
             body.push_str(&format!("| `{f}` | `{owner_suite}` | `{owner_crate}` |\n"));
         }
         body.push_str(&format!("\nTotal fixtures: {}\n", files.len()));
-        write_file(
-            &out_dir.join(format!("{family}_fixture_inventory_report.md")),
-            &body,
-        )?;
+        write_file(&out_dir.join(format!("{family}_fixture_inventory_report.md")), &body)?;
     }
 
     let mut missing_owner = String::from("# Fixture Governance Missing Owner Report\n\n| Family | Missing owner suite | Missing owner crate |\n| --- | --- | --- |\n");
@@ -156,18 +139,9 @@ fn main() -> Result<(), String> {
             missing_crate.push_str(&format!("| `{family}` | `{owner_crate}` |\n"));
         }
     }
-    write_file(
-        &out_dir.join("fixture_governance_missing_owner_report.md"),
-        &missing_owner,
-    )?;
-    write_file(
-        &out_dir.join("fixtures_with_no_owning_suite_report.md"),
-        &missing_suite,
-    )?;
-    write_file(
-        &out_dir.join("fixtures_with_no_owning_crate_report.md"),
-        &missing_crate,
-    )?;
+    write_file(&out_dir.join("fixture_governance_missing_owner_report.md"), &missing_owner)?;
+    write_file(&out_dir.join("fixtures_with_no_owning_suite_report.md"), &missing_suite)?;
+    write_file(&out_dir.join("fixtures_with_no_owning_crate_report.md"), &missing_crate)?;
 
     let sources = all_text_sources(&root);
     let mut unreferenced = String::from(
@@ -189,10 +163,7 @@ fn main() -> Result<(), String> {
             }
         }
     }
-    write_file(
-        &out_dir.join("UNREFERENCED_FIXTURES_REPORT.md"),
-        &unreferenced,
-    )?;
+    write_file(&out_dir.join("UNREFERENCED_FIXTURES_REPORT.md"), &unreferenced)?;
 
     let mut hash_map: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for files in family_to_files.values() {
@@ -211,23 +182,13 @@ fn main() -> Result<(), String> {
     );
     for (hash, paths) in &hash_map {
         if paths.len() > 1 {
-            let joined = paths
-                .iter()
-                .map(|p| format!("`{p}`"))
-                .collect::<Vec<_>>()
-                .join("<br>");
+            let joined = paths.iter().map(|p| format!("`{p}`")).collect::<Vec<_>>().join("<br>");
             dup.push_str(&format!("| `{hash}` | {joined} |\n"));
         }
     }
-    write_file(
-        &out_dir.join("duplicate_fixtures_semantic_hash_report.md"),
-        &dup,
-    )?;
+    write_file(&out_dir.join("duplicate_fixtures_semantic_hash_report.md"), &dup)?;
 
-    let patterns = policy["legacy_schema_field_patterns"]
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    let patterns = policy["legacy_schema_field_patterns"].as_array().cloned().unwrap_or_default();
     let mut stale = String::from("# Stale Fixture Schema Field Report\n\n| Fixture path | Legacy field pattern |\n| --- | --- |\n");
     let mut stale_seen = BTreeSet::new();
     for p in patterns {
@@ -247,10 +208,7 @@ fn main() -> Result<(), String> {
             }
         }
     }
-    write_file(
-        &out_dir.join("stale_fixture_schema_field_report.md"),
-        &stale,
-    )?;
+    write_file(&out_dir.join("stale_fixture_schema_field_report.md"), &stale)?;
 
     let mut quick = String::from("# Fixture Governance Quick Reference\n\nPolicy source: `configs/dag/policy/fixture_family_governance.json`\n\n## Governed families\n\n| Family | Purpose | Owner | Lane | Taxonomy |\n| --- | --- | --- | --- | --- |\n");
     for family_obj in families {
@@ -279,10 +237,7 @@ fn main() -> Result<(), String> {
     ] {
         quick.push_str(&format!("- `docs/reports/foundation/{rel}`\n"));
     }
-    write_file(
-        &root.join("docs/reference/FIXTURE_GOVERNANCE_QUICK_REFERENCE.md"),
-        &quick,
-    )?;
+    write_file(&root.join("docs/reference/FIXTURE_GOVERNANCE_QUICK_REFERENCE.md"), &quick)?;
 
     Ok(())
 }

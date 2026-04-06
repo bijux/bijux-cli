@@ -21,11 +21,7 @@ use std::time::Instant;
 
 #[test]
 fn scheduler_ordering_is_deterministic_for_equal_priority_ready_nodes() {
-    let ready = vec![
-        ready("b", 10, 0, 100),
-        ready("a", 10, 0, 100),
-        ready("c", 10, 0, 100),
-    ];
+    let ready = vec![ready("b", 10, 0, 100), ready("a", 10, 0, 100), ready("c", 10, 0, 100)];
 
     let first = deterministic_schedule_order(ready.clone(), &BTreeMap::new());
     let second = deterministic_schedule_order(ready, &BTreeMap::new());
@@ -47,10 +43,7 @@ fn scheduler_fairness_promotes_starved_nodes() {
 fn scheduler_concurrency_limit_is_enforced_in_batch_decision() {
     let graph = independent_graph(3);
     let mut cfg = RuntimeConfig::default();
-    cfg.scheduler_policy = SchedulerPolicy {
-        max_parallelism: 2,
-        ..SchedulerPolicy::default()
-    };
+    cfg.scheduler_policy = SchedulerPolicy { max_parallelism: 2, ..SchedulerPolicy::default() };
 
     let plan = build_plan(&graph, &cfg);
     let dep_counter = DependencyCounter::from_plan(&plan);
@@ -76,11 +69,8 @@ fn scheduler_resource_budget_blocks_excess_cpu_work() {
     .expect("graph");
 
     let mut cfg = RuntimeConfig::default();
-    cfg.scheduler_policy = SchedulerPolicy {
-        max_parallelism: 2,
-        cpu_budget: Some(2),
-        ..SchedulerPolicy::default()
-    };
+    cfg.scheduler_policy =
+        SchedulerPolicy { max_parallelism: 2, cpu_budget: Some(2), ..SchedulerPolicy::default() };
 
     let plan = build_plan(&graph, &cfg);
     let dep_counter = DependencyCounter::from_plan(&plan);
@@ -94,11 +84,8 @@ fn scheduler_resource_budget_blocks_excess_cpu_work() {
 
 #[test]
 fn scheduler_priority_ordering_uses_weighted_policy() {
-    let submissions = vec![
-        sub("standard-1", "r1", 3),
-        sub("critical-1", "r2", 4),
-        sub("high-1", "r3", 2),
-    ];
+    let submissions =
+        vec![sub("standard-1", "r1", 3), sub("critical-1", "r2", 4), sub("high-1", "r3", 2)];
     let priorities = BTreeMap::from([
         ("standard-1".to_string(), PriorityClass::Standard),
         ("critical-1".to_string(), PriorityClass::Critical),
@@ -127,11 +114,7 @@ fn scheduler_starvation_prevention_prefers_oldest_starved_first() {
 
 #[test]
 fn scheduler_tie_break_rules_are_stable_for_identical_priority() {
-    let ready = vec![
-        ready("b", 10, 1, 200),
-        ready("a", 10, 1, 200),
-        ready("c", 10, 1, 100),
-    ];
+    let ready = vec![ready("b", 10, 1, 200), ready("a", 10, 1, 200), ready("c", 10, 1, 100)];
     let ordered = deterministic_schedule_order(ready, &BTreeMap::new());
 
     assert_eq!(ids(&ordered), vec!["c", "a", "b"]);
@@ -207,12 +190,7 @@ fn independent_graph(nodes: usize) -> bijux_dag_core::Graph {
 }
 
 fn ready(node_id: &str, priority: u8, attempt: u32, ready_unix_ms: u128) -> ReadyNode {
-    ReadyNode {
-        node_id: node_id.to_string(),
-        priority,
-        attempt,
-        ready_unix_ms,
-    }
+    ReadyNode { node_id: node_id.to_string(), priority, attempt, ready_unix_ms }
 }
 
 fn sub(schedule_id: &str, run_id: &str, created_unix_ms: u128) -> ScheduledSubmission {

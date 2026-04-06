@@ -51,8 +51,9 @@ pub(super) fn run_evidence_ledger_report() -> Result<(), String> {
 
 pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Result<(), String> {
     let root = repo_root()?;
-    let structure_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_structure.json"))
-        .map_err(|err| err.to_string())?;
+    let structure_payload =
+        fs::read_to_string(root.join("configs/dag/policy/evidence_structure.json"))
+            .map_err(|err| err.to_string())?;
     let structure: Value =
         serde_json::from_str(&structure_payload).map_err(|err| err.to_string())?;
     let required_dirs = structure["required_directories"]
@@ -61,9 +62,8 @@ pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Re
 
     let mut map_entries = Vec::new();
     for dir in required_dirs {
-        let rel = dir
-            .as_str()
-            .ok_or_else(|| "required directory entry must be a string".to_string())?;
+        let rel =
+            dir.as_str().ok_or_else(|| "required directory entry must be a string".to_string())?;
         let full = root.join(rel);
         if create_missing && !full.exists() {
             fs::create_dir_all(&full).map_err(|err| err.to_string())?;
@@ -79,11 +79,7 @@ pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Re
         "source_policy": "configs/dag/policy/evidence_structure.json",
         "entries": map_entries
     });
-    let out_path = if out.is_absolute() {
-        out.to_path_buf()
-    } else {
-        root.join(out)
-    };
+    let out_path = if out.is_absolute() { out.to_path_buf() } else { root.join(out) };
     if let Some(parent) = out_path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
@@ -95,8 +91,9 @@ pub(super) fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Re
 
 pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_governance.json"))
-        .map_err(|err| err.to_string())?;
+    let policy_payload =
+        fs::read_to_string(root.join("configs/dag/policy/evidence_governance.json"))
+            .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
     let ledger_payload = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
         .map_err(|err| err.to_string())?;
@@ -172,17 +169,12 @@ pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
             .ok_or_else(|| "evidence ledger entry must be an object".to_string())?;
         for field in &required_fields {
             if !map.contains_key(field) {
-                return Err(format!(
-                    "evidence ledger entry missing required field `{field}`"
-                ));
+                return Err(format!("evidence ledger entry missing required field `{field}`"));
             }
         }
-        let path = entry["path"]
-            .as_str()
-            .ok_or_else(|| "entry path must be string".to_string())?;
-        let owner = entry["owner"]
-            .as_str()
-            .ok_or_else(|| format!("owner must be string for {path}"))?;
+        let path = entry["path"].as_str().ok_or_else(|| "entry path must be string".to_string())?;
+        let owner =
+            entry["owner"].as_str().ok_or_else(|| format!("owner must be string for {path}"))?;
         let class = entry["evidence_class"]
             .as_str()
             .ok_or_else(|| format!("evidence_class must be string for {path}"))?;
@@ -297,9 +289,8 @@ pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
         let in_schema_fixture_root = schema_fixture_roots
             .iter()
             .any(|schema_root| rel == *schema_root || rel.starts_with(&format!("{schema_root}/")));
-        let in_helper_allowlist = helper_allowlist
-            .iter()
-            .any(|pattern| wildcard_match(pattern, &rel));
+        let in_helper_allowlist =
+            helper_allowlist.iter().any(|pattern| wildcard_match(pattern, &rel));
         let in_legacy_scenario_root = legacy_scenario_roots
             .iter()
             .any(|legacy_root| rel == *legacy_root || rel.starts_with(&format!("{legacy_root}/")));
@@ -319,13 +310,8 @@ pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
                 "scenario-like json path outside evidence-governed roots is forbidden: {rel}"
             ));
         }
-        if forbidden_globs
-            .iter()
-            .any(|pattern| wildcard_match(pattern, &rel))
-        {
-            return Err(format!(
-                "path is forbidden by evidence governance freeze policy: {rel}"
-            ));
+        if forbidden_globs.iter().any(|pattern| wildcard_match(pattern, &rel)) {
+            return Err(format!("path is forbidden by evidence governance freeze policy: {rel}"));
         }
         if rel.starts_with("tests/authoring/examples/") || rel.starts_with("tests/authoring/bad/") {
             return Err(format!(
@@ -393,11 +379,7 @@ pub(super) fn run_repo_hotspot_reports(
             }
         }
         for (pos, start) in fn_starts.iter().enumerate() {
-            let end = if pos + 1 < fn_starts.len() {
-                fn_starts[pos + 1] - 1
-            } else {
-                lines.len()
-            };
+            let end = if pos + 1 < fn_starts.len() { fn_starts[pos + 1] - 1 } else { lines.len() };
             let len = end.saturating_sub(*start) + 1;
             if len >= 60 {
                 long_functions.push((len, rel.clone(), *start));
@@ -504,9 +486,7 @@ pub(super) fn markdown_contains_path(
     root: &Path,
 ) -> bool {
     markdown_files.iter().any(|doc| {
-        fs::read_to_string(doc)
-            .map(|body| body.contains(rel_path))
-            .unwrap_or(false)
+        fs::read_to_string(doc).map(|body| body.contains(rel_path)).unwrap_or(false)
             && doc.strip_prefix(root).is_ok()
     })
 }
@@ -599,10 +579,7 @@ pub(super) fn run_repo_runtime_scope_reports(
             "- `{module}` ({classification}, decision `{decision}`): {rationale}\n"
         ));
     }
-    non_kernel_report.push_str(&format!(
-        "\nTotal: `{}` modules.\n",
-        non_kernel_modules.len()
-    ));
+    non_kernel_report.push_str(&format!("\nTotal: `{}` modules.\n", non_kernel_modules.len()));
 
     let runtime_tests = root.join("crates/bijux-dag-runtime/tests");
     let dev_tests = root.join("crates/bijux-dev/tests");
@@ -618,11 +595,9 @@ pub(super) fn run_repo_runtime_scope_reports(
     let mut documented_only = Vec::new();
     let mut unclassified = Vec::new();
     for (_, _, _, _, rel) in &non_kernel_modules {
-        let referenced_by_tests = test_files.iter().any(|file| {
-            fs::read_to_string(file)
-                .map(|body| body.contains(rel))
-                .unwrap_or(false)
-        });
+        let referenced_by_tests = test_files
+            .iter()
+            .any(|file| fs::read_to_string(file).map(|body| body.contains(rel)).unwrap_or(false));
         let referenced_by_docs = markdown_contains_path(rel, &docs_spec_files, &root)
             || markdown_contains_path(rel, &docs_arch_files, &root);
         if referenced_by_tests {
@@ -656,9 +631,7 @@ pub(super) fn run_repo_runtime_scope_reports(
     let mut operator_facing = Vec::new();
     let mut internal_only = Vec::new();
     for (_, _, _, _, rel) in &non_kernel_modules {
-        let rel_mod = rel
-            .strip_prefix("crates/bijux-dag-runtime/src/")
-            .unwrap_or(rel.as_str());
+        let rel_mod = rel.strip_prefix("crates/bijux-dag-runtime/src/").unwrap_or(rel.as_str());
         let is_operator_facing = rel_mod.starts_with("diagnostics/runtime/")
             || rel_mod.starts_with("replay/")
             || rel_mod == "artifacts/verifier.rs"
@@ -696,23 +669,11 @@ pub(super) fn run_repo_runtime_scope_reports(
     );
 
     write_report(&resolve_under_root(&root, kernel_out), &kernel_report)?;
-    write_report(
-        &resolve_under_root(&root, non_kernel_out),
-        &non_kernel_report,
-    )?;
-    write_report(
-        &resolve_under_root(&root, contract_backing_out),
-        &contract_backing_report,
-    )?;
-    write_report(
-        &resolve_under_root(&root, operator_surface_out),
-        &operator_surface_report,
-    )?;
+    write_report(&resolve_under_root(&root, non_kernel_out), &non_kernel_report)?;
+    write_report(&resolve_under_root(&root, contract_backing_out), &contract_backing_report)?;
+    write_report(&resolve_under_root(&root, operator_surface_out), &operator_surface_report)?;
     write_report(&resolve_under_root(&root, core_api_out), &core_api_report)?;
-    write_report(
-        &resolve_under_root(&root, runtime_api_out),
-        &runtime_api_report,
-    )?;
+    write_report(&resolve_under_root(&root, runtime_api_out), &runtime_api_report)?;
     Ok(())
 }
 
@@ -757,13 +718,7 @@ pub(super) fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String
             == serde_json::to_string_pretty(&second).map_err(|err| err.to_string())?;
         let plan_value = serde_json::to_value(&first).map_err(|err| err.to_string())?;
         let schema_ok = required.iter().all(|field| plan_value.get(field).is_some());
-        rows.push((
-            fixture_rel,
-            first.nodes.len(),
-            first.edges.len(),
-            stable_dump,
-            schema_ok,
-        ));
+        rows.push((fixture_rel, first.nodes.len(), first.edges.len(), stable_dump, schema_ok));
     }
 
     let mut report = String::from(
@@ -794,10 +749,8 @@ pub(super) fn run_repo_artifact_capability_reports(
 
     let root = repo_root()?;
     let fs_store = FilesystemArtifactStore::new(".");
-    let object_store = ObjectArtifactStore {
-        bucket: "modeled".to_string(),
-        prefix: "artifacts/".to_string(),
-    };
+    let object_store =
+        ObjectArtifactStore { bucket: "modeled".to_string(), prefix: "artifacts/".to_string() };
 
     let fs_caps = fs_store.capabilities();
     let object_caps = object_store.capabilities();
@@ -844,10 +797,7 @@ pub(super) fn required_schema_fields(schema_path: &Path) -> Result<BTreeSet<Stri
     let mut fields = BTreeSet::new();
     for field in required {
         let name = field.as_str().ok_or_else(|| {
-            format!(
-                "schema required entry must be string: {}",
-                schema_path.display()
-            )
+            format!("schema required entry must be string: {}", schema_path.display())
         })?;
         fields.insert(name.to_string());
     }
@@ -896,18 +846,15 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
         .as_array()
         .ok_or_else(|| "evidence ledger entries must be an array".to_string())?;
     for entry in entries {
-        let map = entry
-            .as_object()
-            .ok_or_else(|| "evidence ledger entry must be object".to_string())?;
+        let map =
+            entry.as_object().ok_or_else(|| "evidence ledger entry must be object".to_string())?;
         let id = entry
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "evidence entry missing id".to_string())?;
         for field in &asset_required {
             if !map.contains_key(field) {
-                return Err(format!(
-                    "evidence entry `{id}` missing required field `{field}`"
-                ));
+                return Err(format!("evidence entry `{id}` missing required field `{field}`"));
             }
         }
 
@@ -956,16 +903,8 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
         if consumers.is_empty() {
             return Err(format!("evidence entry `{id}` has empty consumers"));
         }
-        let allowed_kinds = [
-            "authoring",
-            "battle",
-            "cache",
-            "compat",
-            "fault",
-            "operator",
-            "perf",
-            "compare",
-        ];
+        let allowed_kinds =
+            ["authoring", "battle", "cache", "compat", "fault", "operator", "perf", "compare"];
         if !allowed_kinds.contains(&kind) {
             return Err(format!("evidence entry `{id}` has unknown kind `{kind}`"));
         }
@@ -975,18 +914,14 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
             ));
         }
         if !duplicate_of.is_null()
-            && duplicate_of
-                .as_str()
-                .map_or(true, |value| value.trim().is_empty())
+            && duplicate_of.as_str().map_or(true, |value| value.trim().is_empty())
         {
             return Err(format!(
                 "evidence entry `{id}` duplicate_of must be non-empty string or null"
             ));
         }
         if !derived_from.is_null()
-            && derived_from
-                .as_str()
-                .map_or(true, |value| value.trim().is_empty())
+            && derived_from.as_str().map_or(true, |value| value.trim().is_empty())
         {
             return Err(format!(
                 "evidence entry `{id}` derived_from must be non-empty string or null"
@@ -998,18 +933,14 @@ pub(super) fn run_evidence_schema_verify() -> Result<(), String> {
         .as_array()
         .ok_or_else(|| "evidence ledger asset_families must be an array".to_string())?;
     for family in families {
-        let map = family
-            .as_object()
-            .ok_or_else(|| "asset family must be object".to_string())?;
+        let map = family.as_object().ok_or_else(|| "asset family must be object".to_string())?;
         let family_id = family
             .get("family_id")
             .and_then(Value::as_str)
             .ok_or_else(|| "asset family missing family_id".to_string())?;
         for field in &family_required {
             if !map.contains_key(field) {
-                return Err(format!(
-                    "asset family `{family_id}` missing required field `{field}`"
-                ));
+                return Err(format!("asset family `{family_id}` missing required field `{field}`"));
             }
         }
     }
@@ -1048,9 +979,7 @@ pub(super) fn run_evidence_domain_verify(
     run_evidence_metadata_validate()?;
     for rel in required_paths {
         if !root.join(rel).exists() {
-            return Err(format!(
-                "required evidence surface missing for `{domain}`: {rel}"
-            ));
+            return Err(format!("required evidence surface missing for `{domain}`: {rel}"));
         }
     }
     let ledger: Value = serde_json::from_str(
@@ -1063,28 +992,19 @@ pub(super) fn run_evidence_domain_verify(
         .ok_or_else(|| "evidence ledger entries must be an array".to_string())?;
     let prefix = format!("evidence/{domain}/");
     let has_entries = entries.iter().any(|entry| {
-        entry
-            .get("path")
-            .and_then(Value::as_str)
-            .is_some_and(|path| path.starts_with(&prefix))
+        entry.get("path").and_then(Value::as_str).is_some_and(|path| path.starts_with(&prefix))
     });
     if !has_entries {
-        return Err(format!(
-            "evidence ledger has no entries for governed domain `{domain}`"
-        ));
+        return Err(format!("evidence ledger has no entries for governed domain `{domain}`"));
     }
     Ok(())
 }
 
 pub(super) fn parse_string_set(value: &Value, label: &str) -> Result<BTreeSet<String>, String> {
-    let items = value
-        .as_array()
-        .ok_or_else(|| format!("{label} must be an array"))?;
+    let items = value.as_array().ok_or_else(|| format!("{label} must be an array"))?;
     let mut out = BTreeSet::new();
     for item in items {
-        let name = item
-            .as_str()
-            .ok_or_else(|| format!("{label} entry must be a string"))?;
+        let name = item.as_str().ok_or_else(|| format!("{label} entry must be a string"))?;
         if name.trim().is_empty() {
             return Err(format!("{label} contains empty string"));
         }
@@ -1161,25 +1081,16 @@ pub(super) fn run_evidence_family_boundary_verify() -> Result<(), String> {
         .ok_or_else(|| "compat metadata decision_matrix must be an object".to_string())?;
     for (path, entry) in decision_matrix {
         if !path.starts_with("evidence/compat/") {
-            return Err(format!(
-                "compat decision matrix contains out-of-family asset: {path}"
-            ));
+            return Err(format!("compat decision matrix contains out-of-family asset: {path}"));
         }
         if !root.join(path).exists() {
-            return Err(format!(
-                "compat decision matrix path does not exist: {path}"
-            ));
+            return Err(format!("compat decision matrix path does not exist: {path}"));
         }
         let decision = entry
             .get("decision")
             .and_then(Value::as_str)
             .ok_or_else(|| format!("compat decision matrix entry missing decision: {path}"))?;
-        let allowed = [
-            "supported",
-            "unsupported_future",
-            "unsupported_past",
-            "corrupt",
-        ];
+        let allowed = ["supported", "unsupported_future", "unsupported_past", "corrupt"];
         if !allowed.contains(&decision) {
             return Err(format!(
                 "compat decision matrix has unknown decision `{decision}` for `{path}`"
@@ -1206,16 +1117,12 @@ pub(super) fn run_evidence_family_boundary_verify() -> Result<(), String> {
         }
     }
     for (fault_class, profile) in fault_profiles {
-        let expected_fault_class = profile
-            .get("expected_fault_class")
-            .and_then(Value::as_str)
-            .ok_or_else(|| {
+        let expected_fault_class =
+            profile.get("expected_fault_class").and_then(Value::as_str).ok_or_else(|| {
                 format!("fault profile missing expected_fault_class: `{fault_class}`")
             })?;
-        let expected_reaction = profile
-            .get("expected_system_reaction")
-            .and_then(Value::as_str)
-            .ok_or_else(|| {
+        let expected_reaction =
+            profile.get("expected_system_reaction").and_then(Value::as_str).ok_or_else(|| {
                 format!("fault profile missing expected_system_reaction: `{fault_class}`")
             })?;
         if expected_fault_class.trim().is_empty() || expected_reaction.trim().is_empty() {
@@ -1297,11 +1204,7 @@ pub(super) fn run_evidence_compat_verify() -> Result<(), String> {
 pub(super) fn run_evidence_fault_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "fault",
-        &[
-            "evidence/fault/classes",
-            "evidence/fault/corrupt_runs",
-            "evidence/fault/metadata.json",
-        ],
+        &["evidence/fault/classes", "evidence/fault/corrupt_runs", "evidence/fault/metadata.json"],
     )?;
     run_evidence_family_boundary_verify()
 }
@@ -1309,11 +1212,7 @@ pub(super) fn run_evidence_fault_verify() -> Result<(), String> {
 pub(super) fn run_evidence_perf_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "perf",
-        &[
-            "evidence/perf/scenarios",
-            "evidence/perf/baselines",
-            "evidence/perf/metadata.json",
-        ],
+        &["evidence/perf/scenarios", "evidence/perf/baselines", "evidence/perf/metadata.json"],
     )?;
     run_perf_evidence_policy_verify()
 }
@@ -1380,10 +1279,7 @@ pub(super) fn write_evidence_foundation_summary_report(
     markdown.push_str("# Evidence Foundation Verification Summary\n\n");
     markdown.push_str("This report describes each verification check executed by `verify evidence-foundation`, including the evidence surfaces validated by each check.\n\n");
     markdown.push_str("## Result\n\n");
-    markdown.push_str(&format!(
-        "- Status: PASS\n- Checks executed: {}\n\n",
-        total_steps
-    ));
+    markdown.push_str(&format!("- Status: PASS\n- Checks executed: {}\n\n", total_steps));
     markdown.push_str("## Verification Matrix\n\n");
     markdown.push_str("| Step | What was verified | Evidence surfaces |\n");
     markdown.push_str("| --- | --- | --- |\n");
@@ -1513,31 +1409,16 @@ pub(super) fn run_evidence_foundation_verify() -> Result<(), String> {
     println!("evidence foundation verification summary");
     let mut rows = Vec::new();
     for (index, step) in steps.iter().enumerate() {
-        println!(
-            "  [{}/{}] {}: {}",
-            index + 1,
-            steps.len(),
-            step.id,
-            step.description
-        );
+        println!("  [{}/{}] {}: {}", index + 1, steps.len(), step.id, step.description);
         if let Err(err) = (step.run)() {
-            return Err(format!(
-                "evidence foundation step `{}` failed: {}",
-                step.id, err
-            ));
+            return Err(format!("evidence foundation step `{}` failed: {}", step.id, err));
         }
         let surfaces = step.evidence_scope.join(", ");
-        rows.push(format!(
-            "| `{}` | {} | `{}` |",
-            step.id, step.description, surfaces
-        ));
+        rows.push(format!("| `{}` | {} | `{}` |", step.id, step.description, surfaces));
     }
 
     let report_path = write_evidence_foundation_summary_report(&root, &rows, steps.len())?;
-    println!(
-        "evidence foundation verification report: {}",
-        report_path.display()
-    );
+    println!("evidence foundation verification report: {}", report_path.display());
     Ok(())
 }
 
@@ -1579,10 +1460,7 @@ pub(super) fn run_evidence_drift_verify() -> Result<(), String> {
     if violations.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "evidence drift violations detected: {}",
-            violations.join(", ")
-        ))
+        Err(format!("evidence drift violations detected: {}", violations.join(", ")))
     }
 }
 
@@ -1693,9 +1571,7 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
         let text = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         for pattern in restricted_patterns {
             if text.contains(pattern) {
-                violations.push(format!(
-                    "{rel}: contains legacy scenario reference `{pattern}`"
-                ));
+                violations.push(format!("{rel}: contains legacy scenario reference `{pattern}`"));
             }
         }
     }
@@ -1707,17 +1583,11 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
 }
 
 pub(super) fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
 
 pub(crate) fn now_millis() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)
 }
 
 #[derive(Debug, Deserialize)]
@@ -1760,10 +1630,7 @@ pub(super) fn run_test_taxonomy_guard() -> Result<(), String> {
             if !rel.contains("/tests/") && !rel.starts_with("tests/") {
                 continue;
             }
-            let name = path
-                .file_name()
-                .and_then(|v| v.to_str())
-                .unwrap_or_default();
+            let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
             if !prefixes.iter().any(|prefix| name.starts_with(prefix)) && !allowlist.contains(&rel)
             {
                 violations.push(format!("test file must use taxonomy prefix: {rel}"));
@@ -1775,9 +1642,8 @@ pub(super) fn run_test_taxonomy_guard() -> Result<(), String> {
                 || content.contains("Command::new(\"cargo\")")
                 || content.contains("Command::new(\"bijux\")");
             if shells_out && !is_e2e {
-                violations.push(format!(
-                    "non-e2e test shells out to production binary path: {rel}"
-                ));
+                violations
+                    .push(format!("non-e2e test shells out to production binary path: {rel}"));
             }
         }
     }
@@ -1791,19 +1657,9 @@ pub(super) fn run_test_taxonomy_guard() -> Result<(), String> {
 
 pub(super) fn run_test_classification_report() -> Result<(), String> {
     let root = repo_root()?;
-    let categories = [
-        "unit_",
-        "contract_",
-        "integration_",
-        "e2e_",
-        "perf_",
-        "compat_",
-        "fault_",
-    ];
-    let mut counts: BTreeMap<String, u64> = categories
-        .iter()
-        .map(|category| ((*category).to_string(), 0_u64))
-        .collect();
+    let categories = ["unit_", "contract_", "integration_", "e2e_", "perf_", "compat_", "fault_"];
+    let mut counts: BTreeMap<String, u64> =
+        categories.iter().map(|category| ((*category).to_string(), 0_u64)).collect();
 
     let mut dirs = vec![root.join("crates"), root.join("tests")];
     while let Some(dir) = dirs.pop() {
@@ -1828,10 +1684,7 @@ pub(super) fn run_test_classification_report() -> Result<(), String> {
             if !rel.contains("/tests/") && !rel.starts_with("tests/") {
                 continue;
             }
-            let name = path
-                .file_name()
-                .and_then(|v| v.to_str())
-                .unwrap_or_default();
+            let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
             for category in categories {
                 if name.starts_with(category) {
                     if let Some(value) = counts.get_mut(category) {
@@ -1868,36 +1721,20 @@ pub(super) fn run_test_policy_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut violations = Vec::new();
 
-    let schema_fixtures_ok = root
-        .join("configs/dag/schema/fixtures")
-        .join("v0.1")
-        .join("positive")
-        .exists()
-        && root
-            .join("configs/dag/schema/fixtures")
-            .join("v0.1")
-            .join("negative")
-            .exists();
+    let schema_fixtures_ok =
+        root.join("configs/dag/schema/fixtures").join("v0.1").join("positive").exists()
+            && root.join("configs/dag/schema/fixtures").join("v0.1").join("negative").exists();
     if !schema_fixtures_ok {
         violations.push("schema fixtures must have positive and negative coverage".to_string());
     }
 
     let state_test = root.join("crates/bijux-dag-runtime/src/state_machine_tests.rs");
     let state_text = fs::read_to_string(&state_test).map_err(|err| err.to_string())?;
-    for state in [
-        "queued",
-        "ready",
-        "running",
-        "succeeded",
-        "failed",
-        "cached",
-        "skipped",
-        "cancelled",
-    ] {
+    for state in
+        ["queued", "ready", "running", "succeeded", "failed", "cached", "skipped", "cancelled"]
+    {
         if !state_text.contains(state) {
-            violations.push(format!(
-                "runtime transition coverage missing state: {state}"
-            ));
+            violations.push(format!("runtime transition coverage missing state: {state}"));
         }
     }
 
@@ -1930,13 +1767,7 @@ pub(super) fn run_e2e_matrix() -> Result<(), String> {
     run_with_root(
         &root,
         "cargo",
-        &[
-            "test",
-            "-p",
-            "bijux-dag-app",
-            "--test",
-            "e2e_integration_scenarios",
-        ],
+        &["test", "-p", "bijux-dag-app", "--test", "e2e_integration_scenarios"],
     )
     .and_then(|_| {
         run_with_root(
@@ -1995,14 +1826,8 @@ pub(super) fn run_fault_summary_report() -> Result<(), String> {
         "tested_fault_classes": tested,
         "missing_fault_classes": missing,
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
-    );
-    if summary["missing_fault_classes"]
-        .as_array()
-        .is_some_and(|items| items.is_empty())
-    {
+    println!("{}", serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?);
+    if summary["missing_fault_classes"].as_array().is_some_and(|items| items.is_empty()) {
         Ok(())
     } else {
         Err("fault class catalog has missing tested_by mappings".to_string())
@@ -2119,9 +1944,8 @@ pub(super) fn run_performance_claims_guard() -> Result<(), String> {
                         || line.contains("PERFORMANCE_STRATEGY.md")
                         || line.contains("PERFORMANCE_CONTRACT.md"))
                 {
-                    violations.push(format!(
-                        "{rel}: performance claim without evidence link: {line}"
-                    ));
+                    violations
+                        .push(format!("{rel}: performance claim without evidence link: {line}"));
                 }
             }
         }
@@ -2153,16 +1977,10 @@ pub(super) fn run_resource_profile_summary(report: &Path) -> Result<(), String> 
         }
     });
 
-    if let Some(items) = report_json
-        .get("scenario_results")
-        .and_then(Value::as_array)
-    {
+    if let Some(items) = report_json.get("scenario_results").and_then(Value::as_array) {
         let mut wall = 0.0_f64;
         for item in items {
-            wall += item
-                .get("elapsed_ms")
-                .and_then(Value::as_f64)
-                .unwrap_or(0.0);
+            wall += item.get("elapsed_ms").and_then(Value::as_f64).unwrap_or(0.0);
         }
         summary["scenario_count"] = Value::from(items.len() as u64);
         summary["totals"]["wall_time_ms"] = Value::from(wall);
@@ -2170,10 +1988,7 @@ pub(super) fn run_resource_profile_summary(report: &Path) -> Result<(), String> 
         summary["cost_split"]["harness_overhead_ms"] = Value::from(0.0_f64);
     }
 
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -2200,24 +2015,13 @@ pub(super) fn run_resource_budget_check(report: &Path, gate: bool) -> Result<(),
     }
 
     let mut warnings = Vec::new();
-    if let Some(items) = report_json
-        .get("scenario_results")
-        .and_then(Value::as_array)
-    {
+    if let Some(items) = report_json.get("scenario_results").and_then(Value::as_array) {
         for item in items {
-            let scenario = item
-                .get("scenario_id")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            let elapsed = item
-                .get("elapsed_ms")
-                .and_then(Value::as_f64)
-                .unwrap_or(0.0);
+            let scenario = item.get("scenario_id").and_then(Value::as_str).unwrap_or_default();
+            let elapsed = item.get("elapsed_ms").and_then(Value::as_f64).unwrap_or(0.0);
             if let Some(budget) = budget_map.get(scenario) {
-                let approx_budget_ms = budget
-                    .get("max_manifest_bytes")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(0) as f64;
+                let approx_budget_ms =
+                    budget.get("max_manifest_bytes").and_then(Value::as_u64).unwrap_or(0) as f64;
                 if approx_budget_ms > 0.0 && elapsed > approx_budget_ms {
                     warnings.push(format!(
                         "scenario {} exceeded approximate budget threshold (elapsed_ms={elapsed})",
@@ -2271,11 +2075,8 @@ pub(super) fn run_resource_trend_append(report: &Path, trend: &Path) -> Result<(
         series.push(entry);
     }
 
-    fs::write(
-        trend_path,
-        serde_json::to_vec_pretty(&trend_json).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())
+    fs::write(trend_path, serde_json::to_vec_pretty(&trend_json).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())
 }
 
 pub(super) fn dir_size_bytes(path: &Path) -> Result<u64, String> {
@@ -2366,9 +2167,8 @@ pub(super) fn run_test_trust_foundation_guard() -> Result<(), String> {
         return Err("test_trust_catalog.json must contain at least one class".to_string());
     }
     for (class, files) in object {
-        let files = files
-            .as_array()
-            .ok_or_else(|| format!("catalog class `{class}` must be an array"))?;
+        let files =
+            files.as_array().ok_or_else(|| format!("catalog class `{class}` must be an array"))?;
         if files.is_empty() {
             return Err(format!("catalog class `{class}` must not be empty"));
         }
@@ -2397,10 +2197,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
 
     for required in [&policy_path, &metadata_path, &harness_path] {
         if !required.exists() {
-            return Err(format!(
-                "missing battle suite artifact: {}",
-                required.display()
-            ));
+            return Err(format!("missing battle suite artifact: {}", required.display()));
         }
     }
 
@@ -2416,10 +2213,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
         return Err("battle trust policy must define at least 12 trust properties".to_string());
     }
     let has_plan_truth = trust_properties.iter().any(|property| {
-        property
-            .get("id")
-            .and_then(Value::as_str)
-            .is_some_and(|id| id == "tp_plan_truth")
+        property.get("id").and_then(Value::as_str).is_some_and(|id| id == "tp_plan_truth")
     });
     if !has_plan_truth {
         return Err("battle trust policy must include tp_plan_truth".to_string());
@@ -2456,10 +2250,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
         .ok_or_else(|| "battle trust policy missing scenario_trust_map".to_string())?;
     let state_machine_mapped = scenario_trust_map.values().any(|value| {
         value.as_array().is_some_and(|ids| {
-            ids.iter().any(|id| {
-                id.as_str()
-                    .is_some_and(|v| v == "tp_state_machine_legality")
-            })
+            ids.iter().any(|id| id.as_str().is_some_and(|v| v == "tp_state_machine_legality"))
         })
     });
     if !state_machine_mapped {
@@ -2474,11 +2265,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     let metadata: Value =
         serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
             .map_err(|err| err.to_string())?;
-    if metadata
-        .get("scenarios")
-        .and_then(Value::as_object)
-        .is_none()
-    {
+    if metadata.get("scenarios").and_then(Value::as_object).is_none() {
         return Err("battle metadata must define scenario ownership".to_string());
     }
 
@@ -2545,10 +2332,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "planner alignment missing required surfaces: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("planner alignment missing required surfaces: {}", missing.join(", ")));
     }
 
     let planner_contract =
@@ -2563,9 +2347,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
         "dag plan-dump",
     ] {
         if !planner_contract.contains(required_token) {
-            return Err(format!(
-                "planner contract missing required token: {required_token}"
-            ));
+            return Err(format!("planner contract missing required token: {required_token}"));
         }
     }
 
@@ -2573,9 +2355,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     for required_command in ["DagCommand::PlanDump", "run_dag_plan_dump"] {
         if !commands.contains(required_command) {
-            return Err(format!(
-                "planner alignment missing command surface: {required_command}"
-            ));
+            return Err(format!("planner alignment missing command surface: {required_command}"));
         }
     }
 
@@ -2584,15 +2364,10 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
-    let has_plan_truth = policy
-        .get("trust_properties")
-        .and_then(Value::as_array)
-        .is_some_and(|entries| {
+    let has_plan_truth =
+        policy.get("trust_properties").and_then(Value::as_array).is_some_and(|entries| {
             entries.iter().any(|entry| {
-                entry
-                    .get("id")
-                    .and_then(Value::as_str)
-                    .is_some_and(|id| id == "tp_plan_truth")
+                entry.get("id").and_then(Value::as_str).is_some_and(|id| id == "tp_plan_truth")
             })
         });
     if !has_plan_truth {
@@ -2626,10 +2401,7 @@ pub(super) fn run_scheduler_invariants_guard() -> Result<(), String> {
     }
     let commands = fs::read_to_string(root.join("crates/bijux-dev/src/commands/mod.rs"))
         .map_err(|err| err.to_string())?;
-    for required in [
-        "DagCommand::SchedulerTimeline",
-        "run_dag_scheduler_timeline",
-    ] {
+    for required in ["DagCommand::SchedulerTimeline", "run_dag_scheduler_timeline"] {
         if !commands.contains(required) {
             return Err(format!(
                 "scheduler invariant coverage missing command surface: {required}"
@@ -2699,10 +2471,7 @@ pub(super) fn run_state_machine_contract_guard() -> Result<(), String> {
     ];
     for state in run_states {
         if !contract.contains(&format!("- {}", state)) {
-            return Err(format!(
-                "state machine contract missing documented run state `{}`",
-                state
-            ));
+            return Err(format!("state machine contract missing documented run state `{}`", state));
         }
     }
     for token in [
@@ -2749,10 +2518,7 @@ pub(super) fn run_concurrency_model_guard() -> Result<(), String> {
     if missing.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "concurrency model missing required surfaces: {}",
-            missing.join(", ")
-        ))
+        Err(format!("concurrency model missing required surfaces: {}", missing.join(", ")))
     }
 }
 
@@ -2764,10 +2530,7 @@ pub(super) fn run_runtime_unsafe_guard() -> Result<(), String> {
         .output()
         .map_err(|err| err.to_string())?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let findings = stdout
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .collect::<Vec<_>>();
+    let findings = stdout.lines().filter(|line| !line.trim().is_empty()).collect::<Vec<_>>();
     if findings.is_empty() {
         Ok(())
     } else {
@@ -2828,10 +2591,7 @@ pub(super) fn run_backend_contract_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "backend contract missing required surfaces: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("backend contract missing required surfaces: {}", missing.join(", ")));
     }
 
     let test_path = root.join("crates/bijux-dag-runtime/tests/execution_backend_contract.rs");
@@ -2981,10 +2741,7 @@ pub(super) fn run_storage_health(run_dir: &Path, cache_dir: Option<&Path>) -> Re
                 let parsed: Value =
                     serde_json::from_str(&payload).map_err(|err| err.to_string())?;
                 if parsed.get("fingerprint").is_none() {
-                    anomalies.push(format!(
-                        "cache meta missing fingerprint: {}",
-                        meta.display()
-                    ));
+                    anomalies.push(format!("cache meta missing fingerprint: {}", meta.display()));
                 }
             }
         }
@@ -2995,10 +2752,7 @@ pub(super) fn run_storage_health(run_dir: &Path, cache_dir: Option<&Path>) -> Re
         "healthy": anomalies.is_empty(),
         "anomalies": anomalies
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -3011,10 +2765,7 @@ pub(super) fn run_run_dir_audit(run_dir: &Path, strict: bool) -> Result<(), Stri
     };
     let report = bijux_dag_artifacts::verify_run_dir(root.join(run_dir), mode)
         .map_err(|err| err.to_string())?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -3052,9 +2803,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         "dag verify --strict",
     ] {
         if !run_dir_contract.contains(token) {
-            return Err(format!(
-                "run-dir contract missing required section `{token}`"
-            ));
+            return Err(format!("run-dir contract missing required section `{token}`"));
         }
     }
     let import_export_contract =
@@ -3068,9 +2817,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         "provenance.source",
     ] {
         if !import_export_contract.contains(token) {
-            return Err(format!(
-                "import/export contract missing required section `{token}`"
-            ));
+            return Err(format!("import/export contract missing required section `{token}`"));
         }
     }
     let policy: Value = serde_json::from_str(
@@ -3084,15 +2831,10 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
     for required in ["tp_run_dir_resilience", "tp_import_export_compatibility"] {
         let present = trust_properties.iter().any(|property| {
-            property
-                .get("id")
-                .and_then(Value::as_str)
-                .is_some_and(|id| id == required)
+            property.get("id").and_then(Value::as_str).is_some_and(|id| id == required)
         });
         if !present {
-            return Err(format!(
-                "artifact hardening requires trust property `{required}`"
-            ));
+            return Err(format!("artifact hardening requires trust property `{required}`"));
         }
     }
     Ok(())
@@ -3123,7 +2865,7 @@ pub(super) fn run_observability_contract_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?;
     if !test_text.contains("required_runtime_event_names_are_present_for_reference_sequence") {
         return Err(
-            "observability contract test for required runtime event names is missing".to_string(),
+            "observability contract test for required runtime event names is missing".to_string()
         );
     }
     Ok(())
@@ -3203,9 +2945,7 @@ pub(super) fn run_security_model_guard() -> Result<(), String> {
         "## Secret handling and redaction",
     ] {
         if !security_doc.contains(required_section) {
-            return Err(format!(
-                "security model missing required section: {required_section}"
-            ));
+            return Err(format!("security model missing required section: {required_section}"));
         }
     }
     let security_tests =
@@ -3361,10 +3101,7 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
 
 pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let required_docs = [
-        "docs/spec/AUTHORING_UX_CONTRACT.md",
-        "docs/user/AUTHORING_GUIDE.md",
-    ];
+    let required_docs = ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/user/AUTHORING_GUIDE.md"];
     let required_examples = [
         "evidence/authoring/patterns/minimal.json",
         "evidence/authoring/patterns/medium.json",
@@ -3383,20 +3120,13 @@ pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
         "evidence/authoring/negative/unsupported_adapter_payload.json",
     ];
     let mut missing = Vec::new();
-    for rel in required_docs
-        .iter()
-        .chain(required_examples.iter())
-        .chain(required_bad.iter())
-    {
+    for rel in required_docs.iter().chain(required_examples.iter()).chain(required_bad.iter()) {
         if !root.join(rel).exists() {
             missing.push((*rel).to_string());
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "authoring ux required surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("authoring ux required surfaces missing: {}", missing.join(", ")));
     }
 
     let contract = fs::read_to_string(root.join("docs/spec/AUTHORING_UX_CONTRACT.md"))
@@ -3405,14 +3135,10 @@ pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     for rel in required_examples.iter().chain(required_bad.iter()) {
         if !contract.contains(rel) {
-            return Err(format!(
-                "authoring contract must reference executable fixture: {rel}"
-            ));
+            return Err(format!("authoring contract must reference executable fixture: {rel}"));
         }
         if !guide.contains(rel) {
-            return Err(format!(
-                "authoring user guide must reference executable fixture: {rel}"
-            ));
+            return Err(format!("authoring user guide must reference executable fixture: {rel}"));
         }
     }
 
@@ -3424,9 +3150,7 @@ pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
             .iter()
             .any(|d| d.severity == bijux_dag_core::Severity::Error);
         if has_error {
-            return Err(format!(
-                "authoring example must validate without errors: {rel}"
-            ));
+            return Err(format!("authoring example must validate without errors: {rel}"));
         }
     }
     Ok(())
@@ -3460,19 +3184,14 @@ pub(super) fn run_versioning_compatibility_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "versioning compatibility surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("versioning compatibility surfaces missing: {}", missing.join(", ")));
     }
 
     let matrix = fs::read_to_string(root.join("docs/reference/COMPATIBILITY_MATRIX.md"))
         .map_err(|err| err.to_string())?;
     for token in ["graph schema", "run-dir format", "export bundle"] {
         if !matrix.to_lowercase().contains(token) {
-            return Err(format!(
-                "compatibility matrix missing required surface row: {token}"
-            ));
+            return Err(format!("compatibility matrix missing required surface row: {token}"));
         }
     }
     Ok(())
@@ -3504,10 +3223,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "cache evolution required surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("cache evolution required surfaces missing: {}", missing.join(", ")));
     }
     let cache_metadata: Value = serde_json::from_str(
         &fs::read_to_string(root.join("evidence/cache/metadata.json"))
@@ -3526,9 +3242,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         "evidence/cache/corrupt/missing_outputs_proof.json",
     ] {
         if !corrupt_fixtures.contains_key(fixture) {
-            return Err(format!(
-                "cache metadata missing corruption entry: {fixture}"
-            ));
+            return Err(format!("cache metadata missing corruption entry: {fixture}"));
         }
     }
     let model = fs::read_to_string(root.join("docs/spec/CACHE_EVOLUTION_MODEL.md"))
@@ -3545,20 +3259,11 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
     }
     let app_commands = fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs"))
         .map_err(|err| err.to_string())?;
-    let cache_surface_count = [
-        "Ls",
-        "Pack",
-        "Unpack",
-        "Gc",
-        "Verify",
-        "Explain",
-        "Stats",
-        "PruneSimulate",
-        "Diff",
-    ]
-    .iter()
-    .filter(|name| app_commands.contains(&format!("CacheCommands::{}", name)))
-    .count();
+    let cache_surface_count =
+        ["Ls", "Pack", "Unpack", "Gc", "Verify", "Explain", "Stats", "PruneSimulate", "Diff"]
+            .iter()
+            .filter(|name| app_commands.contains(&format!("CacheCommands::{}", name)))
+            .count();
     if cache_surface_count >= 9 {
         for test in [
             "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
@@ -3582,10 +3287,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         .and_then(Value::as_array)
         .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
     let has_cache_integrity = trust_properties.iter().any(|property| {
-        property
-            .get("id")
-            .and_then(Value::as_str)
-            .is_some_and(|id| id == "tp_cache_integrity")
+        property.get("id").and_then(Value::as_str).is_some_and(|id| id == "tp_cache_integrity")
     });
     if !has_cache_integrity {
         return Err("cache evolution requires tp_cache_integrity trust property".to_string());
@@ -3615,10 +3317,7 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "replay contract required surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("replay contract required surfaces missing: {}", missing.join(", ")));
     }
     let contract = fs::read_to_string(root.join("docs/spec/REPLAY_CONTRACT.md"))
         .map_err(|err| err.to_string())?;
@@ -3654,10 +3353,7 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
         .and_then(Value::as_array)
         .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
     let has_replay_equivalence = trust_properties.iter().any(|property| {
-        property
-            .get("id")
-            .and_then(Value::as_str)
-            .is_some_and(|id| id == "tp_replay_equivalence")
+        property.get("id").and_then(Value::as_str).is_some_and(|id| id == "tp_replay_equivalence")
     });
     if !has_replay_equivalence {
         return Err("replay contract requires tp_replay_equivalence trust property".to_string());
@@ -3728,9 +3424,7 @@ pub(super) fn run_multi_run_analytics_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     for token in ["Summary", "Compare", "Trend", "Failures", "Flakes"] {
         if !commands_src.contains(token) {
-            return Err(format!(
-                "runs command surface missing analytics variant `{token}`"
-            ));
+            return Err(format!("runs command surface missing analytics variant `{token}`"));
         }
     }
     let contract = fs::read_to_string(root.join("docs/spec/MULTI_RUN_ANALYTICS_CONTRACT.md"))
@@ -3770,9 +3464,7 @@ pub(super) fn run_distributed_coordination_guard() -> Result<(), String> {
         "planner, scheduler, and storage contracts",
     ] {
         if !model.contains(token) {
-            return Err(format!(
-                "distributed coordination model missing section `{token}`"
-            ));
+            return Err(format!("distributed coordination model missing section `{token}`"));
         }
     }
     Ok(())
@@ -3791,10 +3483,7 @@ pub(super) fn run_distributed_semantics_report() -> Result<(), String> {
             "authoritative_remote_state_writer": false
         }
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -3814,10 +3503,7 @@ pub(super) fn run_formal_invariants_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "formal invariants required surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("formal invariants required surfaces missing: {}", missing.join(", ")));
     }
     let spec = fs::read_to_string(root.join("docs/spec/FORMAL_INVARIANTS.md"))
         .map_err(|err| err.to_string())?;
@@ -3885,14 +3571,8 @@ pub(super) fn run_invariants_report() -> Result<(), String> {
         "missing_coverage_entries": missing_coverage,
         "coverage_file": "docs/tracking/INVARIANT_COVERAGE.md"
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
-    if payload["missing_coverage_entries"]
-        .as_array()
-        .is_some_and(|a| a.is_empty())
-    {
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
+    if payload["missing_coverage_entries"].as_array().is_some_and(|a| a.is_empty()) {
         Ok(())
     } else {
         Err("invariant coverage file missing registry entries".to_string())
@@ -3929,7 +3609,7 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     if !commands_src.contains("Capabilities") {
         return Err(
-            "dag capabilities command is required for machine-readable support summary".to_string(),
+            "dag capabilities command is required for machine-readable support summary".to_string()
         );
     }
 
@@ -3937,10 +3617,9 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     let install = fs::read_to_string(root.join("docs/user/INSTALLATION.md"))
         .map_err(|err| err.to_string())?;
-    for required_cmd in [
-        "cargo build -p bijux-dag-cli --release",
-        "cargo run -p bijux-dag-cli -- dag version",
-    ] {
+    for required_cmd in
+        ["cargo build -p bijux-dag-cli --release", "cargo run -p bijux-dag-cli -- dag version"]
+    {
         if !install.contains(required_cmd) {
             return Err(format!(
                 "installation doc missing clean-environment command `{}`",
@@ -4000,10 +3679,7 @@ pub(super) fn run_drift_dashboard() -> Result<(), String> {
         "dashboard_doc": "docs/tracking/DRIFT_DASHBOARD.md",
         "anti_drift_policy": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4022,10 +3698,7 @@ pub(super) fn run_repo_trust_summary() -> Result<(), String> {
         },
         "evidence_index": root.join("docs/reference/REPO_TRUST_EVIDENCE_INDEX.md").exists()
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4044,24 +3717,14 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "anti-drift governance surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("anti-drift governance surfaces missing: {}", missing.join(", ")));
     }
     let policy = fs::read_to_string(root.join("docs/spec/ANTI_DRIFT_POLICY.md"))
         .map_err(|err| err.to_string())?;
-    for token in [
-        "docs drift",
-        "schema drift",
-        "contract drift",
-        "cli drift",
-        "same-change alignment rule",
-    ] {
-        if !policy
-            .to_ascii_lowercase()
-            .contains(&token.to_ascii_lowercase())
-        {
+    for token in
+        ["docs drift", "schema drift", "contract drift", "cli drift", "same-change alignment rule"]
+    {
+        if !policy.to_ascii_lowercase().contains(&token.to_ascii_lowercase()) {
             return Err(format!("anti-drift policy missing `{}`", token));
         }
     }
@@ -4077,10 +3740,7 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
         "performance-claims",
     ] {
         if !suite_ids.contains(&required_check) {
-            return Err(format!(
-                "anti-drift governance requires repo suite `{}`",
-                required_check
-            ));
+            return Err(format!("anti-drift governance requires repo suite `{}`", required_check));
         }
     }
 
@@ -4090,14 +3750,14 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
         || !release_doc.contains("dag capabilities --json")
     {
         return Err(
-            "release verification doc must define machine-readable artifact checks".to_string(),
+            "release verification doc must define machine-readable artifact checks".to_string()
         );
     }
 
     let benchmark_scenarios = root.join("evidence/perf/scenarios");
     if !benchmark_scenarios.exists() {
         return Err(
-            "benchmark scenario directory missing for anti-drift benchmark check".to_string(),
+            "benchmark scenario directory missing for anti-drift benchmark check".to_string()
         );
     }
     Ok(())
@@ -4120,25 +3780,20 @@ pub(super) fn run_runtime_module_triage_guard() -> Result<(), String> {
         }
     }
     if !missing.is_empty() {
-        return Err(format!(
-            "runtime module triage surfaces missing: {}",
-            missing.join(", ")
-        ));
+        return Err(format!("runtime module triage surfaces missing: {}", missing.join(", ")));
     }
 
-    let freeze_payload = fs::read_to_string(root.join("configs/dag/policy/runtime_module_freeze.json"))
-        .map_err(|err| err.to_string())?;
+    let freeze_payload =
+        fs::read_to_string(root.join("configs/dag/policy/runtime_module_freeze.json"))
+            .map_err(|err| err.to_string())?;
     let freeze_json: Value =
         serde_json::from_str(&freeze_payload).map_err(|err| err.to_string())?;
     let allowed = freeze_json
         .get("allowed_modules")
         .and_then(Value::as_array)
         .ok_or_else(|| "runtime_module_freeze.json missing allowed_modules".to_string())?;
-    let allowed_set: BTreeSet<String> = allowed
-        .iter()
-        .filter_map(Value::as_str)
-        .map(|s| s.to_string())
-        .collect();
+    let allowed_set: BTreeSet<String> =
+        allowed.iter().filter_map(Value::as_str).map(|s| s.to_string()).collect();
 
     let mut actual = BTreeSet::new();
     for entry in
@@ -4271,10 +3926,7 @@ pub(super) fn run_crate_boundary_foundation_guard() -> Result<(), String> {
         let cargo = fs::read_to_string(root.join(format!("crates/{}/Cargo.toml", from)))
             .map_err(|err| err.to_string())?;
         if cargo.contains(to) {
-            return Err(format!(
-                "forbidden dependency edge detected: {} -> {}",
-                from, to
-            ));
+            return Err(format!("forbidden dependency edge detected: {} -> {}", from, to));
         }
     }
     Ok(())
@@ -4305,11 +3957,7 @@ pub(super) fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
     }
 
     if let Some(path) = config {
-        let full = if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            root.join(path)
-        };
+        let full = if path.is_absolute() { path.to_path_buf() } else { root.join(path) };
         let payload = fs::read_to_string(full).map_err(|err| err.to_string())?;
         let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
         deep_merge_json(&mut merged, &parsed);
@@ -4317,10 +3965,7 @@ pub(super) fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
 
     let _typed: EffectiveConfigDump =
         serde_json::from_value(merged.clone()).map_err(|err| err.to_string())?;
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&merged).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&merged).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4331,20 +3976,12 @@ pub(super) fn run_policy_audit(config: Option<&Path>) -> Result<(), String> {
     let defaults: Value = serde_json::from_str(&defaults_payload).map_err(|err| err.to_string())?;
     let mut merged = defaults;
     if let Some(path) = config {
-        let full = if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            root.join(path)
-        };
+        let full = if path.is_absolute() { path.to_path_buf() } else { root.join(path) };
         let payload = fs::read_to_string(full).map_err(|err| err.to_string())?;
         let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
         deep_merge_json(&mut merged, &parsed);
     }
-    let policy = merged
-        .get("policy")
-        .and_then(Value::as_object)
-        .cloned()
-        .unwrap_or_default();
+    let policy = merged.get("policy").and_then(Value::as_object).cloned().unwrap_or_default();
     let report = json!({
         "policy_controls": {
             "deny_network": policy.get("deny_network").cloned().unwrap_or(Value::Bool(false)),
@@ -4354,19 +3991,13 @@ pub(super) fn run_policy_audit(config: Option<&Path>) -> Result<(), String> {
         },
         "security_contract": "docs/spec/SECURITY_MODEL.md"
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
 pub(super) fn run_execution_modes_report() -> Result<(), String> {
     let report = bijux_dag_runtime::execution_mode_report();
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4390,10 +4021,7 @@ pub(super) fn run_compatibility_report() -> Result<(), String> {
             "unsupported_past_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/unsupported_past"))?
         }
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4417,10 +4045,7 @@ pub(super) fn run_cache_coverage_report() -> Result<(), String> {
             }
         }
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4448,13 +4073,7 @@ pub(super) fn run_config_lint() -> Result<(), String> {
         }
         let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
         let value: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
-        let allowed_root = [
-            "jobs",
-            "cache_mode",
-            "materialize_inputs",
-            "policy",
-            "debug",
-        ];
+        let allowed_root = ["jobs", "cache_mode", "materialize_inputs", "policy", "debug"];
         if let Some(obj) = value.as_object() {
             for key in obj.keys() {
                 if !allowed_root.contains(&key.as_str()) {
@@ -4474,17 +4093,11 @@ pub(super) fn run_config_lint() -> Result<(), String> {
         if value.get("jobs").and_then(|v| v.as_u64()).unwrap_or(0) == 0 {
             violations.push(format!("{} has invalid jobs", path.display()));
         }
-        let cache_mode = value
-            .get("cache_mode")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let cache_mode = value.get("cache_mode").and_then(|v| v.as_str()).unwrap_or("");
         if !["off", "read", "read-write"].contains(&cache_mode) {
             violations.push(format!("{} has invalid cache_mode", path.display()));
         }
-        let materialize = value
-            .get("materialize_inputs")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let materialize = value.get("materialize_inputs").and_then(|v| v.as_str()).unwrap_or("");
         if !["none", "direct", "all"].contains(&materialize) {
             violations.push(format!("{} has invalid materialize_inputs", path.display()));
         }
@@ -4506,17 +4119,12 @@ pub(super) fn run_config_precedence_drift_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     let expected = "CLI > explicit config file > environment > defaults";
     if !precedence_doc.contains(expected) {
-        return Err(
-            "docs/spec/CONFIG_PRECEDENCE_CONTRACT.md missing canonical precedence table"
-                .to_string(),
-        );
+        return Err("docs/spec/CONFIG_PRECEDENCE_CONTRACT.md missing canonical precedence table"
+            .to_string());
     }
     for token in ["dag config show-effective", "dag policy show-effective"] {
         if !precedence_doc.contains(token) {
-            return Err(format!(
-                "config precedence contract missing command surface `{}`",
-                token
-            ));
+            return Err(format!("config precedence contract missing command surface `{}`", token));
         }
     }
 
@@ -4546,9 +4154,7 @@ pub(super) fn run_config_policy_determinism_guard() -> Result<(), String> {
         "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
     ] {
         if !root.join(required).exists() {
-            return Err(format!(
-                "config/policy determinism missing required surface: {required}"
-            ));
+            return Err(format!("config/policy determinism missing required surface: {required}"));
         }
     }
 
@@ -4561,9 +4167,7 @@ pub(super) fn run_config_policy_determinism_guard() -> Result<(), String> {
         "Policy evaluation trace must be available for operator/debug inspection.",
     ] {
         if !contract.contains(token) {
-            return Err(format!(
-                "config precedence contract missing required token `{token}`"
-            ));
+            return Err(format!("config precedence contract missing required token `{token}`"));
         }
     }
 
@@ -4624,10 +4228,7 @@ pub(super) fn run_ambient_env_guard() -> Result<(), String> {
             if allow_env_keys.iter().any(|key| line.contains(key)) {
                 continue;
             }
-            violations.push(format!(
-                "{rel}: disallowed ambient env read `{}`",
-                line.trim()
-            ));
+            violations.push(format!("{rel}: disallowed ambient env read `{}`", line.trim()));
         }
     }
     if violations.is_empty() {
@@ -4672,9 +4273,7 @@ pub(super) fn run_foundation_verification_guard() -> Result<(), String> {
         "runtime-module-triage",
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
-            return Err(format!(
-                "foundation verification missing suite id: {required}"
-            ));
+            return Err(format!("foundation verification missing suite id: {required}"));
         }
     }
     Ok(())
@@ -4689,10 +4288,8 @@ pub(super) fn run_foundation_review_report() -> Result<(), String> {
     let docs_root = root.join("docs");
     let mut markdown = Vec::new();
     collect_markdown_files(&docs_root, &mut markdown)?;
-    let docs_root_markdown_count = markdown
-        .iter()
-        .filter(|path| path.parent() == Some(docs_root.as_path()))
-        .count();
+    let docs_root_markdown_count =
+        markdown.iter().filter(|path| path.parent() == Some(docs_root.as_path())).count();
 
     let report = json!({
         "runtime_module_count": runtime_modules.len(),
@@ -4700,10 +4297,7 @@ pub(super) fn run_foundation_review_report() -> Result<(), String> {
         "repo_suite_count": crate::suites::repo::IDS.len(),
         "has_foundation_final_report": root.join("docs/reports/foundation/FOUNDATION_FINAL_REPORT.md").exists(),
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -4788,9 +4382,7 @@ pub(super) fn run_repo_hygiene_suite_guard() -> Result<(), String> {
         "evidence-authority",
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
-            return Err(format!(
-                "repo hygiene suite missing required guard: {required}"
-            ));
+            return Err(format!("repo hygiene suite missing required guard: {required}"));
         }
     }
     Ok(())

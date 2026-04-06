@@ -32,18 +32,13 @@ fn precedence_is_cli_then_explicit_then_env_then_defaults() {
         materialize_inputs: Some(MaterializeInputsSurface::Direct),
         ..PartialRuntimeSurfaceConfig::default()
     };
-    let cli = PartialRuntimeSurfaceConfig {
-        jobs: Some(8),
-        ..PartialRuntimeSurfaceConfig::default()
-    };
+    let cli =
+        PartialRuntimeSurfaceConfig { jobs: Some(8), ..PartialRuntimeSurfaceConfig::default() };
 
     let effective = resolve_effective_config(cli, Some(explicit), Some(env_cfg), defaults);
     assert_eq!(effective.jobs, 8);
     assert_eq!(effective.cache_mode, CacheModeSurface::Read);
-    assert_eq!(
-        effective.materialize_inputs,
-        MaterializeInputsSurface::Direct
-    );
+    assert_eq!(effective.materialize_inputs, MaterializeInputsSurface::Direct);
 }
 
 #[test]

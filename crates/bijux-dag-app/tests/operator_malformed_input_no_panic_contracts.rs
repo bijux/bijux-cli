@@ -32,10 +32,7 @@ fn operator_inspect_handles_malformed_run_manifest_without_panicking() {
     .expect("write snapshot");
 
     let result = std::panic::catch_unwind(AssertUnwindSafe(|| inspect_summary(&run)));
-    assert!(
-        result.is_ok(),
-        "inspect summary panicked on malformed manifest"
-    );
+    assert!(result.is_ok(), "inspect summary panicked on malformed manifest");
 }
 
 #[test]
@@ -50,10 +47,7 @@ fn prove_and_verify_commands_handle_malformed_run_dir_without_panicking() {
         .try_get_matches_from(["dag", "--json", "prove", run.to_str().expect("run path")])
         .expect("prove matches");
     let prove_result = std::panic::catch_unwind(AssertUnwindSafe(|| dag_run(&prove)));
-    assert!(
-        prove_result.is_ok(),
-        "prove command panicked on malformed run dir"
-    );
+    assert!(prove_result.is_ok(), "prove command panicked on malformed run dir");
 
     let verify = dag_command()
         .try_get_matches_from([
@@ -66,8 +60,5 @@ fn prove_and_verify_commands_handle_malformed_run_dir_without_panicking() {
         ])
         .expect("verify matches");
     let verify_result = std::panic::catch_unwind(AssertUnwindSafe(|| dag_run(&verify)));
-    assert!(
-        verify_result.is_ok(),
-        "verify command panicked on malformed run dir"
-    );
+    assert!(verify_result.is_ok(), "verify command panicked on malformed run dir");
 }

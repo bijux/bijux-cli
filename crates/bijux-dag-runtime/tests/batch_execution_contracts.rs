@@ -27,11 +27,9 @@ fn batch_metadata_requires_scheduler_and_attempt_identity() {
         status_mapping: "slurm-default".to_string(),
     };
     assert!(validate_batch_metadata(&meta).is_ok());
-    assert!(validate_batch_metadata(&BatchJobMetadata {
-        scheduler_id: String::new(),
-        ..meta
-    })
-    .is_err());
+    assert!(
+        validate_batch_metadata(&BatchJobMetadata { scheduler_id: String::new(), ..meta }).is_err()
+    );
 }
 
 #[test]
@@ -49,10 +47,7 @@ fn retry_and_heartbeat_contracts_are_explicit() {
     assert_eq!(second.attempt_id, "2");
     assert!(second.submission_time_unix_ms > first.submission_time_unix_ms);
 
-    let hb = BatchHeartbeat {
-        scheduler_id: "slurm-a".to_string(),
-        unix_ms: 1_000,
-    };
+    let hb = BatchHeartbeat { scheduler_id: "slurm-a".to_string(), unix_ms: 1_000 };
     assert!(!heartbeat_stale(&hb, 1_250, 500));
     assert!(heartbeat_stale(&hb, 1_700, 500));
 }

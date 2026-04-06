@@ -121,11 +121,8 @@ fn container_env_isolation_respects_allowlist_and_denylist() {
         ("RUST_LOG".to_string(), "debug".to_string()),
         ("AWS_SECRET_ACCESS_KEY".to_string(), "x".to_string()),
     ]);
-    let allowlist = vec![
-        "PATH".to_string(),
-        "RUST_*".to_string(),
-        "AWS_SECRET_ACCESS_KEY".to_string(),
-    ];
+    let allowlist =
+        vec!["PATH".to_string(), "RUST_*".to_string(), "AWS_SECRET_ACCESS_KEY".to_string()];
     let denylist = vec!["AWS_SECRET_*".to_string()];
     assert!(!container_env_isolated(&env, &allowlist, &denylist));
 

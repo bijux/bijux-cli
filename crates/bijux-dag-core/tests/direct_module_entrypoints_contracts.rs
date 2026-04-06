@@ -85,32 +85,19 @@ fn validate_module_splits_domains_and_keeps_registry_stable() {
     );
 
     let registry = validation_rule_registry();
-    assert!(
-        !registry.is_empty(),
-        "validation registry must be non-empty"
-    );
-    assert!(registry
-        .iter()
-        .any(|rule| matches!(rule.domain, ValidationDomain::Schema)));
-    assert!(registry
-        .iter()
-        .any(|rule| matches!(rule.domain, ValidationDomain::Semantic)));
-    assert!(registry
-        .iter()
-        .any(|rule| matches!(rule.domain, ValidationDomain::Topology)));
+    assert!(!registry.is_empty(), "validation registry must be non-empty");
+    assert!(registry.iter().any(|rule| matches!(rule.domain, ValidationDomain::Schema)));
+    assert!(registry.iter().any(|rule| matches!(rule.domain, ValidationDomain::Semantic)));
+    assert!(registry.iter().any(|rule| matches!(rule.domain, ValidationDomain::Topology)));
 
     let all = validate_graph(&graph);
-    let errors: Vec<_> = all
-        .iter()
-        .filter(|diag| matches!(diag.severity, Severity::Error))
-        .collect();
+    let errors: Vec<_> =
+        all.iter().filter(|diag| matches!(diag.severity, Severity::Error)).collect();
     assert!(errors.is_empty(), "valid graph should not emit errors");
     assert!(validate_schema(&graph).is_empty());
     assert!(validate_semantics(&graph).is_empty());
     let topology = validate_topology(&graph);
-    assert!(topology
-        .iter()
-        .all(|diag| !matches!(diag.severity, Severity::Error)));
+    assert!(topology.iter().all(|diag| !matches!(diag.severity, Severity::Error)));
 }
 
 #[test]
@@ -170,11 +157,7 @@ fn planner_module_lowers_graph_to_execution_plan() {
     let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
     assert_eq!(plan.nodes.len(), 1);
     assert_eq!(plan.ordering, vec!["source".to_string()]);
-    let source = plan
-        .nodes
-        .iter()
-        .find(|node| node.id == "source")
-        .expect("source node");
+    let source = plan.nodes.iter().find(|node| node.id == "source").expect("source node");
     assert!(source.deps.is_empty());
 }
 
@@ -191,10 +174,7 @@ fn compile_module_compiles_graph_without_contract_packaging() {
     );
     let compiled = compile_graph(&graph).expect("compile graph");
     assert_eq!(compiled.normalized_graph.nodes.len(), 1);
-    assert_eq!(
-        compiled.plan_hints.deterministic_topology_order,
-        vec!["source".to_string()]
-    );
+    assert_eq!(compiled.plan_hints.deterministic_topology_order, vec!["source".to_string()]);
 }
 
 #[test]
@@ -209,10 +189,7 @@ fn compile_module_applies_defaults_without_contract_wrapper() {
         }"#,
     );
     let defaults = GraphDefaults {
-        retry: Some(bijux_dag_core::RetryPolicy {
-            max_attempts: 3,
-            backoff_ms: 10,
-        }),
+        retry: Some(bijux_dag_core::RetryPolicy { max_attempts: 3, backoff_ms: 10 }),
         resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 64 }),
     };
     let compiled = compile_graph_with_defaults(&graph, &defaults).expect("compile with defaults");
@@ -223,8 +200,5 @@ fn compile_module_applies_defaults_without_contract_wrapper() {
         .find(|node| node.id == "source")
         .expect("source node");
     assert_eq!(node.retry.max_attempts, 3);
-    assert_eq!(
-        node.resources.as_ref().map(|resources| resources.cpu),
-        Some(1)
-    );
+    assert_eq!(node.resources.as_ref().map(|resources| resources.cpu), Some(1));
 }

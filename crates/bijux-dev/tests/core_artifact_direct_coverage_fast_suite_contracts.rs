@@ -15,10 +15,7 @@ use tempfile as _;
 fn core_artifact_fast_suite_covers_direct_coverage_contract_targets() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let suite = root.join("configs/dag/suites/core_artifact_direct_coverage_fast.json");
-    assert!(
-        suite.exists(),
-        "missing core/artifact direct coverage fast suite"
-    );
+    assert!(suite.exists(), "missing core/artifact direct coverage fast suite");
 
     let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
         .expect("parse suite");
@@ -38,10 +35,7 @@ fn core_artifact_fast_suite_covers_direct_coverage_contract_targets() {
 
     for name in required {
         assert!(
-            commands
-                .iter()
-                .filter_map(|v| v.as_str())
-                .any(|cmd| cmd.contains(name)),
+            commands.iter().filter_map(|v| v.as_str()).any(|cmd| cmd.contains(name)),
             "core/artifact fast suite missing {name}"
         );
     }

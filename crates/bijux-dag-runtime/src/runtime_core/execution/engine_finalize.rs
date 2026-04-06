@@ -17,12 +17,7 @@ mod tests {
 
     #[test]
     fn summary_total_matches_component_counts() {
-        let counts = NodeCounts {
-            success: 3,
-            failed: 2,
-            skipped: 1,
-            cached: 4,
-        };
+        let counts = NodeCounts { success: 3, failed: 2, skipped: 1, cached: 4 };
         let summary = summarize_counts(&counts);
         assert_eq!(summary.success, 3);
         assert_eq!(summary.failed, 2);

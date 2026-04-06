@@ -59,10 +59,6 @@ fn strict_and_permissive_modes_differ_in_effect_policy() {
 
     let strict_trace = policy_evaluation_trace(&strict.policy);
     let permissive_trace = policy_evaluation_trace(&permissive.policy);
-    assert!(strict_trace
-        .iter()
-        .any(|e| e.contains("rule:deny_network decision:deny")));
-    assert!(permissive_trace
-        .iter()
-        .any(|e| e.contains("rule:deny_network decision:allow")));
+    assert!(strict_trace.iter().any(|e| e.contains("rule:deny_network decision:deny")));
+    assert!(permissive_trace.iter().any(|e| e.contains("rule:deny_network decision:allow")));
 }

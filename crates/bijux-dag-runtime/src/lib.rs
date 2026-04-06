@@ -469,10 +469,7 @@ pub struct ConstAdapter;
 
 impl Adapter for ConstAdapter {
     fn id(&self) -> AdapterId {
-        AdapterId {
-            id: "const".to_string(),
-            version: "0.1".to_string(),
-        }
+        AdapterId { id: "const".to_string(), version: "0.1".to_string() }
     }
 
     fn supported_kinds(&self) -> Vec<String> {
@@ -493,8 +490,7 @@ impl Adapter for ConstAdapter {
         let params = ctx.params;
         let node_dir = exec.run_dir.node_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
-        exec.fs
-            .create_dir_all(exec.run_dir.node_outputs_dir(&node.id).as_path())?;
+        exec.fs.create_dir_all(exec.run_dir.node_outputs_dir(&node.id).as_path())?;
         exec.fs.create_dir_all(&node_dir)?;
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
@@ -512,8 +508,7 @@ impl Adapter for ConstAdapter {
         if let Some(parent) = out_path.parent() {
             exec.fs.create_dir_all(parent)?;
         }
-        exec.fs
-            .write(&out_path, &serde_json::to_vec_pretty(&value)?)?;
+        exec.fs.write(&out_path, &serde_json::to_vec_pretty(&value)?)?;
         exec.fs.write(&stdout_path, b"")?;
         exec.fs.write(&stderr_path, b"")?;
         let fp = node_fingerprint_from_ctx(exec, &node.id);
@@ -539,10 +534,7 @@ pub struct ShellAdapter;
 
 impl Adapter for ShellAdapter {
     fn id(&self) -> AdapterId {
-        AdapterId {
-            id: "shell".to_string(),
-            version: "0.1".to_string(),
-        }
+        AdapterId { id: "shell".to_string(), version: "0.1".to_string() }
     }
 
     fn supported_kinds(&self) -> Vec<String> {
@@ -550,12 +542,7 @@ impl Adapter for ShellAdapter {
     }
 
     fn required_effects(&self) -> EffectSet {
-        EffectSet {
-            filesystem: true,
-            env: false,
-            network: false,
-            clock: false,
-        }
+        EffectSet { filesystem: true, env: false, network: false, clock: false }
     }
 
     fn produces_outputs_schema_version(&self) -> String {
@@ -630,11 +617,7 @@ impl Adapter for ShellAdapter {
         };
 
         Ok(NodeResult {
-            status: if success {
-                NodeStatus::Success
-            } else {
-                NodeStatus::Failed
-            },
+            status: if success { NodeStatus::Success } else { NodeStatus::Failed },
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
@@ -652,10 +635,7 @@ pub struct ContainerAdapter;
 
 impl Adapter for ContainerAdapter {
     fn id(&self) -> AdapterId {
-        AdapterId {
-            id: "container".to_string(),
-            version: "0.1".to_string(),
-        }
+        AdapterId { id: "container".to_string(), version: "0.1".to_string() }
     }
 
     fn supported_kinds(&self) -> Vec<String> {
@@ -663,12 +643,7 @@ impl Adapter for ContainerAdapter {
     }
 
     fn required_effects(&self) -> EffectSet {
-        EffectSet {
-            filesystem: true,
-            env: false,
-            network: false,
-            clock: false,
-        }
+        EffectSet { filesystem: true, env: false, network: false, clock: false }
     }
 
     fn produces_outputs_schema_version(&self) -> String {
@@ -722,10 +697,7 @@ impl Adapter for ContainerAdapter {
 
         cmd.args(["-v", &format!("{}:/bijux/node", node_dir.display())]);
 
-        let workdir = spec
-            .workdir
-            .clone()
-            .unwrap_or_else(|| "/bijux/node/work".to_string());
+        let workdir = spec.workdir.clone().unwrap_or_else(|| "/bijux/node/work".to_string());
         cmd.args(["--workdir", &workdir]);
 
         for (key, val) in shaped_environment(exec.policy.clean_env, &spec.env_allowlist, &[]) {
@@ -778,11 +750,7 @@ impl Adapter for ContainerAdapter {
         };
 
         Ok(NodeResult {
-            status: if success {
-                NodeStatus::Success
-            } else {
-                NodeStatus::Failed
-            },
+            status: if success { NodeStatus::Success } else { NodeStatus::Failed },
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
@@ -888,12 +856,7 @@ pub struct PolicyConfig {
 
 impl Default for PolicyConfig {
     fn default() -> Self {
-        Self {
-            deny_network: false,
-            deny_env: false,
-            deny_clock: false,
-            clean_env: true,
-        }
+        Self { deny_network: false, deny_env: false, deny_clock: false, clean_env: true }
     }
 }
 
@@ -915,12 +878,7 @@ impl Runtime {
             Ok(reg) => (reg, None),
             Err(err) => (AdapterRegistry::new(), Some(err.to_string())),
         };
-        Self {
-            registry,
-            fs: Arc::new(StdFs),
-            clock: Arc::new(SystemClock),
-            init_error,
-        }
+        Self { registry, fs: Arc::new(StdFs), clock: Arc::new(SystemClock), init_error }
     }
 
     #[allow(dead_code)]
@@ -1004,15 +962,12 @@ fn write_trace(
         .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?;
     ctx.store.ensure_node_dir(node_id)?;
     write_resolved_params(ctx, node_id)?;
-    let inputs_index = if ctx
-        .fs
-        .metadata(ctx.run_dir.node_inputs_index_path(node_id).as_path())
-        .is_ok()
-    {
-        Some("inputs/index.json".to_string())
-    } else {
-        None
-    };
+    let inputs_index =
+        if ctx.fs.metadata(ctx.run_dir.node_inputs_index_path(node_id).as_path()).is_ok() {
+            Some("inputs/index.json".to_string())
+        } else {
+            None
+        };
     let trace = NodeTrace {
         node_id: node_id.to_string(),
         status: status_string(&status),
@@ -1024,10 +979,7 @@ fn write_trace(
         adapter_version: adapter_version.to_string(),
         adapter_outputs_schema_version: adapter_outputs_schema_version.to_string(),
         adapter_binary_sha256,
-        resources: node.resources.as_ref().map(|r| TraceResources {
-            cpu: r.cpu,
-            mem_mb: r.mem_mb,
-        }),
+        resources: node.resources.as_ref().map(|r| TraceResources { cpu: r.cpu, mem_mb: r.mem_mb }),
         inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         container: container_meta,
@@ -1061,11 +1013,7 @@ pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
 }
 
 fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
-    let mut params = ctx
-        .resolved_params
-        .get(node_id)
-        .cloned()
-        .unwrap_or(Value::Null);
+    let mut params = ctx.resolved_params.get(node_id).cloned().unwrap_or(Value::Null);
     sort_value_maps(&mut params);
     let data = serde_json::to_vec_pretty(&params)?;
     ctx.store.write_resolved_params(node_id, &data)?;
@@ -1106,11 +1054,7 @@ fn execute_with_retries(
     loop {
         attempt += 1;
         let started = ctx.clock.now_unix_ms();
-        let node_ctx = NodeCtx {
-            node,
-            exec: ctx,
-            params,
-        };
+        let node_ctx = NodeCtx { node, exec: ctx, params };
         let mut result = adapter.execute(&node_ctx)?;
         let finished = ctx.clock.now_unix_ms();
         attempt_events.push(AttemptEvent {
@@ -1129,9 +1073,7 @@ fn execute_with_retries(
             return Ok(result);
         }
         if retry.backoff_ms > 0 {
-            let wait = retry
-                .backoff_ms
-                .saturating_mul(attempt.saturating_sub(1) as u64);
+            let wait = retry.backoff_ms.saturating_mul(attempt.saturating_sub(1) as u64);
             if wait > 0 {
                 std::thread::sleep(Duration::from_millis(wait));
             }
@@ -1207,10 +1149,7 @@ fn materialize_inputs(
             .iter()
             .find(|o| o.name == edge.from.port)
             .ok_or_else(|| RuntimeError::Executor("missing output port".to_string()))?;
-        let src_path = ctx
-            .run_dir
-            .node_outputs_dir(&edge.from.node_id)
-            .join(&out.path);
+        let src_path = ctx.run_dir.node_outputs_dir(&edge.from.node_id).join(&out.path);
         let dst_dir = inputs_dir.join(&edge.from.node_id);
         ctx.fs.create_dir_all(&dst_dir)?;
         let dst_path = dst_dir.join(&edge.to.port);
@@ -1259,20 +1198,12 @@ fn try_cache_read(
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     if options.cache_mode == CacheMode::Off {
-        return Ok(CacheRead {
-            hit: false,
-            proof: None,
-        });
+        return Ok(CacheRead { hit: false, proof: None });
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let cache_store = match cache_dir {
         Some(d) => Some(RuntimeCacheStore::new(d, Arc::clone(&fs))),
-        None => {
-            return Ok(CacheRead {
-                hit: false,
-                proof: None,
-            })
-        }
+        None => return Ok(CacheRead { hit: false, proof: None }),
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
         let key = node_fingerprint.to_string();
@@ -1370,10 +1301,7 @@ fn try_cache_read(
             }
         }
     }
-    Ok(CacheRead {
-        hit: false,
-        proof: None,
-    })
+    Ok(CacheRead { hit: false, proof: None })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1409,15 +1337,8 @@ fn try_cache_write(
         "cache_source": "local",
         "schema_version": "v0.1",
     });
-    store.fs().write(
-        entry.join("meta.json").as_path(),
-        &serde_json::to_vec_pretty(&meta)?,
-    )?;
-    copy_dir_all(
-        store.fs(),
-        ctx.run_dir.node_outputs_dir(&node.id),
-        entry.join("outputs"),
-    )?;
+    store.fs().write(entry.join("meta.json").as_path(), &serde_json::to_vec_pretty(&meta)?)?;
+    copy_dir_all(store.fs(), ctx.run_dir.node_outputs_dir(&node.id), entry.join("outputs"))?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
     let _ = store.fs().copy(
         node_dir.join("stdout.log").as_path(),
@@ -1460,9 +1381,7 @@ fn verify_cache_entry(
     if meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version) {
         return Ok(false);
     }
-    if meta
-        .get("produces_outputs_schema_version")
-        .and_then(|v| v.as_str())
+    if meta.get("produces_outputs_schema_version").and_then(|v| v.as_str())
         != Some(adapter_outputs_schema_version)
     {
         return Ok(false);
@@ -1491,11 +1410,7 @@ pub(crate) fn sha256_bytes(bytes: &[u8]) -> String {
 }
 
 fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
-    ctx.graph_fingerprint
-        .lock()
-        .ok()
-        .and_then(|map| map.get(node_id).cloned())
-        .unwrap_or_default()
+    ctx.graph_fingerprint.lock().ok().and_then(|map| map.get(node_id).cloned()).unwrap_or_default()
 }
 
 fn set_node_fingerprint(ctx: &RunContext, node_id: &str, fp: String) {
@@ -1525,9 +1440,7 @@ fn cache_source_from_meta(fs: &dyn Fs, entry: &Path) -> Option<String> {
     let meta_path = entry.join("meta.json");
     let data = fs.read_to_string(&meta_path).ok()?;
     let meta: serde_json::Value = serde_json::from_str(&data).ok()?;
-    meta.get("cache_source")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
+    meta.get("cache_source").and_then(|v| v.as_str()).map(|s| s.to_string())
 }
 
 fn sort_value_maps(value: &mut Value) {
@@ -1719,9 +1632,7 @@ pub(crate) fn command_output_with_timeout(
             }
             let _ = child.kill();
             let _ = child.wait();
-            return Err(RuntimeError::Executor(format!(
-                "execution timed out after {limit_ms}ms"
-            )));
+            return Err(RuntimeError::Executor(format!("execution timed out after {limit_ms}ms")));
         }
         std::thread::sleep(Duration::from_millis(10));
     }
@@ -1730,17 +1641,12 @@ pub(crate) fn command_output_with_timeout(
 #[cfg(unix)]
 fn kill_child_descendants_best_effort(pid: u32) {
     let parent = pid.to_string();
-    let _ = std::process::Command::new("pkill")
-        .args(["-TERM", "-P", &parent])
-        .status();
-    let _ = std::process::Command::new("pkill")
-        .args(["-KILL", "-P", &parent])
-        .status();
+    let _ = std::process::Command::new("pkill").args(["-TERM", "-P", &parent]).status();
+    let _ = std::process::Command::new("pkill").args(["-KILL", "-P", &parent]).status();
 }
 
 fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
-    node.timeout_ms
-        .or_else(|| params.get("timeout_ms").and_then(|v| v.as_u64()))
+    node.timeout_ms.or_else(|| params.get("timeout_ms").and_then(|v| v.as_u64()))
 }
 
 fn container_trace(
@@ -1749,23 +1655,21 @@ fn container_trace(
     exit_code: Option<i32>,
     engine_version: Option<String>,
 ) -> ContainerTrace {
-    let image_digest = subprocess::output(
-        engine,
-        &["image", "inspect", "--format", "{{.Id}}", &spec.image],
-    )
-    .ok()
-    .and_then(|out| {
-        if out.status.success() {
-            let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if s.is_empty() {
-                None
-            } else {
-                Some(s)
-            }
-        } else {
-            None
-        }
-    });
+    let image_digest =
+        subprocess::output(engine, &["image", "inspect", "--format", "{{.Id}}", &spec.image])
+            .ok()
+            .and_then(|out| {
+                if out.status.success() {
+                    let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                    if s.is_empty() {
+                        None
+                    } else {
+                        Some(s)
+                    }
+                } else {
+                    None
+                }
+            });
     ContainerTrace {
         image: spec.image.clone(),
         image_digest,
@@ -1776,20 +1680,18 @@ fn container_trace(
 }
 
 fn engine_version(engine: &str) -> Option<String> {
-    subprocess::output(engine, &["--version"])
-        .ok()
-        .and_then(|out| {
-            if out.status.success() {
-                let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                if v.is_empty() {
-                    None
-                } else {
-                    Some(v)
-                }
-            } else {
+    subprocess::output(engine, &["--version"]).ok().and_then(|out| {
+        if out.status.success() {
+            let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if v.is_empty() {
                 None
+            } else {
+                Some(v)
             }
-        })
+        } else {
+            None
+        }
+    })
 }
 
 fn collect_outputs_summary(
@@ -1849,12 +1751,7 @@ fn rustc_version() -> String {
 }
 
 fn count_nodes(status_map: &HashMap<String, NodeStatus>) -> NodeCounts {
-    let mut counts = NodeCounts {
-        success: 0,
-        failed: 0,
-        skipped: 0,
-        cached: 0,
-    };
+    let mut counts = NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 };
     for status in status_map.values() {
         match status {
             NodeStatus::Success => counts.success += 1,

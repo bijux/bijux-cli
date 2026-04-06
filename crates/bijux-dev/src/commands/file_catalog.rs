@@ -10,18 +10,11 @@ pub(super) fn newest_run(runs: &Path) -> Result<PathBuf, String> {
         .collect();
 
     candidates.sort_by(|a, b| {
-        let ma = fs::metadata(a)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        let mb = fs::metadata(b)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
+        let ma = fs::metadata(a).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        let mb = fs::metadata(b).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
         mb.cmp(&ma)
     });
-    candidates
-        .into_iter()
-        .next()
-        .ok_or_else(|| format!("no runs found in {}", runs.display()))
+    candidates.into_iter().next().ok_or_else(|| format!("no runs found in {}", runs.display()))
 }
 
 pub(super) fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String> {
@@ -42,12 +35,8 @@ pub(super) fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String>
     }
 
     candidates.sort_by(|a, b| {
-        let ma = fs::metadata(a)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        let mb = fs::metadata(b)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
+        let ma = fs::metadata(a).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        let mb = fs::metadata(b).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
         mb.cmp(&ma)
     });
 

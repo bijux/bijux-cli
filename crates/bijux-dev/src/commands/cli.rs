@@ -256,10 +256,7 @@ pub(super) enum RepoCommand {
     ShowEffectiveAllAuthoring,
     /// Generate authoring coverage and unused-asset reports
     AuthoringCoverageReport {
-        #[arg(
-            long,
-            default_value = "evidence/reports/authoring_coverage_by_docs_and_commands.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/authoring_coverage_by_docs_and_commands.md")]
         out: PathBuf,
         #[arg(long, default_value = "evidence/reports/authoring_unused_assets.md")]
         unused_out: PathBuf,
@@ -278,10 +275,7 @@ pub(super) enum RepoCommand {
     },
     /// Rebuild canonical evidence registry
     EvidenceRegistryRebuild {
-        #[arg(
-            long,
-            default_value = "evidence/_meta/registries/evidence_registry.json"
-        )]
+        #[arg(long, default_value = "evidence/_meta/registries/evidence_registry.json")]
         out: PathBuf,
         #[arg(long, default_value_t = false)]
         check: bool,
@@ -302,10 +296,7 @@ pub(super) enum RepoCommand {
     BattleCoverageReport {
         #[arg(long, default_value = "evidence/reports/battle_coverage_gaps.md")]
         gaps_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "evidence/reports/battle_overloaded_scenarios.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/battle_overloaded_scenarios.md")]
         overloaded_out: PathBuf,
     },
     /// Validate battle scenario trust-property mappings
@@ -336,25 +327,16 @@ pub(super) enum RepoCommand {
     },
     /// Generate reports that map assets to consumers and consumers to families
     EvidenceConsumerReports {
-        #[arg(
-            long,
-            default_value = "evidence/reports/evidence_assets_to_consumers.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/evidence_assets_to_consumers.md")]
         assets_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "evidence/reports/evidence_consumers_to_families.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/evidence_consumers_to_families.md")]
         consumers_out: PathBuf,
     },
     /// Emit machine-readable and human-readable evidence suite summary reports
     EvidenceSummaryReport {
         #[arg(long, default_value = "artifacts/reports/evidence_suite_summary.json")]
         json_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "evidence/reports/evidence_verification_summary.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/evidence_verification_summary.md")]
         markdown_out: PathBuf,
     },
     /// Generate release evidence summary and release proof scope reports
@@ -363,38 +345,20 @@ pub(super) enum RepoCommand {
         json_out: PathBuf,
         #[arg(long, default_value = "evidence/reports/what_this_release_proves.md")]
         proves_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "evidence/reports/what_this_release_does_not_prove.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/what_this_release_does_not_prove.md")]
         limits_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "evidence/reports/unsupported_or_simulated_areas.md"
-        )]
+        #[arg(long, default_value = "evidence/reports/unsupported_or_simulated_areas.md")]
         unsupported_out: PathBuf,
     },
     /// Generate foundation hotspot reports for files, functions, API surface, and dependencies
     HotspotReports {
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md")]
         file_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md")]
         function_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md")]
         api_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/dependency_cycle_report.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/dependency_cycle_report.md")]
         dep_out: PathBuf,
     },
     /// Generate schema changelog from files under configs/dag/schema
@@ -406,56 +370,32 @@ pub(super) enum RepoCommand {
     },
     /// Generate runtime kernel-boundary and API-scope reports from policy and source
     RuntimeScopeReports {
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/KERNEL_OWNED_MODULES_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/KERNEL_OWNED_MODULES_REPORT.md")]
         kernel_out: PathBuf,
         #[arg(
             long,
             default_value = "docs/reports/foundation/RUNTIME_NON_KERNEL_MODULES_REPORT.md"
         )]
         non_kernel_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/RUNTIME_CONTRACT_BACKING_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/RUNTIME_CONTRACT_BACKING_REPORT.md")]
         contract_backing_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/RUNTIME_OPERATOR_SURFACE_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/RUNTIME_OPERATOR_SURFACE_REPORT.md")]
         operator_surface_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md")]
         core_api_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md")]
         runtime_api_out: PathBuf,
     },
     /// Generate planner hardening report from canonical graph fixtures
     PlannerHardeningReport {
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/PLANNER_HARDENING_REPORT.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/PLANNER_HARDENING_REPORT.md")]
         out: PathBuf,
     },
     /// Generate artifact store capability and content-addressed model reports from implementation
     ArtifactCapabilityReports {
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/artifact_store_capability_matrix.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/artifact_store_capability_matrix.md")]
         matrix_out: PathBuf,
-        #[arg(
-            long,
-            default_value = "docs/reports/foundation/CONTENT_ADDRESSED_STORAGE_MODEL.md"
-        )]
+        #[arg(long, default_value = "docs/reports/foundation/CONTENT_ADDRESSED_STORAGE_MODEL.md")]
         model_out: PathBuf,
     },
 }

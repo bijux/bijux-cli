@@ -83,9 +83,7 @@ pub(crate) fn pack_cache_entry(entry: &Path, out: &Path) -> Result<(), ExitCode>
     let file = fs::File::create(out).map_err(|_| ExitCode::from(3))?;
     let enc = GzEncoder::new(file, Compression::default());
     let mut builder = Builder::new(enc);
-    builder
-        .append_dir_all(".", entry)
-        .map_err(|_| ExitCode::from(3))?;
+    builder.append_dir_all(".", entry).map_err(|_| ExitCode::from(3))?;
     let enc = builder.into_inner().map_err(|_| ExitCode::from(3))?;
     enc.finish().map_err(|_| ExitCode::from(3))?;
     Ok(())
@@ -104,29 +102,16 @@ pub(crate) fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), Ex
     let mut meta: Value =
         serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
             .map_err(|_| ExitCode::from(3))?;
-    let key = meta
-        .get("node_fingerprint")
-        .and_then(|v| v.as_str())
-        .ok_or(ExitCode::from(3))?
-        .to_string();
-    let adapter_id = meta
-        .get("adapter_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let adapter_version = meta
-        .get("adapter_version")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    let key =
+        meta.get("node_fingerprint").and_then(|v| v.as_str()).ok_or(ExitCode::from(3))?.to_string();
+    let adapter_id = meta.get("adapter_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let adapter_version =
+        meta.get("adapter_version").and_then(|v| v.as_str()).unwrap_or("").to_string();
     if !verify_cache_entry_cli(tmp.path(), &key, &adapter_id, &adapter_version)? {
         return Err(ExitCode::from(3));
     }
     if let Some(obj) = meta.as_object_mut() {
-        obj.insert(
-            "cache_source".to_string(),
-            Value::String("pack".to_string()),
-        );
+        obj.insert("cache_source".to_string(), Value::String("pack".to_string()));
     }
     fs::write(&meta_path, serde_json::to_vec_pretty(&meta).unwrap())
         .map_err(|_| ExitCode::from(3))?;
@@ -404,10 +389,8 @@ pub(crate) fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<V
 
 fn dir_size_bytes(path: &Path) -> Result<u64, ExitCode> {
     let mut total = 0u64;
-    let mut entries: Vec<_> = fs::read_dir(path)
-        .map_err(|_| ExitCode::from(3))?
-        .filter_map(|e| e.ok())
-        .collect();
+    let mut entries: Vec<_> =
+        fs::read_dir(path).map_err(|_| ExitCode::from(3))?.filter_map(|e| e.ok()).collect();
     entries.sort_by_key(|e| e.file_name());
     for entry in entries {
         let p = entry.path();

@@ -157,10 +157,7 @@ pub fn answer_failure_question(summary: &FailureSummary) -> DiagnosticsAnswer {
         evidence.push(format!("failed-nodes={}", summary.failed_nodes.join(",")));
     }
     if !summary.policy_denials.is_empty() {
-        evidence.push(format!(
-            "policy-denials={}",
-            summary.policy_denials.join(",")
-        ));
+        evidence.push(format!("policy-denials={}", summary.policy_denials.join(",")));
     }
     DiagnosticsAnswer {
         question: "why did this fail".to_string(),
@@ -212,22 +209,10 @@ pub fn anomaly_detected(signal: &ObservabilityAnomalySignal, threshold: f64) -> 
 
 pub fn build_postmortem_seed(summary: &FailureSummary) -> PostmortemSeed {
     let mut sections = BTreeMap::new();
-    sections.insert(
-        "impact".to_string(),
-        format!("failed_nodes={}", summary.failed_nodes.len()),
-    );
-    sections.insert(
-        "timeline".to_string(),
-        "see investigation bundle timeline".to_string(),
-    );
-    sections.insert(
-        "root-cause-hypothesis".to_string(),
-        "pending operator review".to_string(),
-    );
-    PostmortemSeed {
-        run_id: summary.run_id.clone(),
-        sections,
-    }
+    sections.insert("impact".to_string(), format!("failed_nodes={}", summary.failed_nodes.len()));
+    sections.insert("timeline".to_string(), "see investigation bundle timeline".to_string());
+    sections.insert("root-cause-hypothesis".to_string(), "pending operator review".to_string());
+    PostmortemSeed { run_id: summary.run_id.clone(), sections }
 }
 
 pub fn redact_for_ai_export(
@@ -256,10 +241,7 @@ pub fn suggestion_quality(simulations: &[RecommendationSimulationResult]) -> f64
     if simulations.is_empty() {
         return 0.0;
     }
-    let passed = simulations
-        .iter()
-        .filter(|item| item.recommendation_correct)
-        .count();
+    let passed = simulations.iter().filter(|item| item.recommendation_correct).count();
     passed as f64 / simulations.len() as f64
 }
 

@@ -28,9 +28,7 @@ pub(super) fn run_evidence_suite_policy_verify() -> Result<(), String> {
             .as_str()
             .ok_or_else(|| format!("evidence suite policy entry `{id}` missing mode"))?;
         if !["blocking", "advisory"].contains(&mode) {
-            return Err(format!(
-                "evidence suite policy entry `{id}` has invalid mode `{mode}`"
-            ));
+            return Err(format!("evidence suite policy entry `{id}` has invalid mode `{mode}`"));
         }
         if !verify_command.starts_with("verify evidence-") {
             return Err(format!(
@@ -110,9 +108,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
             || id.starts_with("benchmarks/")
             || id.starts_with("comparisons/")
         {
-            return Err(format!(
-                "release evidence set references legacy root path `{id}`"
-            ));
+            return Err(format!("release evidence set references legacy root path `{id}`"));
         }
         if !id.starts_with("evidence/") {
             return Err(format!(
@@ -120,9 +116,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
             ));
         }
         let Some(is_release_blocking) = registry_release_flags.get(id) else {
-            return Err(format!(
-                "release evidence set references unknown registry asset `{id}`"
-            ));
+            return Err(format!("release evidence set references unknown registry asset `{id}`"));
         };
         if !is_release_blocking {
             return Err(format!(
@@ -172,9 +166,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
             .as_str()
             .ok_or_else(|| "release evidence asset id must be a string".to_string())?;
         let Some(is_release_blocking) = registry_release_flags.get(id) else {
-            return Err(format!(
-                "release evidence set references unknown registry asset `{id}`"
-            ));
+            return Err(format!("release evidence set references unknown registry asset `{id}`"));
         };
         if *is_release_blocking {
             return Err(format!(
@@ -209,9 +201,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         .ok_or_else(|| "release evidence set missing claimed_proof_surfaces object".to_string())?;
     for required in ["replay", "cache", "operator"] {
         let Some(claimed_assets) = claimed_surfaces.get(required).and_then(Value::as_array) else {
-            return Err(format!(
-                "release evidence set missing claimed proof surface `{required}`"
-            ));
+            return Err(format!("release evidence set missing claimed proof surface `{required}`"));
         };
         if claimed_assets.is_empty() {
             return Err(format!(
@@ -324,8 +314,9 @@ pub(super) fn run_evidence_summary_report(
     markdown_out: &Path,
 ) -> Result<(), String> {
     let root = repo_root()?;
-    let policy_payload = fs::read_to_string(root.join("configs/dag/policy/evidence_suite_policy.json"))
-        .map_err(|err| err.to_string())?;
+    let policy_payload =
+        fs::read_to_string(root.join("configs/dag/policy/evidence_suite_policy.json"))
+            .map_err(|err| err.to_string())?;
     let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
     let suites = policy["suites"]
         .as_array()
@@ -349,9 +340,7 @@ pub(super) fn run_evidence_summary_report(
         let verify_command = suite["verify_command"]
             .as_str()
             .ok_or_else(|| format!("verify_command missing for `{id}`"))?;
-        let mode = suite["mode"]
-            .as_str()
-            .ok_or_else(|| format!("mode missing for `{id}`"))?;
+        let mode = suite["mode"].as_str().ok_or_else(|| format!("mode missing for `{id}`"))?;
         markdown_lines.push(format!("| `{id}` | `{verify_command}` | `{mode}` |"));
         match mode {
             "blocking" => blocking.push(json!({ "id": id, "verify_command": verify_command })),
@@ -489,9 +478,7 @@ pub(super) fn run_release_evidence_report(
         String::new(),
     ];
     for entry in blocking_assets {
-        let id = entry
-            .as_str()
-            .ok_or_else(|| "blocking asset id must be string".to_string())?;
+        let id = entry.as_str().ok_or_else(|| "blocking asset id must be string".to_string())?;
         proves_lines.push(format!("- `{id}`"));
     }
     proves_lines.push(String::new());
@@ -507,9 +494,7 @@ pub(super) fn run_release_evidence_report(
         String::new(),
     ];
     for entry in advisory_assets {
-        let id = entry
-            .as_str()
-            .ok_or_else(|| "advisory asset id must be string".to_string())?;
+        let id = entry.as_str().ok_or_else(|| "advisory asset id must be string".to_string())?;
         limits_lines.push(format!("- `{id}`"));
     }
     limits_lines.push(String::new());

@@ -12,25 +12,14 @@ impl Graph {
 
         for node in &mut nodes {
             node.id = normalize_identity_text(&node.id);
-            node.inputs = node
-                .inputs
-                .iter()
-                .map(|input| normalize_identity_text(input))
-                .collect();
+            node.inputs = node.inputs.iter().map(|input| normalize_identity_text(input)).collect();
             for output in &mut node.outputs {
                 output.name = normalize_identity_text(&output.name);
                 output.path = normalize_rel_path(&output.path);
             }
-            node.env_allowlist = node
-                .env_allowlist
-                .iter()
-                .map(|entry| normalize_identity_text(entry))
-                .collect();
-            node.tags = node
-                .tags
-                .iter()
-                .map(|entry| normalize_identity_text(entry))
-                .collect();
+            node.env_allowlist =
+                node.env_allowlist.iter().map(|entry| normalize_identity_text(entry)).collect();
+            node.tags = node.tags.iter().map(|entry| normalize_identity_text(entry)).collect();
             if let Some(group) = &node.group {
                 node.group = Some(normalize_identity_text(group));
             }
@@ -47,8 +36,7 @@ impl Graph {
         for node in &mut nodes {
             sort_param_value(&mut node.params);
             node.inputs.sort();
-            node.outputs
-                .sort_by(|left, right| left.name.cmp(&right.name));
+            node.outputs.sort_by(|left, right| left.name.cmp(&right.name));
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
             node.tags.sort();
@@ -60,18 +48,12 @@ impl Graph {
         }
 
         edges.sort_by(|left, right| {
-            (
-                &left.from.node_id,
-                &left.from.port,
-                &left.to.node_id,
-                &left.to.port,
-            )
-                .cmp(&(
-                    &right.from.node_id,
-                    &right.from.port,
-                    &right.to.node_id,
-                    &right.to.port,
-                ))
+            (&left.from.node_id, &left.from.port, &left.to.node_id, &left.to.port).cmp(&(
+                &right.from.node_id,
+                &right.from.port,
+                &right.to.node_id,
+                &right.to.port,
+            ))
         });
 
         let mut inputs = self.inputs.clone();
@@ -186,10 +168,7 @@ pub(crate) fn is_valid_output_path(path: &str) -> bool {
 }
 
 pub(crate) fn is_valid_canonical_name(name: &str) -> bool {
-    !name.is_empty()
-        && name
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 pub(crate) fn error(
@@ -198,13 +177,7 @@ pub(crate) fn error(
     path: String,
     hint: Option<String>,
 ) -> ValidationDiagnostic {
-    ValidationDiagnostic {
-        code: code.to_string(),
-        message,
-        path,
-        hint,
-        severity: Severity::Error,
-    }
+    ValidationDiagnostic { code: code.to_string(), message, path, hint, severity: Severity::Error }
 }
 
 pub(crate) fn warn(

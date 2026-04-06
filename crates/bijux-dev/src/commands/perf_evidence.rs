@@ -66,16 +66,12 @@ pub(super) fn run_perf_evidence_policy_verify() -> Result<(), String> {
     let scenario_files = collect_perf_scenario_files(&root)?;
     for rel in &scenario_files {
         if !scenarios.contains_key(rel) {
-            return Err(format!(
-                "perf scenario file is missing metadata classification: {rel}"
-            ));
+            return Err(format!("perf scenario file is missing metadata classification: {rel}"));
         }
     }
     for rel in scenarios.keys() {
         if !root.join(rel).exists() {
-            return Err(format!(
-                "perf metadata references missing scenario file: {rel}"
-            ));
+            return Err(format!("perf metadata references missing scenario file: {rel}"));
         }
     }
 
@@ -118,17 +114,14 @@ pub(super) fn run_perf_evidence_policy_verify() -> Result<(), String> {
     }
 
     for item in release_set {
-        let rel = item
-            .as_str()
-            .ok_or_else(|| "release_relevant_set entry must be string".to_string())?;
+        let rel =
+            item.as_str().ok_or_else(|| "release_relevant_set entry must be string".to_string())?;
         let entry = scenarios
             .get(rel)
             .ok_or_else(|| format!("release_relevant_set references unknown scenario: {rel}"))?;
         let release_blocking = entry["release_blocking"].as_bool().unwrap_or(false);
         if !release_blocking {
-            return Err(format!(
-                "release_relevant_set scenario must be release_blocking: {rel}"
-            ));
+            return Err(format!("release_relevant_set scenario must be release_blocking: {rel}"));
         }
     }
     Ok(())
@@ -169,10 +162,7 @@ pub(super) fn run_perf_evidence_summary() -> Result<(), String> {
         "experimental": experimental,
         "obsolete_candidates": metadata["obsolete_candidates"]
     });
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
-    );
+    println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
 }
 
@@ -188,9 +178,8 @@ pub(super) fn run_perf_release_set() -> Result<(), String> {
         .ok_or_else(|| "perf metadata scenarios must be an object".to_string())?;
     let mut rows = Vec::new();
     for rel in release_set {
-        let rel = rel
-            .as_str()
-            .ok_or_else(|| "release_relevant_set entry must be string".to_string())?;
+        let rel =
+            rel.as_str().ok_or_else(|| "release_relevant_set entry must be string".to_string())?;
         let entry = scenarios
             .get(rel)
             .ok_or_else(|| format!("release_relevant_set references unknown scenario: {rel}"))?;
@@ -248,14 +237,8 @@ mod tests {
         let root = repo_root().expect("repo root");
         let metadata = load_perf_metadata(&root).expect("perf metadata");
         assert!(metadata.get("contract_reference").is_some());
-        assert!(metadata
-            .get("scenarios")
-            .and_then(Value::as_object)
-            .is_some());
-        assert!(metadata
-            .get("release_relevant_set")
-            .and_then(Value::as_array)
-            .is_some());
+        assert!(metadata.get("scenarios").and_then(Value::as_object).is_some());
+        assert!(metadata.get("release_relevant_set").and_then(Value::as_array).is_some());
     }
 
     #[test]

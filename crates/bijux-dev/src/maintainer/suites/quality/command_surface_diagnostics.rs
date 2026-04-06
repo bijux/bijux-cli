@@ -68,7 +68,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())
             .unwrap_or_else(|| json!({}));
             let expected_routes = fs::read_to_string(
-                workspace_root.join("crates/bijux-dev/tests/maintainer/data/golden/runtime_routes.json"),
+                workspace_root
+                    .join("crates/bijux-dev/tests/maintainer/data/golden/runtime_routes.json"),
             )
             .ok()
             .and_then(|s| serde_json::from_str::<Value>(&s).ok())

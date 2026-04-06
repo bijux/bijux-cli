@@ -12,12 +12,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub fn load_workspace_fixture_text(manifest_dir: &str, relative_path: &str) -> String {
-    let path = workspace_root_from_manifest_dir(manifest_dir).join(relative_path);
+    let workspace_root = workspace_root_from_manifest_dir(manifest_dir);
+    let path = resolve_workspace_fixture_path(&workspace_root, relative_path);
     fs::read_to_string(&path).unwrap_or_else(|error| {
-        panic!(
-            "failed to read workspace fixture {}: {error}",
-            path.display()
-        )
+        panic!("failed to read workspace fixture {}: {error}", path.display())
     })
 }
 
@@ -83,22 +81,45 @@ pub fn resolve_evidence_asset_by_id(registry: &Value, asset_id: &str) -> Value {
 }
 
 pub fn evidence_registry_path(workspace_root: &Path) -> PathBuf {
-    workspace_root.join("evidence/_meta/registries/evidence_registry.json")
+    let legacy = workspace_root.join("evidence/_meta/registries/evidence_registry.json");
+    if legacy.is_file() {
+        return legacy;
+    }
+    workspace_root.join("evidence/dag/_meta/registries/evidence_registry.json")
+}
+
+fn resolve_workspace_fixture_path(workspace_root: &Path, relative_path: &str) -> PathBuf {
+    let canonical = workspace_root.join(relative_path);
+    if canonical.exists() {
+        return canonical;
+    }
+
+    if let Some(remapped) = remap_legacy_evidence_path(relative_path) {
+        let remapped_path = workspace_root.join(remapped);
+        if remapped_path.exists() {
+            return remapped_path;
+        }
+    }
+
+    canonical
+}
+
+fn remap_legacy_evidence_path(relative_path: &str) -> Option<String> {
+    let normalized = relative_path.strip_prefix("./").unwrap_or(relative_path);
+    let remainder = normalized.strip_prefix("evidence/")?;
+    if remainder.starts_with("dag/") {
+        return None;
+    }
+    Some(format!("evidence/dag/{remainder}"))
 }
 
 pub fn load_evidence_registry_checked(workspace_root: &Path) -> Result<Value, String> {
     let path = evidence_registry_path(workspace_root);
     let text = fs::read_to_string(&path).map_err(|error| {
-        format!(
-            "failed to read evidence registry at {}: {error}",
-            path.display()
-        )
+        format!("failed to read evidence registry at {}: {error}", path.display())
     })?;
     serde_json::from_str(&text).map_err(|error| {
-        format!(
-            "failed to parse evidence registry at {}: {error}",
-            path.display()
-        )
+        format!("failed to parse evidence registry at {}: {error}", path.display())
     })
 }
 
@@ -106,9 +127,7 @@ pub fn resolve_evidence_asset_by_id_checked(
     registry: &Value,
     asset_id: &str,
 ) -> Result<Value, String> {
-    let assets = registry["assets"]
-        .as_array()
-        .expect("evidence registry assets array");
+    let assets = registry["assets"].as_array().expect("evidence registry assets array");
     for asset in assets {
         if asset["id"].as_str() == Some(asset_id) {
             return Ok(asset.clone());
@@ -152,10 +171,7 @@ pub fn graph_diamond() -> Graph {
 pub fn graph_fanout() -> Graph {
     graph_from_nodes(
         vec![const_node("root"), shell_node("left"), shell_node("right")],
-        vec![
-            ("root", "out", "left", "in"),
-            ("root", "out", "right", "in"),
-        ],
+        vec![("root", "out", "left", "in"), ("root", "out", "right", "in")],
     )
 }
 
@@ -165,10 +181,7 @@ pub fn graph_disconnected() -> Graph {
 
 pub fn graph_retry() -> Graph {
     let mut g = graph_chain();
-    g.nodes[1].retry = RetryPolicy {
-        max_attempts: 2,
-        backoff_ms: 5,
-    };
+    g.nodes[1].retry = RetryPolicy { max_attempts: 2, backoff_ms: 5 };
     g
 }
 
@@ -190,11 +203,7 @@ pub fn graph_failure() -> Graph {
     let mut g = graph_chain();
     g.nodes[1].params = param_object(vec![(
         "argv",
-        Value::Array(vec![
-            Value::from("/bin/sh"),
-            Value::from("-c"),
-            Value::from("exit 2"),
-        ]),
+        Value::Array(vec![Value::from("/bin/sh"), Value::from("-c"), Value::from("exit 2")]),
     )]);
     g
 }
@@ -213,10 +222,7 @@ pub fn assert_trace_completeness(traces: &[NodeTrace], expected_nodes: &[&str]) 
     assert_eq!(actual, expected, "trace node coverage mismatch");
     for trace in traces {
         assert!(!trace.status.is_empty(), "trace status is empty");
-        assert!(
-            trace.finished_unix_ms >= trace.started_unix_ms,
-            "trace timing is invalid"
-        );
+        assert!(trace.finished_unix_ms >= trace.started_unix_ms, "trace timing is invalid");
     }
 }
 
@@ -227,10 +233,7 @@ pub fn assert_node_event_sequence(statuses: &[&str]) {
         while cursor < order.len() && order[cursor] != *status {
             cursor += 1;
         }
-        assert!(
-            cursor < order.len(),
-            "illegal status sequence element: {status}"
-        );
+        assert!(cursor < order.len(), "illegal status sequence element: {status}");
     }
 }
 
@@ -270,11 +273,8 @@ pub fn create_corrupted_run_dir(base: &Path, kind: &str) -> PathBuf {
         }
         "tampered_outputs_index" => {
             fs::create_dir_all(run.join("outputs")).expect("create outputs dir");
-            fs::write(
-                run.join("outputs").join("index.json"),
-                "{\"files\":[{\"path\":\"../x\"}]}",
-            )
-            .expect("tamper outputs index");
+            fs::write(run.join("outputs").join("index.json"), "{\"files\":[{\"path\":\"../x\"}]}")
+                .expect("tamper outputs index");
         }
         _ => {}
     }
@@ -291,14 +291,8 @@ fn graph_from_nodes(nodes: Vec<Node>, edges: Vec<(&str, &str, &str, &str)>) -> G
         edges: edges
             .into_iter()
             .map(|(from_node, from_port, to_node, to_port)| Edge {
-                from: PortRef {
-                    node_id: from_node.to_string(),
-                    port: from_port.to_string(),
-                },
-                to: PortRef {
-                    node_id: to_node.to_string(),
-                    port: to_port.to_string(),
-                },
+                from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
+                to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
             })
             .collect(),
     }
@@ -309,10 +303,7 @@ fn const_node(id: &str) -> Node {
         id: id.to_string(),
         kind: NodeKind::Const,
         inputs: vec![],
-        outputs: vec![FileOutput {
-            name: "out".to_string(),
-            path: format!("out_{id}"),
-        }],
+        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![("value", Value::from("ok"))]),
         container: None,
         timeout_ms: None,
@@ -330,10 +321,7 @@ fn shell_node(id: &str) -> Node {
         id: id.to_string(),
         kind: NodeKind::Shell,
         inputs: vec!["in".to_string()],
-        outputs: vec![FileOutput {
-            name: "out".to_string(),
-            path: format!("out_{id}"),
-        }],
+        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![(
             "argv",
             Value::Array(vec![

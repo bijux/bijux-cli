@@ -50,18 +50,9 @@ mod tests {
     #[test]
     fn deterministic_selection_prefers_score_then_identity() {
         let selected = select_deterministic_adapter(&[
-            AdapterCandidate {
-                descriptor: descriptor("b", "1.0"),
-                compatibility_score: 10,
-            },
-            AdapterCandidate {
-                descriptor: descriptor("a", "1.0"),
-                compatibility_score: 10,
-            },
-            AdapterCandidate {
-                descriptor: descriptor("z", "1.0"),
-                compatibility_score: 9,
-            },
+            AdapterCandidate { descriptor: descriptor("b", "1.0"), compatibility_score: 10 },
+            AdapterCandidate { descriptor: descriptor("a", "1.0"), compatibility_score: 10 },
+            AdapterCandidate { descriptor: descriptor("z", "1.0"), compatibility_score: 9 },
         ])
         .expect("selected");
 

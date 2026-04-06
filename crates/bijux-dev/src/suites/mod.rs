@@ -13,13 +13,8 @@ pub struct SuiteMetadata {
     pub internal: bool,
 }
 
-pub const RELEASE_VERIFY_SUITES: &[&str] = &[
-    "checks.run",
-    "tests.run",
-    "contracts.run",
-    "repo.run",
-    "docs.run",
-];
+pub const RELEASE_VERIFY_SUITES: &[&str] =
+    &["checks.run", "tests.run", "contracts.run", "repo.run", "docs.run"];
 
 pub fn release_verify_suite_ids() -> Vec<&'static str> {
     release::VERIFY_FLOW.to_vec()
@@ -83,24 +78,9 @@ mod tests {
     #[test]
     fn filter_respects_domain_and_flags() {
         let suites = vec![
-            SuiteMetadata {
-                id: "a",
-                domain: "contracts",
-                slow: false,
-                internal: false,
-            },
-            SuiteMetadata {
-                id: "b",
-                domain: "contracts",
-                slow: true,
-                internal: false,
-            },
-            SuiteMetadata {
-                id: "c",
-                domain: "repo",
-                slow: false,
-                internal: true,
-            },
+            SuiteMetadata { id: "a", domain: "contracts", slow: false, internal: false },
+            SuiteMetadata { id: "b", domain: "contracts", slow: true, internal: false },
+            SuiteMetadata { id: "c", domain: "repo", slow: false, internal: true },
         ];
 
         let selected = filter_suites(&suites, Some("contracts"), false, false);

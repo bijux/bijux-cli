@@ -18,10 +18,7 @@ pub fn parse_graph_with_compat(input: &str) -> Result<Graph, GraphError> {
             }
             Err(GraphError::InvalidSpec(format!(
                 "unsupported spec version: {}",
-                value
-                    .get("spec")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("<missing>")
+                value.get("spec").and_then(serde_json::Value::as_str).unwrap_or("<missing>")
             )))
         }
         Err(e) => Err(e),

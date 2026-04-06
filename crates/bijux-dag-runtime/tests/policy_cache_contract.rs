@@ -20,10 +20,8 @@ use std::collections::HashSet;
 use std::fs;
 
 fn shell_graph(script: &str, effects: &[&str]) -> String {
-    let effect_values: Vec<Value> = effects
-        .iter()
-        .map(|effect| Value::String((*effect).to_string()))
-        .collect();
+    let effect_values: Vec<Value> =
+        effects.iter().map(|effect| Value::String((*effect).to_string())).collect();
 
     let graph = json!({
         "spec": "bijux-dag/v0.1",
@@ -95,14 +93,9 @@ fn runtime_clean_env_defaults_to_stripped_environment() {
     let run_clean = runtime
         .run(&graph, with_clean_env.path(), RuntimeConfig::default())
         .expect("run clean env");
-    let clean_output = fs::read_to_string(
-        run_clean
-            .join("nodes")
-            .join("node")
-            .join("outputs")
-            .join("value.txt"),
-    )
-    .expect("clean output");
+    let clean_output =
+        fs::read_to_string(run_clean.join("nodes").join("node").join("outputs").join("value.txt"))
+            .expect("clean output");
     assert!(
         clean_output.contains("${PATH:-missing-path}") || clean_output.trim() == "missing-path"
     );
@@ -113,20 +106,13 @@ fn runtime_clean_env_defaults_to_stripped_environment() {
             &graph,
             run_dir.path(),
             RuntimeConfig {
-                policy: PolicyConfig {
-                    clean_env: false,
-                    ..PolicyConfig::default()
-                },
+                policy: PolicyConfig { clean_env: false, ..PolicyConfig::default() },
                 ..RuntimeConfig::default()
             },
         )
         .expect("run unstripped env");
     let unstripped_output = fs::read_to_string(
-        run_unstripped
-            .join("nodes")
-            .join("node")
-            .join("outputs")
-            .join("value.txt"),
+        run_unstripped.join("nodes").join("node").join("outputs").join("value.txt"),
     )
     .expect("unstripped output");
     assert_ne!(unstripped_output, "missing-path");
@@ -146,10 +132,7 @@ fn runtime_rejects_network_effect_when_denied() {
             &graph,
             out.path(),
             RuntimeConfig {
-                policy: PolicyConfig {
-                    deny_network: true,
-                    ..PolicyConfig::default()
-                },
+                policy: PolicyConfig { deny_network: true, ..PolicyConfig::default() },
                 ..RuntimeConfig::default()
             },
         )
@@ -173,10 +156,7 @@ fn runtime_rejects_env_effect_when_denied() {
             &graph,
             out.path(),
             RuntimeConfig {
-                policy: PolicyConfig {
-                    deny_env: true,
-                    ..PolicyConfig::default()
-                },
+                policy: PolicyConfig { deny_env: true, ..PolicyConfig::default() },
                 ..RuntimeConfig::default()
             },
         )
@@ -200,10 +180,7 @@ fn runtime_rejects_clock_effect_when_denied() {
             &graph,
             out.path(),
             RuntimeConfig {
-                policy: PolicyConfig {
-                    deny_clock: true,
-                    ..PolicyConfig::default()
-                },
+                policy: PolicyConfig { deny_clock: true, ..PolicyConfig::default() },
                 ..RuntimeConfig::default()
             },
         )
@@ -218,9 +195,7 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
     let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
 
     let outputs: Value = serde_json::from_str(
         &fs::read_to_string(run_path.join("outputs").join("index.json"))
@@ -229,14 +204,10 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
     .expect("parse outputs index");
     let files = outputs["files"].as_array().expect("files");
 
-    let actual: HashSet<String> = files
-        .iter()
-        .map(|file| file["path"].as_str().unwrap_or("").to_string())
-        .collect();
-    let expected = HashSet::from([
-        "nodes/a/outputs/a.txt".to_string(),
-        "nodes/b/outputs/b.txt".to_string(),
-    ]);
+    let actual: HashSet<String> =
+        files.iter().map(|file| file["path"].as_str().unwrap_or("").to_string()).collect();
+    let expected =
+        HashSet::from(["nodes/a/outputs/a.txt".to_string(), "nodes/b/outputs/b.txt".to_string()]);
     assert_eq!(actual, expected);
 }
 
@@ -245,9 +216,7 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     let graph = parse_graph_strict(&shell_graph("true", &["filesystem"])).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
 
     let manifest: Value = serde_json::from_str(
         &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
@@ -265,11 +234,9 @@ fn runtime_missing_output_file_fails_with_missing_output() {
 
 #[test]
 fn runtime_cache_hit_uses_cached_nodes_when_mode_is_readwrite() {
-    let graph = parse_graph_strict(&shell_graph(
-        "printf '%s' ok > ../outputs/value.txt",
-        &["filesystem"],
-    ))
-    .expect("parse graph");
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp out");
     let cache = tempfile::tempdir().expect("temp cache");
@@ -310,11 +277,9 @@ fn runtime_cache_hit_uses_cached_nodes_when_mode_is_readwrite() {
 
 #[test]
 fn runtime_cache_off_mode_never_uses_cached_nodes() {
-    let graph = parse_graph_strict(&shell_graph(
-        "printf '%s' ok > ../outputs/value.txt",
-        &["filesystem"],
-    ))
-    .expect("parse graph");
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp out");
     let cache = tempfile::tempdir().expect("temp cache");
@@ -357,11 +322,9 @@ fn runtime_cache_off_mode_never_uses_cached_nodes() {
 
 #[test]
 fn runtime_cache_verify_detects_corrupt_entry() {
-    let graph = parse_graph_strict(&shell_graph(
-        "printf '%s' ok > ../outputs/value.txt",
-        &["filesystem"],
-    ))
-    .expect("parse graph");
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp out");
     let cache = tempfile::tempdir().expect("temp cache");
@@ -423,9 +386,7 @@ fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
 
     let manifest: Value = serde_json::from_str(
         &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
@@ -476,23 +437,9 @@ fn runtime_failure_artifacts_include_traces_and_io_logs() {
     let graph = parse_graph_strict(&shell_graph("true", &["filesystem"])).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("failed run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
 
-    assert!(run_path
-        .join("nodes")
-        .join("node")
-        .join("stdout.log")
-        .exists());
-    assert!(run_path
-        .join("nodes")
-        .join("node")
-        .join("stderr.log")
-        .exists());
-    assert!(run_path
-        .join("nodes")
-        .join("node")
-        .join("trace.json")
-        .exists());
+    assert!(run_path.join("nodes").join("node").join("stdout.log").exists());
+    assert!(run_path.join("nodes").join("node").join("stderr.log").exists());
+    assert!(run_path.join("nodes").join("node").join("trace.json").exists());
 }

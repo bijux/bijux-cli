@@ -58,9 +58,7 @@ fn validation_marks_unreachable_node_groups() {
         }"#,
     );
     let diags = graph.validate_with_warnings();
-    assert!(diags
-        .iter()
-        .any(|d| d.code == "W2001" && d.path == "/nodes/isolated"));
+    assert!(diags.iter().any(|d| d.code == "W2001" && d.path == "/nodes/isolated"));
 }
 
 #[test]
@@ -76,10 +74,7 @@ fn validation_rejects_duplicate_node_ids_and_output_bindings() {
           "edges":[]
         }"#,
     );
-    assert!(duplicate_id_graph
-        .validate_with_warnings()
-        .iter()
-        .any(|d| d.code == "E1001"));
+    assert!(duplicate_id_graph.validate_with_warnings().iter().any(|d| d.code == "E1001"));
 
     let duplicate_output_graph = graph_from(
         r#"{
@@ -92,10 +87,7 @@ fn validation_rejects_duplicate_node_ids_and_output_bindings() {
           "edges":[]
         }"#,
     );
-    assert!(duplicate_output_graph
-        .validate_with_warnings()
-        .iter()
-        .any(|d| d.code == "E1008"));
+    assert!(duplicate_output_graph.validate_with_warnings().iter().any(|d| d.code == "E1008"));
 }
 
 #[test]
@@ -179,25 +171,16 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
     selected.insert("sink".to_string());
     let pruned = lower_graph_to_execution_plan(
         &graph,
-        PlanOptions {
-            selected_nodes: selected,
-            ..PlanOptions::default()
-        },
+        PlanOptions { selected_nodes: selected, ..PlanOptions::default() },
     )
     .expect("pruned plan");
-    assert_eq!(
-        pruned.ordering,
-        vec!["sink".to_string(), "source".to_string()]
-    );
+    assert_eq!(pruned.ordering, vec!["sink".to_string(), "source".to_string()]);
 
     let mut supported = BTreeSet::new();
     supported.insert("const".to_string());
     let capability_err = lower_graph_to_execution_plan(
         &graph,
-        PlanOptions {
-            supported_kinds: supported,
-            ..PlanOptions::default()
-        },
+        PlanOptions { supported_kinds: supported, ..PlanOptions::default() },
     )
     .expect_err("shell should be rejected");
     assert!(matches!(
@@ -231,9 +214,6 @@ fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_
     let required = schema["required"].as_array().expect("required");
     let plan_json = serde_json::to_value(first).expect("value");
     for field in required.iter().filter_map(Value::as_str) {
-        assert!(
-            plan_json.get(field).is_some(),
-            "missing required field: {field}"
-        );
+        assert!(plan_json.get(field).is_some(), "missing required field: {field}");
     }
 }

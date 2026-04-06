@@ -58,11 +58,7 @@ fn hash_graph_cli_output_matches_core_graph_id() {
     fs::write(&dag_path, payload).expect("write dag");
 
     let graph = bijux_dag_core::parse_graph_strict(payload).expect("parse core graph");
-    let core_id = graph
-        .graph_id()
-        .expect("core graph id")
-        .as_str()
-        .to_string();
+    let core_id = graph.graph_id().expect("core graph id").as_str().to_string();
 
     let dag_path_str = dag_path.to_string_lossy().into_owned();
     let args = ["hash", "graph", "--json", dag_path_str.as_str()];

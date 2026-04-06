@@ -31,9 +31,6 @@ fn run_history_resilience_fast_suite_keeps_damaged_run_no_panic_coverage() {
         "run_history_reliability_contract",
         "run_history_ancestry_contracts",
     ] {
-        assert!(
-            commands.contains(required),
-            "run history resilience suite missing {required}"
-        );
+        assert!(commands.contains(required), "run history resilience suite missing {required}");
     }
 }

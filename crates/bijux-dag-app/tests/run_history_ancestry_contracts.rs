@@ -197,15 +197,9 @@ fn ancestry_fields_are_present_for_failed_cancelled_and_partial_replay_runs() {
 
     let history = runs_history(&root).expect("history");
     let rows = history["runs"].as_array().expect("rows");
-    assert!(rows
-        .iter()
-        .any(|r| r["run_id"] == "failed" && r["source_run_id"] == "src-run"));
-    assert!(rows
-        .iter()
-        .any(|r| r["run_id"] == "cancelled" && r["parent_run_id"] == "failed"));
-    assert!(rows
-        .iter()
-        .any(|r| r["run_id"] == "partial" && r["source_run_id"] == "imported-run"));
+    assert!(rows.iter().any(|r| r["run_id"] == "failed" && r["source_run_id"] == "src-run"));
+    assert!(rows.iter().any(|r| r["run_id"] == "cancelled" && r["parent_run_id"] == "failed"));
+    assert!(rows.iter().any(|r| r["run_id"] == "partial" && r["source_run_id"] == "imported-run"));
 }
 
 #[test]
@@ -276,11 +270,8 @@ fn strict_verify_rejects_tampered_timestamps_environment_summary_and_missing_eve
             .expect("json");
     manifest["started_unix_ms"] = json!(9999);
     manifest["finished_unix_ms"] = json!(1000);
-    fs::write(
-        run.join("manifest.json"),
-        serde_json::to_vec_pretty(&manifest).expect("encode"),
-    )
-    .expect("write");
+    fs::write(run.join("manifest.json"), serde_json::to_vec_pretty(&manifest).expect("encode"))
+        .expect("write");
     fs::remove_file(run.join("observability.events.json")).expect("remove events");
 
     let matches = dag_command()
@@ -372,26 +363,10 @@ fn damaged_run_directories_return_errors_without_panics() {
     fs::create_dir_all(&run).expect("mkdir");
     fs::write(run.join("manifest.json"), "{bad-json").expect("manifest");
     fs::create_dir_all(run.join("nodes").join("node-a")).expect("nodes");
-    fs::write(
-        run.join("nodes").join("node-a").join("trace.json"),
-        "{bad-json",
-    )
-    .expect("trace");
+    fs::write(run.join("nodes").join("node-a").join("trace.json"), "{bad-json").expect("trace");
 
-    assert!(
-        inspect_summary(&run).is_ok(),
-        "inspect summary should not panic on damaged run"
-    );
-    assert!(
-        run_timeline(&run).is_ok(),
-        "timeline should not panic on damaged run"
-    );
-    assert!(
-        runs_history(&root).is_ok(),
-        "history should not panic on damaged run set"
-    );
-    assert!(
-        explain_run_id(&root, "run-damaged").is_ok(),
-        "id explain should not panic"
-    );
+    assert!(inspect_summary(&run).is_ok(), "inspect summary should not panic on damaged run");
+    assert!(run_timeline(&run).is_ok(), "timeline should not panic on damaged run");
+    assert!(runs_history(&root).is_ok(), "history should not panic on damaged run set");
+    assert!(explain_run_id(&root, "run-damaged").is_ok(), "id explain should not panic");
 }

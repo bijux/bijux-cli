@@ -27,15 +27,10 @@ fn tenant_overlay_and_run_indexing_are_deterministic() {
         values: BTreeMap::from([("JOBS".to_string(), "8".to_string())]),
         overrides: BTreeMap::from([("LOG_LEVEL".to_string(), "info".to_string())]),
     };
-    let resolved = resolve_tenant_overlay(
-        &BTreeMap::from([("JOBS".to_string(), "4".to_string())]),
-        &overlay,
-    );
+    let resolved =
+        resolve_tenant_overlay(&BTreeMap::from([("JOBS".to_string(), "4".to_string())]), &overlay);
     assert_eq!(resolved.get("JOBS"), Some(&"8".to_string()));
-    assert_eq!(
-        compose_tenant_run_id(&tenant, "run_001"),
-        "tenant_alpha::run_001"
-    );
+    assert_eq!(compose_tenant_run_id(&tenant, "run_001"), "tenant_alpha::run_001");
 }
 
 #[test]
@@ -45,21 +40,12 @@ fn tenant_plugin_and_lineage_scopes_enforce_boundaries() {
         tenant_id: tenant.clone(),
         allowed_plugins: vec!["official-local-adapter".to_string()],
     };
-    assert!(enforce_tenant_plugin_allowlist(
-        "official-local-adapter",
-        &allowlist
-    ));
-    assert!(!enforce_tenant_plugin_allowlist(
-        "unknown-third-party",
-        &allowlist
-    ));
+    assert!(enforce_tenant_plugin_allowlist("official-local-adapter", &allowlist));
+    assert!(!enforce_tenant_plugin_allowlist("unknown-third-party", &allowlist));
 
     let scoped = scope_lineage_query(
         &["a1".to_string(), "a2".to_string()],
-        &TenantLineageScope {
-            tenant_id: tenant,
-            allowed_artifact_ids: vec!["a2".to_string()],
-        },
+        &TenantLineageScope { tenant_id: tenant, allowed_artifact_ids: vec!["a2".to_string()] },
     );
     assert_eq!(scoped, vec!["a2".to_string()]);
 }

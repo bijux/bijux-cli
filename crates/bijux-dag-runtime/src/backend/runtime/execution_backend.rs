@@ -140,11 +140,7 @@ pub fn execute_with_backend(
             backend.prepare(&ctx)?;
             backend.launch(&ctx)?;
             let observed = backend.observe(&ctx)?;
-            if !observed
-                .produced_outputs
-                .iter()
-                .all(|entry| ctx.declared_outputs.contains(entry))
-            {
+            if !observed.produced_outputs.iter().all(|entry| ctx.declared_outputs.contains(entry)) {
                 return Err(BackendError::Finalize(format!(
                     "backend produced undeclared outputs for {}",
                     ctx.node_id
@@ -214,20 +210,14 @@ impl ExecutionBackend for FakeBackend {
 
     fn prepare(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_prepare_for.contains(&ctx.node_id) {
-            return Err(BackendError::Prepare(format!(
-                "prepare failed for {}",
-                ctx.node_id
-            )));
+            return Err(BackendError::Prepare(format!("prepare failed for {}", ctx.node_id)));
         }
         Ok(())
     }
 
     fn launch(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_launch_for.contains(&ctx.node_id) {
-            return Err(BackendError::Launch(format!(
-                "launch failed for {}",
-                ctx.node_id
-            )));
+            return Err(BackendError::Launch(format!("launch failed for {}", ctx.node_id)));
         }
         Ok(())
     }
@@ -254,20 +244,14 @@ impl ExecutionBackend for FakeBackend {
         _result: &BackendLifecycleResult,
     ) -> Result<(), BackendError> {
         if self.fail_finalize_for.contains(&ctx.node_id) {
-            return Err(BackendError::Finalize(format!(
-                "finalize failed for {}",
-                ctx.node_id
-            )));
+            return Err(BackendError::Finalize(format!("finalize failed for {}", ctx.node_id)));
         }
         Ok(())
     }
 
     fn cleanup(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_cleanup_for.contains(&ctx.node_id) {
-            return Err(BackendError::Cleanup(format!(
-                "cleanup failed for {}",
-                ctx.node_id
-            )));
+            return Err(BackendError::Cleanup(format!("cleanup failed for {}", ctx.node_id)));
         }
         Ok(())
     }

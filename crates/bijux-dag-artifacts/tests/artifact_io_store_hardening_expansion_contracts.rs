@@ -25,13 +25,8 @@ fn fs_accepts_normalized_relative_paths_for_indexing() {
     fs::create_dir_all(dir.path().join("nested/ok")).expect("mkdir");
     fs::write(dir.path().join("nested/ok/payload.bin"), b"payload").expect("write");
 
-    write_outputs_index(
-        dir.path(),
-        "node-a",
-        "fp-a",
-        &["nested/ok/payload.bin".to_string()],
-    )
-    .expect("index");
+    write_outputs_index(dir.path(), "node-a", "fp-a", &["nested/ok/payload.bin".to_string()])
+        .expect("index");
 
     let parsed: OutputsIndex =
         serde_json::from_str(&fs::read_to_string(dir.path().join("index.json")).expect("read"))
@@ -72,13 +67,8 @@ fn store_local_roundtrip_and_capability_query_are_stable() {
     let dir = tempfile::tempdir().expect("tmp");
     let store = FilesystemArtifactStore::new(dir.path());
 
-    store
-        .write_bytes("cas/aa/blob", b"hello-world")
-        .expect("write");
-    assert_eq!(
-        store.read_bytes("cas/aa/blob").expect("read"),
-        b"hello-world"
-    );
+    store.write_bytes("cas/aa/blob", b"hello-world").expect("write");
+    assert_eq!(store.read_bytes("cas/aa/blob").expect("read"), b"hello-world");
 
     let caps = store.capabilities();
     assert_eq!(caps.support_level, ArtifactStoreSupportLevel::Implemented);
@@ -88,10 +78,8 @@ fn store_local_roundtrip_and_capability_query_are_stable() {
 
 #[test]
 fn store_modeled_capability_query_behavior_is_explicit() {
-    let store = ObjectArtifactStore {
-        bucket: "bucket-a".to_string(),
-        prefix: "prefix-a".to_string(),
-    };
+    let store =
+        ObjectArtifactStore { bucket: "bucket-a".to_string(), prefix: "prefix-a".to_string() };
     let caps = store.capabilities();
     assert_eq!(caps.support_level, ArtifactStoreSupportLevel::ModeledOnly);
     assert!(!caps.can_write_bytes);
@@ -115,20 +103,13 @@ fn integrity_verify_flow_flags_missing_required_artifacts() {
 
     let report = verify_run_dir(dir.path(), VerificationMode::Standard).expect("verify");
     assert!(!report.valid);
-    assert!(report
-        .anomalies
-        .iter()
-        .any(|entry| entry.contains("outputs.index")));
+    assert!(report.anomalies.iter().any(|entry| entry.contains("outputs.index")));
 }
 
 #[test]
 fn hardening_cleanup_plan_respects_bounded_prefix_policy() {
     let policy = RetentionPolicy::default();
-    let entries = vec![
-        "run-1".to_string(),
-        "cache-a".to_string(),
-        "scratch-tmp".to_string(),
-    ];
+    let entries = vec!["run-1".to_string(), "cache-a".to_string(), "scratch-tmp".to_string()];
     let plan = build_cleanup_plan(&entries, &policy.retain_prefixes());
     assert!(plan.retained.contains(&"run-1".to_string()));
     assert!(plan.retained.contains(&"cache-a".to_string()));
@@ -170,23 +151,14 @@ fn inspect_missing_payload_and_damaged_metadata_are_detected() {
     .expect("write");
 
     let strict = verify_run_dir(dir.path(), VerificationMode::Strict).expect("verify");
-    assert!(strict
-        .anomalies
-        .iter()
-        .any(|entry| entry.contains("missing run_id")));
-    assert!(strict
-        .anomalies
-        .iter()
-        .any(|entry| entry.contains("manifest.finalized")));
+    assert!(strict.anomalies.iter().any(|entry| entry.contains("missing run_id")));
+    assert!(strict.anomalies.iter().any(|entry| entry.contains("manifest.finalized")));
 }
 
 #[test]
 fn gc_explain_covers_retained_roots_and_collectable_leaves() {
     let referenced = vec![ArtifactId("root:a".to_string())];
-    let all = vec![
-        ArtifactId("root:a".to_string()),
-        ArtifactId("leaf:b".to_string()),
-    ];
+    let all = vec![ArtifactId("root:a".to_string()), ArtifactId("leaf:b".to_string())];
 
     let plan = plan_lineage_safe_gc(&referenced, &all, "lineage-gc-1");
     assert!(plan.preserved_artifacts.iter().any(|id| id.0 == "root:a"));
@@ -213,19 +185,14 @@ fn retention_explain_for_imported_bundle_prefixes_is_stable() {
         "tmp-work".to_string(),
     ];
     let plan = build_cleanup_plan(&entries, &policy.retain_prefixes());
-    assert!(plan
-        .retained
-        .iter()
-        .any(|entry| entry.starts_with("export-")));
+    assert!(plan.retained.iter().any(|entry| entry.starts_with("export-")));
     assert!(plan.prunable.iter().any(|entry| entry == "tmp-work"));
 }
 
 #[test]
 fn store_capability_serialization_is_stable() {
-    let store = ObjectArtifactStore {
-        bucket: "cap-bucket".to_string(),
-        prefix: "cap-prefix".to_string(),
-    };
+    let store =
+        ObjectArtifactStore { bucket: "cap-bucket".to_string(), prefix: "cap-prefix".to_string() };
     let caps = store.capabilities();
 
     let first = format!("{caps:?}");

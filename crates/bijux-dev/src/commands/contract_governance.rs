@@ -15,10 +15,7 @@ pub(super) fn run_contract_test_links_guard() -> Result<(), String> {
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         if !content.contains("## Related tests") {
             let rel = file.strip_prefix(&root).map_err(|err| err.to_string())?;
-            violations.push(format!(
-                "{} missing '## Related tests' section",
-                rel.display()
-            ));
+            violations.push(format!("{} missing '## Related tests' section", rel.display()));
             continue;
         }
         let mut test_link_count = 0usize;
@@ -69,10 +66,7 @@ pub(super) fn run_contract_schema_owner_guard() -> Result<(), String> {
     if missing.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "schemas missing owning contract links: {}",
-            missing.join(", ")
-        ))
+        Err(format!("schemas missing owning contract links: {}", missing.join(", ")))
     }
 }
 
@@ -89,10 +83,7 @@ pub(super) fn run_contract_command_ownership_guard() -> Result<(), String> {
         if !trimmed.starts_with("- `") || !trimmed.ends_with('`') {
             continue;
         }
-        let value = trimmed
-            .trim_start_matches("- `")
-            .trim_end_matches('`')
-            .to_string();
+        let value = trimmed.trim_start_matches("- `").trim_end_matches('`').to_string();
         if value.starts_with("migrate ") {
             if !commands.contains(&"migrate".to_string()) {
                 commands.push("migrate".to_string());
@@ -161,12 +152,7 @@ pub(super) fn run_contract_coverage_report() -> Result<(), String> {
         "bijux-dev-dag",
     ];
     for crate_name in crate_names {
-        if !root
-            .join("crates")
-            .join(crate_name)
-            .join("CONTRACT.md")
-            .exists()
-        {
+        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
             missing.push(format!("crate contract missing: {crate_name}"));
         }
     }
@@ -197,10 +183,7 @@ pub(super) fn run_contract_coverage_report() -> Result<(), String> {
             .and_then(|x| x.to_str())
             .is_some_and(|name| name.ends_with("CONTRACT.md"))
         {
-            let file_name = path
-                .file_name()
-                .and_then(|x| x.to_str())
-                .unwrap_or_default();
+            let file_name = path.file_name().and_then(|x| x.to_str()).unwrap_or_default();
             if !specs.contains(&file_name)
                 && file_name != "WORKSPACE_CONTRACT.md"
                 && file_name != "PROJECT_CONTRACT.md"
@@ -285,9 +268,7 @@ pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
         if !test.exists() {
             violations.push(format!(
                 "missing required error contract test file: {}",
-                test.strip_prefix(&root)
-                    .map_err(|err| err.to_string())?
-                    .display()
+                test.strip_prefix(&root).map_err(|err| err.to_string())?.display()
             ));
         }
     }
@@ -354,10 +335,7 @@ fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
             ));
         }
         if entry.owner.trim().is_empty() || entry.description.trim().is_empty() {
-            return Err(format!(
-                "error code {} has empty owner or description",
-                entry.code
-            ));
+            return Err(format!("error code {} has empty owner or description", entry.code));
         }
         if !seen_codes.insert(entry.code.clone()) {
             return Err(format!("duplicate error code {}", entry.code));

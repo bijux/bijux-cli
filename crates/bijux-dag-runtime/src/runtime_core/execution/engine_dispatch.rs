@@ -58,9 +58,7 @@ mod tests {
         let mut indegree = HashMap::new();
         indegree.insert("n1".to_string(), 0usize);
         let mut ready = ReadyQueue::from_indegree(&indegree);
-        let mut scheduler = StubScheduler {
-            seen_cancel_flag: None,
-        };
+        let mut scheduler = StubScheduler { seen_cancel_flag: None };
         let decision = next_scheduler_decision(
             &mut scheduler,
             &graph,

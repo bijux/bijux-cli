@@ -17,10 +17,7 @@ impl ArtifactStore {
     }
 
     pub fn with_std_fs(run_dir: Arc<RunDir>) -> Self {
-        Self {
-            run_dir,
-            fs: Arc::new(StdFs),
-        }
+        Self { run_dir, fs: Arc::new(StdFs) }
     }
 
     pub fn run_dir(&self) -> &RunDir {
@@ -108,10 +105,7 @@ impl CacheStore {
     }
 
     pub fn with_std_fs(dir: PathBuf) -> Self {
-        Self {
-            dir,
-            fs: Arc::new(StdFs),
-        }
+        Self { dir, fs: Arc::new(StdFs) }
     }
 
     pub fn fs(&self) -> &dyn Fs {
@@ -133,10 +127,7 @@ impl CacheStore {
         let target = entry.join("meta.json");
         let tmp = entry.join("meta.json.tmp");
         let payload = serde_json::to_vec_pretty(meta).map_err(|err| {
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("serialize meta: {err}"),
-            )
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("serialize meta: {err}"))
         })?;
         self.fs.write(&tmp, &payload)?;
         self.fs.rename(&tmp, &target)

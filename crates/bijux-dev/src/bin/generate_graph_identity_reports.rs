@@ -14,10 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("workspace root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn write_file(path: &Path, content: &str) -> Result<(), String> {
@@ -69,10 +66,7 @@ fn main() -> Result<(), String> {
         "legacy_spec_aliases_normalized": ["0.1", "v0.1"],
         "identity_scope_note": "graph identity is a hash of canonical graph JSON only"
     });
-    write_file(
-        &json_out,
-        &serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?,
-    )?;
+    write_file(&json_out, &serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?)?;
     write_file(
         &field_impact_json_out,
         &serde_json::to_string_pretty(&serde_json::json!({

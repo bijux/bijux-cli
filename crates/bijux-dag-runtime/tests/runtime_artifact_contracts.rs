@@ -20,8 +20,5 @@ fn artifact_corruption_is_classified_and_lineage_missing_is_detected() {
         RuntimeFailureClass::ArtifactCorruption
     );
     let lineage = BTreeMap::from([("a/out".to_string(), "extract".to_string())]);
-    assert!(!artifact_lineage_complete(
-        &["a/out".to_string(), "b/out".to_string()],
-        &lineage
-    ));
+    assert!(!artifact_lineage_complete(&["a/out".to_string(), "b/out".to_string()], &lineage));
 }

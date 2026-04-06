@@ -40,9 +40,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
         }
         let name = entry.file_name().to_string_lossy().to_string();
         if !allowed_dirs.contains(&name.as_str()) {
-            return Err(format!(
-                "docs taxonomy violation: docs/{name} is not allowed"
-            ));
+            return Err(format!("docs taxonomy violation: docs/{name} is not allowed"));
         }
     }
 
@@ -74,11 +72,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
-    if owners
-        .get("owners")
-        .and_then(Value::as_array)
-        .is_none_or(|items| items.is_empty())
-    {
+    if owners.get("owners").and_then(Value::as_array).is_none_or(|items| items.is_empty()) {
         return Err("docs ownership metadata has no owners entries".to_string());
     }
 
@@ -214,11 +208,8 @@ pub(super) fn run_naming_governance_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?
             .to_string_lossy()
             .replace('\\', "/");
-        let stem = file
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or_default()
-            .to_ascii_lowercase();
+        let stem =
+            file.file_stem().and_then(|s| s.to_str()).unwrap_or_default().to_ascii_lowercase();
         for term in &banned_terms {
             if stem.contains(term) {
                 violations.push(format!("{rel}: banned runtime module term `{term}`"));
@@ -254,9 +245,7 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
         "docs/adr/20260309-DOCUMENTATION-GOVERNANCE-ALIGNMENT.md",
     ] {
         if !root.join(required).exists() {
-            return Err(format!(
-                "missing docs config reduction authority: {required}"
-            ));
+            return Err(format!("missing docs config reduction authority: {required}"));
         }
     }
 
@@ -338,9 +327,8 @@ pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
             violations.push(format!("{crate_name} missing CONTRACT.md"));
         }
         if !docs_index.contains(crate_name) {
-            violations.push(format!(
-                "docs/reference/DOCS_INDEX.md missing crate mention: {crate_name}"
-            ));
+            violations
+                .push(format!("docs/reference/DOCS_INDEX.md missing crate mention: {crate_name}"));
         }
     }
 
@@ -354,15 +342,7 @@ pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
 pub(super) fn run_docs_index_generate() -> Result<(), String> {
     let root = repo_root()?;
     let docs_root = root.join("docs");
-    let sections = [
-        "spec",
-        "architecture",
-        "user",
-        "dev",
-        "reference",
-        "tracking",
-        "generated",
-    ];
+    let sections = ["spec", "architecture", "user", "dev", "reference", "tracking", "generated"];
 
     let mut lines = vec![
         "# Documentation index".to_string(),
@@ -403,11 +383,8 @@ pub(super) fn run_docs_index_generate() -> Result<(), String> {
     }
     lines.push(String::new());
 
-    fs::write(
-        docs_root.join("reference").join("DOCS_INDEX.md"),
-        lines.join("\n"),
-    )
-    .map_err(|err| err.to_string())?;
+    fs::write(docs_root.join("reference").join("DOCS_INDEX.md"), lines.join("\n"))
+        .map_err(|err| err.to_string())?;
 
     run_docs_inventory_generate()
 }
@@ -426,12 +403,7 @@ pub(super) fn run_docs_coverage_report() -> Result<(), String> {
 
     let mut missing = Vec::new();
     for crate_name in crate_names {
-        if !root
-            .join("crates")
-            .join(crate_name)
-            .join("CONTRACT.md")
-            .exists()
-        {
+        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
             missing.push(format!("missing contract doc for {crate_name}"));
         }
     }
@@ -475,24 +447,14 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
         let path = root.join(rel_path);
         let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
         let lines = content.lines().collect::<Vec<_>>();
-        let head = lines
-            .iter()
-            .take(60)
-            .map(|line| line.to_ascii_lowercase())
-            .collect::<Vec<_>>();
+        let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
 
         let metadata_required = required_exact.contains(rel_path)
-            || policy
-                .metadata_required_prefixes
-                .iter()
-                .any(|prefix| rel_path.starts_with(prefix));
+            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         if metadata_required {
             let has_audience = head.iter().any(|line| line.starts_with("audience:"));
             let has_owner = head.iter().any(|line| line.starts_with("owner:"));
-            let status_line = head
-                .iter()
-                .find(|line| line.starts_with("status:"))
-                .cloned();
+            let status_line = head.iter().find(|line| line.starts_with("status:")).cloned();
             if !has_audience {
                 metadata_errors.push(format!("{rel_path}: missing `audience`"));
             }
@@ -502,29 +464,18 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
             match status_line {
                 None => metadata_errors.push(format!("{rel_path}: missing `status`")),
                 Some(line) => {
-                    let value = line
-                        .trim_start_matches("status:")
-                        .trim()
-                        .to_ascii_lowercase();
-                    if !matches!(
-                        value.as_str(),
-                        "stable" | "generated" | "historical" | "internal"
-                    ) {
+                    let value = line.trim_start_matches("status:").trim().to_ascii_lowercase();
+                    if !matches!(value.as_str(), "stable" | "generated" | "historical" | "internal")
+                    {
                         bad_status.push(format!("{rel_path}: invalid `status` value `{value}`"));
                     }
                 }
             }
         }
 
-        if let Some(title) = lines
-            .iter()
-            .find_map(|line| line.strip_prefix("# ").map(str::trim))
-        {
+        if let Some(title) = lines.iter().find_map(|line| line.strip_prefix("# ").map(str::trim)) {
             if !title.is_empty() {
-                title_map
-                    .entry(title.to_string())
-                    .or_default()
-                    .push(rel_path.clone());
+                title_map.entry(title.to_string()).or_default().push(rel_path.clone());
                 let topic = normalize_topic(title);
                 if !topic.is_empty() {
                     topic_map.entry(topic).or_default().push(rel_path.clone());
@@ -562,11 +513,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     violations.extend(bad_status);
     violations.extend(duplicate_titles);
     violations.extend(duplicate_topics);
-    violations.extend(
-        orphan_docs
-            .into_iter()
-            .map(|path| format!("orphan doc: {path}")),
-    );
+    violations.extend(orphan_docs.into_iter().map(|path| format!("orphan doc: {path}")));
     if violations.is_empty() {
         Ok(())
     } else {
@@ -591,42 +538,24 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
 
     for rel_path in &markdown_files {
         let parts = rel_path.split('/').collect::<Vec<_>>();
-        let section = if parts.len() > 1 {
-            parts[1].to_string()
-        } else {
-            "root".to_string()
-        };
+        let section = if parts.len() > 1 { parts[1].to_string() } else { "root".to_string() };
         *section_counts.entry(section).or_insert(0) += 1;
 
         let content = fs::read_to_string(root.join(rel_path)).map_err(|err| err.to_string())?;
         let lines = content.lines().collect::<Vec<_>>();
-        let head = lines
-            .iter()
-            .take(60)
-            .map(|line| line.to_ascii_lowercase())
-            .collect::<Vec<_>>();
+        let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
         let status = head
             .iter()
             .find(|line| line.starts_with("status:"))
-            .map(|line| {
-                line.trim_start_matches("status:")
-                    .trim()
-                    .to_ascii_lowercase()
-            })
+            .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
             .filter(|status| {
-                matches!(
-                    status.as_str(),
-                    "stable" | "generated" | "historical" | "internal"
-                )
+                matches!(status.as_str(), "stable" | "generated" | "historical" | "internal")
             })
             .unwrap_or_else(|| "missing_or_invalid".to_string());
         *status_counts.entry(status).or_insert(0) += 1;
 
         let metadata_required = required_exact.contains(rel_path)
-            || policy
-                .metadata_required_prefixes
-                .iter()
-                .any(|prefix| rel_path.starts_with(prefix));
+            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         if metadata_required {
             if !head.iter().any(|line| line.starts_with("audience:")) {
                 metadata_gaps.push(format!("{rel_path}: missing `audience`"));
@@ -701,11 +630,8 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
             candidate_lines.push(format!("- `{rel_path}`"));
         }
     }
-    fs::write(
-        consolidation_path,
-        format!("{}\n", candidate_lines.join("\n")),
-    )
-    .map_err(|err| err.to_string())?;
+    fs::write(consolidation_path, format!("{}\n", candidate_lines.join("\n")))
+        .map_err(|err| err.to_string())?;
 
     Ok(())
 }
@@ -748,10 +674,7 @@ fn collect_markdown_files_filtered(
 }
 
 fn is_excluded(rel_path: &str, policy: &DocsLintPolicy) -> bool {
-    policy
-        .exclude_prefixes
-        .iter()
-        .any(|prefix| rel_path.starts_with(prefix))
+    policy.exclude_prefixes.iter().any(|prefix| rel_path.starts_with(prefix))
 }
 
 fn load_docs_lint_policy(root: &Path) -> Result<DocsLintPolicy, String> {
@@ -788,10 +711,7 @@ fn collect_inbound_counts(
                 if link_no_anchor.is_empty() {
                     continue;
                 }
-                let resolved = source_path
-                    .parent()
-                    .unwrap_or(Path::new("."))
-                    .join(link_no_anchor);
+                let resolved = source_path.parent().unwrap_or(Path::new(".")).join(link_no_anchor);
                 if !resolved.exists()
                     || resolved.extension().and_then(|ext| ext.to_str()) != Some("md")
                 {

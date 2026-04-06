@@ -108,9 +108,9 @@ fn federation_readiness_requires_full_auth_event_audit() {
         preserves_subject_id: true,
         preserves_audit_chain: true,
     };
-    assert!(
-        bijux_dag_runtime::simulated_platform::migrate_identity_provider_compatible(&compatibility)
-    );
+    assert!(bijux_dag_runtime::simulated_platform::migrate_identity_provider_compatible(
+        &compatibility
+    ));
 }
 
 #[test]

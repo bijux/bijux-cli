@@ -23,10 +23,7 @@ fn validation_error_and_warning_coverage() {
     for code in expected_error_codes {
         let graph = graph_for_code(code);
         let diags = graph.validate_with_warnings();
-        assert!(
-            diags.iter().any(|d| d.code == code),
-            "expected diagnostic {code}"
-        );
+        assert!(diags.iter().any(|d| d.code == code), "expected diagnostic {code}");
     }
 
     let warning_graphs = ["W2001", "W2002"];
@@ -107,35 +104,17 @@ fn topo_order_is_dependency_sensitive() {
         ],
         edges: vec![
             Edge {
-                from: PortRef {
-                    node_id: "a".to_string(),
-                    port: "out".to_string(),
-                },
-                to: PortRef {
-                    node_id: "b".to_string(),
-                    port: "in".to_string(),
-                },
+                from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
+                to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
             },
             Edge {
-                from: PortRef {
-                    node_id: "b".to_string(),
-                    port: "out".to_string(),
-                },
-                to: PortRef {
-                    node_id: "c".to_string(),
-                    port: "in".to_string(),
-                },
+                from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
+                to: PortRef { node_id: "c".to_string(), port: "in".to_string() },
             },
         ],
     };
     let order = graph.topo_order().unwrap();
-    assert_eq!(
-        order,
-        vec!["a", "b", "c"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-    );
+    assert_eq!(order, vec!["a", "b", "c"].iter().map(|s| s.to_string()).collect::<Vec<_>>());
 }
 
 #[test]
@@ -162,14 +141,8 @@ fn property_duplicate_id_detection() {
 fn property_edge_target_validation() {
     let mut graph = base_graph();
     graph.edges.push(Edge {
-        from: PortRef {
-            node_id: "source".to_string(),
-            port: "out".to_string(),
-        },
-        to: PortRef {
-            node_id: "missing".to_string(),
-            port: "in".to_string(),
-        },
+        from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
+        to: PortRef { node_id: "missing".to_string(), port: "in".to_string() },
     });
     let diags = graph.validate_with_warnings();
     assert!(diags.iter().any(|d| d.code == "E1002"));
@@ -220,14 +193,8 @@ fn base_graph() -> Graph {
         nondeterminism_allowed: false,
         nodes,
         edges: vec![Edge {
-            from: PortRef {
-                node_id: "source".to_string(),
-                port: "out".to_string(),
-            },
-            to: PortRef {
-                node_id: "sink".to_string(),
-                port: "in".to_string(),
-            },
+            from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
+            to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
         }],
     }
 }
@@ -242,14 +209,8 @@ fn graph_for_code(code: &str) -> Graph {
         "E1002" => {
             let mut g = base_graph();
             g.edges.push(Edge {
-                from: PortRef {
-                    node_id: "missing".to_string(),
-                    port: "out".to_string(),
-                },
-                to: PortRef {
-                    node_id: "sink".to_string(),
-                    port: "in".to_string(),
-                },
+                from: PortRef { node_id: "missing".to_string(), port: "out".to_string() },
+                to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
             g
         }
@@ -257,14 +218,8 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = base_graph();
             g.nodes[1].inputs = vec!["in".to_string()];
             g.edges.push(Edge {
-                from: PortRef {
-                    node_id: "source".to_string(),
-                    port: "missing".to_string(),
-                },
-                to: PortRef {
-                    node_id: "sink".to_string(),
-                    port: "in".to_string(),
-                },
+                from: PortRef { node_id: "source".to_string(), port: "missing".to_string() },
+                to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
             g
         }
@@ -280,24 +235,12 @@ fn graph_for_code(code: &str) -> Graph {
                 ],
                 edges: vec![
                     Edge {
-                        from: PortRef {
-                            node_id: "a".to_string(),
-                            port: "out".to_string(),
-                        },
-                        to: PortRef {
-                            node_id: "b".to_string(),
-                            port: "in".to_string(),
-                        },
+                        from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
+                        to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
                     },
                     Edge {
-                        from: PortRef {
-                            node_id: "b".to_string(),
-                            port: "out".to_string(),
-                        },
-                        to: PortRef {
-                            node_id: "a".to_string(),
-                            port: "in".to_string(),
-                        },
+                        from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
+                        to: PortRef { node_id: "a".to_string(), port: "in".to_string() },
                     },
                 ],
             };
@@ -310,14 +253,10 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1008" => {
             let mut g = base_graph();
-            g.nodes[0].outputs = vec![FileOutput {
-                name: "same".to_string(),
-                path: "out.txt".to_string(),
-            }];
-            g.nodes[1].outputs = vec![FileOutput {
-                name: "same".to_string(),
-                path: "out.txt".to_string(),
-            }];
+            g.nodes[0].outputs =
+                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
+            g.nodes[1].outputs =
+                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
             g
         }
         "E1009" => {
@@ -392,14 +331,8 @@ fn graph_for_code(code: &str) -> Graph {
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
                 edges: vec![Edge {
-                    from: PortRef {
-                        node_id: "source".to_string(),
-                        port: "out".to_string(),
-                    },
-                    to: PortRef {
-                        node_id: "sink".to_string(),
-                        port: "in".to_string(),
-                    },
+                    from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
+                    to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
                 }],
             };
             g.nodes[0].params = bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
@@ -431,16 +364,13 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1025" => {
             let mut g = base_graph();
-            g.nodes[0].outputs = vec![FileOutput {
-                name: "out".to_string(),
-                path: "../bad.out".to_string(),
-            }];
+            g.nodes[0].outputs =
+                vec![FileOutput { name: "out".to_string(), path: "../bad.out".to_string() }];
             g
         }
         "W2001" => {
             let mut g = base_graph();
-            g.nodes
-                .push(build_node("isolated", vec!["in".to_string()], "out"));
+            g.nodes.push(build_node("isolated", vec!["in".to_string()], "out"));
             g
         }
         "W2002" => {
@@ -466,10 +396,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         id: id.to_string(),
         kind: NodeKind::Const,
         inputs: std::mem::take(&mut inputs),
-        outputs: vec![FileOutput {
-            name: name.to_string(),
-            path: format!("{id}/{name}.txt"),
-        }],
+        outputs: vec![FileOutput { name: name.to_string(), path: format!("{id}/{name}.txt") }],
         params: bijux_dag_core::ParamValue::default(),
         container: None,
         timeout_ms: None,
@@ -490,14 +417,8 @@ fn chain_graph(len: usize) -> Graph {
         nodes.push(build_node(&id, vec![], "out"));
         if idx > 0 {
             edges.push(Edge {
-                from: PortRef {
-                    node_id: format!("n{}", idx - 1),
-                    port: "out".to_string(),
-                },
-                to: PortRef {
-                    node_id: id,
-                    port: "in".to_string(),
-                },
+                from: PortRef { node_id: format!("n{}", idx - 1), port: "out".to_string() },
+                to: PortRef { node_id: id, port: "in".to_string() },
             });
         }
         if let Some(node) = nodes.get_mut(idx) {

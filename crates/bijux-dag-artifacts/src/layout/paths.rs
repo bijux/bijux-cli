@@ -12,10 +12,7 @@ pub fn is_normalized_relative_path(path: &str) -> bool {
     if path.contains('\\') {
         return false;
     }
-    if path
-        .split('/')
-        .any(|part| part.is_empty() || part == "." || part == "..")
-    {
+    if path.split('/').any(|part| part.is_empty() || part == "." || part == "..") {
         return false;
     }
     true

@@ -19,10 +19,8 @@ use bijux_dag_runtime::{
 
 #[test]
 fn pause_state_contract_freezes_ready_and_dispatch_in_full_pause_mode() {
-    let policy = RunPausePolicy {
-        mode: RunPauseMode::PauseAllNewDispatch,
-        preserve_running_nodes: true,
-    };
+    let policy =
+        RunPausePolicy { mode: RunPauseMode::PauseAllNewDispatch, preserve_running_nodes: true };
     let state = evaluate_pause_state(&policy, 2, 3, 1);
     assert_eq!(state.get("freeze_dispatch"), Some(&true));
     assert_eq!(state.get("freeze_ready_queue"), Some(&true));
@@ -31,10 +29,7 @@ fn pause_state_contract_freezes_ready_and_dispatch_in_full_pause_mode() {
 
 #[test]
 fn stuck_detection_uses_progress_or_heartbeat_gap() {
-    let policy = StuckRunPolicy {
-        max_without_progress_ms: 10,
-        max_without_heartbeat_ms: 20,
-    };
+    let policy = StuckRunPolicy { max_without_progress_ms: 10, max_without_heartbeat_ms: 20 };
     assert!(detect_stuck_run(100, 80, 90, &policy));
     assert!(!detect_stuck_run(100, 95, 90, &policy));
 }
@@ -53,17 +48,10 @@ fn consistency_and_quarantine_contracts_detect_inconsistent_terminal_run() {
     let summary = RunSummaryV2 {
         run_id: RunId("run_01".to_string()),
         state: RunState::Failed,
-        counts: NodeCounts {
-            success: 2,
-            failed: 0,
-            skipped: 0,
-            cached: 0,
-        },
+        counts: NodeCounts { success: 2, failed: 0, skipped: 0, cached: 0 },
     };
-    let node_states = vec![
-        ("n1".to_string(), NodeState::Success),
-        ("n2".to_string(), NodeState::Failed),
-    ];
+    let node_states =
+        vec![("n1".to_string(), NodeState::Success), ("n2".to_string(), NodeState::Failed)];
     let artifacts = vec!["n1".to_string()];
     let consistency = check_run_consistency(&node_states, &artifacts, &summary);
     assert!(!consistency.summary_matches_node_states);

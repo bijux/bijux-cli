@@ -23,14 +23,12 @@ fn main() -> ExitCode {
         .arg_required_else_help(true)
         .subcommand(dag_command())
         .subcommand(
-            Cmd::new("completions")
-                .about("Generate shell completion script")
-                .arg(
-                    Arg::new("shell")
-                        .long("shell")
-                        .value_parser(["bash", "zsh", "fish", "elvish", "powershell"])
-                        .required(true),
-                ),
+            Cmd::new("completions").about("Generate shell completion script").arg(
+                Arg::new("shell")
+                    .long("shell")
+                    .value_parser(["bash", "zsh", "fish", "elvish", "powershell"])
+                    .required(true),
+            ),
         );
     let matches = cmd.clone().get_matches();
 
@@ -58,12 +56,9 @@ fn main() -> ExitCode {
                 "zsh" => generate(shells::Zsh, &mut cmd, "bijux", &mut std::io::stdout()),
                 "fish" => generate(shells::Fish, &mut cmd, "bijux", &mut std::io::stdout()),
                 "elvish" => generate(shells::Elvish, &mut cmd, "bijux", &mut std::io::stdout()),
-                "powershell" => generate(
-                    shells::PowerShell,
-                    &mut cmd,
-                    "bijux",
-                    &mut std::io::stdout(),
-                ),
+                "powershell" => {
+                    generate(shells::PowerShell, &mut cmd, "bijux", &mut std::io::stdout())
+                }
                 _ => return ExitCode::from(2),
             }
             ExitCode::SUCCESS

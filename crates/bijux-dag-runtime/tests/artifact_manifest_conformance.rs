@@ -47,12 +47,8 @@ fn manifest_shape_stable_across_replay_like_reexecution() {
     let runtime = Runtime::new();
     let out = tempfile::tempdir().unwrap();
 
-    let run_a = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .unwrap();
-    let run_b = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .unwrap();
+    let run_a = runtime.run(&graph, out.path(), RuntimeConfig::default()).unwrap();
+    let run_b = runtime.run(&graph, out.path(), RuntimeConfig::default()).unwrap();
 
     let a = stable_manifest_shape(&run_a.join("manifest.json"));
     let b = stable_manifest_shape(&run_b.join("manifest.json"));
@@ -93,10 +89,7 @@ fn manifest_shape_stable_between_uncached_and_cached_runs() {
     let uncached_manifest = stable_manifest_shape(&uncached.join("manifest.json"));
     let cached_manifest = stable_manifest_shape(&cached.join("manifest.json"));
 
-    assert_eq!(
-        uncached_manifest["graph_fingerprint"],
-        cached_manifest["graph_fingerprint"]
-    );
+    assert_eq!(uncached_manifest["graph_fingerprint"], cached_manifest["graph_fingerprint"]);
     assert_eq!(uncached_manifest["spec"], cached_manifest["spec"]);
     assert!(cached_manifest["node_counts"]["cached"].as_u64().is_some());
 }

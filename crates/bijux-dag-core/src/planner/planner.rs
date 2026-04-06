@@ -78,38 +78,25 @@ pub fn lower_graph_to_execution_plan(
     mut options: PlanOptions,
 ) -> Result<ExecutionPlan, PlannerError> {
     let validation_diags = graph.validate_with_warnings();
-    if validation_diags
-        .iter()
-        .any(|d| d.severity == crate::Severity::Error)
-    {
+    if validation_diags.iter().any(|d| d.severity == crate::Severity::Error) {
         return Err(PlannerError::ValidationFailed);
     }
 
     if options.supported_kinds.is_empty() {
-        options.supported_kinds = ["const", "shell", "container"]
-            .into_iter()
-            .map(str::to_string)
-            .collect();
+        options.supported_kinds =
+            ["const", "shell", "container"].into_iter().map(str::to_string).collect();
     }
 
     let canonical = graph.canonicalize();
 
     let selected = if options.selected_nodes.is_empty() {
-        canonical
-            .nodes
-            .iter()
-            .map(|n| n.id.clone())
-            .collect::<BTreeSet<_>>()
+        canonical.nodes.iter().map(|n| n.id.clone()).collect::<BTreeSet<_>>()
     } else {
         options.selected_nodes
     };
 
-    let selected_nodes = canonical
-        .nodes
-        .iter()
-        .filter(|n| selected.contains(&n.id))
-        .cloned()
-        .collect::<Vec<_>>();
+    let selected_nodes =
+        canonical.nodes.iter().filter(|n| selected.contains(&n.id)).cloned().collect::<Vec<_>>();
 
     let selected_edges = canonical
         .edges
@@ -145,15 +132,11 @@ pub fn lower_graph_to_execution_plan(
     let planned_nodes = to_planned_nodes(&selected_nodes, &selected_edges);
     let planned_edges = selected_edges
         .iter()
-        .map(|e| PlannedEdge {
-            from: e.from.node_id.clone(),
-            to: e.to.node_id.clone(),
-        })
+        .map(|e| PlannedEdge { from: e.from.node_id.clone(), to: e.to.node_id.clone() })
         .collect::<Vec<_>>();
 
-    let graph_fingerprint = canonical
-        .graph_fingerprint()
-        .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
+    let graph_fingerprint =
+        canonical.graph_fingerprint().map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
     let planner_fingerprint = planner_fingerprint(&planned_nodes, &planned_edges, &ordering)?;
 
     Ok(ExecutionPlan {
@@ -183,21 +166,14 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
         deps.insert(n.id.clone(), BTreeSet::new());
     }
     for edge in edges {
-        deps.entry(edge.to.node_id.clone())
-            .or_default()
-            .insert(edge.from.node_id.clone());
+        deps.entry(edge.to.node_id.clone()).or_default().insert(edge.from.node_id.clone());
     }
     nodes
         .iter()
         .map(|n| PlannedNode {
             id: n.id.clone(),
             kind: n.kind.as_str().to_string(),
-            deps: deps
-                .get(&n.id)
-                .cloned()
-                .unwrap_or_default()
-                .into_iter()
-                .collect(),
+            deps: deps.get(&n.id).cloned().unwrap_or_default().into_iter().collect(),
             outputs: n.outputs.clone(),
             retry: n.retry.clone(),
             timeout_ms: n.timeout_ms,
@@ -214,10 +190,7 @@ fn topo_order_selected(nodes: &[Node], edges: &[Edge]) -> Result<Vec<String>, Pl
     }
     for edge in edges {
         *indegree.entry(edge.to.node_id.clone()).or_insert(0) += 1;
-        outgoing
-            .entry(edge.from.node_id.clone())
-            .or_default()
-            .insert(edge.to.node_id.clone());
+        outgoing.entry(edge.from.node_id.clone()).or_default().insert(edge.to.node_id.clone());
     }
 
     let mut ready = indegree
@@ -283,10 +256,7 @@ pub fn can_runtime_execute_plan_without_raw_graph() -> bool {
 }
 
 pub fn node_kind_supported(kind: &NodeKind) -> bool {
-    matches!(
-        kind,
-        NodeKind::Const | NodeKind::Shell | NodeKind::Container
-    )
+    matches!(kind, NodeKind::Const | NodeKind::Shell | NodeKind::Container)
 }
 
 pub fn planner_alignment_required_schema() -> &'static str {

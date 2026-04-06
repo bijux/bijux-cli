@@ -139,23 +139,15 @@ fn fan_structures_and_selector_pruned_graphs_lower() {
     let full = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("full plan");
     assert!(full.nodes.len() >= 5);
 
-    let selected_nodes = ["root", "l", "join"]
-        .into_iter()
-        .map(str::to_string)
-        .collect::<BTreeSet<_>>();
+    let selected_nodes =
+        ["root", "l", "join"].into_iter().map(str::to_string).collect::<BTreeSet<_>>();
     let pruned = lower_graph_to_execution_plan(
         &graph,
-        PlanOptions {
-            selected_nodes,
-            ..PlanOptions::default()
-        },
+        PlanOptions { selected_nodes, ..PlanOptions::default() },
     )
     .expect("pruned plan");
 
-    assert!(pruned
-        .nodes
-        .iter()
-        .all(|n| ["root", "l", "join"].contains(&n.id.as_str())));
+    assert!(pruned.nodes.iter().all(|n| ["root", "l", "join"].contains(&n.id.as_str())));
     let join = pruned
         .nodes
         .iter()

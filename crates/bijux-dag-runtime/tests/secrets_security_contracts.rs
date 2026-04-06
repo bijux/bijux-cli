@@ -39,14 +39,8 @@ fn secret_scope_and_delivery_mode_contracts_are_enforced() {
         allowed_modes: vec![SecretInjectionMode::Env, SecretInjectionMode::FileMount],
         deny_process_args: true,
     };
-    assert!(validate_secret_delivery_mode(
-        &SecretInjectionMode::Env,
-        &delivery
-    ));
-    assert!(!validate_secret_delivery_mode(
-        &SecretInjectionMode::BackendNative,
-        &delivery
-    ));
+    assert!(validate_secret_delivery_mode(&SecretInjectionMode::Env, &delivery));
+    assert!(!validate_secret_delivery_mode(&SecretInjectionMode::BackendNative, &delivery));
 }
 
 #[test]
@@ -54,10 +48,7 @@ fn secret_versioning_redaction_and_leak_checks_are_stable() {
     let selected = select_secret_version(
         &["v1".to_string(), "v2".to_string()],
         None,
-        &SecretRotationRule {
-            allow_latest: true,
-            require_pin_for_backfill: false,
-        },
+        &SecretRotationRule { allow_latest: true, require_pin_for_backfill: false },
         false,
     )
     .expect("latest selected");
@@ -83,10 +74,7 @@ fn secure_mode_and_incident_actions_are_explicit() {
         incident_id: "sec-1".to_string(),
         detected_in: "stderr".to_string(),
         run_id: Some("run-1".to_string()),
-        containment_actions: vec![
-            "revoke-credentials".to_string(),
-            "quarantine-run".to_string(),
-        ],
+        containment_actions: vec!["revoke-credentials".to_string(), "quarantine-run".to_string()],
     };
     let actions = incident_response_actions(&incident);
     assert!(actions.contains("revoke-credentials"));

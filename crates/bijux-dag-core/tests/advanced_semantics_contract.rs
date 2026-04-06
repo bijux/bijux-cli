@@ -15,9 +15,7 @@ use bijux_dag_core::{
 };
 
 fn read_fixture(name: &str) -> String {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name);
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name);
     std::fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("failed to read fixture {}: {err}", path.display()))
 }
@@ -54,10 +52,7 @@ fn computes_semantic_diff_static_analysis_and_complexity() {
         .expect("after graph parse should pass");
     let diff = semantic_diff(&before, &after);
     assert_eq!(diff.class, SemanticDiffClass::Topology);
-    assert_eq!(
-        classify_compatibility(&diff),
-        CompatibilityClassification::CacheBreaking
-    );
+    assert_eq!(classify_compatibility(&diff), CompatibilityClassification::CacheBreaking);
     let analysis = static_analysis(&after);
     assert!(analysis.noop_join_nodes.iter().any(|n| n == "join"));
     let complexity = complexity_score(&after);

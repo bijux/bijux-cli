@@ -18,14 +18,8 @@ pub(crate) fn run_suite_group(
     let overrides =
         crate::suites::load_suite_overrides(&root.join("configs/dag/dev/suite_overrides.json"))?;
     let disabled: BTreeSet<String> = overrides.disabled_suite_ids.into_iter().collect();
-    let selection = build_suite_selection(
-        group,
-        suites,
-        domain,
-        include_slow,
-        include_internal,
-        &disabled,
-    );
+    let selection =
+        build_suite_selection(group, suites, domain, include_slow, include_internal, &disabled);
 
     if why {
         let details = serde_json::to_value(&selection).map_err(|err| err.to_string())?;
@@ -189,11 +183,7 @@ mod tests {
     use crate::commands::model::CommandEffect;
 
     fn pass() -> Result<(), String> {
-        if std::env::var("BIJUX_DEV_DAG_FORCE_TEST_FAIL")
-            .ok()
-            .as_deref()
-            == Some("1")
-        {
+        if std::env::var("BIJUX_DEV_DAG_FORCE_TEST_FAIL").ok().as_deref() == Some("1") {
             return Err("forced failure".to_string());
         }
         Ok(())
@@ -248,10 +238,7 @@ mod tests {
 
     #[test]
     fn blocking_mode_returns_error_on_failures() {
-        let context = CommandContext {
-            json: false,
-            report: None,
-        };
+        let context = CommandContext { json: false, report: None };
         let result =
             finalize_suite_outcome("checks", vec!["lint: failed".to_string()], false, &context);
         assert!(result.is_err());
@@ -259,10 +246,7 @@ mod tests {
 
     #[test]
     fn advisory_mode_does_not_fail_command() {
-        let context = CommandContext {
-            json: true,
-            report: None,
-        };
+        let context = CommandContext { json: true, report: None };
         let result =
             finalize_suite_outcome("checks", vec!["lint: failed".to_string()], true, &context);
         assert!(result.is_ok());

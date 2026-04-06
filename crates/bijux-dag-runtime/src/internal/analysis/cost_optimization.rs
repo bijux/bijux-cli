@@ -153,11 +153,7 @@ pub fn choose_cost_profile(latency_sensitive: bool, strict_budget: bool) -> Cost
 }
 
 pub fn cache_reuse_score(recompute_cost: f64, reuse_cost: f64) -> CacheReuseCostScore {
-    CacheReuseCostScore {
-        recompute_cost,
-        reuse_cost,
-        prefer_reuse: reuse_cost <= recompute_cost,
-    }
+    CacheReuseCostScore { recompute_cost, reuse_cost, prefer_reuse: reuse_cost <= recompute_cost }
 }
 
 pub fn run_budget_allows(cost: f64, budget: &RunBudget) -> bool {

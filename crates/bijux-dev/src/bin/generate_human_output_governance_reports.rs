@@ -12,10 +12,7 @@ use std::path::{Path, PathBuf};
 use tempfile as _;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("repo root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("repo root")
 }
 
 fn write_file(path: &Path, body: &str) -> Result<(), String> {
@@ -50,19 +47,15 @@ fn main() -> Result<(), String> {
     fs::create_dir_all(&out_dir).map_err(|e| e.to_string())?;
     fs::create_dir_all(&example_root).map_err(|e| e.to_string())?;
 
-    let families = policy["families"]
-        .as_array()
-        .ok_or_else(|| "families must be array".to_string())?;
+    let families =
+        policy["families"].as_array().ok_or_else(|| "families must be array".to_string())?;
 
     for fam in families {
         let family = fam["family"].as_str().unwrap_or("unknown");
         let family_dir = example_root.join(family);
         fs::create_dir_all(&family_dir).map_err(|e| e.to_string())?;
 
-        let files = fam["snapshot_files"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default();
+        let files = fam["snapshot_files"].as_array().cloned().unwrap_or_default();
         let first = files.first().and_then(|v| v.as_str()).unwrap_or("");
         let second = files.get(1).and_then(|v| v.as_str()).unwrap_or(first);
 
@@ -99,10 +92,7 @@ fn main() -> Result<(), String> {
             .join(", ");
         inv.push_str(&format!("| `{family}` | `{tests}` | `{files}` |\n"));
     }
-    write_file(
-        &out_dir.join("human_output_snapshot_inventory_report.md"),
-        &inv,
-    )?;
+    write_file(&out_dir.join("human_output_snapshot_inventory_report.md"), &inv)?;
 
     let mut rs_files = Vec::new();
     collect_rs_files(&root.join("crates/bijux-dag-app/tests"), &mut rs_files);
@@ -118,29 +108,19 @@ fn main() -> Result<(), String> {
     let mut missing_rows: Vec<String> = Vec::new();
     for fam in families {
         let family = fam["family"].as_str().unwrap_or("");
-        for t in fam["snapshot_tests"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-        {
+        for t in fam["snapshot_tests"].as_array().cloned().unwrap_or_default() {
             if let Some(test_name) = t.as_str() {
                 if !test_sources.contains(test_name) {
-                    missing_rows.push(format!(
-                        "| `{family}` | `{test_name}` | `missing snapshot test` |"
-                    ));
+                    missing_rows
+                        .push(format!("| `{family}` | `{test_name}` | `missing snapshot test` |"));
                 }
             }
         }
-        for s in fam["snapshot_files"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-        {
+        for s in fam["snapshot_files"].as_array().cloned().unwrap_or_default() {
             if let Some(snap) = s.as_str() {
                 if !root.join(snap).exists() {
-                    missing_rows.push(format!(
-                        "| `{family}` | `{snap}` | `missing snapshot file` |"
-                    ));
+                    missing_rows
+                        .push(format!("| `{family}` | `{snap}` | `missing snapshot file` |"));
                 }
             }
         }
@@ -152,17 +132,9 @@ fn main() -> Result<(), String> {
         missing.push_str(row);
         missing.push('\n');
     }
-    missing.push_str(&format!(
-        "\nMissing human snapshot surfaces: {missing_count}\n"
-    ));
-    write_file(
-        &out_dir.join("human_output_surfaces_without_snapshot_report.md"),
-        &missing,
-    )?;
-    write_file(
-        &out_dir.join("human_output_without_snapshot_tests_report.md"),
-        &missing,
-    )?;
+    missing.push_str(&format!("\nMissing human snapshot surfaces: {missing_count}\n"));
+    write_file(&out_dir.join("human_output_surfaces_without_snapshot_report.md"), &missing)?;
+    write_file(&out_dir.join("human_output_without_snapshot_tests_report.md"), &missing)?;
 
     let mut concise_detail = String::from("# Concise vs Detailed Human Output Coverage Report\n\n| Family | Concise example | Detailed example | Distinct |\n| --- | --- | --- | --- |\n");
     for fam in families {
@@ -180,10 +152,7 @@ fn main() -> Result<(), String> {
             distinct
         ));
     }
-    write_file(
-        &out_dir.join("concise_detailed_human_output_coverage_report.md"),
-        &concise_detail,
-    )?;
+    write_file(&out_dir.join("concise_detailed_human_output_coverage_report.md"), &concise_detail)?;
 
     let concise =
         fs::read(root.join("crates/bijux-dag-app/tests/snapshots/route_concise_wording.txt"))
@@ -203,34 +172,19 @@ fn main() -> Result<(), String> {
     );
     drift.push_str(&format!(
         "| route concise vs route detailed | `{}` |\n",
-        if concise == detailed {
-            "identical"
-        } else {
-            "different-as-expected"
-        }
+        if concise == detailed { "identical" } else { "different-as-expected" }
     ));
     drift.push_str(&format!(
         "| prove vs verify human output | `{}` |\n",
-        if prove == verify {
-            "identical"
-        } else {
-            "different-as-expected"
-        }
+        if prove == verify { "identical" } else { "different-as-expected" }
     ));
-    write_file(
-        &out_dir.join("wording_drift_equivalent_commands_report.md"),
-        &drift,
-    )?;
+    write_file(&out_dir.join("wording_drift_equivalent_commands_report.md"), &drift)?;
 
     let mut ux = String::from("# Operator UX Reference (Generated)\n\nGenerated from human-output snapshots and governed examples.\n\n");
     for fam in families {
         let family = fam["family"].as_str().unwrap_or("unknown");
         ux.push_str(&format!("## {family}\n\n- Snapshot tests:\n"));
-        for t in fam["snapshot_tests"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-        {
+        for t in fam["snapshot_tests"].as_array().cloned().unwrap_or_default() {
             if let Some(name) = t.as_str() {
                 ux.push_str(&format!("  - `{name}`\n"));
             }

@@ -65,10 +65,7 @@ fn readiness_and_quota_contracts_are_deterministic() {
         healthy: true,
         reason: "ok".to_string(),
     };
-    assert!(backend_ready_for_admission(
-        &probe,
-        &BackendMaintenanceMode::Active
-    ));
+    assert!(backend_ready_for_admission(&probe, &BackendMaintenanceMode::Active));
     assert_eq!(quota_saturation_percent(100, 45), 45);
 }
 
@@ -88,16 +85,8 @@ fn cross_backend_replay_rules_are_enforced() {
             reason: "incompatible runtime assumptions".to_string(),
         },
     ];
-    assert!(replay_allowed_across_backends(
-        "local",
-        "kubernetes",
-        &rules
-    ));
-    assert!(!replay_allowed_across_backends(
-        "kubernetes",
-        "slurm",
-        &rules
-    ));
+    assert!(replay_allowed_across_backends("local", "kubernetes", &rules));
+    assert!(!replay_allowed_across_backends("kubernetes", "slurm", &rules));
 }
 
 fn outcome(shape: &str) -> AdapterExecutionOutcome {
@@ -143,10 +132,7 @@ fn local_and_k8s_outcomes_are_equivalent_for_simple_fanout_fanin_cachehit_and_pa
     for shape in ["simple", "fan-out", "fan-in"] {
         let local = outcome(shape);
         let k8s = outcome(shape);
-        assert!(
-            equivalent_to_local(&local, &k8s),
-            "shape must match: {shape}"
-        );
+        assert!(equivalent_to_local(&local, &k8s), "shape must match: {shape}");
     }
 
     let mut local_cache = outcome("cache-hit");
@@ -202,18 +188,9 @@ fn stdout_stderr_and_artifact_collection_contracts_hold_for_success_and_failure(
     let k8s = outcome("simple");
     assert!(outputs_logs_equivalent(&local, &k8s));
 
-    assert_eq!(
-        artifact_collection_state(3, 3),
-        ArtifactCollectionState::Complete
-    );
-    assert_eq!(
-        artifact_collection_state(3, 1),
-        ArtifactCollectionState::Partial
-    );
-    assert_eq!(
-        artifact_collection_state(3, 0),
-        ArtifactCollectionState::Missing
-    );
+    assert_eq!(artifact_collection_state(3, 3), ArtifactCollectionState::Complete);
+    assert_eq!(artifact_collection_state(3, 1), ArtifactCollectionState::Partial);
+    assert_eq!(artifact_collection_state(3, 0), ArtifactCollectionState::Missing);
 }
 
 #[test]
@@ -325,10 +302,7 @@ fn hpc_queue_partition_walltime_and_retry_precedence_are_deterministic() {
     let mapped = map_node_to_hpc_queue_partition(&node, "default", "general");
     assert_eq!(mapped.queue, "priority");
     assert_eq!(mapped.partition, "gpu");
-    assert_eq!(
-        map_timeout_to_hpc_walltime(node.timeout_seconds),
-        "01:01:01"
-    );
+    assert_eq!(map_timeout_to_hpc_walltime(node.timeout_seconds), "01:01:01");
 
     let scheduler_first = effective_hpc_retry_policy(true, true);
     assert_eq!(scheduler_first.effective_retry_owner, "scheduler-native");
@@ -385,14 +359,8 @@ fn hpc_polling_logs_cleanup_and_retention_contracts_are_explicit() {
 
 #[test]
 fn hpc_artifact_collection_array_semantics_and_unsupported_features_are_guarded() {
-    assert_eq!(
-        artifact_collection_state(4, 3),
-        ArtifactCollectionState::Partial
-    );
-    assert_eq!(
-        artifact_collection_state(4, 4),
-        ArtifactCollectionState::Complete
-    );
+    assert_eq!(artifact_collection_state(4, 3), ArtifactCollectionState::Partial);
+    assert_eq!(artifact_collection_state(4, 4), ArtifactCollectionState::Complete);
     assert!(hpc_array_job_supported("slurm"));
     assert!(!hpc_array_job_supported("pbs"));
 
@@ -434,14 +402,8 @@ fn hpc_resource_fingerprint_changes_with_partition_and_account() {
         partition: "cpu".to_string(),
         account: "team-b".to_string(),
     };
-    assert_ne!(
-        hpc_resource_fingerprint(&baseline),
-        hpc_resource_fingerprint(&changed_partition)
-    );
-    assert_ne!(
-        hpc_resource_fingerprint(&baseline),
-        hpc_resource_fingerprint(&changed_account)
-    );
+    assert_ne!(hpc_resource_fingerprint(&baseline), hpc_resource_fingerprint(&changed_partition));
+    assert_ne!(hpc_resource_fingerprint(&baseline), hpc_resource_fingerprint(&changed_account));
 }
 
 #[test]

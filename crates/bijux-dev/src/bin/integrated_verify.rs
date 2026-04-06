@@ -24,9 +24,8 @@ struct VerificationInput {
 }
 
 fn main() -> ExitCode {
-    let input_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "integrated-verify-input.json".to_string());
+    let input_path =
+        std::env::args().nth(1).unwrap_or_else(|| "integrated-verify-input.json".to_string());
 
     match run_integrated_verification(&input_path) {
         Ok(report) => {
@@ -68,13 +67,7 @@ fn run_integrated_verification(path: &str) -> Result<serde_json::Value, String> 
 
     let failed: Vec<String> = checks
         .iter()
-        .filter_map(|(name, passed)| {
-            if *passed {
-                None
-            } else {
-                Some((*name).to_string())
-            }
-        })
+        .filter_map(|(name, passed)| if *passed { None } else { Some((*name).to_string()) })
         .collect();
 
     Ok(json!({

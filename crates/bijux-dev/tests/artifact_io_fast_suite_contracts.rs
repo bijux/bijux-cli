@@ -31,9 +31,6 @@ fn artifact_io_fast_suite_covers_store_fs_and_inspect_corruption_contracts() {
         "storage_services_contracts",
         "artifact_inspect_storage_contracts",
     ] {
-        assert!(
-            commands.contains(required),
-            "missing suite command: {required}"
-        );
+        assert!(commands.contains(required), "missing suite command: {required}");
     }
 }

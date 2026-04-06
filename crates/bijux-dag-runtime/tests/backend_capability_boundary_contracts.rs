@@ -46,11 +46,7 @@ fn backend_capability_declarations_support_replay_gate_checks() {
         },
     ];
     assert!(replay_allowed_across_backends("local", "local", &rules));
-    assert!(!replay_allowed_across_backends(
-        "local",
-        "kubernetes",
-        &rules
-    ));
+    assert!(!replay_allowed_across_backends("local", "kubernetes", &rules));
 }
 
 #[test]

@@ -30,14 +30,7 @@ fn malformed_route_entrypoints_do_not_panic() {
         &["dag", "plan", "explain", "/no/such/file.json"],
         &["dag", "run", "/no/such/file.json", "--out", "/tmp/nowhere"],
         &["dag", "replay", "/no/such/run", "--out", "/tmp/replay"],
-        &[
-            "dag",
-            "runs",
-            "inspect",
-            "missing-run",
-            "--root",
-            "/no/such/root",
-        ],
+        &["dag", "runs", "inspect", "missing-run", "--root", "/no/such/root"],
         &["dag", "diff", "/no/such/run-a", "/no/such/run-b"],
         &["dag", "prove", "/no/such/run"],
         &["dag", "export", "--out", "/tmp/bundle.json"],
@@ -48,9 +41,6 @@ fn malformed_route_entrypoints_do_not_panic() {
         &["dag", "capabilities", "--backend", "unknown"],
     ];
     for case in cases {
-        assert!(
-            run_without_panic(case),
-            "command panicked for malformed input: {case:?}"
-        );
+        assert!(run_without_panic(case), "command panicked for malformed input: {case:?}");
     }
 }

@@ -28,14 +28,8 @@ fn load_health() -> Vec<DomainHealthSnapshot> {
 #[test]
 fn health_propagation_blocks_unhealthy_domain() {
     let health = load_health();
-    assert!(domain_healthy(
-        &SchedulerDomainId("eu-core".to_string()),
-        &health
-    ));
-    assert!(!domain_healthy(
-        &SchedulerDomainId("us-burst".to_string()),
-        &health
-    ));
+    assert!(domain_healthy(&SchedulerDomainId("eu-core".to_string()), &health));
+    assert!(!domain_healthy(&SchedulerDomainId("us-burst".to_string()), &health));
 }
 
 #[test]
@@ -59,10 +53,7 @@ fn replay_safety_requires_all_compatibility_domains() {
         policy_compatible: true,
         backend_compatible: true,
     };
-    let unsafe_case = CrossDomainReplaySafety {
-        backend_compatible: false,
-        ..safe
-    };
+    let unsafe_case = CrossDomainReplaySafety { backend_compatible: false, ..safe };
 
     assert!(cross_domain_replay_safe(&safe));
     assert!(!cross_domain_replay_safe(&unsafe_case));
@@ -92,14 +83,8 @@ fn trust_tier_routing_restricts_sensitive_workloads() {
         allowed_domains: BTreeSet::from([SchedulerDomainId("eu-core".to_string())]),
     };
 
-    assert!(trust_tier_allows_domain(
-        &rule,
-        &SchedulerDomainId("eu-core".to_string())
-    ));
-    assert!(!trust_tier_allows_domain(
-        &rule,
-        &SchedulerDomainId("us-burst".to_string())
-    ));
+    assert!(trust_tier_allows_domain(&rule, &SchedulerDomainId("eu-core".to_string())));
+    assert!(!trust_tier_allows_domain(&rule, &SchedulerDomainId("us-burst".to_string())));
 }
 
 #[test]

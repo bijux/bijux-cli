@@ -45,18 +45,11 @@ fn scheduler_state_tracks_mixed_cached_skipped_retry_and_scheduled_events() {
     state.requeue_retries();
     state.mark_scheduled("c");
 
-    let event_kinds = state
-        .events()
-        .iter()
-        .map(|event| event.kind.clone())
-        .collect::<Vec<_>>();
+    let event_kinds = state.events().iter().map(|event| event.kind.clone()).collect::<Vec<_>>();
     assert!(event_kinds.contains(&SchedulerEventKind::NodeCached));
     assert!(event_kinds.contains(&SchedulerEventKind::NodeSkipped));
     assert!(
-        event_kinds
-            .iter()
-            .filter(|kind| **kind == SchedulerEventKind::NodeRetryQueued)
-            .count()
+        event_kinds.iter().filter(|kind| **kind == SchedulerEventKind::NodeRetryQueued).count()
             == 1
     );
     assert!(event_kinds.contains(&SchedulerEventKind::NodeRetryRequeued));
@@ -92,10 +85,7 @@ fn terminal_run_rejects_non_terminal_nodes() {
         0,
     );
     assert!(!report.valid);
-    assert!(report
-        .violations
-        .iter()
-        .any(|line| line.contains("non-terminal node")));
+    assert!(report.violations.iter().any(|line| line.contains("non-terminal node")));
 }
 
 #[test]
@@ -127,10 +117,7 @@ fn run_directory_creation_failures_surface_as_runtime_io_errors() {
         .expect_err("run should fail when output root is not a directory");
     let rendered = format!("{err}");
     assert!(
-        matches!(
-            err,
-            RuntimeError::Io(_) | RuntimeError::Executor(_) | RuntimeError::Artifact(_)
-        ),
+        matches!(err, RuntimeError::Io(_) | RuntimeError::Executor(_) | RuntimeError::Artifact(_)),
         "unexpected error class: {rendered}"
     );
 }

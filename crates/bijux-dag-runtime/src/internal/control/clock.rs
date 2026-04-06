@@ -9,10 +9,7 @@ pub struct SystemClock;
 
 impl Clock for SystemClock {
     fn now_unix_ms(&self) -> u128 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis()
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
     }
 }
 
