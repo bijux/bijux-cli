@@ -8,7 +8,7 @@ repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
 publish = false
-readme = "dev-cli/README.md"
+readme = "README.md"
 description = "Unified maintainer control plane and DAG governance tooling for the Bijux workspace."
 
 [lints]
