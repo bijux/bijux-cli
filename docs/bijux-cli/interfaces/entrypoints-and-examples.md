@@ -13,8 +13,8 @@ This page defines interface expectations for **Entrypoints And Examples** in `bi
 
 Primary references:
 
-- [Command surface](../../reference/command-surface.md)
-- [Output contracts](../../contracts/output-and-stream-contracts.md)
+- [CLI surface](cli-surface.md)
+- [Artifact contracts](artifact-contracts.md)
 
 ## Consolidated Operator Guidance
 

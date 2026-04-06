@@ -13,8 +13,8 @@ This page defines interface expectations for **Artifact Contracts** in `bijux-cl
 
 Primary references:
 
-- [Command surface](../../reference/command-surface.md)
-- [Output contracts](../../contracts/output-and-stream-contracts.md)
+- [CLI surface](cli-surface.md)
+- [Artifact contracts](artifact-contracts.md)
 
 ## Consolidated Reference And Contract Surface
 

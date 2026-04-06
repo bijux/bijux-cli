@@ -14,4 +14,4 @@ This architecture page anchors **Module Map** for CLI.
 Related references:
 
 - [Execution pipeline](../../bijux-core/architecture/execution-pipeline.md)
-- [CLI command model](../introduction/command-model.md)
+- [CLI surface](../interfaces/cli-surface.md)

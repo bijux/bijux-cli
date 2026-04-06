@@ -95,4 +95,4 @@ claim that the current evidence supports shipping more than delaying.
 
 - [Quality and change management](../../bijux-core/architecture/quality-and-change-management.md)
 - [Runtime and distribution](../../bijux-core/architecture/runtime-and-distribution.md)
-- [Integrations and routed runtimes](../../bijux-cli/reference/integrations-and-routed-runtimes.md)
+- [CLI compatibility commitments](../../bijux-cli/interfaces/compatibility-commitments.md)

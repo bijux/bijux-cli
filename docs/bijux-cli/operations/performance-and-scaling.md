@@ -13,8 +13,8 @@ This page captures the CLI operational contract for **Performance And Scaling**.
 
 Start with:
 
-- [Install and verify](../../getting-started/install-and-verify.md)
-- [Troubleshoot early problems](../../getting-started/troubleshoot-early-problems.md)
+- [Installation and setup](installation-and-setup.md)
+- [Failure recovery](failure-recovery.md)
 
 ## Consolidated Onboarding Guidance
 

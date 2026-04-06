@@ -13,5 +13,5 @@ This page defines the CLI foundation contract for **Dependencies And Adjacencies
 
 Primary references:
 
-- [CLI introduction](../introduction/index.md)
-- [CLI user guide](../user-guide/index.md)
+- [CLI foundation index](index.md)
+- [Operator workflows](../interfaces/operator-workflows.md)

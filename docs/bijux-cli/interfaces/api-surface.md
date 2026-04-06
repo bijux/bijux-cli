@@ -13,5 +13,5 @@ This page defines interface expectations for **Api Surface** in `bijux-cli`.
 
 Primary references:
 
-- [Command surface](../../reference/command-surface.md)
-- [Output contracts](../../contracts/output-and-stream-contracts.md)
+- [CLI surface](cli-surface.md)
+- [Artifact contracts](artifact-contracts.md)

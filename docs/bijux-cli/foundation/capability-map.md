@@ -13,8 +13,8 @@ This page defines the CLI foundation contract for **Capability Map**.
 
 Primary references:
 
-- [CLI introduction](../introduction/index.md)
-- [CLI user guide](../user-guide/index.md)
+- [CLI foundation index](index.md)
+- [Operator workflows](../interfaces/operator-workflows.md)
 
 ## Consolidated Command Model
 

@@ -14,4 +14,4 @@ This page defines quality expectations for **Dependency Governance** in `bijux-c
 Validation references:
 
 - [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
-- [Plugin contracts](../../contracts/plugin-contracts.md)
+- [Artifact contracts](../interfaces/artifact-contracts.md)

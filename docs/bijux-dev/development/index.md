@@ -74,6 +74,6 @@ compatible with these rules.
 
 ## Next Step
 
-If you only need to use the CLI, go to [User Guide](../../bijux-cli/user-guide/index.md).
+If you only need to use the CLI, go to [CLI operator workflows](../../bijux-cli/interfaces/operator-workflows.md).
 If you are contributing, start with
 [Workspace And Tooling](workspace-and-tooling.md).
