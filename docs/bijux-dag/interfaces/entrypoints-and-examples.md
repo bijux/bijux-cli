@@ -1,23 +1,55 @@
 ---
-title: Entrypoints And Examples
+title: Entrypoints and Examples
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-dag-docs
 last_reviewed: 2026-04-06
 ---
 
-# Entrypoints And Examples
+# Entrypoints and Examples
 
-This page defines interface expectations for **Entrypoints And Examples** in `bijux-dag`.
+This page records practical DAG entrypoints for CLI users and Rust integrators.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Data contracts](data-contracts.md)
+```mermaid
+flowchart TD
+    shell["shell user"] --> cli["bijux dag ..."]
+    cli --> app["dag-app command orchestration"]
+    rust["rust integration"] --> core["dag-core crate exports"]
+    rust --> runtime["dag-runtime crate exports"]
+    runtime --> artifacts["dag-artifacts persistence exports"]
+```
 
-## Consolidated Command Guidance
+## CLI Entrypoints
 
-This page now carries former CLI-reference and user-guide coverage for command
-family behavior, operator flow, inspect/replay/diff interpretation, and bundle
-workflow expectations.
+```bash
+bijux dag validate ./examples/simple.dag.json
+bijux dag run ./examples/simple.dag.json --out ./runs
+bijux dag replay ./runs/run-123 --out ./runs/replay-123
+bijux dag diff ./runs/run-122 ./runs/run-123 --mode semantic --explain
+bijux dag status ./runs/run-123
+```
+
+## Rust Entrypoint Example
+
+```rust
+use bijux_dag_core::parse_graph_strict;
+
+let graph = parse_graph_strict("{\"spec\":\"bijux-dag/v0.1\",\"nodes\":[],\"edges\":[]}")?;
+println!("spec={}", graph.spec);
+```
+
+## Code Anchors
+
+- `crates/bijux-dag-cli/src/main.rs`
+- `crates/bijux-dag-app/src/lib.rs`
+- `crates/bijux-dag-core/src/lib.rs`
+- `crates/bijux-dag-runtime/src/lib.rs`
+
+## Next Reads
+
+- [CLI Surface](cli-surface.md)
+- [Operator Workflows](operator-workflows.md)
+- [Local Development](../operations/local-development.md)

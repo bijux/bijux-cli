@@ -1,7 +1,7 @@
 ---
 title: Compatibility Commitments
 audience: mixed
-type: interfaces
+type: explanation
 status: canonical
 owner: bijux-dag-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,42 @@ last_reviewed: 2026-04-06
 
 # Compatibility Commitments
 
-This page defines interface expectations for **Compatibility Commitments** in `bijux-dag`.
+Compatibility commitments define what DAG behavior is expected to remain stable
+for operators, automation, and integrations.
 
-Primary references:
+## Visual Summary
 
-- [CLI surface](cli-surface.md)
-- [Data contracts](data-contracts.md)
+```mermaid
+flowchart LR
+    commitments["compatibility commitments"] --> grammar["command grammar and flags"]
+    commitments --> identity["identity and canonicalization meaning"]
+    commitments --> outcomes["replay and diff classification vocabulary"]
+    commitments --> artifacts["artifact and lineage contract shapes"]
+```
 
-## Consolidated Command Guidance
+## Compatibility Scope
 
-This page now carries former CLI-reference and user-guide coverage for command
-family behavior, operator flow, inspect/replay/diff interpretation, and bundle
-workflow expectations.
+- command family behavior for documented DAG surfaces
+- graph/run/artifact identity semantics and reason-code meaning
+- replay/diff classification vocabulary and failure-state visibility
+- crate-root API intent for core/runtime/artifacts integrations
+
+## Flexibility Boundaries
+
+- additive commands and fields are acceptable with documentation updates
+- internal module refactors are acceptable if external behavior stays stable
+- capability expansion is acceptable when downgrade semantics remain explicit
+
+## Code Anchors
+
+- `crates/bijux-dag-app/src/commands/mod.rs`
+- `crates/bijux-dag-core/src/analysis/fingerprint.rs`
+- `crates/bijux-dag-runtime/src/replay/`
+- `crates/bijux-dag-artifacts/src/storage/models.rs`
+- `crates/bijux-dag-app/tests/*contract*.rs`
+
+## Next Reads
+
+- [Change Principles](../foundation/change-principles.md)
+- [Change Validation](../quality/change-validation.md)
+- [Release and Versioning](../operations/release-and-versioning.md)
