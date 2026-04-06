@@ -35,6 +35,16 @@ flowchart LR
 - mitigations must be concrete and testable
 - expired exceptions must be closed or renewed with evidence
 
+## Exception Record Template
+
+Use this structure for every exception request:
+
+- `owner`: accountable maintainer
+- `scope`: exact affected crate/docs surface
+- `reason`: why the standard gate cannot pass now
+- `mitigation`: immediate controls while exception is active
+- `expiry`: specific date for revalidation or removal
+
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/ops.rs`

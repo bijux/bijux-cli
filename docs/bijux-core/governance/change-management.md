@@ -37,6 +37,15 @@ flowchart LR
 - compatibility-sensitive changes require explicit migration notes
 - docs updates belong in the same change set as behavior updates
 
+## Evidence Bundle Checklist
+
+Attach this minimum bundle for cross-program changes:
+
+1. ownership scope statement with affected handbook pages
+2. command/test evidence from owning crates
+3. compatibility impact note (`none`, `additive`, or `breaking`)
+4. documentation updates linked to changed behavior
+
 ## Code Anchors
 
 - `crates/bijux-dev/src/suites/`

@@ -38,6 +38,13 @@ make docs-check
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- verify
 ```
 
+## Minimum Review Evidence
+
+- failing-to-passing command outputs for affected surfaces
+- contract-test confirmation for schema-sensitive changes
+- docs-check output for documentation-affected changes
+- explicit note for any skipped check with owner and follow-up date
+
 ## Code Anchors
 
 - `makes/rust.mk`
