@@ -17,14 +17,14 @@ fn parse(text: &str) -> bijux_dag_core::Graph {
 
 #[test]
 fn parse_rejects_unknown_fields_fixture() {
-    let payload = include_str!("../../../configs/schema/fixtures/v0.1/negative/unknown-field.json");
+    let payload = include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/negative/unknown-field.json");
     assert!(parse_graph_strict(payload).is_err());
 }
 
 #[test]
 fn parse_rejects_future_required_behavior_fixture() {
     let payload = include_str!(
-        "../../../configs/schema/fixtures/v0.1/negative/future-required-behavior.json"
+        "../../../bijux-dag/configs/schema/fixtures/v0.1/negative/future-required-behavior.json"
     );
     assert!(parse_graph_strict(payload).is_err());
 }
@@ -32,19 +32,19 @@ fn parse_rejects_future_required_behavior_fixture() {
 #[test]
 fn parse_rejects_ambiguous_output_paths_fixture() {
     let payload =
-        include_str!("../../../configs/schema/fixtures/v0.1/negative/invalid-output-path.json");
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/negative/invalid-output-path.json");
     assert!(parse_graph_strict(payload).is_err());
 }
 
 #[test]
 fn canonical_graph_shape_coverage() {
     let fixtures = [
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/empty-graph.json"),
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/isolated-node.json"),
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/diamond.json"),
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/fan-in.json"),
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/fan-out.json"),
-        include_str!("../../../configs/schema/fixtures/v0.1/positive/disconnected-groups.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/empty-graph.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/isolated-node.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/diamond.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/fan-in.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/fan-out.json"),
+        include_str!("../../../bijux-dag/configs/schema/fixtures/v0.1/positive/disconnected-groups.json"),
     ];
 
     for fixture in fixtures {
