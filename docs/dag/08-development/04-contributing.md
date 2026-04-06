@@ -67,6 +67,6 @@ Contributor responsibility: preserve truth in claims, keep scope explicit, and n
 
 ## Next reading
 
-- [Repository structure](docs/08-development/01-repository-structure.md)
-- [Testing strategy](docs/08-development/02-testing-strategy.md)
-- [Specification index](docs/06-specification/01-dag-model.md)
+- [Repository structure](01-repository-structure.md)
+- [Testing strategy](02-testing-strategy.md)
+- [Specification index](../06-specification/01-dag-model.md)

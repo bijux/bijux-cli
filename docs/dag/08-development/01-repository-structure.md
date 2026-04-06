@@ -54,6 +54,6 @@ If a change touches multiple conceptual surfaces, document why each surface is r
 
 ## Next reading
 
-- [Crate architecture](docs/05-system-architecture/02-crate-architecture.md)
-- [Testing strategy](docs/08-development/02-testing-strategy.md)
-- [Contributing](docs/08-development/04-contributing.md)
+- [Crate architecture](../05-system-architecture/02-crate-architecture.md)
+- [Testing strategy](02-testing-strategy.md)
+- [Contributing](04-contributing.md)

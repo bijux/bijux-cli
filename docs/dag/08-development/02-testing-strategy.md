@@ -75,6 +75,6 @@ Testing results are only as strong as the boundary assumptions:
 
 ## Next reading
 
-- [CI integration](docs/07-operations/01-ci-integration.md)
-- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
-- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)
+- [CI integration](../07-operations/01-ci-integration.md)
+- [Replay semantics contract](../06-specification/07-replay-semantics.md)
+- [Diff semantics contract](../06-specification/08-diff-semantics.md)

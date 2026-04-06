@@ -75,6 +75,6 @@ Example: `container-x` adapter.
 
 ## Next reading
 
-- [Adapters architecture](docs/05-system-architecture/05-adapters.md)
-- [Backend support](docs/07-operations/05-backend-support.md)
-- [Run model contract](docs/06-specification/02-run-model.md)
+- [Adapters architecture](../05-system-architecture/05-adapters.md)
+- [Backend support](../07-operations/05-backend-support.md)
+- [Run model contract](../06-specification/02-run-model.md)
