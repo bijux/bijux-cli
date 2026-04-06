@@ -43,6 +43,13 @@ flowchart LR
 - keep semver and release tags aligned with shipped contract behavior
 - avoid undocumented behavior changes between patch releases
 
+## Current Release Line
+
+- release target: `v0.3.4`
+- published Rust crate: `bijux-cli`
+- published Python package: `bijux-cli`
+- DAG crates remain internal until the coordinated `v0.4.0` release line.
+
 ## Next Reads
 
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)

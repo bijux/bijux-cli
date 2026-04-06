@@ -29,6 +29,13 @@ flowchart LR
 - ensure docs navigation and links are valid before publishing
 - verify post-release health and rollback readiness
 
+## Current Publication Policy
+
+- `v0.3.4` publishes `bijux-cli` to crates.io and `bijux-cli` to PyPI.
+- `bijux-dag-*` crates remain internal and are intentionally not published in `v0.3.4`.
+- DAG publication is deferred to `v0.4.0`, when CLI and DAG are released together.
+- canonical repository for both programs is `https://github.com/bijux/bijux-core`.
+
 ## Preflight Checklist
 
 - required tests and maintainer verification commands are green
