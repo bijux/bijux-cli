@@ -38,7 +38,7 @@ jobs:
       - name: install cargo-nextest
         run: cargo install --locked cargo-nextest --version 0.9.100
       - name: install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov --locked
+        run: cargo install --locked cargo-llvm-cov --version 0.6.21
       - name: generate coverage and threshold reports
         continue-on-error: true
         run: make coverage
