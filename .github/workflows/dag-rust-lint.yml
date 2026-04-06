@@ -37,7 +37,11 @@ jobs:
           toolchain: 1.85.0
           components: clippy,rustfmt
       - name: checks
-        run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy --domain quality --domain style --domain supply-chain --advisory
+        run: |
+          cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy --advisory
+          cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain quality --advisory
+          cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain style --advisory
+          cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain supply-chain --advisory
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
