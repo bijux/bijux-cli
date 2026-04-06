@@ -2,10 +2,10 @@ use std::path::Path;
 
 pub fn required_contract_files() -> &'static [&'static str] {
     &[
-        "docs/06-specification/01-dag-model.md",
-        "docs/06-specification/02-run-model.md",
-        "docs/06-specification/03-artifact-model.md",
-        "docs/06-specification/07-replay-semantics.md",
+        "contracts/schemas/output-envelope-v1.schema.json",
+        "contracts/schemas/error-envelope-v1.schema.json",
+        "contracts/schemas/plugin-manifest-v2.schema.json",
+        "evidence/dag/CONTRACT.md",
     ]
 }
 
