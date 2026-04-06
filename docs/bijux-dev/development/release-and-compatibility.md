@@ -93,6 +93,6 @@ claim that the current evidence supports shipping more than delaying.
 
 ## Where To Go Deeper
 
-- [Quality and change management](../04-architecture/quality-and-change-management.md)
-- [Runtime and distribution](../04-architecture/runtime-and-distribution.md)
-- [Integrations and routed runtimes](../06-reference/integrations-and-routed-runtimes.md)
+- [Quality and change management](../../bijux-core/architecture/quality-and-change-management.md)
+- [Runtime and distribution](../../bijux-core/architecture/runtime-and-distribution.md)
+- [Integrations and routed runtimes](../../bijux-cli/reference/integrations-and-routed-runtimes.md)

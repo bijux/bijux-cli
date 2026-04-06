@@ -13,5 +13,5 @@ This page defines quality expectations for **Invariants** in `bijux-dag`.
 
 Validation references:
 
-- [DAG development testing strategy](../../dag/08-development/02-testing-strategy.md)
-- [DAG replay semantics](../../dag/06-specification/07-replay-semantics.md)
+- [DAG development testing strategy](../../program/08-development/02-testing-strategy.md)
+- [DAG replay semantics](../../program/06-specification/07-replay-semantics.md)

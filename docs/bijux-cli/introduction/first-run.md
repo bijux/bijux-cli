@@ -63,12 +63,12 @@ These commands do not prove:
 
 Go to:
 
-- [Install and verify](../02-getting-started/install-and-verify.md)
-- [Installation and recovery](../02-getting-started/installation-and-recovery.md)
-- [Command surface](../06-reference/command-surface.md)
-- [Testing and evidence](../05-development/testing-and-evidence.md)
+- [Install and verify](../getting-started/install-and-verify.md)
+- [Installation and recovery](../getting-started/installation-and-recovery.md)
+- [Command surface](../reference/command-surface.md)
+- [Testing and evidence](../../bijux-dev/development/testing-and-evidence.md)
 
 ## Read Next
 
-If the runtime works, continue to [Getting started](../02-getting-started/index.md)
+If the runtime works, continue to [Getting started](../getting-started/index.md)
 or return to [Command Model](command-model.md).

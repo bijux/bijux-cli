@@ -61,5 +61,5 @@ These pages are intentionally different from guides:
 
 ## Next Step
 
-If you need workflows, go to [User Guide](../03-user-guide/index.md). If you
-need system shape, go to [Architecture](../04-architecture/index.md).
+If you need workflows, go to [User Guide](../user-guide/index.md). If you
+need system shape, go to [Architecture](../../bijux-core/architecture/index.md).

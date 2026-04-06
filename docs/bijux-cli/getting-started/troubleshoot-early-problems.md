@@ -65,11 +65,11 @@ command-level problems.
 
 Move to the fuller docs when the basics are already proven:
 
-- [Installation and recovery](../02-getting-started/installation-and-recovery.md)
-- [Command surface](../06-reference/command-surface.md)
-- [Configuration and output](../03-user-guide/configuration-and-output.md)
-- [Plugins and extensions](../03-user-guide/plugins-and-extensions.md)
-- [Testing and evidence](../05-development/testing-and-evidence.md)
+- [Installation and recovery](../getting-started/installation-and-recovery.md)
+- [Command surface](../reference/command-surface.md)
+- [Configuration and output](../user-guide/configuration-and-output.md)
+- [Plugins and extensions](../user-guide/plugins-and-extensions.md)
+- [Testing and evidence](../../bijux-dev/development/testing-and-evidence.md)
 
 ## Closing Rule
 

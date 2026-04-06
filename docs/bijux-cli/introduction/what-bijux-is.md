@@ -60,4 +60,4 @@ macOS until the remaining POSIX-only product edges are removed.
 
 - [First Run](first-run.md)
 - [Command Model](command-model.md)
-- [System Overview](../04-architecture/system-overview.md)
+- [System Overview](../../bijux-core/architecture/system-overview.md)

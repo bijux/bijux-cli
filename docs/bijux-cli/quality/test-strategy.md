@@ -13,5 +13,5 @@ This page defines quality expectations for **Test Strategy** in `bijux-cli`.
 
 Validation references:
 
-- [Testing and evidence](../../05-development/testing-and-evidence.md)
-- [Plugin contracts](../../07-contracts/plugin-contracts.md)
+- [Testing and evidence](../../../bijux-dev/development/testing-and-evidence.md)
+- [Plugin contracts](../../contracts/plugin-contracts.md)

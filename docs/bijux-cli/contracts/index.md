@@ -74,5 +74,5 @@ its `contracts/` path:
 
 ## Next Step
 
-If you need implementation shape, go to [Architecture](../04-architecture/index.md).
-If you need exact lookup tables, go to [Reference](../06-reference/index.md).
+If you need implementation shape, go to [Architecture](../../bijux-core/architecture/index.md).
+If you need exact lookup tables, go to [Reference](../reference/index.md).

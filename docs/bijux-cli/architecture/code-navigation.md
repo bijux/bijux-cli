@@ -13,5 +13,5 @@ This architecture page anchors **Code Navigation** for CLI.
 
 Related references:
 
-- [Execution pipeline](../../04-architecture/execution-pipeline.md)
-- [CLI command model](../../01-introduction/command-model.md)
+- [Execution pipeline](../../../bijux-core/architecture/execution-pipeline.md)
+- [CLI command model](../../introduction/command-model.md)

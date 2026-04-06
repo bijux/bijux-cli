@@ -172,4 +172,4 @@ When using `bijux repl`, the documented session controls are:
 ## Honest Limit
 
 This page is a command inventory, not a full behavior tutorial. For usage
-workflows, go to [User Guide](../03-user-guide/index.md).
+workflows, go to [User Guide](../user-guide/index.md).

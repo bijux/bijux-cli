@@ -13,5 +13,5 @@ This page defines the DAG foundation contract for **Lifecycle Overview**.
 
 Primary references:
 
-- [DAG introduction](../../dag/01-introduction/01-what-is-bijux-dag.md)
-- [DAG specification](../../dag/06-specification/01-dag-model.md)
+- [DAG introduction](../../program/01-introduction/01-what-is-bijux-dag.md)
+- [DAG specification](../../program/06-specification/01-dag-model.md)

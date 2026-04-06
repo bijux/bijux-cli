@@ -13,5 +13,5 @@ This architecture page anchors **Extensibility Model** for `bijux-dag`.
 
 Related references:
 
-- [System architecture](../../dag/05-system-architecture/01-system-overview.md)
-- [Execution engine](../../dag/05-system-architecture/03-execution-engine.md)
+- [System architecture](../../program/05-system-architecture/01-system-overview.md)
+- [Execution engine](../../program/05-system-architecture/03-execution-engine.md)

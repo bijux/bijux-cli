@@ -13,5 +13,5 @@ This page defines interface expectations for **Configuration Surface** in `bijux
 
 Primary references:
 
-- [DAG CLI reference](../../dag/04-cli-reference/01-cli-overview.md)
-- [DAG specification](../../dag/06-specification/01-dag-model.md)
+- [DAG CLI reference](../../program/04-cli-reference/01-cli-overview.md)
+- [DAG specification](../../program/06-specification/01-dag-model.md)

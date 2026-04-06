@@ -73,5 +73,5 @@ surface-specific reasoning users need to do once the command set grows.
 ## Read Next
 
 - [Limits And Guarantees](limits-and-guarantees.md)
-- [Execution Pipeline](../04-architecture/execution-pipeline.md)
-- [Routing And Surfaces](../04-architecture/routing-and-surfaces.md)
+- [Execution Pipeline](../../bijux-core/architecture/execution-pipeline.md)
+- [Routing And Surfaces](../../bijux-core/architecture/routing-and-surfaces.md)

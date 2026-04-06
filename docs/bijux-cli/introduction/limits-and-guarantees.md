@@ -68,9 +68,9 @@ still assume Linux/macOS host behavior.
 
 Use these sources, in this order:
 
-1. [Contracts index](../07-contracts/index.md)
-2. [Testing and evidence](../05-development/testing-and-evidence.md)
-3. [Quality and change management](../04-architecture/quality-and-change-management.md)
+1. [Contracts index](../contracts/index.md)
+2. [Testing and evidence](../../bijux-dev/development/testing-and-evidence.md)
+3. [Quality and change management](../../bijux-core/architecture/quality-and-change-management.md)
 
 ## Closing Rule
 

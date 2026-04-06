@@ -59,4 +59,4 @@ These pages are intentionally narrow:
 
 If you already know you want installation details, go to
 [First Run](first-run.md). If you need the deeper system map, continue to
-[System Overview](../04-architecture/system-overview.md).
+[System Overview](../../bijux-core/architecture/system-overview.md).

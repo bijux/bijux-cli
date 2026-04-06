@@ -62,5 +62,5 @@ These pages are intentionally narrow:
 ## Next Step
 
 If you have not read the project identity and limits yet, start with
-[Introduction](../01-introduction/index.md). If you already know what Bijux is,
+[Introduction](../introduction/index.md). If you already know what Bijux is,
 continue to [Install And Verify](install-and-verify.md).

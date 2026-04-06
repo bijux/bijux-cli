@@ -13,5 +13,5 @@ This page captures the CLI operational contract for **Common Workflows**.
 
 Start with:
 
-- [Install and verify](../../02-getting-started/install-and-verify.md)
-- [Troubleshoot early problems](../../02-getting-started/troubleshoot-early-problems.md)
+- [Install and verify](../../getting-started/install-and-verify.md)
+- [Troubleshoot early problems](../../getting-started/troubleshoot-early-problems.md)

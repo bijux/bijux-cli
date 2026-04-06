@@ -12,4 +12,4 @@ last_reviewed: 2026-04-06
 The docs website uses handbook-first routing to keep cognitive overhead low
 between projects.
 
-All new pages must follow [Documentation Style Standard](../standards/documentation-style.md).
+All new pages must follow [Documentation Style Standard](documentation-style-standard.md).

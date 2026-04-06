@@ -13,5 +13,5 @@ This page captures the DAG operational contract for **Common Workflows**.
 
 Start with:
 
-- [DAG installation](../../dag/02-getting-started/01-installation.md)
-- [DAG troubleshooting](../../dag/02-getting-started/05-basic-troubleshooting.md)
+- [DAG installation](../../program/02-getting-started/01-installation.md)
+- [DAG troubleshooting](../../program/02-getting-started/05-basic-troubleshooting.md)

@@ -21,7 +21,7 @@
 - Runtime crates stay under `crates/`.
 - DAG domain crates stay under root `crates/` with `bijux-dag-*` and `bijux-dev` naming for discoverability and direct workspace ownership.
 - Repository-level docs live under `docs/` and are organized as four top-level programs:
-  `docs/cli`, `docs/dag`, `docs/core`, and `docs/dev`.
+  `docs/bijux-cli`, `docs/bijux-dag`, `docs/bijux-core`, and `docs/bijux-dev`.
 
 ## Operational Contract
 

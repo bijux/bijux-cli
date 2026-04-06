@@ -87,6 +87,6 @@ durable event store.
 
 ## Where To Go Deeper
 
-- [Command surface](../06-reference/command-surface.md)
-- [Integrations and routed runtimes](../06-reference/integrations-and-routed-runtimes.md)
-- [Routing and surfaces architecture](../04-architecture/routing-and-surfaces.md)
+- [Command surface](../reference/command-surface.md)
+- [Integrations and routed runtimes](../reference/integrations-and-routed-runtimes.md)
+- [Routing and surfaces architecture](../../bijux-core/architecture/routing-and-surfaces.md)
