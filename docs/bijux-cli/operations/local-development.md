@@ -1,7 +1,7 @@
 ---
 title: Local Development
-audience: operators
-type: operations
+audience: mixed
+type: explanation
 status: canonical
 owner: bijux-cli-docs
 last_reviewed: 2026-04-06
@@ -9,15 +9,50 @@ last_reviewed: 2026-04-06
 
 # Local Development
 
-This page captures the CLI operational contract for **Local Development**.
+Local development for `bijux-cli` should combine fast command iteration with
+targeted test evidence on every contract-impacting change.
 
-Start with:
+## Visual Summary
 
-- [Installation and setup](installation-and-setup.md)
-- [Failure recovery](failure-recovery.md)
+```mermaid
+flowchart LR
+    edit["edit source or docs"] --> run["run focused command checks"]
+    run --> tests["run targeted tests"]
+    tests --> docs["update handbook pages"]
+    docs --> gates["run docs and workspace gates"]
+```
 
-## Consolidated Onboarding Guidance
+## Local Development Loop
 
-This section absorbs the former getting-started chapter so installation,
-verification, first command execution, structured output use, and early
-troubleshooting remain in one operational path.
+- run command behavior locally through `cargo run -p bijux-cli --bin bijux -- ...`
+- run focused tests in affected routing, integration, or architecture suites
+- update handbook pages when user-facing behavior changes
+- rerun docs and contract checks before commit
+
+## Typical Commands
+
+```bash
+cargo run -p bijux-cli --bin bijux -- status
+cargo test -p bijux-cli routing::
+cargo test -p bijux-cli integration::
+make docs-check
+```
+
+## Code Anchors
+
+- `crates/bijux-cli/tests/routing/`
+- `crates/bijux-cli/tests/integration/`
+- `crates/bijux-cli/tests/architecture/`
+- `makes/docs.mk`
+
+## Development Rules
+
+- treat golden/snapshot changes as reviewable contract changes
+- avoid mixing unrelated behavior and documentation edits in one commit
+- keep commits scoped to one understandable runtime concern
+
+## Next Reads
+
+- [Common Workflows](common-workflows.md)
+- [Test Strategy](../quality/test-strategy.md)
+- [Change Validation](../quality/change-validation.md)
