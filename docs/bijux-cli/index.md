@@ -15,6 +15,17 @@ workspace operations.
 Read this handbook when the question is about command UX, compatibility of
 output envelopes, or plugin/operator workflows.
 
+## Handbook Structure Contract
+
+`docs/bijux-cli/` keeps one durable layout:
+
+- exactly five section directories: `foundation`, `architecture`,
+  `interfaces`, `operations`, `quality`
+- each section contains exactly ten pages
+- no additional nested section trees under `docs/bijux-cli/`
+
+This keeps CLI documentation shape stable for long-term navigation and review.
+
 ## Main Paths
 
 - [Foundation](foundation/index.md)
