@@ -60,15 +60,16 @@ It owns:
 
 It does not redefine the runtime contract independently from the Rust crate.
 
-### `crates/bijux-dev/dev-cli`
+### `crates/bijux-dev`
 
-This is the maintainer control-plane.
+This is the maintainer and governance control-plane package.
 
 It owns:
 
 - repository diagnostics
 - maintainer reports and inventories
 - release and parity support commands intended for maintainers rather than ordinary runtime users
+- merged maintainer modules under `src/maintainer`
 
 ## `bijux-cli` Internal Layers
 
