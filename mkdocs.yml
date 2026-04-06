@@ -31,6 +31,7 @@ nav:
       - Overview: 04-architecture/index.md
       - System Overview: 04-architecture/system-overview.md
       - Workspace Map: 04-architecture/workspace-map.md
+      - Workspace Ownership Map: 04-architecture/workspace-ownership-map.md
       - Execution Pipeline: 04-architecture/execution-pipeline.md
       - Routing And Surfaces: 04-architecture/routing-and-surfaces.md
       - Configuration And State: 04-architecture/configuration-and-state.md
@@ -58,6 +59,9 @@ nav:
       - Distribution And Ownership: 07-contracts/distribution-and-ownership.md
   - DAG:
       - Overview: 08-dag/index.md
+      - What Is bijux-dag: ../bijux-dag/docs/01-introduction/01-what-is-bijux-dag.md
+      - DAG Object Model: ../bijux-dag/docs/06-specification/01-object-model.md
+      - DAG Operations: ../bijux-dag/docs/07-operations/01-ci-integration.md
 
 strict: true
 use_directory_urls: true
