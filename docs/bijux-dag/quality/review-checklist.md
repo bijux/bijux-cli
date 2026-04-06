@@ -16,6 +16,13 @@ Validation references:
 - [Test strategy](test-strategy.md)
 - [Change validation](change-validation.md)
 
+## Required Review Checks
+
+- confirm `docs/bijux-dag/` contains only `foundation`, `architecture`,
+  `interfaces`, `operations`, and `quality` directories
+- confirm each of those five directories contains exactly ten markdown pages
+- confirm no links target removed `docs/bijux-dag/program/` chapter paths
+
 ## Consolidated Development Governance
 
 This page now includes former development chapter expectations for contributor
