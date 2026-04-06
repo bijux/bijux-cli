@@ -23,7 +23,7 @@ This crate is the owner of command orchestration behavior, command-level respons
 - `cache/*`, `explain/*`, `format/*`, `migrate/*`: focused domain command helpers.
 
 ## Allowed changes
-- Add or evolve orchestration modules while keeping command contracts backward-compatible per [docs/spec/CLI_BACKWARD_COMPATIBILITY.md](/Users/bijan/bijux/bijux-dag/docs/spec/CLI_BACKWARD_COMPATIBILITY.md).
+- Add or evolve orchestration modules while keeping command contracts backward-compatible per [docs/spec/CLI_BACKWARD_COMPATIBILITY.md](/Users/bijan/bijux/bijux-core/docs/dag/04-cli-reference/01-cli-overview.md).
 - Add formatting variants that do not weaken machine-readable contracts.
 
 ## Related tests
