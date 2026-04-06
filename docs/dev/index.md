@@ -1,6 +1,6 @@
 # Dev Program
 
-This section is the maintainer and contributor control-plane documentation for `bijux-core-dev`.
+This section is the maintainer and contributor control-plane documentation for `bijux-dev`.
 
 ## Maintainer and contribution flow
 
@@ -13,5 +13,5 @@ This section is the maintainer and contributor control-plane documentation for `
 ## Maintainer command surface
 
 ```bash
-cargo run -p bijux-core-dev --bin bijux-dev-cli -- status --format json --no-pretty
+cargo run -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
 ```

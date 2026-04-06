@@ -86,8 +86,8 @@ lint-rs: ## Run Rust clippy checks with -D warnings
 test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-core-dev --bin bijux-dev-cli"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-core-dev --bin bijux-dev-cli
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
 	@status=0; \
 	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
@@ -113,8 +113,8 @@ test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-core-dev --bin bijux-dev-cli"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-core-dev --bin bijux-dev-cli
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
@@ -142,8 +142,8 @@ coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-core-dev --bin bijux-dev-cli"
-	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-core-dev --bin bijux-dev-cli
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dev-cli" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \

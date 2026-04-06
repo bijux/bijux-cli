@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-core-dev -- dag validate examples/pipeline.dag.json
+      - run: cargo run -p bijux-dev -- dag validate examples/pipeline.dag.json
   test:
     runs-on: ubuntu-latest
     needs: [validate]
@@ -59,15 +59,15 @@ jobs:
     needs: [test]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-core-dev -- run replay --baseline runs/r_120 --mode strict
-      - run: cargo run -p bijux-core-dev -- run diff --baseline runs/r_120 --candidate runs/latest --json
+      - run: cargo run -p bijux-dev -- run replay --baseline runs/r_120 --mode strict
+      - run: cargo run -p bijux-dev -- run diff --baseline runs/r_120 --candidate runs/latest --json
   promote:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     needs: [determinism]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-core-dev -- release verify --require-equivalent
+      - run: cargo run -p bijux-dev -- release verify --require-equivalent
 ```
 
 Jenkins/GitLab/CircleCI mapping pattern:

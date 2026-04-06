@@ -4,7 +4,7 @@
 
 ## DAG ownership map
 
-- Crates: `crates/bijux-dag-*`, `crates/bijux-core-dev`
+- Crates: `crates/bijux-dag-*`, `crates/bijux-dev`
 - Config: `configs/dag/`
 - Automation modules: `makes/`
 - DAG documentation and evidence assets: `docs/dag/`, `evidence/dag/`
@@ -13,7 +13,7 @@
 ## Local verification path
 
 ```bash
-cargo test -p bijux-core-dev --test source_layout_guardrails -- --nocapture
+cargo test -p bijux-dev --test source_layout_guardrails -- --nocapture
 cargo check --workspace --all-targets
 make dag-test
 make dag-contracts

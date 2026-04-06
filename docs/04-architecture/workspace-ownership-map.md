@@ -6,8 +6,8 @@
 
 - `crates/bijux-cli`: primary runtime and command surface authority.
 - `crates/bijux-cli-python`: Python packaging and bridge for the runtime.
-- `crates/bijux-core-dev/dev-cli`: maintainer control plane for repository quality gates.
-- `crates/bijux-dag-*` and `crates/bijux-core-dev`: DAG engine, app, cli, and testkit crates integrated as peer workspace members.
+- `crates/bijux-dev/dev-cli`: maintainer control plane for repository quality gates.
+- `crates/bijux-dag-*` and `crates/bijux-dev`: DAG engine, app, cli, and testkit crates integrated as peer workspace members.
 
 ## Ownership Rules
 
@@ -19,7 +19,7 @@
 ## Path Contract
 
 - Runtime crates stay under `crates/`.
-- DAG domain crates stay under root `crates/` with `bijux-dag-*` and `bijux-core-dev` naming for discoverability and direct workspace ownership.
+- DAG domain crates stay under root `crates/` with `bijux-dag-*` and `bijux-dev` naming for discoverability and direct workspace ownership.
 - Repository-level docs live under `docs/` and are organized as four top-level programs:
   `docs/cli`, `docs/dag`, `docs/core`, and `docs/dev`.
 

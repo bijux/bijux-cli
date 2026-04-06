@@ -8,7 +8,7 @@ members = [
   "crates/bijux-dag-app",
   "crates/bijux-dag-cli",
   "crates/bijux-dag-testkit",
-  "crates/bijux-core-dev",
+  "crates/bijux-dev",
   ]
 resolver = "2"
 
