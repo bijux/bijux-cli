@@ -43,7 +43,7 @@ base64 = "0.22.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
-missing_docs = "warn"
+missing_docs = "allow"
 unused_crate_dependencies = "allow"
 
 [workspace.lints.clippy]

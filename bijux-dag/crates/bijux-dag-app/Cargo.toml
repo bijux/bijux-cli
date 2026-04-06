@@ -28,6 +28,3 @@ tempfile = { workspace = true }
 
 [dev-dependencies]
 bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }
-
-[lints.rust]
-missing_docs = "allow"
