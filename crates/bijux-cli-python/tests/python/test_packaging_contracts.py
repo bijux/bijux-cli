@@ -272,7 +272,7 @@ def test_maturin_sdist_includes_core_release_documents() -> None:
     include_paths = {(entry["path"], entry["format"]) for entry in include}
     assert ("README.md", "sdist") in include_paths
     assert ("CHANGELOG.md", "sdist") in include_paths
-    assert ("../../LICENSE", "sdist") in include_paths
+    assert ("LICENSE", "sdist") in include_paths
 
 
 def test_runtime_support_helper_matches_python_requirement_floor() -> None:

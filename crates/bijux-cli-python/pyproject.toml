@@ -85,7 +85,7 @@ features = ["python-extension"]
 include = [
   { path = "README.md", format = "sdist" },
   { path = "CHANGELOG.md", format = "sdist" },
-  { path = "../../LICENSE", format = "sdist" },
+  { path = "LICENSE", format = "sdist" },
 ]
 
 # --8<-- [start:bijux]
