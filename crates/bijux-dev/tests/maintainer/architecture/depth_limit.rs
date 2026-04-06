@@ -97,7 +97,7 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
     collect_rs_files(&crate_root.join("src"), &mut rs_files);
     collect_rs_files(&crate_root.join("tests"), &mut rs_files);
 
-    let this_file = crate_root.join("tests/architecture/depth_limit.rs");
+    let this_file = crate_root.join("tests/maintainer/architecture/depth_limit.rs");
     for file in rs_files {
         if file == this_file {
             continue;
