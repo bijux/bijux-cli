@@ -9,32 +9,32 @@ last_reviewed: 2026-04-06
 
 # Repository Handbook
 
-This handbook owns repository-level conventions that span more than one crate
-or program boundary.
+`bijux-core` repository guidance is split into two stable sections:
+architecture and governance.
 
-Use this section when no single program handbook can answer the question on its
-own.
+## Visual Summary
 
-## Pages In This Section
+```mermaid
+flowchart LR
+    core[repository handbook] --> architecture[core architecture section]
+    core --> governance[core governance section]
+    architecture --> programs[cli dag python dev integration boundaries]
+    governance --> policies[release compatibility quality policy]
+```
 
-- [Platform Overview](platform-overview.md)
-- [Repository Scope](repository-scope.md)
-- [Workspace Layout](workspace-layout.md)
-- [Package Map](package-map.md)
-- [API and Schema Governance](api-and-schema-governance.md)
-- [Local Development](local-development.md)
-- [Testing and Validation](testing-and-validation.md)
-- [Release and Versioning](release-and-versioning.md)
-- [Documentation System](documentation-system.md)
+## Section Directory
 
-## Use This Section For
+- [Core Architecture](architecture/index.md)
+- [Core Governance](governance/index.md)
 
-- workspace boundaries and ownership rules
-- shared schema and contract governance
-- release and validation policy that applies across CLI and DAG
+## When To Use This Handbook
 
-## Leave This Section For Program Handbooks When
+- when a policy affects more than one program handbook
+- when ownership boundaries across crates must be clarified
+- when release, compatibility, or validation policy is repository-wide
 
-- behavior is specific to one command surface
-- behavior is specific to DAG runtime execution semantics
-- a maintainer operation is local to tooling and not product behavior
+## Program Handbooks
+
+- [CLI Handbook](../bijux-cli/index.md)
+- [DAG Handbook](../bijux-dag/index.md)
+- [Maintainer Handbook](../bijux-dev/index.md)
