@@ -1,6 +1,6 @@
 # DAG integration targets for the unified bijux-core make surface.
 
-DAG_MAKEFILE ?= bijux-dag/make/root.mk
+DAG_MAKEFILE ?= makes/dag/root.mk
 
 .PHONY: dag-help dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
 dag-help: ## Show dag-specific make targets

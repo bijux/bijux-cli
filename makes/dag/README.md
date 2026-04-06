@@ -12,15 +12,15 @@ This directory defines the repository make surface with one root include and cle
 - `CONTRACT.md`: rules and invariants for the make system.
 
 ## Entry flow
-1. Root `Makefile` includes `make/root.mk`.
-2. `make/root.mk` includes shared modules (`macros.mk`, `cargo.mk`, `evidence.mk`).
+1. Root `Makefile` includes `makes/dag/root.mk`.
+2. `makes/dag/root.mk` includes shared modules (`macros.mk`, `cargo.mk`, `evidence.mk`).
 3. `help` is generated from target annotations (`##`) in loaded make files.
 
 ## Maintenance rules
-- Add public targets in `make/root.mk` with a `##` description.
-- Keep `make/target-list.json` synchronized with the public surface.
+- Add public targets in `makes/dag/root.mk` with a `##` description.
+- Keep `makes/dag/target-list.json` synchronized with the public surface.
 - Keep behavioral logic in `bijux-dev-dag`; make targets should remain wrappers.
-- Keep evidence workflow wrappers in `make/evidence.mk`; do not duplicate evidence `verify` orchestration in other make files.
+- Keep evidence workflow wrappers in `makes/dag/evidence.mk`; do not duplicate evidence `verify` orchestration in other make files.
 
 ## Test target behavior
 - `make test`: fast suite only; skips Rust tests tagged `#[ignore = "slow"]`.

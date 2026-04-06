@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+DAG_MAKE_DIR := 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701abspath 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701dir 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701lastword 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701MAKEFILE_LIST))))
 
 ARTIFACT_ROOT ?= artifacts
 RUN_ID ?= local
@@ -13,9 +14,9 @@ TARGET_DIR := artifacts/target
 CONTRACT_DIR := artifacts/contracts
 OUTPUT_PATHS := $(RUN_DIR) $(REPORT_DIR) $(TARGET_DIR) $(CONTRACT_DIR)
 
-include make/macros.mk
-include make/cargo.mk
-include make/evidence.mk
+include 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701DAG_MAKE_DIR)/macros.mk
+include 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701DAG_MAKE_DIR)/cargo.mk
+include 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701DAG_MAKE_DIR)/evidence.mk
 
 .DEFAULT_GOAL := help
 
@@ -82,7 +83,7 @@ tests-all: ## Run all control-plane test suites
 	$(call run_or_fail,Run all test suites,$(DEV_TOOL) tests run)
 
 test-release: ## Run full workspace tests plus release-critical evidence checks
-	@$(MAKE) -f make/cargo.mk test-all
+	@20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701MAKE) -f 20 20 12 61 79 80 81 33 98 100 204 250 395 398 399 400 701DAG_MAKE_DIR)/cargo.mk test-all
 	@$(MAKE) evidence-battle
 	@$(MAKE) evidence-cache
 	@$(MAKE) evidence-replay
@@ -163,10 +164,10 @@ ci: release-verify ## Run CI gate
 sanity: doctor ## Run local sanity gate
 
 help-contract: ## Print the make contract location
-	@echo "See make/CONTRACT.md"
+	@echo "See makes/dag/CONTRACT.md"
 
 make-target-list: ## Print tracked make targets
-	@cat make/target-list.json
+	@cat makes/dag/target-list.json
 
 help: ## Show available make targets
 	@printf '%s\n' "bijux-dag make targets"; \

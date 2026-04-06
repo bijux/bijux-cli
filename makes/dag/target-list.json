@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "owner": "make/root.mk",
+  "owner": "makes/dag/root.mk",
   "targets": [
     "all",
     "help",
