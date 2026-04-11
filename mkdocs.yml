@@ -190,6 +190,9 @@ nav:
               - Change Validation: bijux-dag/quality/change-validation.md
               - Known Limitations: bijux-dag/quality/known-limitations.md
               - Risk Register: bijux-dag/quality/risk-register.md
+      - bijux-dag-core: bijux-dag/packages/bijux-dag-core/index.md
+      - bijux-dag-runtime: bijux-dag/packages/bijux-dag-runtime/index.md
+      - bijux-dag-app: bijux-dag/packages/bijux-dag-app/index.md
   - Maintainer Handbook:
       - Home:
           - Maintainer Handbook: bijux-dev/index.md
