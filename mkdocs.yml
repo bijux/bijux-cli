@@ -71,6 +71,7 @@ nav:
               - Documentation Standards: bijux-core/governance/documentation-standards.md
               - Decision Record Policy: bijux-core/governance/decision-record-policy.md
               - Risk and Exceptions: bijux-core/governance/risk-and-exceptions.md
+      - Packages: bijux-core/packages/index.md
   - CLI:
       - Home:
           - CLI Handbook: bijux-cli/index.md
