@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-04-12
 ---
 
 # DAG Handbook
@@ -19,25 +19,33 @@ This handbook is optimized for operational questions that need hard answers:
 - whether replay stayed equivalent, drifted, or is incomplete
 - where ownership boundaries are between DAG crates
 
+<div class="bijux-quicklinks">
+<a class="md-button md-button--primary" href="packages/bijux-dag-core/">Open the kernel package</a>
+<a class="md-button" href="packages/bijux-dag-runtime/">Open the runtime package</a>
+<a class="md-button" href="packages/bijux-dag-app/">Open the app package</a>
+</div>
+
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    graph_def["graph definition"] --> run["run execution"]
-    run --> evidence["run and artifact evidence"]
-    evidence --> replay["replay classification"]
-    replay --> diff["diff classification"]
-    diff --> decision["release and operator decision"]
+flowchart TB
+    handbook["DAG handbook"]
+    handbook --> core["bijux-dag-core"]
+    handbook --> runtime["bijux-dag-runtime"]
+    handbook --> app["bijux-dag-app"]
+    handbook --> cli["bijux-dag-cli"]
+    handbook --> artifacts["bijux-dag-artifacts"]
+    handbook --> testkit["bijux-dag-testkit"]
 ```
 
-## Handbook Structure Contract
+## Package Destinations
 
-`docs/bijux-dag/` remains stable and reviewable:
-
-- exactly five section directories: `foundation`, `architecture`,
-  `interfaces`, `operations`, `quality`
-- each section contains exactly ten pages
-- no nested section trees under `docs/bijux-dag/`
+- [`bijux-dag-core`](packages/bijux-dag-core/index.md) owns graph truth and planner lowering
+- [`bijux-dag-runtime`](packages/bijux-dag-runtime/index.md) owns execution policy, replay, and diagnostics
+- [`bijux-dag-app`](packages/bijux-dag-app/index.md) owns command orchestration and response shaping
+- [`bijux-dag-cli`](packages/bijux-dag-cli/index.md) owns the thin executable wrapper
+- [`bijux-dag-artifacts`](packages/bijux-dag-artifacts/index.md) owns artifact identity, integrity, and lifecycle helpers
+- [`bijux-dag-testkit`](packages/bijux-dag-testkit/index.md) owns shared deterministic fixtures
 
 ## Code Anchors
 

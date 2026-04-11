@@ -4,7 +4,7 @@ audience: maintainers
 type: index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-04-12
 ---
 
 # Maintainer Handbook
@@ -12,15 +12,28 @@ last_reviewed: 2026-04-06
 `bijux-dev` documents maintainer-only operations and governance for quality
 gates, evidence workflows, and release reliability.
 
+<div class="bijux-quicklinks">
+<a class="md-button md-button--primary" href="packages/bijux-dev/">Open the bijux-dev package</a>
+<a class="md-button" href="operations/">Open operations</a>
+<a class="md-button" href="governance/">Open governance</a>
+</div>
+
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    handbook[maintainer handbook] --> operations[operations section]
-    handbook --> governance[governance section]
-    operations --> evidence[evidence and diagnostics workflows]
-    governance --> policy[quality and contract policy]
+flowchart TB
+    handbook["Maintainer handbook"]
+    handbook --> package["bijux-dev package"]
+    handbook --> operations["operations section"]
+    handbook --> governance["governance section"]
+    operations --> evidence["evidence and diagnostics workflows"]
+    governance --> policy["quality and contract policy"]
 ```
+
+## Package Destination
+
+- [`bijux-dev`](packages/bijux-dev/index.md) owns the repository control plane,
+  maintainer automation, diagnostics, and release verification flows
 
 ## Sections In This Handbook
 
