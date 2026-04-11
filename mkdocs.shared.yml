@@ -37,10 +37,22 @@ theme:
     - scheme: default
       primary: indigo
       accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
 
 plugins:
   - search
   - autorefs
+  - git-revision-date-localized:
+      enable_creation_date: false
+      fallback_to_build_date: true
 
 markdown_extensions:
   - admonition
@@ -71,7 +83,6 @@ markdown_extensions:
 
 extra:
   homepage: https://bijux.io/
-  generator: true
   bijux:
     repository: bijux-core
   social:
@@ -84,5 +95,6 @@ extra_css:
 extra_javascript:
   - assets/javascripts/vendor/mermaid-11.6.0.min.js
   - assets/javascripts/mermaid-init.js
+  - assets/javascripts/navigation-sync.js
 
-copyright: "© 2026 Bijan Mousavi"
+copyright: "© 2026 Bijan Mousavi <bijan@bijux.io>"

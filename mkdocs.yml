@@ -1,9 +1,9 @@
 INHERIT: mkdocs.shared.yml
 
-site_name: bijux-core
+site_name: Bijux Core
 site_description: Unified Bijux CLI and DAG runtime workspace.
 site_url: !ENV [SITE_URL, https://bijux.io/bijux-core/]
-site_author: Bijan Mousavi
+site_author: Bijan Mousavi <bijan@bijux.io>
 repo_url: https://github.com/bijux/bijux-core
 repo_name: bijux/bijux-core
 edit_uri: edit/main/docs/
@@ -13,9 +13,36 @@ site_dir: artifacts/docs/site
 watch:
   - docs
   - docs/assets
+  - docs/overrides
   - mkdocs.yml
   - mkdocs.shared.yml
   - docs/automation
+
+extra:
+  bijux:
+    repository: bijux-core
+    hub_links:
+      - key: bijux
+        label: Bijux
+        url: https://bijux.io/
+      - key: core
+        label: Core
+        url: https://bijux.io/bijux-core/
+      - key: bijux-canon
+        label: Canon
+        url: https://bijux.io/bijux-canon/
+      - key: bijux-atlas
+        label: Atlas
+        url: https://bijux.io/bijux-atlas/
+      - key: bijux-proteomics
+        label: Proteomics
+        url: https://bijux.io/bijux-proteomics/
+      - key: bijux-pollenomics
+        label: Pollenomics
+        url: https://bijux.io/bijux-pollenomics/
+      - key: bijux-masterclass
+        label: Masterclass
+        url: https://bijux.io/bijux-masterclass/
 
 nav:
   - Home: index.md
