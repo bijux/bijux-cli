@@ -1,0 +1,141 @@
+{% set class = "md-header" %}
+{% if "navigation.tabs.sticky" in features %}
+  {% set class = class ~ " md-header--shadow md-header--lifted" %}
+{% elif "navigation.tabs" not in features %}
+  {% set class = class ~ " md-header--shadow" %}
+{% endif %}
+{% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
+{% set hub_links = bijux.hub_links if bijux and bijux.hub_links else [] %}
+{% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
+{% set active_section = namespace(item=None) %}
+{% import "partials/bijux-nav.html" as bijux_nav with context %}
+{% macro site_label(title) -%}
+  {% if title == "Repository Handbook" -%}
+    Repository
+  {%- elif title == "Maintainer Handbook" or title == "Maintenance Handbook" -%}
+    Maintainer
+  {%- elif active_repository and title.startswith(active_repository ~ "-") -%}
+    {{ title | replace(active_repository ~ "-", "") | replace("-", " ") | title }}
+  {%- elif title.startswith("bijux-") -%}
+    {{ title | replace("bijux-", "") | replace("-", " ") | title }}
+  {%- elif "-" in title -%}
+    {{ title | replace("-", " ") | title }}
+  {%- else -%}
+    {{ title }}
+  {%- endif %}
+{%- endmacro %}
+{% for nav_item in nav %}
+  {% if nav_item.active %}
+    {% set active_section.item = nav_item %}
+  {% endif %}
+{% endfor %}
+<header class="{{ class }}" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
+    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      {% set icon = config.theme.icon.menu or "material/menu" %}
+      {% include ".icons/" ~ icon ~ ".svg" %}
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            {{ config.site_name }}
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            {% if page.meta and page.meta.title %}
+              {{ page.meta.title }}
+            {% else %}
+              {{ page.title }}
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+    {% if hub_links %}
+      <nav class="bijux-hub-strip" aria-label="Bijux sites">
+        <ul class="bijux-tabs__list bijux-tabs__list--hub">
+          {% for entry in hub_links %}
+            {% set item_class = "bijux-tabs__item" %}
+            {% if entry.key == active_repository %}
+              {% set item_class = item_class ~ " bijux-tabs__item--active" %}
+            {% endif %}
+            <li class="{{ item_class }}">
+              <a href="{{ entry.url }}" class="bijux-tabs__link bijux-tabs__link--hub">{{ entry.label }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
+    <div class="bijux-header-tools">
+      {% if config.theme.palette %}
+        {% if not config.theme.palette is mapping %}
+          {% include "partials/palette.html" %}
+        {% endif %}
+      {% endif %}
+      {% if not config.theme.palette is mapping %}
+        {% include "partials/javascripts/palette.html" %}
+      {% endif %}
+      {% if config.extra.alternate %}
+        {% include "partials/alternate.html" %}
+      {% endif %}
+      {% if "material/search" in config.plugins %}
+        <label class="md-header__button md-icon" for="__search">
+          {% set icon = config.theme.icon.search or "material/magnify" %}
+          {% include ".icons/" ~ icon ~ ".svg" %}
+        </label>
+        {% include "partials/search.html" %}
+      {% endif %}
+      {% if config.repo_url %}
+        <div class="md-header__source">
+          {% include "partials/source.html" %}
+        </div>
+      {% endif %}
+    </div>
+  </nav>
+  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-md-component="tabs">
+    <div class="md-grid">
+      <ul class="md-tabs__list bijux-tabs__list bijux-tabs__list--site">
+        {% for nav_item in nav %}
+          {% set item_class = "md-tabs__item bijux-tabs__item" %}
+          {% set current = "" %}
+          {% if nav_item.active %}
+            {% set item_class = item_class ~ " md-tabs__item--active bijux-tabs__item--active" %}
+            {% set current = 'aria-current="page"' %}
+          {% endif %}
+          <li class="{{ item_class }}">
+            <a href="{{ bijux_nav.first_page_url(nav_item) }}" class="md-tabs__link bijux-tabs__link bijux-tabs__link--site" data-bijux-site-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ current }}>
+              {{ site_label(nav_item.title) }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </nav>
+  {% for nav_item in nav %}
+    {% if nav_item.children %}
+      {% set is_hidden = "" if nav_item.active else "hidden" %}
+      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
+        <div class="md-grid">
+          <ul class="bijux-tabs__list bijux-tabs__list--detail">
+            {% for child in nav_item.children %}
+              {% set item_class = "bijux-tabs__item" %}
+              {% set current = "" %}
+              {% if nav_item == active_section.item and child.active %}
+                {% set item_class = item_class ~ " bijux-tabs__item--active" %}
+                {% set current = 'aria-current="page"' %}
+              {% endif %}
+              <li class="{{ item_class }}">
+                <a href="{{ bijux_nav.first_page_url(child) }}" class="bijux-tabs__link bijux-tabs__link--detail" data-bijux-detail-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ current }}>{{ bijux_nav.detail_label(child) }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </nav>
+    {% endif %}
+  {% endfor %}
+</header>
