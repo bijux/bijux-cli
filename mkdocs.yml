@@ -46,7 +46,7 @@ extra:
 
 nav:
   - Home: index.md
-  - Repository:
+  - Repository Handbook:
       - Home:
           - Repository Handbook: bijux-core/index.md
           - Architecture:
@@ -72,7 +72,7 @@ nav:
               - Decision Record Policy: bijux-core/governance/decision-record-policy.md
               - Risk and Exceptions: bijux-core/governance/risk-and-exceptions.md
       - Packages: bijux-core/packages/index.md
-  - CLI:
+  - CLI Handbook:
       - Home:
           - CLI Handbook: bijux-cli/index.md
           - Foundation:
@@ -130,7 +130,9 @@ nav:
               - Change Validation: bijux-cli/quality/change-validation.md
               - Known Limitations: bijux-cli/quality/known-limitations.md
               - Risk Register: bijux-cli/quality/risk-register.md
-  - DAG:
+      - bijux-cli: bijux-cli/packages/bijux-cli/index.md
+      - bijux-cli-python: bijux-cli/packages/bijux-cli-python/index.md
+  - DAG Handbook:
       - Home:
           - DAG Handbook: bijux-dag/index.md
           - Foundation:
@@ -188,7 +190,7 @@ nav:
               - Change Validation: bijux-dag/quality/change-validation.md
               - Known Limitations: bijux-dag/quality/known-limitations.md
               - Risk Register: bijux-dag/quality/risk-register.md
-  - Maintainer:
+  - Maintainer Handbook:
       - Home:
           - Maintainer Handbook: bijux-dev/index.md
           - Operations:
