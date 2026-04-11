@@ -193,6 +193,9 @@ nav:
       - bijux-dag-core: bijux-dag/packages/bijux-dag-core/index.md
       - bijux-dag-runtime: bijux-dag/packages/bijux-dag-runtime/index.md
       - bijux-dag-app: bijux-dag/packages/bijux-dag-app/index.md
+      - bijux-dag-cli: bijux-dag/packages/bijux-dag-cli/index.md
+      - bijux-dag-artifacts: bijux-dag/packages/bijux-dag-artifacts/index.md
+      - bijux-dag-testkit: bijux-dag/packages/bijux-dag-testkit/index.md
   - Maintainer Handbook:
       - Home:
           - Maintainer Handbook: bijux-dev/index.md
