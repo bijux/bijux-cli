@@ -221,6 +221,7 @@ nav:
               - Documentation Standard: bijux-dev/governance/documentation-standard.md
               - Security and Secrets: bijux-dev/governance/security-and-secrets.md
               - Known Limitations: bijux-dev/governance/known-limitations.md
+      - bijux-dev: bijux-dev/packages/bijux-dev/index.md
 
 hooks:
   - docs/automation/publish_contract_assets.py
