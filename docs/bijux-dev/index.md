@@ -9,13 +9,18 @@ last_reviewed: 2026-04-12
 
 # Maintainer Handbook
 
-`bijux-dev` documents maintainer-only operations and governance for quality
-gates, evidence workflows, and release reliability.
+The maintainer handbook explains repository-health work that should not be
+rediscovered from CI logs, shell history, or one-off commands. It covers the
+maintainer package itself, the shared make surface, and the GitHub workflow
+entrypoints that enforce release and documentation policy.
+
+This handbook should make repository automation inspectable without pretending
+that maintainer tooling is part of the end-user product surface.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-dev/">Open the bijux-dev package</a>
 <a class="md-button" href="operations/">Open operations</a>
-<a class="md-button" href="governance/">Open governance</a>
+<a class="md-button" href="makes/">Open makes</a>
 </div>
 
 ## Visual Summary
@@ -25,9 +30,11 @@ flowchart TB
     handbook["Maintainer handbook"]
     handbook --> package["bijux-dev package"]
     handbook --> operations["operations section"]
-    handbook --> governance["governance section"]
+    handbook --> makes["makes section"]
+    handbook --> workflows["gh-workflows section"]
     operations --> evidence["evidence and diagnostics workflows"]
-    governance --> policy["quality and contract policy"]
+    makes --> commands["root command surfaces"]
+    workflows --> policy["verification and release entrypoints"]
 ```
 
 ## Package Destination
@@ -39,6 +46,8 @@ flowchart TB
 
 - [Dev Operations](operations/index.md)
 - [Dev Governance](governance/index.md)
+- [makes](makes/index.md)
+- [gh-workflows](gh-workflows/index.md)
 
 ## Maintainer Workflow Map
 
@@ -55,6 +64,7 @@ flowchart TB
 - maintainer command workflows and repository gates
 - evidence collection and reporting operations
 - policy decisions around contracts, dependencies, and security
+- shared make entrypoints and GitHub workflow triggers
 
 ## Program Handbooks
 
@@ -67,3 +77,14 @@ flowchart TB
 When a question affects runtime behavior seen by end users, switch to the
 program handbook (`bijux-cli` or `bijux-dag`) and return here only for
 maintainer-specific verification and release workflows.
+
+## Purpose
+
+This page routes readers into the repository-health sections that actually
+exist, instead of leaving make files and workflows as undocumented support
+glue.
+
+## Stability
+
+Keep this page aligned with the real maintainer sections under `docs/bijux-dev/`
+and the automation surfaces used by this repository today.
