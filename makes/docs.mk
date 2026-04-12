@@ -44,7 +44,7 @@ else
   DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check docs-package-surface-check docs-navigation-check
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check docs-root-structure-check docs-maintainer-structure-check docs-package-surface-check docs-navigation-check
 
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
@@ -91,6 +91,8 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	@$(MAKE) docs-hygiene
 	@$(MAKE) docs-cli-structure-check
 	@$(MAKE) docs-dag-structure-check
+	@$(MAKE) docs-root-structure-check
+	@$(MAKE) docs-maintainer-structure-check
 	@$(MAKE) docs-package-surface-check
 	@$(MAKE) docs-navigation-check
 	@echo "Documentation passes build checks"
@@ -136,6 +138,25 @@ docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 page
 	@test -f "docs/bijux-dag/packages/bijux-dag-testkit/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-testkit/index.md" && exit 1)
 	@echo "DAG docs structure OK"
 
+docs-root-structure-check: ## Enforce repository handbook foundation and operations structure
+	@for d in foundation operations; do \
+	  test -d "docs/bijux-core/$$d" || (echo "ERROR: missing docs/bijux-core/$$d" && exit 1); \
+	  count=$$(find "docs/bijux-core/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
+	  test "$$count" = "10" || (echo "ERROR: docs/bijux-core/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+	done
+	@echo "Repository docs structure OK"
+
+docs-maintainer-structure-check: ## Enforce maintainer handbook structure
+	@for d in operations governance makes; do \
+	  test -d "docs/bijux-dev/$$d" || (echo "ERROR: missing docs/bijux-dev/$$d" && exit 1); \
+	  count=$$(find "docs/bijux-dev/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
+	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dev/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+	done
+	@test -d "docs/bijux-dev/gh-workflows" || (echo "ERROR: missing docs/bijux-dev/gh-workflows" && exit 1)
+	@workflow_count=$$(find "docs/bijux-dev/gh-workflows" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
+	  test "$$workflow_count" = "7" || (echo "ERROR: docs/bijux-dev/gh-workflows must contain exactly 7 markdown pages (found $$workflow_count)" && exit 1)
+	@echo "Maintainer docs structure OK"
+
 docs-package-surface-check: ## Verify repository and maintainer package surfaces exist
 	@test -f "docs/bijux-core/packages/index.md" || (echo "ERROR: missing docs/bijux-core/packages/index.md" && exit 1)
 	@test -f "docs/bijux-dev/packages/bijux-dev/index.md" || (echo "ERROR: missing docs/bijux-dev/packages/bijux-dev/index.md" && exit 1)
@@ -154,6 +175,8 @@ docs-navigation-check: ## Verify shared chrome and handbook/package tabs are ren
 	@$(call docs_search_tree,/bijux-dev/packages/bijux-dev/,$(DOCS_SITE_DIR)) || (echo "ERROR: maintainer package tab is missing" && exit 1)
 	@$(call docs_search_file,data-bijux-course-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
 	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI section strip labels are missing" && exit 1)
-	@$(call docs_search_file,Governance,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer fourth-row navigation labels are missing" && exit 1)
+	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository fourth-row navigation labels are missing" && exit 1)
+	@$(call docs_search_file,makes,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer make-section navigation labels are missing" && exit 1)
+	@$(call docs_search_file,gh-workflows,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer workflow navigation labels are missing" && exit 1)
 	@"$(DOCS_PYTHON_BIN)" docs/automation/navigation_sanity.py "$(DOCS_SITE_DIR)"
 	@echo "Docs navigation OK"

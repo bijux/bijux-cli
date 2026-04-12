@@ -49,6 +49,17 @@ nav:
   - Repository Handbook:
       - Home:
           - Overview: bijux-core/index.md
+          - Foundation:
+              - Foundation: bijux-core/foundation/index.md
+              - Platform Overview: bijux-core/foundation/platform-overview.md
+              - Repository Scope: bijux-core/foundation/repository-scope.md
+              - Workspace Layout: bijux-core/foundation/workspace-layout.md
+              - Package Map: bijux-core/foundation/package-map.md
+              - Ownership Model: bijux-core/foundation/ownership-model.md
+              - Domain Language: bijux-core/foundation/domain-language.md
+              - Documentation System: bijux-core/foundation/documentation-system.md
+              - Change Principles: bijux-core/foundation/change-principles.md
+              - Decision Rules: bijux-core/foundation/decision-rules.md
           - Architecture:
               - Core Architecture: bijux-core/architecture/index.md
               - System Overview: bijux-core/architecture/system-overview.md
@@ -60,6 +71,17 @@ nav:
               - Maintainer Control Plane: bijux-core/architecture/maintainer-control-plane.md
               - Artifact and Contract Flow: bijux-core/architecture/artifact-and-contract-flow.md
               - Architecture Risks: bijux-core/architecture/architecture-risks.md
+          - Operations:
+              - Operations: bijux-core/operations/index.md
+              - Local Development: bijux-core/operations/local-development.md
+              - Testing and Validation: bijux-core/operations/testing-and-validation.md
+              - Release and Versioning: bijux-core/operations/release-and-versioning.md
+              - API and Schema Governance: bijux-core/operations/api-and-schema-governance.md
+              - Contributor Workflows: bijux-core/operations/contributor-workflows.md
+              - Automation Surfaces: bijux-core/operations/automation-surfaces.md
+              - Artifact Governance: bijux-core/operations/artifact-governance.md
+              - Review Expectations: bijux-core/operations/review-expectations.md
+              - Change Management: bijux-core/operations/change-management.md
           - Governance:
               - Core Governance: bijux-core/governance/index.md
               - Repository Scope: bijux-core/governance/repository-scope.md
@@ -221,6 +243,25 @@ nav:
               - Documentation Standard: bijux-dev/governance/documentation-standard.md
               - Security and Secrets: bijux-dev/governance/security-and-secrets.md
               - Known Limitations: bijux-dev/governance/known-limitations.md
+          - makes:
+              - makes: bijux-dev/makes/index.md
+              - Make System Overview: bijux-dev/makes/make-system-overview.md
+              - Root Entrypoints: bijux-dev/makes/root-entrypoints.md
+              - Environment Model: bijux-dev/makes/environment-model.md
+              - Repository Layout: bijux-dev/makes/repository-layout.md
+              - Package Dispatch: bijux-dev/makes/package-dispatch.md
+              - CI Targets: bijux-dev/makes/ci-targets.md
+              - Package Contracts: bijux-dev/makes/package-contracts.md
+              - Release Surfaces: bijux-dev/makes/release-surfaces.md
+              - Authoring Rules: bijux-dev/makes/authoring-rules.md
+          - gh-workflows:
+              - gh-workflows: bijux-dev/gh-workflows/index.md
+              - ci: bijux-dev/gh-workflows/ci.md
+              - deploy-docs: bijux-dev/gh-workflows/deploy-docs.md
+              - release-crates: bijux-dev/gh-workflows/release-crates.md
+              - release-pypi: bijux-dev/gh-workflows/release-pypi.md
+              - release-github: bijux-dev/gh-workflows/release-github.md
+              - bijux-canon: bijux-dev/gh-workflows/bijux-canon.md
       - bijux-dev: bijux-dev/packages/bijux-dev/index.md
 
 hooks:
