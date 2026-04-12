@@ -201,6 +201,7 @@ def test_optional_dependency_groups_match_current_repo_workflows() -> None:
     assert optional["docs"] == [
         "mkdocs>=1.6.1,<2.0",
         "mkdocs-autorefs>=1.4.4,<2.0",
+        "mkdocs-git-revision-date-localized-plugin>=1.2,<2.0",
         "mkdocs-glightbox>=0.3,<1.0",
         "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
         "mkdocs-material[imaging]>=9.7.5,<10.0",
@@ -226,7 +227,6 @@ def test_optional_dependencies_drop_legacy_python_only_tooling() -> None:
         "hypothesis-jsonschema",
         "interrogate",
         "mkdocs-gen-files",
-        "mkdocs-git-revision-date-localized-plugin",
         "mkdocs-literate-nav",
         "mkdocstrings",
         "mypy",
@@ -273,6 +273,7 @@ def test_maturin_sdist_includes_core_release_documents() -> None:
     assert ("README.md", "sdist") in include_paths
     assert ("CHANGELOG.md", "sdist") in include_paths
     assert ("LICENSE", "sdist") in include_paths
+    assert ("NOTICE", "sdist") in include_paths
 
 
 def test_runtime_support_helper_matches_python_requirement_floor() -> None:

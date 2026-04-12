@@ -57,4 +57,4 @@ python -m bijux_cli_py --help
 
 ## License
 
-Apache-2.0 (`LICENSE`).
+Apache-2.0 ([repository LICENSE](../../LICENSE)).
