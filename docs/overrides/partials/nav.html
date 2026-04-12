@@ -45,6 +45,15 @@
   {% set scoped.title = "Home" %}
   {% set scoped.visible = scoped.items | length > 0 %}
 {% endif %}
+{% if not scoped.visible and current_page and current_page.url and "/packages/" in current_page.url %}
+  {% set _ = scoped.items.append(current_page) %}
+  {% if active_root.item %}
+    {% set scoped.title = active_root.item.title %}
+  {% else %}
+    {% set scoped.title = current_page.title %}
+  {% endif %}
+  {% set scoped.visible = true %}
+{% endif %}
 {% if not scoped.visible and current_page and active_root.item and current_page.parent and current_page.parent.children and current_page.parent != active_root.item %}
   {% for child in current_page.parent.children %}
     {% if not child.children %}
