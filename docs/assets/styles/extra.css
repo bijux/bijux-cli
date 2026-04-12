@@ -1,66 +1,74 @@
 :root {
-  --bijux-ink: #1e2852;
-  --bijux-muted: #5f6d8d;
-  --bijux-border: rgba(49, 46, 129, 0.16);
-  --bijux-panel: rgba(79, 70, 229, 0.05);
-  --bijux-panel-strong: rgba(79, 70, 229, 0.08);
-  --bijux-card-shadow: 0 18px 42px rgba(30, 41, 89, 0.09);
-  --bijux-map-shadow: 0 22px 54px rgba(30, 41, 89, 0.14);
-  --bijux-surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0));
+  --bijux-ink: #142033;
+  --bijux-muted: #5d6c7e;
+  --bijux-border: rgba(20, 32, 51, 0.12);
+  --bijux-panel: rgba(13, 148, 136, 0.06);
+  --bijux-panel-strong: rgba(8, 145, 178, 0.08);
+  --bijux-card-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  --bijux-map-shadow: 0 22px 54px rgba(15, 23, 42, 0.13);
+  --bijux-card-shadow-hover: 0 26px 56px rgba(15, 23, 42, 0.14);
+  --bijux-surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
   --bijux-shell-width: 84rem;
   --bijux-shell-width-wide: 92rem;
   --bijux-shell-width-ultra: 102rem;
-  --bijux-ribbon-bg: #2b2f6e;
-  --bijux-ribbon-bg-strong: #4338ca;
-  --bijux-ribbon-fade: rgba(43, 47, 110, 0);
+  --bijux-ribbon-bg: #10213b;
+  --bijux-ribbon-bg-strong: #124e66;
+  --bijux-ribbon-fade: rgba(16, 33, 59, 0);
+  --bijux-nav-indicator: linear-gradient(90deg, rgba(245, 158, 11, 0.95), rgba(45, 212, 191, 0.95));
+  --bijux-nav-active-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
+  --bijux-focus-ring: rgba(15, 118, 110, 0.22);
 }
 
 [data-md-color-scheme="default"] {
-  --md-default-bg-color: #f5f7fd;
-  --md-default-bg-color--light: #fbfcff;
+  --md-default-bg-color: #f4f6f4;
+  --md-default-bg-color--light: #fbfcfa;
   --md-default-fg-color: var(--bijux-ink);
-  --md-primary-fg-color: #4338ca;
-  --md-accent-fg-color: #4f46e5;
-  --md-typeset-a-color: #3730a3;
-  --bijux-hub-bg: rgba(24, 28, 64, 0.96);
+  --md-primary-fg-color: #0f766e;
+  --md-accent-fg-color: #155e75;
+  --md-typeset-a-color: #0f5f73;
+  --bijux-hub-bg: rgba(11, 20, 34, 0.97);
   --bijux-hub-border: rgba(255, 255, 255, 0.12);
   --bijux-hub-link: rgba(255, 255, 255, 0.76);
   --bijux-hub-link-active-bg: rgba(255, 255, 255, 0.14);
-  --bijux-detail-bg: rgba(255, 255, 255, 0.94);
-  --bijux-detail-border: rgba(63, 81, 181, 0.12);
-  --bijux-detail-link: #31406f;
-  --bijux-detail-link-active-bg: rgba(79, 70, 229, 0.12);
+  --bijux-detail-bg: rgba(255, 255, 255, 0.95);
+  --bijux-detail-border: rgba(15, 118, 110, 0.14);
+  --bijux-detail-link: #2d4b5c;
+  --bijux-detail-link-active-bg: rgba(13, 148, 136, 0.12);
 }
 
 [data-md-color-scheme="slate"] {
-  --bijux-ink: #e8ecff;
-  --bijux-muted: #b6bfdc;
-  --bijux-border: rgba(129, 140, 248, 0.2);
-  --bijux-panel: rgba(99, 102, 241, 0.12);
-  --bijux-panel-strong: rgba(99, 102, 241, 0.18);
+  --bijux-ink: #e7eef5;
+  --bijux-muted: #b2c2cf;
+  --bijux-border: rgba(45, 212, 191, 0.18);
+  --bijux-panel: rgba(15, 118, 110, 0.14);
+  --bijux-panel-strong: rgba(8, 145, 178, 0.2);
   --bijux-card-shadow: 0 24px 48px rgba(2, 6, 23, 0.38);
   --bijux-map-shadow: 0 28px 58px rgba(2, 6, 23, 0.5);
+  --bijux-card-shadow-hover: 0 30px 64px rgba(2, 6, 23, 0.52);
   --bijux-surface-gradient: linear-gradient(180deg, rgba(30, 41, 59, 0.42), rgba(15, 23, 42, 0));
   --md-default-bg-color: #0b1120;
   --md-default-bg-color--light: #111827;
   --md-default-fg-color: #e8ecff;
   --md-default-fg-color--light: #cdd5f3;
   --md-default-fg-color--lighter: #9ea9d0;
-  --md-primary-fg-color: #4338ca;
-  --md-primary-fg-color--light: #6366f1;
-  --md-accent-fg-color: #a5b4fc;
-  --md-typeset-a-color: #a5b4fc;
+  --md-primary-fg-color: #0f766e;
+  --md-primary-fg-color--light: #14b8a6;
+  --md-accent-fg-color: #67e8f9;
+  --md-typeset-a-color: #7dd3fc;
   --bijux-hub-bg: rgba(8, 11, 29, 0.98);
-  --bijux-hub-border: rgba(129, 140, 248, 0.16);
+  --bijux-hub-border: rgba(45, 212, 191, 0.16);
   --bijux-hub-link: rgba(229, 231, 255, 0.82);
-  --bijux-hub-link-active-bg: rgba(129, 140, 248, 0.16);
+  --bijux-hub-link-active-bg: rgba(45, 212, 191, 0.16);
   --bijux-detail-bg: rgba(15, 23, 42, 0.96);
-  --bijux-detail-border: rgba(129, 140, 248, 0.18);
-  --bijux-detail-link: #c7d2fe;
-  --bijux-detail-link-active-bg: rgba(99, 102, 241, 0.18);
-  --bijux-ribbon-bg: #151a43;
-  --bijux-ribbon-bg-strong: #312e81;
-  --bijux-ribbon-fade: rgba(21, 26, 67, 0);
+  --bijux-detail-border: rgba(45, 212, 191, 0.18);
+  --bijux-detail-link: #d0f3f0;
+  --bijux-detail-link-active-bg: rgba(13, 148, 136, 0.18);
+  --bijux-ribbon-bg: #091524;
+  --bijux-ribbon-bg-strong: #0f3f56;
+  --bijux-ribbon-fade: rgba(9, 21, 36, 0);
+  --bijux-nav-indicator: linear-gradient(90deg, rgba(251, 191, 36, 0.92), rgba(103, 232, 249, 0.92));
+  --bijux-nav-active-shadow: 0 18px 34px rgba(2, 6, 23, 0.48);
+  --bijux-focus-ring: rgba(103, 232, 249, 0.24);
 }
 
 body,
