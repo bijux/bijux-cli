@@ -200,6 +200,18 @@ def _render_group(
     return "\n".join(rendered)
 
 
+def _render_badge_line(
+    catalog: dict[str, str],
+    group_records: dict[str, tuple[PackageRecord, ...]],
+    group_names: tuple[str, ...],
+) -> str:
+    parts = [
+        _render_group(catalog[group_name], group_records[group_name], group_name)
+        for group_name in group_names
+    ]
+    return " ".join(part for part in parts if part)
+
+
 def render_repository_badges(
     catalog: dict[str, str], records: tuple[PackageRecord, ...]
 ) -> str:
@@ -222,10 +234,20 @@ def render_repository_badges(
         "family-ghcr-badge": published_records,
         "family-docs-badge": published_records,
     }
-    for group_name in BADGE_GROUPS:
-        section = _render_group(catalog[group_name], repository_group_records[group_name], group_name)
-        if section:
-            sections.append(section)
+    release_line = _render_badge_line(
+        catalog,
+        repository_group_records,
+        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
+    )
+    if release_line:
+        sections.append(release_line)
+    docs_line = _render_badge_line(
+        catalog,
+        repository_group_records,
+        ("family-docs-badge", "family-rustdocs-badge"),
+    )
+    if docs_line:
+        sections.append(docs_line)
     return "\n\n".join(sections)
 
 
@@ -249,10 +271,20 @@ def render_package_badges(
             record for record in published_records if record.family_key == current.family_key
         ),
     }
-    for group_name in BADGE_GROUPS:
-        section = _render_group(catalog[group_name], package_group_records[group_name], group_name)
-        if section:
-            sections.append(section)
+    release_line = _render_badge_line(
+        catalog,
+        package_group_records,
+        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
+    )
+    if release_line:
+        sections.append(release_line)
+    docs_line = _render_badge_line(
+        catalog,
+        package_group_records,
+        ("family-docs-badge", "family-rustdocs-badge"),
+    )
+    if docs_line:
+        sections.append(docs_line)
     return "\n\n".join(sections)
 
 

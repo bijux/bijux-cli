@@ -26,11 +26,8 @@ implementation boundaries such as the Python bridge.
 Generated badge sections always render in this order:
 
 1. surface summary badges
-2. one line of `crates.io` badges for every public Rust package
-3. one line of `docs.rs` badges for every public Rust package
-4. one line of `PyPI` badges for every public Python package
-5. one line of `GHCR` badges for every published release bundle
-6. one line of documentation badges for every public package surface
+2. one line of release-channel badges in this order: `crates.io`, `PyPI`, `GHCR`
+3. one line of documentation badges in this order: published docs, `docs.rs`
 
 Link policy for GHCR badges is fixed here as part of the contract:
 
