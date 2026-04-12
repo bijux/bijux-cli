@@ -783,12 +783,51 @@ input:focus-visible,
 }
 
 @media screen and (max-width: 60em) {
+  html {
+    scroll-padding-top: 4.8rem;
+  }
+
+  .md-typeset h1,
+  .md-typeset h2,
+  .md-typeset h3,
+  .md-typeset h4,
+  .md-typeset h5,
+  .md-typeset h6 {
+    scroll-margin-top: 4.8rem;
+  }
+
+  .md-header__inner {
+    gap: 0.45rem;
+    padding-block: 0.35rem;
+  }
+
+  .md-header__button.md-logo,
+  .md-header__button[for="__drawer"] {
+    margin: 0;
+  }
+
   .bijux-header-tools {
+    flex: 1 1 auto;
     gap: 0.35rem;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .bijux-header-tools .md-search {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .bijux-header-tools .md-search__inner {
-    width: min(11.5rem, 46vw);
+    width: min(12rem, 100%);
+  }
+
+  .md-main__inner {
+    margin-top: 0.75rem;
+  }
+
+  .md-content__inner {
+    padding-inline: 0.15rem;
   }
 
   .bijux-map-frame iframe {
@@ -843,7 +882,7 @@ input:focus-visible,
   }
 
   .bijux-header-tools .md-search__inner {
-    width: min(10.5rem, calc(100vw - 9rem));
+    width: min(100%, calc(100vw - 7.75rem));
   }
 
   .bijux-quicklinks {
