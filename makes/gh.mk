@@ -38,7 +38,7 @@ gh-test-install-rust-tools: ## Install cargo-nextest that matches the pinned CI 
 	@cargo install --locked cargo-nextest --version "$(GH_TEST_CARGO_NEXTEST_VERSION)"
 
 gh-docs-install: install ## Install the documentation toolchain for GitHub Actions
-	@$(MAKE) --no-print-directory docs-require
+	@$(MAKE) --no-print-directory docs-install
 	@"$(MKDOCS_BIN)" --version
 
 docs-artifact-pages: ## Generate documentation pages that summarize release artifacts

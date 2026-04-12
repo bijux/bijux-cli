@@ -54,6 +54,7 @@ security = [
 docs = [
   "mkdocs>=1.6.1,<2.0",
   "mkdocs-autorefs>=1.4.4,<2.0",
+  "mkdocs-git-revision-date-localized-plugin>=1.2,<2.0",
   "mkdocs-glightbox>=0.3,<1.0",
   "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
   "mkdocs-material[imaging]>=9.7.5,<10.0",
