@@ -12,6 +12,7 @@ concurrency:
 permissions:
   contents: write
   actions: read
+  packages: write
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -133,12 +134,47 @@ jobs:
           Published package surfaces:
           - crates.io: https://crates.io/crates/bijux-cli/${RELEASE_VERSION}
           - PyPI: https://pypi.org/project/bijux-cli/${RELEASE_VERSION}/
+          - GHCR: https://github.com/${GITHUB_REPOSITORY}/pkgs/container/${GITHUB_REPOSITORY#*/}%2Fbijux-cli
 
           Attached assets:
           - manylinux wheel for the Python package
           - source distribution for the Python package
           - SHA-256 checksums for the attached files
           EOF
+
+      - name: Install ORAS
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1
+
+      - name: Log in to GHCR
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish bijux-cli release bundle to GHCR
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_ASSETS_DIR: ${{ steps.release_tree.outputs.assets }}
+        run: |
+          set -euo pipefail
+          archive_dir="${GITHUB_WORKSPACE}/artifacts/ghcr"
+          archive_path="${archive_dir}/bijux-cli-${RELEASE_TAG}.tar.gz"
+          package_ref="ghcr.io/${GITHUB_REPOSITORY}/bijux-cli"
+          mkdir -p "${archive_dir}"
+          tar -C "${RELEASE_ASSETS_DIR}" -czf "${archive_path}" .
+          oras push "${package_ref}:${RELEASE_TAG}" \
+            --artifact-type application/vnd.bijux.release-bundle.v1+tar \
+            --annotation "org.opencontainers.image.title=bijux-cli" \
+            --annotation "org.opencontainers.image.version=${RELEASE_VERSION}" \
+            --annotation "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --annotation "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            "${archive_path}:application/gzip"
+          oras tag "${package_ref}:${RELEASE_TAG}" latest
 
       - name: Publish GitHub Release
         if: ${{ steps.release.outputs.publish == 'true' }}
