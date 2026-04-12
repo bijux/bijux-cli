@@ -119,8 +119,8 @@ docs-cli-structure-check: ## Enforce canonical CLI handbook structure (5x10 page
 	  test "$$count" = "10" || (echo "ERROR: docs/bijux-cli/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
 	done
 	@test -d "docs/bijux-cli/packages" || (echo "ERROR: missing docs/bijux-cli/packages" && exit 1)
-	@test -f "docs/bijux-cli/packages/bijux-cli/index.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli/index.md" && exit 1)
-	@test -f "docs/bijux-cli/packages/bijux-cli-python/index.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli-python/index.md" && exit 1)
+	@test -f "docs/bijux-cli/packages/bijux-cli.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli.md" && exit 1)
+	@test -f "docs/bijux-cli/packages/bijux-cli-python.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli-python.md" && exit 1)
 	@echo "CLI docs structure OK"
 
 docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 pages)
@@ -130,12 +130,12 @@ docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 page
 	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dag/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
 	done
 	@test -d "docs/bijux-dag/packages" || (echo "ERROR: missing docs/bijux-dag/packages" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-core/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-core/index.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-runtime/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-runtime/index.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-app/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-app/index.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-cli/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-cli/index.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-artifacts/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-artifacts/index.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-testkit/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-testkit/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-core.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-core.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-runtime.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-runtime.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-app.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-app.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-cli.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-cli.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-artifacts.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-artifacts.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-testkit.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-testkit.md" && exit 1)
 	@echo "DAG docs structure OK"
 
 docs-root-structure-check: ## Enforce repository handbook foundation and operations structure
@@ -159,7 +159,7 @@ docs-maintainer-structure-check: ## Enforce maintainer handbook structure
 
 docs-package-surface-check: ## Verify repository and maintainer package surfaces exist
 	@test -f "docs/bijux-core/packages/index.md" || (echo "ERROR: missing docs/bijux-core/packages/index.md" && exit 1)
-	@test -f "docs/bijux-dev/packages/bijux-dev/index.md" || (echo "ERROR: missing docs/bijux-dev/packages/bijux-dev/index.md" && exit 1)
+	@test -f "docs/bijux-dev/packages/bijux-dev.md" || (echo "ERROR: missing docs/bijux-dev/packages/bijux-dev.md" && exit 1)
 	@echo "Package surface docs OK"
 
 docs-navigation-check: ## Verify shared chrome and handbook/package tabs are rendered
@@ -173,9 +173,9 @@ docs-navigation-check: ## Verify shared chrome and handbook/package tabs are ren
 	@$(call docs_search_tree,/bijux-cli/packages/bijux-cli-python/,$(DOCS_SITE_DIR)) || (echo "ERROR: CLI Python package tab is missing" && exit 1)
 	@$(call docs_search_tree,/bijux-dag/packages/bijux-dag-runtime/,$(DOCS_SITE_DIR)) || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
 	@$(call docs_search_tree,/bijux-dev/packages/bijux-dev/,$(DOCS_SITE_DIR)) || (echo "ERROR: maintainer package tab is missing" && exit 1)
-	@$(call docs_search_file,data-bijux-course-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
-	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI section strip labels are missing" && exit 1)
-	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository fourth-row navigation labels are missing" && exit 1)
+	@$(call docs_search_file,data-bijux-detail-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: handbook detail strip is missing" && exit 1)
+	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI detail strip labels are missing" && exit 1)
+	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository detail strip labels are missing" && exit 1)
 	@$(call docs_search_file,makes,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer make-section navigation labels are missing" && exit 1)
 	@$(call docs_search_file,gh-workflows,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer workflow navigation labels are missing" && exit 1)
 	@"$(DOCS_PYTHON_BIN)" docs/automation/navigation_sanity.py "$(DOCS_SITE_DIR)"
