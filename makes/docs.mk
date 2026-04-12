@@ -155,4 +155,5 @@ docs-navigation-check: ## Verify shared chrome and handbook/package tabs are ren
 	@$(call docs_search_file,data-bijux-course-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
 	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI section strip labels are missing" && exit 1)
 	@$(call docs_search_file,Governance,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer fourth-row navigation labels are missing" && exit 1)
+	@"$(DOCS_PYTHON_BIN)" docs/automation/navigation_sanity.py "$(DOCS_SITE_DIR)"
 	@echo "Docs navigation OK"
