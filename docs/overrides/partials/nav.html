@@ -3,24 +3,77 @@
   {% set class = class ~ " md-nav--integrated" %}
 {% endif %}
 {% set bijux_primary_section_nav = true %}
+{% set current_page = page if page is defined else none %}
 {% set scoped = namespace(items=[], title=config.site_name, visible=false) %}
 {% set active_root = namespace(item=None) %}
+{% set active_course = namespace(item=None) %}
+{% set active_course_section = namespace(item=None) %}
 {% for nav_item in nav %}
   {% if nav_item.active %}
     {% set active_root.item = nav_item %}
+    {% if nav_item.children %}
+      {% for child in nav_item.children %}
+        {% if child.active and child.children %}
+          {% set active_course.item = child %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
   {% endif %}
 {% endfor %}
-{% if page and active_root.item and page.parent and page.parent.children and page.parent != active_root.item %}
-  {% for child in page.parent.children %}
-    {% if not child.is_index %}
+{% if active_course.item and active_course.item.children %}
+  {% for child in active_course.item.children %}
+    {% if child.active or (current_page and child.pages and current_page in child.pages) %}
+      {% set active_course_section.item = child %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% if active_course_section.item and active_course_section.item.children %}
+  {% for child in active_course_section.item.children %}
+    {% if not child.children %}
       {% set _ = scoped.items.append(child) %}
     {% endif %}
   {% endfor %}
-  {% set scoped.title = page.parent.title %}
+  {% set scoped.title = active_course_section.item.title %}
+  {% set scoped.visible = scoped.items | length > 0 %}
+{% endif %}
+{% if not scoped.visible and current_page and active_course.item and active_course.item.children and (active_course.item.children | first).url == current_page.url %}
+  {% for child in active_course.item.children %}
+    {% if not child.children %}
+      {% set _ = scoped.items.append(child) %}
+    {% endif %}
+  {% endfor %}
+  {% set scoped.title = "Home" %}
+  {% set scoped.visible = scoped.items | length > 0 %}
+{% endif %}
+{% if not scoped.visible and current_page and active_root.item and current_page.parent and current_page.parent.children and current_page.parent != active_root.item %}
+  {% for child in current_page.parent.children %}
+    {% if not child.children %}
+      {% set _ = scoped.items.append(child) %}
+    {% endif %}
+  {% endfor %}
+  {% set scoped.title = current_page.parent.title %}
+  {% set scoped.visible = scoped.items | length > 0 %}
+{% endif %}
+{% if not scoped.visible and active_course.item and active_course.item.children %}
+  {% for child in active_course.item.children %}
+    {% if not child.children %}
+      {% set _ = scoped.items.append(child) %}
+    {% endif %}
+  {% endfor %}
+  {% set scoped.title = active_course.item.title %}
+  {% set scoped.visible = scoped.items | length > 0 %}
+{% endif %}
+{% if not scoped.visible and active_root.item and active_root.item.children %}
+  {% for child in active_root.item.children %}
+    {% if not child.children %}
+      {% set _ = scoped.items.append(child) %}
+    {% endif %}
+  {% endfor %}
+  {% set scoped.title = active_root.item.title %}
   {% set scoped.visible = scoped.items | length > 0 %}
 {% endif %}
 {% set bijux_expand_scoped_groups = false %}
-{% if scoped.visible and page and page.title == "Overview" %}
+{% if scoped.visible and current_page and current_page.title == "Overview" %}
   {% set bijux_expand_scoped_groups = true %}
 {% endif %}
 {% import "partials/nav-item.html" as item with context %}
