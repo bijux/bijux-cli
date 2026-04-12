@@ -48,7 +48,7 @@ nav:
   - Home: index.md
   - Repository Handbook:
       - Home:
-          - Repository Handbook: bijux-core/index.md
+          - Overview: bijux-core/index.md
           - Architecture:
               - Core Architecture: bijux-core/architecture/index.md
               - System Overview: bijux-core/architecture/system-overview.md
@@ -74,7 +74,7 @@ nav:
       - Packages: bijux-core/packages/index.md
   - CLI Handbook:
       - Home:
-          - CLI Handbook: bijux-cli/index.md
+          - Overview: bijux-cli/index.md
           - Foundation:
               - Foundation: bijux-cli/foundation/index.md
               - Package Overview: bijux-cli/foundation/package-overview.md
@@ -134,7 +134,7 @@ nav:
       - bijux-cli-python: bijux-cli/packages/bijux-cli-python/index.md
   - DAG Handbook:
       - Home:
-          - DAG Handbook: bijux-dag/index.md
+          - Overview: bijux-dag/index.md
           - Foundation:
               - Foundation: bijux-dag/foundation/index.md
               - Package Overview: bijux-dag/foundation/package-overview.md
@@ -198,7 +198,7 @@ nav:
       - bijux-dag-testkit: bijux-dag/packages/bijux-dag-testkit/index.md
   - Maintainer Handbook:
       - Home:
-          - Maintainer Handbook: bijux-dev/index.md
+          - Overview: bijux-dev/index.md
           - Operations:
               - Dev Operations: bijux-dev/operations/index.md
               - Toolchain Setup: bijux-dev/operations/toolchain-setup.md

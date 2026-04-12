@@ -28,7 +28,7 @@ else
   DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check docs-package-surface-check docs-navigation-check
 
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
@@ -74,6 +74,8 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	@$(MAKE) docs-hygiene
 	@$(MAKE) docs-cli-structure-check
 	@$(MAKE) docs-dag-structure-check
+	@$(MAKE) docs-package-surface-check
+	@$(MAKE) docs-navigation-check
 	@echo "Documentation passes build checks"
 
 docs-clean: ## Remove generated documentation outputs
@@ -92,21 +94,48 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@echo "Docs hygiene OK"
 
 docs-cli-structure-check: ## Enforce canonical CLI handbook structure (5x10 pages)
-	@dirs=$$(find docs/bijux-cli -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' '); \
-	  test "$$dirs" = "5" || (echo "ERROR: docs/bijux-cli must contain exactly 5 section directories" && exit 1)
 	@for d in foundation architecture interfaces operations quality; do \
 	  test -d "docs/bijux-cli/$$d" || (echo "ERROR: missing docs/bijux-cli/$$d" && exit 1); \
 	  count=$$(find "docs/bijux-cli/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
 	  test "$$count" = "10" || (echo "ERROR: docs/bijux-cli/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
 	done
+	@test -d "docs/bijux-cli/packages" || (echo "ERROR: missing docs/bijux-cli/packages" && exit 1)
+	@test -f "docs/bijux-cli/packages/bijux-cli/index.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli/index.md" && exit 1)
+	@test -f "docs/bijux-cli/packages/bijux-cli-python/index.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli-python/index.md" && exit 1)
 	@echo "CLI docs structure OK"
 
 docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 pages)
-	@dirs=$$(find docs/bijux-dag -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' '); \
-	  test "$$dirs" = "5" || (echo "ERROR: docs/bijux-dag must contain exactly 5 section directories" && exit 1)
 	@for d in foundation architecture interfaces operations quality; do \
 	  test -d "docs/bijux-dag/$$d" || (echo "ERROR: missing docs/bijux-dag/$$d" && exit 1); \
 	  count=$$(find "docs/bijux-dag/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
 	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dag/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
 	done
+	@test -d "docs/bijux-dag/packages" || (echo "ERROR: missing docs/bijux-dag/packages" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-core/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-core/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-runtime/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-runtime/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-app/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-app/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-cli/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-cli/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-artifacts/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-artifacts/index.md" && exit 1)
+	@test -f "docs/bijux-dag/packages/bijux-dag-testkit/index.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-testkit/index.md" && exit 1)
 	@echo "DAG docs structure OK"
+
+docs-package-surface-check: ## Verify repository and maintainer package surfaces exist
+	@test -f "docs/bijux-core/packages/index.md" || (echo "ERROR: missing docs/bijux-core/packages/index.md" && exit 1)
+	@test -f "docs/bijux-dev/packages/bijux-dev/index.md" || (echo "ERROR: missing docs/bijux-dev/packages/bijux-dev/index.md" && exit 1)
+	@echo "Package surface docs OK"
+
+docs-navigation-check: ## Verify shared chrome and handbook/package tabs are rendered
+	@rg -q 'bijux-hub-strip' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: shared Bijux hub strip is missing" && exit 1)
+	@rg -q 'bijux-site-tabs' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: shared site tabs are missing" && exit 1)
+	@rg -q 'Repository Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: Repository Handbook tab label is missing" && exit 1)
+	@rg -q 'CLI Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: CLI Handbook tab label is missing" && exit 1)
+	@rg -q 'DAG Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: DAG Handbook tab label is missing" && exit 1)
+	@rg -q 'Maintainer Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: Maintainer Handbook tab label is missing" && exit 1)
+	@rg -q '/bijux-core/packages/' "$(DOCS_SITE_DIR)" || (echo "ERROR: repository package tab is missing" && exit 1)
+	@rg -q '/bijux-cli/packages/bijux-cli-python/' "$(DOCS_SITE_DIR)" || (echo "ERROR: CLI Python package tab is missing" && exit 1)
+	@rg -q '/bijux-dag/packages/bijux-dag-runtime/' "$(DOCS_SITE_DIR)" || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
+	@rg -q '/bijux-dev/packages/bijux-dev/' "$(DOCS_SITE_DIR)" || (echo "ERROR: maintainer package tab is missing" && exit 1)
+	@rg -q 'data-bijux-course-strip' "$(DOCS_SITE_DIR)/bijux-cli/index.html" || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
+	@rg -q 'Foundation' "$(DOCS_SITE_DIR)/bijux-cli/index.html" || (echo "ERROR: CLI section strip labels are missing" && exit 1)
+	@rg -q 'Governance' "$(DOCS_SITE_DIR)/bijux-dev/index.html" || (echo "ERROR: maintainer fourth-row navigation labels are missing" && exit 1)
+	@echo "Docs navigation OK"
