@@ -1,10 +1,21 @@
 # bijux-cli
 
 <!-- bijux-core-badges:generated:start -->
-[![bijux-cli crate](https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust)](https://crates.io/crates/bijux-cli)
-[![bijux-cli docs.rs](https://img.shields.io/docsrs/bijux-cli?label=docs.rs)](https://docs.rs/bijux-cli)
-[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/)
-[![Source](https://img.shields.io/badge/source-bijux--core-181717?logo=github&logoColor=white)](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
+[![Crates.io](https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust)](https://crates.io/crates/bijux-cli)
+[![Docs.rs](https://img.shields.io/docsrs/bijux-cli?label=docs.rs)](https://docs.rs/bijux-cli)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
+[![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
+
+[![bijux-cli](https://img.shields.io/crates/v/bijux-cli?label=bijux--cli&logo=rust)](https://crates.io/crates/bijux-cli)
+
+[![bijux-cli docs.rs](https://img.shields.io/docsrs/bijux-cli?label=bijux--cli%20docs.rs)](https://docs.rs/bijux-cli)
+
+[![bijux-cli](https://img.shields.io/pypi/v/bijux-cli?label=bijux--cli&logo=pypi)](https://pypi.org/project/bijux-cli/)
+
+[![bijux-cli](https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli)
+
+[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/)
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-cli` is the Rust runtime crate behind the `bijux` executable.

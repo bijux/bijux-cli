@@ -66,6 +66,7 @@ docs-deploy: docs-require ## Deploy documentation to GitHub Pages
 
 docs-check: docs-require ## Verify that documentation builds without errors
 	@echo "Checking documentation build integrity"
+	@$(MAKE) --no-print-directory check-badges
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
 	  "$(MKDOCS_BIN)" build --strict --quiet \
