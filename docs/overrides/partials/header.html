@@ -13,7 +13,7 @@
 {% macro site_label(title) -%}
   {% if title == "Repository Handbook" -%}
     Repository
-  {%- elif title == "Maintainer Handbook" -%}
+  {%- elif title == "Maintainer Handbook" or title == "Maintenance Handbook" -%}
     Maintainer
   {%- elif active_repository and title.startswith(active_repository ~ "-") -%}
     {{ title | replace(active_repository ~ "-", "") | replace("-", " ") | title }}
