@@ -1,5 +1,5 @@
 ---
-title: bijux-core Documentation
+title: Bijux Core Documentation
 audience: mixed
 type: index
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# bijux-core
+# Bijux Core
 
 `bijux-core` is a deliberately split Rust workspace for command runtime,
 deterministic DAG execution, and maintainer governance. The split is part of
