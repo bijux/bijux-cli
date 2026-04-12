@@ -7,7 +7,10 @@ use super::{collect_files_with_extension, repo_root};
 
 fn load_battle_policy(root: &Path) -> Result<Value, String> {
     let policy_path = root.join("configs/dag/policy/battle_trust_properties.json");
-    serde_json::from_str(&fs::read_to_string(policy_path).map_err(|err| err.to_string())?)
+    serde_json::from_str(
+        &fs::read_to_string(&policy_path)
+            .map_err(|err| format!("failed to read {}: {err}", policy_path.display()))?,
+    )
         .map_err(|err| err.to_string())
 }
 
@@ -19,7 +22,8 @@ pub(super) fn load_battle_scenario_records(root: &Path) -> Result<Vec<(String, S
 
     let mut records = Vec::new();
     for path in files {
-        let raw = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        let raw = fs::read_to_string(&path)
+            .map_err(|err| format!("failed to read {}: {err}", path.display()))?;
         let doc: Value = serde_json::from_str(&raw).map_err(|err| err.to_string())?;
         let scenario_id = doc
             .get("scenario")
@@ -236,8 +240,11 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
         return Err(format!("missing battle scenario registry: {}", registry_path.display()));
     }
     let registry: Value =
-        serde_json::from_str(&fs::read_to_string(&registry_path).map_err(|err| err.to_string())?)
-            .map_err(|err| err.to_string())?;
+        serde_json::from_str(
+            &fs::read_to_string(&registry_path)
+                .map_err(|err| format!("failed to read {}: {err}", registry_path.display()))?,
+        )
+        .map_err(|err| err.to_string())?;
     let registry_entries = registry
         .get("entries")
         .and_then(Value::as_array)
@@ -263,8 +270,11 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
 
     let metadata_path = root.join("evidence/battle/metadata.json");
     let metadata: Value =
-        serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
-            .map_err(|err| err.to_string())?;
+        serde_json::from_str(
+            &fs::read_to_string(&metadata_path)
+                .map_err(|err| format!("failed to read {}: {err}", metadata_path.display()))?,
+        )
+        .map_err(|err| err.to_string())?;
     let scenarios = metadata
         .get("scenarios")
         .and_then(Value::as_object)
