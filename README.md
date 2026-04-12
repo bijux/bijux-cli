@@ -1,5 +1,19 @@
 # bijux-core
 
+<!-- bijux-core-badges:generated:start -->
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
+[![CI](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
+[![Docs](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
+[![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
+[![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
+[![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
+
+[![bijux-cli crate](https://img.shields.io/crates/v/bijux-cli?label=bijux--cli&logo=rust)](https://crates.io/crates/bijux-cli)
+[![bijux-cli docs.rs](https://img.shields.io/docsrs/bijux-cli?label=docs.rs)](https://docs.rs/bijux-cli)
+[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/)
+[![bijux-cli-python](https://img.shields.io/pypi/v/bijux-cli?label=bijux--cli--python&logo=pypi)](https://pypi.org/project/bijux-cli/)
+<!-- bijux-core-badges:generated:end -->
+
 `bijux-core` is the canonical repository for the Bijux platform.
 It contains two real products built and governed together:
 

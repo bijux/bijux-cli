@@ -1,5 +1,12 @@
 # bijux-cli
 
+<!-- bijux-core-badges:generated:start -->
+[![bijux-cli crate](https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust)](https://crates.io/crates/bijux-cli)
+[![bijux-cli docs.rs](https://img.shields.io/docsrs/bijux-cli?label=docs.rs)](https://docs.rs/bijux-cli)
+[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/)
+[![Source](https://img.shields.io/badge/source-bijux--core-181717?logo=github&logoColor=white)](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
+<!-- bijux-core-badges:generated:end -->
+
 `bijux-cli` is the Rust runtime crate behind the `bijux` executable.
 
 It is the public command runtime product in `v0.3.4` and the source of truth
