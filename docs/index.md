@@ -98,9 +98,9 @@ flowchart TB
 | Handbook | Package destinations | Use it when |
 | --- | --- | --- |
 | [Repository Handbook](bijux-core/index.md) | [Repository Packages](bijux-core/packages/index.md) | the question is about workspace scope, release policy, or cross-package ownership |
-| [CLI Handbook](bijux-cli/index.md) | [`bijux-cli`](bijux-cli/packages/bijux-cli/index.md), [`bijux-cli-python`](bijux-cli/packages/bijux-cli-python/index.md) | the issue is command behavior, runtime routing, REPL semantics, or Python distribution |
-| [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core/index.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime/index.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app/index.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli/index.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts/index.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit/index.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
-| [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev/index.md) | the issue is repository diagnostics, release proof, or control-plane automation |
+| [CLI Handbook](bijux-cli/index.md) | [`bijux-cli`](bijux-cli/packages/bijux-cli.md), [`bijux-cli-python`](bijux-cli/packages/bijux-cli-python.md) | the issue is command behavior, runtime routing, REPL semantics, or Python distribution |
+| [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
+| [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev.md) | the issue is repository diagnostics, release proof, or control-plane automation |
 
 ## Documentation Scope
 

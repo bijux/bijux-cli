@@ -51,9 +51,9 @@ bridge compatibility, or Python-facing parity with the native binary.
 ## Open Next
 
 - open the [CLI Handbook](../../index.md) for product-level runtime behavior
-- open [`bijux-cli`](../bijux-cli/index.md) when the question is native runtime
+- open [`bijux-cli`](./bijux-cli.md) when the question is native runtime
   ownership rather than distribution or bridge mechanics
-- open the [Repository Handbook](../../../bijux-core/index.md) when the issue
+- open the [Repository Handbook](../../bijux-core/index.md) when the issue
   touches release governance, workspace policy, or cross-program ownership
 
 ## Code Anchors

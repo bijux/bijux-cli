@@ -28,4 +28,4 @@ that a maintainer can predict where failures will land.
 
 - [CI Targets](ci-targets.md)
 - [Package Contracts](package-contracts.md)
-- [Maintainer Package Destination](../packages/bijux-dev/index.md)
+- [Maintainer Package Destination](../packages/bijux-dev.md)

@@ -39,8 +39,8 @@ been accepted as valid.
 ## Open Next
 
 - open the [DAG Handbook](../../index.md) for the full DAG system map
-- open [`bijux-dag-core`](../bijux-dag-core/index.md) for graph truth and planning inputs
-- open [`bijux-dag-app`](../bijux-dag-app/index.md) for command orchestration and response shaping
+- open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
+- open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
 
 ## Code Anchors
 

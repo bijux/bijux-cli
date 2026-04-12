@@ -30,9 +30,9 @@ binary-level integration rather than DAG semantics themselves.
 
 ## Open Next
 
-- open [`bijux-dag-app`](../bijux-dag-app/index.md) for command orchestration and user-facing response shaping
+- open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and user-facing response shaping
 - open the [DAG Handbook](../../index.md) for the wider system map and operator guidance
-- open the [Repository Handbook](../../../bijux-core/index.md) when process behavior intersects shared release policy
+- open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
 
 ## Code Anchors
 

@@ -39,8 +39,8 @@ than graph truth or execution internals.
 ## Open Next
 
 - open the [DAG Handbook](../../index.md) for the package-wide architecture and interfaces
-- open [`bijux-dag-runtime`](../bijux-dag-runtime/index.md) when the question crosses from response shaping into execution policy
-- open [`bijux-dag-cli`](../bijux-dag-cli/index.md) when the concern is process wiring rather than app orchestration
+- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
+- open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
 
 ## Code Anchors
 

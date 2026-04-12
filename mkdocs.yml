@@ -152,8 +152,10 @@ nav:
               - Change Validation: bijux-cli/quality/change-validation.md
               - Known Limitations: bijux-cli/quality/known-limitations.md
               - Risk Register: bijux-cli/quality/risk-register.md
-      - bijux-cli: bijux-cli/packages/bijux-cli/index.md
-      - bijux-cli-python: bijux-cli/packages/bijux-cli-python/index.md
+          - Packages:
+              - Packages: bijux-cli/packages/index.md
+              - bijux-cli: bijux-cli/packages/bijux-cli.md
+              - bijux-cli-python: bijux-cli/packages/bijux-cli-python.md
   - DAG Handbook:
       - Home:
           - Overview: bijux-dag/index.md
@@ -212,12 +214,14 @@ nav:
               - Change Validation: bijux-dag/quality/change-validation.md
               - Known Limitations: bijux-dag/quality/known-limitations.md
               - Risk Register: bijux-dag/quality/risk-register.md
-      - bijux-dag-core: bijux-dag/packages/bijux-dag-core/index.md
-      - bijux-dag-runtime: bijux-dag/packages/bijux-dag-runtime/index.md
-      - bijux-dag-app: bijux-dag/packages/bijux-dag-app/index.md
-      - bijux-dag-cli: bijux-dag/packages/bijux-dag-cli/index.md
-      - bijux-dag-artifacts: bijux-dag/packages/bijux-dag-artifacts/index.md
-      - bijux-dag-testkit: bijux-dag/packages/bijux-dag-testkit/index.md
+          - Packages:
+              - Packages: bijux-dag/packages/index.md
+              - bijux-dag-core: bijux-dag/packages/bijux-dag-core.md
+              - bijux-dag-runtime: bijux-dag/packages/bijux-dag-runtime.md
+              - bijux-dag-app: bijux-dag/packages/bijux-dag-app.md
+              - bijux-dag-cli: bijux-dag/packages/bijux-dag-cli.md
+              - bijux-dag-artifacts: bijux-dag/packages/bijux-dag-artifacts.md
+              - bijux-dag-testkit: bijux-dag/packages/bijux-dag-testkit.md
   - Maintainer Handbook:
       - Home:
           - Overview: bijux-dev/index.md
@@ -262,7 +266,9 @@ nav:
               - release-pypi: bijux-dev/gh-workflows/release-pypi.md
               - release-github: bijux-dev/gh-workflows/release-github.md
               - bijux-canon: bijux-dev/gh-workflows/bijux-canon.md
-      - bijux-dev: bijux-dev/packages/bijux-dev/index.md
+          - Packages:
+              - Packages: bijux-dev/packages/index.md
+              - bijux-dev: bijux-dev/packages/bijux-dev.md
 
 hooks:
   - docs/automation/publish_contract_assets.py

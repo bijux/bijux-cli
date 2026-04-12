@@ -39,8 +39,8 @@ automation, or maintainer-only workflows.
 ## Open Next
 
 - open the [Maintainer Handbook](../../index.md) for operations and governance guidance
-- open the [Repository Handbook](../../../bijux-core/index.md) when a maintainer question touches cross-program ownership
-- open [CLI Handbook](../../../bijux-cli/index.md) or [DAG Handbook](../../../bijux-dag/index.md) when the issue belongs to product behavior rather than governance tooling
+- open the [Repository Handbook](../../bijux-core/index.md) when a maintainer question touches cross-program ownership
+- open [CLI Handbook](../../bijux-cli/index.md) or [DAG Handbook](../../bijux-dag/index.md) when the issue belongs to product behavior rather than governance tooling
 
 ## Code Anchors
 

@@ -19,8 +19,8 @@ This handbook is written for two outcomes:
 - a reviewer can trace each claim to concrete `crates/bijux-cli` code
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="packages/bijux-cli/">Open the runtime package</a>
-<a class="md-button" href="packages/bijux-cli-python/">Open the Python bridge package</a>
+<a class="md-button md-button--primary" href="packages/bijux-cli.md">Open the runtime package</a>
+<a class="md-button" href="packages/bijux-cli-python.md">Open the Python bridge package</a>
 </div>
 
 ## Visual Summary
@@ -35,8 +35,8 @@ flowchart TB
 
 ## Package Destinations
 
-- [`bijux-cli`](packages/bijux-cli/index.md) owns native runtime semantics
-- [`bijux-cli-python`](packages/bijux-cli-python/index.md) owns Python packaging
+- [`bijux-cli`](packages/bijux-cli.md) owns native runtime semantics
+- [`bijux-cli-python`](packages/bijux-cli-python.md) owns Python packaging
   and bridge compatibility
 - stay in this handbook when the question spans both CLI packages
 

@@ -18,7 +18,7 @@ This handbook should make repository automation inspectable without pretending
 that maintainer tooling is part of the end-user product surface.
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="packages/bijux-dev/">Open the bijux-dev package</a>
+<a class="md-button md-button--primary" href="packages/bijux-dev.md">Open the bijux-dev package</a>
 <a class="md-button" href="operations/">Open operations</a>
 <a class="md-button" href="makes/">Open makes</a>
 </div>
@@ -39,7 +39,7 @@ flowchart TB
 
 ## Package Destination
 
-- [`bijux-dev`](packages/bijux-dev/index.md) owns the repository control plane,
+- [`bijux-dev`](packages/bijux-dev.md) owns the repository control plane,
   maintainer automation, diagnostics, and release verification flows
 
 ## Sections In This Handbook

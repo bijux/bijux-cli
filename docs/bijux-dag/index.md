@@ -20,9 +20,9 @@ This handbook is optimized for operational questions that need hard answers:
 - where ownership boundaries are between DAG crates
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="packages/bijux-dag-core/">Open the kernel package</a>
-<a class="md-button" href="packages/bijux-dag-runtime/">Open the runtime package</a>
-<a class="md-button" href="packages/bijux-dag-app/">Open the app package</a>
+<a class="md-button md-button--primary" href="packages/bijux-dag-core.md">Open the kernel package</a>
+<a class="md-button" href="packages/bijux-dag-runtime.md">Open the runtime package</a>
+<a class="md-button" href="packages/bijux-dag-app.md">Open the app package</a>
 </div>
 
 ## Visual Summary
@@ -40,12 +40,12 @@ flowchart TB
 
 ## Package Destinations
 
-- [`bijux-dag-core`](packages/bijux-dag-core/index.md) owns graph truth and planner lowering
-- [`bijux-dag-runtime`](packages/bijux-dag-runtime/index.md) owns execution policy, replay, and diagnostics
-- [`bijux-dag-app`](packages/bijux-dag-app/index.md) owns command orchestration and response shaping
-- [`bijux-dag-cli`](packages/bijux-dag-cli/index.md) owns the thin executable wrapper
-- [`bijux-dag-artifacts`](packages/bijux-dag-artifacts/index.md) owns artifact identity, integrity, and lifecycle helpers
-- [`bijux-dag-testkit`](packages/bijux-dag-testkit/index.md) owns shared deterministic fixtures
+- [`bijux-dag-core`](packages/bijux-dag-core.md) owns graph truth and planner lowering
+- [`bijux-dag-runtime`](packages/bijux-dag-runtime.md) owns execution policy, replay, and diagnostics
+- [`bijux-dag-app`](packages/bijux-dag-app.md) owns command orchestration and response shaping
+- [`bijux-dag-cli`](packages/bijux-dag-cli.md) owns the thin executable wrapper
+- [`bijux-dag-artifacts`](packages/bijux-dag-artifacts.md) owns artifact identity, integrity, and lifecycle helpers
+- [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) owns shared deterministic fixtures
 
 ## Code Anchors
 

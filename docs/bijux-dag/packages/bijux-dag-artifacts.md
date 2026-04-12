@@ -34,9 +34,9 @@ material is identified, and how artifact integrity is verified over time.
 
 ## Open Next
 
-- open [`bijux-dag-runtime`](../bijux-dag-runtime/index.md) when artifact work is tied to execution and replay policy
+- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when artifact work is tied to execution and replay policy
 - open the [DAG Handbook](../../index.md) for the full DAG ownership map
-- open the [Repository Handbook](../../../bijux-core/index.md) when artifact contracts affect shared governance
+- open the [Repository Handbook](../../bijux-core/index.md) when artifact contracts affect shared governance
 
 ## Code Anchors
 

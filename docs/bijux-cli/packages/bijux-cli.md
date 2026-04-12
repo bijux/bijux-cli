@@ -53,9 +53,9 @@ product itself rather than repository policy or Python distribution.
 
 - open the [CLI Handbook](../../index.md) for architecture, interfaces,
   operations, and quality guidance
-- open the [Repository Handbook](../../../bijux-core/index.md) when a change
+- open the [Repository Handbook](../../bijux-core/index.md) when a change
   crosses into DAG, maintainer, or repository governance concerns
-- open [`bijux-cli-python`](../bijux-cli-python/index.md) when the question is
+- open [`bijux-cli-python`](./bijux-cli-python.md) when the question is
   Python packaging, bridge parity, or launcher distribution
 
 ## Code Anchors

@@ -37,8 +37,8 @@ effects begin.
 ## Open Next
 
 - open the [DAG Handbook](../../index.md) for cross-package architecture and operator-facing context
-- open [`bijux-dag-runtime`](../bijux-dag-runtime/index.md) when the question moves from graph truth to execution policy
-- open the [Repository Handbook](../../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
+- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question moves from graph truth to execution policy
+- open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
 
 ## Code Anchors
 

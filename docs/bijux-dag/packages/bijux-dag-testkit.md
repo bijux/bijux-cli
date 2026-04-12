@@ -30,8 +30,8 @@ or shared assertions rather than production runtime behavior.
 ## Open Next
 
 - open the [DAG Handbook](../../index.md) when the testing question belongs to the wider DAG stack
-- open [`bijux-dag-core`](../bijux-dag-core/index.md) or [`bijux-dag-runtime`](../bijux-dag-runtime/index.md) when a fixture needs to map back to owned behavior
-- open the [Maintainer Handbook](../../../bijux-dev/index.md) when the concern is repository-level verification policy
+- open [`bijux-dag-core`](./bijux-dag-core.md) or [`bijux-dag-runtime`](./bijux-dag-runtime.md) when a fixture needs to map back to owned behavior
+- open the [Maintainer Handbook](../../bijux-dev/index.md) when the concern is repository-level verification policy
 
 ## Code Anchors
 
