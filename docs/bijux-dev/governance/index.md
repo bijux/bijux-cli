@@ -12,6 +12,11 @@ last_reviewed: 2026-04-06
 This section defines maintainership governance for `bijux-dev` command behavior,
 quality expectations, and policy controls.
 
+Use this section for policy and boundary questions. Use
+[Dev Operations](../operations/index.md) for runbooks and evidence flows,
+[makes](../makes/index.md) for root command entrypoints, and
+[gh-workflows](../gh-workflows/index.md) for hosted automation triggers.
+
 ## Visual Summary
 
 ```mermaid
@@ -34,3 +39,9 @@ flowchart LR
 - [Documentation Standard](documentation-standard.md)
 - [Security and Secrets](security-and-secrets.md)
 - [Known Limitations](known-limitations.md)
+
+## Related Maintainer Sections
+
+- [Dev Operations](../operations/index.md)
+- [makes](../makes/index.md)
+- [gh-workflows](../gh-workflows/index.md)

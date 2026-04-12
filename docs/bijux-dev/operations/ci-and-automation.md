@@ -50,6 +50,8 @@ Every required workflow must declare:
 
 ## Next Reads
 
+- [gh-workflows](../gh-workflows/index.md)
+- [makes](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
 - [Release Operations](release-operations.md)
 - [Change Control](../governance/change-control.md)

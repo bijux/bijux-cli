@@ -53,6 +53,8 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit
 
 ## Next Reads
 
+- [makes](../makes/index.md)
+- [gh-workflows](../gh-workflows/deploy-docs.md)
 - [Documentation Standard](../governance/documentation-standard.md)
 - [Core Documentation Standards](../../bijux-core/governance/documentation-standards.md)
 - [CI and Automation](ci-and-automation.md)
