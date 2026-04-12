@@ -32,6 +32,21 @@ fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
+fn resolve_lcov_path(root: &Path) -> PathBuf {
+    if let Some(explicit) = std::env::var_os("BIJUX_COVERAGE_LCOV_PATH") {
+        return PathBuf::from(explicit);
+    }
+    for candidate in [
+        root.join("artifacts/coverage/lcov.info"),
+        root.join("artifacts/rust/coverage/local/lcov.info"),
+    ] {
+        if candidate.exists() {
+            return candidate;
+        }
+    }
+    root.join("artifacts/coverage/lcov.info")
+}
+
 fn to_repo_relative(root: &Path, raw: &str) -> String {
     let path = Path::new(raw);
     if path.is_absolute() {
@@ -266,21 +281,24 @@ fn render_app_route_support_below_target_report(
 
 fn main() -> Result<(), String> {
     let root = repo_root();
-    let lcov_path = root.join("artifacts/coverage/lcov.info");
+    let lcov_path = resolve_lcov_path(&root);
     let allowlist_path = root.join("configs/dag/policy/protected_zero_coverage_allowlist.json");
-    let out_under_50 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md");
-    let out_under_25 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md");
-    let out_zero = root.join("docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md");
+    let out_under_50 = root.join("docs/reports/foundation/line_coverage_under_50_report.md");
+    let out_under_25 = root.join("docs/reports/foundation/line_coverage_under_25_report.md");
+    let out_zero = root.join("docs/reports/foundation/line_coverage_zero_direct_report.md");
     let out_app_route_support = root
-        .join("docs/reports/foundation/APP_ROUTE_SUPPORT_MODULES_BELOW_TARGET_COVERAGE_REPORT.md");
+        .join("docs/reports/foundation/app_route_support_modules_below_target_coverage_report.md");
     let app_route_policy = root.join("configs/dag/policy/app_routing_coverage_targets.json");
 
     if !lcov_path.exists() {
-        let msg = "# Coverage report unavailable\n\n`artifacts/coverage/lcov.info` was not found. Run `make coverage` first.\n";
-        write_text(&out_under_50, msg)?;
-        write_text(&out_under_25, msg)?;
-        write_text(&out_zero, msg)?;
-        write_text(&out_app_route_support, msg)?;
+        let msg = format!(
+            "# Coverage report unavailable\n\n`{}` was not found. Run `make coverage` first.\n",
+            lcov_path.display()
+        );
+        write_text(&out_under_50, &msg)?;
+        write_text(&out_under_25, &msg)?;
+        write_text(&out_zero, &msg)?;
+        write_text(&out_app_route_support, &msg)?;
         println!("coverage input missing; wrote placeholder reports");
         return Ok(());
     }

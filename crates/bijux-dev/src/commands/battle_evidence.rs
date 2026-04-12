@@ -11,7 +11,7 @@ fn load_battle_policy(root: &Path) -> Result<Value, String> {
         &fs::read_to_string(&policy_path)
             .map_err(|err| format!("failed to read {}: {err}", policy_path.display()))?,
     )
-        .map_err(|err| err.to_string())
+    .map_err(|err| err.to_string())
 }
 
 pub(super) fn load_battle_scenario_records(root: &Path) -> Result<Vec<(String, String)>, String> {
@@ -239,12 +239,11 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
     if !registry_path.exists() {
         return Err(format!("missing battle scenario registry: {}", registry_path.display()));
     }
-    let registry: Value =
-        serde_json::from_str(
-            &fs::read_to_string(&registry_path)
-                .map_err(|err| format!("failed to read {}: {err}", registry_path.display()))?,
-        )
-        .map_err(|err| err.to_string())?;
+    let registry: Value = serde_json::from_str(
+        &fs::read_to_string(&registry_path)
+            .map_err(|err| format!("failed to read {}: {err}", registry_path.display()))?,
+    )
+    .map_err(|err| err.to_string())?;
     let registry_entries = registry
         .get("entries")
         .and_then(Value::as_array)
@@ -269,12 +268,11 @@ pub(super) fn run_battle_scenario_mapping_validate() -> Result<(), String> {
     }
 
     let metadata_path = root.join("evidence/battle/metadata.json");
-    let metadata: Value =
-        serde_json::from_str(
-            &fs::read_to_string(&metadata_path)
-                .map_err(|err| format!("failed to read {}: {err}", metadata_path.display()))?,
-        )
-        .map_err(|err| err.to_string())?;
+    let metadata: Value = serde_json::from_str(
+        &fs::read_to_string(&metadata_path)
+            .map_err(|err| format!("failed to read {}: {err}", metadata_path.display()))?,
+    )
+    .map_err(|err| err.to_string())?;
     let scenarios = metadata
         .get("scenarios")
         .and_then(Value::as_object)

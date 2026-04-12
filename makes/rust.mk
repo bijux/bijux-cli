@@ -57,7 +57,7 @@ define rs_nextest_summary
 	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
 endef
 
-.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage-rs audit-rs publish-rs
+.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage coverage-rs audit-rs publish-rs
 
 ##@ Rust
 fmt-rs: ## Run Rust formatting checks
@@ -138,6 +138,11 @@ test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
 	test $$status -eq 0
 
+coverage: coverage-rs ## Run coverage and refresh tracked coverage reports
+	@mkdir -p artifacts/coverage
+	@cp "$(RS_LCOV_FILE)" artifacts/coverage/lcov.info
+	@BIJUX_COVERAGE_LCOV_PATH="$(RS_LCOV_FILE)" cargo run --locked -p bijux-dev --bin generate_line_coverage_reports
+
 coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
@@ -164,18 +169,23 @@ coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
 		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
-		--lcov --output-path "$(RS_LCOV_FILE)" \
 		2>&1 | tee "$(RS_COVERAGE_TEST_REPORT)" || status=$$?; \
+	printf '%s' "$$status" > "$(RS_COVERAGE_DIR)/status.code"; \
 	$(call rs_nextest_summary,$(RS_COVERAGE_TEST_REPORT)); \
-	test $$status -eq 0
+	true
 	@set -o pipefail; \
 	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
 	cargo llvm-cov report --summary-only 2>&1 | tee "$(RS_COVERAGE_SUMMARY_REPORT)"
+	@set -o pipefail; \
+	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
+	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
+	cargo llvm-cov report --lcov --output-path "$(RS_LCOV_FILE)" >/dev/null
 	@total_line=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$(RS_COVERAGE_SUMMARY_REPORT)" | grep '^TOTAL' | tail -n 1 || true); \
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-summary:" "$${total_line:-unavailable}"; \
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-lcov:" "$(RS_LCOV_FILE)"; \
 	printf '\033[1;36m%s\033[0m %s\n' "coverage-report:" "$(RS_COVERAGE_SUMMARY_REPORT)"
+	@test "$$(cat "$(RS_COVERAGE_DIR)/status.code")" -eq 0
 
 audit-rs: ## Run cargo-deny and cargo-audit
 	$(call rs_require_tool,cargo-deny)

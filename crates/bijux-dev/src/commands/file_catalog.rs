@@ -100,8 +100,8 @@ pub(super) fn collect_files_with_extension(
     if !dir.exists() {
         return Ok(());
     }
-    for entry in
-        fs::read_dir(dir).map_err(|err| format!("failed to read directory {}: {err}", dir.display()))?
+    for entry in fs::read_dir(dir)
+        .map_err(|err| format!("failed to read directory {}: {err}", dir.display()))?
     {
         let path = entry
             .map_err(|err| format!("failed to read entry in {}: {err}", dir.display()))?
