@@ -11,8 +11,12 @@
   {% if nav_item.is_page and nav_item.meta.icon %}
     {% include ".icons/" ~ nav_item.meta.icon ~ ".svg" %}
   {% endif %}
+  {% set bijux_label = ref.title %}
+  {% if nav_item.is_index or (ref.parent and ref.title == ref.parent.title) or ref.title == "Home" %}
+    {% set bijux_label = "Overview" %}
+  {% endif %}
   <span class="md-ellipsis">
-    {{ ref.title }}
+    {{ bijux_label }}
   </span>
   {% if nav_item.is_page and nav_item.meta.status %}
     {{ render_status(nav_item, nav_item.meta.status) }}
