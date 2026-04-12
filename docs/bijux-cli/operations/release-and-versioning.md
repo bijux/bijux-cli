@@ -45,7 +45,7 @@ flowchart LR
 
 ## Current Release Line
 
-- release target: `v0.3.4`
+- release target: `v0.3.5`
 - published Rust crate: `bijux-cli`
 - published Python package: `bijux-cli`
 - DAG crates remain internal until the coordinated `v0.4.0` release line.

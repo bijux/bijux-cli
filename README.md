@@ -32,9 +32,9 @@ The goal of this repository is simple: ship both products from one audited sourc
 
 ## Release State
 
-Current release line: **`v0.3.4`**.
+Current release line: **`v0.3.5`**.
 
-- `bijux-cli` is the active public release surface at `v0.3.4`.
+- `bijux-cli` is the active public release surface at `v0.3.5`.
 - `bijux-cli-python` is the Python packaging bridge for the same CLI runtime.
 - `bijux-dag` remains an internal workspace product until the coordinated public release target at `v0.4.0`.
 

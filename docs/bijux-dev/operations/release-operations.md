@@ -31,8 +31,8 @@ flowchart LR
 
 ## Current Publication Policy
 
-- `v0.3.4` publishes `bijux-cli` to crates.io and `bijux-cli` to PyPI.
-- `bijux-dag-*` crates remain internal and are intentionally not published in `v0.3.4`.
+- `v0.3.5` publishes `bijux-cli` to crates.io and `bijux-cli` to PyPI.
+- `bijux-dag-*` crates remain internal and are intentionally not published in `v0.3.5`.
 - DAG publication is deferred to `v0.4.0`, when CLI and DAG are released together.
 - canonical repository for both programs is `https://github.com/bijux/bijux-core`.
 

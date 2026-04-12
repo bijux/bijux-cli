@@ -11,6 +11,17 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-5"></a>
+
+## [0.3.5] – 2026-04-12
+
+### Changed
+- Grouped shared release-channel badges onto one line and shared documentation badges onto one line across repository and package surfaces.
+- Advanced the repository release metadata and compatibility defaults to the `v0.3.5` line.
+
+### Fixed
+- Removed badge ordering drift between the root README, package READMEs, and docs landing pages by regenerating all managed badge blocks from the shared catalog.
+
 <a id="v0-3-4"></a>
 
 ## [0.3.4] – 2026-04-06
@@ -287,7 +298,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
 [0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/bijux/bijux-core/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/bijux/bijux-core/compare/v0.1.2...v0.1.3
