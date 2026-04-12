@@ -96,5 +96,6 @@ extra_javascript:
   - assets/javascripts/vendor/mermaid-11.6.0.min.js
   - assets/javascripts/mermaid-init.js
   - assets/javascripts/navigation-sync.js
+  - assets/javascripts/external-links.js
 
 copyright: "© 2026 Bijan Mousavi <bijan@bijux.io>"

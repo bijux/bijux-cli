@@ -356,6 +356,23 @@ html {
   transform: translateY(-1px);
 }
 
+.md-typeset a[data-bijux-external-link]:not(.md-button)::after {
+  content: "↗";
+  display: inline-block;
+  font-size: 0.72em;
+  font-weight: 700;
+  margin-inline-start: 0.28rem;
+  opacity: 0.8;
+  vertical-align: text-top;
+}
+
+.md-typeset .md-button[data-bijux-external-link]::after {
+  content: "↗";
+  font-size: 0.82em;
+  font-weight: 700;
+  margin-inline-start: 0.4rem;
+}
+
 .bijux-site-tabs,
 .bijux-detail-tabs {
   backdrop-filter: blur(14px);
