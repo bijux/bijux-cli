@@ -163,17 +163,19 @@ jobs:
         run: |
           set -euo pipefail
           archive_dir="${GITHUB_WORKSPACE}/artifacts/ghcr"
-          archive_path="${archive_dir}/bijux-cli-${RELEASE_TAG}.tar.gz"
+          archive_name="bijux-cli-${RELEASE_TAG}.tar.gz"
+          archive_path="${archive_dir}/${archive_name}"
           package_ref="ghcr.io/${GITHUB_REPOSITORY}/bijux-cli"
           mkdir -p "${archive_dir}"
           tar -C "${RELEASE_ASSETS_DIR}" -czf "${archive_path}" .
+          cd "${archive_dir}"
           oras push "${package_ref}:${RELEASE_TAG}" \
             --artifact-type application/vnd.bijux.release-bundle.v1+tar \
             --annotation "org.opencontainers.image.title=bijux-cli" \
             --annotation "org.opencontainers.image.version=${RELEASE_VERSION}" \
             --annotation "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
             --annotation "org.opencontainers.image.revision=${GITHUB_SHA}" \
-            "${archive_path}:application/gzip"
+            "./${archive_name}:application/gzip"
           oras tag "${package_ref}:${RELEASE_TAG}" latest
 
       - name: Publish GitHub Release
