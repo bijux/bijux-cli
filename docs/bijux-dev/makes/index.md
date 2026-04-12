@@ -7,7 +7,7 @@ owner: bijux-dev-docs
 last_reviewed: 2026-04-12
 ---
 
-# makes
+# Dev Make System
 
 The `makes/` section explains the shared command surface that ties local work,
 CI validation, docs publication, DAG governance, and release automation

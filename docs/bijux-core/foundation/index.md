@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# Foundation
+# Core Foundation
 
 The foundation section explains why `bijux-core` exists in this shape before it
 explains how the workspace is operated. A reader should leave this section able

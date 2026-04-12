@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-04-06
 ---
 
-# Architecture
+# DAG Architecture
 
 The architecture section explains how DAG behavior is implemented across crates:
 semantic kernel, runtime engine, artifact persistence, and orchestration routes.

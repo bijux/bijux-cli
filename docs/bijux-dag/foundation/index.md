@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-04-06
 ---
 
-# Foundation
+# DAG Foundation
 
 The foundation section defines DAG intent and limits before architecture or
 command details: mission, scope boundaries, domain vocabulary, lifecycle model,

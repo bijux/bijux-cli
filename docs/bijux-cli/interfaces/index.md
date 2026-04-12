@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Interfaces
+# CLI Interfaces
 
 The interfaces section defines what external callers can depend on: command
 surface, API facade modules, configuration behavior, typed data contracts, and

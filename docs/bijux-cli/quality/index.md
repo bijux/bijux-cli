@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Quality
+# CLI Quality
 
 The quality section defines how `bijux-cli` changes are validated, reviewed, and
 documented before release.

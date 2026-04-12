@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# Repository Handbook
+# Core Handbook
 
 The repository handbook explains the parts of `bijux-core` that no single
 product handbook can own honestly on its own. It exists to explain why the

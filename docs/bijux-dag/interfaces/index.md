@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-04-06
 ---
 
-# Interfaces
+# DAG Interfaces
 
 The interfaces section defines what operators and integrators can rely on:
 command surfaces, crate APIs, config/policy surfaces, and identity-bearing data

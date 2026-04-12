@@ -1,4 +1,4 @@
-# Maintainer Packages
+# Dev Packages
 
 This section is the package ownership map for maintainer and control-plane behavior. Use it when the question is about repository automation, diagnostics, release verification, or governance enforcement rather than product runtime behavior.
 

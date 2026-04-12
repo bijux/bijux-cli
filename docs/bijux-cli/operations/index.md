@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Operations
+# CLI Operations
 
 The operations section describes how to run, validate, diagnose, and release
 `bijux-cli` in daily engineering and automation workflows.

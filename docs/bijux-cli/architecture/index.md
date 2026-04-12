@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Architecture
+# CLI Architecture
 
 The architecture section describes how `bijux-cli` is assembled: module
 boundaries, dependency flow, execution pipeline, persistence touchpoints,

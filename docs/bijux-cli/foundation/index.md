@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Foundation
+# CLI Foundation
 
 The foundation section answers first-order questions about `bijux-cli` ownership:
 what it is, what it is not, where it fits in `bijux-core`, and which principles

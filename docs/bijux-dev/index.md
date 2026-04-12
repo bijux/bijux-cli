@@ -7,7 +7,7 @@ owner: bijux-dev-docs
 last_reviewed: 2026-04-12
 ---
 
-# Maintainer Handbook
+# Dev Handbook
 
 The maintainer handbook explains repository-health work that should not be
 rediscovered from CI logs, shell history, or one-off commands. It covers the

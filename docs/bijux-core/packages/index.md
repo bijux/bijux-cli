@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# Repository Packages
+# Core Packages
 
 `bijux-core` ships one workspace, but it does not ship one idea. The crate
 split is the repository contract: runtime command ownership lives in CLI,

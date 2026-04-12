@@ -7,7 +7,7 @@ owner: bijux-dev-docs
 last_reviewed: 2026-04-12
 ---
 
-# gh-workflows
+# Dev GitHub Workflows
 
 This section is the control map for GitHub Actions entrypoints in `bijux-core`.
 Use it to identify which workflow owns a failure, release gate, or automation

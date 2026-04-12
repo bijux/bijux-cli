@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# Operations
+# Core Operations
 
 The operations section explains how repository-wide work is carried out after
 the ownership model is already clear. These pages are about repeatable root
