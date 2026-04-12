@@ -14,6 +14,22 @@ DOCS_SITE_DIR    ?= artifacts/docs/site
 DOCS_CACHE_DIR   ?= artifacts/docs/.cache
 DOCS_CONTRACT_DIR ?= $(DOCS_SITE_DIR)/contracts
 
+define docs_search_file
+if command -v rg >/dev/null 2>&1; then \
+  rg -q '$(1)' "$(2)"; \
+else \
+  grep -q '$(1)' "$(2)"; \
+fi
+endef
+
+define docs_search_tree
+if command -v rg >/dev/null 2>&1; then \
+  rg -q '$(1)' "$(2)"; \
+else \
+  grep -R -q '$(1)' "$(2)"; \
+fi
+endef
+
 ENABLE_SOCIAL_CARDS ?= false
 SITE_URL            ?= http://127.0.0.1:8000/
 DOCS_HOST           ?= 127.0.0.1
@@ -126,17 +142,17 @@ docs-package-surface-check: ## Verify repository and maintainer package surfaces
 	@echo "Package surface docs OK"
 
 docs-navigation-check: ## Verify shared chrome and handbook/package tabs are rendered
-	@rg -q 'bijux-hub-strip' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: shared Bijux hub strip is missing" && exit 1)
-	@rg -q 'bijux-site-tabs' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: shared site tabs are missing" && exit 1)
-	@rg -q 'Repository Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: Repository Handbook tab label is missing" && exit 1)
-	@rg -q 'CLI Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: CLI Handbook tab label is missing" && exit 1)
-	@rg -q 'DAG Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: DAG Handbook tab label is missing" && exit 1)
-	@rg -q 'Maintainer Handbook' "$(DOCS_SITE_DIR)/index.html" || (echo "ERROR: Maintainer Handbook tab label is missing" && exit 1)
-	@rg -q '/bijux-core/packages/' "$(DOCS_SITE_DIR)" || (echo "ERROR: repository package tab is missing" && exit 1)
-	@rg -q '/bijux-cli/packages/bijux-cli-python/' "$(DOCS_SITE_DIR)" || (echo "ERROR: CLI Python package tab is missing" && exit 1)
-	@rg -q '/bijux-dag/packages/bijux-dag-runtime/' "$(DOCS_SITE_DIR)" || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
-	@rg -q '/bijux-dev/packages/bijux-dev/' "$(DOCS_SITE_DIR)" || (echo "ERROR: maintainer package tab is missing" && exit 1)
-	@rg -q 'data-bijux-course-strip' "$(DOCS_SITE_DIR)/bijux-cli/index.html" || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
-	@rg -q 'Foundation' "$(DOCS_SITE_DIR)/bijux-cli/index.html" || (echo "ERROR: CLI section strip labels are missing" && exit 1)
-	@rg -q 'Governance' "$(DOCS_SITE_DIR)/bijux-dev/index.html" || (echo "ERROR: maintainer fourth-row navigation labels are missing" && exit 1)
+	@$(call docs_search_file,bijux-hub-strip,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: shared Bijux hub strip is missing" && exit 1)
+	@$(call docs_search_file,bijux-site-tabs,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: shared site tabs are missing" && exit 1)
+	@$(call docs_search_file,Repository Handbook,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: Repository Handbook tab label is missing" && exit 1)
+	@$(call docs_search_file,CLI Handbook,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: CLI Handbook tab label is missing" && exit 1)
+	@$(call docs_search_file,DAG Handbook,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: DAG Handbook tab label is missing" && exit 1)
+	@$(call docs_search_file,Maintainer Handbook,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: Maintainer Handbook tab label is missing" && exit 1)
+	@$(call docs_search_tree,/bijux-core/packages/,$(DOCS_SITE_DIR)) || (echo "ERROR: repository package tab is missing" && exit 1)
+	@$(call docs_search_tree,/bijux-cli/packages/bijux-cli-python/,$(DOCS_SITE_DIR)) || (echo "ERROR: CLI Python package tab is missing" && exit 1)
+	@$(call docs_search_tree,/bijux-dag/packages/bijux-dag-runtime/,$(DOCS_SITE_DIR)) || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
+	@$(call docs_search_tree,/bijux-dev/packages/bijux-dev/,$(DOCS_SITE_DIR)) || (echo "ERROR: maintainer package tab is missing" && exit 1)
+	@$(call docs_search_file,data-bijux-course-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: fourth-row handbook section strip is missing" && exit 1)
+	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI section strip labels are missing" && exit 1)
+	@$(call docs_search_file,Governance,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer fourth-row navigation labels are missing" && exit 1)
 	@echo "Docs navigation OK"
