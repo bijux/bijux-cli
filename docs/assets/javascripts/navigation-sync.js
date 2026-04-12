@@ -177,6 +177,7 @@ function bijuxSyncDetailStripActiveState() {
 
 function bijuxActiveDetailPath() {
   const activeStrip = document.querySelector("[data-bijux-detail-strip]:not([hidden])");
+  const currentPath = bijuxNormalizePath(window.location.pathname);
   const authoredActiveLink = activeStrip?.querySelector(
     "[data-bijux-detail-path][aria-current='page'], .bijux-tabs__item--active [data-bijux-detail-path]"
   );
@@ -185,15 +186,26 @@ function bijuxActiveDetailPath() {
     return null;
   }
 
-  const activeLink = bijuxBestMatchingLink(
-    activeStrip.querySelectorAll("[data-bijux-detail-path]"),
-    "data-bijux-detail-path"
-  );
+  let activeLink = null;
+
+  for (const link of activeStrip.querySelectorAll("[data-bijux-detail-path]")) {
+    const linkPath = bijuxNormalizeNavPath(
+      link.getAttribute("data-bijux-detail-path") || "/"
+    );
+    const isMatch =
+      currentPath === linkPath ||
+      (linkPath !== "/" && currentPath.startsWith(`${linkPath}/`));
+
+    if (isMatch && (!activeLink || linkPath.length > activeLink.path.length)) {
+      activeLink = { path: linkPath, node: link };
+    }
+  }
+
   if (activeLink) {
     return activeLink.path;
   }
   if (authoredActiveLink) {
-    return bijuxNormalizePath(
+    return bijuxNormalizeNavPath(
       authoredActiveLink.getAttribute("data-bijux-detail-path") || "/"
     );
   }
@@ -203,21 +215,37 @@ function bijuxActiveDetailPath() {
 function bijuxSyncCourseStripVisibility() {
   const activeDetailPath = bijuxActiveDetailPath();
   const strips = document.querySelectorAll("[data-bijux-course-strip]");
+  const currentPath = bijuxNormalizePath(window.location.pathname);
 
   for (const strip of strips) {
-    const rootPath = bijuxNormalizePath(
+    const rootPath = bijuxNormalizeNavPath(
       strip.getAttribute("data-bijux-course-root-path") || "/"
     );
-    const activeCourseLink = bijuxBestMatchingLink(
-      strip.querySelectorAll("[data-bijux-course-path]"),
-      "data-bijux-course-path"
-    );
+    let activeCourseLink = null;
+
+    for (const link of strip.querySelectorAll("[data-bijux-course-path]")) {
+      const linkPath = bijuxNormalizeNavPath(
+        link.getAttribute("data-bijux-course-path") || "/"
+      );
+      const isMatch =
+        currentPath === linkPath ||
+        (linkPath !== "/" && currentPath.startsWith(`${linkPath}/`));
+
+      if (
+        isMatch &&
+        (!activeCourseLink || linkPath.length > activeCourseLink.path.length)
+      ) {
+        activeCourseLink = { path: linkPath, node: link };
+      }
+    }
+
     strip.hidden = rootPath !== activeDetailPath && !activeCourseLink;
   }
 }
 
 function bijuxSyncCourseStripActiveState() {
   const activeStrip = document.querySelector("[data-bijux-course-strip]:not([hidden])");
+  const currentPath = bijuxNormalizePath(window.location.pathname);
   const authoredActiveLink = activeStrip?.querySelector(
     "[data-bijux-course-path][aria-current='page'], .bijux-tabs__item--active [data-bijux-course-path]"
   );
@@ -237,14 +265,24 @@ function bijuxSyncCourseStripActiveState() {
     return;
   }
 
-  let activeLink = bijuxBestMatchingLink(
-    activeStrip.querySelectorAll("[data-bijux-course-path]"),
-    "data-bijux-course-path"
-  );
+  let activeLink = null;
+
+  for (const link of activeStrip.querySelectorAll("[data-bijux-course-path]")) {
+    const linkPath = bijuxNormalizeNavPath(
+      link.getAttribute("data-bijux-course-path") || "/"
+    );
+    const isMatch =
+      currentPath === linkPath ||
+      (linkPath !== "/" && currentPath.startsWith(`${linkPath}/`));
+
+    if (isMatch && (!activeLink || linkPath.length > activeLink.path.length)) {
+      activeLink = { path: linkPath, node: link };
+    }
+  }
 
   if (!activeLink && authoredActiveLink) {
     activeLink = {
-      path: bijuxNormalizePath(
+      path: bijuxNormalizeNavPath(
         authoredActiveLink.getAttribute("data-bijux-course-path") || "/"
       ),
       node: authoredActiveLink,
