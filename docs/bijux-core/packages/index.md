@@ -17,6 +17,9 @@ governance lives in Maintainer.
 Use this page when you need the fastest honest answer to "which package owns
 this behavior?"
 
+This page is the detailed package inventory behind the shorter routing summary
+in [Foundation / Package Map](../foundation/package-map.md).
+
 ## Visual Summary
 
 ```mermaid
@@ -60,6 +63,12 @@ flowchart TB
   repository health, release proof, docs gates, or evidence collection
 - stay in the [Repository Handbook](../index.md) only when the question crosses
   those ownership boundaries
+
+## Related Root Pages
+
+- [Foundation](../foundation/index.md)
+- [Ownership Model](../foundation/ownership-model.md)
+- [Decision Rules](../foundation/decision-rules.md)
 
 ## Code Anchors
 

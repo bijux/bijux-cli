@@ -12,6 +12,10 @@ last_reviewed: 2026-04-06
 Core governance defines repository-wide policies that apply across CLI, DAG,
 Python bridge, and maintainer control-plane work.
 
+This section remains the policy detail layer. Use
+[Operations](../operations/index.md) when the question is primarily about how a
+repository workflow is executed rather than which rule justifies it.
+
 ## Visual Summary
 
 ```mermaid
@@ -29,6 +33,12 @@ flowchart LR
 - require evidence before compatibility or release claims
 - align documentation with executable behavior and contracts
 - make risk decisions visible and reviewable
+
+## Related Root Pages
+
+- [Foundation](../foundation/index.md)
+- [Operations](../operations/index.md)
+- [Repository Handbook](../index.md)
 
 ## Pages In This Section
 

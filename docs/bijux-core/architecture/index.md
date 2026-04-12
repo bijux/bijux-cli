@@ -12,6 +12,10 @@ last_reviewed: 2026-04-06
 This section defines the repository-level architecture that coordinates CLI,
 DAG, Python bridge, and maintainer control-plane responsibilities.
 
+Use [Foundation](../foundation/index.md) first when the repository split itself
+is still unclear. Use this section when the ownership model is already clear
+and the remaining question is structural.
+
 ## Visual Summary
 
 ```mermaid
@@ -29,6 +33,12 @@ flowchart LR
 - explicit crate ownership with one-way dependency rules
 - stable command and artifact behavior across CLI and DAG programs
 - maintainers operate through dedicated control-plane paths
+
+## Related Root Pages
+
+- [Foundation](../foundation/index.md)
+- [Operations](../operations/index.md)
+- [Repository Handbook](../index.md)
 
 ## Pages In This Section
 
