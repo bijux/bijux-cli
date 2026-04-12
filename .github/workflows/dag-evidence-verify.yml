@@ -38,7 +38,6 @@ jobs:
       - name: verify evidence foundation
         run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
       - name: run battle-first trust subset
-        continue-on-error: true
         run: |
           cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-battle
           cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-cache
