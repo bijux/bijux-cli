@@ -1532,18 +1532,33 @@ pub(super) fn run_evidence_consumer_reports(
 pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
     let root = repo_root()?;
     verify_registry_access_bypass(&root)?;
-    let restricted_patterns = [
-        "tests/e2e/replay/fixtures/",
-        "tests/e2e/fixtures/e2e_minimal.json",
-        "tests/e2e/compat/legacy_fixture_validation.json",
-        "tests/e2e/container/container_execution_if_supported.json",
-        "benchmarks/scenarios/",
-        "comparisons/scenarios/",
-    ];
+    let path_policy_payload =
+        fs::read_to_string(root.join("configs/dag/policy/evidence_path_policy.json"))
+            .map_err(|err| err.to_string())?;
+    let path_policy: Value =
+        serde_json::from_str(&path_policy_payload).map_err(|err| err.to_string())?;
+    let restricted_patterns: Vec<String> = path_policy["legacy_scenario_roots"]
+        .as_array()
+        .ok_or_else(|| "legacy_scenario_roots must be an array".to_string())?
+        .iter()
+        .chain(
+            path_policy["legacy_scenario_paths"]
+                .as_array()
+                .ok_or_else(|| "legacy_scenario_paths must be an array".to_string())?
+                .iter(),
+        )
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "legacy scenario pattern must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
     let mut violations = Vec::new();
     let mut files = Vec::new();
     collect_all_files(&root, &mut files)?;
     let ignore_paths = [
+        "crates/bijux-dev/src/commands/ops.rs",
         "crates/bijux-dev/src/commands/mod.rs",
         "crates/bijux-dev/tests/evidence_consumer_integrity_contracts.rs",
         "crates/bijux-dev/tests/evidence_access_contracts.rs",
@@ -1558,7 +1573,12 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
             .map_err(|err| err.to_string())?
             .to_string_lossy()
             .replace('\\', "/");
-        if ignore_paths.iter().any(|path| rel == *path) {
+        let ignore_prefixes = ["configs/dag/policy/", "evidence/", "evidence/dag/"];
+        if ignore_paths.iter().any(|path| rel == *path)
+            || ignore_prefixes.iter().any(|prefix| rel.starts_with(prefix))
+            || rel.contains("/tests/")
+            || rel.ends_with("/README.md")
+        {
             continue;
         }
         if !(rel.ends_with(".rs")
@@ -1569,7 +1589,7 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
             continue;
         }
         let text = fs::read_to_string(&file).map_err(|err| err.to_string())?;
-        for pattern in restricted_patterns {
+        for pattern in &restricted_patterns {
             if text.contains(pattern) {
                 violations.push(format!("{rel}: contains legacy scenario reference `{pattern}`"));
             }

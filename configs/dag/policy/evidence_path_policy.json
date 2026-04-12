@@ -38,6 +38,11 @@
     "crates/bijux-dag-core/tests/compat",
     "crates/bijux-dag-core/tests/snapshots"
   ],
+  "legacy_scenario_paths": [
+    "tests/e2e/fixtures/e2e_minimal.json",
+    "tests/e2e/compat/legacy_fixture_validation.json",
+    "tests/e2e/container/container_execution_if_supported.json"
+  ],
   "helper_allowlist": [
     "tests/integration_fixtures/*.sh",
     "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
