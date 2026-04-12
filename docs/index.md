@@ -24,13 +24,16 @@ last_reviewed: 2026-04-12
 [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/docsrs/bijux-cli?label=bijux--cli%20docs.rs)](https://docs.rs/bijux-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is a deliberately split Rust workspace for command runtime,
-deterministic DAG execution, and maintainer governance. The split is part of
-the product design: reader-facing behavior, execution truth, and repository
-control-plane work live in different places on purpose.
+`bijux-core` is a deliberately split workspace for command runtime,
+deterministic DAG execution, and repository control-plane work. The split is
+the design, not a packaging afterthought. Readers should be able to see where
+authority changes hands before they start reading source files or workflow
+logs.
 
-Use this landing page to decide which handbook and which package own the
-question before you start reading source files.
+Start here when you need repository-level orientation. The job of this page is
+to show which handbook branch owns the current question, which package family
+likely carries the implementation, and which repository-only surfaces sit above
+the product handbooks.
 
 <div class="bijux-callout"><strong>Start with ownership, not just the crate list.</strong>
 Repository docs explain cross-workspace policy. CLI docs own the <code>bijux</code>
@@ -56,15 +59,27 @@ repository gates, and governance tooling.</div>
 
 ```mermaid
 flowchart TB
-    workspace["bijux-core workspace"]
-    workspace --> repo["Repository handbook"]
-    workspace --> cli["CLI handbook"]
-    workspace --> dag["DAG handbook"]
-    workspace --> dev["Maintainer handbook"]
-    cli --> cli_pkg["bijux-cli | bijux-cli-python"]
-    dag --> dag_pkg["bijux-dag-core | runtime | app | cli | artifacts | testkit"]
-    dev --> dev_pkg["bijux-dev"]
-    repo --> repo_pkg["workspace package inventory"]
+    page["Bijux Core<br/>clarifies: repository handbook | product handbooks | maintainer handbook"]
+    classDef page fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a,stroke-width:2px;
+    classDef anchor fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
+    classDef action fill:#fef3c7,stroke:#d97706,color:#7c2d12;
+    anchor1["why the workspace is split"]
+    anchor2["which handbook branch owns the question"]
+    anchor3["which package family carries the implementation"]
+    anchor4["which concerns stay at the repository root"]
+    anchor1 --> page
+    anchor2 --> page
+    anchor3 --> page
+    anchor4 --> page
+    next1["repository handbook"]
+    next2["CLI or DAG handbook"]
+    next3["maintainer handbook"]
+    page --> next1
+    page --> next2
+    page --> next3
+    class page page;
+    class anchor1,anchor2,anchor3,anchor4 anchor;
+    class next1,next2,next3 action;
 ```
 
 ## Start Here
@@ -87,9 +102,27 @@ flowchart TB
 | [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core/index.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime/index.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app/index.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli/index.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts/index.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit/index.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
 | [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev/index.md) | the issue is repository diagnostics, release proof, or control-plane automation |
 
+## Documentation Scope
+
+- the repository handbook under [bijux-core](bijux-core/index.md)
+- the product handbooks under [bijux-cli](bijux-cli/index.md) and
+  [bijux-dag](bijux-dag/index.md)
+- the maintainer handbook under [bijux-dev](bijux-dev/index.md)
+
 ## Navigation Rule
 
 Start from the handbook that owns the question, then use its package tabs when
 you need the exact implementation boundary. If two handbook branches seem to
 own the same behavior, treat that as a docs bug and verify the answer from the
 [Repository Handbook](bijux-core/index.md).
+
+## Purpose
+
+Use this page to get oriented quickly, choose the right handbook branch, and
+move to the checked-in files that carry the detailed proof.
+
+## Stability
+
+Keep this page aligned with the published handbook roots, the current workspace
+package split, and the repository-only surfaces that actually exist in
+`bijux-core`.
