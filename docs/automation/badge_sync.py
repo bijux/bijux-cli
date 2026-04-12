@@ -378,7 +378,7 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
         BadgeTarget(REPO_ROOT / "docs" / "index.md", "repository"),
         BadgeTarget(REPO_ROOT / "crates" / "bijux-cli" / "README.md", "package", "bijux-cli"),
         BadgeTarget(
-            REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli" / "index.md",
+            REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli.md",
             "package",
             "bijux-cli",
         ),
@@ -392,8 +392,7 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
             / "docs"
             / "bijux-cli"
             / "packages"
-            / "bijux-cli-python"
-            / "index.md",
+            / "bijux-cli-python.md",
             "package",
             "bijux-cli-python",
         ),
