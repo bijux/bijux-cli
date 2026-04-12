@@ -30,6 +30,10 @@
   {% set scoped.visible = scoped.items | length > 0 %}
 {% endif %}
 
+{% if current_page and current_page.is_index %}
+  {% set scoped.visible = false %}
+{% endif %}
+
 {% set bijux_expand_scoped_groups = false %}
 {% if scoped.visible and current_page and (current_page.title == "Overview" or current_page.title == "Home") %}
   {% set bijux_expand_scoped_groups = true %}
