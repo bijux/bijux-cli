@@ -28,9 +28,10 @@
 {%- endmacro %}
 
 {% macro detail_label(nav_item) -%}
-  {% if nav_item.title == "Home" or (nav_item.parent and nav_item.title == nav_item.parent.title) -%}
-    Overview
+  {% set label = (nav_item.title or "") | string | trim %}
+  {% if label | lower in ["home", "overview"] or (nav_item.parent and label == nav_item.parent.title) -%}
+    Home
   {%- else -%}
-    {{ nav_item.title }}
+    {{ label }}
   {%- endif %}
 {%- endmacro %}

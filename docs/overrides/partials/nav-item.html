@@ -13,7 +13,7 @@
   {% endif %}
   {% set bijux_label = ref.title %}
   {% if nav_item.is_index or (ref.parent and ref.title == ref.parent.title) or ref.title == "Home" %}
-    {% set bijux_label = "Overview" %}
+    {% set bijux_label = "Home" %}
   {% endif %}
   <span class="md-ellipsis">
     {{ bijux_label }}
