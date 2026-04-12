@@ -114,7 +114,7 @@ function bijuxSyncDetailStripVisibility() {
   const strips = document.querySelectorAll("[data-bijux-detail-strip]");
 
   for (const strip of strips) {
-    const rootPath = bijuxNormalizePath(
+    const rootPath = bijuxNormalizeNavPath(
       strip.getAttribute("data-bijux-detail-root-path") || "/"
     );
     strip.hidden = rootPath !== activeSitePath;
@@ -123,6 +123,7 @@ function bijuxSyncDetailStripVisibility() {
 
 function bijuxSyncDetailStripActiveState() {
   const activeStrip = document.querySelector("[data-bijux-detail-strip]:not([hidden])");
+  const currentPath = bijuxNormalizePath(window.location.pathname);
   const authoredActiveLink = activeStrip?.querySelector(
     "[data-bijux-detail-path][aria-current='page'], .bijux-tabs__item--active [data-bijux-detail-path]"
   );
@@ -142,14 +143,24 @@ function bijuxSyncDetailStripActiveState() {
     return;
   }
 
-  let activeLink = bijuxBestMatchingLink(
-    activeStrip.querySelectorAll("[data-bijux-detail-path]"),
-    "data-bijux-detail-path"
-  );
+  let activeLink = null;
+
+  for (const link of activeStrip.querySelectorAll("[data-bijux-detail-path]")) {
+    const linkPath = bijuxNormalizeNavPath(
+      link.getAttribute("data-bijux-detail-path") || "/"
+    );
+    const isMatch =
+      currentPath === linkPath ||
+      (linkPath !== "/" && currentPath.startsWith(`${linkPath}/`));
+
+    if (isMatch && (!activeLink || linkPath.length > activeLink.path.length)) {
+      activeLink = { path: linkPath, node: link };
+    }
+  }
 
   if (!activeLink && authoredActiveLink) {
     activeLink = {
-      path: bijuxNormalizePath(
+      path: bijuxNormalizeNavPath(
         authoredActiveLink.getAttribute("data-bijux-detail-path") || "/"
       ),
       node: authoredActiveLink,
