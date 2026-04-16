@@ -13,6 +13,19 @@ The repository root owns the things that cross package boundaries. It does not
 own command semantics that already belong to the CLI handbook or execution
 semantics that already belong to the DAG handbook.
 
+```mermaid
+flowchart TD
+    A[Proposed repository-level change] --> B{Spans package boundaries?}
+    B -->|No| C[Keep change in owning package handbook]
+    B -->|Yes| D{Is it root policy, docs shape, contracts, or release rules?}
+    D -->|Yes| E[Repository scope]
+    D -->|No| C
+    E --> E1[workspace and root build policy]
+    E --> E2[shared docs and publication]
+    E --> E3[cross-program contracts]
+    E --> E4[release and compatibility rules]
+```
+
 ## In Scope
 
 - workspace membership and root build policy
