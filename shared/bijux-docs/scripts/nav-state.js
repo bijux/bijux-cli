@@ -1,9 +1,23 @@
 (function () {
   const shell = (window.bijuxShell = window.bijuxShell || {});
 
+  function siteBasePath() {
+    const scopePath = window.__md_scope?.pathname;
+    if (!scopePath) {
+      return "";
+    }
+
+    const path = scopePath.replace(/\/+$/, "");
+    return path === "/" ? "" : path;
+  }
+
   function normalizePath(target) {
     const url = new URL(target, window.location.href);
-    const path = url.pathname.replace(/\/+$/, "");
+    const basePath = siteBasePath();
+    let path = url.pathname.replace(/\/+$/, "");
+    if (basePath && (path === basePath || path.startsWith(`${basePath}/`))) {
+      path = path.slice(basePath.length) || "/";
+    }
     return path || "/";
   }
 
@@ -92,6 +106,7 @@
   }
 
   shell.navState = {
+    siteBasePath,
     normalizePath,
     bestMatchingLink,
     bestSitePath,
