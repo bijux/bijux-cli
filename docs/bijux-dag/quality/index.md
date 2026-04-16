@@ -16,10 +16,15 @@ claims, and operational trust.
 
 ```mermaid
 flowchart LR
-    strategy[test strategy] --> validate[change validation]
-    validate --> invariants[invariant protection]
-    invariants --> review[review checklist]
-    review --> done[definition of done]
+  Q[Quality] --> Validate[Change Validation]
+  Q --> Done[Definition of Done]
+  Q --> Deps[Dependency Governance]
+  Q --> Docs[Documentation Standards]
+  Q --> Inv[Invariants]
+  Q --> Limits[Known Limitations]
+  Q --> Review[Review Checklist]
+  Q --> Risk[Risk Register]
+  Q --> Tests[Test Strategy]
 ```
 
 ## Quality Goals
