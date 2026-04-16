@@ -14,6 +14,20 @@ behavioral surface. The repository exists so CLI runtime behavior, DAG
 execution behavior, and repository-health automation can evolve together
 without pretending they are one package.
 
+```mermaid
+flowchart LR
+    cli[bijux-cli and bijux-cli-python\noperator runtime surface]
+    dag[bijux-dag package family\ngraph execution surface]
+    dev[bijux-dev\nrepository-health automation]
+    root[Repository root\nshared contracts and rules]
+
+    cli --> root
+    dag --> root
+    dev --> root
+    root -. coordinates shared policy for .-> cli
+    root -. coordinates shared policy for .-> dag
+```
+
 ## What The Repository Is Organizing
 
 - `bijux-cli` owns the operator-facing command runtime and the Python bridge
