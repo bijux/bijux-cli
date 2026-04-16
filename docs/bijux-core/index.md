@@ -32,14 +32,27 @@ release surfaces, and shared automation.</div>
 ## Visual Summary
 
 ```mermaid
-flowchart TB
-    handbook["Repository handbook"]
-    handbook --> foundation["foundation section"]
-    handbook --> architecture["architecture section"]
-    handbook --> operations["operations section"]
-    foundation --> boundaries["workspace split | ownership model | package map"]
-    architecture --> structure["topology | dependencies | runtime seams"]
-    operations --> policies["validation | release | review | automation"]
+mindmap
+  root((bijux-core repository handbook))
+    Foundation
+      repository scope
+      ownership model
+      package map
+      decision rules
+    Architecture
+      workspace topology
+      dependency direction
+      runtime surfaces
+      state and configuration
+    Operations
+      local development
+      testing and validation
+      release and versioning
+      change management
+    Program handbooks
+      CLI
+      DAG
+      Maintainer
 ```
 
 ## Start Here
