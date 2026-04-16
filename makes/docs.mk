@@ -58,6 +58,7 @@ docs-install: ## Install the documentation toolchain dependencies
 
 docs: docs-clean docs-require ## Build documentation into artifacts/docs/site
 	@echo "Building documentation"
+	@$(MAKE) --no-print-directory bijux-docs-sync
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
 	  "$(MKDOCS_BIN)" build --strict --config-file "$(MKDOCS_CFG)" --site-dir "$(DOCS_SITE_DIR)"
@@ -65,6 +66,7 @@ docs: docs-clean docs-require ## Build documentation into artifacts/docs/site
 	@echo "Documentation build complete"
 
 docs-serve: docs-require ## Serve documentation locally with automatic reloads
+	@$(MAKE) --no-print-directory bijux-docs-sync
 	@HOST=$${HOST:-$(DOCS_HOST)}; PORT=$${PORT:-$(DOCS_PORT)}; \
 	  if command -v lsof >/dev/null 2>&1; then \
 	    while lsof -tiTCP:$$PORT -sTCP:LISTEN >/dev/null 2>&1; do PORT=$$((PORT+1)); done; \
@@ -82,6 +84,7 @@ docs-deploy: docs-require ## Deploy documentation to GitHub Pages
 
 docs-check: docs-require ## Verify that documentation builds without errors
 	@echo "Checking documentation build integrity"
+	@$(MAKE) --no-print-directory bijux-docs-check
 	@$(MAKE) --no-print-directory check-badges
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
