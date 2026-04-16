@@ -15,15 +15,18 @@ execution crates, a Python bridge package, and a maintainer control-plane.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    user[user and automation] --> cli[bijux cli program]
-    user --> dag[bijux dag program]
-    cli --> runtime[cli runtime crate]
-    dag --> dag_app[dag app and runtime crates]
-    runtime --> shared[shared workspace contracts]
-    dag_app --> shared
-    maintainer[maintainer workflows] --> dev[bijux-dev control plane]
-    dev --> shared
+flowchart TB
+    Root[bijux-core workspace]
+    Root --> Programs[Runtime programs]
+    Root --> DAG[DAG execution crates]
+    Root --> Python[Python bridge package]
+    Root --> Maintain[Maintainer control plane]
+    Root --> Shared[Shared contracts and policies]
+
+    Programs --> Shared
+    DAG --> Shared
+    Python --> Shared
+    Maintain --> Shared
 ```
 
 ## System Components
