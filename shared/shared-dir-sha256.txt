@@ -1,3 +1,3 @@
-b3bbb76a4293dade4bbc4e51994fb6d130436b2e0ec43b6d2b4c1c727d073fd3  shared/bijux-docs
+17c63fe88d72eb7fdac5c0cd7dd7512dcdc7005c437120d00e65ad89002b0437  shared/bijux-docs
 2618134acbdb3bd0ac18c6b29d8b6cded5f7586d44fbef39e15c5a9c64ad8d26  shared/bijux-makes-py
 377a246089aae2e3c59206a9769e9f85965287c8a0708fa2fc91fc8ab08aadda  shared/bijux-checks

@@ -10,7 +10,8 @@
 {% set nav_mode = bijux.nav_mode if bijux and bijux.nav_mode else "default" %}
 {% set theme_key = bijux.theme_key if bijux and bijux.theme_key else "bijux:theme" %}
 {% set current_page = page if page is defined else none %}
-{% set allow_flattened_detail_rows = active_repository == "bijux.github.io" %}
+{% set is_bijux_hub_site = repo_name == "bijux/bijux.github.io" or active_repository in ["bijux", "bijux.github.io"] %}
+{% set allow_flattened_detail_rows = is_bijux_hub_site %}
 {% import "partials/bijux-nav.html" as bijux_nav with context %}
 {% macro site_label(title) -%}
   {% if title == "Repository Handbook" -%}
