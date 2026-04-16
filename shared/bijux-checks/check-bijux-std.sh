@@ -115,5 +115,6 @@ fi
 
 verify_dir_against_manifests "shared/bijux-docs" "${tmp_manifest}"
 verify_dir_against_manifests "shared/bijux-makes-py" "${tmp_manifest}"
+verify_dir_against_manifests "shared/bijux-checks" "${tmp_manifest}"
 
 echo "✔ bijux-std check passed (ref=${std_ref})"

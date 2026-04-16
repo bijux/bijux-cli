@@ -4,7 +4,7 @@ PYTHON_BIN                  ?= $(shell command -v python3 2>/dev/null)
 BIJUX_DOCS_SYNC_SCRIPT      ?= internal/scripts/sync_bijux_docs.sh
 BIJUX_DOCS_SOT_GUARD        ?= internal/scripts/verify_bijux_docs_source_of_truth.sh
 BIJUX_DOCS_CONTRACT_GUARD   ?= internal/quality/validate_bijux_docs_contract.py
-BIJUX_STD_CHECK_SCRIPT      ?= shared/bijux-makes-py/ci/check-bijux-std.sh
+BIJUX_STD_CHECK_SCRIPT      ?= shared/bijux-checks/check-bijux-std.sh
 BIJUX_STD_REF               ?= main
 BIJUX_STD_REMOTE            ?= https://raw.githubusercontent.com/bijux/bijux-std
 
