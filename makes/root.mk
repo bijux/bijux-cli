@@ -6,6 +6,7 @@ include $(ROOT_MK_DIR)/rust.mk
 include $(ROOT_MK_DIR)/python.mk
 include $(ROOT_MK_DIR)/docs.mk
 include $(ROOT_MK_DIR)/bijux-docs.mk
+include $(ROOT_MK_DIR)/bijux-std.mk
 include $(ROOT_MK_DIR)/gh.mk
 include $(ROOT_MK_DIR)/dag.mk
 
