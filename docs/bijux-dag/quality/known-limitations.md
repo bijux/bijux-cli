@@ -16,9 +16,12 @@ reports.
 
 ```mermaid
 flowchart TD
-    capability[supported capability] --> boundary[known limitation]
-    boundary --> impact[operator impact]
-    impact --> mitigation[mitigation or workaround]
+    limitations[Known limitations]
+    limitations --> performance[performance limits]
+    limitations --> environment[deployment and environment assumptions]
+    limitations --> interfaces[interface rough edges]
+    limitations --> recovery[recovery boundaries]
+    limitations --> extensibility[extensibility constraints]
 ```
 
 ## Limitation Categories
