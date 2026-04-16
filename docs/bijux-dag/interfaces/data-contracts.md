@@ -16,10 +16,15 @@ artifact indices, and replay/diff classifications.
 
 ```mermaid
 flowchart TD
-    graph_contracts["graph contracts"] --> runtime["runtime execution contracts"]
-    runtime --> run["run and node trace contracts"]
-    run --> artifact["artifact index and lineage contracts"]
-    artifact --> classify["replay and diff classification contracts"]
+    contracts[Data contracts]
+    contracts --> inputs[input models]
+    contracts --> plans[plan and execution models]
+    contracts --> state[state and trace models]
+    contracts --> results[result envelopes]
+    contracts --> diagnostics[diagnostic models]
+
+    results --> success[success envelope]
+    results --> failure[failure envelope]
 ```
 
 ## Contract Families
