@@ -84,6 +84,7 @@ docs-deploy: docs-require ## Deploy documentation to GitHub Pages
 
 docs-check: docs-require ## Verify that documentation builds without errors
 	@echo "Checking documentation build integrity"
+	@$(MAKE) --no-print-directory docs-install
 	@$(MAKE) --no-print-directory bijux-docs-check
 	@$(MAKE) --no-print-directory check-badges
 	@mkdir -p "$(DOCS_CACHE_DIR)"
@@ -176,7 +177,7 @@ docs-navigation-check: ## Verify shared chrome and handbook/package tabs are ren
 	@$(call docs_search_tree,/bijux-cli/packages/bijux-cli-python/,$(DOCS_SITE_DIR)) || (echo "ERROR: CLI Python package tab is missing" && exit 1)
 	@$(call docs_search_tree,/bijux-dag/packages/bijux-dag-runtime/,$(DOCS_SITE_DIR)) || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
 	@$(call docs_search_tree,/bijux-dev/packages/bijux-dev/,$(DOCS_SITE_DIR)) || (echo "ERROR: maintainer package tab is missing" && exit 1)
-	@$(call docs_search_file,data-bijux-detail-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: handbook detail strip is missing" && exit 1)
+	@$(call docs_search_file,data-bijux-course-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: handbook course strip is missing" && exit 1)
 	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI detail strip labels are missing" && exit 1)
 	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository detail strip labels are missing" && exit 1)
 	@$(call docs_search_file,makes,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer make-section navigation labels are missing" && exit 1)
