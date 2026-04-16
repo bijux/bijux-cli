@@ -16,10 +16,15 @@ updated and coherent.
 
 ```mermaid
 flowchart TD
-    code[implementation complete] --> tests[test evidence complete]
-    tests --> docs[docs and links updated]
-    docs --> risk[risk and limitations updated]
-    risk --> review[review checklist passes]
+  Work[Proposed complete work] --> Code{Code correct and owned?}
+  Code -->|No| Rework[Rework]
+  Code -->|Yes| Tests{Tests and validation complete?}
+  Tests -->|No| Rework
+  Tests -->|Yes| Docs{Docs and links updated?}
+  Docs -->|No| Rework
+  Docs -->|Yes| Review{Review checklist passed?}
+  Review -->|No| Rework
+  Review -->|Yes| Done[Done]
 ```
 
 ## Done Criteria
