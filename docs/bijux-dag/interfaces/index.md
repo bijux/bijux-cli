@@ -16,11 +16,17 @@ contracts.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    cli["CLI surface"] --> api["crate API surface"]
-    api --> config["config and policy surface"]
-    config --> contracts["data and artifact contracts"]
-    contracts --> compatibility["compatibility commitments"]
+mindmap
+  root((DAG Interfaces))
+    CLI Surface
+    API Surface
+    Configuration Surface
+    Data Contracts
+    Artifact Contracts
+    Public Imports
+    Compatibility Commitments
+    Operator Workflows
+    Entrypoints and Examples
 ```
 
 ## Interface Scope
