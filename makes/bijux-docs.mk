@@ -1,6 +1,8 @@
 # Shared Bijux docs shell synchronization and contract enforcement.
 
-PYTHON_BIN ?= $(shell command -v python3 2>/dev/null)
+# Prefer repository-managed Python interpreters so docs contract checks run in
+# the same environment where docs dependencies were installed.
+PYTHON_BIN ?= $(or $(VENV_PYTHON),$(DOCS_PYTHON_BIN),$(shell command -v python3 2>/dev/null))
 BIJUX_DOCS_SYNC_SCRIPT ?= internal/scripts/sync_bijux_docs.sh
 BIJUX_DOCS_SOT_GUARD ?= internal/scripts/verify_bijux_docs_source_of_truth.sh
 BIJUX_DOCS_CONTRACT_GUARD ?= internal/quality/validate_bijux_docs_contract.py
