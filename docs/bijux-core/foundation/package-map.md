@@ -12,6 +12,18 @@ last_reviewed: 2026-04-12
 The package map exists so readers can route from a repository question to the
 owning package family before they inspect source files.
 
+```mermaid
+flowchart TD
+    Q[What is your question about?]
+    Q --> R1[operator-facing command behavior]
+    Q --> R2[graph execution, replay, artifacts]
+    Q --> R3[repository-health automation and release control]
+
+    R1 --> P1[bijux-cli and bijux-cli-python]
+    R2 --> P2[bijux-dag package family]
+    R3 --> P3[bijux-dev]
+```
+
 ## Package Families
 
 | Package family | Owns | Open next |
