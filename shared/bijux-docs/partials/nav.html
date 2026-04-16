@@ -30,7 +30,7 @@
 {% endif %}
 {% set current_page_src_uri = current_page.file.src_uri if current_page and current_page.file else "" %}
 {% set bijux_index_page = current_page and (current_page.is_index or current_page_src_uri.endswith('/index.md') or current_page_src_uri == 'index.md') %}
-{% set landing_home_page = bijux_index_page and current_page_src_uri.count('/') <= 2 %}
+{% set landing_home_page = bijux_index_page and current_page and active_root.item and current_page.parent == active_root.item %}
 {% if landing_home_page %}
   {% set scoped.visible = false %}
 {% endif %}
