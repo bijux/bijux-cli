@@ -16,11 +16,14 @@ behavior while preserving shared contracts.
 
 ```mermaid
 flowchart LR
-    root_cli[bijux cli commands] --> cli_runtime[cli runtime handlers]
-    dag_cli[bijux dag commands] --> dag_routes[dag app routes]
-    dag_routes --> dag_runtime[dag runtime engine]
-    cli_runtime --> outputs[structured and human outputs]
-    dag_runtime --> outputs
+    user[User and automation] --> cli[bijux CLI surface]
+    user --> dag[bijux DAG surface]
+    cli --> handlers[CLI handlers and plugins]
+    dag --> routes[DAG routes]
+    routes --> engine[DAG runtime engine]
+    handlers --> envelopes[structured output envelopes]
+    engine --> envelopes
+    envelopes --> contracts[shared output contracts]
 ```
 
 ## Surface Contract
