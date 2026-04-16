@@ -19,65 +19,20 @@ read_directories() {
 }
 
 manifest_rel="$(read_scalar manifest)"
-repo_url_default="$(read_scalar '  repo_url')"
-raw_base_default="$(read_scalar '  raw_base')"
 git_url_default="$(read_scalar '  git_url')"
 default_ref="$(read_scalar '  default_ref')"
 
 std_ref="${BIJUX_STD_REF:-${default_ref}}"
-std_remote="${BIJUX_STD_REMOTE:-${repo_url_default}}"
-std_remote="${std_remote%/}"
+std_git_url="${BIJUX_STD_GIT_URL:-${git_url_default}}"
 std_root="${BIJUX_STD_ROOT:-${repo_root}/../bijux-std}"
 strict_remote="${BIJUX_STD_STRICT_REMOTE:-0}"
 manifest_path="${repo_root}/${manifest_rel}"
-
-resolve_raw_base() {
-  local remote="$1"
-  local fallback_raw="$2"
-  local owner_repo
-
-  if [[ "${remote}" == https://raw.githubusercontent.com/* ]]; then
-    echo "${remote%/}"
-    return
-  fi
-
-  owner_repo="$(echo "${remote}" | sed -E 's#^https?://github\.com/##; s#\.git$##')"
-  if [[ "${owner_repo}" == */* ]]; then
-    echo "https://raw.githubusercontent.com/${owner_repo}"
-    return
-  fi
-
-  if [[ -n "${fallback_raw}" ]]; then
-    echo "${fallback_raw%/}"
-    return
-  fi
-
-  echo "${remote%/}"
-}
-
-std_raw_base="$(resolve_raw_base "${std_remote}" "${raw_base_default}")"
-std_manifest_url="${std_raw_base}/${std_ref}/${manifest_rel}"
 
 if [[ ! -f "${manifest_path}" ]]; then
   echo "ERROR: missing local manifest ${manifest_path}" >&2
   echo "Hint: run make bijux-std-update" >&2
   exit 1
 fi
-
-fetch_url_to_file() {
-  local url="$1"
-  local out="$2"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$out"
-    return
-  fi
-  if command -v wget >/dev/null 2>&1; then
-    wget -qO "$out" "$url"
-    return
-  fi
-  echo "ERROR: neither curl nor wget is available" >&2
-  exit 2
-}
 
 directory_tree_sha256() {
   local target_dir="$1"
@@ -138,26 +93,34 @@ verify_dir_against_manifests() {
   echo "✔ ${dir_rel} matches bijux-std (${remote_expected})"
 }
 
-tmp_manifest="$(mktemp)"
+tmp_dir="$(mktemp -d)"
+tmp_manifest="${tmp_dir}/manifest.txt"
 cleanup() {
-  rm -f "${tmp_manifest}"
+  rm -rf "${tmp_dir}"
 }
 trap cleanup EXIT
 
-if ! fetch_url_to_file "${std_manifest_url}" "${tmp_manifest}"; then
+if ! git clone --depth 1 --branch "${std_ref}" "${std_git_url}" "${tmp_dir}/bijux-std" >/dev/null 2>&1; then
   local_std_manifest="${std_root}/${manifest_rel}"
   if [[ "${strict_remote}" == "1" ]]; then
-    echo "ERROR: failed to fetch ${std_manifest_url} (strict remote mode)" >&2
+    echo "ERROR: failed to clone ${std_git_url}@${std_ref} (strict remote mode)" >&2
     exit 1
   fi
   if [[ -f "${local_std_manifest}" ]]; then
     cp "${local_std_manifest}" "${tmp_manifest}"
     echo "→ remote manifest unavailable; using local bijux-std manifest at ${local_std_manifest}"
   else
-    echo "ERROR: failed to fetch ${std_manifest_url}" >&2
+    echo "ERROR: failed to clone ${std_git_url}@${std_ref}" >&2
     echo "ERROR: local fallback manifest not found at ${local_std_manifest}" >&2
     exit 1
   fi
+else
+  remote_manifest_path="${tmp_dir}/bijux-std/${manifest_rel}"
+  if [[ ! -f "${remote_manifest_path}" ]]; then
+    echo "ERROR: missing manifest ${manifest_rel} in ${std_git_url}@${std_ref}" >&2
+    exit 1
+  fi
+  cp "${remote_manifest_path}" "${tmp_manifest}"
 fi
 
 while IFS= read -r dir_rel; do

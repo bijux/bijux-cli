@@ -33,10 +33,6 @@
   min-height: 2.45rem;
 }
 
-[data-md-component="header"][data-bijux-detail-visible="true"] .bijux-site-tabs .md-tabs__list.bijux-tabs__list--site {
-  transform: translateY(-10%);
-}
-
 .bijux-detail-tabs {
   background: var(--bijux-detail-bg);
   border-color: var(--bijux-detail-border);
