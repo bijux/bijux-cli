@@ -16,12 +16,18 @@ assets live so contributors can navigate without guesswork.
 
 ```mermaid
 flowchart TD
-    root[repository root] --> crates[crates]
-    root --> configs[configs]
-    root --> makes[makes]
-    root --> docs[docs]
-    root --> contracts[contracts]
-    root --> artifacts[artifacts]
+    root[repository root]
+    root --> crates[crates/]
+    root --> configs[configs/]
+    root --> makes[makes/ and Makefile]
+    root --> docs[docs/]
+    root --> contracts[contracts/]
+    root --> artifacts[artifacts/]
+
+    crates --> runtime[runtime and maintainer crates]
+    docs --> programs[core/cli/dag/dev handbooks]
+    contracts --> api[contract snapshots and schemas]
+    artifacts --> generated[generated evidence only]
 ```
 
 ## Topology Rules
