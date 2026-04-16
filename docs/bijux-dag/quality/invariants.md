@@ -14,11 +14,19 @@ Invariants protect the meaning of DAG execution and must not drift silently.
 ## Visual Summary
 
 ```mermaid
-flowchart TB
-    identity[identity invariants] --> trust[behavioral trust]
-    replay[replay invariants] --> trust
-    diff[diff invariants] --> trust
-    artifacts[artifact invariants] --> trust
+flowchart TD
+    invariants[Core invariants]
+    invariants --> identity[deterministic identity meaning]
+    invariants --> transitions[state transitions are explicit]
+    invariants --> lineage[artifacts remain attributable]
+    invariants --> classification[failures are classifiable]
+    invariants --> interfaces[interfaces remain structured]
+
+    identity --> tests[test and contract coverage]
+    transitions --> tests
+    lineage --> tests
+    classification --> tests
+    interfaces --> tests
 ```
 
 ## Core Invariants
