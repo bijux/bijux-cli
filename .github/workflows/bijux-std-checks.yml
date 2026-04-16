@@ -1,0 +1,17 @@
+name: Bijux Standard Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  bijux_std:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run bijux standard checks
+        run: make bijux-std-checks

@@ -2,18 +2,38 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+config_path="${BIJUX_STD_CONFIG:-${repo_root}/shared/bijux-checks/bijux-std-checks.yml}"
 
-std_ref="${BIJUX_STD_REF:-main}"
-std_remote="${BIJUX_STD_REMOTE:-https://raw.githubusercontent.com/bijux/bijux-std}"
+if [[ ! -f "${config_path}" ]]; then
+  echo "ERROR: missing config ${config_path}" >&2
+  exit 1
+fi
+
+read_scalar() {
+  local key="$1"
+  awk -F': ' -v key="${key}" '$1 == key {print $2; exit}' "${config_path}" | tr -d '"'
+}
+
+read_directories() {
+  awk '/^directories:/{flag=1;next} /^remote:/{flag=0} flag && /^  - /{sub(/^  - /, ""); print}' "${config_path}"
+}
+
+manifest_rel="$(read_scalar manifest)"
+raw_base_default="$(read_scalar '  raw_base')"
+git_url_default="$(read_scalar '  git_url')"
+default_ref="$(read_scalar '  default_ref')"
+
+std_ref="${BIJUX_STD_REF:-${default_ref}}"
+std_remote="${BIJUX_STD_REMOTE:-${raw_base_default}}"
 std_remote="${std_remote%/}"
-std_manifest_url="${std_remote}/${std_ref}/shared/shared-dir-sha256.txt"
+std_manifest_url="${std_remote}/${std_ref}/${manifest_rel}"
 std_root="${BIJUX_STD_ROOT:-${repo_root}/../bijux-std}"
 strict_remote="${BIJUX_STD_STRICT_REMOTE:-0}"
+manifest_path="${repo_root}/${manifest_rel}"
 
-local_manifest="${repo_root}/shared/shared-dir-sha256.txt"
-if [[ ! -f "${local_manifest}" ]]; then
-  echo "ERROR: missing local manifest ${local_manifest}" >&2
-  echo "Hint: sync from bijux-std and commit shared/shared-dir-sha256.txt" >&2
+if [[ ! -f "${manifest_path}" ]]; then
+  echo "ERROR: missing local manifest ${manifest_path}" >&2
+  echo "Hint: run make bijux-std-update" >&2
   exit 1
 fi
 
@@ -47,9 +67,9 @@ directory_tree_sha256() {
 }
 
 manifest_sha_for_dir() {
-  local manifest_path="$1"
+  local manifest_file="$1"
   local dir_rel="$2"
-  awk -v dir_rel="${dir_rel}" '$2 == dir_rel { print $1 }' "${manifest_path}"
+  awk -v dir_rel="${dir_rel}" '$2 == dir_rel { print $1 }' "${manifest_file}"
 }
 
 verify_dir_against_manifests() {
@@ -60,7 +80,7 @@ verify_dir_against_manifests() {
   local remote_expected
   local actual_sha
 
-  local_expected="$(manifest_sha_for_dir "${local_manifest}" "${dir_rel}")"
+  local_expected="$(manifest_sha_for_dir "${manifest_path}" "${dir_rel}")"
   remote_expected="$(manifest_sha_for_dir "${remote_manifest}" "${dir_rel}")"
 
   if [[ -z "${local_expected}" ]]; then
@@ -98,7 +118,7 @@ cleanup() {
 trap cleanup EXIT
 
 if ! fetch_url_to_file "${std_manifest_url}" "${tmp_manifest}"; then
-  local_std_manifest="${std_root}/shared/shared-dir-sha256.txt"
+  local_std_manifest="${std_root}/${manifest_rel}"
   if [[ "${strict_remote}" == "1" ]]; then
     echo "ERROR: failed to fetch ${std_manifest_url} (strict remote mode)" >&2
     exit 1
@@ -113,8 +133,8 @@ if ! fetch_url_to_file "${std_manifest_url}" "${tmp_manifest}"; then
   fi
 fi
 
-verify_dir_against_manifests "shared/bijux-docs" "${tmp_manifest}"
-verify_dir_against_manifests "shared/bijux-makes-py" "${tmp_manifest}"
-verify_dir_against_manifests "shared/bijux-checks" "${tmp_manifest}"
+while IFS= read -r dir_rel; do
+  verify_dir_against_manifests "${dir_rel}" "${tmp_manifest}"
+done < <(read_directories)
 
-echo "✔ bijux-std check passed (ref=${std_ref})"
+echo "✔ bijux-std check passed (ref=${std_ref}, manifest=${manifest_rel}, remote=${git_url_default})"
