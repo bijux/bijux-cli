@@ -13,6 +13,17 @@ The repository exposes automation through a small set of root surfaces. They
 should be named explicitly so readers can move from documentation to the exact
 entrypoint file.
 
+```mermaid
+flowchart TD
+    automation[Repository automation surfaces]
+    automation --> makefile[Makefile and makes/]
+    automation --> workflows[.github/workflows/]
+    automation --> docs_auto[docs/automation/]
+    automation --> artifacts[artifacts/ outputs]
+
+    hidden[undocumented ad hoc commands] -. avoid .-> automation
+```
+
 ## Root Surfaces
 
 - `Makefile` and `makes/` for local and CI command composition
