@@ -130,6 +130,60 @@
   border-color: rgba(45, 212, 191, 0.16);
 }
 
+/* Force high-contrast Mermaid rendering in dark mode, regardless of per-diagram classDef/style declarations. */
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .node rect,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .node circle,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .node ellipse,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .node polygon,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .node path,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .classBox,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .stateGroup rect,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .stateGroup path,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg rect.basic,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg rect.label-container {
+  fill: #122b3c !important;
+  stroke: #6fc7c2 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .cluster rect {
+  fill: #0f2536 !important;
+  stroke: #4ba8a2 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .flowchart-link,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .edgePath .path,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .path,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .marker,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .marker path,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg line,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg polyline {
+  stroke: #a9c8d4 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg text,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg tspan,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .label,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .label text,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .nodeLabel,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg span.nodeLabel,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .edgeLabel,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .edgeLabel p,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .cluster-label text,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .classTitle,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .state-title,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg foreignObject div,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg foreignObject span {
+  color: #eaf2fa !important;
+  fill: #eaf2fa !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .edgeLabel rect,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .labelBkg,
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg .relationshipLabelBox {
+  fill: #102334 !important;
+  opacity: 1 !important;
+}
+
 [data-md-color-scheme="slate"] .md-typeset .md-button {
   background: rgba(12, 19, 33, 0.8);
   border-color: rgba(45, 212, 191, 0.16);
