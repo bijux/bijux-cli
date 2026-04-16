@@ -16,14 +16,25 @@ so governance automation does not distort product command behavior.
 
 ```mermaid
 flowchart LR
-    user[user-facing runtime] --> cli[bijux and bijux dag commands]
-    maintainer[maintainer workflows] --> dev_cli[bijux-dev-cli commands]
-    maintainer --> dev_dag[bijux-dev-dag commands]
-    dev_cli --> reports[evidence and governance reports]
+    subgraph ProductRuntime
+        cli[bijux and bijux dag commands]
+        runtime[product runtime contracts]
+    end
+
+    subgraph MaintainerPlane
+        dev_cli[bijux-dev CLI commands]
+        dev_dag[bijux-dev DAG commands]
+        reports[evidence and governance reports]
+    end
+
+    maintainer[maintainer workflows] --> dev_cli
+    maintainer --> dev_dag
+    dev_cli --> reports
     dev_dag --> reports
-    cli --> runtime[product runtime contracts]
+    cli --> runtime
     dev_cli --> runtime
     dev_dag --> runtime
+    runtime -. no reverse dependency .-> dev_cli
 ```
 
 ## Control-Plane Responsibilities
