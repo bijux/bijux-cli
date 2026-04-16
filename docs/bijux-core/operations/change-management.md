@@ -12,6 +12,16 @@ last_reviewed: 2026-04-12
 Repository change management exists so cross-package work lands with explicit
 ownership, validation, and documentation updates.
 
+```mermaid
+timeline
+    title Repository change management flow
+    Proposal : identify owner and scope
+    Batch 1 : apply reviewable code and structure change
+    Batch 2 : update docs, risks, and release surfaces
+    Validation : run root and package checks
+    Completion : merge when explanation and behavior match
+```
+
 ## Required Steps
 
 1. identify the owning package and handbook branches
