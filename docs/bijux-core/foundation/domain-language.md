@@ -13,6 +13,20 @@ The repository uses a small set of terms repeatedly. They should stay stable so
 readers are not forced to reinterpret the docs tree every time they move
 between handbooks.
 
+```mermaid
+flowchart TD
+    stable[stable repository vocabulary]
+    stable --> repo[repository handbook]
+    stable --> product[product handbook]
+    stable --> maintainer[maintainer handbook]
+    stable --> pkg[package]
+    stable --> contract[contract]
+    stable --> evidence[evidence]
+
+    drift[term drift or synonym churn] --> confusion[reader confusion]
+    confusion --> misroute[misrouted ownership and weak review]
+```
+
 ## Durable Terms
 
 - `repository handbook`: root docs for cross-program rules and ownership
