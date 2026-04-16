@@ -12,6 +12,22 @@ last_reviewed: 2026-04-12
 The workspace layout separates product code, maintainer code, shared contracts,
 and generated artifacts so repository concerns stay inspectable.
 
+```mermaid
+flowchart TD
+    root[repository root]
+    root --> crates[crates/]
+    root --> contracts[contracts/]
+    root --> docs[docs/]
+    root --> makes[makes/]
+    root --> workflows[.github/workflows/]
+    root --> artifacts[artifacts/]
+
+    crates --> code[product and maintainer code]
+    contracts --> machine[machine-checkable contracts]
+    docs --> handbook[published handbooks]
+    artifacts --> generated[generated outputs only]
+```
+
 ## Root Layout
 
 - `crates/` for Rust package ownership boundaries
