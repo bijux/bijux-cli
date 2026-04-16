@@ -16,10 +16,14 @@ published, and consumed across programs.
 
 ```mermaid
 flowchart TD
-    execution[cli or dag execution] --> artifacts[run and report artifacts]
-    artifacts --> contracts[contract snapshots and schemas]
-    contracts --> verification[validation suites]
-    verification --> docs[documentation and release notes]
+    behavior[package public behavior] --> contracts[tracked contracts and schemas]
+    contracts --> pinned[pinned snapshots and digests]
+    pinned --> checks[drift and compatibility checks]
+    checks --> review[review and merge decision]
+    review --> behavior
+
+    mismatch_code[behavior changed without contract update] --> checks
+    mismatch_contract[contract changed without stated intent] --> checks
 ```
 
 ## Flow Stages
