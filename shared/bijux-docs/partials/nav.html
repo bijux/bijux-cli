@@ -2,6 +2,8 @@
 {% if "toc.integrate" in features %}
   {% set class = class ~ " md-nav--integrated" %}
 {% endif %}
+{% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
+{% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set bijux_primary_section_nav = true %}
 {% set current_page = page if page is defined else none %}
 {% set scoped = namespace(items=[], title=config.site_name, visible=false) %}
@@ -46,6 +48,9 @@
   {% if matches_nested_node.value %}
     {% set scoped.visible = false %}
   {% endif %}
+{% endif %}
+{% if active_repository == "bijux.github.io" %}
+  {% set scoped.visible = false %}
 {% endif %}
 {% set bijux_expand_scoped_groups = false %}
 {% if scoped.visible and current_page and current_page.title == "Overview" %}
