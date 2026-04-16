@@ -15,11 +15,17 @@ is reproducible and diagnosable.
 ## Visual Summary
 
 ```mermaid
-flowchart TD
-    defaults[workspace defaults] --> config[configuration files]
-    config --> env[environment overrides]
-    env --> flags[explicit command flags]
-    flags --> resolved[resolved runtime state]
+stateDiagram-v2
+    [*] --> DefaultsLoaded
+    DefaultsLoaded --> ConfigApplied
+    ConfigApplied --> EnvOverridesApplied
+    EnvOverridesApplied --> FlagsApplied
+    FlagsApplied --> ResolvedState
+    ResolvedState --> Running
+    Running --> Persisting
+    Persisting --> [*]
+    Running --> FailedResolution
+    FailedResolution --> [*]
 ```
 
 ## Resolution Rules
