@@ -13,6 +13,28 @@ Ownership in `bijux-core` is explicit on purpose. The repository is healthiest
 when every behavior claim names one owner and every root rule explains why it
 is above package scope.
 
+```mermaid
+flowchart LR
+    subgraph OwnedByRepository
+        root_docs[root handbook boundaries]
+        shared_rules[cross-program rules]
+    end
+
+    subgraph OwnedByProducts
+        cli_docs[CLI product behavior]
+        dag_docs[DAG product behavior]
+    end
+
+    subgraph OwnedByMaintainer
+        dev_docs[maintainer automation behavior]
+    end
+
+    root_docs --> shared_rules
+    cli_docs -. must not redefine .-> shared_rules
+    dag_docs -. must not redefine .-> shared_rules
+    dev_docs -. must not redefine .-> cli_docs
+```
+
 ## Ownership Rules
 
 - product behavior belongs to CLI or DAG package handbooks
