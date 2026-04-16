@@ -12,6 +12,20 @@ last_reviewed: 2026-04-12
 The documentation system exists so repository behavior stays readable from
 checked-in pages instead of being reconstructed from code and CI alone.
 
+```mermaid
+flowchart TD
+    site[documentation system]
+    site --> core[docs/bijux-core]
+    site --> cli[docs/bijux-cli]
+    site --> dag[docs/bijux-dag]
+    site --> dev[docs/bijux-dev]
+
+    core --> rules[cross-program rules]
+    cli --> runtime[CLI runtime ownership]
+    dag --> execution[DAG execution ownership]
+    dev --> health[repository-health automation]
+```
+
 ## Handbook Roots
 
 - `docs/bijux-core/` for repository-level foundation, architecture, and operations
