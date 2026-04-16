@@ -9,7 +9,7 @@
 {% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set nav_mode = bijux.nav_mode if bijux and bijux.nav_mode else "default" %}
 {% set theme_key = bijux.theme_key if bijux and bijux.theme_key else "bijux:theme" %}
-{% set active_section = namespace(item=None) %}
+{% set current_page = page if page is defined else none %}
 {% import "partials/bijux-nav.html" as bijux_nav with context %}
 {% macro site_label(title) -%}
   {% if title == "Repository Handbook" -%}
@@ -26,9 +26,10 @@
     {{ title }}
   {%- endif %}
 {%- endmacro %}
+{% set active_root = namespace(item=None) %}
 {% for nav_item in nav %}
   {% if nav_item.active %}
-    {% set active_section.item = nav_item %}
+    {% set active_root.item = nav_item %}
   {% endif %}
 {% endfor %}
 <header class="{{ class }}" data-md-component="header" data-bijux-nav-mode="{{ nav_mode }}" data-bijux-theme-key="{{ theme_key }}">
@@ -100,7 +101,7 @@
       {% endif %}
     </div>
   </nav>
-  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-md-component="tabs">
+  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-bijux-nav-row="site" data-md-component="tabs">
     <div class="md-grid">
       <ul class="md-tabs__list bijux-tabs__list bijux-tabs__list--site">
         {% for nav_item in nav %}
@@ -122,14 +123,14 @@
   {% for nav_item in nav %}
     {% if nav_item.children %}
       {% set is_hidden = "" if nav_item.active else "hidden" %}
-      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
+      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-nav-row="program" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
         <div class="md-grid">
           <div class="bijux-detail-select-wrap">
-            <label class="bijux-detail-select-label" for="bijux-detail-select-{{ loop.index }}">Section</label>
-            <select class="bijux-detail-select" id="bijux-detail-select-{{ loop.index }}" data-bijux-detail-select>
+            <label class="bijux-detail-select-label" for="bijux-detail-select-program-{{ loop.index }}">Section</label>
+            <select class="bijux-detail-select" id="bijux-detail-select-program-{{ loop.index }}" data-bijux-detail-select>
               {% for child in nav_item.children %}
                 {% set option_selected = "" %}
-                {% if nav_item == active_section.item and child.active %}
+                {% if child.active or (current_page and child.pages and current_page in child.pages) %}
                   {% set option_selected = "selected" %}
                 {% endif %}
                 <option value="{{ bijux_nav.first_page_url(child) }}" data-bijux-detail-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ option_selected }}>
@@ -142,7 +143,7 @@
             {% for child in nav_item.children %}
               {% set item_class = "bijux-tabs__item" %}
               {% set current = "" %}
-              {% if nav_item == active_section.item and child.active %}
+              {% if nav_item.active and (child.active or (current_page and child.pages and current_page in child.pages)) %}
                 {% set item_class = item_class ~ " bijux-tabs__item--active" %}
                 {% set current = 'aria-current="page"' %}
               {% endif %}
@@ -153,6 +154,50 @@
           </ul>
         </div>
       </nav>
+    {% endif %}
+  {% endfor %}
+  {% for nav_item in nav %}
+    {% if nav_item.children %}
+      {% set program_index = loop.index %}
+      {% for course_item in nav_item.children %}
+        {% if course_item.children %}
+          {% set course_active = course_item.active or (current_page and course_item.pages and current_page in course_item.pages) %}
+          {% set is_hidden = "" if nav_item.active and course_active else "hidden" %}
+          <nav class="bijux-detail-tabs bijux-course-tabs" aria-label="{{ course_item.title }} course sections" data-bijux-nav-row="course" data-bijux-course-strip data-bijux-course-root-path="{{ bijux_nav.first_page_path(course_item) | trim }}" data-bijux-course-title="{{ course_item.title }}" {{ is_hidden }}>
+            <div class="md-grid">
+              <div class="bijux-detail-select-wrap">
+                <label class="bijux-detail-select-label" for="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}">Section</label>
+                <select class="bijux-detail-select" id="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}" data-bijux-detail-select>
+                  {% for child in course_item.children %}
+                    {% set option_selected = "" %}
+                    {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
+                    {% if course_active and child_active %}
+                      {% set option_selected = "selected" %}
+                    {% endif %}
+                    <option value="{{ bijux_nav.first_page_url(child) }}" data-bijux-course-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ option_selected }}>
+                      {{ bijux_nav.detail_label(child) }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <ul class="bijux-tabs__list bijux-tabs__list--detail bijux-tabs__list--course">
+                {% for child in course_item.children %}
+                  {% set item_class = "bijux-tabs__item" %}
+                  {% set current = "" %}
+                  {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
+                  {% if course_active and child_active %}
+                    {% set item_class = item_class ~ " bijux-tabs__item--active" %}
+                    {% set current = 'aria-current="page"' %}
+                  {% endif %}
+                  <li class="{{ item_class }}">
+                    <a href="{{ bijux_nav.first_page_url(child) }}" class="bijux-tabs__link bijux-tabs__link--detail bijux-tabs__link--course" data-bijux-course-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ current }}>{{ bijux_nav.detail_label(child) }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </nav>
+        {% endif %}
+      {% endfor %}
     {% endif %}
   {% endfor %}
 </header>
