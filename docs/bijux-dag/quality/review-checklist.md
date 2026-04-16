@@ -16,10 +16,17 @@ or documentation regressions.
 
 ```mermaid
 flowchart TD
-    scope[scope and ownership] --> tests[test evidence]
-    tests --> contracts[replay and diff contract impact]
-    contracts --> docs[docs and links accuracy]
-    docs --> risk[risk and limitation updates]
+    review[Review starts] --> ownership[Correct ownership?]
+    ownership --> architecture[Architecture still honest?]
+    architecture --> contracts[Contracts and semantics clear?]
+    contracts --> tests[Tests adequate?]
+    tests --> docs[Docs and links aligned?]
+    docs --> approve[Approve]
+    ownership --> request[Request changes]
+    architecture --> request
+    contracts --> request
+    tests --> request
+    docs --> request
 ```
 
 ## Required Checks
