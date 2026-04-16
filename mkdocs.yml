@@ -14,6 +14,7 @@ watch:
   - docs
   - docs/assets
   - docs/overrides
+  - shared/bijux-docs
   - mkdocs.yml
   - mkdocs.shared.yml
   - docs/automation
@@ -21,6 +22,8 @@ watch:
 extra:
   bijux:
     repository: bijux-core
+    nav_mode: default
+    theme_key: bijux:theme
     hub_links:
       - key: bijux
         label: Bijux
