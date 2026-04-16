@@ -12,6 +12,19 @@ last_reviewed: 2026-04-12
 Repository review should verify ownership, evidence, and documentation together
 instead of treating root changes as glue that can skip normal standards.
 
+```mermaid
+flowchart TD
+    review[root change under review] --> owner{owning handbook branch clear?}
+    owner --> evidence{validation evidence matches scope?}
+    evidence --> surfaces{changed root surfaces named explicitly?}
+    surfaces --> docs{docs and navigation aligned?}
+    docs --> approve[approve]
+    owner --> request[request changes]
+    evidence --> request
+    surfaces --> request
+    docs --> request
+```
+
 ## Reviewer Checks
 
 - the owning handbook branch is clear
