@@ -60,7 +60,7 @@
 {% endif %}
 {% import "partials/nav-item.html" as item with context %}
 {% set bijux_primary_section_nav = false %}
-<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-md-level="0">
+<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-bijux-hub-site="{{ 'true' if is_bijux_hub_site else 'false' }}" data-md-level="0">
   <label class="md-nav__title bijux-nav__title" for="__drawer">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
