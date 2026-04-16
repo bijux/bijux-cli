@@ -15,6 +15,20 @@ to answer a stable set of questions: why the workspace is split, where
 authority changes hands, which names stay durable across docs and code, and
 which repository rules should not drift.
 
+```mermaid
+mindmap
+  root((Core Foundation))
+    Platform Overview
+    Repository Scope
+    Workspace Layout
+    Package Map
+    Ownership Model
+    Domain Language
+    Documentation System
+    Change Principles
+    Decision Rules
+```
+
 ## Pages In This Section
 
 - [Platform Overview](platform-overview.md)
