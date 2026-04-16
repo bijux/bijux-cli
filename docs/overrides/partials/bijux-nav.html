@@ -28,8 +28,20 @@
 {%- endmacro %}
 
 {% macro detail_label(nav_item) -%}
+  {% set nav_path = first_page_path(nav_item) | trim %}
   {% if nav_item.parent and nav_item.title == nav_item.parent.title -%}
     Home
+  {%- elif "/capstone-docs/" in nav_path -%}
+    Capstone Docs
+  {%- elif "/capstone/" in nav_path -%}
+    Capstone
+  {%- elif "/guides/" in nav_path -%}
+    Guides
+  {%- elif "/reference/" in nav_path -%}
+    Reference
+  {%- elif "/module-" in nav_path -%}
+    {% set module_slug = nav_path.split("/module-", 1)[1] %}
+    M{{ module_slug[:2] }}
   {%- elif nav_item.title == "Overview" -%}
     Home
   {%- else -%}

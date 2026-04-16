@@ -1,0 +1,4 @@
+# Shared directory SHA256 manifest
+# Canonical source: bijux-std
+b3bbb76a4293dade4bbc4e51994fb6d130436b2e0ec43b6d2b4c1c727d073fd3  shared/bijux-docs
+2618134acbdb3bd0ac18c6b29d8b6cded5f7586d44fbef39e15c5a9c64ad8d26  shared/bijux-makes-py

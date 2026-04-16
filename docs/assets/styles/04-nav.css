@@ -43,6 +43,23 @@
   box-shadow: inset 0 -1px 0 var(--bijux-detail-border);
 }
 
+.bijux-course-tabs {
+  background:
+    linear-gradient(90deg, rgba(15, 118, 110, 0.08), rgba(8, 145, 178, 0.06)),
+    var(--bijux-detail-bg);
+  border-top: 1px solid var(--bijux-detail-border);
+  box-shadow: inset 0 1px 0 rgba(13, 148, 136, 0.08), inset 0 -1px 0 var(--bijux-detail-border);
+  position: relative;
+  z-index: 2;
+}
+
+[data-md-color-scheme="slate"] .bijux-course-tabs {
+  background:
+    linear-gradient(90deg, rgba(15, 118, 110, 0.16), rgba(8, 145, 178, 0.1)),
+    var(--bijux-detail-bg);
+  box-shadow: inset 0 1px 0 rgba(45, 212, 191, 0.12), inset 0 -1px 0 var(--bijux-detail-border);
+}
+
 .bijux-tabs__list {
   display: flex;
   flex-wrap: nowrap;
@@ -147,6 +164,17 @@
 
 .bijux-tabs__list--detail {
   gap: 0.28rem 0.38rem;
+}
+
+.bijux-tabs__list--course {
+  gap: 0.24rem 0.34rem;
+  padding-bottom: 0.5rem;
+  padding-top: 0.46rem;
+}
+
+.bijux-tabs__link--course {
+  font-size: 0.72rem;
+  padding: 0.36rem 0.66rem;
 }
 
 .bijux-detail-tabs .bijux-tabs__link:hover,
@@ -434,4 +462,14 @@
   color: var(--bijux-ink);
   font-size: 0.82rem;
   line-height: 1.3;
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-main__inner:has(.md-sidebar--primary .bijux-nav--mobile[data-bijux-hub-site="true"]) .md-sidebar--primary {
+    display: none;
+  }
+
+  .md-main__inner:has(.md-sidebar--primary .bijux-nav--mobile[data-bijux-hub-site="true"]) .md-content > .md-content__inner {
+    margin-left: 0.8rem;
+  }
 }

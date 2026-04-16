@@ -33,6 +33,50 @@ compare_required() {
   fi
 }
 
+directory_tree_sha256() {
+  local target_dir="$1"
+
+  if [[ ! -d "${target_dir}" ]]; then
+    echo "ERROR: missing directory ${target_dir}" >&2
+    exit 1
+  fi
+
+  (
+    cd "${target_dir}"
+    find . -type f -print | LC_ALL=C sort | while IFS= read -r file_rel; do
+      shasum -a 256 "${file_rel}"
+    done
+  ) | shasum -a 256 | awk '{print $1}'
+}
+
+manifest_sha_for_dir() {
+  local manifest_path="$1"
+  local dir_rel="$2"
+  awk -v dir_rel="${dir_rel}" '$2 == dir_rel { print $1 }' "${manifest_path}"
+}
+
+verify_shared_manifest_entry() {
+  local manifest_path="$1"
+  local dir_rel="$2"
+  local repo_label="$3"
+
+  local expected_sha
+  expected_sha="$(manifest_sha_for_dir "${manifest_path}" "${dir_rel}")"
+  if [[ -z "${expected_sha}" ]]; then
+    echo "ERROR: ${manifest_path} missing entry for ${dir_rel} (${repo_label})" >&2
+    exit 1
+  fi
+
+  local computed_sha
+  computed_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
+  if [[ "${computed_sha}" != "${expected_sha}" ]]; then
+    echo "ERROR: ${dir_rel} SHA mismatch for ${repo_label}" >&2
+    echo "Expected: ${expected_sha}" >&2
+    echo "Actual:   ${computed_sha}" >&2
+    exit 1
+  fi
+}
+
 assert_absent() {
   local rel_path="$1"
   if [[ -e "${repo_root}/${rel_path}" ]]; then
@@ -70,5 +114,41 @@ assert_absent "reading-paths"
 assert_absent "search"
 assert_absent "sitemap.xml"
 assert_absent "sitemap.xml.gz"
+
+# shared directory SHA contract
+local_manifest="${repo_root}/shared/shared-dir-sha256.txt"
+if [[ ! -f "${local_manifest}" ]]; then
+  echo "ERROR: missing local shared SHA manifest shared/shared-dir-sha256.txt" >&2
+  exit 1
+fi
+
+verify_shared_manifest_entry "${local_manifest}" "shared/bijux-docs" "local repository"
+verify_shared_manifest_entry "${local_manifest}" "shared/bijux-makes-py" "local repository"
+
+workspace_root="$(cd "${repo_root}/.." && pwd)"
+std_root="${BIJUX_STD_ROOT:-${workspace_root}/bijux-std}"
+std_manifest="${std_root}/shared/shared-dir-sha256.txt"
+
+if [[ -f "${std_manifest}" ]]; then
+  if ! cmp -s "${local_manifest}" "${std_manifest}"; then
+    echo "ERROR: shared SHA manifest drift vs bijux-std" >&2
+    echo "Local: ${local_manifest}" >&2
+    echo "Std:   ${std_manifest}" >&2
+    exit 1
+  fi
+
+  for dir_rel in shared/bijux-docs shared/bijux-makes-py; do
+    local_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
+    std_sha="$(directory_tree_sha256 "${std_root}/${dir_rel}")"
+    if [[ "${local_sha}" != "${std_sha}" ]]; then
+      echo "ERROR: ${dir_rel} drift vs bijux-std" >&2
+      echo "Local SHA: ${local_sha}" >&2
+      echo "Std SHA:   ${std_sha}" >&2
+      exit 1
+    fi
+  done
+else
+  echo "NOTE: bijux-std manifest not found at ${std_manifest}; skipped cross-repo SHA comparison"
+fi
 
 echo "Bijux docs source-of-truth checks passed"
