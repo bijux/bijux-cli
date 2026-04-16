@@ -12,6 +12,18 @@ last_reviewed: 2026-04-12
 Repository-level schema work exists to keep package contracts, published docs,
 and release expectations aligned.
 
+```mermaid
+flowchart TD
+    behavior[package public behavior] --> schemas[shared contracts and schemas]
+    schemas --> pinned[pinned schema and contract snapshots]
+    pinned --> checks[drift and compatibility checks]
+    checks --> review[review and merge decision]
+    review --> behavior
+
+    code_drift[behavior changed without schema update] --> checks
+    schema_drift[schema changed without stated intent] --> checks
+```
+
 ## Root Governance Surfaces
 
 - shared contract assets under `contracts/`
