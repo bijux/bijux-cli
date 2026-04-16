@@ -15,12 +15,20 @@ compatibility loss, or unreliable release outcomes.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    drift[ownership drift] --> regression[behavior regressions]
-    drift --> evidence_gaps[evidence gaps]
-    coupling[layer coupling] --> regression
-    coupling --> delayed_release[release delays]
-    evidence_gaps --> delayed_release
+quadrantChart
+    title Architecture Risk Map
+    x-axis Low impact --> High impact
+    y-axis Easy to detect --> Hard to detect
+    quadrant-1 Prioritize mitigation
+    quadrant-2 Watch closely
+    quadrant-3 Accept or monitor
+    quadrant-4 Improve detection
+    hidden coupling: [0.79, 0.76]
+    state drift: [0.68, 0.72]
+    boundary leakage: [0.73, 0.45]
+    version mismatch: [0.58, 0.64]
+    extension breakage: [0.61, 0.55]
+    recovery gaps: [0.82, 0.35]
 ```
 
 ## Key Risk Areas
