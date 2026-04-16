@@ -15,12 +15,21 @@ without attribution.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    define["validate graph"] --> run["execute run"]
-    run --> inspect["inspect run and artifacts"]
-    inspect --> replay["replay baseline"]
-    replay --> diff["diff scope classification"]
-    diff --> decision["promote or investigate"]
+journey
+  title Operator workflow
+  section Prepare
+    Read docs: 4: Operator
+    Set config: 4: Operator
+    Choose entrypoint: 3: Operator
+  section Execute
+    Run DAG package: 5: Operator
+    Inspect progress: 4: Operator
+  section Verify
+    Review artifacts: 5: Operator
+    Validate outputs: 5: Operator
+  section Follow-up
+    Triage failure: 3: Operator
+    Re-run with fixes: 4: Operator
 ```
 
 ## Baseline Workflow
