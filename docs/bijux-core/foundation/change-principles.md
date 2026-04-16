@@ -13,6 +13,21 @@ Repository changes should make ownership clearer, not blurrier. The handbook
 model matters because it keeps readers from debugging organizational drift by
 hand.
 
+```mermaid
+flowchart TD
+    change[Proposed change] --> q1{Changes public contract?}
+    q1 -->|Yes| review[Require design and compatibility review]
+    q1 -->|No| q2{Changes execution semantics?}
+    q2 -->|Yes| validate[Add validation and release notes]
+    q2 -->|No| q3{Docs and tests only?}
+    q3 -->|Yes| fast[Fast path]
+    q3 -->|No| standard[Standard review path]
+    review --> merge[Merge when evidence is complete]
+    validate --> merge
+    fast --> merge
+    standard --> merge
+```
+
 ## Principles
 
 - prefer stable names over migration-era labels
