@@ -15,11 +15,18 @@ and execution materialization choices.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    flags["run and replay flags"] --> resolve["effective config resolution"]
-    resolve --> policy["policy evaluation"]
-    policy --> runtime["runtime execution behavior"]
-    runtime --> diagnostics["effective config and policy explain outputs"]
+flowchart TD
+    start[Start configuration load] --> sources[Read sources]
+    sources --> defaults[Defaults]
+    sources --> file[Config file]
+    sources --> env[Environment]
+    sources --> flags[CLI flags]
+    defaults --> merge[Merge precedence]
+    file --> merge
+    env --> merge
+    flags --> merge
+    merge --> validate[Validate]
+    validate --> effective[Effective config]
 ```
 
 ## Configuration Inputs
