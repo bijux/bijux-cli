@@ -16,11 +16,12 @@ verifiable evidence surface.
 
 ```mermaid
 flowchart LR
-    payload["artifact payload"] --> hash["identity hash"]
-    payload --> metadata["artifact metadata"]
-    metadata --> lineage["lineage links"]
-    hash --> replay_diff["replay and diff consumers"]
-    lineage --> replay_diff
+    producer[core producer] --> schema[artifact schema]
+    schema --> file[artifact payload and files]
+    file --> consumer[consumer]
+    schema --> version[version marker]
+    version --> compatibility[compatibility rule]
+    consumer --> validation[contract validation]
 ```
 
 ## Contract Surfaces
