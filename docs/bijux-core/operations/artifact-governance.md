@@ -12,6 +12,16 @@ last_reviewed: 2026-04-12
 Generated outputs are useful only when they stay auditable and do not leak into
 tracked source roots by accident.
 
+```mermaid
+flowchart TD
+    source[canonical source and contracts]
+    source --> tracked[tracked reference assets]
+    source --> docs[checked docs and metadata]
+    tracked --> review[reviewed and versioned]
+    generated[generated outputs] --> artifacts[artifacts/]
+    artifacts --> disposable[local or CI disposable outputs]
+```
+
 ## Repository Rules
 
 - generated outputs belong under `artifacts/`
