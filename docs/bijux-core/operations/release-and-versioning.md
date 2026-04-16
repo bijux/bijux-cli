@@ -12,6 +12,21 @@ last_reviewed: 2026-04-12
 Release work at the repository root coordinates tags, publication workflows,
 docs deployment, and release evidence across all published surfaces.
 
+```mermaid
+sequenceDiagram
+    participant Maintainer
+    participant Repo as Repository
+    participant CI as CI workflows
+    participant Registry as Release targets
+    participant Consumer
+
+    Maintainer->>Repo: merge reviewed release-ready change
+    Repo->>CI: trigger tag and publish workflows
+    CI->>CI: run release validations
+    CI->>Registry: publish versioned artifacts and release metadata
+    Registry-->>Consumer: release becomes consumable
+```
+
 ## Current Root Responsibilities
 
 - tag-driven publication for crates.io, PyPI, and GitHub releases
