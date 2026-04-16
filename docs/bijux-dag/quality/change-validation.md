@@ -16,11 +16,12 @@ and documented.
 
 ```mermaid
 flowchart LR
-    proposal[proposed change] --> scope[scope impact]
-    scope --> tests[run relevant tests]
-    tests --> replay[replay and diff checks]
-    replay --> docs[update docs and risks]
-    docs --> merge[merge decision]
+  Change[Code or docs change] --> Static[Static checks]
+  Static --> Unit[Unit and targeted tests]
+  Unit --> Contract[Contract and replay/diff checks]
+  Contract --> Integration[Integration checks]
+  Integration --> Docs[Docs and risk alignment]
+  Docs --> Evidence[Review-ready evidence]
 ```
 
 ## Validation Checklist
