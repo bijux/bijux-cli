@@ -19,12 +19,17 @@ and the remaining question is structural.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    topology[workspace topology] --> dependencies[dependency direction]
-    dependencies --> runtime[runtime surfaces]
-    runtime --> state[state and configuration]
-    state --> distribution[distribution model]
-    distribution --> risks[architecture risks]
+mindmap
+  root((Core Architecture))
+    System Overview
+    Workspace Topology
+    Dependency Direction
+    Runtime Surfaces
+    State and Configuration
+    Distribution Model
+    Maintainer Control Plane
+    Artifact and Contract Flow
+    Architecture Risks
 ```
 
 ## Architecture Priorities
