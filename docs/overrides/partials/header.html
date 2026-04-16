@@ -9,6 +9,7 @@
 {% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set nav_mode = bijux.nav_mode if bijux and bijux.nav_mode else "default" %}
 {% set theme_key = bijux.theme_key if bijux and bijux.theme_key else "bijux:theme" %}
+{% set allow_flattened_detail_rows = active_repository == "bijux.github.io" %}
 {% set active_section = namespace(item=None) %}
 {% import "partials/bijux-nav.html" as bijux_nav with context %}
 {% macro site_label(title) -%}
@@ -121,13 +122,23 @@
   </nav>
   {% for nav_item in nav %}
     {% if nav_item.children %}
+      {% set detail_items = namespace(list=[]) %}
+      {% for child in nav_item.children %}
+        {% set child_src_uri = child.file.src_uri if child.file else "" %}
+        {% set child_is_index = child.is_index or child_src_uri.endswith('/index.md') or child_src_uri == 'index.md' %}
+        {% if allow_flattened_detail_rows or child.children or child_is_index %}
+          {% set _ = detail_items.list.append(child) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if detail_items and detail_items.list %}
       {% set is_hidden = "" if nav_item.active else "hidden" %}
       <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
         <div class="md-grid">
           <div class="bijux-detail-select-wrap">
             <label class="bijux-detail-select-label" for="bijux-detail-select-{{ loop.index }}">Section</label>
             <select class="bijux-detail-select" id="bijux-detail-select-{{ loop.index }}" data-bijux-detail-select>
-              {% for child in nav_item.children %}
+              {% for child in detail_items.list %}
                 {% set option_selected = "" %}
                 {% if nav_item == active_section.item and child.active %}
                   {% set option_selected = "selected" %}
@@ -139,7 +150,7 @@
             </select>
           </div>
           <ul class="bijux-tabs__list bijux-tabs__list--detail">
-            {% for child in nav_item.children %}
+            {% for child in detail_items.list %}
               {% set item_class = "bijux-tabs__item" %}
               {% set current = "" %}
               {% if nav_item == active_section.item and child.active %}
