@@ -17,11 +17,17 @@ portability/configuration concerns.
 
 ```mermaid
 flowchart TD
-    dag["bijux dag"] --> define["init validate canonicalize lint graph"]
-    dag --> execute["run replay prove verify fsck"]
-    dag --> inspect["status explain node runs artifact-inspect"]
-    dag --> compare["diff why-rerun why-cache-missed"]
-    dag --> ops["cache adapters export import config policy"]
+    dag[bijux dag]
+    dag --> validate[validate canonicalize lint]
+    dag --> execute[run replay prove verify]
+    dag --> inspect[status explain node artifact-inspect]
+    dag --> compare[diff why-rerun why-cache-missed]
+    dag --> ops[cache adapters export import config policy]
+
+    execute --> inputs[inputs and run settings]
+    execute --> output_mode[output mode and reporting]
+    inspect --> run_state[run and node state]
+    inspect --> artifacts[artifact evidence]
 ```
 
 ## Command Families
