@@ -15,11 +15,20 @@ for operators, automation, and integrations.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    commitments["compatibility commitments"] --> grammar["command grammar and flags"]
-    commitments --> identity["identity and canonicalization meaning"]
-    commitments --> outcomes["replay and diff classification vocabulary"]
-    commitments --> artifacts["artifact and lineage contract shapes"]
+flowchart TB
+    stable[Stable commitments]
+    stable --> api_shape[crate-root API shape]
+    stable --> cli_flags[documented CLI flags]
+    stable --> artifacts[versioned artifact shapes]
+    stable --> imports[public imports]
+
+    conditional[Conditional compatibility]
+    conditional --> defaults[defaults and configuration behavior]
+    conditional --> examples[example paths and docs]
+
+    unstable[Explicitly unstable]
+    unstable --> internals[private internals]
+    unstable --> experimental[experimental seams]
 ```
 
 ## Compatibility Scope
