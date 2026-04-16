@@ -1,6 +1,20 @@
 (function () {
   const shell = (window.bijuxShell = window.bijuxShell || {});
 
+  function syncDetailStripPresence() {
+    const header = document.querySelector("[data-md-component='header']");
+    if (!header) {
+      return;
+    }
+    const hasVisibleDetailStrip = document.querySelector(
+      "[data-bijux-detail-strip]:not([hidden]), [data-bijux-course-strip]:not([hidden])"
+    );
+    header.setAttribute(
+      "data-bijux-detail-visible",
+      hasVisibleDetailStrip ? "true" : "false"
+    );
+  }
+
   function syncDetailStripVisibility() {
     const navState = shell.navState;
     if (!navState) {
@@ -8,26 +22,12 @@
     }
 
     const activeSitePath = navState.syncSiteTabActiveState();
-    const strips = document.querySelectorAll("[data-bijux-detail-strip]");
-
-    for (const strip of strips) {
+    for (const strip of document.querySelectorAll("[data-bijux-detail-strip]")) {
       const rootPath = navState.normalizePath(
         strip.getAttribute("data-bijux-detail-root-path") || "/"
       );
       strip.hidden = rootPath !== activeSitePath;
     }
-
-    const header = document.querySelector("[data-md-component='header']");
-    if (!header) {
-      return;
-    }
-    const hasVisibleDetailStrip = document.querySelector(
-      "[data-bijux-detail-strip]:not([hidden])"
-    );
-    header.setAttribute(
-      "data-bijux-detail-visible",
-      hasVisibleDetailStrip ? "true" : "false"
-    );
   }
 
   function syncDetailStripActiveState() {
@@ -36,75 +36,175 @@
       return;
     }
 
-    const activeStrip = document.querySelector(
-      "[data-bijux-detail-strip]:not([hidden])"
-    );
     const currentPath = navState.normalizePath(window.location.pathname);
+    const strips = document.querySelectorAll("[data-bijux-detail-strip]:not([hidden])");
 
+    for (const strip of strips) {
+      const authoredActiveLink = strip.querySelector(
+        "a[data-bijux-detail-path][aria-current='page'], .bijux-tabs__item--active a[data-bijux-detail-path]"
+      );
+
+      for (const item of strip.querySelectorAll(".bijux-tabs__item")) {
+        item.classList.remove("bijux-tabs__item--active");
+      }
+
+      for (const link of strip.querySelectorAll("a[data-bijux-detail-path]")) {
+        link.removeAttribute("aria-current");
+      }
+
+      const matchedLink = navState.bestMatchingLink(
+        strip,
+        "data-bijux-detail-path",
+        currentPath,
+        "a[data-bijux-detail-path]"
+      );
+
+      let activeLink = matchedLink;
+
+      if (!activeLink && authoredActiveLink) {
+        activeLink = {
+          path: navState.normalizePath(
+            authoredActiveLink.getAttribute("data-bijux-detail-path") || "/"
+          ),
+          node: authoredActiveLink,
+        };
+      }
+
+      if (!activeLink) {
+        const parentPath = navState.normalizePath(
+          strip.getAttribute("data-bijux-detail-root-path") || "/"
+        );
+        const homeLink = strip.querySelector(
+          `a[data-bijux-detail-path="${parentPath}"]`
+        );
+        if (homeLink) {
+          activeLink = {
+            path: parentPath,
+            node: homeLink,
+          };
+        }
+      }
+
+      if (!activeLink) {
+        const firstLink = strip.querySelector("a[data-bijux-detail-path]");
+        if (firstLink) {
+          activeLink = {
+            path: navState.normalizePath(
+              firstLink.getAttribute("data-bijux-detail-path") || "/"
+            ),
+            node: firstLink,
+          };
+        }
+      }
+
+      if (activeLink) {
+        activeLink.node
+          .closest(".bijux-tabs__item")
+          ?.classList.add("bijux-tabs__item--active");
+        activeLink.node.setAttribute("aria-current", "page");
+      }
+    }
+  }
+
+  function activeDetailPath() {
+    const navState = shell.navState;
+    if (!navState) {
+      return null;
+    }
+
+    const activeStrip = document.querySelector("[data-bijux-detail-strip]:not([hidden])");
     if (!activeStrip) {
-      return;
+      return null;
+    }
+
+    const activeLink = navState.bestMatchingLink(
+      activeStrip,
+      "data-bijux-detail-path",
+      navState.normalizePath(window.location.pathname),
+      "a[data-bijux-detail-path]"
+    );
+    if (activeLink) {
+      return activeLink.path;
     }
 
     const authoredActiveLink = activeStrip.querySelector(
       "a[data-bijux-detail-path][aria-current='page'], .bijux-tabs__item--active a[data-bijux-detail-path]"
     );
-
-    for (const item of activeStrip.querySelectorAll(".bijux-tabs__item")) {
-      item.classList.remove("bijux-tabs__item--active");
+    if (authoredActiveLink) {
+      return navState.normalizePath(
+        authoredActiveLink.getAttribute("data-bijux-detail-path") || "/"
+      );
     }
 
-    for (const link of activeStrip.querySelectorAll("a[data-bijux-detail-path]")) {
-      link.removeAttribute("aria-current");
+    return null;
+  }
+
+  function syncCourseStripVisibility() {
+    const navState = shell.navState;
+    if (!navState) {
+      return;
     }
 
-    const matchedLink = navState.bestMatchingLink(
-      activeStrip,
-      "data-bijux-detail-path",
-      currentPath,
-      "a[data-bijux-detail-path]"
-    );
-
-    let activeLink = matchedLink;
-
-    if (!activeLink && authoredActiveLink) {
-      activeLink = {
-        path: navState.normalizePath(
-          authoredActiveLink.getAttribute("data-bijux-detail-path") || "/"
-        ),
-        node: authoredActiveLink,
-      };
-    }
-
-    if (!activeLink) {
+    const currentPath = navState.normalizePath(window.location.pathname);
+    const activeProgramPath = activeDetailPath();
+    for (const strip of document.querySelectorAll("[data-bijux-course-strip]")) {
       const rootPath = navState.normalizePath(
-        activeStrip.getAttribute("data-bijux-detail-root-path") || "/"
+        strip.getAttribute("data-bijux-course-root-path") || "/"
       );
-      const homeLink = activeStrip.querySelector(
-        `a[data-bijux-detail-path="${rootPath}"]`
+      const activeCourseLink = navState.bestMatchingLink(
+        strip,
+        "data-bijux-course-path",
+        currentPath,
+        "a[data-bijux-course-path]"
       );
-      if (homeLink) {
-        activeLink = {
-          path: rootPath,
-          node: homeLink,
-        };
-      }
+      strip.hidden = rootPath !== activeProgramPath && !activeCourseLink;
+    }
+  }
+
+  function syncCourseStripActiveState() {
+    const navState = shell.navState;
+    if (!navState) {
+      return;
     }
 
-    if (!activeLink) {
-      const firstLink = activeStrip.querySelector("a[data-bijux-detail-path]");
-      if (firstLink) {
+    const currentPath = navState.normalizePath(window.location.pathname);
+    const strips = document.querySelectorAll("[data-bijux-course-strip]:not([hidden])");
+
+    for (const strip of strips) {
+      const authoredActiveLink = strip.querySelector(
+        "a[data-bijux-course-path][aria-current='page'], .bijux-tabs__item--active a[data-bijux-course-path]"
+      );
+
+      for (const item of strip.querySelectorAll(".bijux-tabs__item")) {
+        item.classList.remove("bijux-tabs__item--active");
+      }
+
+      for (const link of strip.querySelectorAll("a[data-bijux-course-path]")) {
+        link.removeAttribute("aria-current");
+      }
+
+      let activeLink = navState.bestMatchingLink(
+        strip,
+        "data-bijux-course-path",
+        currentPath,
+        "a[data-bijux-course-path]"
+      );
+
+      if (!activeLink && authoredActiveLink) {
         activeLink = {
           path: navState.normalizePath(
-            firstLink.getAttribute("data-bijux-detail-path") || "/"
+            authoredActiveLink.getAttribute("data-bijux-course-path") || "/"
           ),
-          node: firstLink,
+          node: authoredActiveLink,
         };
       }
-    }
 
-    if (activeLink) {
-      activeLink.node.closest(".bijux-tabs__item")?.classList.add("bijux-tabs__item--active");
-      activeLink.node.setAttribute("aria-current", "page");
+      if (activeLink) {
+        activeLink.node
+          .closest(".bijux-tabs__item")
+          ?.classList.add("bijux-tabs__item--active");
+        activeLink.node.setAttribute("aria-current", "page");
+      }
     }
   }
 
@@ -130,48 +230,59 @@
       return;
     }
 
-    const activeStrip = document.querySelector(
-      "[data-bijux-detail-strip]:not([hidden])"
-    );
-    if (!activeStrip) {
-      return;
-    }
-
-    const activeLink = activeStrip.querySelector(
-      "a[data-bijux-detail-path][aria-current='page']"
+    const strips = document.querySelectorAll(
+      "[data-bijux-detail-strip]:not([hidden]), [data-bijux-course-strip]:not([hidden])"
     );
 
-    if (!activeLink) {
-      return;
-    }
-
-    const activePath = navState.normalizePath(
-      activeLink.getAttribute("data-bijux-detail-path") || "/"
-    );
-
-    const select = activeStrip.querySelector("[data-bijux-detail-select]");
-    if (!select) {
-      return;
-    }
-
-    for (const option of select.options) {
-      const optionPath = navState.normalizePath(
-        option.getAttribute("data-bijux-detail-path") || option.value || "/"
+    for (const strip of strips) {
+      const activeLink = strip.querySelector(
+        "a[data-bijux-detail-path][aria-current='page'], a[data-bijux-course-path][aria-current='page']"
       );
-      option.selected = optionPath === activePath;
+
+      if (!activeLink) {
+        continue;
+      }
+
+      const activePath = navState.normalizePath(
+        activeLink.getAttribute("data-bijux-detail-path") ||
+          activeLink.getAttribute("data-bijux-course-path") ||
+          "/"
+      );
+
+      const select = strip.querySelector("[data-bijux-detail-select]");
+      if (!select) {
+        continue;
+      }
+
+      for (const option of select.options) {
+        const optionPath = navState.normalizePath(
+          option.getAttribute("data-bijux-detail-path") ||
+            option.getAttribute("data-bijux-course-path") ||
+            option.value ||
+            "/"
+        );
+        option.selected = optionPath === activePath;
+      }
     }
   }
 
   function runDetailTabsSync() {
     syncDetailStripVisibility();
     syncDetailStripActiveState();
+    syncCourseStripVisibility();
+    syncCourseStripActiveState();
+    syncDetailStripPresence();
     syncDetailSelectState();
     bindDetailSelectNavigation();
   }
 
   shell.detailTabs = {
+    syncDetailStripPresence,
     syncDetailStripVisibility,
     syncDetailStripActiveState,
+    activeDetailPath,
+    syncCourseStripVisibility,
+    syncCourseStripActiveState,
     syncDetailSelectState,
     bindDetailSelectNavigation,
     runDetailTabsSync,
