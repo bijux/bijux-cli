@@ -189,7 +189,7 @@ def test_optional_dependency_groups_match_current_repo_workflows() -> None:
     assert set(optional) == {"build", "docs", "lint", "security", "test"}
 
     assert optional["test"] == [
-        "pytest>=8.4.1,<9.0",
+        "pytest>=9.0.3,<10.0",
         "pytest-cov>=6.2.1,<7.0",
         "pytest-timeout>=2.4.0,<3.0",
     ]
