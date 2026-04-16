@@ -16,13 +16,18 @@ internal module paths.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    caller["rust caller"] --> core["bijux-dag-core exports"]
-    caller --> runtime["bijux-dag-runtime exports"]
-    caller --> artifacts["bijux-dag-artifacts exports"]
-    cli_surface["dag-cli and dag-app"] --> runtime
-    cli_surface --> core
-    cli_surface --> artifacts
+sequenceDiagram
+    participant Client as Rust caller
+    participant API as Crate-root exports
+    participant Core as Core/runtime/artifact logic
+    participant Contracts as Data contracts
+
+    Client->>API: call public function
+    API->>Contracts: validate request shape
+    API->>Core: invoke operation
+    Core-->>API: result or typed error
+    API->>Contracts: format response payload
+    API-->>Client: stable response surface
 ```
 
 ## API Surfaces by Crate
