@@ -16,10 +16,13 @@ without splitting repository ownership.
 
 ```mermaid
 flowchart LR
-    source[workspace source] --> crates_release[rust crate releases]
-    source --> python_release[python package release]
-    source --> docs_site[documentation site publish]
-    source --> artifacts[evidence artifacts]
+    commits[conventional commits] --> tag[version tag]
+    tag --> version[workspace version resolution]
+    version --> publish[publish workflows]
+    publish --> crates_release[Rust crate release]
+    publish --> python_release[Python bridge release]
+    publish --> docs_site[documentation publish]
+    publish --> evidence[evidence artifacts]
 ```
 
 ## Distribution Surfaces
