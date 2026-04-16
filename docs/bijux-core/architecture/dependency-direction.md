@@ -15,14 +15,26 @@ depend on which layers.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    cli[bijux-cli] --> core_contracts[workspace contracts]
-    dag_app[bijux-dag-app] --> dag_core[bijux-dag-core]
-    dag_app --> dag_runtime[bijux-dag-runtime]
-    dag_runtime --> dag_artifacts[bijux-dag-artifacts]
-    dev[bijux-dev] --> cli
-    dev --> dag_app
-    py[bijux-cli-python] --> cli
+flowchart TB
+    entry[Entrypoints: bijux-cli, bijux-dag-cli]
+    app[Application: bijux-dag-app]
+    domain[Domain/runtime: bijux-dag-core and bijux-dag-runtime]
+    ports[Contracts and shared interfaces]
+    adapters[External adapters]
+    store[Persistence/artifacts: bijux-dag-artifacts]
+    maintain[Maintainer layer: bijux-dev]
+
+    entry --> app
+    app --> domain
+    domain --> ports
+    adapters --> ports
+    adapters --> store
+    maintain --> entry
+    maintain --> app
+
+    entry -. forbidden .-> store
+    store -. forbidden .-> domain
+    domain -. forbidden .-> maintain
 ```
 
 ## Direction Rules
