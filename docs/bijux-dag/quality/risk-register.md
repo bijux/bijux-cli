@@ -15,11 +15,17 @@ expectations.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    risk[identify risk] --> signal[define leading signal]
-    signal --> mitigation[assign mitigation]
-    mitigation --> verify[verify effectiveness]
-    verify --> reassess[reassess risk level]
+stateDiagram-v2
+    [*] --> Identified
+    Identified --> Assessed
+    Assessed --> Mitigating
+    Assessed --> Accepted
+    Mitigating --> Monitoring
+    Monitoring --> Escalated
+    Monitoring --> Resolved
+    Escalated --> Mitigating
+    Accepted --> Monitoring
+    Resolved --> [*]
 ```
 
 ## Active Risk Themes
