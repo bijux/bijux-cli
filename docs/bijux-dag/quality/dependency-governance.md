@@ -15,11 +15,14 @@ surprise from indirect upgrades.
 ## Visual Summary
 
 ```mermaid
-flowchart LR
-    add[add or update dependency] --> assess[assess runtime and security impact]
-    assess --> verify[verify tests and replay/diff contracts]
-    verify --> record[record rationale and constraints]
-    record --> monitor[monitor for regressions]
+flowchart TD
+  Need[Need dependency change] --> Eval[Evaluate necessity]
+  Eval --> Scope{Touches runtime path?}
+  Scope -->|Yes| Risk[Assess compatibility and security risk]
+  Scope -->|No| Tooling[Tooling-only review]
+  Risk --> Approve[Approve with evidence]
+  Tooling --> Approve
+  Approve --> Track[Track version and owner]
 ```
 
 ## Governance Rules
