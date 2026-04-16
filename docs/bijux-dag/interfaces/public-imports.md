@@ -15,11 +15,13 @@ intended ownership boundaries.
 ## Visual Summary
 
 ```mermaid
-flowchart TB
-    caller["rust caller"] --> core["bijux_dag_core::*"]
-    caller --> runtime["bijux_dag_runtime::*"]
-    caller --> artifacts["bijux_dag_artifacts::*"]
-    caller -.avoid deep internal paths.-> internals["internal module paths"]
+flowchart LR
+    consumer[consumer code] --> public_path[public import path]
+    public_path --> facade[crate-root exported surface]
+    facade --> stable_types[stable types]
+    facade --> stable_functions[stable functions]
+    facade -. hides .-> internals[private internals]
+    internals --> impl[implementation modules]
 ```
 
 ## Preferred Imports
