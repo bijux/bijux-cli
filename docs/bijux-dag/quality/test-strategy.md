@@ -15,11 +15,17 @@ execution, artifact integrity, and replay/diff semantics.
 ## Visual Summary
 
 ```mermaid
-flowchart TD
-    unit[unit tests] --> integration[integration tests]
-    integration --> contract[contract tests]
-    contract --> regression[regression snapshots]
-    regression --> release[release confidence]
+flowchart TB
+  E2E[End-to-end and workflow tests]
+  INT[Integration and contract tests]
+  UNIT[Unit and focused logic tests]
+
+  E2E --> INT
+  INT --> UNIT
+
+  UNIT --> Invariants[Fast invariant coverage]
+  INT --> Boundaries[Boundary validation]
+  E2E --> UserPaths[Critical operator paths]
 ```
 
 ## Test Layers
