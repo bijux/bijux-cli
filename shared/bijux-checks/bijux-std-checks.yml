@@ -5,7 +5,7 @@ directories:
   - shared/bijux-makes-py
   - shared/bijux-checks
 remote:
-  raw_base: https://raw.githubusercontent.com/bijux/bijux-std
+  repo_url: https://github.com/bijux/bijux-std
   git_url: https://github.com/bijux/bijux-std.git
   default_ref: main
   tag_pattern: v*

@@ -19,17 +19,44 @@ read_directories() {
 }
 
 manifest_rel="$(read_scalar manifest)"
+repo_url_default="$(read_scalar '  repo_url')"
 raw_base_default="$(read_scalar '  raw_base')"
 git_url_default="$(read_scalar '  git_url')"
 default_ref="$(read_scalar '  default_ref')"
 
 std_ref="${BIJUX_STD_REF:-${default_ref}}"
-std_remote="${BIJUX_STD_REMOTE:-${raw_base_default}}"
+std_remote="${BIJUX_STD_REMOTE:-${repo_url_default}}"
 std_remote="${std_remote%/}"
-std_manifest_url="${std_remote}/${std_ref}/${manifest_rel}"
 std_root="${BIJUX_STD_ROOT:-${repo_root}/../bijux-std}"
 strict_remote="${BIJUX_STD_STRICT_REMOTE:-0}"
 manifest_path="${repo_root}/${manifest_rel}"
+
+resolve_raw_base() {
+  local remote="$1"
+  local fallback_raw="$2"
+  local owner_repo
+
+  if [[ "${remote}" == https://raw.githubusercontent.com/* ]]; then
+    echo "${remote%/}"
+    return
+  fi
+
+  owner_repo="$(echo "${remote}" | sed -E 's#^https?://github\.com/##; s#\.git$##')"
+  if [[ "${owner_repo}" == */* ]]; then
+    echo "https://raw.githubusercontent.com/${owner_repo}"
+    return
+  fi
+
+  if [[ -n "${fallback_raw}" ]]; then
+    echo "${fallback_raw%/}"
+    return
+  fi
+
+  echo "${remote%/}"
+}
+
+std_raw_base="$(resolve_raw_base "${std_remote}" "${raw_base_default}")"
+std_manifest_url="${std_raw_base}/${std_ref}/${manifest_rel}"
 
 if [[ ! -f "${manifest_path}" ]]; then
   echo "ERROR: missing local manifest ${manifest_path}" >&2
