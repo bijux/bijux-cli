@@ -16,10 +16,12 @@ aligned with real code behavior.
 
 ```mermaid
 flowchart LR
-    source[code and command behavior] --> docs[documentation update]
-    docs --> verify[link and structure validation]
-    verify --> publish[publish with release]
-    publish --> feedback[operator feedback and correction loop]
+  Page[Documentation page] --> Purpose[Clear purpose]
+  Page --> Anchors[Concrete code and workflow anchors]
+  Page --> Scope[Honest ownership scope]
+  Page --> Diagram[Useful diagram fit]
+  Page --> Examples[Examples where needed]
+  Page --> Review[Review metadata current]
 ```
 
 ## Standards
