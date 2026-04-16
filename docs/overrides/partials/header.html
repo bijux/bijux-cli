@@ -140,7 +140,7 @@
             <select class="bijux-detail-select" id="bijux-detail-select-program-{{ loop.index }}" data-bijux-detail-select>
               {% for child in detail_items.list %}
                 {% set option_selected = "" %}
-                {% if child.active or (current_page and child.pages and current_page in child.pages) %}
+                {% if child.active %}
                   {% set option_selected = "selected" %}
                 {% endif %}
                 <option value="{{ bijux_nav.first_page_url(child) }}" data-bijux-detail-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ option_selected }}>
@@ -153,7 +153,7 @@
             {% for child in detail_items.list %}
               {% set item_class = "bijux-tabs__item" %}
               {% set current = "" %}
-              {% if nav_item.active and (child.active or (current_page and child.pages and current_page in child.pages)) %}
+              {% if nav_item.active and child.active %}
                 {% set item_class = item_class ~ " bijux-tabs__item--active" %}
                 {% set current = 'aria-current="page"' %}
               {% endif %}
@@ -181,7 +181,7 @@
           {% endfor %}
         {% endif %}
         {% if course_item.children and course_detail_items.list and course_detail_items.list | length > 1 %}
-          {% set course_active = course_item.active or (current_page and course_item.pages and current_page in course_item.pages) %}
+          {% set course_active = course_item.active %}
           {% set is_hidden = "" if nav_item.active and course_active else "hidden" %}
           <nav class="bijux-detail-tabs bijux-course-tabs" aria-label="{{ course_item.title }} course sections" data-bijux-nav-row="course" data-bijux-course-strip data-bijux-course-root-path="{{ bijux_nav.first_page_path(course_item) | trim }}" data-bijux-course-title="{{ course_item.title }}" {{ is_hidden }}>
             <div class="md-grid">
@@ -190,7 +190,7 @@
                 <select class="bijux-detail-select" id="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}" data-bijux-detail-select>
                   {% for child in course_detail_items.list %}
                     {% set option_selected = "" %}
-                    {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
+                    {% set child_active = child.active %}
                     {% if course_active and child_active %}
                       {% set option_selected = "selected" %}
                     {% endif %}
@@ -204,7 +204,7 @@
                 {% for child in course_detail_items.list %}
                   {% set item_class = "bijux-tabs__item" %}
                   {% set current = "" %}
-                  {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
+                  {% set child_active = child.active %}
                   {% if course_active and child_active %}
                     {% set item_class = item_class ~ " bijux-tabs__item--active" %}
                     {% set current = 'aria-current="page"' %}
