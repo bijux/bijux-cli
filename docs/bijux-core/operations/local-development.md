@@ -12,6 +12,16 @@ last_reviewed: 2026-04-12
 Repository-local development should start from root entrypoints so local work
 and CI stay aligned.
 
+```mermaid
+flowchart TD
+    edit[edit code or docs] --> lint[run local static checks]
+    lint --> test[run targeted package and root tests]
+    test --> run[execute local workflow commands]
+    run --> inspect[inspect outputs and diagnostics]
+    inspect --> commit[commit when evidence is coherent]
+    inspect --> edit
+```
+
 ## Baseline Commands
 
 ```bash
