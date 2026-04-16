@@ -13,6 +13,20 @@ The operations section explains how repository-wide work is carried out after
 the ownership model is already clear. These pages are about repeatable root
 work, not package-local runtime behavior.
 
+```mermaid
+mindmap
+  root((Core Operations))
+    Local Development
+    Testing and Validation
+    Release and Versioning
+    API and Schema Governance
+    Contributor Workflows
+    Automation Surfaces
+    Artifact Governance
+    Review Expectations
+    Change Management
+```
+
 ## Pages In This Section
 
 - [Local Development](local-development.md)
