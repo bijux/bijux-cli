@@ -12,6 +12,20 @@ last_reviewed: 2026-04-12
 Repository validation combines package-local tests, root make gates, and docs
 checks into one reviewable evidence model.
 
+```mermaid
+flowchart TB
+    confidence[Repository confidence]
+    confidence --> package_tests[package test layers]
+    confidence --> root_checks[root make gates]
+    confidence --> contracts[contract/schema checks]
+    confidence --> docs_checks[docs and navigation checks]
+
+    package_tests --> evidence[reviewable evidence set]
+    root_checks --> evidence
+    contracts --> evidence
+    docs_checks --> evidence
+```
+
 ## Canonical Commands
 
 ```bash
