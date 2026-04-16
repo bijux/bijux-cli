@@ -14,12 +14,14 @@ This page records practical DAG entrypoints for CLI users and Rust integrators.
 ## Visual Summary
 
 ```mermaid
-flowchart TD
-    shell["shell user"] --> cli["bijux dag ..."]
-    cli --> app["dag-app command orchestration"]
-    rust["rust integration"] --> core["dag-core crate exports"]
-    rust --> runtime["dag-runtime crate exports"]
-    runtime --> artifacts["dag-artifacts persistence exports"]
+flowchart LR
+    examples[Examples] --> cli_example[CLI example]
+    examples --> rust_example[Rust API example]
+    examples --> config_example[Config-driven example]
+
+    cli_example --> cli_entry[bijux dag entrypoints]
+    rust_example --> api_entry[dag-core and dag-runtime crate exports]
+    config_example --> runtime_path[configured runtime path]
 ```
 
 ## CLI Entrypoints
