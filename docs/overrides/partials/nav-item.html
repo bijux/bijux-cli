@@ -11,12 +11,8 @@
   {% if nav_item.is_page and nav_item.meta.icon %}
     {% include ".icons/" ~ nav_item.meta.icon ~ ".svg" %}
   {% endif %}
-  {% set bijux_label = ref.title %}
-  {% if nav_item.is_index or (ref.parent and ref.title == ref.parent.title) or ref.title == "Home" %}
-    {% set bijux_label = "Home" %}
-  {% endif %}
   <span class="md-ellipsis">
-    {{ bijux_label }}
+    {{ ref.title }}
   </span>
   {% if nav_item.is_page and nav_item.meta.status %}
     {{ render_status(nav_item, nav_item.meta.status) }}
@@ -37,10 +33,13 @@
 {% endmacro %}
 {% macro render(nav_item, path, level) %}
   {% set class = "md-nav__item" %}
-  {% set current_page = page if page is defined else none %}
-  {% set item_active = true if nav_item.active or (current_page and nav_item.pages and current_page in nav_item.pages) else false %}
-  {% if item_active %}
+  {% if nav_item.active %}
     {% set class = class ~ " md-nav__item--active" %}
+  {% endif %}
+  {% if nav_item.pages %}
+    {% if page in nav_item.pages %}
+      {% set nav_item = page %}
+    {% endif %}
   {% endif %}
   {% if nav_item.children %}
     {% set indexes = [] %}
@@ -52,7 +51,7 @@
       {% endfor %}
     {% endif %}
     {% if "navigation.tabs" in features %}
-      {% if level == 1 and item_active %}
+      {% if level == 1 and nav_item.active %}
         {% set class = class ~ " md-nav__item--section" %}
         {% set is_section = true %}
       {% endif %}
@@ -77,7 +76,7 @@
     <li class="{{ class }} md-nav__item--nested">
       {% if not is_pruned %}
         {% set force_checked = bijux_expand_scoped_groups and level == 1 %}
-        {% set checked = "checked" if item_active or force_checked %}
+        {% set checked = "checked" if nav_item.active or force_checked %}
         {% if "navigation.expand" in features and not checked %}
           {% set indeterminate = "md-toggle--indeterminate" %}
         {% endif %}
@@ -90,7 +89,7 @@
           </label>
         {% else %}
           {% set index = indexes | first %}
-          {% set class = "md-nav__link--active" if index == current_page %}
+          {% set class = "md-nav__link--active" if index == page %}
           <div class="md-nav__link md-nav__container">
             <a href="{{ index.url | url }}" class="md-nav__link {{ class }}">
               {{ render_content(index, nav_item) }}
@@ -103,7 +102,7 @@
             {% endif %}
           </div>
         {% endif %}
-        <nav class="md-nav" data-md-level="{{ level }}" aria-labelledby="{{ path }}_label" aria-expanded="{{ item_active | tojson }}">
+        <nav class="md-nav" data-md-level="{{ level }}" aria-labelledby="{{ path }}_label" aria-expanded="{{ nav_item.active | tojson }}">
           <label class="md-nav__title" for="{{ path }}">
             <span class="md-nav__icon md-icon"></span>
             {{ nav_item.title }}
@@ -120,9 +119,9 @@
         {{ render_pruned(nav_item) }}
       {% endif %}
     </li>
-  {% elif nav_item == current_page %}
+  {% elif nav_item == page %}
     <li class="{{ class }}">
-      {% set toc = current_page.toc %}
+      {% set toc = page.toc %}
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       {% set first = toc | first %}
       {% if first and first.level == 1 %}

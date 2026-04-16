@@ -2,8 +2,10 @@
 {% if "toc.integrate" in features %}
   {% set class = class ~ " md-nav--integrated" %}
 {% endif %}
+{% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
+{% set hub_links = bijux.hub_links if bijux and bijux.hub_links else [] %}
+{% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set bijux_primary_section_nav = true %}
-{% set current_page = page if page is defined else none %}
 {% set scoped = namespace(items=[], title=config.site_name, visible=false) %}
 {% set active_root = namespace(item=None) %}
 {% for nav_item in nav %}
@@ -11,38 +13,19 @@
     {% set active_root.item = nav_item %}
   {% endif %}
 {% endfor %}
-
-{% if current_page and current_page.parent and current_page.parent.children %}
-  {% for child in current_page.parent.children %}
-    {% if not child.children %}
+{% if page and active_root.item and page.parent and page.parent.children and page.parent != active_root.item %}
+  {% for child in page.parent.children %}
+    {% if not child.is_index %}
       {% set _ = scoped.items.append(child) %}
     {% endif %}
   {% endfor %}
-  {% set scoped.title = current_page.parent.title %}
-  {% set scoped.visible = scoped.items | length > 0 %}
-{% elif active_root.item and active_root.item.children %}
-  {% for child in active_root.item.children %}
-    {% if not child.children %}
-      {% set _ = scoped.items.append(child) %}
-    {% endif %}
-  {% endfor %}
-  {% set scoped.title = active_root.item.title %}
+  {% set scoped.title = page.parent.title %}
   {% set scoped.visible = scoped.items | length > 0 %}
 {% endif %}
-
-{% set current_page_src_uri = current_page.file.src_uri if current_page and current_page.file else "" %}
-{% set current_page_url = current_page.url if current_page else "" %}
-{% set bijux_index_page = current_page and (current_page.is_index or current_page_src_uri.endswith('/index.md') or current_page_src_uri == 'index.md') %}
-{% set bijux_root_home_page = bijux_index_page and (current_page_url in ["", "index.html"] or current_page_url.count('/') <= 1) %}
-{% if bijux_root_home_page %}
-  {% set scoped.visible = false %}
-{% endif %}
-
 {% set bijux_expand_scoped_groups = false %}
-{% if scoped.visible and current_page and (current_page.title == "Overview" or current_page.title == "Home") %}
+{% if scoped.visible and page and page.title == "Overview" %}
   {% set bijux_expand_scoped_groups = true %}
 {% endif %}
-
 {% import "partials/nav-item.html" as item with context %}
 {% set bijux_primary_section_nav = false %}
 <nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-md-level="0">
@@ -60,6 +43,28 @@
   {% if config.repo_url %}
     <div class="md-nav__source">
       {% include "partials/source.html" %}
+    </div>
+  {% endif %}
+  {% if hub_links %}
+    <section class="bijux-mobile-hub" aria-label="Bijux sites">
+      <p class="bijux-mobile-hub__label">Bijux Network</p>
+      <ul class="bijux-mobile-hub__list">
+        {% for entry in hub_links %}
+          {% set hub_item_class = "bijux-mobile-hub__item" %}
+          {% if entry.key == active_repository %}
+            {% set hub_item_class = hub_item_class ~ " bijux-mobile-hub__item--active" %}
+          {% endif %}
+          <li class="{{ hub_item_class }}">
+            <a class="bijux-mobile-hub__link" href="{{ entry.url }}">{{ entry.label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if page and page.title %}
+    <div class="bijux-mobile-context" aria-label="Current page">
+      <span class="bijux-mobile-context__label">Current Page</span>
+      <strong class="bijux-mobile-context__title">{{ page.title }}</strong>
     </div>
   {% endif %}
   <ul class="md-nav__list" data-md-scrollfix>

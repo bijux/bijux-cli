@@ -7,8 +7,9 @@
 {% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
 {% set hub_links = bijux.hub_links if bijux and bijux.hub_links else [] %}
 {% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
+{% set nav_mode = bijux.nav_mode if bijux and bijux.nav_mode else "default" %}
+{% set theme_key = bijux.theme_key if bijux and bijux.theme_key else "bijux:theme" %}
 {% set active_section = namespace(item=None) %}
-{% set current_page = page if page is defined else none %}
 {% import "partials/bijux-nav.html" as bijux_nav with context %}
 {% macro site_label(title) -%}
   {% if title == "Repository Handbook" -%}
@@ -30,7 +31,7 @@
     {% set active_section.item = nav_item %}
   {% endif %}
 {% endfor %}
-<header class="{{ class }}" data-md-component="header">
+<header class="{{ class }}" data-md-component="header" data-bijux-nav-mode="{{ nav_mode }}" data-bijux-theme-key="{{ theme_key }}">
   <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
@@ -48,12 +49,10 @@
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
-            {% if current_page and current_page.meta and current_page.meta.title %}
-              {{ current_page.meta.title }}
-            {% elif current_page %}
-              {{ current_page.title }}
+            {% if page.meta and page.meta.title %}
+              {{ page.meta.title }}
             {% else %}
-              {{ config.site_name }}
+              {{ page.title }}
             {% endif %}
           </span>
         </div>
@@ -75,12 +74,8 @@
       </nav>
     {% endif %}
     <div class="bijux-header-tools">
-      {% if config.theme.palette %}
-        {% if not config.theme.palette is mapping %}
-          {% include "partials/palette.html" %}
-        {% endif %}
-      {% endif %}
       {% if not config.theme.palette is mapping %}
+        {% include "partials/palette.html" %}
         {% include "partials/javascripts/palette.html" %}
       {% endif %}
       {% if config.extra.alternate %}
@@ -98,9 +93,14 @@
           {% include "partials/source.html" %}
         </div>
       {% endif %}
+      {% if config.theme.palette and not config.theme.palette is mapping %}
+        <button class="md-header__button md-icon bijux-theme-toggle" type="button" data-bijux-theme-toggle hidden>
+          {% include ".icons/material/theme-light-dark.svg" %}
+        </button>
+      {% endif %}
     </div>
   </nav>
-  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-bijux-nav-row="site" data-md-component="tabs">
+  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-md-component="tabs">
     <div class="md-grid">
       <ul class="md-tabs__list bijux-tabs__list bijux-tabs__list--site">
         {% for nav_item in nav %}
@@ -121,22 +121,28 @@
   </nav>
   {% for nav_item in nav %}
     {% if nav_item.children %}
-      {% set detail_items = nav_item.children %}
-      {% if nav_item.children | length == 1 %}
-        {% set first_child = nav_item.children | first %}
-        {% if first_child and first_child.title == "Home" and first_child.children %}
-          {% set detail_items = first_child.children %}
-        {% endif %}
-      {% endif %}
       {% set is_hidden = "" if nav_item.active else "hidden" %}
-      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-nav-row="program" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
+      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
         <div class="md-grid">
+          <div class="bijux-detail-select-wrap">
+            <label class="bijux-detail-select-label" for="bijux-detail-select-{{ loop.index }}">Section</label>
+            <select class="bijux-detail-select" id="bijux-detail-select-{{ loop.index }}" data-bijux-detail-select>
+              {% for child in nav_item.children %}
+                {% set option_selected = "" %}
+                {% if nav_item == active_section.item and child.active %}
+                  {% set option_selected = "selected" %}
+                {% endif %}
+                <option value="{{ bijux_nav.first_page_url(child) }}" data-bijux-detail-path="{{ bijux_nav.first_page_path(child) | trim }}" {{ option_selected }}>
+                  {{ bijux_nav.detail_label(child) }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
           <ul class="bijux-tabs__list bijux-tabs__list--detail">
-            {% for child in detail_items %}
+            {% for child in nav_item.children %}
               {% set item_class = "bijux-tabs__item" %}
               {% set current = "" %}
-              {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
-              {% if nav_item == active_section.item and child_active %}
+              {% if nav_item == active_section.item and child.active %}
                 {% set item_class = item_class ~ " bijux-tabs__item--active" %}
                 {% set current = 'aria-current="page"' %}
               {% endif %}
