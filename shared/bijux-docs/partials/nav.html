@@ -3,6 +3,7 @@
   {% set class = class ~ " md-nav--integrated" %}
 {% endif %}
 {% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
+{% set hub_links = bijux.hub_links if bijux and bijux.hub_links else [] %}
 {% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set repo_name = config.repo_name if config and config.repo_name else "" %}
 {% set is_bijux_hub_site = repo_name == "bijux/bijux.github.io" or active_repository in ["bijux", "bijux.github.io"] %}
@@ -60,7 +61,7 @@
 {% endif %}
 {% import "partials/nav-item.html" as item with context %}
 {% set bijux_primary_section_nav = false %}
-<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-bijux-hub-site="{{ 'true' if is_bijux_hub_site else 'false' }}" data-md-level="0">
+<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-bijux-mobile-tree-mode="{{ 'hub-simplified' if is_bijux_hub_site else 'default' }}" data-bijux-hub-site="{{ 'true' if is_bijux_hub_site else 'false' }}" data-md-level="0">
   <label class="md-nav__title bijux-nav__title" for="__drawer">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
@@ -77,11 +78,61 @@
       {% include "partials/source.html" %}
     </div>
   {% endif %}
-  <ul class="md-nav__list" data-md-scrollfix>
-    {% for nav_item in nav %}
-      {% set path = "__nav_mobile_" ~ loop.index %}
-      {{ item.render(nav_item, path, 1) }}
-    {% endfor %}
+  {% if hub_links %}
+    <section class="bijux-mobile-hub" aria-label="Bijux sites" data-bijux-mobile-order="1-sites">
+      <div class="bijux-mobile-hub__label">Sites</div>
+      <ul class="bijux-mobile-hub__list">
+        {% for entry in hub_links %}
+          {% set item_class = "bijux-mobile-hub__item" %}
+          {% set current = "" %}
+          {% if entry.key == active_repository %}
+            {% set item_class = item_class ~ " bijux-mobile-hub__item--active" %}
+            {% set current = 'aria-current="page"' %}
+          {% endif %}
+          <li class="{{ item_class }}">
+            <a href="{{ entry.url }}" class="bijux-mobile-hub__link" {{ current }}>{{ entry.label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  <ul class="md-nav__list" data-md-scrollfix data-bijux-mobile-order="2-tree">
+    {% if is_bijux_hub_site %}
+      {% set hub_seen_paths = namespace(values=[]) %}
+      {% for nav_item in nav %}
+        {% set nav_path = (nav_item.url | trim("/")) if nav_item.url else "" %}
+        {% if nav_item.title != "Home" and nav_path not in hub_seen_paths.values %}
+          {% set _ = hub_seen_paths.values.append(nav_path) %}
+          {% set item_class = "md-nav__item" %}
+          {% set current = "" %}
+          {% if nav_item.active %}
+            {% set item_class = item_class ~ " md-nav__item--active" %}
+            {% set current = 'aria-current="page"' %}
+          {% endif %}
+          <li class="{{ item_class }}">
+            <a href="{{ nav_item.url | url }}" class="md-nav__link" {{ current }}>{{ nav_item.title }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {% for nav_item in nav %}
+        {% set path = "__nav_mobile_" ~ loop.index %}
+        {% set first_child = nav_item.children[0] if nav_item.children else none %}
+        {% set nav_path = (nav_item.url | trim("/")) if nav_item.url else "" %}
+        {% set first_path = (first_child.url | trim("/")) if first_child and first_child.url else "" %}
+        {% set flatten_wrapper_home = first_child and first_child.title == "Home" and first_child.children and first_path == nav_path %}
+        {% if flatten_wrapper_home %}
+          {% for child in first_child.children %}
+            {% set child_path = (child.url | trim("/")) if child.url else "" %}
+            {% if child_path != nav_path %}
+              {{ item.render(child, path ~ "_flat_" ~ loop.index, 1) }}
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          {{ item.render(nav_item, path, 1) }}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
   </ul>
 </nav>
 {% set bijux_primary_section_nav = true %}

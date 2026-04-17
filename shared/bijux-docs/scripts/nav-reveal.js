@@ -53,6 +53,14 @@
     window.setTimeout(revealActiveNavigationTarget, 320);
   }
 
+  function runDesktopNavigationSync() {
+    revealAfterLayoutSettles();
+  }
+
+  function runPhoneNavigationSync() {
+    revealMobileDrawerContext();
+  }
+
   function revealMobileDrawerContext() {
     const viewportMode =
       window.bijuxViewportProfile &&
@@ -100,6 +108,8 @@
   shell.navReveal = {
     revealActiveNavigationTarget,
     revealAfterLayoutSettles,
+    runDesktopNavigationSync,
+    runPhoneNavigationSync,
     revealMobileDrawerContext,
     bindMobileDrawerReveal,
   };

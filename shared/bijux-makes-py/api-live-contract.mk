@@ -54,7 +54,14 @@ api-test:
 	  echo "→ Running schemathesis against live server"
 	@set -eu; \
 	  BASE_FLAG=$$($(SCHEMATHESIS) run -h 2>&1 | grep -q " --url " && echo --url || echo --base-url); \
-	  EXTRA_FLAG=$$(PYTHONPATH=""; "$(VENV_PYTHON)" -c "import yaml; v=yaml.safe_load(open('$(API_SCHEMA)', 'r', encoding='utf-8')).get('openapi',''); print('--experimental=openapi-3.1' if str(v).startswith('3.1') else '')"); \
+	  EXTRA_FLAG=""; \
+	  HAS_EXPERIMENTAL=$$($(SCHEMATHESIS) run -h 2>&1 | grep -q " --experimental" && echo 1 || echo 0); \
+	  if [ "$$HAS_EXPERIMENTAL" -eq 1 ]; then \
+	    OPENAPI_VERSION=$$(PYTHONPATH=""; "$(VENV_PYTHON)" -c "import yaml; v=yaml.safe_load(open('$(API_SCHEMA)', 'r', encoding='utf-8')).get('openapi',''); print(v)"); \
+	    case "$$OPENAPI_VERSION" in \
+	      3.1*) EXTRA_FLAG="--experimental=openapi-3.1" ;; \
+	    esac; \
+	  fi; \
 	  PORT="$$(cat "$(API_ARTIFACTS_DIR_ABS)/port")"; \
 	  $(SCHEMATHESIS) run "$(API_SCHEMA)" $$BASE_FLAG "http://$(API_HOST):$$PORT" $$EXTRA_FLAG $(API_SCHEMATHESIS_ARGS) 2>&1 | tee "$(API_ARTIFACTS_DIR_ABS)/schemathesis.log"; \
 	  RC=$$?; \

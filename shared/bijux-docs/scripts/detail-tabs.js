@@ -276,6 +276,24 @@
     bindDetailSelectNavigation();
   }
 
+  function runDesktopNavigationSync() {
+    syncDetailStripVisibility();
+    syncDetailStripActiveState();
+    syncCourseStripVisibility();
+    syncCourseStripActiveState();
+    syncDetailStripPresence();
+    syncDetailSelectState();
+  }
+
+  function runPhoneNavigationSync() {
+    syncDetailStripVisibility();
+    syncDetailStripActiveState();
+    syncCourseStripVisibility();
+    syncCourseStripActiveState();
+    syncDetailStripPresence();
+    syncDetailSelectState();
+  }
+
   shell.detailTabs = {
     syncDetailStripPresence,
     syncDetailStripVisibility,
@@ -285,6 +303,8 @@
     syncCourseStripActiveState,
     syncDetailSelectState,
     bindDetailSelectNavigation,
+    runDesktopNavigationSync,
+    runPhoneNavigationSync,
     runDetailTabsSync,
   };
 })();

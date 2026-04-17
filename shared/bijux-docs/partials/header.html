@@ -5,6 +5,7 @@
   {% set class = class ~ " md-header--shadow" %}
 {% endif %}
 {% set bijux = config.extra.bijux if config.extra and config.extra.bijux else {} %}
+{# SSOT cross-site links source. Phone rendering happens in nav.html drawer, not here. #}
 {% set hub_links = bijux.hub_links if bijux and bijux.hub_links else [] %}
 {% set active_repository = bijux.repository if bijux and bijux.repository else "" %}
 {% set nav_mode = bijux.nav_mode if bijux and bijux.nav_mode else "default" %}
@@ -34,23 +35,23 @@
     {% set active_root.item = nav_item %}
   {% endif %}
 {% endfor %}
-<header class="{{ class }}" data-md-component="header" data-bijux-nav-mode="{{ nav_mode }}" data-bijux-theme-key="{{ theme_key }}">
+<header class="{{ class }}" data-md-component="header" data-bijux-nav-mode="{{ nav_mode }}" data-bijux-theme-key="{{ theme_key }}" data-bijux-phone-nav="drawer" data-bijux-phone-compact="true">
   <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" data-bijux-header-control="drawer-toggle">
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
-    <div class="md-header__title" data-md-component="header-title">
+    <div class="md-header__title" data-md-component="header-title" data-bijux-header-title="primary">
       <div class="md-header__ellipsis">
-        <div class="md-header__topic">
+        <div class="md-header__topic" data-bijux-header-topic="site" data-bijux-phone-compact="keep">
           <span class="md-ellipsis">
             {{ config.site_name }}
           </span>
         </div>
-        <div class="md-header__topic" data-md-component="header-topic">
+        <div class="md-header__topic" data-md-component="header-topic" data-bijux-header-topic="page" data-bijux-phone-compact="hide">
           <span class="md-ellipsis">
             {% if page.meta and page.meta.title %}
               {{ page.meta.title }}
@@ -62,7 +63,8 @@
       </div>
     </div>
     {% if hub_links %}
-      <nav class="bijux-hub-strip" aria-label="Bijux sites">
+      {# Keep hub strip in header; responsive CSS controls visibility by viewport profile. #}
+      <nav class="bijux-hub-strip" aria-label="Bijux sites" data-bijux-row-scope="desktop-normal">
         <ul class="bijux-tabs__list bijux-tabs__list--hub">
           {% for entry in hub_links %}
             {% set item_class = "bijux-tabs__item" %}
@@ -101,7 +103,8 @@
       {% endif %}
     </div>
   </nav>
-  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-bijux-nav-row="site" data-md-component="tabs">
+  {# Header rows remain desktop/normal; phone navigation is owned by the drawer tree. #}
+  <nav class="md-tabs bijux-site-tabs" aria-label="{{ config.site_name }} navigation" data-bijux-nav-row="site" data-bijux-row-scope="desktop-normal" data-md-component="tabs">
     <div class="md-grid">
       <ul class="md-tabs__list bijux-tabs__list bijux-tabs__list--site">
         {% for nav_item in nav %}
@@ -148,11 +151,11 @@
     {% endif %}
     {% if detail_items and detail_items.list and (detail_items.list | length > 1 or show_detail_home) %}
       {% set is_hidden = "" if nav_item.active else "hidden" %}
-      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-nav-row="program" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
+      <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-nav-row="program" data-bijux-row-scope="desktop-normal" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
         <div class="md-grid">
-          <div class="bijux-detail-select-wrap">
+          <div class="bijux-detail-select-wrap" data-bijux-compact-control="normal-tablet">
             <label class="bijux-detail-select-label" for="bijux-detail-select-program-{{ loop.index }}">Section</label>
-            <select class="bijux-detail-select" id="bijux-detail-select-program-{{ loop.index }}" data-bijux-detail-select>
+            <select class="bijux-detail-select" id="bijux-detail-select-program-{{ loop.index }}" data-bijux-detail-select data-bijux-compact-control="normal-tablet">
               {% if show_detail_home %}
                 {% set option_selected = "selected" if nav_item.active and not detail_active.has_child_active else "" %}
                 <option value="{{ bijux_nav.first_page_url(nav_item) }}" data-bijux-detail-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ option_selected }}>
@@ -231,11 +234,11 @@
         {% if course_item.children and course_detail_items.list and (allow_flattened_detail_rows and course_detail_items.list | length > 1 or (not allow_flattened_detail_rows and course_detail_items.list | length > 0)) %}
           {% set course_active = course_item.active or (current_page and course_item.pages and current_page in course_item.pages) %}
           {% set is_hidden = "" if nav_item.active and course_active else "hidden" %}
-          <nav class="bijux-detail-tabs bijux-course-tabs" aria-label="{{ course_item.title }} course sections" data-bijux-nav-row="course" data-bijux-course-strip data-bijux-course-root-path="{{ bijux_nav.first_page_path(course_item) | trim }}" data-bijux-course-title="{{ course_item.title }}" {{ is_hidden }}>
+          <nav class="bijux-detail-tabs bijux-course-tabs" aria-label="{{ course_item.title }} course sections" data-bijux-nav-row="course" data-bijux-row-scope="desktop-normal" data-bijux-course-strip data-bijux-course-root-path="{{ bijux_nav.first_page_path(course_item) | trim }}" data-bijux-course-title="{{ course_item.title }}" {{ is_hidden }}>
             <div class="md-grid">
-              <div class="bijux-detail-select-wrap">
+              <div class="bijux-detail-select-wrap" data-bijux-compact-control="normal-tablet">
                 <label class="bijux-detail-select-label" for="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}">Section</label>
-                <select class="bijux-detail-select" id="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}" data-bijux-detail-select>
+                <select class="bijux-detail-select" id="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}" data-bijux-detail-select data-bijux-compact-control="normal-tablet">
                   {% if show_course_home %}
                     {% set option_selected = "selected" if course_active and not course_active_item.has_child_active else "" %}
                     <option value="{{ bijux_nav.first_page_url(course_item) }}" data-bijux-course-path="{{ bijux_nav.first_page_path(course_item) | trim }}" {{ option_selected }}>

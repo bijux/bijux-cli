@@ -88,61 +88,142 @@
   }
 }
 
-@media screen and (max-width: 76.2344em) {
+@media screen and (max-width: 47.9375em) {
+  [data-bijux-row-scope="desktop-normal"] {
+    display: none !important;
+  }
+
+  [data-bijux-phone-compact="true"] [data-bijux-header-title="primary"] {
+    min-width: 0;
+  }
+
+  [data-bijux-phone-compact="true"] [data-bijux-phone-compact="hide"] {
+    display: none;
+  }
+
+  .bijux-hub-strip {
+    display: none !important;
+  }
+
+  .bijux-site-tabs,
+  .bijux-detail-tabs,
+  .bijux-course-tabs {
+    display: none !important;
+  }
+
+  .md-header__inner {
+    gap: 0.35rem;
+    padding-block: 0.28rem;
+  }
+
+  .md-main__inner {
+    margin-top: 0.5rem;
+  }
+
+  .bijux-nav--mobile .md-nav__source {
+    display: none;
+  }
+
+  .md-sidebar--primary .bijux-nav--mobile {
+    display: block;
+  }
+
+  .bijux-mobile-hub,
+  .bijux-mobile-context {
+    display: block;
+  }
+
+  .md-sidebar--primary .bijux-nav--scoped {
+    display: none;
+  }
+
+  .md-sidebar--primary:has(.bijux-nav--mobile) {
+    display: block;
+  }
+
+  .md-sidebar--primary .bijux-nav--mobile[data-bijux-nav-empty="true"] {
+    display: block;
+  }
+}
+
+[data-bijux-viewport="phone"] .bijux-hub-strip,
+[data-bijux-viewport="phone"] .bijux-site-tabs,
+[data-bijux-viewport="phone"] .bijux-detail-tabs,
+[data-bijux-viewport="phone"] .bijux-course-tabs {
+  display: none !important;
+}
+
+[data-bijux-viewport="phone"] [data-bijux-row-scope="desktop-normal"] {
+  display: none !important;
+}
+
+[data-bijux-viewport="phone"] [data-bijux-phone-compact="hide"] {
+  display: none;
+}
+
+[data-bijux-viewport="phone"] .md-sidebar--primary .bijux-nav--mobile {
+  display: block;
+}
+
+[data-bijux-viewport="phone"] .md-sidebar--primary .bijux-nav--scoped {
+  display: none;
+}
+
+@media screen and (min-width: 48em) and (max-width: 76.2344em) {
+  [data-bijux-phone-compact="true"] .md-header__inner {
+    gap: 0.4rem;
+    padding-block: 0.32rem;
+  }
+
+  [data-bijux-phone-compact="true"] [data-bijux-header-title="primary"] {
+    min-width: 0;
+  }
+
+  .bijux-hub-strip {
+    display: none;
+  }
+
   .bijux-site-tabs,
   .bijux-detail-tabs {
     display: block;
   }
 
-  [data-bijux-viewport="phone"] .bijux-hub-strip {
-    display: none;
-  }
-
-  [data-bijux-viewport="phone"] .bijux-detail-tabs .bijux-tabs__list--detail {
-    display: none;
-  }
-
-  [data-bijux-viewport="phone"] .bijux-detail-select-wrap {
-    align-items: center;
-    display: grid;
-    gap: 0.35rem;
-    grid-template-columns: 1fr;
-    padding: 0.45rem 0;
-  }
-
   .bijux-site-tabs,
   .bijux-detail-tabs {
     backdrop-filter: blur(10px);
-  }
-
-  .bijux-hub-strip,
-  .bijux-site-tabs,
-  .bijux-detail-tabs {
     border-top-width: 0;
   }
 
-  .bijux-hub-strip {
-    background: linear-gradient(90deg, var(--bijux-hub-bg), var(--bijux-ribbon-bg-strong));
-    border-top: 1px solid var(--bijux-hub-border);
-    flex: 1 1 100%;
-    margin-inline: calc(var(--md-default-spacing) * -1);
-    padding-inline: var(--md-default-spacing);
+  .bijux-detail-select-wrap[data-bijux-compact-control="normal-tablet"] {
+    align-items: center;
+    display: grid;
+    gap: 0.32rem;
+    grid-template-columns: 1fr;
+    padding: 0.4rem 0;
   }
 
-  .bijux-hub-strip .bijux-tabs__list,
   .bijux-site-tabs .bijux-tabs__list,
   .bijux-detail-tabs .bijux-tabs__list {
     -webkit-overflow-scrolling: touch;
-    padding-block: 0.45rem;
+    padding-block: 0.4rem;
     scroll-padding-inline: var(--md-default-spacing);
   }
 
-  .bijux-hub-strip .bijux-tabs__link,
   .bijux-site-tabs .bijux-tabs__link,
   .bijux-detail-tabs .bijux-tabs__link {
-    font-size: 0.72rem;
-    min-height: 2.2rem;
-    padding: 0.38rem 0.7rem;
+    font-size: 0.7rem;
+    min-height: 2.1rem;
+    padding: 0.34rem 0.66rem;
+  }
+
+  .bijux-detail-select-wrap[data-bijux-compact-control="normal-tablet"] .bijux-detail-select {
+    font-size: 0.78rem;
+    min-height: 2.3rem;
+    padding: 0.42rem 0.68rem;
+  }
+
+  .md-main__inner {
+    margin-top: 0.62rem;
   }
 
   [data-md-component="header"][data-bijux-detail-visible="true"] .bijux-site-tabs .md-tabs__list.bijux-tabs__list--site {
@@ -303,7 +384,7 @@
   }
 
   .md-main__inner {
-    margin-top: 0.55rem;
+    margin-top: 0.45rem;
   }
 
   .md-content__inner {
