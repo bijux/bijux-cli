@@ -13,8 +13,13 @@
 
   function normalizePath(target) {
     const url = new URL(target, window.location.href);
-    const basePath = siteBasePath();
     let path = url.pathname.replace(/\/+$/, "");
+    return path || "/";
+  }
+
+  function normalizeCurrentPath(target) {
+    const basePath = siteBasePath();
+    let path = normalizePath(target);
     if (basePath && (path === basePath || path.startsWith(`${basePath}/`))) {
       path = path.slice(basePath.length) || "/";
     }
@@ -45,7 +50,7 @@
       return null;
     }
 
-    const currentPath = normalizePath(window.location.pathname);
+    const currentPath = normalizeCurrentPath(window.location.pathname);
     const matchedLink = bestMatchingLink(
       siteTabs,
       "data-bijux-site-path",
@@ -108,6 +113,7 @@
   shell.navState = {
     siteBasePath,
     normalizePath,
+    normalizeCurrentPath,
     bestMatchingLink,
     bestSitePath,
     syncSiteTabActiveState,

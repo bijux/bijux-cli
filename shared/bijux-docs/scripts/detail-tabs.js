@@ -36,7 +36,7 @@
       return;
     }
 
-    const currentPath = navState.normalizePath(window.location.pathname);
+    const currentPath = navState.normalizeCurrentPath(window.location.pathname);
     const strips = document.querySelectorAll("[data-bijux-detail-strip]:not([hidden])");
 
     for (const strip of strips) {
@@ -120,7 +120,7 @@
     const activeLink = navState.bestMatchingLink(
       activeStrip,
       "data-bijux-detail-path",
-      navState.normalizePath(window.location.pathname),
+      navState.normalizeCurrentPath(window.location.pathname),
       "a[data-bijux-detail-path]"
     );
     if (activeLink) {
@@ -145,7 +145,7 @@
       return;
     }
 
-    const currentPath = navState.normalizePath(window.location.pathname);
+    const currentPath = navState.normalizeCurrentPath(window.location.pathname);
     const activeProgramPath = activeDetailPath();
     for (const strip of document.querySelectorAll("[data-bijux-course-strip]")) {
       const rootPath = navState.normalizePath(
@@ -167,7 +167,7 @@
       return;
     }
 
-    const currentPath = navState.normalizePath(window.location.pathname);
+    const currentPath = navState.normalizeCurrentPath(window.location.pathname);
     const strips = document.querySelectorAll("[data-bijux-course-strip]:not([hidden])");
 
     for (const strip of strips) {

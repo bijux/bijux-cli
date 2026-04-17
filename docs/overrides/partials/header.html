@@ -131,9 +131,7 @@
         {% set child_is_index = child.is_index or child_src_uri.endswith('/index.md') or child_src_uri == 'index.md' %}
         {% set child_path = bijux_nav.first_page_path(child) | trim %}
         {% if allow_flattened_detail_rows %}
-          {% if child.children or child_is_index %}
-            {% set _ = detail_items.list.append(child) %}
-          {% endif %}
+          {% set _ = detail_items.list.append(child) %}
         {% elif child.children or (child_is_index and child_path != detail_root_path) %}
           {% set _ = detail_items.list.append(child) %}
         {% endif %}
@@ -214,9 +212,7 @@
             {% set child_is_index = child.is_index or child_src_uri.endswith('/index.md') or child_src_uri == 'index.md' %}
             {% set child_path = bijux_nav.first_page_path(child) | trim %}
             {% if allow_flattened_detail_rows %}
-              {% if child.children or child_is_index %}
-                {% set _ = course_detail_items.list.append(child) %}
-              {% endif %}
+              {% set _ = course_detail_items.list.append(child) %}
             {% elif child.children or (child_is_index and child_path != course_root_path) %}
               {% set _ = course_detail_items.list.append(child) %}
             {% endif %}
