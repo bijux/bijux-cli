@@ -263,8 +263,8 @@
 
 .bijux-nav__title {
   align-items: center;
-  gap: 0.6rem;
-  padding-block: 0.46rem;
+  gap: 0.34rem;
+  padding-block: 0.26rem;
 }
 
 .bijux-nav__title-text {
@@ -275,15 +275,15 @@
 }
 
 .bijux-nav__site-name {
-  font-size: 0.84rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.12;
 }
 
 .bijux-nav__section-name {
   color: var(--bijux-muted);
-  font-size: 0.66rem;
-  line-height: 1.15;
+  font-size: 0.58rem;
+  line-height: 1.04;
   letter-spacing: 0.01em;
 }
 
@@ -294,8 +294,8 @@
 .bijux-nav--mobile > .md-nav__list {
   display: flex;
   flex-direction: column;
-  gap: 0.48rem;
-  padding-top: 0.52rem;
+  gap: 0.34rem;
+  padding-top: 0.34rem;
 }
 
 .bijux-nav--mobile > .md-nav__list > .md-nav__item {
@@ -315,9 +315,9 @@
 
 .bijux-nav--mobile > .md-nav__list > .md-nav__item > .md-nav {
   border-inline-start: 1px solid var(--bijux-border);
-  margin-inline-start: 0.48rem;
-  margin-top: 0.28rem;
-  padding-inline-start: 0.52rem;
+  margin-inline-start: 0.2rem;
+  margin-top: 0.18rem;
+  padding-inline-start: 0.24rem;
 }
 
 .bijux-nav--mobile > .md-nav__list > .md-nav__item > .md-nav .md-nav__title {
@@ -335,7 +335,7 @@
 .bijux-nav--mobile .md-nav__link,
 .bijux-nav--mobile .md-nav__container > .md-nav__link,
 .bijux-nav--mobile .md-nav__title {
-  min-height: 2.7rem;
+  min-height: 2.58rem;
   padding-block: 0.56rem;
 }
 
@@ -349,10 +349,6 @@
 }
 
 .md-sidebar--primary [data-bijux-nav-empty="true"] {
-  display: none;
-}
-
-.md-sidebar--primary:has(.bijux-nav--scoped[data-bijux-nav-empty="true"]) {
   display: none;
 }
 
@@ -393,37 +389,210 @@
   font-weight: 700;
 }
 
+.bijux-mobile-local,
 .bijux-mobile-hub {
-  background: var(--bijux-panel);
-  border: 1px solid var(--bijux-border);
-  border-radius: 0.95rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-  margin-bottom: 0.75rem;
-  margin-top: 0.72rem;
-  padding: 0.66rem 0.7rem 0.74rem;
+  background:
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--bijux-panel) 24%, var(--md-default-bg-color)),
+      color-mix(in srgb, var(--md-default-bg-color) 95%, transparent)
+    );
+  border: 1px solid color-mix(in srgb, var(--bijux-border) 72%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  margin-block: 0.4rem;
+  padding: 0.52rem 0.54rem 0.56rem;
 }
 
-.bijux-nav--mobile [data-bijux-mobile-order="1-sites"] {
-  margin-bottom: 0.86rem;
+.bijux-nav--mobile [data-bijux-mobile-kind="sections"],
+.bijux-nav--mobile [data-bijux-mobile-kind="directories"] {
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 36%, var(--bijux-border));
 }
 
-.bijux-nav--mobile > .md-nav__list[data-bijux-mobile-order="2-tree"] {
-  margin-top: 0.02rem;
+.bijux-nav--mobile [data-bijux-mobile-kind="subdirectories"],
+.bijux-nav--mobile [data-bijux-mobile-kind="nested-directories"] {
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 22%, var(--bijux-border));
 }
 
+.bijux-nav--mobile [data-bijux-mobile-kind="pages"] {
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 28%, var(--bijux-border));
+}
+
+.bijux-nav--mobile [data-bijux-mobile-kind="sites"] {
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 44%, var(--bijux-border));
+}
+
+.bijux-mobile-local__label,
 .bijux-mobile-hub__label {
-  color: var(--bijux-muted);
-  font-size: 0.68rem;
+  align-items: center;
+  color: color-mix(in srgb, var(--bijux-muted) 76%, var(--bijux-ink));
+  display: inline-flex;
+  font-size: 0.62rem;
   font-weight: 800;
+  gap: 0.35rem;
   letter-spacing: 0.08em;
-  margin: 0 0 0.54rem;
+  margin: 0 0 0.34rem;
   text-transform: uppercase;
+}
+
+.bijux-mobile-local__label::before,
+.bijux-mobile-hub__label::before {
+  background: linear-gradient(180deg, var(--md-primary-fg-color), var(--md-accent-fg-color));
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 0.46rem;
+  opacity: 0.8;
+  width: 0.16rem;
+}
+
+.bijux-mobile-local > .md-nav__list {
+  display: grid;
+  gap: 0.32rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item {
+  margin: 0;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link {
+  background: color-mix(in srgb, var(--md-default-bg-color) 88%, var(--bijux-panel));
+  border: 1px solid color-mix(in srgb, var(--bijux-border) 76%, transparent);
+  border-radius: 0.78rem;
+  box-shadow: 0 3px 9px rgba(15, 23, 42, 0.045);
+  font-size: 0.76rem;
+  font-weight: 700;
+  min-height: 2.5rem;
+  overflow-wrap: anywhere;
+  padding: 0.46rem 0.76rem;
+  padding-inline-end: 0.88rem;
+  position: relative;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+  word-break: normal;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link::after,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link::after {
+  border-inline-end: 1.5px solid currentcolor;
+  border-top: 1.5px solid currentcolor;
+  content: "";
+  height: 0.38rem;
+  margin-inline-start: auto;
+  opacity: 0.38;
+  transform: rotate(45deg);
+  width: 0.38rem;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link:hover,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link:hover {
+  background: color-mix(in srgb, var(--md-default-bg-color) 74%, var(--bijux-panel-strong));
+  border-color: color-mix(in srgb, var(--bijux-border) 54%, var(--bijux-detail-border));
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link:focus-visible,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link:focus-visible {
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 72%, var(--md-accent-fg-color));
+  box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--bijux-focus-ring) 70%, transparent);
+  outline: none;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item--active > .md-nav__link,
+.bijux-mobile-local > .md-nav__list > .md-nav__item--active > .md-nav__container > .md-nav__link,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link[aria-current="page"] {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--bijux-detail-border) 46%, var(--md-default-bg-color)),
+      color-mix(in srgb, var(--bijux-panel) 78%, var(--md-default-bg-color))
+    );
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 72%, var(--md-accent-fg-color));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bijux-detail-border) 54%, transparent),
+    0 9px 18px rgba(15, 23, 42, 0.12);
+  color: var(--bijux-ink);
+  font-weight: 800;
+  transform: none;
+}
+
+.bijux-mobile-local > .md-nav__list > .md-nav__item--active > .md-nav__link::after,
+.bijux-mobile-local > .md-nav__list > .md-nav__item--active > .md-nav__container > .md-nav__link::after,
+.bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link[aria-current="page"]::after {
+  opacity: 0.84;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order="2-subdirectories"] > .md-nav__list > .md-nav__item > .md-nav__link,
+.bijux-nav--mobile [data-bijux-mobile-order="2-subdirectories"] > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link,
+.bijux-nav--mobile [data-bijux-mobile-order="3-third-level-directories"] > .md-nav__list > .md-nav__item > .md-nav__link,
+.bijux-nav--mobile [data-bijux-mobile-order="3-third-level-directories"] > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link {
+  font-size: 0.74rem;
+  min-height: 2.36rem;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order="4-pages"] > .md-nav__list > .md-nav__item > .md-nav__link,
+.bijux-nav--mobile [data-bijux-mobile-order="4-pages"] > .md-nav__list > .md-nav__item > .md-nav__container > .md-nav__link {
+  border-style: dashed;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order] + [data-bijux-mobile-order] {
+  margin-top: 0.38rem;
+  position: relative;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order] + [data-bijux-mobile-order]::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bijux-border) 14%, transparent),
+    color-mix(in srgb, var(--bijux-border) 78%, transparent) 16%,
+    color-mix(in srgb, var(--bijux-border) 78%, transparent) 84%,
+    color-mix(in srgb, var(--bijux-border) 14%, transparent)
+  );
+  border-radius: 999px;
+  content: "";
+  display: block;
+  height: 1px;
+  left: 0.28rem;
+  position: absolute;
+  right: 0.28rem;
+  top: -0.2rem;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order^="1-"] {
+  margin-top: 0.14rem;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order$="-sites"] {
+  margin-top: 0.5rem;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order] + [data-bijux-mobile-order$="-sites"] {
+  margin-top: 0.56rem;
+  padding-top: 0.44rem;
+}
+
+.bijux-nav--mobile [data-bijux-mobile-order$="-sites"]::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bijux-detail-border) 16%, transparent),
+    color-mix(in srgb, var(--bijux-detail-border) 52%, transparent) 18%,
+    color-mix(in srgb, var(--bijux-detail-border) 52%, transparent) 82%,
+    color-mix(in srgb, var(--bijux-detail-border) 16%, transparent)
+  );
 }
 
 .bijux-mobile-hub__list {
   display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 1fr;
+  gap: 0.42rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   list-style: none;
   margin: 0;
   padding: 0;
@@ -435,53 +604,96 @@
 
 .bijux-mobile-hub__link {
   align-items: center;
-  background: var(--bijux-panel);
-  border: 1px solid var(--bijux-border);
-  border-radius: 0.78rem;
+  background: color-mix(in srgb, var(--md-default-bg-color) 88%, var(--bijux-panel));
+  border: 1px solid color-mix(in srgb, var(--bijux-border) 74%, transparent);
+  border-radius: 0.72rem;
   color: var(--bijux-ink);
-  display: block;
-  font-size: 0.74rem;
+  display: flex;
+  font-size: 0.7rem;
   font-weight: 700;
-  line-height: 1.3;
-  min-height: 2.45rem;
-  padding: 0.56rem 0.78rem;
+  gap: 0.38rem;
+  line-height: 1.24;
+  min-height: 2.34rem;
+  overflow-wrap: anywhere;
+  padding: 0.36rem 0.54rem;
   text-decoration: none;
-  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
   width: 100%;
 }
 
+.bijux-mobile-hub__link::before {
+  background: color-mix(in srgb, var(--md-accent-fg-color) 72%, var(--bijux-detail-border));
+  border-radius: 50%;
+  content: "";
+  height: 0.34rem;
+  width: 0.34rem;
+}
+
+.bijux-mobile-hub__link::after {
+  border-inline-end: 1.5px solid currentcolor;
+  border-top: 1.5px solid currentcolor;
+  content: "";
+  height: 0.36rem;
+  margin-inline-start: auto;
+  opacity: 0.42;
+  transform: rotate(45deg);
+  width: 0.36rem;
+}
+
 .bijux-mobile-hub__link:hover {
-  background: color-mix(in srgb, var(--bijux-panel) 68%, rgba(13, 148, 136, 0.16));
-  border-color: color-mix(in srgb, var(--bijux-border) 58%, var(--bijux-detail-border));
+  background: color-mix(in srgb, var(--md-default-bg-color) 72%, var(--bijux-panel-strong));
+  border-color: color-mix(in srgb, var(--bijux-border) 56%, var(--bijux-detail-border));
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
 }
 
 .bijux-mobile-hub__link:focus-visible {
-  border-color: var(--bijux-detail-border);
-  box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--bijux-detail-border) 35%, transparent);
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 72%, var(--md-accent-fg-color));
+  box-shadow: 0 0 0 0.16rem color-mix(in srgb, var(--bijux-focus-ring) 70%, transparent);
   outline: none;
 }
 
 .bijux-mobile-hub__item--active .bijux-mobile-hub__link {
-  background: color-mix(in srgb, var(--bijux-detail-link-active-bg) 70%, var(--bijux-panel));
-  border-color: var(--bijux-detail-border);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bijux-detail-border) 70%, transparent);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--bijux-detail-border) 44%, var(--md-default-bg-color)),
+      color-mix(in srgb, var(--bijux-panel) 78%, var(--md-default-bg-color))
+    );
+  border-color: color-mix(in srgb, var(--bijux-detail-border) 74%, var(--md-accent-fg-color));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bijux-detail-border) 58%, transparent),
+    0 9px 18px rgba(15, 23, 42, 0.12);
   color: var(--bijux-ink);
   font-weight: 800;
 }
 
+.bijux-mobile-hub__item--active .bijux-mobile-hub__link::before {
+  background: linear-gradient(180deg, var(--md-primary-fg-color), var(--md-accent-fg-color));
+}
+
 .bijux-mobile-context {
-  background: var(--bijux-panel);
-  border: 1px solid var(--bijux-border);
-  border-radius: 0.95rem;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--bijux-panel) 20%, var(--md-default-bg-color)),
+      color-mix(in srgb, var(--md-default-bg-color) 95%, transparent)
+    );
+  border: 1px solid color-mix(in srgb, var(--bijux-border) 72%, transparent);
+  border-radius: 1rem;
   display: grid;
-  gap: 0.12rem;
+  gap: 0.16rem;
   margin-top: 0.66rem;
-  padding: 0.62rem 0.74rem;
+  padding: 0.66rem 0.72rem;
 }
 
 .bijux-mobile-context__label {
-  color: var(--bijux-muted);
-  font-size: 0.65rem;
+  color: color-mix(in srgb, var(--bijux-muted) 76%, var(--bijux-ink));
+  font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -491,6 +703,44 @@
   color: var(--bijux-ink);
   font-size: 0.82rem;
   line-height: 1.3;
+}
+
+@media screen and (max-width: 47.99em) {
+  .bijux-mobile-hub__list {
+    gap: 0.38rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bijux-nav--mobile {
+    padding-bottom: 0.58rem;
+    position: relative;
+  }
+
+  .bijux-nav--mobile::after {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--md-default-bg-color) 0%, transparent),
+      color-mix(in srgb, var(--md-default-bg-color) 88%, transparent)
+    );
+    content: "";
+    display: block;
+    inset-inline: 0;
+    height: 0.56rem;
+    position: absolute;
+    bottom: 0;
+    pointer-events: none;
+  }
+
+  .md-sidebar--primary .md-sidebar__inner {
+    scrollbar-color: color-mix(in srgb, var(--bijux-border) 76%, transparent) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@media screen and (max-width: 23.75em) {
+  .bijux-mobile-hub__list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media screen and (min-width: 76.25em) {

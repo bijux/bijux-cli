@@ -1,5 +1,6 @@
 (function () {
   const shell = (window.bijuxShell = window.bijuxShell || {});
+  let viewportRevealBound = false;
 
   function centerLinkInScrollableTabs(link) {
     if (!link) {
@@ -58,17 +59,36 @@
   }
 
   function runPhoneNavigationSync() {
+    bindViewportReveal();
     revealMobileDrawerContext();
   }
 
-  function revealMobileDrawerContext() {
-    const viewportMode =
+  function resolveViewportMode() {
+    if (window.bijuxViewportProfile && typeof window.bijuxViewportProfile.current === "function") {
+      return window.bijuxViewportProfile.current();
+    }
+
+    const fallbackWidth =
+      window.visualViewport && typeof window.visualViewport.width === "number"
+        ? window.visualViewport.width
+        : window.innerWidth;
+
+    if (
       window.bijuxViewportProfile &&
-      typeof window.bijuxViewportProfile.current === "function"
-        ? window.bijuxViewportProfile.current()
-        : window.matchMedia("(max-width: 76.2344em)").matches
-          ? "phone"
-          : "normal";
+      typeof window.bijuxViewportProfile.classifyWidth === "function"
+    ) {
+      return window.bijuxViewportProfile.classifyWidth(fallbackWidth);
+    }
+
+    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 47.9375em)").matches) {
+      return "phone";
+    }
+
+    return "normal";
+  }
+
+  function revealMobileDrawerContext() {
+    const viewportMode = resolveViewportMode();
 
     if (viewportMode !== "phone") {
       return;
@@ -88,6 +108,7 @@
   }
 
   function bindMobileDrawerReveal() {
+    bindViewportReveal();
     const drawerToggle = document.querySelector("#__drawer");
     if (!drawerToggle || drawerToggle.dataset.bijuxRevealBound === "true") {
       return;
@@ -105,6 +126,16 @@
     });
   }
 
+  function bindViewportReveal() {
+    if (viewportRevealBound) {
+      return;
+    }
+    viewportRevealBound = true;
+    window.addEventListener("bijux:viewport-change", () => {
+      revealMobileDrawerContext();
+    });
+  }
+
   shell.navReveal = {
     revealActiveNavigationTarget,
     revealAfterLayoutSettles,
@@ -112,5 +143,6 @@
     runPhoneNavigationSync,
     revealMobileDrawerContext,
     bindMobileDrawerReveal,
+    bindViewportReveal,
   };
 })();
