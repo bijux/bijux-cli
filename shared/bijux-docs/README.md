@@ -13,5 +13,6 @@ Consumption model:
 3. Generated mirrors are synchronized into:
    - `docs/overrides/partials/*`
    - `docs/assets/styles/*`
+   - `docs/assets/javascripts/mermaid-init.js`
    - `docs/assets/javascripts/shell/*`
    - `docs/assets/javascripts/navigation-sync.js`

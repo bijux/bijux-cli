@@ -93,6 +93,32 @@ verify_dir_against_manifests() {
   echo "✔ ${dir_rel} matches bijux-std (${remote_expected})"
 }
 
+verify_canonical_mermaid_init() {
+  local shared_mermaid_path="${repo_root}/shared/bijux-docs/scripts/mermaid-init.js"
+  local docs_mermaid_path="${repo_root}/docs/assets/javascripts/mermaid-init.js"
+
+  if [[ ! -f "${shared_mermaid_path}" ]]; then
+    echo "ERROR: missing canonical Mermaid initializer ${shared_mermaid_path}" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "${docs_mermaid_path}" ]]; then
+    echo "ERROR: missing docs Mermaid initializer ${docs_mermaid_path}" >&2
+    echo "Hint: copy ${shared_mermaid_path} to ${docs_mermaid_path}" >&2
+    exit 1
+  fi
+
+  if ! cmp -s "${shared_mermaid_path}" "${docs_mermaid_path}"; then
+    echo "ERROR: docs Mermaid initializer drift" >&2
+    echo "Expected source: ${shared_mermaid_path}" >&2
+    echo "Drifted target: ${docs_mermaid_path}" >&2
+    echo "Hint: synchronize docs/assets/javascripts/mermaid-init.js from shared/bijux-docs/scripts/mermaid-init.js" >&2
+    exit 1
+  fi
+
+  echo "✔ Mermaid initializer matches shared canonical source"
+}
+
 tmp_dir="$(mktemp -d)"
 tmp_manifest="${tmp_dir}/manifest.txt"
 cleanup() {
@@ -126,5 +152,7 @@ fi
 while IFS= read -r dir_rel; do
   verify_dir_against_manifests "${dir_rel}" "${tmp_manifest}"
 done < <(read_directories)
+
+verify_canonical_mermaid_init
 
 echo "✔ bijux-std check passed (ref=${std_ref}, manifest=${manifest_rel}, remote=${git_url_default})"
