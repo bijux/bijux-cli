@@ -145,12 +145,19 @@
       return;
     }
 
+    const currentPath = navState.normalizePath(window.location.pathname);
     const activeProgramPath = activeDetailPath();
     for (const strip of document.querySelectorAll("[data-bijux-course-strip]")) {
       const rootPath = navState.normalizePath(
         strip.getAttribute("data-bijux-course-root-path") || "/"
       );
-      strip.hidden = rootPath !== activeProgramPath;
+      const activeCourseLink = navState.bestMatchingLink(
+        strip,
+        "data-bijux-course-path",
+        currentPath,
+        "a[data-bijux-course-path]"
+      );
+      strip.hidden = rootPath !== activeProgramPath && !activeCourseLink;
     }
   }
 
