@@ -122,22 +122,45 @@
   </nav>
   {% for nav_item in nav %}
     {% if nav_item.children %}
+      {% set promoted_home_wrapper = not allow_flattened_detail_rows and nav_item.children | length == 1 and nav_item.children[0].title == "Home" and nav_item.children[0].children %}
+      {% set detail_source = nav_item.children[0].children if promoted_home_wrapper else nav_item.children %}
+      {% set detail_root_path = bijux_nav.first_page_path(nav_item.children[0]) | trim if promoted_home_wrapper else bijux_nav.first_page_path(nav_item) | trim %}
       {% set detail_items = namespace(list=[]) %}
-      {% for child in nav_item.children %}
+      {% for child in detail_source %}
         {% set child_src_uri = child.file.src_uri if child.file else "" %}
         {% set child_is_index = child.is_index or child_src_uri.endswith('/index.md') or child_src_uri == 'index.md' %}
-        {% if allow_flattened_detail_rows or child.children or child_is_index %}
+        {% set child_path = bijux_nav.first_page_path(child) | trim %}
+        {% if allow_flattened_detail_rows %}
+          {% if child.children or child_is_index %}
+            {% set _ = detail_items.list.append(child) %}
+          {% endif %}
+        {% elif child.children or (child_is_index and child_path != detail_root_path) %}
           {% set _ = detail_items.list.append(child) %}
         {% endif %}
       {% endfor %}
     {% endif %}
-    {% if detail_items and detail_items.list and detail_items.list | length > 1 %}
+    {% set show_detail_home = not allow_flattened_detail_rows and detail_items and detail_items.list %}
+    {% set detail_active = namespace(has_child_active=false) %}
+    {% if detail_items and detail_items.list %}
+      {% for child in detail_items.list %}
+        {% if child.active %}
+          {% set detail_active.has_child_active = true %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if detail_items and detail_items.list and (detail_items.list | length > 1 or show_detail_home) %}
       {% set is_hidden = "" if nav_item.active else "hidden" %}
       <nav class="bijux-detail-tabs" aria-label="{{ nav_item.title }} sections" data-bijux-nav-row="program" data-bijux-detail-strip data-bijux-detail-root-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ is_hidden }}>
         <div class="md-grid">
           <div class="bijux-detail-select-wrap">
             <label class="bijux-detail-select-label" for="bijux-detail-select-program-{{ loop.index }}">Section</label>
             <select class="bijux-detail-select" id="bijux-detail-select-program-{{ loop.index }}" data-bijux-detail-select>
+              {% if show_detail_home %}
+                {% set option_selected = "selected" if nav_item.active and not detail_active.has_child_active else "" %}
+                <option value="{{ bijux_nav.first_page_url(nav_item) }}" data-bijux-detail-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ option_selected }}>
+                  Home
+                </option>
+              {% endif %}
               {% for child in detail_items.list %}
                 {% set option_selected = "" %}
                 {% if child.active %}
@@ -150,6 +173,17 @@
             </select>
           </div>
           <ul class="bijux-tabs__list bijux-tabs__list--detail">
+            {% if show_detail_home %}
+              {% set item_class = "bijux-tabs__item" %}
+              {% set current = "" %}
+              {% if nav_item.active and not detail_active.has_child_active %}
+                {% set item_class = item_class ~ " bijux-tabs__item--active" %}
+                {% set current = 'aria-current="page"' %}
+              {% endif %}
+              <li class="{{ item_class }}">
+                <a href="{{ bijux_nav.first_page_url(nav_item) }}" class="bijux-tabs__link bijux-tabs__link--detail" data-bijux-detail-path="{{ bijux_nav.first_page_path(nav_item) | trim }}" {{ current }}>Home</a>
+              </li>
+            {% endif %}
             {% for child in detail_items.list %}
               {% set item_class = "bijux-tabs__item" %}
               {% set current = "" %}
@@ -168,29 +202,53 @@
   {% endfor %}
   {% for nav_item in nav %}
     {% if nav_item.children %}
+      {% set promoted_home_wrapper = not allow_flattened_detail_rows and nav_item.children | length == 1 and nav_item.children[0].title == "Home" and nav_item.children[0].children %}
+      {% set detail_source = nav_item.children[0].children if promoted_home_wrapper else nav_item.children %}
       {% set program_index = loop.index %}
-      {% for course_item in nav_item.children %}
+      {% for course_item in detail_source %}
+        {% set course_detail_items = namespace(list=[]) %}
         {% if course_item.children %}
-          {% set course_detail_items = namespace(list=[]) %}
+          {% set course_root_path = bijux_nav.first_page_path(course_item) | trim %}
           {% for child in course_item.children %}
             {% set child_src_uri = child.file.src_uri if child.file else "" %}
             {% set child_is_index = child.is_index or child_src_uri.endswith('/index.md') or child_src_uri == 'index.md' %}
-            {% if allow_flattened_detail_rows or child.children or child_is_index %}
+            {% set child_path = bijux_nav.first_page_path(child) | trim %}
+            {% if allow_flattened_detail_rows %}
+              {% if child.children or child_is_index %}
+                {% set _ = course_detail_items.list.append(child) %}
+              {% endif %}
+            {% elif child.children or (child_is_index and child_path != course_root_path) %}
               {% set _ = course_detail_items.list.append(child) %}
             {% endif %}
           {% endfor %}
         {% endif %}
-        {% if course_item.children and course_detail_items.list and course_detail_items.list | length > 1 %}
-          {% set course_active = course_item.active %}
+        {% set show_course_home = not allow_flattened_detail_rows and course_detail_items.list %}
+        {% set course_active_item = namespace(has_child_active=false) %}
+        {% if course_detail_items.list %}
+          {% for child in course_detail_items.list %}
+            {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
+            {% if child_active %}
+              {% set course_active_item.has_child_active = true %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        {% if course_item.children and course_detail_items.list and (allow_flattened_detail_rows and course_detail_items.list | length > 1 or (not allow_flattened_detail_rows and course_detail_items.list | length > 0)) %}
+          {% set course_active = course_item.active or (current_page and course_item.pages and current_page in course_item.pages) %}
           {% set is_hidden = "" if nav_item.active and course_active else "hidden" %}
           <nav class="bijux-detail-tabs bijux-course-tabs" aria-label="{{ course_item.title }} course sections" data-bijux-nav-row="course" data-bijux-course-strip data-bijux-course-root-path="{{ bijux_nav.first_page_path(course_item) | trim }}" data-bijux-course-title="{{ course_item.title }}" {{ is_hidden }}>
             <div class="md-grid">
               <div class="bijux-detail-select-wrap">
                 <label class="bijux-detail-select-label" for="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}">Section</label>
                 <select class="bijux-detail-select" id="bijux-detail-select-course-{{ program_index }}-{{ loop.index }}" data-bijux-detail-select>
+                  {% if show_course_home %}
+                    {% set option_selected = "selected" if course_active and not course_active_item.has_child_active else "" %}
+                    <option value="{{ bijux_nav.first_page_url(course_item) }}" data-bijux-course-path="{{ bijux_nav.first_page_path(course_item) | trim }}" {{ option_selected }}>
+                      Home
+                    </option>
+                  {% endif %}
                   {% for child in course_detail_items.list %}
                     {% set option_selected = "" %}
-                    {% set child_active = child.active %}
+                    {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
                     {% if course_active and child_active %}
                       {% set option_selected = "selected" %}
                     {% endif %}
@@ -201,10 +259,21 @@
                 </select>
               </div>
               <ul class="bijux-tabs__list bijux-tabs__list--detail bijux-tabs__list--course">
+                {% if show_course_home %}
+                  {% set item_class = "bijux-tabs__item" %}
+                  {% set current = "" %}
+                  {% if course_active and not course_active_item.has_child_active %}
+                    {% set item_class = item_class ~ " bijux-tabs__item--active" %}
+                    {% set current = 'aria-current="page"' %}
+                  {% endif %}
+                  <li class="{{ item_class }}">
+                    <a href="{{ bijux_nav.first_page_url(course_item) }}" class="bijux-tabs__link bijux-tabs__link--detail bijux-tabs__link--course" data-bijux-course-path="{{ bijux_nav.first_page_path(course_item) | trim }}" {{ current }}>Home</a>
+                  </li>
+                {% endif %}
                 {% for child in course_detail_items.list %}
                   {% set item_class = "bijux-tabs__item" %}
                   {% set current = "" %}
-                  {% set child_active = child.active %}
+                  {% set child_active = child.active or (current_page and child.pages and current_page in child.pages) %}
                   {% if course_active and child_active %}
                     {% set item_class = item_class ~ " bijux-tabs__item--active" %}
                     {% set current = 'aria-current="page"' %}
