@@ -32,7 +32,7 @@ Generated badge sections always render in this order:
 Link policy for GHCR badges is fixed here as part of the contract:
 
 - the repository-wide GHCR summary badge links to
-  `https://github.com/bijux?tab=packages`
+  `https://github.com/bijux?tab=packages&repo_name=bijux-core`
 - per-package GHCR badges link to the package-specific
   `https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli`
   page
@@ -46,7 +46,7 @@ Link policy for GHCR badges is fixed here as part of the contract:
 [![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
 [![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
-[![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20package-181717?logo=github)](https://github.com/bijux?tab=packages)
+[![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20package-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
 [![Published packages](https://img.shields.io/badge/published%20packages-{{ public_package_count }}-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
 <!-- bijux-core-badges:repository-summary:end -->
 
