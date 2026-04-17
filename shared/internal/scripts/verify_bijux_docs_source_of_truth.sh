@@ -123,23 +123,40 @@ if [[ ! -f "${local_manifest}" ]]; then
   exit 1
 fi
 
-verify_shared_manifest_entry "${local_manifest}" "shared/bijux-docs" "local repository"
-verify_shared_manifest_entry "${local_manifest}" "shared/bijux-makes-py" "local repository"
-verify_shared_manifest_entry "${local_manifest}" "shared/bijux-checks" "local repository"
+local_dirs=(
+  "shared/bijux-docs"
+  "shared/bijux-makes-py"
+  "shared/bijux-checks"
+  "shared/internal"
+)
+
+if [[ -d "${repo_root}/shared/bijux-gh-py" ]]; then
+  local_dirs+=("shared/bijux-gh-py")
+fi
+
+for dir_rel in "${local_dirs[@]}"; do
+  verify_shared_manifest_entry "${local_manifest}" "${dir_rel}" "local repository"
+done
 
 workspace_root="$(cd "${repo_root}/.." && pwd)"
 std_root="${BIJUX_STD_ROOT:-${workspace_root}/bijux-std}"
 std_manifest="${std_root}/shared/shared-dir-sha256.txt"
 
 if [[ -f "${std_manifest}" ]]; then
-  if ! cmp -s "${local_manifest}" "${std_manifest}"; then
-    echo "ERROR: shared SHA manifest drift vs bijux-std" >&2
-    echo "Local: ${local_manifest}" >&2
-    echo "Std:   ${std_manifest}" >&2
-    exit 1
-  fi
+  for dir_rel in "${local_dirs[@]}"; do
+    local_manifest_sha="$(manifest_sha_for_dir "${local_manifest}" "${dir_rel}")"
+    std_manifest_sha="$(manifest_sha_for_dir "${std_manifest}" "${dir_rel}")"
+    if [[ -z "${std_manifest_sha}" ]]; then
+      echo "ERROR: bijux-std manifest missing ${dir_rel}" >&2
+      exit 1
+    fi
+    if [[ "${local_manifest_sha}" != "${std_manifest_sha}" ]]; then
+      echo "ERROR: manifest entry drift for ${dir_rel}" >&2
+      echo "Local manifest SHA: ${local_manifest_sha}" >&2
+      echo "Std manifest SHA:   ${std_manifest_sha}" >&2
+      exit 1
+    fi
 
-  for dir_rel in shared/bijux-docs shared/bijux-makes-py shared/bijux-checks; do
     local_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
     std_sha="$(directory_tree_sha256 "${std_root}/${dir_rel}")"
     if [[ "${local_sha}" != "${std_sha}" ]]; then
