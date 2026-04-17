@@ -119,6 +119,42 @@ verify_canonical_mermaid_init() {
   echo "✔ Mermaid initializer matches shared canonical source"
 }
 
+verify_homepage_sidebar_collapse_contract() {
+  local responsive_css_path="${repo_root}/shared/bijux-docs/styles/08-responsive.css"
+
+  if [[ ! -f "${responsive_css_path}" ]]; then
+    echo "ERROR: missing responsive stylesheet ${responsive_css_path}" >&2
+    exit 1
+  fi
+
+  if ! grep -qF '[data-bijux-viewport="normal"] .md-main__inner:has(.md-sidebar--primary .bijux-nav--scoped[data-bijux-nav-empty="true"])' "${responsive_css_path}"; then
+    echo "ERROR: missing homepage/sidebar collapse selector for normal viewport" >&2
+    exit 1
+  fi
+
+  if ! grep -qF '[data-bijux-viewport="desktop"] .md-main__inner:has(.md-sidebar--primary .bijux-nav--scoped[data-bijux-nav-empty="true"])' "${responsive_css_path}"; then
+    echo "ERROR: missing homepage/sidebar collapse selector for desktop viewport" >&2
+    exit 1
+  fi
+
+  if ! grep -qF '[data-bijux-viewport="wide"] .md-main__inner:has(.md-sidebar--primary .bijux-nav--scoped[data-bijux-nav-empty="true"])' "${responsive_css_path}"; then
+    echo "ERROR: missing homepage/sidebar collapse selector for wide viewport" >&2
+    exit 1
+  fi
+
+  if ! grep -qF 'grid-template-columns: minmax(0, 1fr);' "${responsive_css_path}"; then
+    echo "ERROR: homepage/sidebar collapse contract missing single-column layout rule" >&2
+    exit 1
+  fi
+
+  if ! grep -qF 'max-width: 100%;' "${responsive_css_path}"; then
+    echo "ERROR: homepage/sidebar collapse contract missing full-width content rule" >&2
+    exit 1
+  fi
+
+  echo "✔ Homepage scoped-nav-empty sidebar collapse contract is enforced"
+}
+
 tmp_dir="$(mktemp -d)"
 tmp_manifest="${tmp_dir}/manifest.txt"
 cleanup() {
@@ -154,5 +190,6 @@ while IFS= read -r dir_rel; do
 done < <(read_directories)
 
 verify_canonical_mermaid_init
+verify_homepage_sidebar_collapse_contract
 
 echo "✔ bijux-std check passed (ref=${std_ref}, manifest=${manifest_rel}, remote=${git_url_default})"
