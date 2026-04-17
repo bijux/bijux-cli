@@ -222,17 +222,27 @@
     margin-bottom: 0.26rem;
   }
 
+  .bijux-mobile-dynamic__header {
+    column-gap: 0.34rem;
+    grid-template-columns: 1.72rem 1fr 1.72rem;
+  }
+
+  .bijux-mobile-dynamic__control {
+    height: 1.48rem;
+    width: 1.48rem;
+  }
+
   .bijux-mobile-hub__list {
-    display: grid;
-    gap: 0.36rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: block;
+    gap: 0;
+    grid-template-columns: 1fr;
   }
 
   .bijux-mobile-hub__link {
-    border-radius: 0.68rem;
-    font-size: 0.7rem;
+    border-radius: 0;
+    font-size: 0.74rem;
     min-height: 2.24rem;
-    padding: 0.34rem 0.5rem;
+    padding: 0.34rem 0.1rem 0.34rem 0;
   }
 
   .bijux-mobile-hub__item--active .bijux-mobile-hub__link {
@@ -252,7 +262,7 @@
   }
 
   .bijux-nav--mobile [data-bijux-mobile-order$="-sites"] .bijux-mobile-hub__list {
-    gap: 0.34rem;
+    gap: 0;
   }
 
   .bijux-mobile-local > .md-nav__list > .md-nav__item > .md-nav__link,

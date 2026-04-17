@@ -52,17 +52,13 @@
     {% set scoped.visible = false %}
   {% endif %}
 {% endif %}
-{% if is_bijux_hub_site %}
-  {% set scoped.visible = false %}
-{% endif %}
 {% set bijux_expand_scoped_groups = false %}
 {% if scoped.visible and current_page and current_page.title == "Overview" %}
   {% set bijux_expand_scoped_groups = true %}
 {% endif %}
 {% import "partials/nav-item.html" as item with context %}
 {% import "partials/bijux-nav.html" as bijux_nav with context %}
-{% set hub_mobile_titles = ["Home", "Platform", "Projects", "Learning"] %}
-{% set mobile_sites_order = "3-sites" if is_bijux_hub_site else "5-sites" %}
+{% set mobile_sites_order = "5-sites" %}
 {% macro nav_entry_url(entry) -%}
   {% if entry %}
     {% set resolved = bijux_nav.first_page_url(entry) | trim %}
@@ -114,6 +110,23 @@
     </section>
   {% endif %}
 {%- endmacro %}
+{% macro mobile_tree_node(entry) -%}
+  {% if entry %}
+    {% set node_path = nav_entry_path(entry) | trim %}
+    {% set node_url = nav_entry_url(entry) | trim %}
+    {% if node_path and node_url %}
+      <li class="bijux-mobile-tree__node" data-bijux-node-path="{{ node_path }}" data-bijux-node-url="{{ node_url }}" data-bijux-node-title="{{ entry.title | e }}">
+        {% if entry.children and entry.children | length > 0 %}
+          <ul class="bijux-mobile-tree__children">
+            {% for child in entry.children %}
+              {{ mobile_tree_node(child) }}
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </li>
+    {% endif %}
+  {% endif %}
+{%- endmacro %}
 {% set mobile_sites_block %}
   {% if hub_links %}
     <section class="bijux-mobile-hub" aria-label="Bijux sites" data-bijux-mobile-order="{{ mobile_sites_order }}" data-bijux-mobile-kind="sites">
@@ -138,7 +151,7 @@
 {# Phone drawer model contract:
    - Hub: Sections -> Pages -> Sites
    - Project repos: Directories rows -> Pages fallback -> Sites #}
-<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-bijux-mobile-tree-mode="{{ 'hub-simplified' if is_bijux_hub_site else 'default' }}" data-bijux-hub-site="{{ 'true' if is_bijux_hub_site else 'false' }}" data-md-level="0">
+<nav class="{{ class }} bijux-nav bijux-nav--mobile" aria-label="{{ lang.t('nav') }}" data-bijux-nav-variant="mobile" data-bijux-mobile-tree-mode="default" data-bijux-hub-site="{{ 'true' if is_bijux_hub_site else 'false' }}" data-md-level="0">
   <label class="md-nav__title bijux-nav__title" for="__drawer">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
@@ -155,44 +168,27 @@
       {% include "partials/source.html" %}
     </div>
   {% endif %}
-  {% if is_bijux_hub_site %}
-    {% set hub_sections = namespace(list=[]) %}
-    {% for section_title in hub_mobile_titles %}
-      {% set section = namespace(item=None) %}
+  <section class="bijux-mobile-local bijux-mobile-dynamic" aria-label="Navigation" data-bijux-mobile-order="1-navigation" data-bijux-mobile-kind="navigation" data-bijux-mobile-dynamic hidden>
+    <div class="bijux-mobile-dynamic__header">
+      <button class="bijux-mobile-dynamic__control" type="button" data-bijux-mobile-nav-back aria-label="Go back in navigation" title="Go back" disabled>
+        <span aria-hidden="true">←</span>
+      </button>
+      <div class="bijux-mobile-local__label bijux-mobile-dynamic__label" data-bijux-mobile-nav-title>Navigation</div>
+      <button class="bijux-mobile-dynamic__control" type="button" data-bijux-mobile-nav-forward aria-label="Go forward in navigation" title="Go forward" disabled>
+        <span aria-hidden="true">→</span>
+      </button>
+    </div>
+    <ul class="md-nav__list" data-bijux-mobile-dynamic-list data-md-scrollfix></ul>
+  </section>
+  <nav class="bijux-mobile-tree-source" data-bijux-mobile-tree-source aria-hidden="true" hidden>
+    <ul class="bijux-mobile-tree__list">
       {% for nav_item in nav %}
-        {% if section.item is none and nav_item.title | lower == section_title | lower %}
-          {% set section.item = nav_item %}
-        {% endif %}
+        {{ mobile_tree_node(nav_item) }}
       {% endfor %}
-      {% if section.item %}
-        {% set _ = hub_sections.list.append(section.item) %}
-      {% endif %}
-    {% endfor %}
-    {% set active_hub_section = namespace(item=hub_sections.list[0] if hub_sections.list else none) %}
-    {% for section_item in hub_sections.list %}
-      {% if section_item.active %}
-        {% set active_hub_section.item = section_item %}
-      {% endif %}
-    {% endfor %}
-    {% set hub_section_pages = namespace(list=[]) %}
-    {% if active_hub_section.item and active_hub_section.item.children %}
-      {% set active_hub_path = nav_entry_path(active_hub_section.item) | trim %}
-      {% set hub_first_child = active_hub_section.item.children[0] if active_hub_section.item.children else none %}
-      {% set hub_first_path = nav_entry_path(hub_first_child) | trim %}
-      {% set flatten_hub_wrapper = hub_first_child and hub_first_child.children and hub_first_path == active_hub_path %}
-      {% set hub_child_source = hub_first_child.children if flatten_hub_wrapper else active_hub_section.item.children %}
-      {% for child in hub_child_source %}
-        {% set child_path = nav_entry_path(child) | trim %}
-        {% if child_path != active_hub_path %}
-          {% set _ = hub_section_pages.list.append(child) %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-    {{ mobile_row("Sections", hub_sections.list, "1-sections", true, "sections") }}
-    {{ mobile_row("Pages", hub_section_pages.list, "2-pages", true, "pages") }}
-    {{ mobile_sites_block }}
-  {% else %}
-    {% set top_directories = namespace(list=[]) %}
+    </ul>
+  </nav>
+  <div data-bijux-mobile-static>
+  {% set top_directories = namespace(list=[]) %}
     {% set top_level_pages = namespace(list=[]) %}
     {% for nav_item in nav %}
       {% set nav_path = (nav_item.url | trim("/")) if nav_item.url else "" %}
@@ -370,19 +366,6 @@
         {% endif %}
       {% endfor %}
     {% endif %}
-    {% set toc_row_items = namespace(list=[]) %}
-    {% if page and page.toc %}
-      {% set toc_items = page.toc %}
-      {% set toc_first = toc_items | first %}
-      {% if toc_first and toc_first.level == 1 %}
-        {% set toc_items = toc_first.children %}
-      {% endif %}
-      {% for toc_item in toc_items %}
-        {% if toc_item and toc_item.url %}
-          {% set _ = toc_row_items.list.append({'title': toc_item.title, 'url': toc_item.url}) %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
     {% set page_row_items = namespace(list=[]) %}
     {% if third_level_dirs.list | length == 0 and fourth_level_pages.list | length > 0 %}
       {% set page_row_items.list = fourth_level_pages.list %}
@@ -399,15 +382,13 @@
     {{ mobile_row(first_local_label, first_local_items, first_local_row_key, true, "directories" if top_directories.list | length > 0 else "pages") }}
     {{ mobile_row("Subdirectories", second_level_dirs.list, "2-subdirectories", true, "subdirectories") }}
     {{ mobile_row("Nested Directories", third_level_dirs.list, "3-third-level-directories", true, "nested-directories") }}
-    {{ mobile_row("On This Page", toc_row_items.list, "4-page-sections", true, "pages") }}
     {% if first_local_row_key != "1-top-pages" %}
       {{ mobile_row("Pages", page_row_items.list, "4-pages", true, "pages") }}
     {% endif %}
-    {{ mobile_sites_block }}
-  {% endif %}
+  </div>
+  {{ mobile_sites_block }}
 </nav>
 {% set bijux_primary_section_nav = true %}
-{% if not is_bijux_hub_site %}
 <nav class="{{ class }} bijux-nav bijux-nav--scoped" aria-label="{{ lang.t('nav') }}" data-bijux-nav-empty="{{ 'false' if scoped.visible else 'true' }}" data-bijux-nav-variant="scoped" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
@@ -429,4 +410,3 @@
     {% endif %}
   </ul>
 </nav>
-{% endif %}
