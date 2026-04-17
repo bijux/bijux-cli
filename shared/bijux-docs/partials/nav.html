@@ -370,6 +370,19 @@
         {% endif %}
       {% endfor %}
     {% endif %}
+    {% set toc_row_items = namespace(list=[]) %}
+    {% if page and page.toc %}
+      {% set toc_items = page.toc %}
+      {% set toc_first = toc_items | first %}
+      {% if toc_first and toc_first.level == 1 %}
+        {% set toc_items = toc_first.children %}
+      {% endif %}
+      {% for toc_item in toc_items %}
+        {% if toc_item and toc_item.url %}
+          {% set _ = toc_row_items.list.append({'title': toc_item.title, 'url': toc_item.url}) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
     {% set page_row_items = namespace(list=[]) %}
     {% if third_level_dirs.list | length == 0 and fourth_level_pages.list | length > 0 %}
       {% set page_row_items.list = fourth_level_pages.list %}
@@ -386,7 +399,10 @@
     {{ mobile_row(first_local_label, first_local_items, first_local_row_key, true, "directories" if top_directories.list | length > 0 else "pages") }}
     {{ mobile_row("Subdirectories", second_level_dirs.list, "2-subdirectories", true, "subdirectories") }}
     {{ mobile_row("Nested Directories", third_level_dirs.list, "3-third-level-directories", true, "nested-directories") }}
-    {{ mobile_row("Pages", page_row_items.list, "4-pages", true, "pages") }}
+    {{ mobile_row("On This Page", toc_row_items.list, "4-page-sections", true, "pages") }}
+    {% if first_local_row_key != "1-top-pages" %}
+      {{ mobile_row("Pages", page_row_items.list, "4-pages", true, "pages") }}
+    {% endif %}
     {{ mobile_sites_block }}
   {% endif %}
 </nav>
