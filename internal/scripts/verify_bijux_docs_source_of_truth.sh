@@ -102,6 +102,7 @@ for script in bootstrap.js detail-tabs.js nav-reveal.js nav-state.js theme-persi
   compare_required "shared/bijux-docs/scripts/${script}" "docs/assets/javascripts/shell/${script}"
 done
 compare_required "shared/bijux-docs/scripts/nav-sync.js" "docs/assets/javascripts/navigation-sync.js"
+compare_required "shared/bijux-docs/scripts/mermaid-init.js" "docs/assets/javascripts/mermaid-init.js"
 
 # root must stay source-only
 assert_absent "assets"

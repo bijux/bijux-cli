@@ -19,6 +19,7 @@ for required in \
   "${shared_root}/partials/nav-item.html" \
   "${shared_root}/partials/bijux-nav.html" \
   "${shared_root}/styles/extra.css" \
+  "${shared_root}/scripts/mermaid-init.js" \
   "${shared_root}/scripts/nav-sync.js"; do
   if [[ ! -f "${required}" ]]; then
     echo "ERROR: missing shared bijux docs file ${required}" >&2
@@ -42,5 +43,6 @@ for script in bootstrap.js detail-tabs.js nav-reveal.js nav-state.js theme-persi
   sync_file "${shared_root}/scripts/${script}" "${repo_root}/docs/assets/javascripts/shell/${script}"
 done
 sync_file "${shared_root}/scripts/nav-sync.js" "${repo_root}/docs/assets/javascripts/navigation-sync.js"
+sync_file "${shared_root}/scripts/mermaid-init.js" "${repo_root}/docs/assets/javascripts/mermaid-init.js"
 
 echo "Bijux docs synchronized: shared -> docs"
