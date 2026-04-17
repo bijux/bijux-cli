@@ -7,7 +7,7 @@ MKDOCS_BIN       = $(shell test -x "$(MKDOCS_BIN_CAND)" && printf "%s" "$(MKDOCS
 DOCS_PYTHON_BIN_CAND ?= $(ACT)/python
 DOCS_PYTHON_BIN      = $(shell test -x "$(DOCS_PYTHON_BIN_CAND)" && printf "%s" "$(DOCS_PYTHON_BIN_CAND)" || command -v python3 || command -v python)
 MKDOCS_CFG       ?= mkdocs.yml
-DOCS_REQUIREMENTS ?= requirements-docs.txt
+DOCS_REQUIREMENTS ?= configs/docs/requirements-docs.txt
 
 # Keep documentation build outputs and caches under `artifacts/`.
 DOCS_SITE_DIR    ?= artifacts/docs/site
