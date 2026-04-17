@@ -127,7 +127,7 @@ local_dirs=(
   "shared/bijux-docs"
   "shared/bijux-makes-py"
   "shared/bijux-checks"
-  "shared/internal"
+  "shared/bijux-docs-tooling"
 )
 
 if [[ -d "${repo_root}/shared/bijux-gh-py" ]]; then

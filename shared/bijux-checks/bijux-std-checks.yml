@@ -4,7 +4,7 @@ directories:
   - shared/bijux-docs
   - shared/bijux-makes-py
   - shared/bijux-checks
-  - shared/internal
+  - shared/bijux-docs-tooling
 remote:
   repo_url: https://github.com/bijux/bijux-std
   git_url: https://github.com/bijux/bijux-std.git
