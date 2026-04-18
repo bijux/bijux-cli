@@ -7,6 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+## Unreleased
+
+### Changed
+- Scoped the repository GHCR summary badge links to the `bijux-core` packages page in the badge source-of-truth and generated docs/README surfaces.
+- Added repository Dependabot configuration for `github-actions`, workspace `cargo`, and Python dependency roots used by docs and the `bijux-cli-python` crate.
+
+### Fixed
+- Synchronized shared docs partial source-of-truth and SHA manifest entries so docs contract checks no longer fail on partial drift.
+
 ---
 
 <!-- towncrier start -->
