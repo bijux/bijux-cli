@@ -5,16 +5,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: deploy-docs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-deploy:
-    name: Build and deploy documentation
+  build:
+    name: Build docs site
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     env:
       ENABLE_SOCIAL_CARDS: "true"
       RUST_TOOLCHAIN_VERSION: "1.85.0"
@@ -54,8 +57,22 @@ jobs:
       - name: Run documentation checks
         run: make docs-check
 
-      - name: Configure the Git author
-        run: make gh-docs-configure-git
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
 
-      - name: Deploy documentation
-        run: make docs-deploy
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v3.0.1
+        with:
+          path: artifacts/docs/site
+
+  deploy:
+    name: Deploy docs site
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
