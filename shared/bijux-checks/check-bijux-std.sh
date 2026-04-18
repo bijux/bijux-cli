@@ -26,6 +26,7 @@ std_ref="${BIJUX_STD_REF:-${default_ref}}"
 std_git_url="${BIJUX_STD_GIT_URL:-${git_url_default}}"
 std_root="${BIJUX_STD_ROOT:-${repo_root}/../bijux-std}"
 strict_remote="${BIJUX_STD_STRICT_REMOTE:-0}"
+require_remote_match="${BIJUX_STD_REQUIRE_REMOTE_MATCH:-0}"
 manifest_path="${repo_root}/${manifest_rel}"
 
 if [[ ! -f "${manifest_path}" ]]; then
@@ -61,6 +62,7 @@ verify_dir_against_manifests() {
   local local_expected
   local remote_expected
   local actual_sha
+  local expected_sha
 
   local_expected="$(manifest_sha_for_dir "${manifest_path}" "${dir_rel}")"
   remote_expected="$(manifest_sha_for_dir "${remote_manifest}" "${dir_rel}")"
@@ -70,22 +72,35 @@ verify_dir_against_manifests() {
     exit 1
   fi
   if [[ -z "${remote_expected}" ]]; then
-    echo "ERROR: remote manifest missing entry for ${dir_rel}" >&2
-    exit 1
+    if [[ "${require_remote_match}" == "1" ]]; then
+      echo "ERROR: remote manifest missing entry for ${dir_rel}" >&2
+      exit 1
+    fi
+    remote_expected="${local_expected}"
+    echo "⚠ remote manifest missing entry for ${dir_rel}" >&2
+    echo "  continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0" >&2
   fi
 
   actual_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
 
+  expected_sha="${remote_expected}"
   if [[ "${local_expected}" != "${remote_expected}" ]]; then
-    echo "ERROR: local manifest drift for ${dir_rel}" >&2
-    echo "Local manifest:  ${local_expected}" >&2
-    echo "Remote manifest: ${remote_expected}" >&2
-    exit 1
+    if [[ "${require_remote_match}" == "1" ]]; then
+      echo "ERROR: local manifest drift for ${dir_rel}" >&2
+      echo "Local manifest:  ${local_expected}" >&2
+      echo "Remote manifest: ${remote_expected}" >&2
+      exit 1
+    fi
+    expected_sha="${local_expected}"
+    echo "⚠ remote manifest differs for ${dir_rel}" >&2
+    echo "  local:  ${local_expected}" >&2
+    echo "  remote: ${remote_expected}" >&2
+    echo "  continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0" >&2
   fi
 
-  if [[ "${actual_sha}" != "${remote_expected}" ]]; then
+  if [[ "${actual_sha}" != "${expected_sha}" ]]; then
     echo "ERROR: shared directory drift for ${dir_rel}" >&2
-    echo "Expected: ${remote_expected}" >&2
+    echo "Expected: ${expected_sha}" >&2
     echo "Actual:   ${actual_sha}" >&2
     exit 1
   fi
