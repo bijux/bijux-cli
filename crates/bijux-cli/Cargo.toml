@@ -24,7 +24,7 @@ path = "src/bin/bijux.rs"
 [dependencies]
 anyhow.workspace = true
 futures = "0.3.31"
-clap = { version = "4.5.51", features = ["std"] }
+clap = { version = "4.6.1", features = ["std"] }
 schemars = { version = "0.8.22", features = ["derive"] }
 semver = { version = "1.0.27", default-features = false, features = ["std"] }
 serde.workspace = true
