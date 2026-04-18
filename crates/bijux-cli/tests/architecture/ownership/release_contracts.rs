@@ -99,6 +99,8 @@ fn github_workflows_pin_external_actions_to_commits() {
     for path in [
         ".github/workflows/ci.yml",
         ".github/workflows/deploy-docs.yml",
+        ".github/workflows/build-release-artifacts.yml",
+        ".github/workflows/release-artifacts.yml",
         ".github/workflows/release-github.yml",
         ".github/workflows/release-ghcr.yml",
         ".github/workflows/release-crates.yml",
@@ -153,6 +155,8 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
         "BIJUX_RELEASE_PLAN_COMMAND=make gh-release-plan-github",
         "BIJUX_RELEASE_WAIT_FOR_CI_COMMAND=make gh-release-wait-for-ci",
         "BIJUX_RELEASE_PREPARE_COMMAND=.github/scripts/prepare_release_github.sh",
+        "BIJUX_RELEASE_ENABLED=true",
+        "BIJUX_RELEASE_ARTIFACTS_ENABLED=false",
         "BIJUX_RELEASE_SETUP_PYTHON=true",
         "BIJUX_RELEASE_SETUP_RUST=true",
         "BIJUX_GHCR_RELEASE_ENABLED=true",

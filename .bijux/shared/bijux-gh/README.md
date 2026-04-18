@@ -4,6 +4,8 @@ Canonical source-of-truth for Python-first Bijux repositories:
 
 - `.github/automation-identity.md`
 - `.github/workflows/deploy-docs.yml`
+- `.github/workflows/build-release-artifacts.yml`
+- `.github/workflows/release-artifacts.yml`
 - `.github/workflows/release-crates.yml`
 - `.github/workflows/release-ghcr.yml`
 - `.github/workflows/release-github.yml`
@@ -110,6 +112,33 @@ Supported keys:
 - `BIJUX_GHCR_RELEASE_ARTIFACT_TYPE`
 - `BIJUX_GHCR_RELEASE_ARCHIVE_MEDIA_TYPE`
 - `BIJUX_GHCR_RELEASE_ORAS_VERSION`
+
+## `release-artifacts.yml` configuration contract
+
+The shared release orchestrator workflow can run artifact build plus GHCR,
+PyPI artifact-mode, and GitHub Release publication as one coordinated lane.
+
+Configuration sources (highest precedence first):
+
+1. `workflow_call` / `workflow_dispatch` inputs
+2. `.github/release.env`
+3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
+4. built-in defaults
+
+Supported keys:
+
+- `BIJUX_RELEASE_ARTIFACTS_ENABLED` (`true|false`)
+- `BIJUX_RELEASE_ARTIFACTS_RELEASE_TAG`
+- `BIJUX_RELEASE_ARTIFACTS_BUILD_MATRIX_JSON` (JSON array)
+- `BIJUX_RELEASE_ARTIFACTS_PYPI_MATRIX_JSON` (JSON array)
+- `BIJUX_RELEASE_ARTIFACTS_GHCR_MATRIX_JSON` (JSON array)
+- `BIJUX_RELEASE_ARTIFACTS_RUN_PYPI` (`true|false`, default `true`)
+- `BIJUX_RELEASE_ARTIFACTS_RUN_GHCR` (`true|false`, default `true`)
+- `BIJUX_RELEASE_ARTIFACTS_RUN_GITHUB` (`true|false`, default `true`)
+- `BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATTERN` (default `*-release`)
+- `BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATH` (default `.github/tmp/release-assets`)
+- `BIJUX_RELEASE_ARTIFACTS_RELEASE_FILES_GLOB` (default `.github/tmp/release-assets/**/*`)
+- `BIJUX_RELEASE_ARTIFACTS_FAIL_ON_UNMATCHED_FILES` (`true|false`, default `true`)
 
 ## Workflow Naming Convention
 

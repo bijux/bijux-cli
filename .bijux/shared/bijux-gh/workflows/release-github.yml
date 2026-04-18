@@ -10,12 +10,20 @@ on:
         description: "Tag to publish (defaults to current tag on tag pushes)"
         required: false
         type: string
+      enabled:
+        description: "Enable GitHub release publication for this run"
+        required: false
+        type: boolean
   workflow_call:
     inputs:
       release_tag:
         required: false
         type: string
         default: ""
+      enabled:
+        required: false
+        type: boolean
+        default: true
       artifact_pattern:
         required: false
         type: string
@@ -154,6 +162,7 @@ jobs:
           fi
 
           release_tag="$(from_values "${{ inputs.release_tag || github.event.inputs.release_tag || '' }}" "${BIJUX_RELEASE_TAG:-}" "$default_tag")"
+          enabled="$(bool_from_values "${{ inputs.enabled }}" "${BIJUX_RELEASE_ENABLED:-}" "true")"
           release_name="$(from_values "${{ inputs.release_name || '' }}" "${BIJUX_RELEASE_NAME:-}" "")"
           artifact_pattern="$(from_values "${{ inputs.artifact_pattern || '' }}" "${BIJUX_RELEASE_ARTIFACT_PATTERN:-}" "")"
           artifact_path="$(from_values "${{ inputs.artifact_path || '' }}" "${BIJUX_RELEASE_ARTIFACT_PATH:-}" ".github/tmp/release-assets")"
@@ -181,6 +190,7 @@ jobs:
 
           {
             echo "release_tag=${release_tag}"
+            echo "enabled=${enabled}"
             echo "release_name=${release_name}"
             echo "artifact_pattern=${artifact_pattern}"
             echo "artifact_path=${artifact_path}"
@@ -248,6 +258,9 @@ jobs:
           publish="${{ steps.plan.outputs.publish || '' }}"
           if [[ -z "${publish}" ]]; then
             publish="true"
+          fi
+          if [[ "${{ steps.config.outputs.enabled }}" != "true" ]]; then
+            publish="false"
           fi
 
           release_tag="${{ steps.plan.outputs.tag || '' }}"
