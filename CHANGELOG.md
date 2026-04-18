@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
   `docs/badges.md`, generated docs surfaces, and README outputs.
 - Continued synchronization of shared docs shell and standards inputs from
   `bijux-std`, including shared checks/tooling layout updates.
+- Repository bookkeeping now treats the shared standards baseline as
+  `bijux-std v0.1.0` after tag reset.
 - Recorded contributor and automation identity boundaries in governance docs.
 
 ### Fixed
