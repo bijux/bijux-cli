@@ -1,0 +1,3 @@
+artifacts/github-release/*.whl
+artifacts/github-release/*.tar.gz
+artifacts/github-release/sha256sums.txt

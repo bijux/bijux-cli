@@ -121,6 +121,7 @@ fn github_workflows_pin_external_actions_to_commits() {
         }
         assert!(
             content.contains("toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}")
+                || content.contains("toolchain: ${{ steps.config.outputs.rust_toolchain }}")
                 || !content.contains("dtolnay/rust-toolchain@"),
             "{path} must set the pinned Rust toolchain input when using dtolnay/rust-toolchain"
         );
@@ -130,19 +131,57 @@ fn github_workflows_pin_external_actions_to_commits() {
 #[test]
 fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tree() {
     let workflow = read_repo_file(".github/workflows/release-github.yml");
+    let release_env = read_repo_file(".github/release-github.env");
+    let release_files = read_repo_file(".github/release-github.files");
+    let prepare_script = read_repo_file(".github/scripts/prepare_release_github.sh");
     for required in [
         "softprops/action-gh-release@",
-        "make gh-release-plan-github",
-        "make gh-release-wait-for-ci",
+        "source \".github/release-github.env\"",
+        "eval \"${{ steps.config.outputs.plan_command }}\"",
+        "eval \"${{ steps.config.outputs.wait_for_ci_command }}\"",
+        "eval \"${{ steps.config.outputs.prepare_command }}\"",
+        "gh run download",
+        "release_files_manifest",
+    ] {
+        assert!(
+            workflow.contains(required),
+            "release-github.yml must keep reusable release workflow guardrails: {required}"
+        );
+    }
+    for required in [
+        "BIJUX_RELEASE_PLAN_COMMAND=make gh-release-plan-github",
+        "BIJUX_RELEASE_WAIT_FOR_CI_COMMAND=make gh-release-wait-for-ci",
+        "BIJUX_RELEASE_PREPARE_COMMAND=.github/scripts/prepare_release_github.sh",
+        "BIJUX_RELEASE_SETUP_PYTHON=true",
+        "BIJUX_RELEASE_SETUP_RUST=true",
+    ] {
+        assert!(
+            release_env.contains(required),
+            ".github/release-github.env must keep core release guardrails: {required}"
+        );
+    }
+    for required in [
+        "artifacts/github-release/*.whl",
+        "artifacts/github-release/*.tar.gz",
+        "artifacts/github-release/sha256sums.txt",
+    ] {
+        assert!(
+            release_files.contains(required),
+            ".github/release-github.files must keep required release uploads: {required}"
+        );
+    }
+    for required in [
+        "python3 .github/scripts/prepare_release_tree.py",
         "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
-        "PyO3/maturin-action@",
+        "maturin build",
         "--compatibility pypi",
+        "oras push",
         "sha256sums.txt",
         "Repository releases mirror the stamped tag artifacts for this version.",
     ] {
         assert!(
-            workflow.contains(required),
-            "release-github.yml must keep GitHub Release guardrails and attached artifacts: {required}"
+            prepare_script.contains(required),
+            ".github/scripts/prepare_release_github.sh must keep GitHub Release asset guardrails: {required}"
         );
     }
 }
