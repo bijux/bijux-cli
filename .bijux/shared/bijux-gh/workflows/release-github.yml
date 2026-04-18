@@ -1,0 +1,135 @@
+name: release-github
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag to publish (defaults to current tag on tag pushes)"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+        default: ""
+      artifact_pattern:
+        required: false
+        type: string
+        default: ""
+      artifact_path:
+        required: false
+        type: string
+        default: ".github/tmp/release-assets"
+      release_files_glob:
+        required: false
+        type: string
+        default: ""
+      delete_existing_release:
+        required: false
+        type: boolean
+        default: true
+      fail_on_unmatched_files:
+        required: false
+        type: boolean
+        default: false
+      generate_release_notes:
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-github-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: github-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            resolved_tag="${GITHUB_REF_NAME}"
+          else
+            resolved_tag="${{ inputs.release_tag || github.event.inputs.release_tag || '' }}"
+          fi
+
+          if [[ -z "${resolved_tag}" ]]; then
+            echo "release tag is required for workflow_dispatch and workflow_call when ref is not a tag" >&2
+            exit 1
+          fi
+
+          artifact_pattern="${{ inputs.artifact_pattern || '' }}"
+          artifact_path="${{ inputs.artifact_path || '.github/tmp/release-assets' }}"
+          release_files_glob="${{ inputs.release_files_glob || '' }}"
+          delete_existing_release="${{ inputs.delete_existing_release }}"
+          fail_on_unmatched_files="${{ inputs.fail_on_unmatched_files }}"
+          generate_release_notes="${{ inputs.generate_release_notes }}"
+
+          {
+            echo "release_tag=${resolved_tag}"
+            echo "artifact_pattern=${artifact_pattern}"
+            echo "artifact_path=${artifact_path}"
+            echo "release_files_glob=${release_files_glob}"
+            echo "delete_existing_release=${delete_existing_release}"
+            echo "fail_on_unmatched_files=${fail_on_unmatched_files}"
+            echo "generate_release_notes=${generate_release_notes}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download staged release assets
+        if: ${{ steps.config.outputs.artifact_pattern != '' }}
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ${{ steps.config.outputs.artifact_pattern }}
+          path: ${{ steps.config.outputs.artifact_path }}
+          merge-multiple: true
+
+      - name: Reset existing GitHub release
+        if: ${{ steps.config.outputs.delete_existing_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${{ steps.config.outputs.release_tag }}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release delete "${{ steps.config.outputs.release_tag }}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --yes
+          else
+            echo "No existing GitHub release for ${{ steps.config.outputs.release_tag }}; creating a fresh release."
+          fi
+
+      - name: Publish GitHub release with staged files
+        if: ${{ steps.config.outputs.release_files_glob != '' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.config.outputs.release_tag }}
+          files: ${{ steps.config.outputs.release_files_glob }}
+          overwrite_files: true
+          fail_on_unmatched_files: ${{ steps.config.outputs.fail_on_unmatched_files == 'true' }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}
+
+      - name: Publish GitHub release without assets
+        if: ${{ steps.config.outputs.release_files_glob == '' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.config.outputs.release_tag }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}
