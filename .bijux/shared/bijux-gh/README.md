@@ -5,6 +5,7 @@ Canonical source-of-truth for Python-first Bijux repositories:
 - `.github/automation-identity.md`
 - `.github/workflows/deploy-docs.yml`
 - `.github/workflows/release-crates.yml`
+- `.github/workflows/release-ghcr.yml`
 - `.github/workflows/release-github.yml`
 - `.github/workflows/release-pypi.yml`
 - `.github/required-status-checks.md`
@@ -82,6 +83,30 @@ Supported keys:
 - `BIJUX_CRATES_RELEASE_PUBLISH_COMMAND`
 - `BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING` (`true|false`)
 - `BIJUX_CRATES_RELEASE_PACKAGES`
+
+## `release-ghcr.yml` configuration contract
+
+The shared GHCR workflow publishes release bundles to GitHub Container
+Registry from staged release artifacts.
+
+Configuration sources (highest precedence first):
+
+1. `workflow_call` / `workflow_dispatch` inputs
+2. `.github/release-ghcr.env`
+3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
+4. built-in defaults
+
+Supported keys:
+
+- `BIJUX_GHCR_RELEASE_ENABLED` (`true|false`)
+- `BIJUX_GHCR_RELEASE_TAG`
+- `BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON` (JSON array)
+- `BIJUX_GHCR_RELEASE_ARTIFACT_SUFFIX` (default `-release`)
+- `BIJUX_GHCR_RELEASE_PACKAGE_REF_PREFIX` (default `ghcr.io/<owner>/<repo>`)
+- `BIJUX_GHCR_RELEASE_PUSH_LATEST` (`true|false`, default `true`)
+- `BIJUX_GHCR_RELEASE_ARTIFACT_TYPE`
+- `BIJUX_GHCR_RELEASE_ARCHIVE_MEDIA_TYPE`
+- `BIJUX_GHCR_RELEASE_ORAS_VERSION`
 
 ## Workflow Naming Convention
 
