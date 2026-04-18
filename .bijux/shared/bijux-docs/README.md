@@ -8,7 +8,7 @@ Ownership:
 - `scripts/`: shell runtime state and navigation behavior.
 
 Consumption model:
-1. Edit files in `shared/bijux-docs/*` only.
+1. Edit files in `.bijux/shared/bijux-docs/*` only.
 2. Run `make bijux-docs-sync`.
 3. Generated mirrors are synchronized into:
    - `docs/overrides/partials/*`

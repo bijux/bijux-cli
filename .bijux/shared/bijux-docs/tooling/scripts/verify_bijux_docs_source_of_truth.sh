@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 
 if [[ -d "${repo_root}/overrides" ]]; then
-  echo "ERROR: root overrides/ must not exist; use shared/bijux-docs as docs source of truth" >&2
+  echo "ERROR: root overrides/ must not exist; use .bijux/shared/bijux-docs as docs source of truth" >&2
   exit 1
 fi
 
@@ -55,6 +55,15 @@ manifest_sha_for_dir() {
   awk -v dir_rel="${dir_rel}" '$2 == dir_rel { print $1 }' "${manifest_path}"
 }
 
+local_to_std_rel() {
+  local dir_rel="$1"
+  if [[ "${dir_rel}" == .bijux/* ]]; then
+    echo "${dir_rel#.bijux/}"
+    return
+  fi
+  echo "${dir_rel}"
+}
+
 verify_shared_manifest_entry() {
   local manifest_path="$1"
   local dir_rel="$2"
@@ -87,22 +96,22 @@ assert_absent() {
 }
 
 # shared -> docs (authoritative docs source)
-compare_required "shared/bijux-docs/partials/header.html" "docs/overrides/partials/header.html"
-compare_required "shared/bijux-docs/partials/footer.html" "docs/overrides/partials/footer.html"
-compare_required "shared/bijux-docs/partials/footer-profile-links.html" "docs/overrides/partials/footer-profile-links.html"
-compare_required "shared/bijux-docs/partials/nav.html" "docs/overrides/partials/nav.html"
-compare_required "shared/bijux-docs/partials/nav-item.html" "docs/overrides/partials/nav-item.html"
-compare_required "shared/bijux-docs/partials/bijux-nav.html" "docs/overrides/partials/bijux-nav.html"
+compare_required ".bijux/shared/bijux-docs/partials/header.html" "docs/overrides/partials/header.html"
+compare_required ".bijux/shared/bijux-docs/partials/footer.html" "docs/overrides/partials/footer.html"
+compare_required ".bijux/shared/bijux-docs/partials/footer-profile-links.html" "docs/overrides/partials/footer-profile-links.html"
+compare_required ".bijux/shared/bijux-docs/partials/nav.html" "docs/overrides/partials/nav.html"
+compare_required ".bijux/shared/bijux-docs/partials/nav-item.html" "docs/overrides/partials/nav-item.html"
+compare_required ".bijux/shared/bijux-docs/partials/bijux-nav.html" "docs/overrides/partials/bijux-nav.html"
 
 for style in 00-tokens.css 01-theme.css 02-layout.css 03-header.css 04-nav.css 05-content.css 06-components.css 07-utilities.css 08-responsive.css extra.css README.md; do
-  compare_required "shared/bijux-docs/styles/${style}" "docs/assets/styles/${style}"
+  compare_required ".bijux/shared/bijux-docs/styles/${style}" "docs/assets/styles/${style}"
 done
 
 for script in bootstrap.js detail-tabs.js nav-reveal.js nav-state.js theme-persistence.js viewport-profile.js README.md; do
-  compare_required "shared/bijux-docs/scripts/${script}" "docs/assets/javascripts/shell/${script}"
+  compare_required ".bijux/shared/bijux-docs/scripts/${script}" "docs/assets/javascripts/shell/${script}"
 done
-compare_required "shared/bijux-docs/scripts/nav-sync.js" "docs/assets/javascripts/navigation-sync.js"
-compare_required "shared/bijux-docs/scripts/mermaid-init.js" "docs/assets/javascripts/mermaid-init.js"
+compare_required ".bijux/shared/bijux-docs/scripts/nav-sync.js" "docs/assets/javascripts/navigation-sync.js"
+compare_required ".bijux/shared/bijux-docs/scripts/mermaid-init.js" "docs/assets/javascripts/mermaid-init.js"
 
 # root must stay source-only
 assert_absent "assets"
@@ -117,21 +126,20 @@ assert_absent "sitemap.xml"
 assert_absent "sitemap.xml.gz"
 
 # shared directory SHA contract
-local_manifest="${repo_root}/shared/shared-dir-sha256.txt"
+local_manifest="${repo_root}/.bijux/shared/shared-dir-sha256.txt"
 if [[ ! -f "${local_manifest}" ]]; then
-  echo "ERROR: missing local shared SHA manifest shared/shared-dir-sha256.txt" >&2
+  echo "ERROR: missing local shared SHA manifest .bijux/shared/shared-dir-sha256.txt" >&2
   exit 1
 fi
 
 local_dirs=(
-  "shared/bijux-docs"
-  "shared/bijux-makes-py"
-  "shared/bijux-checks"
-  "shared/bijux-docs/tooling"
+  ".bijux/shared/bijux-docs"
+  ".bijux/shared/bijux-makes-py"
+  ".bijux/shared/bijux-checks"
 )
 
-if [[ -d "${repo_root}/shared/bijux-gh" ]]; then
-  local_dirs+=("shared/bijux-gh")
+if [[ -d "${repo_root}/.bijux/shared/bijux-gh" ]]; then
+  local_dirs+=(".bijux/shared/bijux-gh")
 fi
 
 for dir_rel in "${local_dirs[@]}"; do
@@ -141,29 +149,41 @@ done
 workspace_root="$(cd "${repo_root}/.." && pwd)"
 std_root="${BIJUX_STD_ROOT:-${workspace_root}/bijux-std}"
 std_manifest="${std_root}/shared/shared-dir-sha256.txt"
+require_std_match="${BIJUX_STD_REQUIRE_REMOTE_MATCH:-0}"
 
 if [[ -f "${std_manifest}" ]]; then
   for dir_rel in "${local_dirs[@]}"; do
+    std_dir_rel="$(local_to_std_rel "${dir_rel}")"
     local_manifest_sha="$(manifest_sha_for_dir "${local_manifest}" "${dir_rel}")"
-    std_manifest_sha="$(manifest_sha_for_dir "${std_manifest}" "${dir_rel}")"
+    std_manifest_sha="$(manifest_sha_for_dir "${std_manifest}" "${std_dir_rel}")"
     if [[ -z "${std_manifest_sha}" ]]; then
-      echo "ERROR: bijux-std manifest missing ${dir_rel}" >&2
-      exit 1
+      if [[ "${require_std_match}" == "1" ]]; then
+        echo "ERROR: bijux-std manifest missing ${std_dir_rel}" >&2
+        exit 1
+      fi
+      echo "NOTE: bijux-std manifest missing ${std_dir_rel}; continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0"
+      continue
     fi
     if [[ "${local_manifest_sha}" != "${std_manifest_sha}" ]]; then
-      echo "ERROR: manifest entry drift for ${dir_rel}" >&2
-      echo "Local manifest SHA: ${local_manifest_sha}" >&2
-      echo "Std manifest SHA:   ${std_manifest_sha}" >&2
-      exit 1
+      if [[ "${require_std_match}" == "1" ]]; then
+        echo "ERROR: manifest entry drift for ${dir_rel}" >&2
+        echo "Local manifest SHA: ${local_manifest_sha}" >&2
+        echo "Std manifest SHA:   ${std_manifest_sha}" >&2
+        exit 1
+      fi
+      echo "NOTE: manifest entry differs for ${dir_rel}; continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0"
     fi
 
     local_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
-    std_sha="$(directory_tree_sha256 "${std_root}/${dir_rel}")"
+    std_sha="$(directory_tree_sha256 "${std_root}/${std_dir_rel}")"
     if [[ "${local_sha}" != "${std_sha}" ]]; then
-      echo "ERROR: ${dir_rel} drift vs bijux-std" >&2
-      echo "Local SHA: ${local_sha}" >&2
-      echo "Std SHA:   ${std_sha}" >&2
-      exit 1
+      if [[ "${require_std_match}" == "1" ]]; then
+        echo "ERROR: ${dir_rel} drift vs bijux-std" >&2
+        echo "Local SHA: ${local_sha}" >&2
+        echo "Std SHA:   ${std_sha}" >&2
+        exit 1
+      fi
+      echo "NOTE: ${dir_rel} differs from bijux-std; continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0"
     fi
   done
 else

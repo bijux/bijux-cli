@@ -1,7 +1,7 @@
 # Shared Bijux standard source-of-truth checks and updates.
 
-BIJUX_STD_CHECK_SCRIPT ?= shared/bijux-checks/check-bijux-std.sh
-BIJUX_STD_UPDATE_SCRIPT ?= shared/bijux-checks/update-bijux-std.sh
+BIJUX_STD_CHECK_SCRIPT ?= .bijux/shared/bijux-checks/check-bijux-std.sh
+BIJUX_STD_UPDATE_SCRIPT ?= .bijux/shared/bijux-checks/update-bijux-std.sh
 BIJUX_STD_REF ?= main
 BIJUX_STD_REMOTE ?= https://raw.githubusercontent.com/bijux/bijux-std
 BIJUX_STD_GIT_URL ?= https://github.com/bijux/bijux-std.git

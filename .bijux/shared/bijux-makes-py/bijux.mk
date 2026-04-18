@@ -1,8 +1,8 @@
 BIJUX_PY_WORKSPACE_DIR ?= $(abspath $(PROJECT_DIR)/..)
 BIJUX_PY_REPOS ?= bijux-canon bijux-proteomics bijux-pollenomics
-BIJUX_PY_SYSTEM_REL ?= shared/bijux-makes-py
+BIJUX_PY_SYSTEM_REL ?= .bijux/shared/bijux-makes-py
 BIJUX_PY_LOCAL_REL ?= makes/bijux-py
-BIJUX_STANDARD_SHARED_DIR ?= shared/bijux-gh
+BIJUX_STANDARD_SHARED_DIR ?= .bijux/shared/bijux-gh
 BIJUX_STANDARD_DEPENDABOT_RENDER ?= scripts/render-dependabot.sh
 BIJUX_STANDARD_REQUIRED_FILES ?= \
 	required-status-checks.md \

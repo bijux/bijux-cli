@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-shared_root="${repo_root}/shared/bijux-docs"
+shared_root="${repo_root}/.bijux/shared/bijux-docs"
 
 sync_file() {
   local src="$1"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-config_path="${BIJUX_STD_CONFIG:-${repo_root}/shared/bijux-checks/bijux-std-checks.yml}"
+config_path="${BIJUX_STD_CONFIG:-${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml}"
 
 if [[ ! -f "${config_path}" ]]; then
   echo "ERROR: missing config ${config_path}" >&2
@@ -19,6 +19,7 @@ read_directories() {
 }
 
 manifest_rel="$(read_scalar manifest)"
+remote_manifest_rel="$(read_scalar '  remote_manifest')"
 git_url_default="$(read_scalar '  git_url')"
 default_ref="$(read_scalar '  default_ref')"
 tag_pattern_default="$(read_scalar '  tag_pattern')"
@@ -29,6 +30,19 @@ std_ref="${BIJUX_STD_REF:-${default_ref}}"
 tag_pattern="${BIJUX_STD_TAG_PATTERN:-${tag_pattern_default}}"
 allow_missing_dirs="${BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS:-0}"
 self_repo_mode="${BIJUX_STD_SELF_REPO_MODE:-auto}"
+
+if [[ -z "${remote_manifest_rel}" ]]; then
+  remote_manifest_rel="${manifest_rel}"
+fi
+
+local_to_remote_rel() {
+  local path_rel="$1"
+  if [[ "${path_rel}" == .bijux/* ]]; then
+    echo "${path_rel#.bijux/}"
+    return
+  fi
+  echo "${path_rel}"
+}
 
 resolve_ref() {
   if [[ "${update_channel}" == "tag" ]]; then
@@ -112,6 +126,7 @@ fi
 
 if [[ "${should_use_self_repo_mode}" == "1" ]]; then
   while IFS= read -r dir_rel; do
+    remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
     local_dir="${repo_root}/${dir_rel}"
     if [[ ! -d "${local_dir}" ]]; then
       if [[ "${allow_missing_dirs}" == "1" ]]; then
@@ -169,7 +184,8 @@ if ! clone_from_ref "${resolved_ref}"; then
 fi
 
 while IFS= read -r dir_rel; do
-  src="${tmp_dir}/bijux-std/${dir_rel}"
+  remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
+  src="${tmp_dir}/bijux-std/${remote_dir_rel}"
   if [[ ! -d "${src}" ]]; then
     if [[ "${allow_missing_dirs}" == "1" ]]; then
       skipped_dirs+=("${dir_rel}")
@@ -192,7 +208,8 @@ if (( ${#missing_dirs[@]} > 0 )); then
 fi
 
 for dir_rel in "${update_dirs[@]}"; do
-  src="${tmp_dir}/bijux-std/${dir_rel}"
+  remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
+  src="${tmp_dir}/bijux-std/${remote_dir_rel}"
   stage="${staging_dir}/${dir_rel}"
   mkdir -p "$(dirname "${stage}")"
   cp -R "${src}" "${stage}"

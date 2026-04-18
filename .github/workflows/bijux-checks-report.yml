@@ -6,20 +6,20 @@ on:
     paths:
       - ".bijux/checks.consumer.json"
       - ".github/workflows/bijux-checks-report.yml"
-      - "shared/bijux-checks/**"
-      - "shared/bijux-makes-py/**"
-      - "shared/bijux-gh/**"
-      - "shared/bijux-docs/**"
+      - ".bijux/shared/bijux-checks/**"
+      - ".bijux/shared/bijux-makes-py/**"
+      - ".bijux/shared/bijux-gh/**"
+      - ".bijux/shared/bijux-docs/**"
       - "makes/**"
       - "Makefile"
   pull_request:
     paths:
       - ".bijux/checks.consumer.json"
       - ".github/workflows/bijux-checks-report.yml"
-      - "shared/bijux-checks/**"
-      - "shared/bijux-makes-py/**"
-      - "shared/bijux-gh/**"
-      - "shared/bijux-docs/**"
+      - ".bijux/shared/bijux-checks/**"
+      - ".bijux/shared/bijux-makes-py/**"
+      - ".bijux/shared/bijux-gh/**"
+      - ".bijux/shared/bijux-docs/**"
       - "makes/**"
       - "Makefile"
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shared/bijux-checks/scripts/run-bijux-check-suite.sh \
+          .bijux/shared/bijux-checks/scripts/run-bijux-check-suite.sh \
             --consumer .bijux/checks.consumer.json \
             --artifacts-dir artifacts/checks
 
