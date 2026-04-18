@@ -9,12 +9,21 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ## Unreleased
 
+### Added
+- Repository Dependabot configuration for `github-actions`, workspace `cargo`,
+  and Python dependency roots used by docs and the `bijux-cli-python` crate.
+
 ### Changed
-- Scoped the repository GHCR summary badge links to the `bijux-core` packages page in the badge source-of-truth and generated docs/README surfaces.
-- Added repository Dependabot configuration for `github-actions`, workspace `cargo`, and Python dependency roots used by docs and the `bijux-cli-python` crate.
+- Scoped GHCR badge links to repository-specific package pages across
+  `docs/badges.md`, generated docs surfaces, and README outputs.
+- Continued synchronization of shared docs shell and standards inputs from
+  `bijux-std`, including shared checks/tooling layout updates.
+- Recorded contributor and automation identity boundaries in governance docs.
 
 ### Fixed
 - Synchronized shared docs partial source-of-truth and SHA manifest entries so docs contract checks no longer fail on partial drift.
+- Refreshed locked dependency inputs for security advisories in docs and
+  workspace dependency flows.
 
 ---
 
