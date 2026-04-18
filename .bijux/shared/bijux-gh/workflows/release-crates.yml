@@ -48,6 +48,7 @@ jobs:
       publish_command: ${{ steps.config.outputs.publish_command }}
       publish_skip_existing: ${{ steps.config.outputs.publish_skip_existing }}
       fallback_packages: ${{ steps.config.outputs.fallback_packages }}
+      allowed_packages: ${{ steps.config.outputs.allowed_packages }}
     steps:
       - name: Resolve release-crates configuration
         id: config
@@ -115,6 +116,7 @@ jobs:
           publish_command="$(from_values "" "${BIJUX_CRATES_RELEASE_PUBLISH_COMMAND:-}" "${{ vars.BIJUX_CRATES_RELEASE_PUBLISH_COMMAND || '' }}" "make publish-rs RUST_PUBLISH_DRY_RUN=0 RUST_PUBLISH_SKIP_EXISTING=\"${PUBLISH_SKIP_EXISTING}\" RUST_PUBLISH_PACKAGES=\"${PACKAGES}\"")"
           publish_skip_existing="$(bool_from_values "" "${BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING:-}" "${{ vars.BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING || '' }}" "true")"
           fallback_packages="$(from_values "" "${BIJUX_CRATES_RELEASE_PACKAGES:-}" "${{ vars.BIJUX_CRATES_RELEASE_PACKAGES || '' }}" "")"
+          allowed_packages="$(from_values "" "${BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES:-}" "${{ vars.BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES || '' }}" "")"
 
           {
             echo "enabled=${enabled}"
@@ -127,6 +129,7 @@ jobs:
             echo "publish_command=${publish_command}"
             echo "publish_skip_existing=${publish_skip_existing}"
             echo "fallback_packages=${fallback_packages}"
+            echo "allowed_packages=${allowed_packages}"
           } >> "$GITHUB_OUTPUT"
 
   publish:
@@ -188,9 +191,34 @@ jobs:
             packages="${{ needs.resolve.outputs.fallback_packages }}"
           fi
 
+          allowed_packages="${{ needs.resolve.outputs.allowed_packages }}"
+          filtered_packages="$(python3 - "$packages" "$allowed_packages" <<'PY'
+          import re
+          import sys
+
+          packages_raw = sys.argv[1]
+          allowed_raw = sys.argv[2]
+
+          packages = [part.strip() for part in re.split(r"[\s,;]+", packages_raw.strip()) if part.strip()]
+          allowed = {part.strip() for part in re.split(r"[\s,;]+", allowed_raw.strip()) if part.strip()}
+
+          if allowed:
+              if not packages:
+                  packages = sorted(allowed)
+              else:
+                  packages = [name for name in packages if name in allowed]
+
+          print(" ".join(packages))
+          PY
+          )"
+
+          if [[ -n "${allowed_packages// }" && -z "${filtered_packages// }" ]]; then
+            publish="false"
+          fi
+
           echo "publish=${publish}" >> "$GITHUB_OUTPUT"
           echo "version=${release_version}" >> "$GITHUB_OUTPUT"
-          echo "packages=${packages}" >> "$GITHUB_OUTPUT"
+          echo "packages=${filtered_packages}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Rust
         if: ${{ steps.release.outputs.publish == 'true' && needs.resolve.outputs.setup_rust == 'true' }}

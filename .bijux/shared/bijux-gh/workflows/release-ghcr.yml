@@ -74,6 +74,7 @@ jobs:
       enabled: ${{ steps.config.outputs.enabled }}
       release_tag: ${{ steps.config.outputs.release_tag }}
       package_matrix_json: ${{ steps.config.outputs.package_matrix_json }}
+      allowed_packages: ${{ steps.config.outputs.allowed_packages }}
       artifact_suffix: ${{ steps.config.outputs.artifact_suffix }}
       package_ref_prefix: ${{ steps.config.outputs.package_ref_prefix }}
       push_latest: ${{ steps.config.outputs.push_latest }}
@@ -140,6 +141,7 @@ jobs:
           release_tag="$(from_values "${{ inputs.release_tag || github.event.inputs.release_tag || '' }}" "${BIJUX_GHCR_RELEASE_TAG:-}" "${{ vars.BIJUX_GHCR_RELEASE_TAG || '' }}" "$default_tag")"
           enabled="$(bool_from_values "${{ inputs.enabled }}" "${BIJUX_GHCR_RELEASE_ENABLED:-}" "${{ vars.BIJUX_GHCR_RELEASE_ENABLED || '' }}" "false")"
           package_matrix_json="$(from_values "${{ inputs.package_matrix_json || github.event.inputs.package_matrix_json || '' }}" "${BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON:-}" "${{ vars.BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON || '' }}" "[]")"
+          allowed_packages="$(from_values "" "${BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES:-}" "${{ vars.BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES || '' }}" "")"
           artifact_suffix="$(from_values "${{ inputs.artifact_suffix || '' }}" "${BIJUX_GHCR_RELEASE_ARTIFACT_SUFFIX:-}" "${{ vars.BIJUX_GHCR_RELEASE_ARTIFACT_SUFFIX || '' }}" "-release")"
           package_ref_prefix="$(from_values "${{ inputs.package_ref_prefix || '' }}" "${BIJUX_GHCR_RELEASE_PACKAGE_REF_PREFIX:-}" "${{ vars.BIJUX_GHCR_RELEASE_PACKAGE_REF_PREFIX || '' }}" "ghcr.io/${GITHUB_REPOSITORY}")"
           push_latest="$(bool_from_values "${{ inputs.push_latest }}" "${BIJUX_GHCR_RELEASE_PUSH_LATEST:-}" "${{ vars.BIJUX_GHCR_RELEASE_PUSH_LATEST || '' }}" "true")"
@@ -147,9 +149,12 @@ jobs:
           archive_media_type="$(from_values "${{ inputs.archive_media_type || '' }}" "${BIJUX_GHCR_RELEASE_ARCHIVE_MEDIA_TYPE:-}" "${{ vars.BIJUX_GHCR_RELEASE_ARCHIVE_MEDIA_TYPE || '' }}" "application/gzip")"
           oras_version="$(from_values "${{ inputs.oras_version || '' }}" "${BIJUX_GHCR_RELEASE_ORAS_VERSION:-}" "${{ vars.BIJUX_GHCR_RELEASE_ORAS_VERSION || '' }}" "1.2.3")"
 
-          python3 - "$package_matrix_json" <<'PY'
+          package_matrix_json="$(python3 - "$package_matrix_json" "$allowed_packages" <<'PY'
           import json, sys
+          import re
+
           raw = sys.argv[1]
+          allowed_raw = sys.argv[2]
           try:
               value = json.loads(raw)
           except Exception as exc:  # pragma: no cover
@@ -161,11 +166,27 @@ jobs:
                   raise SystemExit(f"Package matrix entry {index} must be an object")
               if "package_slug" not in item or not str(item["package_slug"]).strip():
                   raise SystemExit(f"Package matrix entry {index} missing package_slug")
+
+          allowed = {
+              part.strip()
+              for part in re.split(r"[\s,;]+", allowed_raw.strip())
+              if part.strip()
+          }
+          if allowed:
+              value = [item for item in value if str(item.get("package_slug", "")).strip() in allowed]
+
+          print(json.dumps(value, separators=(",", ":")))
           PY
+          )"
+
+          if [[ "${package_matrix_json}" == "[]" ]]; then
+            enabled="false"
+          fi
 
           {
             echo "enabled=${enabled}"
             echo "release_tag=${release_tag}"
+            echo "allowed_packages=${allowed_packages}"
             echo "artifact_suffix=${artifact_suffix}"
             echo "package_ref_prefix=${package_ref_prefix}"
             echo "push_latest=${push_latest}"

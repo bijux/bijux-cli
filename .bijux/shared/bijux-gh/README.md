@@ -42,6 +42,7 @@ Common keys:
 - `BIJUX_PYPI_ENABLED` (`true|false`)
 - `BIJUX_PYPI_MODE` (`maturin|artifact`)
 - `BIJUX_PYPI_PACKAGE_MATRIX_JSON` (JSON array for artifact mode)
+- `BIJUX_PYPI_ALLOWED_PACKAGES` (space/comma/semicolon-separated package slugs)
 - `BIJUX_PYPI_ENVIRONMENT_NAME` (default `pypi`)
 - `BIJUX_PYPI_PUBLISH_AUTH_DEFAULT` (default `trusted`)
 - `BIJUX_PYPI_SKIP_EXISTING` (default `true`)
@@ -83,6 +84,7 @@ Supported keys:
 - `BIJUX_CRATES_RELEASE_PUBLISH_COMMAND`
 - `BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING` (`true|false`)
 - `BIJUX_CRATES_RELEASE_PACKAGES`
+- `BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES` (space/comma/semicolon-separated crate names)
 
 ## `release-ghcr.yml` configuration contract
 
@@ -101,6 +103,7 @@ Supported keys:
 - `BIJUX_GHCR_RELEASE_ENABLED` (`true|false`)
 - `BIJUX_GHCR_RELEASE_TAG`
 - `BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON` (JSON array)
+- `BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES` (space/comma/semicolon-separated package slugs)
 - `BIJUX_GHCR_RELEASE_ARTIFACT_SUFFIX` (default `-release`)
 - `BIJUX_GHCR_RELEASE_PACKAGE_REF_PREFIX` (default `ghcr.io/<owner>/<repo>`)
 - `BIJUX_GHCR_RELEASE_PUSH_LATEST` (`true|false`, default `true`)

@@ -74,6 +74,7 @@ jobs:
       mode: ${{ steps.config.outputs.mode }}
       release_tag: ${{ steps.config.outputs.release_tag }}
       package_matrix_json: ${{ steps.config.outputs.package_matrix_json }}
+      allowed_packages: ${{ steps.config.outputs.allowed_packages }}
       artifact_suffix: ${{ steps.config.outputs.artifact_suffix }}
       environment_name: ${{ steps.config.outputs.environment_name }}
       publish_auth_default: ${{ steps.config.outputs.publish_auth_default }}
@@ -151,6 +152,7 @@ jobs:
           enabled="$(bool_from_values "${{ inputs.enabled }}" "${BIJUX_PYPI_ENABLED:-}" "${{ vars.BIJUX_PYPI_ENABLED || '' }}" "false")"
           mode="$(from_values "${{ inputs.mode || github.event.inputs.mode || '' }}" "${BIJUX_PYPI_MODE:-}" "${{ vars.BIJUX_PYPI_MODE || '' }}" "maturin")"
           package_matrix_json="$(from_values "${{ inputs.package_matrix_json || github.event.inputs.package_matrix_json || '' }}" "${BIJUX_PYPI_PACKAGE_MATRIX_JSON:-}" "${{ vars.BIJUX_PYPI_PACKAGE_MATRIX_JSON || '' }}" "[]")"
+          allowed_packages="$(from_values "" "${BIJUX_PYPI_ALLOWED_PACKAGES:-}" "${{ vars.BIJUX_PYPI_ALLOWED_PACKAGES || '' }}" "")"
           artifact_suffix="$(from_values "${{ inputs.artifact_suffix || '' }}" "${BIJUX_PYPI_ARTIFACT_SUFFIX:-}" "${{ vars.BIJUX_PYPI_ARTIFACT_SUFFIX || '' }}" "-pypi-dist")"
           environment_name="$(from_values "${{ inputs.environment_name || '' }}" "${BIJUX_PYPI_ENVIRONMENT_NAME:-}" "${{ vars.BIJUX_PYPI_ENVIRONMENT_NAME || '' }}" "pypi")"
           publish_auth_default="$(from_values "${{ inputs.publish_auth_default || '' }}" "${BIJUX_PYPI_PUBLISH_AUTH_DEFAULT:-}" "${{ vars.BIJUX_PYPI_PUBLISH_AUTH_DEFAULT || '' }}" "trusted")"
@@ -174,9 +176,12 @@ jobs:
             exit 1
           fi
 
-          python3 - "$package_matrix_json" <<'PY'
+          package_matrix_json="$(python3 - "$package_matrix_json" "$allowed_packages" <<'PY'
           import json, sys
+          import re
+
           raw = sys.argv[1]
+          allowed_raw = sys.argv[2]
           try:
               value = json.loads(raw)
           except Exception as exc:  # pragma: no cover
@@ -188,12 +193,28 @@ jobs:
                   raise SystemExit(f"Package matrix entry {index} must be an object")
               if "package_slug" not in item or not str(item["package_slug"]).strip():
                   raise SystemExit(f"Package matrix entry {index} missing package_slug")
+
+          allowed = {
+              part.strip()
+              for part in re.split(r"[\s,;]+", allowed_raw.strip())
+              if part.strip()
+          }
+          if allowed:
+              value = [item for item in value if str(item.get("package_slug", "")).strip() in allowed]
+
+          print(json.dumps(value, separators=(",", ":")))
           PY
+          )"
+
+          if [[ "${mode}" == "artifact" && "${package_matrix_json}" == "[]" ]]; then
+            enabled="false"
+          fi
 
           {
             echo "release_tag=${release_tag}"
             echo "enabled=${enabled}"
             echo "mode=${mode}"
+            echo "allowed_packages=${allowed_packages}"
             echo "artifact_suffix=${artifact_suffix}"
             echo "environment_name=${environment_name}"
             echo "publish_auth_default=${publish_auth_default}"
@@ -250,14 +271,14 @@ jobs:
 
       - name: Publish to PyPI (trusted publisher)
         if: ${{ steps.auth.outputs.mode != 'token' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: .github/tmp/${{ matrix.package_slug }}-dist
           skip-existing: ${{ needs.resolve.outputs.skip_existing == 'true' }}
 
       - name: Publish to PyPI (token bootstrap)
         if: ${{ steps.auth.outputs.mode == 'token' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: .github/tmp/${{ matrix.package_slug }}-dist
           skip-existing: ${{ needs.resolve.outputs.skip_existing == 'true' }}
