@@ -1,30 +1,27 @@
 name: CI
-
-on:
+true:
   push:
-    branches: [main]
-  pull_request:
-
+    branches:
+      - main
+  pull_request: null
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
-
 permissions:
   contents: read
-
 jobs:
   run:
     uses: ./.github/workflows/reusable-ci-rust-stack.yml
     with:
-      rust_toolchain_version: "1.85.0"
+      rust_toolchain_version: 1.85.0
       enable_python_toolchain: true
-      python_setup_version: "3.11"
+      python_setup_version: 3.11
       python_cache_dependency_path: crates/bijux-cli-python/pyproject.toml
-      test_python_versions: '["3.11", "3.12"]'
-      install_security_tools_command: make gh-security-install-rust-tools
-      install_test_tools_command: make gh-test-install-rust-tools
-      fmt_command: make gh-fmt
-      lint_command: make gh-lint
-      security_command: make gh-security
-      test_command: make gh-test
-      bijuxcli_api_guard: "1"
+      test_python_versions: "[\"3.11\", \"3.12\"]"
+      install_security_tools_command: "make gh-security-install-rust-tools"
+      install_test_tools_command: "make gh-test-install-rust-tools"
+      fmt_command: "make gh-fmt"
+      lint_command: "make gh-lint"
+      security_command: "make gh-security"
+      test_command: "make gh-test"
+      bijuxcli_api_guard: 1
