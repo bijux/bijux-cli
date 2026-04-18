@@ -109,9 +109,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ -f ".github/release-github.env" ]]; then
+          if [[ -f ".github/release.env" ]]; then
             # shellcheck disable=SC1091
-            source ".github/release-github.env"
+            source ".github/release.env"
           fi
 
           non_empty() {

@@ -131,12 +131,12 @@ fn github_workflows_pin_external_actions_to_commits() {
 #[test]
 fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tree() {
     let workflow = read_repo_file(".github/workflows/release-github.yml");
-    let release_env = read_repo_file(".github/release-github.env");
+    let release_env = read_repo_file(".github/release.env");
     let release_files = read_repo_file(".github/release-github.files");
     let prepare_script = read_repo_file(".github/scripts/prepare_release_github.sh");
     for required in [
         "softprops/action-gh-release@",
-        "source \".github/release-github.env\"",
+        "source \".github/release.env\"",
         "eval \"${{ steps.config.outputs.plan_command }}\"",
         "eval \"${{ steps.config.outputs.wait_for_ci_command }}\"",
         "eval \"${{ steps.config.outputs.prepare_command }}\"",
@@ -157,7 +157,7 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
     ] {
         assert!(
             release_env.contains(required),
-            ".github/release-github.env must keep core release guardrails: {required}"
+            ".github/release.env must keep core release guardrails: {required}"
         );
     }
     for required in [

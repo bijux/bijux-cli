@@ -55,9 +55,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ -f ".github/release-crates.env" ]]; then
+          if [[ -f ".github/release.env" ]]; then
             # shellcheck disable=SC1091
-            source ".github/release-crates.env"
+            source ".github/release.env"
           fi
 
           non_empty() {

@@ -33,7 +33,7 @@ The shared PyPI workflow supports two publication modes behind one contract:
 Configuration sources (highest precedence first):
 
 1. `workflow_call` / `workflow_dispatch` inputs
-2. `.github/release-pypi.env`
+2. `.github/release.env`
 3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
 4. built-in defaults
 
@@ -67,7 +67,7 @@ configurable contract.
 Configuration sources (highest precedence first):
 
 1. `workflow_call` / `workflow_dispatch` inputs
-2. `.github/release-crates.env`
+2. `.github/release.env`
 3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
 4. built-in defaults
 
@@ -92,7 +92,7 @@ Registry from staged release artifacts.
 Configuration sources (highest precedence first):
 
 1. `workflow_call` / `workflow_dispatch` inputs
-2. `.github/release-ghcr.env`
+2. `.github/release.env`
 3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
 4. built-in defaults
 
