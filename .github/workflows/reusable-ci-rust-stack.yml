@@ -1,0 +1,268 @@
+name: reusable-ci-rust-stack
+
+on:
+  workflow_call:
+    inputs:
+      rust_toolchain_version:
+        required: true
+        type: string
+      enable_python_toolchain:
+        required: false
+        type: boolean
+        default: false
+      python_setup_version:
+        required: false
+        type: string
+        default: "3.11"
+      python_cache_dependency_path:
+        required: false
+        type: string
+        default: ""
+      test_python_versions:
+        required: false
+        type: string
+        default: '["3.11"]'
+      use_isolated_temp_roots:
+        required: false
+        type: boolean
+        default: false
+      security_cargo_target_dir:
+        required: false
+        type: string
+        default: ""
+      security_cargo_home:
+        required: false
+        type: string
+        default: ""
+      security_tmp_relative:
+        required: false
+        type: string
+        default: ""
+      test_cargo_target_dir:
+        required: false
+        type: string
+        default: ""
+      test_cargo_home:
+        required: false
+        type: string
+        default: ""
+      test_tmp_relative:
+        required: false
+        type: string
+        default: ""
+      install_security_tools_command:
+        required: false
+        type: string
+        default: ""
+      install_test_tools_command:
+        required: false
+        type: string
+        default: ""
+      expose_cargo_bin_path:
+        required: false
+        type: boolean
+        default: false
+      fmt_command:
+        required: false
+        type: string
+        default: make gh-fmt
+      lint_command:
+        required: false
+        type: string
+        default: make gh-lint
+      security_command:
+        required: false
+        type: string
+        default: make gh-security
+      test_command:
+        required: false
+        type: string
+        default: make gh-test
+      bijuxcli_api_guard:
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+  BIJUXCLI_API_GUARD: ${{ inputs.bijuxcli_api_guard }}
+
+jobs:
+  fmt:
+    name: Formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Python
+        if: ${{ inputs.enable_python_toolchain }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ inputs.python_setup_version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.python_cache_dependency_path }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain_version }}
+          components: rustfmt
+
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Run formatting checks
+        run: ${{ inputs.fmt_command }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Python
+        if: ${{ inputs.enable_python_toolchain }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ inputs.python_setup_version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.python_cache_dependency_path }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain_version }}
+          components: clippy
+
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Run lint checks
+        run: ${{ inputs.lint_command }}
+
+  security:
+    name: Security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_TARGET_DIR: ${{ inputs.security_cargo_target_dir }}
+      CARGO_HOME: ${{ inputs.security_cargo_home }}
+      TMPDIR: ${{ inputs.security_tmp_relative }}
+      TMP: ${{ inputs.security_tmp_relative }}
+      TEMP: ${{ inputs.security_tmp_relative }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Python
+        if: ${{ inputs.enable_python_toolchain }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ inputs.python_setup_version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.python_cache_dependency_path }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain_version }}
+
+      - name: Restore the Rust cache
+        if: ${{ !inputs.use_isolated_temp_roots }}
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Normalize temp roots to absolute workspace paths
+        if: ${{ inputs.use_isolated_temp_roots }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "TMPDIR=${GITHUB_WORKSPACE}/${TMPDIR}" >> "${GITHUB_ENV}"
+          echo "TMP=${GITHUB_WORKSPACE}/${TMP}" >> "${GITHUB_ENV}"
+          echo "TEMP=${GITHUB_WORKSPACE}/${TEMP}" >> "${GITHUB_ENV}"
+
+      - name: Prepare cache and temp roots
+        if: ${{ inputs.use_isolated_temp_roots }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${CARGO_TARGET_DIR}" "${CARGO_HOME}" "${TMPDIR}"
+
+      - name: Install security tools
+        if: ${{ inputs.install_security_tools_command != '' }}
+        run: ${{ inputs.install_security_tools_command }}
+
+      - name: Run security checks
+        run: ${{ inputs.security_command }}
+
+  test:
+    name: Tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(inputs.test_python_versions) }}
+    env:
+      CARGO_TARGET_DIR: ${{ inputs.test_cargo_target_dir }}
+      CARGO_HOME: ${{ inputs.test_cargo_home }}
+      TMPDIR: ${{ inputs.test_tmp_relative }}
+      TMP: ${{ inputs.test_tmp_relative }}
+      TEMP: ${{ inputs.test_tmp_relative }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Python
+        if: ${{ inputs.enable_python_toolchain }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.python_cache_dependency_path }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ inputs.rust_toolchain_version }}
+
+      - name: Restore the Rust cache
+        if: ${{ !inputs.use_isolated_temp_roots }}
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Normalize temp roots to absolute workspace paths
+        if: ${{ inputs.use_isolated_temp_roots }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "TMPDIR=${GITHUB_WORKSPACE}/${TMPDIR}" >> "${GITHUB_ENV}"
+          echo "TMP=${GITHUB_WORKSPACE}/${TMP}" >> "${GITHUB_ENV}"
+          echo "TEMP=${GITHUB_WORKSPACE}/${TEMP}" >> "${GITHUB_ENV}"
+
+      - name: Prepare cache and temp roots
+        if: ${{ inputs.use_isolated_temp_roots }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${CARGO_TARGET_DIR}" "${CARGO_HOME}" "${TMPDIR}"
+
+      - name: Install test tools
+        if: ${{ inputs.install_test_tools_command != '' }}
+        run: ${{ inputs.install_test_tools_command }}
+
+      - name: Expose cargo binaries
+        if: ${{ inputs.expose_cargo_bin_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${CARGO_HOME}/bin" >> "${GITHUB_PATH}"
+
+      - name: Run test suites
+        run: ${{ inputs.test_command }}

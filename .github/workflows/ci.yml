@@ -12,129 +12,19 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PYTHONUNBUFFERED: "1"
-  BIJUXCLI_API_GUARD: "1"
-  RUST_TOOLCHAIN_VERSION: "1.85.0"
-
 jobs:
-  fmt:
-    name: Formatting
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: crates/bijux-cli-python/pyproject.toml
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
-          components: rustfmt
-
-      - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-
-      - name: Run formatting checks
-        run: make gh-fmt
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: crates/bijux-cli-python/pyproject.toml
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
-          components: clippy
-
-      - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-
-      - name: Run lint checks
-        run: make gh-lint
-
-  security:
-    name: Security
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: crates/bijux-cli-python/pyproject.toml
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
-
-      - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-
-      - name: Install Rust security tools
-        run: make gh-security-install-rust-tools
-
-      - name: Run security checks
-        run: make gh-security
-
-  test:
-    name: Tests (py${{ matrix.python-version }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12"]
-
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: crates/bijux-cli-python/pyproject.toml
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
-
-      - name: Restore the Rust cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-
-      - name: Install cargo-nextest
-        run: make gh-test-install-rust-tools
-
-      - name: Run test suites
-        run: make gh-test
+  run:
+    uses: ./.github/workflows/reusable-ci-rust-stack.yml
+    with:
+      rust_toolchain_version: "1.85.0"
+      enable_python_toolchain: true
+      python_setup_version: "3.11"
+      python_cache_dependency_path: crates/bijux-cli-python/pyproject.toml
+      test_python_versions: '["3.11", "3.12"]'
+      install_security_tools_command: make gh-security-install-rust-tools
+      install_test_tools_command: make gh-test-install-rust-tools
+      fmt_command: make gh-fmt
+      lint_command: make gh-lint
+      security_command: make gh-security
+      test_command: make gh-test
+      bijuxcli_api_guard: "1"

@@ -29,6 +29,15 @@ jobs:
           case "${{ matrix.check }}" in
             standard)
               sha256sum --check .github/bijux-std-shared.sha256
+              python3 .github/scripts/check_pinned_actions.py \
+                .github/workflows/bijux-std.yml \
+                .github/workflows/build-release-artifacts.yml \
+                .github/workflows/deploy-docs.yml \
+                .github/workflows/release-artifacts.yml \
+                .github/workflows/release-github.yml \
+                .github/workflows/reusable-ci-python-packages.yml \
+                .github/workflows/reusable-verify-python-packages.yml \
+                .github/workflows/reusable-ci-rust-stack.yml
               make bijux-std-checks
               ;;
             report)
