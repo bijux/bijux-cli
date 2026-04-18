@@ -4,6 +4,7 @@ Canonical source-of-truth for Python-first Bijux repositories:
 
 - `.github/automation-identity.md`
 - `.github/workflows/deploy-docs.yml`
+- `.github/workflows/release-crates.yml`
 - `.github/workflows/release-github.yml`
 - `.github/workflows/release-pypi.yml`
 - `.github/required-status-checks.md`
@@ -56,6 +57,31 @@ Maturin mode keys:
 - `BIJUX_PYPI_CACHE_DEPENDENCY_PATH`
 - `BIJUX_PYPI_MANIFEST_PATH`
 - `BIJUX_PYPI_INTERPRETER`
+
+## `release-crates.yml` configuration contract
+
+The shared crates workflow centralizes crates.io publication behind one
+configurable contract.
+
+Configuration sources (highest precedence first):
+
+1. `workflow_call` / `workflow_dispatch` inputs
+2. `.github/release-crates.env`
+3. repository variables (`Settings -> Secrets and variables -> Actions -> Variables`)
+4. built-in defaults
+
+Supported keys:
+
+- `BIJUX_CRATES_RELEASE_ENABLED` (`true|false`)
+- `BIJUX_CRATES_RELEASE_TAG`
+- `BIJUX_CRATES_RELEASE_WAIT_FOR_CI_COMMAND`
+- `BIJUX_CRATES_RELEASE_PLAN_COMMAND`
+- `BIJUX_CRATES_RELEASE_SETUP_RUST` (`true|false`)
+- `BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN`
+- `BIJUX_CRATES_RELEASE_VERIFY_TOKEN_COMMAND`
+- `BIJUX_CRATES_RELEASE_PUBLISH_COMMAND`
+- `BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING` (`true|false`)
+- `BIJUX_CRATES_RELEASE_PACKAGES`
 
 ## Workflow Naming Convention
 
