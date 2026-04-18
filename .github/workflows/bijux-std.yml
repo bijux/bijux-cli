@@ -28,6 +28,7 @@ jobs:
 
           case "${{ matrix.check }}" in
             standard)
+              sha256sum --check .github/bijux-std-shared.sha256
               make bijux-std-checks
               ;;
             report)
