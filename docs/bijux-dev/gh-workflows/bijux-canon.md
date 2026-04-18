@@ -9,7 +9,7 @@ last_reviewed: 2026-04-12
 
 # bijux-canon
 
-`bijux-canon.yml` is the repository governance workflow for DAG- and
+`ci-canon.yml` is the repository governance workflow for DAG- and
 evidence-heavy changes. Despite the name, it is part of `bijux-core` today and
 acts as a wide governance matrix for DAG, evidence, coverage, and schema work.
 

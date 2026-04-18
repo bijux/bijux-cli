@@ -1,4 +1,4 @@
-name: Bijux Canon
+name: CI Canon
 
 on:
   workflow_dispatch:
