@@ -26,7 +26,7 @@ anyhow.workspace = true
 futures = "0.3.31"
 clap = { version = "4.5.51", features = ["std"] }
 schemars = { version = "0.8.22", features = ["derive"] }
-semver = { version = "1.0.27", default-features = false, features = ["std"] }
+semver = { version = "1.0.28", default-features = false, features = ["std"] }
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
@@ -38,7 +38,7 @@ thiserror.workspace = true
 workspace = true
 
 [build-dependencies]
-semver = { version = "1.0.27", default-features = false, features = ["std"] }
+semver = { version = "1.0.28", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 libc = "0.2.177"
