@@ -2,7 +2,7 @@
 
 .PHONY: \
 	help list list-all install lock lock-check lint quality security test docs docs-check docs-serve api build sbom clean all \
-	clean-root-artifacts root-check-env check-make-layout check-shared-bijux-py
+	clean-root-artifacts root-check-env check-make-layout check-bijux-standard
 
 ROOT_CHECK_VENV ?= $(ROOT_ARTIFACTS_DIR)/check-venv
 ROOT_CHECK_PYTHON ?= $(ROOT_CHECK_VENV)/bin/python

@@ -130,8 +130,8 @@ local_dirs=(
   "shared/bijux-docs-tooling"
 )
 
-if [[ -d "${repo_root}/shared/bijux-gh-py" ]]; then
-  local_dirs+=("shared/bijux-gh-py")
+if [[ -d "${repo_root}/shared/bijux-gh" ]]; then
+  local_dirs+=("shared/bijux-gh")
 fi
 
 for dir_rel in "${local_dirs[@]}"; do
