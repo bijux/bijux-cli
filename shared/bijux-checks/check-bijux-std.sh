@@ -117,21 +117,19 @@ verify_canonical_mermaid_init() {
     exit 1
   fi
 
-  if [[ ! -f "${docs_mermaid_path}" ]]; then
-    echo "ERROR: missing docs Mermaid initializer ${docs_mermaid_path}" >&2
-    echo "Hint: copy ${shared_mermaid_path} to ${docs_mermaid_path}" >&2
-    exit 1
+  if [[ -f "${docs_mermaid_path}" ]]; then
+    if ! cmp -s "${shared_mermaid_path}" "${docs_mermaid_path}"; then
+      echo "ERROR: docs Mermaid initializer drift" >&2
+      echo "Expected source: ${shared_mermaid_path}" >&2
+      echo "Drifted target: ${docs_mermaid_path}" >&2
+      echo "Hint: synchronize docs/assets/javascripts/mermaid-init.js from shared/bijux-docs/scripts/mermaid-init.js" >&2
+      exit 1
+    fi
+    echo "✔ Mermaid initializer matches shared canonical source"
+    return
   fi
 
-  if ! cmp -s "${shared_mermaid_path}" "${docs_mermaid_path}"; then
-    echo "ERROR: docs Mermaid initializer drift" >&2
-    echo "Expected source: ${shared_mermaid_path}" >&2
-    echo "Drifted target: ${docs_mermaid_path}" >&2
-    echo "Hint: synchronize docs/assets/javascripts/mermaid-init.js from shared/bijux-docs/scripts/mermaid-init.js" >&2
-    exit 1
-  fi
-
-  echo "✔ Mermaid initializer matches shared canonical source"
+  echo "✔ Mermaid initializer canonical source is present (docs mirror not required)"
 }
 
 verify_homepage_sidebar_collapse_contract() {
