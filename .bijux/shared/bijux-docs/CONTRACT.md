@@ -21,3 +21,10 @@ Rules:
 - `theme_key`: shared localStorage key for cross-project theme persistence.
 
 Projects may change repository/link labels and URLs, but must not fork shell partial structure or shell runtime logic.
+
+Shared docs assets are source-of-truth in `assets/`:
+- `assets/bijux_icon.png`
+- `assets/bijux_logo_hq.png`
+- `assets/site-icons/favicon.ico`
+- `assets/site-icons/apple-touch-icon.png`
+- `assets/site-icons/apple-touch-icon-precomposed.png`
