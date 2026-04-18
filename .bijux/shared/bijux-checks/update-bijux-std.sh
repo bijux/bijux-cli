@@ -2,7 +2,11 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-config_path="${BIJUX_STD_CONFIG:-${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml}"
+default_config_path="${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml"
+if [[ ! -f "${default_config_path}" ]]; then
+  default_config_path="${repo_root}/shared/bijux-checks/bijux-std-checks.yml"
+fi
+config_path="${BIJUX_STD_CONFIG:-${default_config_path}}"
 
 if [[ ! -f "${config_path}" ]]; then
   echo "ERROR: missing config ${config_path}" >&2
@@ -18,8 +22,16 @@ read_directories() {
   awk '/^directories:/{flag=1;next} /^remote:/{flag=0} flag && /^  - /{sub(/^  - /, ""); print}' "${config_path}"
 }
 
+resolve_local_rel() {
+  local rel="$1"
+  if [[ "${rel}" == shared/* && -d "${repo_root}/.bijux/shared" && ! -d "${repo_root}/shared" ]]; then
+    printf '.bijux/%s\n' "${rel}"
+    return
+  fi
+  printf '%s\n' "${rel}"
+}
+
 manifest_rel="$(read_scalar manifest)"
-remote_manifest_rel="$(read_scalar '  remote_manifest')"
 git_url_default="$(read_scalar '  git_url')"
 default_ref="$(read_scalar '  default_ref')"
 tag_pattern_default="$(read_scalar '  tag_pattern')"
@@ -30,19 +42,6 @@ std_ref="${BIJUX_STD_REF:-${default_ref}}"
 tag_pattern="${BIJUX_STD_TAG_PATTERN:-${tag_pattern_default}}"
 allow_missing_dirs="${BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS:-0}"
 self_repo_mode="${BIJUX_STD_SELF_REPO_MODE:-auto}"
-
-if [[ -z "${remote_manifest_rel}" ]]; then
-  remote_manifest_rel="${manifest_rel}"
-fi
-
-local_to_remote_rel() {
-  local path_rel="$1"
-  if [[ "${path_rel}" == .bijux/* ]]; then
-    echo "${path_rel#.bijux/}"
-    return
-  fi
-  echo "${path_rel}"
-}
 
 resolve_ref() {
   if [[ "${update_channel}" == "tag" ]]; then
@@ -102,7 +101,8 @@ set_manifest_sha_for_dir() {
   mv "${tmp_manifest}" "${manifest_path}"
 }
 
-manifest_path="${repo_root}/${manifest_rel}"
+manifest_local_rel="$(resolve_local_rel "${manifest_rel}")"
+manifest_path="${repo_root}/${manifest_local_rel}"
 if [[ ! -f "${manifest_path}" ]]; then
   echo "ERROR: missing local manifest ${manifest_path}" >&2
   exit 1
@@ -125,19 +125,19 @@ elif [[ "${self_repo_mode}" == "auto" && "${in_bijux_std_repo}" == "1" ]]; then
 fi
 
 if [[ "${should_use_self_repo_mode}" == "1" ]]; then
-  while IFS= read -r dir_rel; do
-    remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
-    local_dir="${repo_root}/${dir_rel}"
+  while IFS= read -r remote_dir_rel; do
+    local_dir_rel="$(resolve_local_rel "${remote_dir_rel}")"
+    local_dir="${repo_root}/${local_dir_rel}"
     if [[ ! -d "${local_dir}" ]]; then
       if [[ "${allow_missing_dirs}" == "1" ]]; then
-        skipped_dirs+=("${dir_rel}")
-        echo "⚠ missing local directory in bijux-std: ${dir_rel}; skipping because BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS=1"
+        skipped_dirs+=("${remote_dir_rel}")
+        echo "⚠ missing local directory in bijux-std: ${local_dir_rel}; skipping because BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS=1"
         continue
       fi
-      missing_dirs+=("${dir_rel}")
+      missing_dirs+=("${local_dir_rel}")
       continue
     fi
-    update_dirs+=("${dir_rel}")
+    update_dirs+=("${remote_dir_rel}")
   done < <(read_directories)
 
   if (( ${#missing_dirs[@]} > 0 )); then
@@ -149,10 +149,11 @@ if [[ "${should_use_self_repo_mode}" == "1" ]]; then
     exit 1
   fi
 
-  for dir_rel in "${update_dirs[@]}"; do
-    dir_sha="$(directory_tree_sha256 "${repo_root}/${dir_rel}")"
-    set_manifest_sha_for_dir "${manifest_path}" "${dir_rel}" "${dir_sha}"
-    echo "→ refreshed manifest hash for ${dir_rel}"
+  for remote_dir_rel in "${update_dirs[@]}"; do
+    local_dir_rel="$(resolve_local_rel "${remote_dir_rel}")"
+    dir_sha="$(directory_tree_sha256 "${repo_root}/${local_dir_rel}")"
+    set_manifest_sha_for_dir "${manifest_path}" "${local_dir_rel}" "${dir_sha}"
+    echo "→ refreshed manifest hash for ${local_dir_rel}"
   done
 
   if (( ${#skipped_dirs[@]} > 0 )); then
@@ -183,19 +184,18 @@ if ! clone_from_ref "${resolved_ref}"; then
   fi
 fi
 
-while IFS= read -r dir_rel; do
-  remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
+while IFS= read -r remote_dir_rel; do
   src="${tmp_dir}/bijux-std/${remote_dir_rel}"
   if [[ ! -d "${src}" ]]; then
     if [[ "${allow_missing_dirs}" == "1" ]]; then
-      skipped_dirs+=("${dir_rel}")
-      echo "⚠ missing source directory in bijux-std: ${dir_rel}; skipping because BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS=1"
+      skipped_dirs+=("${remote_dir_rel}")
+      echo "⚠ missing source directory in bijux-std: ${remote_dir_rel}; skipping because BIJUX_STD_UPDATE_ALLOW_MISSING_DIRS=1"
       continue
     fi
-    missing_dirs+=("${dir_rel}")
+    missing_dirs+=("${remote_dir_rel}")
     continue
   fi
-  update_dirs+=("${dir_rel}")
+  update_dirs+=("${remote_dir_rel}")
 done < <(read_directories)
 
 if (( ${#missing_dirs[@]} > 0 )); then
@@ -207,39 +207,42 @@ if (( ${#missing_dirs[@]} > 0 )); then
   exit 1
 fi
 
-for dir_rel in "${update_dirs[@]}"; do
-  remote_dir_rel="$(local_to_remote_rel "${dir_rel}")"
+for remote_dir_rel in "${update_dirs[@]}"; do
   src="${tmp_dir}/bijux-std/${remote_dir_rel}"
-  stage="${staging_dir}/${dir_rel}"
+  local_dir_rel="$(resolve_local_rel "${remote_dir_rel}")"
+  stage="${staging_dir}/${local_dir_rel}"
   mkdir -p "$(dirname "${stage}")"
   cp -R "${src}" "${stage}"
 done
 
-for dir_rel in "${update_dirs[@]}"; do
-  stage="${staging_dir}/${dir_rel}"
-  dst="${repo_root}/${dir_rel}"
+for remote_dir_rel in "${update_dirs[@]}"; do
+  local_dir_rel="$(resolve_local_rel "${remote_dir_rel}")"
+  stage="${staging_dir}/${local_dir_rel}"
+  dst="${repo_root}/${local_dir_rel}"
 
   preserve_children=0
-  for skipped_dir in "${skipped_dirs[@]}"; do
-    if [[ "${skipped_dir}" == "${dir_rel}/"* ]]; then
-      preserve_children=1
-      break
-    fi
-  done
+  if (( ${#skipped_dirs[@]} > 0 )); then
+    for skipped_dir in "${skipped_dirs[@]}"; do
+      if [[ "${skipped_dir}" == "${remote_dir_rel}/"* ]]; then
+        preserve_children=1
+        break
+      fi
+    done
+  fi
 
   if [[ "${preserve_children}" == "1" ]]; then
     mkdir -p "${dst}"
     cp -R "${stage}/." "${dst}/"
-    echo "→ updated ${dir_rel} (preserved skipped nested directories)"
+    echo "→ updated ${local_dir_rel} (preserved skipped nested directories)"
   else
     rm -rf "${dst}"
     mkdir -p "$(dirname "${dst}")"
     cp -R "${stage}" "${dst}"
-    echo "→ updated ${dir_rel}"
+    echo "→ updated ${local_dir_rel}"
   fi
 
   dir_sha="$(directory_tree_sha256 "${dst}")"
-  set_manifest_sha_for_dir "${manifest_path}" "${dir_rel}" "${dir_sha}"
+  set_manifest_sha_for_dir "${manifest_path}" "${local_dir_rel}" "${dir_sha}"
 done
 
 if (( ${#skipped_dirs[@]} > 0 )); then

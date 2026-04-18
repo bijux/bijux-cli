@@ -1,10 +1,11 @@
 BIJUX_PY_WORKSPACE_DIR ?= $(abspath $(PROJECT_DIR)/..)
 BIJUX_PY_REPOS ?= bijux-canon bijux-proteomics bijux-pollenomics
-BIJUX_PY_SYSTEM_REL ?= .bijux/shared/bijux-makes-py
+BIJUX_PY_SYSTEM_REL ?= shared/bijux-makes-py
 BIJUX_PY_LOCAL_REL ?= makes/bijux-py
-BIJUX_STANDARD_SHARED_DIR ?= .bijux/shared/bijux-gh
+BIJUX_STANDARD_SHARED_DIR ?= $(if $(wildcard $(PROJECT_DIR)/.bijux/shared/bijux-gh),.bijux/shared/bijux-gh,shared/bijux-gh)
 BIJUX_STANDARD_DEPENDABOT_RENDER ?= scripts/render-dependabot.sh
 BIJUX_STANDARD_REQUIRED_FILES ?= \
+	workflows/deploy-docs.yml \
 	required-status-checks.md \
 	rulesets/main-branch-protection.json
 BIJUX_PY_REQUIRED_FILES ?= api-contract.mk api-freeze.mk api-live-contract.mk api.mk bijux.mk package.mk package-catalog.mk ci/build.mk ci/docs.mk ci/help.mk ci/lint.mk ci/quality.mk ci/sbom.mk ci/security.mk ci/test.mk ci/util.mk repository/config-layout.mk repository/env.mk repository/make-layout.mk repository/publish.mk repository/root.mk root/docs.mk root/env.mk root/lifecycle.mk root/package-dispatch.mk

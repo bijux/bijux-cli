@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 consumer_path="${BIJUX_CHECKS_CONSUMER:-${repo_root}/.bijux/checks.consumer.json}"
-registry_dir="${BIJUX_CHECKS_REGISTRY_DIR:-${repo_root}/.bijux/shared/bijux-checks/registry}"
+registry_dir="${BIJUX_CHECKS_REGISTRY_DIR:-${repo_root}/shared/bijux-checks/registry}"
 artifacts_dir="${BIJUX_CHECKS_ARTIFACTS_DIR:-${repo_root}/artifacts/bijux-checks}"
 
 while [[ $# -gt 0 ]]; do

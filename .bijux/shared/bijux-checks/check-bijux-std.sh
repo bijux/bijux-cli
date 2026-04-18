@@ -2,7 +2,11 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-config_path="${BIJUX_STD_CONFIG:-${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml}"
+default_config_path="${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml"
+if [[ ! -f "${default_config_path}" ]]; then
+  default_config_path="${repo_root}/shared/bijux-checks/bijux-std-checks.yml"
+fi
+config_path="${BIJUX_STD_CONFIG:-${default_config_path}}"
 
 if [[ ! -f "${config_path}" ]]; then
   echo "ERROR: missing config ${config_path}" >&2
@@ -18,30 +22,26 @@ read_directories() {
   awk '/^directories:/{flag=1;next} /^remote:/{flag=0} flag && /^  - /{sub(/^  - /, ""); print}' "${config_path}"
 }
 
-manifest_rel="$(read_scalar manifest)"
-remote_manifest_rel="$(read_scalar '  remote_manifest')"
-git_url_default="$(read_scalar '  git_url')"
-default_ref="$(read_scalar '  default_ref')"
-
-if [[ -z "${remote_manifest_rel}" ]]; then
-  remote_manifest_rel="${manifest_rel}"
-fi
-
-local_to_remote_rel() {
-  local path_rel="$1"
-  if [[ "${path_rel}" == .bijux/* ]]; then
-    echo "${path_rel#.bijux/}"
+resolve_local_rel() {
+  local rel="$1"
+  if [[ "${rel}" == shared/* && -d "${repo_root}/.bijux/shared" && ! -d "${repo_root}/shared" ]]; then
+    printf '.bijux/%s\n' "${rel}"
     return
   fi
-  echo "${path_rel}"
+  printf '%s\n' "${rel}"
 }
+
+manifest_rel="$(read_scalar manifest)"
+git_url_default="$(read_scalar '  git_url')"
+default_ref="$(read_scalar '  default_ref')"
 
 std_ref="${BIJUX_STD_REF:-${default_ref}}"
 std_git_url="${BIJUX_STD_GIT_URL:-${git_url_default}}"
 std_root="${BIJUX_STD_ROOT:-${repo_root}/../bijux-std}"
 strict_remote="${BIJUX_STD_STRICT_REMOTE:-0}"
 require_remote_match="${BIJUX_STD_REQUIRE_REMOTE_MATCH:-0}"
-manifest_path="${repo_root}/${manifest_rel}"
+manifest_local_rel="$(resolve_local_rel "${manifest_rel}")"
+manifest_path="${repo_root}/${manifest_local_rel}"
 
 if [[ ! -f "${manifest_path}" ]]; then
   echo "ERROR: missing local manifest ${manifest_path}" >&2
@@ -70,15 +70,18 @@ manifest_sha_for_dir() {
 }
 
 verify_dir_against_manifests() {
-  local local_dir_rel="$1"
+  local remote_dir_rel="$1"
   local remote_manifest="$2"
-  local remote_dir_rel
-  remote_dir_rel="$(local_to_remote_rel "${local_dir_rel}")"
 
+  local local_dir_rel
   local local_expected
   local remote_expected
   local actual_sha
   local expected_sha
+  local local_dir_abs
+
+  local_dir_rel="$(resolve_local_rel "${remote_dir_rel}")"
+  local_dir_abs="${repo_root}/${local_dir_rel}"
 
   local_expected="$(manifest_sha_for_dir "${manifest_path}" "${local_dir_rel}")"
   remote_expected="$(manifest_sha_for_dir "${remote_manifest}" "${remote_dir_rel}")"
@@ -97,12 +100,12 @@ verify_dir_against_manifests() {
     echo "  continuing because BIJUX_STD_REQUIRE_REMOTE_MATCH=0" >&2
   fi
 
-  actual_sha="$(directory_tree_sha256 "${repo_root}/${local_dir_rel}")"
+  actual_sha="$(directory_tree_sha256 "${local_dir_abs}")"
 
   expected_sha="${remote_expected}"
   if [[ "${local_expected}" != "${remote_expected}" ]]; then
     if [[ "${require_remote_match}" == "1" ]]; then
-      echo "ERROR: local manifest drift for ${local_dir_rel}" >&2
+      echo "ERROR: local manifest drift for ${dir_rel}" >&2
       echo "Local manifest:  ${local_expected}" >&2
       echo "Remote manifest: ${remote_expected}" >&2
       exit 1
@@ -125,8 +128,11 @@ verify_dir_against_manifests() {
 }
 
 verify_canonical_mermaid_init() {
-  local shared_mermaid_path="${repo_root}/.bijux/shared/bijux-docs/scripts/mermaid-init.js"
+  local shared_mermaid_rel
+  local shared_mermaid_path
   local docs_mermaid_path="${repo_root}/docs/assets/javascripts/mermaid-init.js"
+  shared_mermaid_rel="$(resolve_local_rel "shared/bijux-docs/scripts/mermaid-init.js")"
+  shared_mermaid_path="${repo_root}/${shared_mermaid_rel}"
 
   if [[ ! -f "${shared_mermaid_path}" ]]; then
     echo "ERROR: missing canonical Mermaid initializer ${shared_mermaid_path}" >&2
@@ -138,7 +144,7 @@ verify_canonical_mermaid_init() {
       echo "ERROR: docs Mermaid initializer drift" >&2
       echo "Expected source: ${shared_mermaid_path}" >&2
       echo "Drifted target: ${docs_mermaid_path}" >&2
-      echo "Hint: synchronize docs/assets/javascripts/mermaid-init.js from .bijux/shared/bijux-docs/scripts/mermaid-init.js" >&2
+      echo "Hint: synchronize docs/assets/javascripts/mermaid-init.js from ${shared_mermaid_rel}" >&2
       exit 1
     fi
     echo "✔ Mermaid initializer matches shared canonical source"
@@ -149,7 +155,10 @@ verify_canonical_mermaid_init() {
 }
 
 verify_homepage_sidebar_collapse_contract() {
-  local responsive_css_path="${repo_root}/.bijux/shared/bijux-docs/styles/08-responsive.css"
+  local responsive_css_rel
+  local responsive_css_path
+  responsive_css_rel="$(resolve_local_rel "shared/bijux-docs/styles/08-responsive.css")"
+  responsive_css_path="${repo_root}/${responsive_css_rel}"
 
   if [[ ! -f "${responsive_css_path}" ]]; then
     echo "ERROR: missing responsive stylesheet ${responsive_css_path}" >&2
@@ -192,7 +201,7 @@ cleanup() {
 trap cleanup EXIT
 
 if ! git clone --depth 1 --branch "${std_ref}" "${std_git_url}" "${tmp_dir}/bijux-std" >/dev/null 2>&1; then
-  local_std_manifest="${std_root}/$(local_to_remote_rel "${remote_manifest_rel}")"
+  local_std_manifest="${std_root}/${manifest_rel}"
   if [[ "${strict_remote}" == "1" ]]; then
     echo "ERROR: failed to clone ${std_git_url}@${std_ref} (strict remote mode)" >&2
     exit 1
@@ -206,9 +215,9 @@ if ! git clone --depth 1 --branch "${std_ref}" "${std_git_url}" "${tmp_dir}/biju
     exit 1
   fi
 else
-  remote_manifest_path="${tmp_dir}/bijux-std/$(local_to_remote_rel "${remote_manifest_rel}")"
+  remote_manifest_path="${tmp_dir}/bijux-std/${manifest_rel}"
   if [[ ! -f "${remote_manifest_path}" ]]; then
-    echo "ERROR: missing manifest ${remote_manifest_rel} in ${std_git_url}@${std_ref}" >&2
+    echo "ERROR: missing manifest ${manifest_rel} in ${std_git_url}@${std_ref}" >&2
     exit 1
   fi
   cp "${remote_manifest_path}" "${tmp_manifest}"

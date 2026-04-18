@@ -1,13 +1,12 @@
 version: 1
-manifest: .bijux/shared/shared-dir-sha256.txt
+manifest: shared/shared-dir-sha256.txt
 directories:
-  - .bijux/shared/bijux-docs
-  - .bijux/shared/bijux-makes-py
-  - .bijux/shared/bijux-checks
-  - .bijux/shared/bijux-gh
+  - shared/bijux-docs
+  - shared/bijux-makes-py
+  - shared/bijux-checks
+  - shared/bijux-gh
 remote:
   repo_url: https://github.com/bijux/bijux-std
   git_url: https://github.com/bijux/bijux-std.git
-  remote_manifest: shared/shared-dir-sha256.txt
   default_ref: main
   tag_pattern: v*
