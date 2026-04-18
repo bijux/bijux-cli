@@ -138,3 +138,5 @@ openapitools.json
 # Workspace-generated outputs
 /artifacts/
 /comments.txt
+
+artifacts/bijux-docs/
