@@ -5,6 +5,7 @@ Canonical source-of-truth for Python-first Bijux repositories:
 - `.github/automation-identity.md`
 - `.github/ISSUE_TEMPLATE/*`
 - `.github/PULL_REQUEST_TEMPLATE/*`
+- `.github/scripts/wait_for_ci.py`
 - `.github/workflows/deploy-docs.yml`
 - `.github/workflows/build-release-artifacts.yml`
 - `.github/workflows/release-artifacts.yml`
@@ -37,6 +38,14 @@ Canonical community templates are provided under:
 - `.github/PULL_REQUEST_TEMPLATE/release-change.md`
 
 Repositories should not maintain ad hoc variants unless there is a repository-specific legal or compliance requirement.
+
+## Shared Scripts
+
+Canonical reusable release helper scripts are provided under `.github/scripts`.
+
+- `wait_for_ci.py`: waits for the configured CI workflow to complete for the release SHA.
+
+Repository-specific release prepare scripts may still exist in `.github/scripts`, but shared helpers should come from this canonical source.
 
 ## `release-pypi.yml` configuration contract
 
