@@ -175,20 +175,20 @@ jobs:
           fi
 
           python3 - "$package_matrix_json" <<'PY'
-import json, sys
-raw = sys.argv[1]
-try:
-    value = json.loads(raw)
-except Exception as exc:  # pragma: no cover
-    raise SystemExit(f"Invalid package matrix JSON: {exc}")
-if not isinstance(value, list):
-    raise SystemExit("Package matrix JSON must be a JSON array")
-for index, item in enumerate(value):
-    if not isinstance(item, dict):
-        raise SystemExit(f"Package matrix entry {index} must be an object")
-    if "package_slug" not in item or not str(item["package_slug"]).strip():
-        raise SystemExit(f"Package matrix entry {index} missing package_slug")
-PY
+          import json, sys
+          raw = sys.argv[1]
+          try:
+              value = json.loads(raw)
+          except Exception as exc:  # pragma: no cover
+              raise SystemExit(f"Invalid package matrix JSON: {exc}")
+          if not isinstance(value, list):
+              raise SystemExit("Package matrix JSON must be a JSON array")
+          for index, item in enumerate(value):
+              if not isinstance(item, dict):
+                  raise SystemExit(f"Package matrix entry {index} must be an object")
+              if "package_slug" not in item or not str(item["package_slug"]).strip():
+                  raise SystemExit(f"Package matrix entry {index} missing package_slug")
+          PY
 
           {
             echo "release_tag=${release_tag}"
