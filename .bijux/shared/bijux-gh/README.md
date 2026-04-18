@@ -2,6 +2,7 @@
 
 Canonical source-of-truth for Python-first Bijux repositories:
 
+- `.github/automation-identity.md`
 - `.github/workflows/deploy-docs.yml`
 - `.github/required-status-checks.md`
 - `.github/rulesets/main-branch-protection.json`

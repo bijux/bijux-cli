@@ -5,6 +5,7 @@ BIJUX_PY_LOCAL_REL ?= makes/bijux-py
 BIJUX_STANDARD_SHARED_DIR ?= $(if $(wildcard $(PROJECT_DIR)/.bijux/shared/bijux-gh),.bijux/shared/bijux-gh,shared/bijux-gh)
 BIJUX_STANDARD_DEPENDABOT_RENDER ?= scripts/render-dependabot.sh
 BIJUX_STANDARD_REQUIRED_FILES ?= \
+	automation-identity.md \
 	workflows/deploy-docs.yml \
 	required-status-checks.md \
 	rulesets/main-branch-protection.json
