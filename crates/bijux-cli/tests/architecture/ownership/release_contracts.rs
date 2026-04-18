@@ -100,6 +100,7 @@ fn github_workflows_pin_external_actions_to_commits() {
         ".github/workflows/ci.yml",
         ".github/workflows/deploy-docs.yml",
         ".github/workflows/release-github.yml",
+        ".github/workflows/release-ghcr.yml",
         ".github/workflows/release-crates.yml",
         ".github/workflows/release-pypi.yml",
     ] {
@@ -154,6 +155,9 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
         "BIJUX_RELEASE_PREPARE_COMMAND=.github/scripts/prepare_release_github.sh",
         "BIJUX_RELEASE_SETUP_PYTHON=true",
         "BIJUX_RELEASE_SETUP_RUST=true",
+        "BIJUX_GHCR_RELEASE_ENABLED=true",
+        "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES=bijux-cli",
+        "BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES=bijux-cli",
     ] {
         assert!(
             release_env.contains(required),
@@ -191,7 +195,7 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
     let workflow = read_repo_file(".github/workflows/release-pypi.yml");
     for required in [
         "PyO3/maturin-action@",
-        "maturin-version: ${{ env.MATURIN_VERSION }}",
+        "maturin-version: ${{ needs.resolve.outputs.maturin_version }}",
         "manylinux: \"2014\"",
         "--compatibility pypi",
         "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
