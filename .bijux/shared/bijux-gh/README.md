@@ -3,6 +3,8 @@
 Canonical source-of-truth for Python-first Bijux repositories:
 
 - `.github/automation-identity.md`
+- `.github/ISSUE_TEMPLATE/*`
+- `.github/PULL_REQUEST_TEMPLATE/*`
 - `.github/workflows/deploy-docs.yml`
 - `.github/workflows/build-release-artifacts.yml`
 - `.github/workflows/release-artifacts.yml`
@@ -23,6 +25,18 @@ Usage in a repository:
 3. Enforce drift checks with `make bijux-standard-check`.
 
 This keeps branch protection and bot update policy consistent across Python repositories.
+
+## Issue and Pull Request Templates
+
+Canonical community templates are provided under:
+
+- `.github/ISSUE_TEMPLATE/config.yml`
+- `.github/ISSUE_TEMPLATE/bug-report.yml`
+- `.github/ISSUE_TEMPLATE/feature-request.yml`
+- `.github/PULL_REQUEST_TEMPLATE/default.md`
+- `.github/PULL_REQUEST_TEMPLATE/release-change.md`
+
+Repositories should not maintain ad hoc variants unless there is a repository-specific legal or compliance requirement.
 
 ## `release-pypi.yml` configuration contract
 
