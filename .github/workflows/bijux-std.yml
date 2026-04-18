@@ -37,7 +37,8 @@ jobs:
                 .github/workflows/release-github.yml \
                 .github/workflows/reusable-ci-python-packages.yml \
                 .github/workflows/reusable-verify-python-packages.yml \
-                .github/workflows/reusable-ci-rust-stack.yml
+                .github/workflows/reusable-ci-rust-stack.yml \
+                .github/workflows/github-policy.yml
               make bijux-std-checks
               ;;
             report)
