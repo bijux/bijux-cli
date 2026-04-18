@@ -1,0 +1,86 @@
+name: reusable-verify-python-packages
+
+on:
+  workflow_call:
+    inputs:
+      package_matrix_json:
+        required: true
+        type: string
+      repository_timeout_minutes:
+        required: false
+        type: number
+        default: 30
+      repository_checks_command:
+        required: false
+        type: string
+        default: make check-bijux-standard check-config-layout check-make-layout help
+      fail_on_dirty_worktree:
+        required: false
+        type: boolean
+        default: false
+      default_test_python_versions:
+        required: false
+        type: string
+        default: '["3.11"]'
+      default_check_targets:
+        required: false
+        type: string
+        default: '["quality", "security", "docs", "api", "build", "sbom"]'
+      default_api_toolchain_targets:
+        required: false
+        type: string
+        default: '["api"]'
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    name: repository-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.repository_timeout_minutes }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: "3.11"
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Run repository checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          ${{ inputs.repository_checks_command }}
+
+      - name: Confirm clean worktree after checks
+        if: ${{ inputs.fail_on_dirty_worktree }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$(git status --short)" ]]; then
+            git status --short
+            exit 1
+          fi
+
+  package:
+    name: ${{ matrix.package_slug }}
+    needs: repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.package_matrix_json) }}
+    uses: ./.github/workflows/reusable-ci-python-packages.yml
+    with:
+      package_slug: ${{ matrix.package_slug }}
+      package_dir: ${{ matrix.package_dir }}
+      artifacts_dir: ${{ matrix.artifacts_dir }}
+      test_python_versions: ${{ matrix.test_python_versions || inputs.default_test_python_versions }}
+      check_targets: ${{ matrix.check_targets || inputs.default_check_targets }}
+      api_toolchain_targets: ${{ matrix.api_toolchain_targets || inputs.default_api_toolchain_targets }}
+      post_test_command: ${{ matrix.post_test_command || '' }}

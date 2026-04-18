@@ -1,0 +1,285 @@
+name: release-artifacts
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag to publish (defaults to current tag on tag pushes)"
+        required: false
+        type: string
+      enabled:
+        description: "Enable orchestrated artifact release for this run"
+        required: false
+        type: boolean
+      build_matrix_json:
+        description: "JSON array for build matrix"
+        required: false
+        type: string
+      pypi_matrix_json:
+        description: "JSON array for PyPI artifact publication matrix"
+        required: false
+        type: string
+      ghcr_matrix_json:
+        description: "JSON array for GHCR publication matrix"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+        default: ""
+      enabled:
+        required: false
+        type: boolean
+        default: false
+      build_matrix_json:
+        required: false
+        type: string
+        default: ""
+      pypi_matrix_json:
+        required: false
+        type: string
+        default: ""
+      ghcr_matrix_json:
+        required: false
+        type: string
+        default: ""
+      run_pypi:
+        required: false
+        type: boolean
+        default: true
+      run_ghcr:
+        required: false
+        type: boolean
+        default: true
+      run_github:
+        required: false
+        type: boolean
+        default: true
+      artifact_pattern:
+        required: false
+        type: string
+        default: ""
+      artifact_path:
+        required: false
+        type: string
+        default: ""
+      release_files_glob:
+        required: false
+        type: string
+        default: ""
+      fail_on_unmatched_files:
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+  packages: write
+
+concurrency:
+  group: release-artifacts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: resolve-release-artifacts-config
+    runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.config.outputs.enabled }}
+      release_tag: ${{ steps.config.outputs.release_tag }}
+      build_matrix_json: ${{ steps.config.outputs.build_matrix_json }}
+      pypi_matrix_json: ${{ steps.config.outputs.pypi_matrix_json }}
+      ghcr_matrix_json: ${{ steps.config.outputs.ghcr_matrix_json }}
+      run_pypi: ${{ steps.config.outputs.run_pypi }}
+      run_ghcr: ${{ steps.config.outputs.run_ghcr }}
+      run_github: ${{ steps.config.outputs.run_github }}
+      artifact_pattern: ${{ steps.config.outputs.artifact_pattern }}
+      artifact_path: ${{ steps.config.outputs.artifact_path }}
+      release_files_glob: ${{ steps.config.outputs.release_files_glob }}
+      fail_on_unmatched_files: ${{ steps.config.outputs.fail_on_unmatched_files }}
+    steps:
+      - name: Resolve release-artifacts configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f ".github/release.env" ]]; then
+            # shellcheck disable=SC1091
+            source ".github/release.env"
+          fi
+
+          non_empty() {
+            local value="$1"
+            [[ -n "${value// }" ]]
+          }
+
+          from_values() {
+            local input_value="$1"
+            local env_value="$2"
+            local repo_var_value="$3"
+            local default_value="$4"
+            if non_empty "$input_value"; then
+              printf '%s\n' "$input_value"
+              return
+            fi
+            if non_empty "$env_value"; then
+              printf '%s\n' "$env_value"
+              return
+            fi
+            if non_empty "$repo_var_value"; then
+              printf '%s\n' "$repo_var_value"
+              return
+            fi
+            printf '%s\n' "$default_value"
+          }
+
+          bool_from_values() {
+            local input_value="$1"
+            local env_value="$2"
+            local repo_var_value="$3"
+            local default_value="$4"
+            local raw
+            raw="$(from_values "$input_value" "$env_value" "$repo_var_value" "$default_value")"
+            case "${raw,,}" in
+              true|1|yes|on) printf 'true\n' ;;
+              false|0|no|off) printf 'false\n' ;;
+              *) printf '%s\n' "$default_value" ;;
+            esac
+          }
+
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            default_tag="${GITHUB_REF_NAME}"
+          else
+            default_tag=""
+          fi
+
+          enabled="$(bool_from_values "${{ inputs.enabled }}" "${BIJUX_RELEASE_ARTIFACTS_ENABLED:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_ENABLED || '' }}" "false")"
+          release_tag="$(from_values "${{ inputs.release_tag || github.event.inputs.release_tag || '' }}" "${BIJUX_RELEASE_ARTIFACTS_RELEASE_TAG:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_RELEASE_TAG || '' }}" "$default_tag")"
+          build_matrix_json="$(from_values "${{ inputs.build_matrix_json || github.event.inputs.build_matrix_json || '' }}" "${BIJUX_RELEASE_ARTIFACTS_BUILD_MATRIX_JSON:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_BUILD_MATRIX_JSON || '' }}" "[]")"
+          pypi_matrix_json="$(from_values "${{ inputs.pypi_matrix_json || github.event.inputs.pypi_matrix_json || '' }}" "${BIJUX_RELEASE_ARTIFACTS_PYPI_MATRIX_JSON:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_PYPI_MATRIX_JSON || '' }}" "[]")"
+          ghcr_matrix_json="$(from_values "${{ inputs.ghcr_matrix_json || github.event.inputs.ghcr_matrix_json || '' }}" "${BIJUX_RELEASE_ARTIFACTS_GHCR_MATRIX_JSON:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_GHCR_MATRIX_JSON || '' }}" "[]")"
+
+          run_pypi="$(bool_from_values "${{ inputs.run_pypi }}" "${BIJUX_RELEASE_ARTIFACTS_RUN_PYPI:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_RUN_PYPI || '' }}" "true")"
+          run_ghcr="$(bool_from_values "${{ inputs.run_ghcr }}" "${BIJUX_RELEASE_ARTIFACTS_RUN_GHCR:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_RUN_GHCR || '' }}" "true")"
+          run_github="$(bool_from_values "${{ inputs.run_github }}" "${BIJUX_RELEASE_ARTIFACTS_RUN_GITHUB:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_RUN_GITHUB || '' }}" "true")"
+
+          artifact_pattern="$(from_values "${{ inputs.artifact_pattern || '' }}" "${BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATTERN:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATTERN || '' }}" "*-release")"
+          artifact_path="$(from_values "${{ inputs.artifact_path || '' }}" "${BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATH:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_ARTIFACT_PATH || '' }}" ".github/tmp/release-assets")"
+          release_files_glob="$(from_values "${{ inputs.release_files_glob || '' }}" "${BIJUX_RELEASE_ARTIFACTS_RELEASE_FILES_GLOB:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_RELEASE_FILES_GLOB || '' }}" ".github/tmp/release-assets/**/*")"
+          fail_on_unmatched_files="$(bool_from_values "${{ inputs.fail_on_unmatched_files }}" "${BIJUX_RELEASE_ARTIFACTS_FAIL_ON_UNMATCHED_FILES:-}" "${{ vars.BIJUX_RELEASE_ARTIFACTS_FAIL_ON_UNMATCHED_FILES || '' }}" "true")"
+
+          python3 - "$build_matrix_json" "$pypi_matrix_json" "$ghcr_matrix_json" <<'PY'
+          import json
+          import sys
+
+          names = ["build", "pypi", "ghcr"]
+          for idx, raw in enumerate(sys.argv[1:]):
+              try:
+                  value = json.loads(raw)
+              except Exception as exc:  # pragma: no cover
+                  raise SystemExit(f"Invalid {names[idx]} matrix JSON: {exc}")
+              if not isinstance(value, list):
+                  raise SystemExit(f"{names[idx]} matrix JSON must be a JSON array")
+              for entry_idx, item in enumerate(value):
+                  if not isinstance(item, dict):
+                      raise SystemExit(f"{names[idx]} matrix entry {entry_idx} must be an object")
+                  if "package_slug" not in item or not str(item["package_slug"]).strip():
+                      raise SystemExit(f"{names[idx]} matrix entry {entry_idx} missing package_slug")
+          PY
+
+          {
+            echo "enabled=${enabled}"
+            echo "release_tag=${release_tag}"
+            echo "run_pypi=${run_pypi}"
+            echo "run_ghcr=${run_ghcr}"
+            echo "run_github=${run_github}"
+            echo "artifact_pattern=${artifact_pattern}"
+            echo "artifact_path=${artifact_path}"
+            echo "release_files_glob=${release_files_glob}"
+            echo "fail_on_unmatched_files=${fail_on_unmatched_files}"
+            echo "build_matrix_json<<EOF"
+            printf '%s\n' "${build_matrix_json}"
+            echo "EOF"
+            echo "pypi_matrix_json<<EOF"
+            printf '%s\n' "${pypi_matrix_json}"
+            echo "EOF"
+            echo "ghcr_matrix_json<<EOF"
+            printf '%s\n' "${ghcr_matrix_json}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build-${{ matrix.package_slug }}
+    needs: resolve
+    if: ${{ needs.resolve.outputs.enabled == 'true' && needs.resolve.outputs.build_matrix_json != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.resolve.outputs.build_matrix_json) }}
+    uses: ./.github/workflows/build-release-artifacts.yml
+    with:
+      package_slug: ${{ matrix.package_slug }}
+      package_dir: ${{ matrix.package_dir }}
+      artifacts_dir: ${{ matrix.artifacts_dir }}
+      makefile_path: ${{ matrix.makefile_path || '' }}
+      build_targets: ${{ matrix.build_targets || 'build' }}
+      dist_subdir: ${{ matrix.dist_subdir || 'build' }}
+
+  publish_pypi:
+    name: publish-pypi
+    needs:
+      - resolve
+      - build
+    if: ${{ needs.resolve.outputs.enabled == 'true' && needs.resolve.outputs.run_pypi == 'true' && needs.resolve.outputs.pypi_matrix_json != '[]' && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/release-pypi.yml
+    with:
+      release_tag: ${{ needs.resolve.outputs.release_tag }}
+      enabled: true
+      mode: artifact
+      package_matrix_json: ${{ needs.resolve.outputs.pypi_matrix_json }}
+    secrets: inherit
+
+  publish_ghcr:
+    name: publish-ghcr
+    needs:
+      - resolve
+      - build
+    if: ${{ needs.resolve.outputs.enabled == 'true' && needs.resolve.outputs.run_ghcr == 'true' && needs.resolve.outputs.ghcr_matrix_json != '[]' && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/release-ghcr.yml
+    with:
+      release_tag: ${{ needs.resolve.outputs.release_tag }}
+      enabled: true
+      package_matrix_json: ${{ needs.resolve.outputs.ghcr_matrix_json }}
+    secrets: inherit
+
+  release:
+    name: github-release
+    needs:
+      - resolve
+      - build
+      - publish_pypi
+      - publish_ghcr
+    if: ${{ needs.resolve.outputs.enabled == 'true' && needs.resolve.outputs.run_github == 'true' && (needs.build.result == 'success' || needs.build.result == 'skipped') && (needs.publish_pypi.result == 'success' || needs.publish_pypi.result == 'skipped') && (needs.publish_ghcr.result == 'success' || needs.publish_ghcr.result == 'skipped') }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-github.yml
+    with:
+      release_tag: ${{ needs.resolve.outputs.release_tag }}
+      enabled: true
+      artifact_pattern: ${{ needs.resolve.outputs.artifact_pattern }}
+      artifact_path: ${{ needs.resolve.outputs.artifact_path }}
+      release_files_glob: ${{ needs.resolve.outputs.release_files_glob }}
+      fail_on_unmatched_files: ${{ needs.resolve.outputs.fail_on_unmatched_files == 'true' }}

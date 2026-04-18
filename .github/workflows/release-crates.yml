@@ -2,7 +2,12 @@ name: Release Crates
 
 on:
   push:
+<<<<<<< Updated upstream
     tags: ["v*"]
+=======
+    tags:
+      - "v*"
+>>>>>>> Stashed changes
   workflow_dispatch:
 
 concurrency:

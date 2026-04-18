@@ -1,0 +1,373 @@
+name: release-github
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag to publish (defaults to current tag on tag pushes)"
+        required: false
+        type: string
+      enabled:
+        description: "Enable GitHub release publication for this run"
+        required: false
+        type: boolean
+  workflow_call:
+    inputs:
+      release_tag:
+        required: false
+        type: string
+        default: ""
+      enabled:
+        required: false
+        type: boolean
+        default: true
+      artifact_pattern:
+        required: false
+        type: string
+        default: ""
+      artifact_path:
+        required: false
+        type: string
+        default: ".github/tmp/release-assets"
+      release_files_glob:
+        required: false
+        type: string
+        default: ""
+      release_files_manifest:
+        required: false
+        type: string
+        default: ""
+      release_notes_path:
+        required: false
+        type: string
+        default: ""
+      release_name:
+        required: false
+        type: string
+        default: ""
+      wait_for_ci_command:
+        required: false
+        type: string
+        default: ""
+      plan_command:
+        required: false
+        type: string
+        default: ""
+      prepare_command:
+        required: false
+        type: string
+        default: ""
+      setup_python:
+        required: false
+        type: boolean
+        default: false
+      python_version:
+        required: false
+        type: string
+        default: "3.11"
+      setup_rust:
+        required: false
+        type: boolean
+        default: false
+      rust_toolchain:
+        required: false
+        type: string
+        default: "stable"
+      delete_existing_release:
+        required: false
+        type: boolean
+        default: true
+      fail_on_unmatched_files:
+        required: false
+        type: boolean
+        default: false
+      generate_release_notes:
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+  packages: write
+
+concurrency:
+  group: release-github-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: github-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Resolve release configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f ".github/release.env" ]]; then
+            # shellcheck disable=SC1091
+            source ".github/release.env"
+          fi
+
+          non_empty() {
+            local value="$1"
+            [[ -n "${value// }" ]]
+          }
+
+          from_values() {
+            local input_value="$1"
+            local env_value="$2"
+            local default_value="$3"
+            if non_empty "$input_value"; then
+              printf '%s\n' "$input_value"
+              return
+            fi
+            if non_empty "$env_value"; then
+              printf '%s\n' "$env_value"
+              return
+            fi
+            printf '%s\n' "$default_value"
+          }
+
+          bool_from_values() {
+            local input_value="$1"
+            local env_value="$2"
+            local default_value="$3"
+            local raw
+            raw="$(from_values "$input_value" "$env_value" "$default_value")"
+            case "${raw,,}" in
+              true|1|yes|on) printf 'true\n' ;;
+              false|0|no|off) printf 'false\n' ;;
+              *) printf '%s\n' "$default_value" ;;
+            esac
+          }
+
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            default_tag="${GITHUB_REF_NAME}"
+          else
+            default_tag=""
+          fi
+
+          release_tag="$(from_values "${{ inputs.release_tag || github.event.inputs.release_tag || '' }}" "${BIJUX_RELEASE_TAG:-}" "$default_tag")"
+          enabled="$(bool_from_values "${{ inputs.enabled }}" "${BIJUX_RELEASE_ENABLED:-}" "true")"
+          release_name="$(from_values "${{ inputs.release_name || '' }}" "${BIJUX_RELEASE_NAME:-}" "")"
+          artifact_pattern="$(from_values "${{ inputs.artifact_pattern || '' }}" "${BIJUX_RELEASE_ARTIFACT_PATTERN:-}" "")"
+          artifact_path="$(from_values "${{ inputs.artifact_path || '' }}" "${BIJUX_RELEASE_ARTIFACT_PATH:-}" ".github/tmp/release-assets")"
+          release_files_glob="$(from_values "${{ inputs.release_files_glob || '' }}" "${BIJUX_RELEASE_FILES_GLOB:-}" "")"
+          release_files_manifest="$(from_values "${{ inputs.release_files_manifest || '' }}" "${BIJUX_RELEASE_FILES_MANIFEST:-}" "")"
+          release_notes_path="$(from_values "${{ inputs.release_notes_path || '' }}" "${BIJUX_RELEASE_NOTES_PATH:-}" "")"
+          wait_for_ci_command="$(from_values "${{ inputs.wait_for_ci_command || '' }}" "${BIJUX_RELEASE_WAIT_FOR_CI_COMMAND:-}" "")"
+          plan_command="$(from_values "${{ inputs.plan_command || '' }}" "${BIJUX_RELEASE_PLAN_COMMAND:-}" "")"
+          prepare_command="$(from_values "${{ inputs.prepare_command || '' }}" "${BIJUX_RELEASE_PREPARE_COMMAND:-}" "")"
+          setup_python="$(bool_from_values "${{ inputs.setup_python }}" "${BIJUX_RELEASE_SETUP_PYTHON:-}" "false")"
+          python_version="$(from_values "${{ inputs.python_version || '' }}" "${BIJUX_RELEASE_PYTHON_VERSION:-}" "3.11")"
+          setup_rust="$(bool_from_values "${{ inputs.setup_rust }}" "${BIJUX_RELEASE_SETUP_RUST:-}" "false")"
+          rust_toolchain="$(from_values "${{ inputs.rust_toolchain || '' }}" "${BIJUX_RELEASE_RUST_TOOLCHAIN:-}" "stable")"
+          delete_existing_release="$(bool_from_values "${{ inputs.delete_existing_release }}" "${BIJUX_RELEASE_DELETE_EXISTING:-}" "true")"
+          fail_on_unmatched_files="$(bool_from_values "${{ inputs.fail_on_unmatched_files }}" "${BIJUX_RELEASE_FAIL_ON_UNMATCHED_FILES:-}" "false")"
+          generate_release_notes="$(bool_from_values "${{ inputs.generate_release_notes }}" "${BIJUX_RELEASE_GENERATE_RELEASE_NOTES:-}" "true")"
+
+          if [[ -n "${release_files_manifest}" ]]; then
+            if [[ ! -f "${release_files_manifest}" ]]; then
+              echo "release files manifest not found: ${release_files_manifest}" >&2
+              exit 1
+            fi
+            release_files_glob="$(cat "${release_files_manifest}")"
+          fi
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "enabled=${enabled}"
+            echo "release_name=${release_name}"
+            echo "artifact_pattern=${artifact_pattern}"
+            echo "artifact_path=${artifact_path}"
+            echo "release_notes_path=${release_notes_path}"
+            echo "wait_for_ci_command=${wait_for_ci_command}"
+            echo "plan_command=${plan_command}"
+            echo "prepare_command=${prepare_command}"
+            echo "setup_python=${setup_python}"
+            echo "python_version=${python_version}"
+            echo "setup_rust=${setup_rust}"
+            echo "rust_toolchain=${rust_toolchain}"
+            echo "delete_existing_release=${delete_existing_release}"
+            echo "fail_on_unmatched_files=${fail_on_unmatched_files}"
+            echo "generate_release_notes=${generate_release_notes}"
+            echo "release_files_glob<<EOF"
+            printf '%s\n' "${release_files_glob}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Python
+        if: ${{ steps.config.outputs.setup_python == 'true' }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ steps.config.outputs.python_version }}
+
+      - name: Install Rust toolchain
+        if: ${{ steps.config.outputs.setup_rust == 'true' }}
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ steps.config.outputs.rust_toolchain }}
+
+      - name: Restore Rust cache
+        if: ${{ steps.config.outputs.setup_rust == 'true' }}
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Wait for CI gate
+        if: ${{ github.event_name == 'push' && steps.config.outputs.wait_for_ci_command != '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          TARGET_REF_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          CI_WAIT_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export CI_WAIT_STARTED_AT
+          eval "${{ steps.config.outputs.wait_for_ci_command }}"
+
+      - name: Decide whether to publish a GitHub Release
+        id: plan
+        if: ${{ steps.config.outputs.plan_command != '' }}
+        env:
+          TARGET_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "${{ steps.config.outputs.plan_command }}"
+
+      - name: Resolve publish decision
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish="${{ steps.plan.outputs.publish || '' }}"
+          if [[ -z "${publish}" ]]; then
+            publish="true"
+          fi
+          if [[ "${{ steps.config.outputs.enabled }}" != "true" ]]; then
+            publish="false"
+          fi
+
+          release_tag="${{ steps.plan.outputs.tag || '' }}"
+          if [[ -z "${release_tag}" ]]; then
+            release_tag="${{ steps.config.outputs.release_tag }}"
+          fi
+
+          release_name="${{ steps.config.outputs.release_name }}"
+          if [[ -z "${release_name}" ]]; then
+            release_name="${release_tag}"
+          fi
+
+          release_version="${{ steps.plan.outputs.version || '' }}"
+
+          if [[ "${publish}" == "true" && -z "${release_tag}" ]]; then
+            echo "release tag is required when publish=true" >&2
+            exit 1
+          fi
+
+          {
+            echo "publish=${publish}"
+            echo "release_tag=${release_tag}"
+            echo "release_name=${release_name}"
+            echo "release_version=${release_version}"
+            echo "release_notes_path=${{ steps.config.outputs.release_notes_path }}"
+            echo "release_files_glob<<EOF"
+            printf '%s\n' "${{ steps.config.outputs.release_files_glob }}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release assets
+        if: ${{ steps.release.outputs.publish == 'true' && steps.config.outputs.prepare_command != '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          RELEASE_NAME: ${{ steps.release.outputs.release_name }}
+          RELEASE_VERSION: ${{ steps.release.outputs.release_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "${{ steps.config.outputs.prepare_command }}"
+
+      - name: Download staged release artifacts
+        if: ${{ steps.release.outputs.publish == 'true' && steps.config.outputs.artifact_pattern != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "${GITHUB_RUN_ID}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "${{ steps.config.outputs.artifact_pattern }}" \
+            --dir "${{ steps.config.outputs.artifact_path }}"
+
+      - name: Reset existing GitHub release
+        if: ${{ steps.release.outputs.publish == 'true' && steps.config.outputs.delete_existing_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${{ steps.release.outputs.release_tag }}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release delete "${{ steps.release.outputs.release_tag }}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --yes
+          else
+            echo "No existing GitHub release for ${{ steps.release.outputs.release_tag }}; creating a fresh release."
+          fi
+
+      - name: Publish GitHub release with files and body
+        if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob != '' && steps.release.outputs.release_notes_path != '' }}
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        with:
+          tag_name: ${{ steps.release.outputs.release_tag }}
+          name: ${{ steps.release.outputs.release_name }}
+          body_path: ${{ steps.release.outputs.release_notes_path }}
+          files: ${{ steps.release.outputs.release_files_glob }}
+          overwrite_files: true
+          fail_on_unmatched_files: ${{ steps.config.outputs.fail_on_unmatched_files == 'true' }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}
+          preserve_order: true
+
+      - name: Publish GitHub release with files
+        if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob != '' && steps.release.outputs.release_notes_path == '' }}
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        with:
+          tag_name: ${{ steps.release.outputs.release_tag }}
+          name: ${{ steps.release.outputs.release_name }}
+          files: ${{ steps.release.outputs.release_files_glob }}
+          overwrite_files: true
+          fail_on_unmatched_files: ${{ steps.config.outputs.fail_on_unmatched_files == 'true' }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}
+          preserve_order: true
+
+      - name: Publish GitHub release with body
+        if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob == '' && steps.release.outputs.release_notes_path != '' }}
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        with:
+          tag_name: ${{ steps.release.outputs.release_tag }}
+          name: ${{ steps.release.outputs.release_name }}
+          body_path: ${{ steps.release.outputs.release_notes_path }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}
+
+      - name: Publish GitHub release without assets
+        if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob == '' && steps.release.outputs.release_notes_path == '' }}
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        with:
+          tag_name: ${{ steps.release.outputs.release_tag }}
+          name: ${{ steps.release.outputs.release_name }}
+          generate_release_notes: ${{ steps.config.outputs.generate_release_notes == 'true' }}

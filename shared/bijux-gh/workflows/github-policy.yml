@@ -1,0 +1,68 @@
+name: github-policy
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Gather changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_ref="${{ github.base_ref }}"
+          git fetch --no-tags --prune --depth=1 origin "${base_ref}"
+          git diff --name-only "origin/${base_ref}...HEAD" > /tmp/changed-files.txt
+
+      - name: Enforce protected .github change policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/check_protected_github_changes.py --changed-file-list /tmp/changed-files.txt
+
+      - name: Render generated .github files from manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          python3 .github/scripts/render_repo_configs.py --repo "${repo_name}"
+
+      - name: Ensure generated files are committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$(git status --short -- .github/release.env .github/dependabot.yml .github/workflows/ci.yml .github/workflows/verify.yml .github/standards/bijux-std.sha)" ]]; then
+            git status --short -- .github/release.env .github/dependabot.yml .github/workflows/ci.yml .github/workflows/verify.yml .github/standards/bijux-std.sha
+            exit 1
+          fi
+
+      - name: Verify shared file checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum --check .github/bijux-std-shared.sha256
+
+      - name: Verify pinned action references
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/check_pinned_actions.py \
+            .github/workflows/bijux-std.yml \
+            .github/workflows/build-release-artifacts.yml \
+            .github/workflows/deploy-docs.yml \
+            .github/workflows/release-artifacts.yml \
+            .github/workflows/release-github.yml \
+            .github/workflows/reusable-ci-python-packages.yml \
+            .github/workflows/reusable-verify-python-packages.yml \
+            .github/workflows/reusable-ci-rust-stack.yml \
+            .github/workflows/github-policy.yml
