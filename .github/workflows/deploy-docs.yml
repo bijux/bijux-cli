@@ -220,8 +220,10 @@ jobs:
       - name: Install Rust toolchain
         if: ${{ steps.config.outputs.setup_rust == 'true' }}
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        env:
+          RUST_TOOLCHAIN_VERSION: ${{ steps.config.outputs.rust_toolchain }}
         with:
-          toolchain: ${{ steps.config.outputs.rust_toolchain }}
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - name: Restore Rust cache
         if: ${{ steps.config.outputs.setup_rust == 'true' }}

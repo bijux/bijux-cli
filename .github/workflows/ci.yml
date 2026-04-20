@@ -35,7 +35,7 @@ jobs:
       - name: "Set up Rust"
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
           components: rustfmt
       - name: "Restore the Rust cache"
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
@@ -57,7 +57,7 @@ jobs:
       - name: "Set up Rust"
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
           components: clippy
       - name: "Restore the Rust cache"
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
@@ -79,7 +79,7 @@ jobs:
       - name: "Set up Rust"
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
       - name: "Restore the Rust cache"
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
       - name: "Install Rust security tools"
@@ -108,7 +108,7 @@ jobs:
       - name: "Set up Rust"
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
       - name: "Restore the Rust cache"
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
       - name: "Install cargo-nextest"
