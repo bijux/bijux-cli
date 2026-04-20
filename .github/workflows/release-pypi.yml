@@ -1,4 +1,4 @@
-name: Release PyPI
+name: release-pypi.yml
 
 on:
   push:
