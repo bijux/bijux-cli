@@ -119,7 +119,8 @@ fn github_workflows_pin_external_actions_to_commits() {
                 "{path} must pin actions to a full commit SHA, found: {spec}"
             );
         }
-        let has_supported_toolchain_pin = content.contains("toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}")
+        let has_supported_toolchain_pin = content
+            .contains("toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}")
             || content.contains("toolchain: \"${{ env.RUST_TOOLCHAIN_VERSION }}\"")
             || content.contains("toolchain: ${{ steps.config.outputs.rust_toolchain }}");
         assert!(
