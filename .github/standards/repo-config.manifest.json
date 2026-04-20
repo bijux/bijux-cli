@@ -164,7 +164,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 18000
+              "time": "05:00"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -190,7 +190,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 19800
+              "time": "05:30"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -216,7 +216,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 21600
+              "time": "06:00"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -242,7 +242,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 22500
+              "time": "06:15"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -734,7 +734,7 @@
           },
           "jobs": {
             "package": {
-              "uses": "bijux/bijux-std/.github/workflows/reusable-ci-python-packages.yml@c240e0629f69cabe675d4bb43f75e8a072e69cec",
+              "uses": "bijux/bijux-std/.github/workflows/reusable-ci-python-packages.yml@d35733591734dd43bc8e5286d87f3a3b48c8d472",
               "with": {
                 "package_slug": "${{ inputs.package_slug }}",
                 "package_dir": "${{ inputs.package_dir }}",
@@ -970,10 +970,10 @@
             "contents": "read"
           },
           "env": {
-            "PIP_DISABLE_PIP_VERSION_CHECK": 1,
-            "PYTHONUNBUFFERED": 1,
-            "BIJUXCLI_API_GUARD": 1,
-            "RUST_TOOLCHAIN_VERSION": "1.85.0"
+            "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+            "PYTHONUNBUFFERED": "1",
+            "BIJUXCLI_API_GUARD": "1",
+            "RUST_TOOLCHAIN_VERSION": "1.86.0"
           },
           "jobs": {
             "fmt": {
@@ -987,9 +987,9 @@
                 },
                 {
                   "name": "Set up Python",
-                  "uses": "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548",
+                  "uses": "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
                   "with": {
-                    "python-version": 3.11,
+                    "python-version": "3.11",
                     "cache": "pip",
                     "cache-dependency-path": "crates/bijux-cli-python/pyproject.toml"
                   }
@@ -1023,9 +1023,9 @@
                 },
                 {
                   "name": "Set up Python",
-                  "uses": "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548",
+                  "uses": "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
                   "with": {
-                    "python-version": 3.11,
+                    "python-version": "3.11",
                     "cache": "pip",
                     "cache-dependency-path": "crates/bijux-cli-python/pyproject.toml"
                   }
@@ -1059,9 +1059,9 @@
                 },
                 {
                   "name": "Set up Python",
-                  "uses": "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548",
+                  "uses": "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
                   "with": {
-                    "python-version": 3.11,
+                    "python-version": "3.11",
                     "cache": "pip",
                     "cache-dependency-path": "crates/bijux-cli-python/pyproject.toml"
                   }
@@ -1095,8 +1095,8 @@
                 "fail-fast": false,
                 "matrix": {
                   "python-version": [
-                    3.11,
-                    3.12
+                    "3.11",
+                    "3.12"
                   ]
                 }
               },
@@ -1107,7 +1107,7 @@
                 },
                 {
                   "name": "Set up Python",
-                  "uses": "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548",
+                  "uses": "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
                   "with": {
                     "python-version": "${{ matrix.python-version }}",
                     "cache": "pip",
@@ -1731,7 +1731,7 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "8cff763f14aa5cf2910954ffbb61e702c102145c"
+      "pinned_std_sha": "0c7c473db6ca6d893af342007ece36bc48097984"
     },
     {
       "name": "bijux-proteomics",
@@ -2332,7 +2332,7 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "8cff763f14aa5cf2910954ffbb61e702c102145c"
+      "pinned_std_sha": "d35733591734dd43bc8e5286d87f3a3b48c8d472"
     },
     {
       "name": "bijux-std",

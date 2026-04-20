@@ -4,4 +4,4 @@
 # Governance and automation
 .github/ @bijux
 shared/bijux-gh/ @bijux
-.bijux/shared/bijux-checks/ @bijux
+shared/bijux-checks/ @bijux
