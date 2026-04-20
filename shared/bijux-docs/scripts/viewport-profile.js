@@ -7,7 +7,7 @@
   const PHONE_MAX_MEDIA = "(max-width: 47.9375em)";
   const NORMAL_MAX_MEDIA = "(max-width: 76.2344em)";
   const WIDE_MIN_MEDIA = "(min-width: 120em)";
-  const VIEWPORT_PROFILE_SOURCE = "shared/bijux-docs/scripts/viewport-profile.js";
+  const VIEWPORT_PROFILE_SOURCE = ".bijux/shared/bijux-docs/scripts/viewport-profile.js";
   const VIEWPORT_PROFILE_REVISION = "2026-04-17";
   const VIEWPORT_PROFILES = Object.freeze({
     PHONE: "phone",
