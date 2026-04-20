@@ -39,6 +39,7 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUST_TOOLCHAIN_VERSION: "1.85.0"
 
 jobs:
   build:
@@ -221,7 +222,7 @@ jobs:
         if: ${{ steps.config.outputs.setup_rust == 'true' }}
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
-          toolchain: "1.85.0"
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - name: Restore Rust cache
         if: ${{ steps.config.outputs.setup_rust == 'true' }}
