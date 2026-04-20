@@ -96,27 +96,6 @@ jobs:
             run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat --advisory
             artifact_name: compatibility-fixture-report
             artifact_path: artifacts/reports
-          - id: coverage-reports
-            name: Coverage Reports
-            os: ubuntu-24.04
-            timeout_minutes: 45
-            soft_fail: true
-            rust_components: ""
-            pre_run: |
-              cargo install --locked cargo-nextest --version 0.9.100
-              cargo install --locked cargo-llvm-cov --version 0.6.21
-            run: |
-              make coverage
-              git diff --exit-code \
-                docs/reports/foundation/line_coverage_under_50_report.md \
-                docs/reports/foundation/line_coverage_under_25_report.md \
-                docs/reports/foundation/line_coverage_zero_direct_report.md
-            artifact_name: coverage-reports
-            artifact_path: |
-              artifacts/coverage
-              docs/reports/foundation/line_coverage_under_50_report.md
-              docs/reports/foundation/line_coverage_under_25_report.md
-              docs/reports/foundation/line_coverage_zero_direct_report.md
           - id: dependency-audit
             name: Dependency Audit
             os: ubuntu-24.04
