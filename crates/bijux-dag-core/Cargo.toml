@@ -22,7 +22,7 @@ unicode-normalization = "0.1"
 
 [dev-dependencies]
 tempfile = { workspace = true }
-criterion = "0.5"
+criterion = "0.8"
 serde_yaml = "0.9"
 
 [[bench]]
