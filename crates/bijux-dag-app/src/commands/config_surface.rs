@@ -96,7 +96,7 @@ pub fn config_fingerprint(cfg: &RuntimeSurfaceConfig) -> String {
     let bytes = serde_json::to_vec(&normalized).expect("config serialize");
     let mut hasher = Sha256::new();
     hasher.update(bytes);
-    format!("{:x}", hasher.finalize())
+    hex::encode(hasher.finalize())
 }
 
 pub fn policy_evaluation_trace(policy: &PolicySurfaceConfig) -> Vec<String> {

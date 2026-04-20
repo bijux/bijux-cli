@@ -29,7 +29,7 @@ fn manifest_anchor_diagnostics(
     match fs::read_to_string(path) {
         Ok(text) => {
             let digest = sha2::Sha256::digest(text.as_bytes());
-            let current_checksum = format!("{digest:x}");
+            let current_checksum = hex::encode(digest);
             if current_checksum != record.manifest_checksum_sha256 {
                 diagnostics.push(PluginLoadDiagnostic {
                     namespace: record.manifest.namespace.0.clone(),

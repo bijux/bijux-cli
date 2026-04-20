@@ -31,7 +31,7 @@ fn planner_reproducibility_hash_is_stable_across_runs() {
         let payload = serde_json::to_vec(&plan).expect("serialize plan");
         let mut h = Sha256::new();
         h.update(payload);
-        digests.push(format!("{:x}", h.finalize()));
+        digests.push(hex::encode(h.finalize()));
     }
 
     assert!(

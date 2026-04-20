@@ -26,7 +26,7 @@ use crate::infrastructure::fs_store::atomic_write_text;
 
 fn checksum_sha256(input: &str) -> String {
     let digest = Sha256::digest(input.as_bytes());
-    format!("{digest:x}")
+    hex::encode(digest)
 }
 
 /// Load plugin registry from disk.

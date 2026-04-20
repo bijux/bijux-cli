@@ -230,7 +230,7 @@ fn planner_fingerprint(
     let payload = serde_json::to_vec(&(nodes, edges, ordering))
         .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
     hasher.update(payload);
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(hex::encode(hasher.finalize()))
 }
 
 pub fn planner_diagnostics_from_error(error: &PlannerError) -> Vec<PlannerDiagnostic> {

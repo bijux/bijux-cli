@@ -187,7 +187,7 @@ fn scheduler_regression_corpus_ordering_remains_stable() {
 
     let mut h = Sha256::new();
     h.update(got.join("\n").as_bytes());
-    let digest = format!("{:x}", h.finalize());
+    let digest = hex::encode(h.finalize());
     assert_eq!(digest.len(), 64);
 }
 

@@ -463,7 +463,7 @@ pub(super) fn run_repo_schema_changelog(out: &Path, schema_root: &Path) -> Resul
     for rel in schema_files {
         let full = root.join(&rel);
         let bytes = fs::read(&full).map_err(|err| err.to_string())?;
-        let sum = format!("{:x}", sha2::Sha256::digest(bytes));
+        let sum = hex::encode(sha2::Sha256::digest(bytes));
         report.push_str(&format!("- {rel} :: {sum}\n"));
     }
 
