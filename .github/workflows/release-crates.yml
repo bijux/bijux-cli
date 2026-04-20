@@ -1,4 +1,4 @@
-name: release-crates
+name: release-crates.yml
 
 on:
   push:
