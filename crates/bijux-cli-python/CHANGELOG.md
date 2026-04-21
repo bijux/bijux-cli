@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-3-6"></a>
 
-## [0.3.6] – Unreleased
+## 0.3.6 – Unreleased
 
 ### Changed
 - Aligned `bijux-cli-python` documentation badges with the shared repository contract so crate docs surfaces stay in sync with root and handbook badge ordering.
@@ -26,7 +26,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-3-5"></a>
 
-## [0.3.5] – 2026-04-12
+## 0.3.5 – 2026-04-12
 
 ### Changed
 - Grouped shared release-channel badges onto one line and shared documentation badges onto one line across repository and package surfaces.
@@ -37,7 +37,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-3-4"></a>
 
-## [0.3.4] – 2026-04-06
+## 0.3.4 – 2026-04-06
 
 ### Changed
 - Updated release metadata and automation to align with the unified `bijux-core` repository model.
@@ -51,7 +51,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-3-0"></a>
 
-## [0.3.0] – 2026-03-14
+## 0.3.0 – 2026-03-14
 
 ### Added
 - Rust-owned runtime crates for the end-user binary (`bijux`), the Python bridge package, and the workspace-only maintainer control plane (`bijux-dev-cli`)
@@ -93,7 +93,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-2-0"></a>
 
-## [0.2.0] – 2026-01-26
+## 0.2.0 – 2026-01-26
 
 ### Added
 - Linear bootstrap flow with explicit bootstrap boundaries and a first-class `CLIIntent`
@@ -126,7 +126,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-1-3"></a>
 
-## [0.1.3] – 2025-08-20
+## 0.1.3 – 2025-08-20
 
 ### Added
 * **ADR-0005:** Zero-root-pollution via **Makefile-orchestrated artifact containment** (all generated outputs under `artifacts/`).  
@@ -142,7 +142,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-1-2"></a>
 
-## [0.1.2] – 2025-08-17
+## 0.1.2 – 2025-08-17
 
 ### Added
 * **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
@@ -173,7 +173,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-1-1"></a>
 
-## [0.1.1] – 2025-08-14
+## 0.1.1 – 2025-08-14
 
 ### Added
 * **Publish pipeline:** GitHub Actions `publish.yml` that publishes via `make publish` only after required checks are green and a tag is present.
@@ -212,7 +212,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-1-0"></a>
 
-## [0.1.0] – 2025-08-12
+## 0.1.0 – 2025-08-12
 
 ### Added
 
