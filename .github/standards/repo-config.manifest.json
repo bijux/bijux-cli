@@ -898,7 +898,7 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "8cff763f14aa5cf2910954ffbb61e702c102145c"
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     },
     {
       "name": "bijux-core",
@@ -1260,7 +1260,8 @@
         "release-crates",
         "release-github",
         "release-pypi"
-      ]
+      ],
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     },
     {
       "name": "bijux-masterclass",
@@ -1357,7 +1358,8 @@
       "workflow_allowlist": [
         "deploy-docs",
         "github-policy"
-      ]
+      ],
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     },
     {
       "name": "bijux-pollenomics",
@@ -1855,7 +1857,7 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "8cff763f14aa5cf2910954ffbb61e702c102145c"
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     },
     {
       "name": "bijux-proteomics",
@@ -2461,66 +2463,7 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "8cff763f14aa5cf2910954ffbb61e702c102145c"
-    },
-    {
-      "name": "bijux-std",
-      "release_env": [
-        {
-          "key": "BIJUX_RELEASE_ENABLED",
-          "type": "bool",
-          "value": false
-        },
-        {
-          "key": "BIJUX_RELEASE_ARTIFACTS_ENABLED",
-          "type": "bool",
-          "value": false
-        },
-        {
-          "key": "BIJUX_CRATES_RELEASE_ENABLED",
-          "type": "bool",
-          "value": false
-        },
-        {
-          "key": "BIJUX_GHCR_RELEASE_ENABLED",
-          "type": "bool",
-          "value": false
-        },
-        {
-          "key": "BIJUX_PYPI_ENABLED",
-          "type": "bool",
-          "value": false
-        }
-      ],
-      "workflow_allowlist": [
-        "github-policy"
-      ],
-      "pinned_std_sha": "5da4225aedcfc2af92bb431875243fa2db2b0ce9",
-      "dependabot": {
-        "version": 2,
-        "updates": [
-          {
-            "package-ecosystem": "github-actions",
-            "directory": "/",
-            "schedule": {
-              "interval": "weekly"
-            },
-            "open-pull-requests-limit": 10,
-            "labels": [
-              "dependencies",
-              "github_actions"
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "bijux.github.io",
-      "release_env": [],
-      "workflow_allowlist": [
-        "deploy-docs",
-        "github-policy"
-      ]
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     },
     {
       "name": "bijux-telecom",
@@ -2883,6 +2826,95 @@
         "release-github",
         "release-pypi"
       ]
+    },
+    {
+      "name": "bijux-std",
+      "release_env": [
+        {
+          "key": "BIJUX_RELEASE_ENABLED",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "key": "BIJUX_RELEASE_ARTIFACTS_ENABLED",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_ENABLED",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "key": "BIJUX_GHCR_RELEASE_ENABLED",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "key": "BIJUX_PYPI_ENABLED",
+          "type": "bool",
+          "value": false
+        }
+      ],
+      "dependabot": {
+        "version": 2,
+        "updates": [
+          {
+            "package-ecosystem": "github-actions",
+            "directory": "/",
+            "schedule": {
+              "interval": "weekly"
+            },
+            "open-pull-requests-limit": 10,
+            "labels": [
+              "dependencies",
+              "github_actions"
+            ]
+          }
+        ]
+      },
+      "workflow_allowlist": [
+        "github-policy"
+      ],
+      "pinned_std_sha": "5da4225aedcfc2af92bb431875243fa2db2b0ce9"
+    },
+    {
+      "name": "bijux.github.io",
+      "release_env": [],
+      "dependabot": {
+        "version": 2,
+        "updates": [
+          {
+            "package-ecosystem": "github-actions",
+            "directory": "/",
+            "schedule": {
+              "interval": "weekly"
+            },
+            "open-pull-requests-limit": 10,
+            "labels": [
+              "dependencies",
+              "github_actions"
+            ]
+          },
+          {
+            "package-ecosystem": "pip",
+            "directory": "/configs/docs",
+            "schedule": {
+              "interval": "weekly"
+            },
+            "open-pull-requests-limit": 10,
+            "labels": [
+              "dependencies",
+              "python"
+            ]
+          }
+        ]
+      },
+      "workflow_allowlist": [
+        "deploy-docs",
+        "github-policy"
+      ],
+      "pinned_std_sha": "af42c48d386fe5af0eb4c4f45041d1ab4d14b634"
     }
   ]
 }

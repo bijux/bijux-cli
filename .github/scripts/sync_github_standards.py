@@ -48,6 +48,7 @@ DEFAULT_REPOS = [
     "bijux-masterclass",
     "bijux-pollenomics",
     "bijux-proteomics",
+    "bijux-telecom",
     "bijux.github.io",
 ]
 
