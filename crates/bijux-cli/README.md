@@ -14,7 +14,7 @@
 
 `bijux-cli` is the Rust runtime crate behind the `bijux` executable.
 
-It is the public command runtime product in `v0.3.5` and the source of truth
+It is the public command runtime product in `v0.3.6` and the source of truth
 for runtime command semantics shared by the native binary and Python bridge.
 
 ## Scope

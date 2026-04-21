@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-3-6"></a>
 
-## 0.3.6 – Unreleased
+## 0.3.6 – 2026-04-21
 
 ### Changed
 - Standardized the `bijux-cli` badge contract across crate and repository surfaces so docs badges render in one deterministic order: repository docs, `bijux-cli` docs, then `bijux-cli` rust-docs.
@@ -306,7 +306,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * None
 
 
-[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/bijux/bijux-core/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
 [0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/bijux/bijux-core/compare/v0.1.3...v0.2.0
