@@ -246,8 +246,14 @@ def render_repository_badges(
         repository_group_records,
         ("family-docs-badge", "family-rustdocs-badge"),
     )
+    docs_parts: list[str] = []
+    repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
+    if repository_docs_badge:
+        docs_parts.append(repository_docs_badge)
     if docs_line:
-        sections.append(docs_line)
+        docs_parts.append(docs_line)
+    if docs_parts:
+        sections.append(" ".join(docs_parts))
     return "\n\n".join(sections)
 
 
@@ -283,8 +289,14 @@ def render_package_badges(
         package_group_records,
         ("family-docs-badge", "family-rustdocs-badge"),
     )
+    docs_parts: list[str] = []
+    repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
+    if repository_docs_badge:
+        docs_parts.append(repository_docs_badge)
     if docs_line:
-        sections.append(docs_line)
+        docs_parts.append(docs_line)
+    if docs_parts:
+        sections.append(" ".join(docs_parts))
     return "\n\n".join(sections)
 
 

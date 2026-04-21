@@ -27,7 +27,7 @@ Generated badge sections always render in this order:
 
 1. surface summary badges
 2. one line of release-channel badges in this order: `crates.io`, `PyPI`, `GHCR`
-3. one line of documentation badges in this order: published docs, Rust docs
+3. one line of documentation badges in this order: repository docs, package docs, Rust docs
 
 Link policy for GHCR badges is fixed here as part of the contract:
 
@@ -99,3 +99,9 @@ Link policy for GHCR badges is fixed here as part of the contract:
 <!-- bijux-core-badges:family-docs-badge:start -->
 [![{{ docs_badge_alt }}](https://img.shields.io/badge/docs-{{ docs_badge_label }}-2563EB?logo=materialformkdocs&logoColor=white)]({{ docs_url }})
 <!-- bijux-core-badges:family-docs-badge:end -->
+
+## Repository Docs Badge
+
+<!-- bijux-core-badges:repository-docs-badge:start -->
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/)
+<!-- bijux-core-badges:repository-docs-badge:end -->
