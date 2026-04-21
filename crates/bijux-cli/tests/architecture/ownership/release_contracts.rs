@@ -153,12 +153,12 @@ fn github_workflows_pin_external_actions_to_commits() {
 fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tree() {
     let workflow_allowlist = workflow_allowlist_for_repo("bijux-core");
     assert!(
-        !workflow_allowlist.iter().any(|entry| entry == "release-github"),
-        "bijux-core workflow allowlist should not include release-github; release lanes are managed through shared standards rollout"
+        workflow_allowlist.iter().any(|entry| entry == "release-github"),
+        "bijux-core workflow allowlist must include release-github for managed release publication"
     );
     assert!(
-        !repo_root().join(".github/workflows/release-github.yml").exists(),
-        "bijux-core should not carry a local release-github workflow when it is not allowlisted"
+        repo_root().join(".github/workflows/release-github.yml").exists(),
+        "bijux-core must carry the managed release-github workflow when allowlisted"
     );
 }
 
@@ -166,12 +166,12 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 fn pypi_release_workflow_builds_pypi_compatible_distributions() {
     let workflow_allowlist = workflow_allowlist_for_repo("bijux-core");
     assert!(
-        !workflow_allowlist.iter().any(|entry| entry == "release-pypi"),
-        "bijux-core workflow allowlist should not include release-pypi; publication workflows are centralized in standards governance"
+        workflow_allowlist.iter().any(|entry| entry == "release-pypi"),
+        "bijux-core workflow allowlist must include release-pypi for Python compatibility publication"
     );
     assert!(
-        !repo_root().join(".github/workflows/release-pypi.yml").exists(),
-        "bijux-core should not carry a local release-pypi workflow when it is not allowlisted"
+        repo_root().join(".github/workflows/release-pypi.yml").exists(),
+        "bijux-core must carry the managed release-pypi workflow when allowlisted"
     );
 }
 
