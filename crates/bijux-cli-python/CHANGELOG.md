@@ -11,6 +11,19 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-6"></a>
+
+## [0.3.6] – Unreleased
+
+### Changed
+- Aligned `bijux-cli-python` documentation badges with the shared repository contract so crate docs surfaces stay in sync with root and handbook badge ordering.
+- Updated badge rendering to keep repository/package badge semantics stable after the rust-docs label-style transition in the shared badge generator.
+- Refreshed packaging test expectations around Python extras and dependency policy so contract tests continue to validate the current package metadata shape.
+
+### Fixed
+- Removed managed badge drift in `crates/bijux-cli-python/README.md` and generated docs pages by regenerating package badge blocks from the shared automation source.
+- Raised the pytest floor in package contracts to address the pip-audit advisory path affecting packaging validation runs.
+
 <a id="v0-3-5"></a>
 
 ## [0.3.5] – 2026-04-12

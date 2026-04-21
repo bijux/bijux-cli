@@ -11,6 +11,26 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-6"></a>
+
+## [0.3.6] – Unreleased
+
+### Added
+- Introduced policy-driven `bijux-std` verification as a first-class workflow for this repository, including shared checksum validation and explicit update/refresh flow for `.bijux/shared` consumers.
+- Brought `deploy-docs` activation and standards-managed release workflow contracts into the active CI surface, so release lanes and docs publication now track the shared governance baseline.
+
+### Changed
+- Migrated standards/doc tooling consumption to the `.bijux/shared` layout and kept the repository manifests/checksums in sync with upstream `bijux-std` updates.
+- Reworked the documentation shell and handbook navigation behavior (program strips, detail rows, scoped sidebars, and mobile drawer behavior) to match the current multi-handbook structure.
+- Expanded the `bijux-core` and `bijux-dag` handbook visuals and section maps so architecture, operations, release, and evidence flows are documented as explicit decision and lifecycle diagrams.
+- Standardized badge generation so documentation badges follow a single contract across managed surfaces: repository docs first, package docs second, and package rust-docs third when available.
+- Updated Rust docs badges from status-style to stable label-style (`rust-docs | <package>`) with Rust iconography for consistency with the broader badge catalog.
+
+### Fixed
+- Corrected docs deployment and standards checks to resolve shared-manifest paths through `.bijux` consumers, eliminating path drift between local and CI execution.
+- Restored standards-managed `release-pypi` workflow wiring and aligned release workflow lane expectations with contract tests.
+- Fixed badge/footer GHCR links so package/profile references scope to `bijux-core` artifacts instead of broader organization targets.
+
 <a id="v0-3-5"></a>
 
 ## [0.3.5] – 2026-04-12

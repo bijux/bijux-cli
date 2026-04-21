@@ -11,6 +11,19 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-3-6"></a>
+
+## [0.3.6] – Unreleased
+
+### Changed
+- Standardized the `bijux-cli` badge contract across crate and repository surfaces so docs badges render in one deterministic order: repository docs, `bijux-cli` docs, then `bijux-cli` rust-docs.
+- Switched the rust-docs badge presentation from status-style to label-style (`rust-docs | bijux-cli`) to match the shared badge catalog and avoid mixed semantics across docs surfaces.
+- Kept release ownership tests aligned with standards-managed workflow naming/lane contracts, including updates in `tests/architecture/ownership/release_contracts.rs` as release workflows were normalized.
+
+### Fixed
+- Removed badge ordering drift between `crates/bijux-cli/README.md`, root docs pages, and generated package docs by regenerating managed badge blocks from the shared badge generator.
+- Corrected release contract expectations after workflow governance updates, so CI assertions match the current managed release lanes.
+
 <a id="v0-3-5"></a>
 
 ## [0.3.5] – 2026-04-12
