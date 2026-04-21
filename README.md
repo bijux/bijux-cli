@@ -45,22 +45,22 @@ The public package families in this repository are:
 
 | Package | Purpose | Links |
 | --- | --- | --- |
-| `bijux-cli` | Public release family for the `bijux` command runtime, spanning the Rust crate, Python distribution, and release bundle. | <a href="https://crates.io/crates/bijux-cli"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-cli"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://pypi.org/project/bijux-cli/"><img alt="PyPI" src="https://img.shields.io/pypi/v/bijux-cli?label=PyPI&logo=pypi" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/"><img alt="Docs" src="https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli"><img alt="GHCR" src="https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-cli` | Public release family for the `bijux` command runtime, spanning the Rust crate, Python distribution, and release bundle. | [Crates.io](https://crates.io/crates/bijux-cli) · [Rust docs](https://docs.rs/bijux-cli) · [PyPI](https://pypi.org/project/bijux-cli/) · [Docs](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) · [GHCR](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli) · [Source](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli) |
 <!-- bijux-core-package-map:generated:end -->
 
 ## Repository Structure
 
-- `crates/bijux-cli`: Rust runtime crate behind the `bijux` executable.
-- `crates/bijux-cli-python`: Python bridge package and native extension surface for CLI runtime distribution.
-- `crates/bijux-dag-core`: DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
-- `crates/bijux-dag-runtime`: DAG execution engine and run lifecycle behavior.
-- `crates/bijux-dag-app`: DAG command orchestration, response modeling, and render flows.
-- `crates/bijux-dag-cli`: thin binary entrypoint for `bijux-dag`.
-- `crates/bijux-dag-artifacts`: artifact and persistence utilities for DAG evidence handling.
-- `crates/bijux-dag-testkit`: fixtures and helpers for DAG contract testing.
-- `crates/bijux-dev`: maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
-- `docs/`: canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
-- `makes/`: make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
+- [`crates/bijux-cli`](crates/bijux-cli): Rust runtime crate behind the `bijux` executable.
+- [`crates/bijux-cli-python`](crates/bijux-cli-python): Python bridge package and native extension surface for CLI runtime distribution.
+- [`crates/bijux-dag-core`](crates/bijux-dag-core): DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
+- [`crates/bijux-dag-runtime`](crates/bijux-dag-runtime): DAG execution engine and run lifecycle behavior.
+- [`crates/bijux-dag-app`](crates/bijux-dag-app): DAG command orchestration, response modeling, and render flows.
+- [`crates/bijux-dag-cli`](crates/bijux-dag-cli): thin binary entrypoint for `bijux-dag`.
+- [`crates/bijux-dag-artifacts`](crates/bijux-dag-artifacts): artifact and persistence utilities for DAG evidence handling.
+- [`crates/bijux-dag-testkit`](crates/bijux-dag-testkit): fixtures and helpers for DAG contract testing.
+- [`crates/bijux-dev`](crates/bijux-dev): maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
+- [`docs/`](docs/): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
+- [`makes/`](makes/): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
 
 ## Quick Start
 
@@ -90,11 +90,11 @@ make dag-contracts
 
 ## Documentation Map
 
-- Repository handbook: `docs/bijux-core/`
-- CLI handbook: `docs/bijux-cli/`
-- DAG handbook: `docs/bijux-dag/`
-- Maintainer handbook: `docs/bijux-dev/`
-- Release history: `CHANGELOG.md`
+- Repository handbook: [`docs/bijux-core/`](docs/bijux-core/)
+- CLI handbook: [`docs/bijux-cli/`](docs/bijux-cli/)
+- DAG handbook: [`docs/bijux-dag/`](docs/bijux-dag/)
+- Maintainer handbook: [`docs/bijux-dev/`](docs/bijux-dev/)
+- Release history: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Why Unified Ownership
 
@@ -107,4 +107,4 @@ This repository model keeps:
 
 ## License
 
-Apache-2.0 (`LICENSE`).
+Apache-2.0 ([`LICENSE`](LICENSE)).

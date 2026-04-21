@@ -26,15 +26,15 @@ for runtime command semantics shared by the native binary and Python bridge.
 
 ## Source Layout
 
-- `src/api`: stable entrypoints used by the binary, tests, and the Python bridge.
-- `src/bootstrap`: process wiring and exit-code handling.
-- `src/contracts`: durable command, envelope, config, plugin, and query types.
-- `src/features`: domain implementations for config, diagnostics, history, install, memory, and plugins.
-- `src/infrastructure`: filesystem, process, environment, and state-store adapters.
-- `src/interface`: CLI and REPL surfaces.
-- `src/kernel`: execution pipeline and policy resolution.
-- `src/routing`: command catalog, parser, and registry.
-- `src/shared`: small cross-cutting helpers.
+- [`src/api`](src/api): stable entrypoints used by the binary, tests, and the Python bridge.
+- [`src/bootstrap`](src/bootstrap): process wiring and exit-code handling.
+- [`src/contracts`](src/contracts): durable command, envelope, config, plugin, and query types.
+- [`src/features`](src/features): domain implementations for config, diagnostics, history, install, memory, and plugins.
+- [`src/infrastructure`](src/infrastructure): filesystem, process, environment, and state-store adapters.
+- [`src/interface`](src/interface): CLI and REPL surfaces.
+- [`src/kernel`](src/kernel): execution pipeline and policy resolution.
+- [`src/routing`](src/routing): command catalog, parser, and registry.
+- [`src/shared`](src/shared): small cross-cutting helpers.
 
 ## Runtime Rules
 
@@ -45,14 +45,14 @@ for runtime command semantics shared by the native binary and Python bridge.
 
 ## Tests
 
-- `tests/architecture.rs`: boundary and ownership checks.
-- `tests/integration.rs`: command behavior, parity, resilience, and REPL coverage.
-- `tests/routing.rs`: parser, registry, schema, and routing law coverage.
-- `tests/data/fixtures` and `tests/data/golden`: stable fixtures and snapshots.
+- [`tests/architecture.rs`](tests/architecture.rs): boundary and ownership checks.
+- [`tests/integration.rs`](tests/integration.rs): command behavior, parity, resilience, and REPL coverage.
+- [`tests/routing.rs`](tests/routing.rs): parser, registry, schema, and routing law coverage.
+- [`tests/data/fixtures`](tests/data/fixtures) and [`tests/data/golden`](tests/data/golden): stable fixtures and snapshots.
 
 ## Release References
 
-- Repository handbook: `docs/bijux-cli/`
-- Crate changelog: `crates/bijux-cli/CHANGELOG.md`
-- Root release log: `CHANGELOG.md`
-- Security policy: `SECURITY.md`
+- Repository handbook: [`docs/bijux-cli/`](../../docs/bijux-cli/)
+- Crate changelog: [`crates/bijux-cli/CHANGELOG.md`](CHANGELOG.md)
+- Root release log: [`CHANGELOG.md`](../../CHANGELOG.md)
+- Security policy: [`SECURITY.md`](../../SECURITY.md)

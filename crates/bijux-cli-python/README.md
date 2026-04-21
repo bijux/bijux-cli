@@ -44,10 +44,10 @@ python -m bijux_cli_py --help
 
 ## Source of Truth
 
-- Runtime crate: `crates/bijux-cli`
-- Python bridge crate: `crates/bijux-cli-python`
-- Package changelog: `crates/bijux-cli-python/CHANGELOG.md`
-- Repository handbook: `docs/bijux-cli/`
+- Runtime crate: [`crates/bijux-cli`](../bijux-cli)
+- Python bridge crate: [`crates/bijux-cli-python`](.)
+- Package changelog: [`crates/bijux-cli-python/CHANGELOG.md`](CHANGELOG.md)
+- Repository handbook: [`docs/bijux-cli/`](../../docs/bijux-cli/)
 
 ## License
 
