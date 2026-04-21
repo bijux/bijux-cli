@@ -316,8 +316,8 @@ def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecor
         links.append(
             _link_badge(
                 record.docsrs_url,
-                "Docs.rs",
-                f"https://img.shields.io/docsrs/{record.crate_name}?label=docs.rs",
+                "Rust docs",
+                f"https://img.shields.io/badge/rust--docs-{_shield_text(record.display_name)}-DEA584?logo=rust&logoColor=white",
             )
         )
     python_record = next((candidate for candidate in family_records if candidate.pypi_url), None)
