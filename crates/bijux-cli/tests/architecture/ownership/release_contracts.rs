@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 //! Publishing metadata and automation contract guardrails.
 
+use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde_json::Value;
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -30,7 +30,8 @@ fn is_hex_sha(value: &str) -> bool {
 
 fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
     let manifest = read_repo_file(".github/standards/repo-config.manifest.json");
-    let parsed: Value = serde_json::from_str(&manifest).expect("standards manifest should be valid JSON");
+    let parsed: Value =
+        serde_json::from_str(&manifest).expect("standards manifest should be valid JSON");
     let repositories = parsed
         .get("repositories")
         .and_then(Value::as_array)
@@ -39,8 +40,7 @@ fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
         .iter()
         .find(|entry| entry.get("name").and_then(Value::as_str) == Some(repo_name))
         .expect("repository should exist in standards manifest");
-    repo
-        .get("workflow_allowlist")
+    repo.get("workflow_allowlist")
         .and_then(Value::as_array)
         .expect("repository should define workflow allowlist")
         .iter()
