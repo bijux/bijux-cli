@@ -42,6 +42,7 @@ REPOS = [
     "bijux-masterclass",
     "bijux-pollenomics",
     "bijux-proteomics",
+    "bijux-telecom",
     "bijux-std",
     "bijux.github.io",
 ]
