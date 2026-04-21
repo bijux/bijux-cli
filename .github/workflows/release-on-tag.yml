@@ -6,9 +6,10 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   packages: write
+  id-token: write
 
 jobs:
   release-crates:
