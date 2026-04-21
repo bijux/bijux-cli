@@ -27,7 +27,7 @@ Generated badge sections always render in this order:
 
 1. surface summary badges
 2. one line of release-channel badges in this order: `crates.io`, `PyPI`, `GHCR`
-3. one line of documentation badges in this order: published docs, `docs.rs`
+3. one line of documentation badges in this order: published docs, Rust docs
 
 Link policy for GHCR badges is fixed here as part of the contract:
 
@@ -54,7 +54,7 @@ Link policy for GHCR badges is fixed here as part of the contract:
 
 <!-- bijux-core-badges:rust-package-summary:start -->
 [![Crates.io](https://img.shields.io/crates/v/{{ crate_name }}?label=crates.io&logo=rust)]({{ crates_url }})
-[![Docs.rs](https://img.shields.io/docsrs/{{ crate_name }}?label=docs.rs)]({{ docsrs_url }})
+[![Rust docs](https://img.shields.io/badge/rust--docs-{{ crate_badge_label }}-DEA584?logo=rust&logoColor=white)]({{ docsrs_url }})
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
 [![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
@@ -79,7 +79,7 @@ Link policy for GHCR badges is fixed here as part of the contract:
 ## Family Rustdocs Badge
 
 <!-- bijux-core-badges:family-rustdocs-badge:start -->
-[![{{ docsrs_badge_alt }}](https://img.shields.io/docsrs/{{ crate_name }}?label={{ docsrs_badge_label }})]({{ docsrs_url }})
+[![{{ docsrs_badge_alt }}](https://img.shields.io/badge/rust--docs-{{ crate_badge_label }}-DEA584?logo=rust&logoColor=white)]({{ docsrs_url }})
 <!-- bijux-core-badges:family-rustdocs-badge:end -->
 
 ## Family PyPI Badge
