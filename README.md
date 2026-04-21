@@ -50,17 +50,17 @@ The public package families in this repository are:
 
 ## Repository Structure
 
-- [`crates/bijux-cli`](crates/bijux-cli): Rust runtime crate behind the `bijux` executable.
-- [`crates/bijux-cli-python`](crates/bijux-cli-python): Python bridge package and native extension surface for CLI runtime distribution.
-- [`crates/bijux-dag-core`](crates/bijux-dag-core): DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
-- [`crates/bijux-dag-runtime`](crates/bijux-dag-runtime): DAG execution engine and run lifecycle behavior.
-- [`crates/bijux-dag-app`](crates/bijux-dag-app): DAG command orchestration, response modeling, and render flows.
-- [`crates/bijux-dag-cli`](crates/bijux-dag-cli): thin binary entrypoint for `bijux-dag`.
-- [`crates/bijux-dag-artifacts`](crates/bijux-dag-artifacts): artifact and persistence utilities for DAG evidence handling.
-- [`crates/bijux-dag-testkit`](crates/bijux-dag-testkit): fixtures and helpers for DAG contract testing.
-- [`crates/bijux-dev`](crates/bijux-dev): maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
-- [`docs/`](docs/): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
-- [`makes/`](makes/): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
+- [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli): Rust runtime crate behind the `bijux` executable.
+- [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python): Python bridge package and native extension surface for CLI runtime distribution.
+- [`crates/bijux-dag-core`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-core): DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
+- [`crates/bijux-dag-runtime`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime): DAG execution engine and run lifecycle behavior.
+- [`crates/bijux-dag-app`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-app): DAG command orchestration, response modeling, and render flows.
+- [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli): thin binary entrypoint for `bijux-dag`.
+- [`crates/bijux-dag-artifacts`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-artifacts): artifact and persistence utilities for DAG evidence handling.
+- [`crates/bijux-dag-testkit`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-testkit): fixtures and helpers for DAG contract testing.
+- [`crates/bijux-dev`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dev): maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
+- [`docs/`](https://github.com/bijux/bijux-core/tree/main/docs): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
+- [`makes/`](https://github.com/bijux/bijux-core/tree/main/makes): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
 
 ## Quick Start
 
@@ -90,11 +90,11 @@ make dag-contracts
 
 ## Documentation Map
 
-- Repository handbook: [`docs/bijux-core/`](docs/bijux-core/)
-- CLI handbook: [`docs/bijux-cli/`](docs/bijux-cli/)
-- DAG handbook: [`docs/bijux-dag/`](docs/bijux-dag/)
-- Maintainer handbook: [`docs/bijux-dev/`](docs/bijux-dev/)
-- Release history: [`CHANGELOG.md`](CHANGELOG.md)
+- Repository handbook: [Repository handbook](https://bijux.io/bijux-core/bijux-core/)
+- CLI handbook: [CLI handbook](https://bijux.io/bijux-core/bijux-cli/)
+- DAG handbook: [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- Maintainer handbook: [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/)
+- Release history: [`CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/CHANGELOG.md)
 
 ## Why Unified Ownership
 
@@ -107,4 +107,4 @@ This repository model keeps:
 
 ## License
 
-Apache-2.0 ([`LICENSE`](LICENSE)).
+Apache-2.0 ([`LICENSE`](https://github.com/bijux/bijux-core/blob/main/LICENSE)).
