@@ -51,7 +51,7 @@ jobs:
       allowed_packages: ${{ steps.config.outputs.allowed_packages }}
     steps:
       - name: Checkout release configuration
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v5.0.0
         with:
           fetch-depth: 1
 
@@ -153,7 +153,7 @@ jobs:
 
     steps:
       - name: Checkout release commit
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v5.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
