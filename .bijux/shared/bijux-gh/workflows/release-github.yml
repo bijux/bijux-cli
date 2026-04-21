@@ -130,7 +130,7 @@ jobs:
       generate_release_notes: ${{ steps.config.outputs.generate_release_notes }}
     steps:
       - name: Checkout release configuration
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v5.0.0
         with:
           fetch-depth: 1
 
@@ -359,14 +359,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v5.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
 
       - name: Setup Python
         if: ${{ needs.resolve.outputs.setup_python == 'true' }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.1.0
         with:
           python-version: ${{ needs.resolve.outputs.python_version }}
 
