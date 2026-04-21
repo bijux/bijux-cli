@@ -113,8 +113,10 @@ jobs:
 
             const trustedBotAuthors = new Set([
               "dependabot[bot]",
+              "@dependabot[bot]",
               "renovate[bot]",
               "github-actions[bot]",
+              "@github-actions[bot]",
             ]);
             const authorLogin = (pr.user && pr.user.login ? pr.user.login : "").toLowerCase();
             const authorIsTrustedBot = trustedBotAuthors.has(authorLogin);
