@@ -164,7 +164,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 18000
+              "time": "05:00"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -190,7 +190,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 19800
+              "time": "05:30"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -216,7 +216,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 21600
+              "time": "06:00"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -242,7 +242,7 @@
             "schedule": {
               "interval": "weekly",
               "day": "monday",
-              "time": 22500
+              "time": "06:15"
             },
             "open-pull-requests-limit": 3,
             "commit-message": {
@@ -902,7 +902,117 @@
     },
     {
       "name": "bijux-core",
-      "release_env": [],
+      "release_env": [
+        {
+          "key": "BIJUX_RELEASE_ENABLED",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_RELEASE_WAIT_FOR_CI_COMMAND",
+          "type": "string",
+          "value": "make gh-release-wait-for-ci"
+        },
+        {
+          "key": "BIJUX_RELEASE_PLAN_COMMAND",
+          "type": "string",
+          "value": "make gh-release-plan-github"
+        },
+        {
+          "key": "BIJUX_RELEASE_SETUP_RUST",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_RELEASE_RUST_TOOLCHAIN",
+          "type": "string",
+          "value": "1.85.0"
+        },
+        {
+          "key": "BIJUX_RELEASE_BUILD_MATRIX_JSON",
+          "type": "json",
+          "value": [
+            {
+              "package_slug": "bijux-cli",
+              "package_dir": ".",
+              "artifacts_dir": "artifacts/python",
+              "makefile_path": "makes/root.mk",
+              "build_targets": "build-py",
+              "dist_subdir": "build"
+            }
+          ]
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_ENABLED",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_WAIT_FOR_CI_COMMAND",
+          "type": "string",
+          "value": "make gh-release-wait-for-ci"
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_PLAN_COMMAND",
+          "type": "string",
+          "value": "make gh-release-plan-crates"
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_SETUP_RUST",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
+          "type": "string",
+          "value": "1.85.0"
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_VERIFY_TOKEN_COMMAND",
+          "type": "string",
+          "value": "make gh-release-require-cargo-token"
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_PUBLISH_SKIP_EXISTING",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_PUBLISH_COMMAND",
+          "type": "string",
+          "value": "make publish-rs RUST_PUBLISH_DRY_RUN=0 RUST_PUBLISH_SKIP_EXISTING=1 RUST_PUBLISH_PACKAGES=\"${PACKAGES}\""
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_PACKAGES",
+          "type": "string",
+          "value": "bijux-cli"
+        },
+        {
+          "key": "BIJUX_GHCR_RELEASE_ENABLED",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "key": "BIJUX_PYPI_ENABLED",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "key": "BIJUX_PYPI_MODE",
+          "type": "string",
+          "value": "maturin"
+        },
+        {
+          "key": "BIJUX_PYPI_WAIT_FOR_CI_COMMAND",
+          "type": "string",
+          "value": "make gh-release-wait-for-ci"
+        },
+        {
+          "key": "BIJUX_PYPI_PLAN_COMMAND",
+          "type": "string",
+          "value": "make gh-release-plan-pypi"
+        }
+      ],
       "dependabot": {
         "version": 2,
         "updates": [
@@ -1145,7 +1255,11 @@
       },
       "workflow_allowlist": [
         "deploy-docs",
-        "github-policy"
+        "github-policy",
+        "release-artifacts",
+        "release-crates",
+        "release-github",
+        "release-pypi"
       ]
     },
     {
