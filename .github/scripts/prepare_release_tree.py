@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -173,6 +174,15 @@ def rewrite_template_compatibility_defaults(path: Path, release_version: str) ->
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def regenerate_lockfile(output_dir: Path) -> None:
+    cargo_toml = output_dir / "Cargo.toml"
+    subprocess.run(
+        ["cargo", "generate-lockfile", "--manifest-path", str(cargo_toml)],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+
 def main() -> int:
     args = parse_args()
     workspace_root = Path(args.workspace_root).resolve()
@@ -186,6 +196,7 @@ def main() -> int:
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
     rewrite_workspace_dependency_versions(output_dir / "Cargo.toml", release_version)
     rewrite_lockfile_versions(output_dir / "Cargo.lock", release_version)
+    regenerate_lockfile(output_dir)
     rewrite_template_compatibility_defaults(
         output_dir / "templates/plugins-py/cookiecutter.json",
         release_version,
