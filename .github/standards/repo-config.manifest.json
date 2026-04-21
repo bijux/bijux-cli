@@ -1257,9 +1257,7 @@
         "deploy-docs",
         "github-policy",
         "release-artifacts",
-        "release-crates",
-        "release-github",
-        "release-pypi"
+        "release-crates"
       ]
     },
     {
