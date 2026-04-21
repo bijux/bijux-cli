@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! Publishing metadata and automation contract guardrails.
 
+use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -25,6 +26,26 @@ fn quoted_value_after(text: &str, prefix: &str) -> Option<String> {
 
 fn is_hex_sha(value: &str) -> bool {
     value.len() == 40 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
+    let manifest = read_repo_file(".github/standards/repo-config.manifest.json");
+    let parsed: Value =
+        serde_json::from_str(&manifest).expect("standards manifest should be valid JSON");
+    let repositories = parsed
+        .get("repositories")
+        .and_then(Value::as_array)
+        .expect("standards manifest should define repositories array");
+    let repo = repositories
+        .iter()
+        .find(|entry| entry.get("name").and_then(Value::as_str) == Some(repo_name))
+        .expect("repository should exist in standards manifest");
+    repo.get("workflow_allowlist")
+        .and_then(Value::as_array)
+        .expect("repository should define workflow allowlist")
+        .iter()
+        .map(|value| value.as_str().expect("allowlist entry should be string").to_string())
+        .collect()
 }
 
 #[test]
@@ -99,9 +120,8 @@ fn github_workflows_pin_external_actions_to_commits() {
     for path in [
         ".github/workflows/ci.yml",
         ".github/workflows/deploy-docs.yml",
-        ".github/workflows/release-github.yml",
-        ".github/workflows/release-crates.yml",
-        ".github/workflows/release-pypi.yml",
+        ".github/workflows/github-policy.yml",
+        ".github/workflows/bijux-std.yml",
     ] {
         let content = read_repo_file(path);
         for line in content.lines() {
@@ -121,6 +141,8 @@ fn github_workflows_pin_external_actions_to_commits() {
         }
         assert!(
             content.contains("toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}")
+                || content.contains("toolchain: \"${{ env.RUST_TOOLCHAIN_VERSION }}\"")
+                || content.contains("toolchain: ${{ steps.config.outputs.rust_toolchain }}")
                 || !content.contains("dtolnay/rust-toolchain@"),
             "{path} must set the pinned Rust toolchain input when using dtolnay/rust-toolchain"
         );
@@ -129,40 +151,28 @@ fn github_workflows_pin_external_actions_to_commits() {
 
 #[test]
 fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tree() {
-    let workflow = read_repo_file(".github/workflows/release-github.yml");
-    for required in [
-        "softprops/action-gh-release@",
-        "make gh-release-plan-github",
-        "make gh-release-wait-for-ci",
-        "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
-        "PyO3/maturin-action@",
-        "--compatibility pypi",
-        "sha256sums.txt",
-        "Repository releases mirror the stamped tag artifacts for this version.",
-    ] {
-        assert!(
-            workflow.contains(required),
-            "release-github.yml must keep GitHub Release guardrails and attached artifacts: {required}"
-        );
-    }
+    let workflow_allowlist = workflow_allowlist_for_repo("bijux-core");
+    assert!(
+        !workflow_allowlist.iter().any(|entry| entry == "release-github"),
+        "bijux-core workflow allowlist should not include release-github; release lanes are managed through shared standards rollout"
+    );
+    assert!(
+        !repo_root().join(".github/workflows/release-github.yml").exists(),
+        "bijux-core should not carry a local release-github workflow when it is not allowlisted"
+    );
 }
 
 #[test]
 fn pypi_release_workflow_builds_pypi_compatible_distributions() {
-    let workflow = read_repo_file(".github/workflows/release-pypi.yml");
-    for required in [
-        "PyO3/maturin-action@",
-        "maturin-version: ${{ env.MATURIN_VERSION }}",
-        "manylinux: \"2014\"",
-        "--compatibility pypi",
-        "release_tree=\"${GITHUB_WORKSPACE}/artifacts/release-tree\"",
-        "make publish-py PUBLISH_BUILD=0",
-    ] {
-        assert!(
-            workflow.contains(required),
-            "release-pypi.yml must keep PyPI-safe build and upload guardrails: {required}"
-        );
-    }
+    let workflow_allowlist = workflow_allowlist_for_repo("bijux-core");
+    assert!(
+        !workflow_allowlist.iter().any(|entry| entry == "release-pypi"),
+        "bijux-core workflow allowlist should not include release-pypi; publication workflows are centralized in standards governance"
+    );
+    assert!(
+        !repo_root().join(".github/workflows/release-pypi.yml").exists(),
+        "bijux-core should not carry a local release-pypi workflow when it is not allowlisted"
+    );
 }
 
 #[test]
