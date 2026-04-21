@@ -14,7 +14,7 @@ watch:
   - docs
   - docs/assets
   - docs/overrides
-  - shared/bijux-docs
+  - .bijux/shared/bijux-docs
   - mkdocs.yml
   - mkdocs.shared.yml
   - docs/automation
