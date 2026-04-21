@@ -122,7 +122,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Thin CLI core wrappers (emit/validation) consolidated
 
 
-[Back to top](#top)
 
 <a id="v0-1-3"></a>
 
@@ -136,7 +135,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ### Changed
 * **Makefiles + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
 
-[Back to top](#top)
 
 ---
 
@@ -167,7 +165,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **API Endpoint Logic:** Corrected the item update logic in `src/bijux_cli/httpapi.py` by removing a faulty check for duplicate names that was causing incorrect 409 Conflict errors.
 * **Test Suite:** Improved the stability and correctness of E2E tests by enhancing golden file comparisons and fixing brittle assertions.
 
-[Back to top](#top)
 
 ---
 
@@ -206,7 +203,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Richer PyPI description:** `hatch-fancy-pypi-readme` renders **README.md** + **CHANGELOG.md** on PyPI.
 * **Wheel/Sdist layout:** Explicit Hatch build config ensures `py.typed`, licenses, and metadata are included.
 
-[Back to top](#top)
 
 ---
 
@@ -309,7 +305,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * None
 
-[Back to top](#top)
 
 [Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.5...HEAD
 [0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
@@ -319,3 +314,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 [0.1.2]: https://github.com/bijux/bijux-core/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bijux/bijux-core/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bijux/bijux-core/releases/tag/v0.1.0
+
+[Back to top](#top)
