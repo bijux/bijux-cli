@@ -150,6 +150,7 @@ fn run(cli: Cli) -> Result<(), String> {
         CommandLine::Security => {
             run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
                 run_audit_allowlist_quality_gate()?;
+                run_deny_policy_deviations_gate()?;
                 run_status("cargo", &["audit"])
             })
         }
@@ -1267,6 +1268,55 @@ fn run_audit_allowlist_quality_gate() -> Result<(), String> {
         return Ok(());
     }
     Err(format!("audit allowlist quality gate failed:\n{}", errors.join("\n")))
+}
+
+fn run_deny_policy_deviations_gate() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join("configs/rust/deny.deviations.toml");
+    if !path.is_file() {
+        return Err(format!("missing {}", path.display()));
+    }
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let rows = value.get("deviation").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+    if rows.is_empty() {
+        return Ok(());
+    }
+    let today = current_iso_day()?;
+    let mut errors = Vec::new();
+    for (index, row) in rows.iter().enumerate() {
+        let label = format!("deviation[{index}]");
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let owner = row.get("owner").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let reason = row.get("reason").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let expiry = row.get("expiry").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let review = row.get("review").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if id.is_empty() {
+            errors.push(format!("{label}: missing id"));
+        }
+        if owner.is_empty() {
+            errors.push(format!("{label}: missing owner"));
+        }
+        if reason.is_empty() {
+            errors.push(format!("{label}: missing reason"));
+        }
+        if !is_iso_day(expiry) {
+            errors.push(format!("{label}: expiry must be YYYY-MM-DD"));
+        } else if expiry < today.as_str() {
+            errors.push(format!("{label}: expiry has passed ({expiry})"));
+        }
+        if !(review.starts_with("http://") || review.starts_with("https://")) {
+            errors.push(format!("{label}: review must be an http(s) link"));
+        } else if !review.contains("bijux-std") {
+            errors.push(format!("{label}: review must reference bijux-std"));
+        }
+    }
+    if errors.is_empty() {
+        return Ok(());
+    }
+    Err(format!("deny policy deviations governance gate failed:\n{}", errors.join("\n")))
 }
 
 fn current_iso_day() -> Result<String, String> {

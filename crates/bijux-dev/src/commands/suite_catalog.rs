@@ -31,6 +31,7 @@ pub(super) const CHECK_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || {
             run_audit_allowlist_quality_gate()?;
+            run_deny_policy_deviations_gate()?;
             run_status("cargo", &["audit"])
         },
     },
