@@ -149,6 +149,7 @@ fn run(cli: Cli) -> Result<(), String> {
         }
         CommandLine::Security => {
             run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
+                run_audit_allowlist_quality_gate()?;
                 run_status("cargo", &["audit"])
             })
         }
@@ -1220,6 +1221,83 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
         },
     }
+}
+
+fn run_audit_allowlist_quality_gate() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join("audit-allowlist.toml");
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let advisories =
+        value.get("advisory").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+    if advisories.is_empty() {
+        return Ok(());
+    }
+
+    let today = current_iso_day()?;
+    let mut errors = Vec::new();
+    for (index, row) in advisories.iter().enumerate() {
+        let label = format!("advisory[{index}]");
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let why = row.get("why").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let owner = row.get("owner").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let link = row.get("link").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let expiry = row.get("expiry").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if !is_rustsec_id(id) {
+            errors.push(format!("{label}: id must match RUSTSEC-YYYY-NNNN"));
+        }
+        if why.is_empty() {
+            errors.push(format!("{label}: missing why"));
+        }
+        if owner.is_empty() {
+            errors.push(format!("{label}: missing owner"));
+        }
+        if !(link.starts_with("http://") || link.starts_with("https://")) {
+            errors.push(format!("{label}: link must be http(s)"));
+        }
+        if !is_iso_day(expiry) {
+            errors.push(format!("{label}: expiry must be YYYY-MM-DD"));
+        } else if expiry < today.as_str() {
+            errors.push(format!("{label}: expiry has passed ({expiry})"));
+        }
+    }
+    if errors.is_empty() {
+        return Ok(());
+    }
+    Err(format!("audit allowlist quality gate failed:\n{}", errors.join("\n")))
+}
+
+fn current_iso_day() -> Result<String, String> {
+    let output = Command::new("date")
+        .args(["+%Y-%m-%d"])
+        .output()
+        .map_err(|err| format!("resolve current date failed: {err}"))?;
+    if !output.status.success() {
+        return Err("resolve current date failed: date command returned non-zero".to_string());
+    }
+    String::from_utf8(output.stdout)
+        .map(|text| text.trim().to_string())
+        .map_err(|err| format!("resolve current date failed: {err}"))
+}
+
+fn is_iso_day(value: &str) -> bool {
+    value.len() == 10
+        && value.chars().nth(4) == Some('-')
+        && value.chars().nth(7) == Some('-')
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, ch)| (index == 4 || index == 7) || ch.is_ascii_digit())
+}
+
+fn is_rustsec_id(value: &str) -> bool {
+    value.len() == 17
+        && value.starts_with("RUSTSEC-")
+        && value.as_bytes().get(12) == Some(&b'-')
+        && value[8..12].chars().all(|ch| ch.is_ascii_digit())
+        && value[13..17].chars().all(|ch| ch.is_ascii_digit())
 }
 
 fn run_ci() -> Result<(), String> {
