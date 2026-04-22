@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shlex
 from pathlib import Path
 from typing import Any
 
@@ -93,7 +92,7 @@ def render_release_env(entries: list[dict]) -> str:
         elif kind == "json":
             rendered = "'" + json.dumps(value, separators=(",", ":")) + "'"
         elif kind == "string":
-            rendered = shlex.quote(str(value))
+            rendered = str(value)
         else:
             raise ValueError(f"Unsupported release.env entry type: {kind}")
 

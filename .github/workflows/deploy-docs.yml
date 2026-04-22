@@ -4,27 +4,6 @@
 name: deploy-docs
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - "v*"
-    paths:
-      - ".github/workflows/deploy-docs.yml"
-      - ".github/docs-deploy.env"
-      - "Makefile"
-      - "makes/**"
-      - "docs/**"
-      - "mkdocs.yml"
-      - "mkdocs.shared.yml"
-      - "configs/**"
-      - "pyproject.toml"
-      - "uv.lock"
-      - "package-lock.json"
-      - "package.json"
-      - ".bijux/shared/bijux-docs/**"
-      - ".bijux/shared/bijux-makes-py/**"
   workflow_dispatch:
   workflow_call:
 
@@ -337,7 +316,7 @@ jobs:
   deploy:
     name: Deploy docs site
     needs: build
-    if: ${{ needs.build.outputs.site_available == 'true' && (github.event_name == 'workflow_call' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+    if: ${{ needs.build.outputs.site_available == 'true' && (github.event_name == 'workflow_call' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
