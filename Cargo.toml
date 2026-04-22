@@ -20,7 +20,7 @@ repository = "https://github.com/bijux/bijux-core"
 homepage = "https://github.com/bijux/bijux-core"
 documentation = "https://github.com/bijux/bijux-core"
 authors = ["Bijan Mousavi <bijan@bijux.io>"]
-rust-version = "1.86.0"
+rust-version = "1.86"
 
 [workspace.dependencies]
 anyhow = "1.0.100"
