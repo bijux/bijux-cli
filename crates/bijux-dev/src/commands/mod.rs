@@ -1301,9 +1301,7 @@ fn run_cargo_audit_with_allowlist() -> Result<(), String> {
         command.arg(advisory);
     }
 
-    let status = command
-        .status()
-        .map_err(|err| format!("cargo audit failed to start: {err}"))?;
+    let status = command.status().map_err(|err| format!("cargo audit failed to start: {err}"))?;
     if status.success() {
         Ok(())
     } else {
