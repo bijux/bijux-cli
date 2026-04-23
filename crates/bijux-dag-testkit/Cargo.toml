@@ -15,5 +15,5 @@ workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
-bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core" }
-bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts" }
+bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.3.5" }
+bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.3.5" }

@@ -198,8 +198,8 @@ audit-rs: ## Run cargo-deny and cargo-audit
 		echo "run: cargo deny check bans licenses sources --config configs/rust/deny.toml"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check bans licenses sources --config configs/rust/deny.toml || deny_status=$$?; \
 		echo; \
-		echo "run: cargo audit"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit || audit_status=$$?; \
+		echo "run: cargo run -q -p bijux-dev --bin bijux-dev-dag -- security"; \
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo run -q -p bijux-dev --bin bijux-dev-dag -- security || audit_status=$$?; \
 	} 2>&1 | tee "$(RS_AUDIT_REPORT)"; \
 	test $$deny_status -eq 0; \
 	test $$audit_status -eq 0

@@ -149,7 +149,9 @@ fn run(cli: Cli) -> Result<(), String> {
         }
         CommandLine::Security => {
             run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
-                run_status("cargo", &["audit"])
+                run_audit_allowlist_quality_gate()?;
+                run_deny_policy_deviations_gate()?;
+                run_cargo_audit_with_allowlist()
             })
         }
         CommandLine::Sanity => {
@@ -1220,6 +1222,171 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
         },
     }
+}
+
+fn run_audit_allowlist_quality_gate() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join("audit-allowlist.toml");
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let advisories =
+        value.get("advisory").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+    if advisories.is_empty() {
+        return Ok(());
+    }
+
+    let today = current_iso_day()?;
+    let mut errors = Vec::new();
+    for (index, row) in advisories.iter().enumerate() {
+        let label = format!("advisory[{index}]");
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let why = row.get("why").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let owner = row.get("owner").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let link = row.get("link").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let expiry = row.get("expiry").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if !is_rustsec_id(id) {
+            errors.push(format!("{label}: id must match RUSTSEC-YYYY-NNNN"));
+        }
+        if why.is_empty() {
+            errors.push(format!("{label}: missing why"));
+        }
+        if owner.is_empty() {
+            errors.push(format!("{label}: missing owner"));
+        }
+        if !(link.starts_with("http://") || link.starts_with("https://")) {
+            errors.push(format!("{label}: link must be http(s)"));
+        }
+        if !is_iso_day(expiry) {
+            errors.push(format!("{label}: expiry must be YYYY-MM-DD"));
+        } else if expiry < today.as_str() {
+            errors.push(format!("{label}: expiry has passed ({expiry})"));
+        }
+    }
+    if errors.is_empty() {
+        return Ok(());
+    }
+    Err(format!("audit allowlist quality gate failed:\n{}", errors.join("\n")))
+}
+
+fn load_audit_allowlist_ids() -> Result<Vec<String>, String> {
+    let root = repo_root()?;
+    let path = root.join("audit-allowlist.toml");
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let advisories =
+        value.get("advisory").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+
+    let mut ids = Vec::new();
+    for row in advisories {
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if is_rustsec_id(id) {
+            ids.push(id.to_string());
+        }
+    }
+    ids.sort();
+    ids.dedup();
+    Ok(ids)
+}
+
+fn run_cargo_audit_with_allowlist() -> Result<(), String> {
+    let ignores = load_audit_allowlist_ids()?;
+    let mut command = Command::new("cargo");
+    command.arg("audit");
+    for advisory in &ignores {
+        command.arg("--ignore");
+        command.arg(advisory);
+    }
+
+    let status = command.status().map_err(|err| format!("cargo audit failed to start: {err}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err("cargo audit failed".to_string())
+    }
+}
+
+fn run_deny_policy_deviations_gate() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join("configs/rust/deny.deviations.toml");
+    if !path.is_file() {
+        return Err(format!("missing {}", path.display()));
+    }
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let rows = value.get("deviation").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+    if rows.is_empty() {
+        return Ok(());
+    }
+    let today = current_iso_day()?;
+    let mut errors = Vec::new();
+    for (index, row) in rows.iter().enumerate() {
+        let label = format!("deviation[{index}]");
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let owner = row.get("owner").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let reason = row.get("reason").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let expiry = row.get("expiry").and_then(toml::Value::as_str).unwrap_or("").trim();
+        let review = row.get("review").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if id.is_empty() {
+            errors.push(format!("{label}: missing id"));
+        }
+        if owner.is_empty() {
+            errors.push(format!("{label}: missing owner"));
+        }
+        if reason.is_empty() {
+            errors.push(format!("{label}: missing reason"));
+        }
+        if !is_iso_day(expiry) {
+            errors.push(format!("{label}: expiry must be YYYY-MM-DD"));
+        } else if expiry < today.as_str() {
+            errors.push(format!("{label}: expiry has passed ({expiry})"));
+        }
+        if !(review.starts_with("http://") || review.starts_with("https://")) {
+            errors.push(format!("{label}: review must be an http(s) link"));
+        } else if !review.contains("bijux-std") {
+            errors.push(format!("{label}: review must reference bijux-std"));
+        }
+    }
+    if errors.is_empty() {
+        return Ok(());
+    }
+    Err(format!("deny policy deviations governance gate failed:\n{}", errors.join("\n")))
+}
+
+fn current_iso_day() -> Result<String, String> {
+    let output = Command::new("date")
+        .args(["+%Y-%m-%d"])
+        .output()
+        .map_err(|err| format!("resolve current date failed: {err}"))?;
+    if !output.status.success() {
+        return Err("resolve current date failed: date command returned non-zero".to_string());
+    }
+    String::from_utf8(output.stdout)
+        .map(|text| text.trim().to_string())
+        .map_err(|err| format!("resolve current date failed: {err}"))
+}
+
+fn is_iso_day(value: &str) -> bool {
+    value.len() == 10
+        && value.chars().nth(4) == Some('-')
+        && value.chars().nth(7) == Some('-')
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, ch)| (index == 4 || index == 7) || ch.is_ascii_digit())
+}
+
+fn is_rustsec_id(value: &str) -> bool {
+    value.len() == 17
+        && value.starts_with("RUSTSEC-")
+        && value.as_bytes().get(12) == Some(&b'-')
+        && value[8..12].chars().all(|ch| ch.is_ascii_digit())
+        && value[13..17].chars().all(|ch| ch.is_ascii_digit())
 }
 
 fn run_ci() -> Result<(), String> {

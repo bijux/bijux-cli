@@ -9,14 +9,16 @@ allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
   "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
   "Unicode-3.0",
+  "CDLA-Permissive-2.0",
   "Zlib",
 ]
 
 [bans]
 multiple-versions = "warn"
-# Workspace path dependencies pin explicit versions to keep dependency intent
-# clear in audits and release metadata.
 wildcards = "warn"
 
 [sources]

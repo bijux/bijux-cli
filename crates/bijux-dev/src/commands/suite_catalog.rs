@@ -29,7 +29,11 @@ pub(super) const CHECK_SUITES: &[SuiteDef] = &[
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
-        run: || run_status("cargo", &["audit"]),
+        run: || {
+            run_audit_allowlist_quality_gate()?;
+            run_deny_policy_deviations_gate()?;
+            run_status("cargo", &["audit"])
+        },
     },
     SuiteDef {
         id: "dep-guard",
