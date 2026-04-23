@@ -11,6 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
+use std::process::Command;
 use tempfile as _;
 
 fn repo_root() -> PathBuf {
@@ -36,8 +37,14 @@ fn collect_files(root: &Path, rel: &str, out: &mut BTreeSet<String>) {
             let entry = entry.expect("dir entry");
             let path = entry.path();
             if path.is_dir() {
+                if is_transient_path(root, &path) {
+                    continue;
+                }
                 stack.push(path);
             } else if path.is_file() {
+                if is_transient_path(root, &path) {
+                    continue;
+                }
                 let rel_path = path
                     .strip_prefix(root)
                     .expect("strip prefix")
@@ -47,6 +54,37 @@ fn collect_files(root: &Path, rel: &str, out: &mut BTreeSet<String>) {
             }
         }
     }
+}
+
+fn is_transient_component(component: &str) -> bool {
+    matches!(
+        component,
+        ".git" | "target" | "artifacts" | "node_modules" | ".venv" | "venv" | "build" | "dist"
+    )
+}
+
+fn is_transient_path(root: &Path, path: &Path) -> bool {
+    let Ok(relative) = path.strip_prefix(root) else {
+        return false;
+    };
+    relative
+        .components()
+        .any(|component| component.as_os_str().to_str().is_some_and(is_transient_component))
+}
+
+fn tracked_json_files(root: &Path) -> Option<BTreeSet<String>> {
+    let output =
+        Command::new("git").args(["ls-files", "--", "*.json"]).current_dir(root).output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let files = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+        .collect();
+    Some(files)
 }
 
 fn glob_match(pattern: &str, text: &str) -> bool {
@@ -375,12 +413,12 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         .map(|value| value.as_str().expect("helper allowlist pattern").to_string())
         .collect();
 
-    let mut all_files = BTreeSet::new();
-    collect_files(&root, ".", &mut all_files);
-    for rel in all_files {
-        if !rel.ends_with(".json") {
-            continue;
-        }
+    let all_files = tracked_json_files(&root).unwrap_or_else(|| {
+        let mut files = BTreeSet::new();
+        collect_files(&root, ".", &mut files);
+        files
+    });
+    for rel in all_files.into_iter().filter(|path| path.ends_with(".json")) {
         let in_governed_root = governed_roots.iter().any(|governed_root| {
             rel == *governed_root || rel.starts_with(&format!("{governed_root}/"))
         });
