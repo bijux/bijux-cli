@@ -138,9 +138,31 @@ fn evidence_suite_summary_models_exist() {
         "evidence/reports/what_this_release_proves.md",
         "evidence/reports/what_this_release_does_not_prove.md",
         "evidence/reports/unsupported_or_simulated_areas.md",
-        ".github/workflows/dag-evidence-verify.yml",
     ] {
         assert!(root.join(rel).exists(), "missing evidence suite summary surface: {rel}");
+    }
+
+    let legacy_workflow = root.join(".github/workflows/dag-evidence-verify.yml");
+    let canonical_workflow = root.join(".github/workflows/bijux-canon.yml");
+    assert!(
+        legacy_workflow.exists() || canonical_workflow.exists(),
+        "missing evidence verify workflow surface; expected either .github/workflows/dag-evidence-verify.yml or .github/workflows/bijux-canon.yml"
+    );
+    if canonical_workflow.exists() {
+        let workflow = fs::read_to_string(&canonical_workflow).expect("read canonical workflow");
+        for token in [
+            "id: evidence-verify",
+            "verify evidence-release-set",
+            "verify evidence-battle",
+            "verify evidence-cache",
+            "verify evidence-replay",
+            "verify evidence-consumers",
+        ] {
+            assert!(
+                workflow.contains(token),
+                "canonical workflow is missing evidence verify token: {token}"
+            );
+        }
     }
 }
 
