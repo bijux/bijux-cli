@@ -151,7 +151,7 @@ fn run(cli: Cli) -> Result<(), String> {
             run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
                 run_audit_allowlist_quality_gate()?;
                 run_deny_policy_deviations_gate()?;
-                run_status("cargo", &["audit"])
+                run_cargo_audit_with_allowlist()
             })
         }
         CommandLine::Sanity => {
@@ -1268,6 +1268,47 @@ fn run_audit_allowlist_quality_gate() -> Result<(), String> {
         return Ok(());
     }
     Err(format!("audit allowlist quality gate failed:\n{}", errors.join("\n")))
+}
+
+fn load_audit_allowlist_ids() -> Result<Vec<String>, String> {
+    let root = repo_root()?;
+    let path = root.join("audit-allowlist.toml");
+    let payload = fs::read_to_string(&path)
+        .map_err(|err| format!("read {} failed: {err}", path.display()))?;
+    let value: toml::Value = toml::from_str(&payload)
+        .map_err(|err| format!("parse {} failed: {err}", path.display()))?;
+    let advisories =
+        value.get("advisory").and_then(toml::Value::as_array).cloned().unwrap_or_default();
+
+    let mut ids = Vec::new();
+    for row in advisories {
+        let id = row.get("id").and_then(toml::Value::as_str).unwrap_or("").trim();
+        if is_rustsec_id(id) {
+            ids.push(id.to_string());
+        }
+    }
+    ids.sort();
+    ids.dedup();
+    Ok(ids)
+}
+
+fn run_cargo_audit_with_allowlist() -> Result<(), String> {
+    let ignores = load_audit_allowlist_ids()?;
+    let mut command = Command::new("cargo");
+    command.arg("audit");
+    for advisory in &ignores {
+        command.arg("--ignore");
+        command.arg(advisory);
+    }
+
+    let status = command
+        .status()
+        .map_err(|err| format!("cargo audit failed to start: {err}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err("cargo audit failed".to_string())
+    }
 }
 
 fn run_deny_policy_deviations_gate() -> Result<(), String> {

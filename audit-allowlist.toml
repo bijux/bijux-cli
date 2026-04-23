@@ -1,0 +1,21 @@
+[metadata]
+review_cadence = "every dependency upgrade sweep (min quarterly)"
+owner = "platform/infra"
+
+[advisories]
+ignore = []
+
+[[advisory]]
+id = "RUSTSEC-2026-0097"
+why = "The current dependency graph includes rand transitively via proptest, and workspace code paths do not combine rand::rng with a custom logger while upstream remediation is tracked."
+expiry = "2026-12-31"
+owner = "bijux-dev"
+link = "https://rustsec.org/advisories/RUSTSEC-2026-0097"
+
+# For each ignored advisory use:
+# [[advisory]]
+# id = "RUSTSEC-YYYY-NNNN"
+# why = "short risk acceptance rationale"
+# expiry = "YYYY-MM-DD"
+# owner = "team-or-crate-owner"
+# link = "https://tracker-or-issue-url"
