@@ -138,6 +138,7 @@ all: fmt lint security test build ## Run quality checks and build distributions
 fmt: fmt-rs fmt-py ## Run Rust and Python formatters
 lint: lint-rs lint-py ## Run Rust and Python lint checks
 test: test-rs test-py ## Run Rust and Python test suites
+test-all: test-all-rs ## Run full Rust tests including ignored tests
 security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution packages
 .PHONY: fmt
