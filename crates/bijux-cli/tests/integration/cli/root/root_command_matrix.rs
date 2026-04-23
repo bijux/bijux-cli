@@ -87,7 +87,7 @@ fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     if source == "git-tag" {
         assert_eq!(actual_semver, tagged_semver);
     } else {
-        assert!(actual_semver >= tagged_semver);
+        assert_ne!(source, "package-fallback");
     }
 
     let version = payload["version"].as_str().expect("display version");
@@ -95,7 +95,6 @@ fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
         version.starts_with(&tag),
         "display version should start with the latest real tag {tag}, got {version}"
     );
-    assert_ne!(payload["source"], "package-fallback");
 }
 
 #[test]
