@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 
-WORKSPACE_PACKAGES = {"bijux-cli", "bijux-cli-python", "bijux-dev"}
 IGNORE_NAMES = {
     ".git",
     ".DS_Store",
@@ -89,36 +89,64 @@ def rewrite_workspace_version(path: Path, release_version: str) -> None:
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
-def rewrite_workspace_dependency_versions(path: Path, release_version: str) -> None:
+def rewrite_bijux_dependency_versions(path: Path, release_version: str) -> None:
+    content = path.read_text(encoding="utf-8")
+    rewritten, replacements = re.subn(
+        r'(\bbijux[-_][A-Za-z0-9_-]+\b\s*=\s*\{[^{}]*?\bversion\s*=\s*")([^"]+)(")',
+        rf'\g<1>{release_version}\g<3>',
+        content,
+        flags=re.DOTALL,
+    )
+    if replacements == 0:
+        return
+    path.write_text(rewritten, encoding="utf-8")
+
+
+def rewrite_workspace_package_manifest(path: Path, release_version: str) -> str:
     lines = path.read_text(encoding="utf-8").splitlines()
     out: list[str] = []
-    in_workspace_dependencies = False
-    replaced = 0
+    in_package = False
+    package_name: str | None = None
+    saw_workspace_version = False
+    version_rewritten = False
 
     for line in lines:
         stripped = line.strip()
         if stripped.startswith("[") and stripped.endswith("]"):
-            in_workspace_dependencies = stripped == "[workspace.dependencies]"
-        if (
-            in_workspace_dependencies
-            and stripped.startswith('bijux-cli = {')
-            and 'version = "' in stripped
-        ):
-            prefix, version_tail = line.split('version = "', 1)
-            _old_version, suffix = version_tail.split('"', 1)
-            out.append(f'{prefix}version = "{release_version}"{suffix}')
-            replaced += 1
+            in_package = stripped == "[package]"
+        if in_package and stripped.startswith("name = "):
+            package_name = stripped.removeprefix("name = ").strip().strip('"')
+        if in_package and stripped.startswith("version.workspace = "):
+            saw_workspace_version = True
+        if in_package and line.lstrip().startswith("version = "):
+            indent = line[: len(line) - len(line.lstrip())]
+            out.append(f'{indent}version = "{release_version}"')
+            version_rewritten = True
             continue
         out.append(line)
 
-    if replaced != 1:
-        raise SystemExit(
-            f"expected to rewrite 1 workspace dependency version in {path}, rewrote {replaced}"
-        )
+    if package_name is None:
+        raise SystemExit(f"failed to discover package name in {path}")
+    if not version_rewritten and not saw_workspace_version:
+        raise SystemExit(f"failed to rewrite package version in {path}")
+
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
+    rewrite_bijux_dependency_versions(path, release_version)
+    return package_name
 
 
-def rewrite_lockfile_versions(path: Path, release_version: str) -> None:
+def rewrite_workspace_crates(output_dir: Path, release_version: str) -> set[str]:
+    workspace_packages: set[str] = set()
+    crates_root = output_dir / "crates"
+    for manifest in sorted(crates_root.glob("*/Cargo.toml")):
+        package_name = rewrite_workspace_package_manifest(manifest, release_version)
+        workspace_packages.add(package_name)
+    if not workspace_packages:
+        raise SystemExit(f"failed to discover workspace crates under {crates_root}")
+    return workspace_packages
+
+
+def rewrite_lockfile_versions(path: Path, release_version: str, workspace_packages: set[str]) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     out: list[str] = []
     current_package: str | None = None
@@ -139,16 +167,20 @@ def rewrite_lockfile_versions(path: Path, release_version: str) -> None:
             current_package = stripped.removeprefix('name = "').removesuffix('"')
             out.append(line)
             continue
-        if in_package_block and current_package in WORKSPACE_PACKAGES and stripped.startswith("version = "):
+        if (
+            in_package_block
+            and current_package in workspace_packages
+            and stripped.startswith("version = ")
+        ):
             indent = line[: len(line) - len(line.lstrip())]
             out.append(f'{indent}version = "{release_version}"')
             replaced += 1
             continue
         out.append(line)
 
-    if replaced != len(WORKSPACE_PACKAGES):
+    if replaced != len(workspace_packages):
         raise SystemExit(
-            f"expected to rewrite {len(WORKSPACE_PACKAGES)} workspace package versions in {path}, rewrote {replaced}"
+            f"expected to rewrite {len(workspace_packages)} workspace package versions in {path}, rewrote {replaced}"
         )
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
@@ -156,7 +188,9 @@ def rewrite_lockfile_versions(path: Path, release_version: str) -> None:
 def parse_release_version(release_version: str) -> tuple[int, int, int]:
     parts = release_version.split(".")
     if len(parts) != 3 or any(not part.isdigit() for part in parts):
-        raise SystemExit(f"release version must be x.y.z semver without prerelease/build metadata: {release_version}")
+        raise SystemExit(
+            f"release version must be x.y.z semver without prerelease/build metadata: {release_version}"
+        )
     return int(parts[0]), int(parts[1]), int(parts[2])
 
 
@@ -194,8 +228,9 @@ def main() -> int:
     ensure_clean_output_dir(output_dir)
     copy_workspace(workspace_root, output_dir)
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
-    rewrite_workspace_dependency_versions(output_dir / "Cargo.toml", release_version)
-    rewrite_lockfile_versions(output_dir / "Cargo.lock", release_version)
+    rewrite_bijux_dependency_versions(output_dir / "Cargo.toml", release_version)
+    workspace_packages = rewrite_workspace_crates(output_dir, release_version)
+    rewrite_lockfile_versions(output_dir / "Cargo.lock", release_version, workspace_packages)
     regenerate_lockfile(output_dir)
     rewrite_template_compatibility_defaults(
         output_dir / "templates/plugins-py/cookiecutter.json",
