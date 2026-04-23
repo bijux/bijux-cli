@@ -135,10 +135,11 @@ clean-soft: ## Remove generated outputs and keep the repo-managed virtualenv und
 all: fmt lint security test build ## Run quality checks and build distributions
 	@echo "✔ All targets completed"
 
-fmt: fmt-rs fmt-py ## Run Rust and Python formatters
-lint: lint-rs lint-py ## Run Rust and Python lint checks
+fmt: fmt-rs ## Run Rust formatting checks
+lint: lint-rs ## Run Rust lint checks
 test: test-rs test-py ## Run Rust and Python test suites
 test-all: test-all-rs ## Run full Rust tests including ignored tests
+audit: audit-rs ## Run Rust dependency and advisory audits
 security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution packages
 .PHONY: fmt
