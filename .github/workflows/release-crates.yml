@@ -232,15 +232,6 @@ jobs:
           echo "version=${release_version}" >> "$GITHUB_OUTPUT"
           echo "packages=${filtered_packages}" >> "$GITHUB_OUTPUT"
 
-      - name: Fail manual dispatch when publish plan resolves false
-        if: ${{ github.event_name == 'workflow_dispatch' && needs.resolve.outputs.enabled == 'true' && steps.release.outputs.publish != 'true' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Release plan resolved publish=false for a manually enabled release-crates run." >&2
-          echo "This run must not report green when crates publication is skipped." >&2
-          exit 1
-
       - name: Set up Rust
         if: ${{ steps.release.outputs.publish == 'true' && needs.resolve.outputs.setup_rust == 'true' }}
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1

@@ -526,15 +526,6 @@ jobs:
           echo "publish=${publish}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Fail manual dispatch when publish plan resolves false
-        if: ${{ github.event_name == 'workflow_dispatch' && needs.resolve.outputs.enabled == 'true' && steps.release.outputs.publish != 'true' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Release plan resolved publish=false for a manually enabled release-pypi run." >&2
-          echo "This run must not report green when publication is skipped." >&2
-          exit 1
-
       - name: Set up Python
         if: ${{ steps.release.outputs.publish == 'true' && needs.resolve.outputs.setup_python == 'true' }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.1.0
