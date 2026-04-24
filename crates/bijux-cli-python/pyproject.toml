@@ -99,6 +99,11 @@ runtime_version_source = "git-tag"
 [tool.security]
 
 [[tool.security.pip_audit_ignore]]
+id = "CVE-2026-3219"
+dependency = "pip"
+reason = "No fixed pip release is available yet; keep this temporary ignore until upstream publishes a patched version."
+
+[[tool.security.pip_audit_ignore]]
 id = "PYSEC-2022-42969"
 dependency = "py"
 reason = "Vulnerability is in a transitive dev-only dependency; it is not part of CLI runtime execution."

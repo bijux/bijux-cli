@@ -29,7 +29,7 @@ Files in crate `src/` trees below 25% line coverage.
 | crates/bijux-dev/src/commands/compare_evidence.rs | 8 | 193 | 4.15 |
 | crates/bijux-dev/src/commands/contract_governance.rs | 0 | 270 | 0.00 |
 | crates/bijux-dev/src/commands/docs_governance.rs | 0 | 638 | 0.00 |
-| crates/bijux-dev/src/commands/mod.rs | 0 | 2757 | 0.00 |
+| crates/bijux-dev/src/commands/mod.rs | 0 | 2790 | 0.00 |
 | crates/bijux-dev/src/commands/ops.rs | 11 | 3873 | 0.28 |
 | crates/bijux-dev/src/commands/suite_catalog_repo.rs | 0 | 74 | 0.00 |
 | crates/bijux-dev/src/main.rs | 0 | 3 | 0.00 |

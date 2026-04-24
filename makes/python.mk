@@ -37,6 +37,7 @@ PYTEST_ADDOPTS ?= -ra --strict-markers --tb=short --cov=bijux_cli_py --cov-branc
 
 # Mirror [tool.security.pip_audit_ignore] in crates/bijux-cli-python/pyproject.toml.
 PIP_AUDIT_IGNORE_IDS ?= \
+	CVE-2026-3219 \
 	PYSEC-2022-42969
 PIP_AUDIT_IGNORE_FLAGS := $(foreach id,$(PIP_AUDIT_IGNORE_IDS),--ignore-vuln $(id))
 PIP_AUDIT_FLAGS ?= --progress-spinner off --skip-editable $(PIP_AUDIT_IGNORE_FLAGS)
