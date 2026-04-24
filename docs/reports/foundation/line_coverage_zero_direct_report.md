@@ -25,7 +25,7 @@ Files in crate `src/` trees with 0% line coverage.
 | crates/bijux-dev/src/commands/cli_release_command.rs | 0 | 2 | 0.00 |
 | crates/bijux-dev/src/commands/contract_governance.rs | 0 | 270 | 0.00 |
 | crates/bijux-dev/src/commands/docs_governance.rs | 0 | 638 | 0.00 |
-| crates/bijux-dev/src/commands/mod.rs | 0 | 2757 | 0.00 |
+| crates/bijux-dev/src/commands/mod.rs | 0 | 2790 | 0.00 |
 | crates/bijux-dev/src/commands/suite_catalog_repo.rs | 0 | 74 | 0.00 |
 | crates/bijux-dev/src/main.rs | 0 | 3 | 0.00 |
 | crates/bijux-dev/src/maintainer/infra/clock.rs | 0 | 10 | 0.00 |

@@ -38,7 +38,7 @@ Files in crate `src/` trees below 50% line coverage.
 | crates/bijux-dev/src/commands/docs_governance.rs | 0 | 638 | 0.00 |
 | crates/bijux-dev/src/commands/evidence_control_plane.rs | 213 | 475 | 44.84 |
 | crates/bijux-dev/src/commands/evidence_registry.rs | 147 | 312 | 47.12 |
-| crates/bijux-dev/src/commands/mod.rs | 0 | 2757 | 0.00 |
+| crates/bijux-dev/src/commands/mod.rs | 0 | 2790 | 0.00 |
 | crates/bijux-dev/src/commands/ops.rs | 11 | 3873 | 0.28 |
 | crates/bijux-dev/src/commands/perf_evidence.rs | 54 | 206 | 26.21 |
 | crates/bijux-dev/src/commands/suite_catalog.rs | 25 | 79 | 31.65 |
