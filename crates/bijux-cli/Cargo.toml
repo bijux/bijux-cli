@@ -41,7 +41,7 @@ workspace = true
 semver = { version = "1.0.27", default-features = false, features = ["std"] }
 
 [dev-dependencies]
-libc = "0.2.177"
+libc = "0.2.186"
 proptest = "1.6.0"
 shlex = "1.3.0"
 tempfile.workspace = true
