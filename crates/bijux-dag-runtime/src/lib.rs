@@ -1489,7 +1489,7 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
                 details: None,
             });
         }
-        if out.path.contains("..") || out.path.starts_with('/') || out.path.starts_with('\\') {
+        if !bijux_dag_artifacts::paths::is_normalized_relative_path(&out.path) {
             return Some(FailureInfo {
                 kind: "Execution".to_string(),
                 code: "OUTPUT_PATH_INVALID".to_string(),

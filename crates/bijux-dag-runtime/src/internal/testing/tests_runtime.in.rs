@@ -1176,6 +1176,18 @@ exit 1
     }
 
     #[test]
+    fn output_validation_rejects_non_normalized_declared_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let outputs = vec![FileOutput {
+            name: "bad".to_string(),
+            path: "nested//out.txt".to_string(),
+        }];
+        let failure = validate_outputs_dir(dir.path(), &outputs).expect("must fail");
+        assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
+        assert!(failure.message.contains("invalid output path"));
+    }
+
+    #[test]
     fn output_validation_skips_symlink_loops_during_undeclared_scan() {
         #[cfg(unix)]
         {
