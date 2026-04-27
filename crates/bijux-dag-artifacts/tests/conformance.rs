@@ -142,6 +142,19 @@ fn write_outputs_index_rejects_escaping_paths() {
 }
 
 #[test]
+fn write_outputs_index_rejects_missing_declared_outputs() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("ok.txt"), b"ok").unwrap();
+    let err =
+        write_outputs_index(dir.path(), "node", "fp", &["ok.txt".to_string(), "missing.txt".to_string()])
+            .err()
+            .unwrap();
+    let msg = err.to_string();
+    assert!(msg.contains("missing output"));
+    assert!(msg.contains("missing.txt"));
+}
+
+#[test]
 fn corruption_payloads_fail_schema_parse() {
     let truncated_manifest = r#"{\"run_id\":\"r1\",\"status\":\"ok\""#;
     let missing_trace_fields = r#"{\"node_id\":\"n1\",\"status\":\"ok\"}"#;

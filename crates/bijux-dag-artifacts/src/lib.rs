@@ -57,6 +57,8 @@ pub enum ArtifactError {
     Json(#[from] serde_json::Error),
     #[error("path violation: {0}")]
     PathViolation(String),
+    #[error("missing output: {0}")]
+    MissingOutput(String),
 }
 
 #[derive(Debug, Clone)]
@@ -201,7 +203,7 @@ pub fn write_outputs_index(
         }
         let path = dir.as_ref().join(rel);
         if !path.is_file() {
-            continue;
+            return Err(ArtifactError::MissingOutput(rel.clone()));
         }
         let data = std_fs::read(&path)?;
         let sha = sha256_bytes(&data);
