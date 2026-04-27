@@ -1038,6 +1038,17 @@ pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
     }
 }
 
+pub(crate) fn failure_propagation_cause(failure: Option<&FailureInfo>) -> &'static str {
+    match transition_cause_for_failure(failure) {
+        "PolicyDenied" => "policy_denied",
+        "TimeoutExceeded" => "timeout_exceeded",
+        "InfrastructureFailed" => "infrastructure_failed",
+        "MissingRequiredOutput" => "missing_required_output",
+        "MissingRequiredInput" => "missing_required_input",
+        _ => "execution_failed",
+    }
+}
+
 fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
     let mut params = ctx.resolved_params.get(node_id).cloned().unwrap_or(Value::Null);
     sort_value_maps(&mut params);

@@ -510,7 +510,7 @@ pub fn execute(
             failure_propagation_records.push(serde_json::json!({
                 "node_id": node_id,
                 "status": "skipped",
-                "cause": reason,
+                "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
             }));
             crate::append_event(
                 &mut run_log,
@@ -562,7 +562,7 @@ pub fn execute(
             failure_propagation_records.push(serde_json::json!({
                 "node_id": node_id,
                 "status": "failed",
-                "cause": "policy_denied",
+                "cause": crate::failure_propagation_cause(Some(failure)),
             }));
             crate::append_event(
                 &mut run_log,
@@ -861,7 +861,7 @@ pub fn execute(
                         failure_propagation_records.push(serde_json::json!({
                             "node_id": node_id,
                             "status": "failed",
-                            "cause": "execution_failed",
+                            "cause": crate::failure_propagation_cause(result.failure.as_ref()),
                         }));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
@@ -937,7 +937,7 @@ pub fn execute(
                     failure_propagation_records.push(serde_json::json!({
                         "node_id": node_id,
                         "status": "failed",
-                        "cause": "internal_error",
+                        "cause": crate::failure_propagation_cause(Some(&failure)),
                     }));
                     crate::append_event(
                         &mut run_log,
@@ -1021,7 +1021,7 @@ pub fn execute(
                 failure_propagation_records.push(serde_json::json!({
                     "node_id": node.id,
                     "status": "skipped",
-                    "cause": "cancelled",
+                    "cause": "cancel_requested",
                 }));
             }
         }

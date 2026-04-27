@@ -131,6 +131,13 @@ fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
     .expect("parse trace")
 }
 
+fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<Value> {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("failure-propagation.json")).expect("failure propagation"),
+    )
+    .expect("parse failure propagation")
+}
+
 #[test]
 fn runtime_clean_env_defaults_to_stripped_environment() {
     let graph = parse_graph_strict(&shell_graph(
@@ -192,6 +199,8 @@ fn runtime_rejects_network_effect_when_denied() {
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["details"]["effect"], "network");
     assert_eq!(trace["transition_cause"], "PolicyDenied");
+    let propagation = read_failure_propagation(&run_path);
+    assert_eq!(propagation[0]["cause"], "policy_denied");
 }
 
 #[test]
@@ -287,6 +296,8 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
     assert_eq!(trace["transition_cause"], "MissingRequiredOutput");
+    let propagation = read_failure_propagation(&run_path);
+    assert_eq!(propagation[0]["cause"], "missing_required_output");
 }
 
 #[test]
