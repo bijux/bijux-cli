@@ -1069,7 +1069,10 @@ fn execute_with_retries(
         attempt += 1;
         let started = ctx.clock.now_unix_ms();
         let node_ctx = NodeCtx { node, exec: ctx, params };
-        let mut result = adapter.execute(&node_ctx)?;
+        let mut result = match adapter.execute(&node_ctx) {
+            Ok(result) => result,
+            Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
+        };
         let finished = ctx.clock.now_unix_ms();
         attempt_events.push(AttemptEvent {
             attempt,
@@ -1092,6 +1095,42 @@ fn execute_with_retries(
                 std::thread::sleep(Duration::from_millis(wait));
             }
         }
+    }
+}
+
+fn failed_node_result_from_runtime_error(
+    ctx: &RunContext,
+    node: &Node,
+    error: RuntimeError,
+) -> NodeResult {
+    let (kind, code, message) = match error {
+        RuntimeError::Graph(err) => ("Internal", "GRAPH_ERROR", err.to_string()),
+        RuntimeError::Artifact(err) => ("Infrastructure", "ARTIFACT_ERROR", err.to_string()),
+        RuntimeError::Io(err) => ("Infrastructure", "IO_ERROR", err.to_string()),
+        RuntimeError::Json(err) => ("Internal", "JSON_ERROR", err.to_string()),
+        RuntimeError::Executor(message) => {
+            if message.contains("timed out") {
+                ("Execution", "EXEC_TIMEOUT", message)
+            } else {
+                ("Execution", "EXEC_ERROR", message)
+            }
+        }
+    };
+    NodeResult {
+        status: NodeStatus::Failed,
+        stdout_path: ctx.run_dir.node_stdout_path(&node.id).display().to_string(),
+        stderr_path: ctx.run_dir.node_stderr_path(&node.id).display().to_string(),
+        outputs_dir: ctx.run_dir.node_outputs_dir(&node.id).display().to_string(),
+        failure: Some(FailureInfo {
+            kind: kind.to_string(),
+            code: code.to_string(),
+            message,
+            details: None,
+        }),
+        attempts: 1,
+        attempt_events: Vec::new(),
+        container_meta: None,
+        adapter_binary_sha256: None,
     }
 }
 

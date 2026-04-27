@@ -1294,6 +1294,10 @@ exit 1
         let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
             .unwrap();
         assert!(trace.contains("timed out"));
+        let run_log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
+        assert!(run_log.contains("\"event\":\"node_attempt_started\""));
+        assert!(run_log.contains("\"event\":\"node_attempt_finished\""));
+        assert!(run_log.contains("\"status\":\"failed\""));
     }
 
     #[test]
