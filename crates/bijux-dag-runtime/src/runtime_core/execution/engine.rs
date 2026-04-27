@@ -1326,18 +1326,18 @@ pub fn execute(
             "timeline": "observability.timeline.json"
         }))?,
     )?;
-    let _ = ctx.fs.write(
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("run-log.index.json"),
         &serde_json::to_vec_pretty(&run_log_index)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("run.audit.json"),
         &serde_json::to_vec_pretty(&run_audit_events)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("failure-propagation.json"),
         &serde_json::to_vec_pretty(&failure_propagation_records)?,
-    );
+    )?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {
