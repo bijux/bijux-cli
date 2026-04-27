@@ -46,6 +46,7 @@ use serde::Serialize;
 use std::fs as std_fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, thiserror::Error)]
@@ -230,7 +231,14 @@ pub fn now_unix_ms() -> u128 {
 }
 
 fn generate_run_id() -> String {
-    now_unix_ms().to_string()
+    static RUN_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
+    let seq = RUN_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!(
+        "{}-{}-{:06}",
+        now_unix_ms(),
+        std::process::id(),
+        seq % 1_000_000
+    )
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
@@ -248,5 +256,14 @@ mod tests {
         assert!(run.staging_path().exists());
         let final_path = run.finalize().unwrap();
         assert!(final_path.exists());
+    }
+
+    #[test]
+    fn generated_run_ids_do_not_collide_within_process() {
+        let first = generate_run_id();
+        let second = generate_run_id();
+        assert_ne!(first, second);
+        assert!(first.contains('-'));
+        assert!(second.contains('-'));
     }
 }
