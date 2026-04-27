@@ -203,7 +203,7 @@ pub fn execute(
         replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
-    let _ = ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?);
+    ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?)?;
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),

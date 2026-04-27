@@ -1,14 +1,104 @@
 mod tests {
     use super::*;
     use crate::clock::FixedClock;
+    use crate::{Fs, StdFs};
     use crate::test_support::{docker_available, param_object, sample_graph};
     use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
+    use std::io;
+    use std::path::{Path, PathBuf};
     use std::fs;
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::{Arc, Mutex, OnceLock};
 
     fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(())).lock().expect("lock")
+    }
+
+    #[derive(Clone)]
+    struct InterceptFs {
+        inner: StdFs,
+        fail_write_suffix: Option<&'static str>,
+        fail_symlink_name: Option<&'static str>,
+    }
+
+    impl InterceptFs {
+        fn fail_write(suffix: &'static str) -> Self {
+            Self { inner: StdFs, fail_write_suffix: Some(suffix), fail_symlink_name: None }
+        }
+
+        fn fail_symlink(name: &'static str) -> Self {
+            Self { inner: StdFs, fail_write_suffix: None, fail_symlink_name: Some(name) }
+        }
+    }
+
+    impl Fs for InterceptFs {
+        fn create_dir_all(&self, path: &Path) -> io::Result<()> {
+            self.inner.create_dir_all(path)
+        }
+
+        fn read_to_string(&self, path: &Path) -> io::Result<String> {
+            self.inner.read_to_string(path)
+        }
+
+        fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+            self.inner.read(path)
+        }
+
+        fn write(&self, path: &Path, data: &[u8]) -> io::Result<()> {
+            if self
+                .fail_write_suffix
+                .is_some_and(|suffix| path.to_string_lossy().ends_with(suffix))
+            {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted write"));
+            }
+            self.inner.write(path, data)
+        }
+
+        fn open_append(&self, path: &Path) -> io::Result<fs::File> {
+            self.inner.open_append(path)
+        }
+
+        fn read_dir(&self, path: &Path) -> io::Result<Vec<fs::DirEntry>> {
+            self.inner.read_dir(path)
+        }
+
+        fn metadata(&self, path: &Path) -> io::Result<fs::Metadata> {
+            self.inner.metadata(path)
+        }
+
+        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.inner.rename(from, to)
+        }
+
+        fn remove_file(&self, path: &Path) -> io::Result<()> {
+            self.inner.remove_file(path)
+        }
+
+        fn copy(&self, from: &Path, to: &Path) -> io::Result<u64> {
+            self.inner.copy(from, to)
+        }
+
+        fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.inner.hard_link(from, to)
+        }
+
+        fn symlink(&self, from: &Path, to: &Path) -> io::Result<()> {
+            if self
+                .fail_symlink_name
+                .is_some_and(|name| to.file_name().and_then(|v| v.to_str()) == Some(name))
+            {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted symlink"));
+            }
+            self.inner.symlink(from, to)
+        }
+
+        fn set_permissions(&self, path: &Path, perms: fs::Permissions) -> io::Result<()> {
+            self.inner.set_permissions(path, perms)
+        }
+
+        fn canonicalize(&self, path: &Path) -> io::Result<PathBuf> {
+            self.inner.canonicalize(path)
+        }
     }
 
     #[test]
@@ -1554,5 +1644,13 @@ exit 1
         let second_manifest = fs::read_to_string(second.join("manifest.json")).unwrap();
         assert_eq!(first_manifest, first_manifest_after);
         assert_ne!(first_manifest_after, second_manifest);
+    }
+
+    #[test]
+    fn run_snapshot_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.snapshot.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
     }
 }
