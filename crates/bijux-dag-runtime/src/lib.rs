@@ -676,11 +676,16 @@ impl Adapter for ContainerAdapter {
                 format!("container engine not available: {}", engine).as_bytes(),
             )?;
             return Ok(NodeResult {
-                status: NodeStatus::Skipped,
+                status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
-                failure: None,
+                failure: Some(FailureInfo {
+                    kind: "Infrastructure".to_string(),
+                    code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
+                    message: format!("container engine not available: {}", engine),
+                    details: Some(serde_json::json!({ "engine": engine })),
+                }),
                 attempts: 1,
                 attempt_events: Vec::new(),
                 container_meta: Some(container_trace(spec, engine, None, engine_version)),

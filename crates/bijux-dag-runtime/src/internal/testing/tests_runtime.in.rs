@@ -895,6 +895,53 @@ mod tests {
     }
 
     #[test]
+    fn missing_container_engine_fails_as_infrastructure_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "c1".to_string(),
+                kind: NodeKind::Container,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out.txt".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: Some(ContainerSpec {
+                    image: "alpine:3.19".to_string(),
+                    argv: vec![
+                        "sh".to_string(),
+                        "-c".to_string(),
+                        "echo hi > /bijux/node/outputs/out.txt".to_string(),
+                    ],
+                    env_allowlist: vec![],
+                    workdir: Some("/bijux/node/work".to_string()),
+                    engine: "podman".to_string(),
+                }),
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("c1").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("\"status\": \"failed\""));
+        assert!(trace.contains("\"kind\": \"Infrastructure\""));
+        assert!(trace.contains("\"code\": \"CONTAINER_ENGINE_UNAVAILABLE\""));
+    }
+
+    #[test]
     fn shell_env_is_clean_except_allowlist() {
         let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
