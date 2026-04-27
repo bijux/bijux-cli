@@ -1,6 +1,6 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
-use bijux_dag_core::{Graph, Node, NodeKind, PlanOptions, PlannerSeverity};
+use bijux_dag_core::{node_io_contract, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity};
 use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
@@ -80,6 +80,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                         id: node.id.clone(),
                         kind: node.kind.clone(),
                         deps: node.deps.clone(),
+                        io_contract: node.io_contract.clone(),
                         outputs: node.outputs.clone(),
                         retry: node.retry.clone(),
                         timeout_ms: node.timeout_ms,
@@ -124,6 +125,12 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                             .unwrap_or_default()
                             .into_iter()
                             .collect(),
+                        io_contract: node_io_contract(graph, &node.id).unwrap_or_else(|| NodeIoContract {
+                            inputs: Vec::new(),
+                            param_bindings: Vec::new(),
+                            env_bindings: Vec::new(),
+                            outputs: Vec::new(),
+                        }),
                         outputs: node.outputs.clone(),
                         retry: node.retry.clone(),
                         timeout_ms: node.timeout_ms,

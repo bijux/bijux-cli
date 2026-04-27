@@ -80,6 +80,42 @@ fn runtime_plan_preserves_dependency_port_bindings() {
 }
 
 #[test]
+fn runtime_plan_preserves_node_io_contracts() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"threads":8},
+          "nodes":[
+            {"id":"seed","kind":"const","inputs":[],"outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+            {
+              "id":"run",
+              "kind":"shell",
+              "inputs":["reads"],
+              "outputs":[{"name":"bam","path":"align/out.bam"}],
+              "params":{
+                "argv":["aligner","--threads",{"graph_input":"threads"}],
+                "seed":{"node_output":{"node_id":"seed","path":"out"}}
+              },
+              "effects":["filesystem","env"],
+              "env_allowlist":["REFGENOME"]
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"seed","port":"out"},"to":{"node_id":"run","port":"reads"}}
+          ]
+        }"#,
+    )
+    .expect("parse graph");
+
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let run = plan.planned_nodes.iter().find(|node| node.id == "run").expect("run node");
+    assert_eq!(run.io_contract.inputs[0].name, "reads");
+    assert_eq!(run.io_contract.outputs[0].name, "bam");
+    assert_eq!(run.io_contract.env_bindings[0].name, "REFGENOME");
+    assert_eq!(run.io_contract.param_bindings.len(), 2);
+}
+
+#[test]
 fn selector_pruning_stage_is_documented_and_dependency_safe() {
     let graph = parse_graph_strict(graph_a()).expect("parse graph");
     let options = RuntimeConfig {

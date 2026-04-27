@@ -1,4 +1,4 @@
-use bijux_dag_core::{FileOutput, Node, RetryPolicy};
+use bijux_dag_core::{FileOutput, Node, NodeIoContract, RetryPolicy};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 
@@ -7,6 +7,7 @@ pub struct PlannedNode {
     pub id: String,
     pub kind: String,
     pub deps: Vec<String>,
+    pub io_contract: NodeIoContract,
     pub outputs: Vec<FileOutput>,
     pub retry: RetryPolicy,
     pub timeout_ms: Option<u64>,
