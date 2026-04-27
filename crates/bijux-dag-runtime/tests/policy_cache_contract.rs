@@ -124,6 +124,31 @@ fn graph_with_fail_fast_abort() -> String {
     .to_string()
 }
 
+fn graph_with_run_timeout_pending_node() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "sleep 0.05; printf '%s' ok > ../outputs/a.txt"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "late"}
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
 fn shell_graph_with_invalid_argv() -> String {
     json!({
         "spec": "bijux-dag/v0.1",
@@ -735,6 +760,36 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
     assert!(propagation
         .iter()
         .any(|entry| entry["node_id"] == "b" && entry["cause"] == "execution_aborted"));
+}
+
+#[test]
+fn runtime_marks_pending_nodes_failed_when_run_times_out() {
+    let graph = parse_graph_strict(&graph_with_run_timeout_pending_node()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig { run_timeout_ms: Some(10), ..RuntimeConfig::default() },
+        )
+        .expect("timed run");
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
+    assert_eq!(manifest["status"], "failed");
+
+    let trace = read_node_trace(&run_path, "b");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "RUN_TIMEOUT");
+    assert_eq!(trace["transition_cause"], "TimeoutExceeded");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "timeout_exceeded"));
 }
 
 #[test]

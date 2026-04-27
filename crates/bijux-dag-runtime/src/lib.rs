@@ -1022,6 +1022,7 @@ pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'s
         Some(failure) if failure.kind == "Policy" => "PolicyDenied",
         Some(failure) if failure.code == "UPSTREAM_FAILED" => "DependencyFailed",
         Some(failure) if failure.code == "RUN_ABORTED" => "ExecutionAborted",
+        Some(failure) if failure.code == "RUN_TIMEOUT" => "TimeoutExceeded",
         Some(failure) if failure.code == "EXEC_TIMEOUT" => "TimeoutExceeded",
         Some(failure) if failure.code == "CONTAINER_ENGINE_UNAVAILABLE" => "InfrastructureFailed",
         Some(failure) if failure.code == "OUTPUT_MISSING" => "MissingRequiredOutput",
