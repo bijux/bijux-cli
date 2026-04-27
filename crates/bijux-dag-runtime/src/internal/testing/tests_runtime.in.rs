@@ -1731,4 +1731,13 @@ exit 1
         assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
         assert!(rendered.contains("timeline export"));
     }
+
+    #[test]
+    fn observability_payload_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime =
+            Runtime::with_io(Arc::new(InterceptFs::fail_write("observability.root-causes.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
 }

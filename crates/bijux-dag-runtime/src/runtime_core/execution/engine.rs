@@ -1290,15 +1290,15 @@ pub fn execute(
     )
     .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
     let root_causes = summarize_failure_root_causes(&structured_events);
-    let _ = ctx.fs.write(
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.root-causes.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.events.json"),
         &serde_json::to_vec_pretty(&structured_events)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.metrics.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "node": metrics_registry.node_metrics,
@@ -1309,8 +1309,8 @@ pub fn execute(
                 "after_materialization_bytes": memory_after_materialization
             }
         }))?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.graph-visualization.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "nodes": graph.nodes.iter().map(|n| {
@@ -1325,7 +1325,7 @@ pub fn execute(
             "lineage_snapshot": "lineage.snapshot.json",
             "timeline": "observability.timeline.json"
         }))?,
-    );
+    )?;
     let _ = ctx.fs.write(
         &ctx.run_dir.staging_path().join("run-log.index.json"),
         &serde_json::to_vec_pretty(&run_log_index)?,
