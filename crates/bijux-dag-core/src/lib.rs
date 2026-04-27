@@ -101,6 +101,18 @@ pub mod stable {
     };
 }
 
+pub mod prelude {
+    pub use crate::stable::{
+        canonical_json, canonicalize_graph, compile_graph, compile_graph_contract,
+        compile_graph_strict, compile_graph_with_defaults, negotiate_spec_version, validate_graph,
+        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot,
+        ExecutionPlan, Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions,
+        PlannedEdge, PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity,
+        SPEC_VERSION,
+    };
+    pub use crate::{lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph};
+}
+
 pub mod experimental {
     pub use crate::semantics::{
         classify_compatibility, complexity_score, enforce_late_binding_immutability,
