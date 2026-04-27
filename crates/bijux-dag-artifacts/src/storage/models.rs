@@ -47,6 +47,12 @@ pub struct NodeTrace {
     pub finished_unix_ms: u128,
     pub attempt: u32,
     pub fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_contract_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
     pub adapter_id: String,
     pub adapter_version: String,
     pub adapter_outputs_schema_version: String,

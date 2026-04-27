@@ -163,6 +163,9 @@ pub fn execute(
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
         graph_fingerprint: Arc::clone(&graph_fingerprint),
+        planner_contract_version: plan.planner_contract_version.clone(),
+        execution_fingerprint: plan.execution_fingerprint.clone(),
+        evidence_fingerprint: plan.evidence_fingerprint.clone(),
         resolved_params,
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
@@ -727,6 +730,9 @@ pub fn execute(
             let ctx_clone = RunContext {
                 run_dir: Arc::clone(&ctx.run_dir),
                 graph_fingerprint: ctx.graph_fingerprint.clone(),
+                planner_contract_version: ctx.planner_contract_version.clone(),
+                execution_fingerprint: ctx.execution_fingerprint.clone(),
+                evidence_fingerprint: ctx.evidence_fingerprint.clone(),
                 resolved_params: ctx.resolved_params.clone(),
                 fs: Arc::clone(&ctx.fs),
                 clock: Arc::clone(&ctx.clock),

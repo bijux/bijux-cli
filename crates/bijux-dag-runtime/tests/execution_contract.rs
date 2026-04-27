@@ -75,6 +75,9 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
         .expect("trace parse");
     assert_eq!(trace["status"], "success");
     assert_eq!(trace["node_id"], "const1");
+    assert_eq!(trace["planner_contract_version"], "bijux-dag-planner/v1");
+    assert!(trace["execution_fingerprint"].as_str().is_some());
+    assert!(trace["evidence_fingerprint"].as_str().is_some());
 }
 
 #[test]
