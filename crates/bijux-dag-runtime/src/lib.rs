@@ -1017,6 +1017,18 @@ pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
     }
 }
 
+pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'static str {
+    match failure {
+        Some(failure) if failure.kind == "Policy" => "PolicyDenied",
+        Some(failure) if failure.code == "EXEC_TIMEOUT" => "TimeoutExceeded",
+        Some(failure) if failure.code == "CONTAINER_ENGINE_UNAVAILABLE" => "InfrastructureFailed",
+        Some(failure) if failure.code == "OUTPUT_MISSING" => "MissingRequiredOutput",
+        Some(failure) if failure.code == "INPUT_MISSING" => "MissingRequiredInput",
+        Some(failure) if failure.kind == "Infrastructure" => "InfrastructureFailed",
+        _ => "ExecutionFailed",
+    }
+}
+
 pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
     match reason {
         "filtered" => "SelectionFiltered",

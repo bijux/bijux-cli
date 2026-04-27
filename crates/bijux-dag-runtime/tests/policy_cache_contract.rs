@@ -147,6 +147,7 @@ fn runtime_rejects_network_effect_when_denied() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["details"]["effect"], "network");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
 }
 
 #[test]
@@ -172,6 +173,7 @@ fn runtime_rejects_env_effect_when_denied() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["details"]["effect"], "env");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
 }
 
 #[test]
@@ -197,6 +199,7 @@ fn runtime_rejects_clock_effect_when_denied() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["details"]["effect"], "clock");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
 }
 
 #[test]
@@ -239,6 +242,7 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     .expect("parse trace");
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
+    assert_eq!(trace["transition_cause"], "MissingRequiredOutput");
 }
 
 #[test]

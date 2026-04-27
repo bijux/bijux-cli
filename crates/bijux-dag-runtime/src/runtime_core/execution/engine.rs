@@ -821,7 +821,14 @@ pub fn execute(
                         result.container_meta.clone(),
                         adapter_hash,
                         None,
-                        Some(crate::transition_cause_for_status(&result.status).to_string()),
+                        Some(
+                            if result.status == NodeStatus::Failed {
+                                crate::transition_cause_for_failure(result.failure.as_ref())
+                            } else {
+                                crate::transition_cause_for_status(&result.status)
+                            }
+                            .to_string(),
+                        ),
                         Some(ReplayProvenance {
                             node_action: match replay_action {
                                 ReplayNodeAction::Reexecuted => "reexecuted",
@@ -898,17 +905,18 @@ pub fn execute(
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     let adapter_hash =
                         runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
+                    let failure = FailureInfo {
+                        kind: "Internal".to_string(),
+                        code: "INTERNAL".to_string(),
+                        message: err.to_string(),
+                        details: None,
+                    };
                     sacred_execution::run_write_trace(
                         &ctx,
                         graph,
                         &node_id,
                         NodeStatus::Failed,
-                        Some(FailureInfo {
-                            kind: "Internal".to_string(),
-                            code: "INTERNAL".to_string(),
-                            message: err.to_string(),
-                            details: None,
-                        }),
+                        Some(failure.clone()),
                         started,
                         finished,
                         1,
@@ -919,7 +927,7 @@ pub fn execute(
                         None,
                         adapter_hash,
                         None,
-                        Some("ExecutionFailed".to_string()),
+                        Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                         Some(ReplayProvenance {
                             node_action: "reexecuted".to_string(),
                             source_run_id: options.parent_run_id.clone(),
