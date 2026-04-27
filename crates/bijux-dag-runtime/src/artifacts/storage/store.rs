@@ -43,6 +43,11 @@ impl ArtifactStore {
         self.fs.write(&path, data)
     }
 
+    pub fn write_attempts(&self, node_id: &str, data: &[u8]) -> std::io::Result<()> {
+        let path = self.run_dir.node_attempts_path(node_id);
+        self.fs.write(&path, data)
+    }
+
     pub fn open_run_log(&self) -> std::io::Result<std::fs::File> {
         self.fs.open_append(self.run_dir.run_log_path().as_path())
     }

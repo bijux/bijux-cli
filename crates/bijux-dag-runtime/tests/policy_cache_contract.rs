@@ -90,6 +90,30 @@ fn shell_graph_with_invalid_argv() -> String {
     .to_string()
 }
 
+fn shell_retry_failure_graph() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "node",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "value.txt"}],
+                "params": {
+                    "argv": ["/bin/sh", "-c", "exit 1"]
+                },
+                "retry": {
+                    "max_attempts": 2,
+                    "backoff_ms": 0
+                },
+                "effects": ["filesystem"],
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
 fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     let data: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -601,4 +625,23 @@ fn runtime_adapter_errors_materialize_failure_logs() {
         fs::read_to_string(run_path.join("nodes").join("node").join("stderr.log")).expect("stderr");
     assert!(stderr.contains("missing argv"));
     assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+}
+
+#[test]
+fn runtime_persists_node_attempt_history() {
+    let graph = parse_graph_strict(&shell_retry_failure_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    let attempts: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("nodes").join("node").join("attempts.json"))
+            .expect("attempts"),
+    )
+    .expect("parse attempts");
+    let entries = attempts.as_array().expect("array");
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entries[0]["attempt"], 1);
+    assert_eq!(entries[2]["attempt"], 3);
+    assert!(entries.iter().all(|entry| entry["status"] == "Failed"));
 }

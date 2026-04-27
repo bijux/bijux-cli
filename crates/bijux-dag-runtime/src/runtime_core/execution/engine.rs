@@ -789,6 +789,7 @@ pub fn execute(
                             "status": crate::status_string(&attempt.status),
                         }));
                     }
+                    crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
                     let replay_action = match result.status {
                         NodeStatus::Cached => ReplayNodeAction::Reused,
                         NodeStatus::Skipped => ReplayNodeAction::Skipped,

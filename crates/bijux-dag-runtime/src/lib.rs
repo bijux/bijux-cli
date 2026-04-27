@@ -456,7 +456,7 @@ pub struct NodeResult {
     pub adapter_binary_sha256: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct AttemptEvent {
     pub attempt: u32,
     pub started_unix_ms: u128,
@@ -1043,6 +1043,16 @@ fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeE
     sort_value_maps(&mut params);
     let data = serde_json::to_vec_pretty(&params)?;
     ctx.store.write_resolved_params(node_id, &data)?;
+    Ok(())
+}
+
+fn write_attempt_events(
+    ctx: &RunContext,
+    node_id: &str,
+    attempt_events: &[AttemptEvent],
+) -> Result<(), RuntimeError> {
+    let data = serde_json::to_vec_pretty(attempt_events)?;
+    ctx.store.write_attempts(node_id, &data)?;
     Ok(())
 }
 

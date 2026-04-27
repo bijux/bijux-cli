@@ -131,6 +131,10 @@ impl RunDir {
         self.node_dir(node_id).join("resolved_params.json")
     }
 
+    pub fn node_attempts_path(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("attempts.json")
+    }
+
     pub fn run_log_path(&self) -> PathBuf {
         self.staging_path.join("run.log.jsonl")
     }
