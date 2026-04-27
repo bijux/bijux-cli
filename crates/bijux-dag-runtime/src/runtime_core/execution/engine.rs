@@ -1205,10 +1205,11 @@ pub fn execute(
         schema_version: "v0.1".to_string(),
         edges: lineage_edges,
     };
-    let _ = bijux_dag_artifacts::lineage::write_lineage_snapshot(
+    bijux_dag_artifacts::lineage::write_lineage_snapshot(
         ctx.run_dir.staging_path().join("lineage.snapshot.json"),
         &lineage_snapshot,
-    );
+    )
+    .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
     let _ = bijux_dag_artifacts::lineage::export_lineage_visualization(
         ctx.run_dir.staging_path().join("observability.lineage-visualization.json"),
         &lineage_snapshot,

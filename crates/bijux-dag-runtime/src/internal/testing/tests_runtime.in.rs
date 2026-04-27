@@ -14,6 +14,12 @@ mod tests {
         LOCK.get_or_init(|| Mutex::new(())).lock().expect("lock")
     }
 
+    fn create_staging_conflict(base: &Path, run_id: &str, relative: &str) {
+        let conflict = base.join(format!("run.tmp-{run_id}")).join(relative);
+        fs::create_dir_all(conflict.parent().expect("conflict parent")).expect("create parent");
+        fs::create_dir_all(&conflict).expect("create conflict directory");
+    }
+
     #[derive(Clone)]
     struct InterceptFs {
         inner: StdFs,
@@ -1660,5 +1666,25 @@ exit 1
         let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.attempts.json")), Arc::new(SystemClock));
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
+    }
+
+    #[test]
+    fn lineage_snapshot_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(dir.path(), "lineage-conflict", "lineage.snapshot.json");
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("lineage-conflict".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        let rendered = format!("{err}");
+        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(rendered.contains("lineage snapshot"));
     }
 }
