@@ -1021,6 +1021,7 @@ pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'s
     match failure {
         Some(failure) if failure.kind == "Policy" => "PolicyDenied",
         Some(failure) if failure.code == "UPSTREAM_FAILED" => "DependencyFailed",
+        Some(failure) if failure.code == "RUN_ABORTED" => "ExecutionAborted",
         Some(failure) if failure.code == "EXEC_TIMEOUT" => "TimeoutExceeded",
         Some(failure) if failure.code == "CONTAINER_ENGINE_UNAVAILABLE" => "InfrastructureFailed",
         Some(failure) if failure.code == "OUTPUT_MISSING" => "MissingRequiredOutput",
@@ -1043,6 +1044,7 @@ pub(crate) fn failure_propagation_cause(failure: Option<&FailureInfo>) -> &'stat
     match transition_cause_for_failure(failure) {
         "PolicyDenied" => "policy_denied",
         "DependencyFailed" => "upstream_failed",
+        "ExecutionAborted" => "execution_aborted",
         "TimeoutExceeded" => "timeout_exceeded",
         "InfrastructureFailed" => "infrastructure_failed",
         "MissingRequiredOutput" => "missing_required_output",

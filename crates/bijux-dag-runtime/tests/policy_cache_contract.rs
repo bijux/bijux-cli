@@ -12,7 +12,9 @@ use thiserror as _;
 
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{registered_adapters, CacheMode, PolicyConfig, Runtime, RuntimeConfig};
+use bijux_dag_runtime::{
+    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, Runtime, RuntimeConfig,
+};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -93,6 +95,31 @@ fn graph_with_failed_upstream_dependency() -> String {
         "edges": [
             {"from": {"node_id": "a", "port": "value"}, "to": {"node_id": "b", "port": "in"}}
         ]
+    })
+    .to_string()
+}
+
+fn graph_with_fail_fast_abort() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "true"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "never-run"}
+            }
+        ],
+        "edges": []
     })
     .to_string()
 }
@@ -681,6 +708,33 @@ fn runtime_marks_upstream_blocked_nodes_as_dependency_failures() {
     assert!(propagation
         .iter()
         .any(|entry| entry["node_id"] == "b" && entry["cause"] == "upstream_failed"));
+}
+
+#[test]
+fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
+    let graph = parse_graph_strict(&graph_with_fail_fast_abort()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::FailFast,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("failed run");
+
+    let trace = read_node_trace(&run_path, "b");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "RUN_ABORTED");
+    assert_eq!(trace["transition_cause"], "ExecutionAborted");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "execution_aborted"));
 }
 
 #[test]

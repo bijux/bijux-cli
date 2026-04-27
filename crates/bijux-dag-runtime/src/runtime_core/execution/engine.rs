@@ -210,6 +210,7 @@ pub fn execute(
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
+    let mut fail_fast_aborted = false;
     let dep_map = plan.dep_map.clone();
     let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
@@ -989,7 +990,54 @@ pub fn execute(
         if matches!(options.failure_propagation, crate::FailurePropagationMode::FailFast)
             && status_map.values().any(|s| *s == NodeStatus::Failed)
         {
+            fail_fast_aborted = true;
             break;
+        }
+    }
+
+    if fail_fast_aborted {
+        for node in &graph.nodes {
+            if status_map.contains_key(&node.id) {
+                continue;
+            }
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+            status_map.insert(node.id.clone(), NodeStatus::Failed);
+            let failure = FailureInfo {
+                kind: "Execution".to_string(),
+                code: "RUN_ABORTED".to_string(),
+                message: "run aborted after fail-fast trigger".to_string(),
+                details: None,
+            };
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let started = ctx.clock.now_unix_ms();
+            sacred_execution::run_write_trace(
+                &ctx,
+                graph,
+                &node.id,
+                NodeStatus::Failed,
+                Some(failure.clone()),
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                &aschema,
+                None,
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                None,
+                Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                Some(ReplayProvenance {
+                    node_action: "skipped".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
+            )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node.id,
+                "status": "failed",
+                "cause": crate::failure_propagation_cause(Some(&failure)),
+            }));
         }
     }
 
