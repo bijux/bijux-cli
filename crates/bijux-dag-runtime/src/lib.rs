@@ -1115,6 +1115,10 @@ fn failed_node_result_from_runtime_error(
     node: &Node,
     error: RuntimeError,
 ) -> NodeResult {
+    let node_dir = ctx.run_dir.node_dir(&node.id);
+    let outputs_dir = ctx.run_dir.node_outputs_dir(&node.id);
+    let stdout_path = ctx.run_dir.node_stdout_path(&node.id);
+    let stderr_path = ctx.run_dir.node_stderr_path(&node.id);
     let (kind, code, message) = match error {
         RuntimeError::Graph(err) => ("Internal", "GRAPH_ERROR", err.to_string()),
         RuntimeError::Artifact(err) => ("Infrastructure", "ARTIFACT_ERROR", err.to_string()),
@@ -1128,11 +1132,15 @@ fn failed_node_result_from_runtime_error(
             }
         }
     };
+    let _ = ctx.fs.create_dir_all(&node_dir);
+    let _ = ctx.fs.create_dir_all(&outputs_dir);
+    let _ = ctx.fs.write(&stdout_path, b"");
+    let _ = ctx.fs.write(&stderr_path, message.as_bytes());
     NodeResult {
         status: NodeStatus::Failed,
-        stdout_path: ctx.run_dir.node_stdout_path(&node.id).display().to_string(),
-        stderr_path: ctx.run_dir.node_stderr_path(&node.id).display().to_string(),
-        outputs_dir: ctx.run_dir.node_outputs_dir(&node.id).display().to_string(),
+        stdout_path: stdout_path.display().to_string(),
+        stderr_path: stderr_path.display().to_string(),
+        outputs_dir: outputs_dir.display().to_string(),
         failure: Some(FailureInfo {
             kind: kind.to_string(),
             code: code.to_string(),

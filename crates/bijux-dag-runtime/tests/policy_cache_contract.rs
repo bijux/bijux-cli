@@ -70,6 +70,26 @@ fn graph_with_two_const_nodes() -> String {
     graph.to_string()
 }
 
+fn shell_graph_with_invalid_argv() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "node",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "value.txt"}],
+                "params": {
+                    "argv": "not-an-array"
+                },
+                "effects": ["filesystem"],
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
 fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     let data: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -562,5 +582,23 @@ fn runtime_failure_artifacts_include_traces_and_io_logs() {
 
     assert!(run_path.join("nodes").join("node").join("stdout.log").exists());
     assert!(run_path.join("nodes").join("node").join("stderr.log").exists());
+    assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+}
+
+#[test]
+fn runtime_adapter_errors_materialize_failure_logs() {
+    let graph = parse_graph_strict(&shell_graph_with_invalid_argv()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    assert_eq!(read_node_status(&run_path, "node"), "failed");
+    assert_eq!(
+        fs::read_to_string(run_path.join("nodes").join("node").join("stdout.log")).expect("stdout"),
+        ""
+    );
+    let stderr =
+        fs::read_to_string(run_path.join("nodes").join("node").join("stderr.log")).expect("stderr");
+    assert!(stderr.contains("missing argv"));
     assert!(run_path.join("nodes").join("node").join("trace.json").exists());
 }
