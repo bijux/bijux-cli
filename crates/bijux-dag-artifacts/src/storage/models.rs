@@ -187,6 +187,18 @@ pub struct Provenance {
     pub arch: String,
     pub rustc: String,
     pub tool_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub graph_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_fingerprint: Option<String>,
     pub adapters: Vec<AdapterInfo>,
     pub policy: PolicyInfo,
     pub time_source: String,

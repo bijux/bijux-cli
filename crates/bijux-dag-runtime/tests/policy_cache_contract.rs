@@ -413,6 +413,28 @@ fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
 }
 
 #[test]
+fn runtime_provenance_contains_identity_fingerprints() {
+    let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
+
+    let provenance: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("provenance.json")).expect("provenance"),
+    )
+    .expect("parse provenance");
+    assert_eq!(
+        provenance["graph_fingerprint"],
+        graph.graph_fingerprint().expect("graph fingerprint")
+    );
+    assert!(provenance["planner_fingerprint"].is_string());
+    assert!(provenance["execution_fingerprint"].is_string());
+    assert!(provenance["evidence_fingerprint"].is_string());
+    assert!(provenance["runtime_fingerprint"].is_string());
+    assert!(provenance["policy_fingerprint"].is_string());
+}
+
+#[test]
 fn runtime_registered_adapters_expose_expected_builtins() {
     let adapters = registered_adapters();
     assert!(!adapters.is_empty());

@@ -1161,6 +1161,24 @@ fn tool_version() -> String {
     base.to_string()
 }
 
+pub(crate) fn runtime_fingerprint(adapters: &[AdapterInfo]) -> String {
+    let payload = serde_json::json!({
+        "tool_version": tool_version(),
+        "adapters": adapters,
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
+pub(crate) fn policy_fingerprint(policy: &PolicyConfig) -> String {
+    let payload = serde_json::json!({
+        "deny_network": policy.deny_network,
+        "deny_env": policy.deny_env,
+        "deny_clock": policy.deny_clock,
+        "clean_env": policy.clean_env,
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),

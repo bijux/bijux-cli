@@ -99,12 +99,19 @@ pub fn execute(
     });
     run_dir.write_manifest(&manifest)?;
 
+    let registered = registered_adapters();
     let prov = Provenance {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         rustc: crate::rustc_version(),
         tool_version: crate::tool_version(),
-        adapters: registered_adapters(),
+        graph_fingerprint: Some(manifest.graph_fingerprint.clone()),
+        planner_fingerprint: manifest.planner_fingerprint.clone(),
+        execution_fingerprint: manifest.execution_fingerprint.clone(),
+        evidence_fingerprint: manifest.evidence_fingerprint.clone(),
+        runtime_fingerprint: Some(crate::runtime_fingerprint(&registered)),
+        policy_fingerprint: Some(crate::policy_fingerprint(&options.policy)),
+        adapters: registered,
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
