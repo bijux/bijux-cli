@@ -48,9 +48,13 @@ pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
 }
 
 pub fn cache_entry_has_required_proof(meta: &serde_json::Value) -> bool {
-    meta.get("node_fingerprint").and_then(|v| v.as_str()).is_some()
+    meta.get("cache_key").and_then(|v| v.as_str()).is_some()
+        && meta.get("node_fingerprint").and_then(|v| v.as_str()).is_some()
         && meta.get("adapter_id").and_then(|v| v.as_str()).is_some()
         && meta.get("adapter_version").and_then(|v| v.as_str()).is_some()
+        && meta.get("policy_fingerprint").and_then(|v| v.as_str()).is_some()
+        && meta.get("config_fingerprint").and_then(|v| v.as_str()).is_some()
+        && meta.get("backend_class").and_then(|v| v.as_str()).is_some()
 }
 
 pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {

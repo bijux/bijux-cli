@@ -1341,24 +1341,21 @@ fn try_cache_read(
         None => return Ok(CacheRead { hit: false, proof: None }),
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
-        let key = cache_key_explanation(&cache_key_input_for_run(
+        let key_input = cache_key_input_for_run(
             options,
             node_fingerprint,
             adapter_id,
             adapter_version,
             adapter_outputs_schema_version,
-        ))
-        .key;
+        );
+        let key = cache_key_explanation(&key_input).key;
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
             if !verify_cache_entry(
                 store.fs(),
                 &entry,
-                &key,
-                adapter_id,
-                adapter_version,
-                adapter_outputs_schema_version,
+                &key_input,
             )? {
                 return Ok(CacheRead {
                     hit: false,
@@ -1400,10 +1397,7 @@ fn try_cache_read(
                 if !verify_cache_entry(
                     store.fs(),
                     &remote_entry,
-                    &key,
-                    adapter_id,
-                    adapter_version,
-                    adapter_outputs_schema_version,
+                    &key_input,
                 )? {
                     return Ok(CacheRead {
                         hit: false,
@@ -1465,23 +1459,28 @@ fn try_cache_write(
         Some(d) => RuntimeCacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
-    let key = cache_key_explanation(&cache_key_input_for_run(
+    let key_input = cache_key_input_for_run(
         options,
         node_fingerprint,
         adapter_id,
         adapter_version,
         adapter_outputs_schema_version,
-    ))
-    .key;
+    );
+    let key = cache_key_explanation(&key_input).key;
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
     let meta = serde_json::json!({
+        "cache_metadata_version": "cache-meta/v0.1",
+        "cache_key": key,
         "node_id": node.id,
-        "node_fingerprint": key,
-        "adapter_id": adapter_id,
-        "adapter_version": adapter_version,
-        "produces_outputs_schema_version": adapter_outputs_schema_version,
+        "node_fingerprint": key_input.node_fingerprint,
+        "adapter_id": key_input.adapter_id,
+        "adapter_version": key_input.adapter_version,
+        "produces_outputs_schema_version": key_input.output_schema_version,
+        "policy_fingerprint": key_input.policy_fingerprint,
+        "config_fingerprint": key_input.config_fingerprint,
+        "backend_class": key_input.backend_class,
         "created_unix_ms": ctx.clock.now_unix_ms(),
         "cache_source": "local",
         "schema_version": "v0.1",
@@ -1507,10 +1506,7 @@ fn try_cache_write(
 fn verify_cache_entry(
     fs: &dyn Fs,
     entry: &Path,
-    expected_key: &str,
-    adapter_id: &str,
-    adapter_version: &str,
-    adapter_outputs_schema_version: &str,
+    expected_input: &CacheKeyInput,
 ) -> Result<bool, RuntimeError> {
     let index_path = entry.join("outputs").join("index.json");
     if fs.metadata(&index_path).is_err() {
@@ -1521,17 +1517,44 @@ fn verify_cache_entry(
         return Ok(false);
     }
     let meta: serde_json::Value = serde_json::from_str(&fs.read_to_string(&meta_path)?)?;
-    if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(expected_key) {
+    if !cache_metadata_version_supported(&meta) || !cache_entry_has_required_proof(&meta) {
         return Ok(false);
     }
-    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(adapter_id) {
+    let expected_key = cache_key_explanation(expected_input).key;
+    if meta.get("cache_key").and_then(|v| v.as_str()) != Some(expected_key.as_str()) {
         return Ok(false);
     }
-    if meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version) {
+    if meta.get("node_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.node_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_input.adapter_id.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("adapter_version").and_then(|v| v.as_str())
+        != Some(expected_input.adapter_version.as_str())
+    {
         return Ok(false);
     }
     if meta.get("produces_outputs_schema_version").and_then(|v| v.as_str())
-        != Some(adapter_outputs_schema_version)
+        != Some(expected_input.output_schema_version.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("policy_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.policy_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("config_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.config_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("backend_class").and_then(|v| v.as_str())
+        != Some(expected_input.backend_class.as_str())
     {
         return Ok(false);
     }

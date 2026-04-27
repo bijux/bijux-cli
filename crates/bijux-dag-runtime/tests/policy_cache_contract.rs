@@ -422,6 +422,49 @@ fn runtime_cache_verify_detects_corrupt_entry() {
 }
 
 #[test]
+fn runtime_cache_meta_records_policy_and_config_proof() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let meta_path = fs::read_dir(cache.path())
+        .expect("cache entries")
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            let meta = path.join("meta.json");
+            if meta.exists() { Some(meta) } else { None }
+        })
+        .next()
+        .expect("cache meta");
+    let meta: Value =
+        serde_json::from_str(&fs::read_to_string(meta_path).expect("cache meta json"))
+            .expect("parse cache meta");
+
+    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.1");
+    assert!(meta["cache_key"].is_string());
+    assert!(meta["node_fingerprint"].is_string());
+    assert!(meta["policy_fingerprint"].is_string());
+    assert!(meta["config_fingerprint"].is_string());
+    assert_eq!(meta["backend_class"], "local");
+}
+
+#[test]
 fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
     let runtime = Runtime::new();
