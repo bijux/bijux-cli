@@ -62,7 +62,7 @@ fn run_artifact_store_trait_is_usable_as_authority_boundary() {
 
     let writes = store.writes.lock().expect("lock");
     assert_eq!(writes.len(), 1);
-    assert!(writes[0].contains("run-run-1"));
+    assert!(writes[0].contains("run-1"));
 }
 
 #[test]

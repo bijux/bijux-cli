@@ -74,6 +74,7 @@ impl RunDir {
     }
 
     pub fn create_with_id(out_base: impl AsRef<Path>, run_id: &str) -> Result<Self, ArtifactError> {
+        let run_id = normalize_run_id(run_id)?;
         let staging = out_base.as_ref().join(format!("run.tmp-{}", run_id));
         let final_path = out_base.as_ref().join(format!("run-{}", run_id));
         std_fs::create_dir_all(staging.join("nodes"))?;
@@ -251,6 +252,25 @@ fn generate_run_id() -> String {
     )
 }
 
+fn normalize_run_id(run_id: &str) -> Result<String, ArtifactError> {
+    let trimmed = run_id.trim();
+    if trimmed.is_empty() {
+        return Err(ArtifactError::PathViolation("run id must not be empty".to_string()));
+    }
+    let normalized = trimmed.strip_prefix("run-").unwrap_or(trimmed);
+    if normalized.is_empty()
+        || normalized.contains('/')
+        || normalized.contains('\\')
+        || normalized.contains("..")
+        || !normalized
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_')
+    {
+        return Err(ArtifactError::PathViolation(format!("invalid run id: {run_id}")));
+    }
+    Ok(normalized.to_string())
+}
+
 fn sha256_bytes(bytes: &[u8]) -> String {
     hash::sha256_hex(bytes)
 }
@@ -286,5 +306,15 @@ mod tests {
         let snapshot = std_fs::read_to_string(run.staging_path().join("graph.snapshot.json")).unwrap();
         assert_eq!(snapshot, "{\"graph\":\"second\"}");
         assert!(!run.staging_path().join("graph.snapshot.tmp").exists());
+    }
+
+    #[test]
+    fn explicit_run_ids_are_normalized_and_validated() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = RunDir::create_with_id(dir.path(), "run-2026_04").unwrap();
+        assert!(run.final_path().ends_with("run-2026_04"));
+
+        let err = RunDir::create_with_id(dir.path(), "../escape").unwrap_err();
+        assert!(err.to_string().contains("invalid run id"));
     }
 }
