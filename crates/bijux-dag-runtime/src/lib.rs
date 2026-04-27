@@ -783,6 +783,16 @@ struct CacheRead {
     proof: Option<CacheProof>,
 }
 
+fn cache_hit_proof(cache_read: CacheRead) -> Result<Option<CacheProof>, RuntimeError> {
+    match (cache_read.hit, cache_read.proof) {
+        (true, Some(proof)) => Ok(Some(proof)),
+        (true, None) => {
+            Err(RuntimeError::Executor("cache hit missing verification proof".to_string()))
+        }
+        (false, proof) => Ok(proof),
+    }
+}
+
 #[derive(Clone)]
 pub struct RuntimeConfig {
     pub jobs: usize,
@@ -2028,6 +2038,31 @@ fn materialize_file(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod cache_read_contract_tests {
+    use super::*;
+
+    #[test]
+    fn cache_hit_requires_proof() {
+        let err = cache_hit_proof(CacheRead { hit: true, proof: None }).expect_err("invalid hit");
+        assert!(err.to_string().contains("missing verification proof"));
+
+        let proof = CacheProof {
+            hit: true,
+            key: "k".to_string(),
+            source: "local".to_string(),
+            verified: true,
+            reason: "hit".to_string(),
+            corrupt_detected: false,
+        };
+        let hit_proof =
+            cache_hit_proof(CacheRead { hit: true, proof: Some(proof) }).expect("valid hit");
+        let hit_proof = hit_proof.expect("proof");
+        assert!(hit_proof.hit);
+        assert_eq!(hit_proof.key, "k");
+    }
 }
 
 #[cfg(test)]

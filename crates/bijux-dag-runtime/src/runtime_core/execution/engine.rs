@@ -458,12 +458,14 @@ pub fn execute(
                 &adapter_id.version,
                 &adapter_schema,
             )?;
-            if let Some(proof) = cache_read.proof.clone() {
-                if !cache_read.hit {
+            let hit = cache_read.hit;
+            let cache_proof = crate::cache_hit_proof(cache_read)?;
+            if let Some(proof) = cache_proof.clone() {
+                if !hit {
                     cache_proofs.insert(node_id.clone(), proof);
                 }
             }
-            if cache_read.hit {
+            if hit {
                 crate::append_event(
                     &mut run_log,
                     serde_json::json!({
@@ -477,7 +479,10 @@ pub fn execute(
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
                 }));
-                cached.push((node_id.clone(), node, cache_read.proof.unwrap()));
+                let proof = cache_proof.ok_or_else(|| {
+                    RuntimeError::Executor("cache hit missing verification proof".to_string())
+                })?;
+                cached.push((node_id.clone(), node, proof));
                 continue;
             }
             crate::append_event(
