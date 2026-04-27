@@ -49,7 +49,7 @@ pub struct ExecutionPlan {
     pub nodes: Vec<PlannedNode>,
     pub edges: Vec<PlannedEdge>,
     pub ordering: Vec<String>,
-    pub erased_fields: Vec<String>,
+    pub omitted_from_execution_identity: Vec<String>,
     pub diagnostics: Vec<PlannerDiagnostic>,
 }
 
@@ -147,7 +147,7 @@ pub fn lower_graph_to_execution_plan(
         nodes: planned_nodes,
         edges: planned_edges,
         ordering,
-        erased_fields: vec![
+        omitted_from_execution_identity: vec![
             "graph.meta".to_string(),
             "graph.inputs".to_string(),
             "graph.nondeterminism_allowed".to_string(),

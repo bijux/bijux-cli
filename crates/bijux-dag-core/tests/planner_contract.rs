@@ -189,3 +189,27 @@ fn execution_plan_shape_matches_schema_required_fields() {
         );
     }
 }
+
+#[test]
+fn planner_reports_identity_omissions_explicitly() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"identity","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    assert!(
+        plan.omitted_from_execution_identity.contains(&"graph.meta".to_string()),
+        "cosmetic graph metadata should be disclosed as omitted from execution identity"
+    );
+    assert!(
+        plan.omitted_from_execution_identity.contains(&"node.params".to_string()),
+        "current planner boundary must state that params are omitted until execution identity is tightened"
+    );
+}
