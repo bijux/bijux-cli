@@ -226,15 +226,15 @@ pub fn write_run_outputs_index(
 ) -> Result<(), ArtifactError> {
     let dir = dir.as_ref();
     std_fs::create_dir_all(dir)?;
-    write_json(dir.join("index.json"), index)
+    write_json_atomic(dir.join("index.json"), index)
 }
 
 pub fn write_provenance(path: impl AsRef<Path>, prov: &Provenance) -> Result<(), ArtifactError> {
-    write_json(path, prov)
+    write_json_atomic(path, prov)
 }
 
 pub fn write_inputs_index(dir: impl AsRef<Path>, index: &InputsIndex) -> Result<(), ArtifactError> {
-    write_json(dir.as_ref().join("index.json"), index)
+    write_json_atomic(dir.as_ref().join("index.json"), index)
 }
 
 pub fn now_unix_ms() -> u128 {
@@ -316,5 +316,44 @@ mod tests {
 
         let err = RunDir::create_with_id(dir.path(), "../escape").unwrap_err();
         assert!(err.to_string().contains("invalid run id"));
+    }
+
+    #[test]
+    fn provenance_and_indexes_replace_atomically() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = RunDir::create(dir.path()).unwrap();
+        let outputs_dir = run.staging_path().join("outputs");
+        let inputs_dir = run.node_inputs_dir("node");
+        let provenance = Provenance {
+            os: "linux".to_string(),
+            arch: "x86_64".to_string(),
+            rustc: "rustc".to_string(),
+            tool_version: "0.1.0".to_string(),
+            graph_fingerprint: None,
+            planner_fingerprint: None,
+            execution_fingerprint: None,
+            evidence_fingerprint: None,
+            runtime_fingerprint: None,
+            policy_fingerprint: None,
+            adapters: Vec::new(),
+            policy: PolicyInfo {
+                deny_network: true,
+                deny_env: true,
+                deny_clock: true,
+                clean_env: true,
+            },
+            time_source: "system_clock".to_string(),
+        };
+        let run_outputs = RunOutputsIndex { files: Vec::new() };
+        let inputs = InputsIndex { files: Vec::new() };
+
+        write_provenance(run.provenance_path(), &provenance).unwrap();
+        write_run_outputs_index(&outputs_dir, &run_outputs).unwrap();
+        std_fs::create_dir_all(&inputs_dir).unwrap();
+        write_inputs_index(&inputs_dir, &inputs).unwrap();
+
+        assert!(!run.staging_path().join("provenance.tmp").exists());
+        assert!(!outputs_dir.join("index.tmp").exists());
+        assert!(!inputs_dir.join("index.tmp").exists());
     }
 }
