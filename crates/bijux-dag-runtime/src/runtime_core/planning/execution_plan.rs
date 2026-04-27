@@ -15,7 +15,9 @@ pub struct PlannedNode {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlannedDependency {
     pub from: String,
+    pub from_port: String,
     pub to: String,
+    pub to_port: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

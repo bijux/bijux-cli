@@ -87,7 +87,12 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .collect::<Vec<_>>(),
                 plan.edges
                     .iter()
-                    .map(|edge| PlannedDependency { from: edge.from.clone(), to: edge.to.clone() })
+                    .map(|edge| PlannedDependency {
+                        from: edge.from.clone(),
+                        from_port: edge.from_port.clone(),
+                        to: edge.to.clone(),
+                        to_port: edge.to_port.clone(),
+                    })
                     .collect::<Vec<_>>(),
                 plan.ordering,
                 {
@@ -129,7 +134,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .iter()
                     .map(|edge| PlannedDependency {
                         from: edge.from.node_id.clone(),
+                        from_port: edge.from.port.clone(),
                         to: edge.to.node_id.clone(),
+                        to_port: edge.to.port.clone(),
                     })
                     .collect::<Vec<_>>(),
                 canonical.nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>(),
