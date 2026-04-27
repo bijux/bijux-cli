@@ -83,10 +83,6 @@ pub use planner::{
     ExecutionPlan, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic, PlannerError,
     PlannerSeverity, PLANNER_CONTRACT_VERSION,
 };
-pub use semantics::{
-    complexity_score, explain_graph, GraphComplexityScore, GraphExplainabilityModel,
-};
-
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
 
@@ -107,13 +103,13 @@ pub mod stable {
 
 pub mod experimental {
     pub use crate::semantics::{
-        classify_compatibility, enforce_late_binding_immutability, migration_patch,
-        normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
-        CompatibilityClassification, ConditionalExecution, DynamicEdgeExpansionRule,
-        GraphCompositionContract, GraphMigrationPatch, GraphTemplate, JoinSemantics,
-        LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph,
-        ParameterBindingSemantics, PartitionSemantics, ReduceFanInSemantics,
-        SemanticDiffClass, SemanticDiffReport, StaticAnalysisReport, SubgraphEmbedding,
-        WindowingSemantics,
+        classify_compatibility, complexity_score, enforce_late_binding_immutability,
+        explain_graph, migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
+        BranchDecisionNode, CompatibilityClassification, ConditionalExecution,
+        DynamicEdgeExpansionRule, GraphCompositionContract, GraphComplexityScore,
+        GraphExplainabilityModel, GraphMigrationPatch, GraphTemplate, JoinSemantics,
+        LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph, ParameterBindingSemantics,
+        PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass, SemanticDiffReport,
+        StaticAnalysisReport, SubgraphEmbedding, WindowingSemantics,
     };
 }

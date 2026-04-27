@@ -9,11 +9,11 @@ use thiserror as _;
 use unicode_normalization as _;
 
 use bijux_dag_core::{
-    complexity_score, explain_graph,
     experimental::{
-        classify_compatibility, enforce_late_binding_immutability, migration_patch,
-        normalize_semantic_graph, semantic_diff, static_analysis, CompatibilityClassification,
-        DynamicEdgeExpansionRule, LateBindingRule, SemanticDiffClass,
+        classify_compatibility, complexity_score, enforce_late_binding_immutability,
+        explain_graph, migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
+        CompatibilityClassification, DynamicEdgeExpansionRule, LateBindingRule,
+        SemanticDiffClass,
     },
 };
 
