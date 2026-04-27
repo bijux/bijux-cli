@@ -457,7 +457,7 @@ pub fn execute(
                 None,
                 adapter_hash,
                 Some(bijux_dag_artifacts::SkipReason { reason: reason.clone() }),
-                Some("SelectionFiltered".to_string()),
+                Some(crate::transition_cause_for_skip_reason(reason).to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
                     source_run_id: options.parent_run_id.clone(),

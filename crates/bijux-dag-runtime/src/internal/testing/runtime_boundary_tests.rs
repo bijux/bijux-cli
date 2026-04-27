@@ -1,5 +1,6 @@
 use crate::{
-    transition_cause_for_status, NodeStatus, PolicyConfig, RuntimeConfig, Selector, SelectorSet,
+    transition_cause_for_skip_reason, transition_cause_for_status, NodeStatus, PolicyConfig,
+    RuntimeConfig, Selector, SelectorSet,
 };
 
 #[test]
@@ -37,4 +38,11 @@ fn transition_cause_mapping_is_stable() {
     assert_eq!(transition_cause_for_status(&NodeStatus::Failed), "ExecutionFailed");
     assert_eq!(transition_cause_for_status(&NodeStatus::Skipped), "SelectionFiltered");
     assert_eq!(transition_cause_for_status(&NodeStatus::Cached), "CachedReuse");
+}
+
+#[test]
+fn skip_transition_causes_follow_recorded_skip_reason() {
+    assert_eq!(transition_cause_for_skip_reason("filtered"), "SelectionFiltered");
+    assert_eq!(transition_cause_for_skip_reason("upstream_failed"), "DependencyFailed");
+    assert_eq!(transition_cause_for_skip_reason("cancelled"), "CancelRequested");
 }

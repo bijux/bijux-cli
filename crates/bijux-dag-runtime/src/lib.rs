@@ -1017,6 +1017,15 @@ pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
     }
 }
 
+pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
+    match reason {
+        "filtered" => "SelectionFiltered",
+        "upstream_failed" => "DependencyFailed",
+        "cancelled" => "CancelRequested",
+        _ => "SelectionFiltered",
+    }
+}
+
 fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
     let mut params = ctx.resolved_params.get(node_id).cloned().unwrap_or(Value::Null);
     sort_value_maps(&mut params);
