@@ -176,8 +176,14 @@ pub fn execute(
         .selectors
         .include
         .iter()
-        .chain(options.selectors.exclude.iter())
-        .map(crate::selector_label)
+        .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .selectors
+                .exclude
+                .iter()
+                .map(|selector| crate::requested_selector_label("exclude", selector)),
+        )
         .collect();
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),

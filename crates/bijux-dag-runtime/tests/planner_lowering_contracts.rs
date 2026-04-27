@@ -129,7 +129,10 @@ fn runtime_plan_records_selector_and_closure_provenance() {
             ..RuntimeConfig::default()
         },
     );
-    assert_eq!(plan.requested_selectors, vec!["id_prefix:join".to_string(), "kind:const".to_string()]);
+    assert_eq!(
+        plan.requested_selectors,
+        vec!["include:id_prefix:join".to_string(), "exclude:kind:const".to_string()]
+    );
     assert!(plan.dependency_closure_enabled);
 }
 

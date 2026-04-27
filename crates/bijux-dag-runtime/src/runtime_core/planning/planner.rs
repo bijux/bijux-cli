@@ -9,8 +9,14 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         .selectors
         .include
         .iter()
-        .chain(options.selectors.exclude.iter())
-        .map(crate::selector_label)
+        .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .selectors
+                .exclude
+                .iter()
+                .map(|selector| crate::requested_selector_label("exclude", selector)),
+        )
         .collect::<Vec<_>>();
     let dep_map = build_dep_map(graph);
     let mut filter_reasons = HashMap::new();

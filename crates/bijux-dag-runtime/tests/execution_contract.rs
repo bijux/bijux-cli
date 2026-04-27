@@ -189,6 +189,6 @@ fn run_snapshot_records_requested_selectors_and_selected_nodes() {
         &fs::read_to_string(run_dir.join("run.snapshot.json")).expect("run snapshot"),
     )
     .expect("snapshot parse");
-    assert_eq!(snapshot["requested_selectors"], serde_json::json!(["tag:seed"]));
+    assert_eq!(snapshot["requested_selectors"], serde_json::json!(["include:tag:seed"]));
     assert_eq!(snapshot["selected_nodes"], serde_json::json!(["const1"]));
 }

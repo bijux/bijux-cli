@@ -1249,6 +1249,10 @@ fn selector_label(selector: &Selector) -> String {
     }
 }
 
+pub(crate) fn requested_selector_label(scope: &str, selector: &Selector) -> String {
+    format!("{scope}:{}", selector_label(selector))
+}
+
 fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
     match mode {
         MaterializeMode::Copy => "copy",
