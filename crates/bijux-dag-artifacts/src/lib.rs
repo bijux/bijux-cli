@@ -93,9 +93,7 @@ impl RunDir {
 
     pub fn write_graph_snapshot(&self, graph_json: &str) -> Result<(), ArtifactError> {
         let path = self.staging_path.join("graph.snapshot.json");
-        let mut f = std_fs::File::create(path)?;
-        f.write_all(graph_json.as_bytes())?;
-        Ok(())
+        write_bytes_atomic(path, graph_json.as_bytes())
     }
 
     pub fn node_dir(&self, node_id: &str) -> PathBuf {
@@ -174,6 +172,16 @@ fn write_json_atomic<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<
     let path = path.as_ref();
     let tmp = path.with_extension("tmp");
     write_json(&tmp, value)?;
+    std_fs::rename(tmp, path)?;
+    Ok(())
+}
+
+fn write_bytes_atomic(path: impl AsRef<Path>, bytes: &[u8]) -> Result<(), ArtifactError> {
+    let path = path.as_ref();
+    let tmp = path.with_extension("tmp");
+    let mut file = std_fs::File::create(&tmp)?;
+    file.write_all(bytes)?;
+    file.sync_all()?;
     std_fs::rename(tmp, path)?;
     Ok(())
 }
@@ -265,5 +273,16 @@ mod tests {
         assert_ne!(first, second);
         assert!(first.contains('-'));
         assert!(second.contains('-'));
+    }
+
+    #[test]
+    fn graph_snapshot_writes_atomically() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = RunDir::create(dir.path()).unwrap();
+        run.write_graph_snapshot("{\"graph\":\"first\"}").unwrap();
+        run.write_graph_snapshot("{\"graph\":\"second\"}").unwrap();
+        let snapshot = std_fs::read_to_string(run.staging_path().join("graph.snapshot.json")).unwrap();
+        assert_eq!(snapshot, "{\"graph\":\"second\"}");
+        assert!(!run.staging_path().join("graph.snapshot.tmp").exists());
     }
 }
