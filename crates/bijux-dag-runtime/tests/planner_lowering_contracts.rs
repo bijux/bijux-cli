@@ -116,6 +116,24 @@ fn runtime_plan_preserves_node_io_contracts() {
 }
 
 #[test]
+fn runtime_plan_records_selector_and_closure_provenance() {
+    let graph = parse_graph_strict(graph_a()).expect("parse graph");
+    let plan = build_plan(
+        &graph,
+        &RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![Selector::IdPrefix("join".to_string())],
+                exclude: vec![Selector::Kind("const".to_string())],
+            },
+            partial_rerun_dependency_closure: true,
+            ..RuntimeConfig::default()
+        },
+    );
+    assert_eq!(plan.requested_selectors, vec!["id_prefix:join".to_string(), "kind:const".to_string()]);
+    assert!(plan.dependency_closure_enabled);
+}
+
+#[test]
 fn selector_pruning_stage_is_documented_and_dependency_safe() {
     let graph = parse_graph_strict(graph_a()).expect("parse graph");
     let options = RuntimeConfig {

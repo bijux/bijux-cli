@@ -5,6 +5,13 @@ use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     let canonical = graph.canonicalize();
+    let requested_selectors = options
+        .selectors
+        .include
+        .iter()
+        .chain(options.selectors.exclude.iter())
+        .map(crate::selector_label)
+        .collect::<Vec<_>>();
     let dep_map = build_dep_map(graph);
     let mut filter_reasons = HashMap::new();
     for node in &graph.nodes {
@@ -171,6 +178,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planner_fingerprint,
         execution_fingerprint,
         evidence_fingerprint,
+        requested_selectors,
+        dependency_closure_enabled: options.partial_rerun_dependency_closure,
         planned_nodes,
         planned_dependencies,
         diagnostics,

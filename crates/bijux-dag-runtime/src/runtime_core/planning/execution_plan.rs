@@ -28,6 +28,8 @@ pub struct ExecutionPlan {
     pub planner_fingerprint: String,
     pub execution_fingerprint: String,
     pub evidence_fingerprint: String,
+    pub requested_selectors: Vec<String>,
+    pub dependency_closure_enabled: bool,
     pub planned_nodes: Vec<PlannedNode>,
     pub planned_dependencies: Vec<PlannedDependency>,
     pub diagnostics: Vec<String>,
