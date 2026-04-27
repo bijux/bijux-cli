@@ -97,6 +97,30 @@ fn planner_output_ordering_is_deterministic() {
 }
 
 #[test]
+fn planner_edges_preserve_port_bindings() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"ports","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"1"}},
+            {"id":"join","kind":"shell","inputs":["lhs"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
+          ],
+          "edges":[
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+          ]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    assert_eq!(plan.edges.len(), 1);
+    assert_eq!(plan.edges[0].from, "left");
+    assert_eq!(plan.edges[0].from_port, "out");
+    assert_eq!(plan.edges[0].to, "join");
+    assert_eq!(plan.edges[0].to_port, "lhs");
+}
+
+#[test]
 fn unsupported_runtime_kind_is_planner_error() {
     let graph = graph_from(
         r#"{

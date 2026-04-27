@@ -40,7 +40,9 @@ pub struct PlannedNode {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannedEdge {
     pub from: String,
+    pub from_port: String,
     pub to: String,
+    pub to_port: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,7 +160,12 @@ pub fn lower_graph_to_execution_plan(
     let planned_nodes = to_planned_nodes(&selected_nodes, &selected_edges);
     let planned_edges = selected_edges
         .iter()
-        .map(|e| PlannedEdge { from: e.from.node_id.clone(), to: e.to.node_id.clone() })
+        .map(|e| PlannedEdge {
+            from: e.from.node_id.clone(),
+            from_port: e.from.port.clone(),
+            to: e.to.node_id.clone(),
+            to_port: e.to.port.clone(),
+        })
         .collect::<Vec<_>>();
 
     let graph_fingerprint =

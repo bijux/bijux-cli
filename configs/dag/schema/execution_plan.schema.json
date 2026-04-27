@@ -45,10 +45,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "to"],
+        "required": ["from", "from_port", "to", "to_port"],
         "properties": {
           "from": { "type": "string" },
-          "to": { "type": "string" }
+          "from_port": { "type": "string" },
+          "to": { "type": "string" },
+          "to_port": { "type": "string" }
         }
       }
     },
