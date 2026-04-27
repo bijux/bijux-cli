@@ -12,9 +12,7 @@ use thiserror as _;
 
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{
-    registered_adapters, CacheMode, PolicyConfig, Runtime, RuntimeConfig, RuntimeError,
-};
+use bijux_dag_runtime::{registered_adapters, CacheMode, PolicyConfig, Runtime, RuntimeConfig};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -81,6 +79,14 @@ fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     data["status"].as_str().unwrap_or("unknown").to_string()
 }
 
+fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
+            .expect("read trace"),
+    )
+    .expect("parse trace")
+}
+
 #[test]
 fn runtime_clean_env_defaults_to_stripped_environment() {
     let graph = parse_graph_strict(&shell_graph(
@@ -127,7 +133,7 @@ fn runtime_rejects_network_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -136,10 +142,11 @@ fn runtime_rejects_network_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny network");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("network effect denied by policy"))
-    );
+        .expect("deny network run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "network");
 }
 
 #[test]
@@ -151,7 +158,7 @@ fn runtime_rejects_env_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -160,10 +167,11 @@ fn runtime_rejects_env_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny env");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("env effect denied by policy"))
-    );
+        .expect("deny env run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "env");
 }
 
 #[test]
@@ -175,7 +183,7 @@ fn runtime_rejects_clock_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -184,10 +192,11 @@ fn runtime_rejects_clock_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny clock");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("clock effect denied by policy"))
-    );
+        .expect("deny clock run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "clock");
 }
 
 #[test]

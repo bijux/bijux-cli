@@ -283,6 +283,7 @@ pub fn execute(
         let mut skipped: Vec<(String, String)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
+        let mut preflight_failures: Vec<(String, Node, FailureInfo, String)> = Vec::new();
 
         for node_id in &batch {
             if let Some(reason) = plan.filter_reasons.get(node_id) {
@@ -340,7 +341,18 @@ pub fn execute(
                         "reason": "network",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("network effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "network effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "network" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             if options.policy.deny_env && node.effects.contains(&Effect::Env) {
                 crate::append_event(
@@ -352,7 +364,18 @@ pub fn execute(
                         "reason": "env",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("env effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "env effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "env" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
                 crate::append_event(
@@ -364,7 +387,18 @@ pub fn execute(
                         "reason": "clock",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("clock effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "clock effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "clock" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let required = adapter.required_effects();
@@ -494,12 +528,67 @@ pub fn execute(
                 "reason": reason,
             }));
         }
+        preflight_failures.sort_by(|a, b| a.0.cmp(&b.0));
+        for (node_id, node, failure, transition_cause) in &preflight_failures {
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+            status_map.insert(node_id.clone(), NodeStatus::Failed);
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let adapter_hash =
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
+            let started = ctx.clock.now_unix_ms();
+            sacred_execution::run_write_trace(
+                &ctx,
+                graph,
+                node_id,
+                NodeStatus::Failed,
+                Some(failure.clone()),
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                &aschema,
+                None,
+                adapter_hash,
+                None,
+                Some(transition_cause.clone()),
+                Some(ReplayProvenance {
+                    node_action: "reexecuted".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
+            )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node_id,
+                "status": "failed",
+                "cause": "policy_denied",
+            }));
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_finished",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "status": "failed",
+                }),
+            )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_finished",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "status": "failed",
+            }));
+        }
 
         let mut started_ids: Vec<String> = Vec::new();
         for (node_id, _, _) in &to_start {
             started_ids.push(node_id.clone());
         }
         for (node_id, _, _) in &cached {
+            started_ids.push(node_id.clone());
+        }
+        for (node_id, _, _, _) in &preflight_failures {
             started_ids.push(node_id.clone());
         }
         started_ids.sort();
