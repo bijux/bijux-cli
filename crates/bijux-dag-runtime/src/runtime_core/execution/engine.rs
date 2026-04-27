@@ -215,7 +215,7 @@ pub fn execute(
         },
     };
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
-    let _ = ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?);
+    ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?)?;
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
