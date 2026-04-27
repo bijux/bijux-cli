@@ -80,14 +80,36 @@ pub use planner::{
     PlannerSeverity, PLANNER_CONTRACT_VERSION,
 };
 pub use semantics::{
-    classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
-    migration_patch, normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
-    CompatibilityClassification, ConditionalExecution, DynamicEdgeExpansionRule,
-    GraphComplexityScore, GraphCompositionContract, GraphExplainabilityModel, GraphMigrationPatch,
-    GraphTemplate, JoinSemantics, LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph,
-    ParameterBindingSemantics, PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass,
-    SemanticDiffReport, StaticAnalysisReport, SubgraphEmbedding, WindowingSemantics,
+    complexity_score, explain_graph, GraphComplexityScore, GraphExplainabilityModel,
 };
 
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
+
+pub mod stable {
+    pub use crate::{
+        canonical::{canonical_json, canonicalize_graph},
+        compile::{
+            compile_graph, compile_graph_contract, compile_graph_strict,
+            compile_graph_with_defaults, negotiate_spec_version, CompatibilityDecision,
+            DagCompilePlanHints, DagCompileResult,
+        },
+        contract::{DagSnapshot, GraphContract, GraphExecutionPolicy},
+        lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
+        validate::validate_graph, ExecutionPlan, Graph, GraphError, PlanOptions, PlannedEdge,
+        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
+    };
+}
+
+pub mod experimental {
+    pub use crate::semantics::{
+        classify_compatibility, enforce_late_binding_immutability, migration_patch,
+        normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
+        CompatibilityClassification, ConditionalExecution, DynamicEdgeExpansionRule,
+        GraphCompositionContract, GraphMigrationPatch, GraphTemplate, JoinSemantics,
+        LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph,
+        ParameterBindingSemantics, PartitionSemantics, ReduceFanInSemantics,
+        SemanticDiffClass, SemanticDiffReport, StaticAnalysisReport, SubgraphEmbedding,
+        WindowingSemantics,
+    };
+}
