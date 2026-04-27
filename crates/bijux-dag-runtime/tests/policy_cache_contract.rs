@@ -394,6 +394,9 @@ fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     .expect("parse manifest");
     let expected_fp = graph.graph_fingerprint().expect("graph fingerprint");
     assert_eq!(manifest["graph_fingerprint"], expected_fp);
+    assert!(manifest["planner_fingerprint"].is_string());
+    assert!(manifest["execution_fingerprint"].is_string());
+    assert!(manifest["evidence_fingerprint"].is_string());
 
     let counts = &manifest["node_counts"];
     let total = counts["success"].as_u64().unwrap_or(0)

@@ -12,6 +12,12 @@ pub struct Manifest {
     pub status: String,
     pub spec: String,
     pub graph_fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
     pub tool_version: String,
     pub jobs: usize,
     pub adapters: Vec<AdapterInfo>,
