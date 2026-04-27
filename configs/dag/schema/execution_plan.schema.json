@@ -29,11 +29,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "kind", "deps", "outputs", "retry"],
+        "required": ["id", "kind", "deps", "io_contract", "outputs", "retry"],
         "properties": {
           "id": { "type": "string" },
           "kind": { "type": "string" },
           "deps": { "type": "array", "items": { "type": "string" } },
+          "io_contract": { "type": "object" },
           "outputs": { "type": "array" },
           "retry": { "type": "object" },
           "timeout_ms": { "type": ["integer", "null"] }

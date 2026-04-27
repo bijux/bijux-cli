@@ -121,6 +121,43 @@ fn planner_edges_preserve_port_bindings() {
 }
 
 #[test]
+fn planner_nodes_preserve_io_contracts() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"io","owners":[],"tags":[]},
+          "inputs":{"threads":8},
+          "nodes":[
+            {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"1"}},
+            {
+              "id":"join",
+              "kind":"shell",
+              "inputs":["lhs"],
+              "outputs":[{"name":"out","path":"join/out"}],
+              "params":{
+                "argv":["echo","--threads",{"graph_input":"threads"}],
+                "seed":{"node_output":{"node_id":"left","path":"out"}}
+              },
+              "effects":["filesystem","env"],
+              "env_allowlist":["HOME"]
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+          ]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    let join = plan.nodes.iter().find(|node| node.id == "join").expect("join node");
+    assert_eq!(join.io_contract.inputs.len(), 1);
+    assert_eq!(join.io_contract.inputs[0].name, "lhs");
+    assert_eq!(join.io_contract.outputs[0].name, "out");
+    assert_eq!(join.io_contract.env_bindings[0].name, "HOME");
+    assert_eq!(join.io_contract.param_bindings.len(), 2);
+}
+
+#[test]
 fn unsupported_runtime_kind_is_planner_error() {
     let graph = graph_from(
         r#"{

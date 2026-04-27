@@ -1,8 +1,8 @@
 //! Planner lowering and execution-plan contract.
 
 use crate::{
-    Edge, Effect, FileOutput, Graph, GraphError, Node, NodeKind, ParamValue, Resources,
-    RetryPolicy,
+    node_io_contract, Edge, Effect, FileOutput, Graph, GraphError, Node, NodeIoContract, NodeKind,
+    ParamValue, Resources, RetryPolicy,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -31,6 +31,7 @@ pub struct PlannedNode {
     pub id: String,
     pub kind: String,
     pub deps: Vec<String>,
+    pub io_contract: NodeIoContract,
     pub outputs: Vec<FileOutput>,
     pub retry: RetryPolicy,
     #[serde(default)]
@@ -197,6 +198,14 @@ pub fn lower_graph_to_execution_plan(
 
 fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
     let mut deps = BTreeMap::<String, BTreeSet<String>>::new();
+    let helper_graph = Graph {
+        spec: String::new(),
+        meta: None,
+        inputs: Default::default(),
+        nondeterminism_allowed: false,
+        nodes: nodes.to_vec(),
+        edges: edges.to_vec(),
+    };
     for n in nodes {
         deps.insert(n.id.clone(), BTreeSet::new());
     }
@@ -209,6 +218,13 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
             id: n.id.clone(),
             kind: n.kind.as_str().to_string(),
             deps: deps.get(&n.id).cloned().unwrap_or_default().into_iter().collect(),
+            io_contract: node_io_contract(&helper_graph, &n.id)
+            .unwrap_or_else(|| NodeIoContract {
+                inputs: Vec::new(),
+                param_bindings: Vec::new(),
+                env_bindings: Vec::new(),
+                outputs: Vec::new(),
+            }),
             outputs: n.outputs.clone(),
             retry: n.retry.clone(),
             timeout_ms: n.timeout_ms,
