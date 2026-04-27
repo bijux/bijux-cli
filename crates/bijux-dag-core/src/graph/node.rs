@@ -1,4 +1,4 @@
-use crate::{Effect, FileOutput, Node, ParamValue};
+use crate::{Effect, FileOutput, Graph, Node, ParamValue};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -20,6 +20,18 @@ pub struct NodeGroupContract {
 pub struct TypedNode {
     pub node: Node,
     pub interface: NodeInterfaceContract,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum NodeInputSource {
+    UpstreamOutput { node_id: String, output_name: String },
+    Unbound,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NodeInputBinding {
+    pub name: String,
+    pub source: NodeInputSource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,4 +71,30 @@ pub fn derive_interface(node: &Node) -> NodeInterfaceContract {
         declared_params,
         declared_effects: node.effects.clone(),
     }
+}
+
+pub fn node_input_bindings(graph: &Graph, node_id: &str) -> Vec<NodeInputBinding> {
+    let Some(node) = graph.nodes.iter().find(|node| node.id == node_id) else {
+        return Vec::new();
+    };
+    let mut bindings = node
+        .inputs
+        .iter()
+        .map(|name| NodeInputBinding { name: name.clone(), source: NodeInputSource::Unbound })
+        .collect::<Vec<_>>();
+
+    for binding in &mut bindings {
+        if let Some(edge) = graph
+            .edges
+            .iter()
+            .find(|edge| edge.to.node_id == node_id && edge.to.port == binding.name)
+        {
+            binding.source = NodeInputSource::UpstreamOutput {
+                node_id: edge.from.node_id.clone(),
+                output_name: edge.from.port.clone(),
+            };
+        }
+    }
+
+    bindings
 }

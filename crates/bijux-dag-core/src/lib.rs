@@ -70,6 +70,7 @@ pub use model::{
     Node, NodeKind, NodeOutputRef, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources,
     RetryPolicy, Severity, ValidationDiagnostic,
 };
+pub use node::{node_input_bindings, NodeInputBinding, NodeInputSource};
 pub use parse::parse_graph_strict;
 pub use planner::{
     can_runtime_execute_plan_without_raw_graph, graph_lowering_boundary_note,
