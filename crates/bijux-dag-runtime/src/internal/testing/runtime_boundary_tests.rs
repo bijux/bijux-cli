@@ -79,6 +79,11 @@ fn transition_cause_mapping_is_stable() {
 #[test]
 fn skip_transition_causes_follow_recorded_skip_reason() {
     assert_eq!(transition_cause_for_skip_reason("filtered"), "SelectionFiltered");
+    assert_eq!(
+        transition_cause_for_skip_reason("not_selected_by_include_selector"),
+        "SelectionFiltered"
+    );
+    assert_eq!(transition_cause_for_skip_reason("excluded_by_selector"), "SelectionFiltered");
     assert_eq!(transition_cause_for_skip_reason("upstream_failed"), "DependencyFailed");
     assert_eq!(transition_cause_for_skip_reason("cancelled"), "CancelRequested");
 }

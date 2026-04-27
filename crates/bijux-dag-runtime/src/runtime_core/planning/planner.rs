@@ -37,7 +37,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         }
         for node in &graph.nodes {
             if !keep.contains(&node.id) {
-                filter_reasons.insert(node.id.clone(), "filtered".to_string());
+                filter_reasons.entry(node.id.clone()).or_insert_with(|| {
+                    "not_selected_by_dependency_closure".to_string()
+                });
             }
         }
     }
@@ -267,10 +269,10 @@ fn filter_reason(node: &Node, selectors: &SelectorSet) -> Option<String> {
     if !selectors.include.is_empty()
         && !selectors.include.iter().any(|sel| selector_matches(node, sel))
     {
-        return Some("filtered".to_string());
+        return Some("not_selected_by_include_selector".to_string());
     }
     if selectors.exclude.iter().any(|sel| selector_matches(node, sel)) {
-        return Some("filtered".to_string());
+        return Some("excluded_by_selector".to_string());
     }
     None
 }
@@ -356,7 +358,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("b"));
+        assert_eq!(
+            plan.filter_reasons.get("b").map(String::as_str),
+            Some("not_selected_by_include_selector")
+        );
         assert!(!plan.filter_reasons.contains_key("a"));
     }
 
@@ -371,7 +376,7 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("a"));
+        assert_eq!(plan.filter_reasons.get("a").map(String::as_str), Some("excluded_by_selector"));
         assert!(!plan.filter_reasons.contains_key("b"));
     }
 
@@ -386,7 +391,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("a"));
-        assert!(plan.filter_reasons.contains_key("b"));
+        assert_eq!(plan.filter_reasons.get("a").map(String::as_str), Some("excluded_by_selector"));
+        assert_eq!(
+            plan.filter_reasons.get("b").map(String::as_str),
+            Some("not_selected_by_include_selector")
+        );
     }
 }

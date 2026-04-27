@@ -1050,7 +1050,8 @@ pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'s
 
 pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
     match reason {
-        "filtered" => "SelectionFiltered",
+        "filtered" | "not_selected_by_include_selector" | "excluded_by_selector"
+        | "not_selected_by_dependency_closure" => "SelectionFiltered",
         "upstream_failed" => "DependencyFailed",
         "cancelled" => "CancelRequested",
         _ => "SelectionFiltered",
