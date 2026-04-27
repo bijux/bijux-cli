@@ -70,6 +70,33 @@ fn graph_with_two_const_nodes() -> String {
     graph.to_string()
 }
 
+fn graph_with_failed_upstream_dependency() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "true"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": ["in"],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "downstream"}
+            }
+        ],
+        "edges": [
+            {"from": {"node_id": "a", "port": "value"}, "to": {"node_id": "b", "port": "in"}}
+        ]
+    })
+    .to_string()
+}
+
 fn shell_graph_with_invalid_argv() -> String {
     json!({
         "spec": "bijux-dag/v0.1",
@@ -636,6 +663,24 @@ fn runtime_adapter_errors_materialize_failure_logs() {
         fs::read_to_string(run_path.join("nodes").join("node").join("stderr.log")).expect("stderr");
     assert!(stderr.contains("missing argv"));
     assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+}
+
+#[test]
+fn runtime_marks_upstream_blocked_nodes_as_dependency_failures() {
+    let graph = parse_graph_strict(&graph_with_failed_upstream_dependency()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    let downstream = read_node_trace(&run_path, "b");
+    assert_eq!(downstream["status"], "failed");
+    assert_eq!(downstream["failure"]["code"], "UPSTREAM_FAILED");
+    assert_eq!(downstream["transition_cause"], "DependencyFailed");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "upstream_failed"));
 }
 
 #[test]

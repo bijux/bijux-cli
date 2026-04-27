@@ -290,6 +290,12 @@ pub fn execute(
                 skipped.push((node_id.clone(), reason.clone()));
                 continue;
             }
+            let node = graph
+                .nodes
+                .iter()
+                .find(|n| n.id == *node_id)
+                .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
+                .clone();
             if cancel.load(Ordering::SeqCst) {
                 skipped.push((node_id.clone(), "cancelled".to_string()));
                 continue;
@@ -308,17 +314,20 @@ pub fn execute(
                         Some(NodeStatus::Failed) | Some(NodeStatus::Skipped)
                     )
                 }) {
-                    skipped.push((node_id.clone(), "upstream_failed".to_string()));
+                    preflight_failures.push((
+                        node_id.clone(),
+                        node,
+                        FailureInfo {
+                            kind: "Dependency".to_string(),
+                            code: "UPSTREAM_FAILED".to_string(),
+                            message: "upstream dependency did not complete successfully".to_string(),
+                            details: Some(serde_json::json!({ "dependencies": deps })),
+                        },
+                        "DependencyFailed".to_string(),
+                    ));
                     continue;
                 }
             }
-
-            let node = graph
-                .nodes
-                .iter()
-                .find(|n| n.id == *node_id)
-                .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
-                .clone();
             let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
 
             if node.retry.max_attempts > 0
