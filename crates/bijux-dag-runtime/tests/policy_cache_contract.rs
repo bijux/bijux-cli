@@ -276,6 +276,46 @@ fn runtime_cache_hit_uses_cached_nodes_when_mode_is_readwrite() {
 }
 
 #[test]
+fn runtime_cache_key_changes_when_policy_changes() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let run_with_different_policy = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                policy: PolicyConfig { deny_network: true, ..PolicyConfig::default() },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("policy-shift run");
+
+    assert_eq!(read_node_status(&run_with_different_policy, "node"), "success");
+
+    let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+    assert_eq!(cache_entries, 2);
+}
+
+#[test]
 fn runtime_cache_off_mode_never_uses_cached_nodes() {
     let graph =
         parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))

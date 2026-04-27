@@ -1179,6 +1179,70 @@ pub(crate) fn policy_fingerprint(policy: &PolicyConfig) -> String {
     sha256_bytes(payload.to_string().as_bytes())
 }
 
+fn selector_label(selector: &Selector) -> String {
+    match selector {
+        Selector::IdPrefix(v) => format!("id_prefix:{v}"),
+        Selector::Tag(v) => format!("tag:{v}"),
+        Selector::Kind(v) => format!("kind:{v}"),
+    }
+}
+
+fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
+    match mode {
+        MaterializeMode::Copy => "copy",
+        MaterializeMode::Hardlink => "hardlink",
+        MaterializeMode::Symlink => "symlink",
+    }
+}
+
+fn failure_propagation_label(mode: &FailurePropagationMode) -> &'static str {
+    match mode {
+        FailurePropagationMode::FailFast => "fail_fast",
+        FailurePropagationMode::IsolateBranch => "isolate_branch",
+        FailurePropagationMode::ContinueIndependent => "continue_independent",
+        FailurePropagationMode::QuorumLikeFuture => "quorum_like_future",
+    }
+}
+
+fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
+    let include_selectors: Vec<String> = options.selectors.include.iter().map(selector_label).collect();
+    let exclude_selectors: Vec<String> = options.selectors.exclude.iter().map(selector_label).collect();
+    let payload = serde_json::json!({
+        "jobs": options.jobs,
+        "cpu_budget": options.cpu_budget,
+        "run_timeout_ms": options.run_timeout_ms,
+        "node_timeout_ms": options.node_timeout_ms,
+        "materialize_inputs": materialize_mode_label(options.materialize_inputs),
+        "scheduler_policy": options.scheduler_policy,
+        "failure_propagation": failure_propagation_label(&options.failure_propagation),
+        "partial_rerun_dependency_closure": options.partial_rerun_dependency_closure,
+        "selectors": {
+            "include": include_selectors,
+            "exclude": exclude_selectors,
+        },
+        "remote_cache_enabled": options.remote_cache_dir.is_some(),
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
+fn cache_key_input_for_run(
+    options: &RuntimeConfig,
+    node_fingerprint: &str,
+    adapter_id: &str,
+    adapter_version: &str,
+    adapter_outputs_schema_version: &str,
+) -> CacheKeyInput {
+    CacheKeyInput {
+        node_fingerprint: node_fingerprint.to_string(),
+        adapter_id: adapter_id.to_string(),
+        adapter_version: adapter_version.to_string(),
+        output_schema_version: adapter_outputs_schema_version.to_string(),
+        policy_fingerprint: policy_fingerprint(&options.policy),
+        config_fingerprint: runtime_config_fingerprint(options),
+        backend_class: "local".to_string(),
+    }
+}
+
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
@@ -1277,7 +1341,14 @@ fn try_cache_read(
         None => return Ok(CacheRead { hit: false, proof: None }),
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
-        let key = node_fingerprint.to_string();
+        let key = cache_key_explanation(&cache_key_input_for_run(
+            options,
+            node_fingerprint,
+            adapter_id,
+            adapter_version,
+            adapter_outputs_schema_version,
+        ))
+        .key;
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
@@ -1394,7 +1465,14 @@ fn try_cache_write(
         Some(d) => RuntimeCacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
-    let key = node_fingerprint.to_string();
+    let key = cache_key_explanation(&cache_key_input_for_run(
+        options,
+        node_fingerprint,
+        adapter_id,
+        adapter_version,
+        adapter_outputs_schema_version,
+    ))
+    .key;
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
