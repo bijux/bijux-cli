@@ -1,6 +1,9 @@
 //! Planner lowering and execution-plan contract.
 
-use crate::{Edge, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy};
+use crate::{
+    Edge, Effect, FileOutput, Graph, GraphError, Node, NodeKind, ParamValue, Resources,
+    RetryPolicy,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -46,11 +49,34 @@ pub struct ExecutionPlan {
     pub spec: String,
     pub graph_fingerprint: String,
     pub planner_fingerprint: String,
+    pub execution_fingerprint: String,
+    pub evidence_fingerprint: String,
     pub nodes: Vec<PlannedNode>,
     pub edges: Vec<PlannedEdge>,
     pub ordering: Vec<String>,
     pub omitted_from_execution_identity: Vec<String>,
     pub diagnostics: Vec<PlannerDiagnostic>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ExecutionIdentityNode {
+    id: String,
+    kind: String,
+    deps: Vec<String>,
+    outputs: Vec<FileOutput>,
+    params: ParamValue,
+    retry: RetryPolicy,
+    timeout_ms: Option<u64>,
+    resources: Option<Resources>,
+    effects: Vec<Effect>,
+    env_allowlist: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct EvidenceIdentityNode {
+    id: String,
+    tags: Vec<String>,
+    group: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -138,23 +164,25 @@ pub fn lower_graph_to_execution_plan(
     let graph_fingerprint =
         canonical.graph_fingerprint().map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
     let planner_fingerprint = planner_fingerprint(&planned_nodes, &planned_edges, &ordering)?;
+    let execution_fingerprint =
+        execution_fingerprint(&canonical, &selected_nodes, &selected_edges, &planned_nodes)?;
+    let evidence_fingerprint =
+        evidence_fingerprint(&canonical, &selected_nodes, &selected_edges, &planned_nodes)?;
 
     Ok(ExecutionPlan {
         planner_contract_version: PLANNER_CONTRACT_VERSION.to_string(),
         spec: canonical.spec,
         graph_fingerprint,
         planner_fingerprint,
+        execution_fingerprint,
+        evidence_fingerprint,
         nodes: planned_nodes,
         edges: planned_edges,
         ordering,
         omitted_from_execution_identity: vec![
             "graph.meta".to_string(),
-            "graph.inputs".to_string(),
-            "graph.nondeterminism_allowed".to_string(),
             "node.tags".to_string(),
             "node.group".to_string(),
-            "node.params".to_string(),
-            "node.resources".to_string(),
         ],
         diagnostics,
     })
@@ -231,6 +259,87 @@ fn planner_fingerprint(
         .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
     hasher.update(payload);
     Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn execution_fingerprint(
+    graph: &Graph,
+    nodes: &[Node],
+    edges: &[Edge],
+    planned_nodes: &[PlannedNode],
+) -> Result<String, PlannerError> {
+    let mut hasher = Sha256::new();
+    let identity_nodes = execution_identity_nodes(nodes, planned_nodes);
+    let identity_edges = edges
+        .iter()
+        .map(|edge| (edge.from.node_id.clone(), edge.from.port.clone(), edge.to.node_id.clone(), edge.to.port.clone()))
+        .collect::<Vec<_>>();
+    let payload = serde_json::to_vec(&(
+        &graph.spec,
+        &graph.inputs,
+        graph.nondeterminism_allowed,
+        &identity_nodes,
+        &identity_edges,
+    ))
+    .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
+    hasher.update(payload);
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn evidence_fingerprint(
+    graph: &Graph,
+    nodes: &[Node],
+    edges: &[Edge],
+    planned_nodes: &[PlannedNode],
+) -> Result<String, PlannerError> {
+    let mut hasher = Sha256::new();
+    let execution_nodes = execution_identity_nodes(nodes, planned_nodes);
+    let evidence_nodes = nodes
+        .iter()
+        .map(|node| EvidenceIdentityNode {
+            id: node.id.clone(),
+            tags: node.tags.clone(),
+            group: node.group.clone(),
+        })
+        .collect::<Vec<_>>();
+    let identity_edges = edges
+        .iter()
+        .map(|edge| (edge.from.node_id.clone(), edge.from.port.clone(), edge.to.node_id.clone(), edge.to.port.clone()))
+        .collect::<Vec<_>>();
+    let payload = serde_json::to_vec(&(
+        &graph.spec,
+        &graph.inputs,
+        graph.nondeterminism_allowed,
+        &execution_nodes,
+        &evidence_nodes,
+        &identity_edges,
+    ))
+    .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
+    hasher.update(payload);
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn execution_identity_nodes(nodes: &[Node], planned_nodes: &[PlannedNode]) -> Vec<ExecutionIdentityNode> {
+    let mut planned_by_id = BTreeMap::new();
+    for planned in planned_nodes {
+        planned_by_id.insert(planned.id.as_str(), planned);
+    }
+    nodes
+        .iter()
+        .filter_map(|node| {
+            planned_by_id.get(node.id.as_str()).map(|planned| ExecutionIdentityNode {
+                id: node.id.clone(),
+                kind: node.kind.as_str().to_string(),
+                deps: planned.deps.clone(),
+                outputs: node.outputs.clone(),
+                params: node.params.clone(),
+                retry: node.retry.clone(),
+                timeout_ms: node.timeout_ms,
+                resources: node.resources.clone(),
+                effects: node.effects.clone(),
+                env_allowlist: node.env_allowlist.clone(),
+            })
+        })
+        .collect()
 }
 
 pub fn planner_diagnostics_from_error(error: &PlannerError) -> Vec<PlannerDiagnostic> {

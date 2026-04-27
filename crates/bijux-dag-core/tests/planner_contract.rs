@@ -209,7 +209,69 @@ fn planner_reports_identity_omissions_explicitly() {
         "cosmetic graph metadata should be disclosed as omitted from execution identity"
     );
     assert!(
-        plan.omitted_from_execution_identity.contains(&"node.params".to_string()),
-        "current planner boundary must state that params are omitted until execution identity is tightened"
+        plan.omitted_from_execution_identity.contains(&"node.group".to_string()),
+        "operator grouping is intentionally omitted from execution identity"
     );
+    assert!(
+        !plan.omitted_from_execution_identity.contains(&"node.params".to_string()),
+        "behavior-affecting node params must not be reported as omitted from execution identity"
+    );
+}
+
+#[test]
+fn execution_identity_tracks_params_without_rewriting_plan_shape() {
+    let graph_a = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"sample":"a"},
+          "nodes":[
+            {"id":"a","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["/bin/echo","one"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let graph_b = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"sample":"a"},
+          "nodes":[
+            {"id":"a","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["/bin/echo","two"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan_a = lower_graph_to_execution_plan(&graph_a, PlanOptions::default()).expect("plan a");
+    let plan_b = lower_graph_to_execution_plan(&graph_b, PlanOptions::default()).expect("plan b");
+    assert_eq!(plan_a.planner_fingerprint, plan_b.planner_fingerprint);
+    assert_ne!(plan_a.execution_fingerprint, plan_b.execution_fingerprint);
+    assert_ne!(plan_a.evidence_fingerprint, plan_b.evidence_fingerprint);
+}
+
+#[test]
+fn evidence_identity_tracks_operator_metadata_without_rewriting_execution_identity() {
+    let graph_a = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let graph_b = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"},"tags":["operator"],"group":"batch-a"}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan_a = lower_graph_to_execution_plan(&graph_a, PlanOptions::default()).expect("plan a");
+    let plan_b = lower_graph_to_execution_plan(&graph_b, PlanOptions::default()).expect("plan b");
+    assert_eq!(plan_a.planner_fingerprint, plan_b.planner_fingerprint);
+    assert_eq!(plan_a.execution_fingerprint, plan_b.execution_fingerprint);
+    assert_ne!(plan_a.evidence_fingerprint, plan_b.evidence_fingerprint);
 }

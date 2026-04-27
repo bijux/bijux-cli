@@ -9,6 +9,8 @@
     "spec",
     "graph_fingerprint",
     "planner_fingerprint",
+    "execution_fingerprint",
+    "evidence_fingerprint",
     "nodes",
     "edges",
     "ordering",
@@ -20,6 +22,8 @@
     "spec": { "type": "string" },
     "graph_fingerprint": { "type": "string" },
     "planner_fingerprint": { "type": "string" },
+    "execution_fingerprint": { "type": "string" },
+    "evidence_fingerprint": { "type": "string" },
     "nodes": {
       "type": "array",
       "items": {
