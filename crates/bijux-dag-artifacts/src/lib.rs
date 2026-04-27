@@ -333,6 +333,7 @@ mod tests {
             arch: "x86_64".to_string(),
             rustc: "rustc".to_string(),
             tool_version: "0.1.0".to_string(),
+            planner_contract_version: Some("bijux-dag-planner/v1".to_string()),
             graph_fingerprint: None,
             planner_fingerprint: None,
             execution_fingerprint: None,

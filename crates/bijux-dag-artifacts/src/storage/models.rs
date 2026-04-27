@@ -190,6 +190,8 @@ pub struct Provenance {
     pub rustc: String,
     pub tool_version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_contract_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub graph_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub planner_fingerprint: Option<String>,

@@ -106,6 +106,7 @@ pub fn execute(
         arch: std::env::consts::ARCH.to_string(),
         rustc: crate::rustc_version(),
         tool_version: crate::tool_version(),
+        planner_contract_version: Some(manifest.planner_contract_version.clone()),
         graph_fingerprint: Some(manifest.graph_fingerprint.clone()),
         planner_fingerprint: manifest.planner_fingerprint.clone(),
         execution_fingerprint: manifest.execution_fingerprint.clone(),
