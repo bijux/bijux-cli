@@ -19,6 +19,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
         status: "succeeded".to_string(),
         spec: "dag/v0.1".to_string(),
         graph_fingerprint: "fp".to_string(),
+        planner_contract_version: "bijux-dag-planner/v1".to_string(),
         planner_fingerprint: None,
         execution_fingerprint: None,
         evidence_fingerprint: None,

@@ -12,6 +12,8 @@ pub struct Manifest {
     pub status: String,
     pub spec: String,
     pub graph_fingerprint: String,
+    #[serde(default = "default_planner_contract_version")]
+    pub planner_contract_version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub planner_fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -245,4 +247,8 @@ pub struct InputFile {
 
 fn default_manifest_version() -> String {
     "run-manifest/v0.1".to_string()
+}
+
+fn default_planner_contract_version() -> String {
+    "bijux-dag-planner/v1".to_string()
 }

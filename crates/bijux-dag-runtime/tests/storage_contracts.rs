@@ -27,6 +27,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         status: "success".to_string(),
         spec: "v0.1".to_string(),
         graph_fingerprint: "x".to_string(),
+        planner_contract_version: "bijux-dag-planner/v1".to_string(),
         planner_fingerprint: None,
         execution_fingerprint: None,
         evidence_fingerprint: None,

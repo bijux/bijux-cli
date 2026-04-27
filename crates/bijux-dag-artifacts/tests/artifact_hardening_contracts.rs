@@ -25,6 +25,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         status: "success".to_string(),
         spec: "bijux-dag/v0.1".to_string(),
         graph_fingerprint: "fp".to_string(),
+        planner_contract_version: "bijux-dag-planner/v1".to_string(),
         planner_fingerprint: None,
         execution_fingerprint: None,
         evidence_fingerprint: None,
@@ -57,6 +58,7 @@ fn manifest_and_atomic_write_contracts_hold() {
     let dir = tempfile::tempdir().unwrap();
     let manifest_path = dir.path().join("manifest.json");
     let payload = serde_json::to_value(sample_manifest("run-1")).unwrap();
+    assert_eq!(payload["planner_contract_version"], "bijux-dag-planner/v1");
     write_json_atomic_durable(&manifest_path, &payload).unwrap();
     assert!(manifest_path.exists());
 }

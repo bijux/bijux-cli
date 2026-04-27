@@ -69,6 +69,7 @@ pub fn execute(
         status: "success".to_string(),
         spec: SPEC_VERSION.to_string(),
         graph_fingerprint: graph_fp,
+        planner_contract_version: plan.planner_contract_version.clone(),
         planner_fingerprint: Some(plan.planner_fingerprint.clone()),
         execution_fingerprint: Some(plan.execution_fingerprint.clone()),
         evidence_fingerprint: Some(plan.evidence_fingerprint.clone()),
