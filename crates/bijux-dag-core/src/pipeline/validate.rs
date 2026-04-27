@@ -66,6 +66,14 @@ fn emit_rule(
     diagnostics.push(diagnostic);
 }
 
+fn valid_env_allowlist_pattern(pattern: &str) -> bool {
+    let core = pattern.strip_suffix('*').unwrap_or(pattern);
+    if core.is_empty() || pattern == "*" {
+        return false;
+    }
+    core.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
 impl Graph {
     pub fn validate_with_warnings(&self) -> Vec<ValidationDiagnostic> {
         let mut diagnostics = Vec::new();
@@ -167,6 +175,17 @@ impl Graph {
                     Some("Add env effect when using env_allowlist".to_string()),
                 );
             }
+            for entry in &node.env_allowlist {
+                if !valid_env_allowlist_pattern(entry) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1027",
+                        format!("invalid env allowlist entry: {}", entry),
+                        format!("/nodes/{}/env_allowlist", node.id),
+                        Some("Use letters, digits, underscores, and optional suffix '*'".to_string()),
+                    );
+                }
+            }
             if node.kind == crate::NodeKind::Container {
                 if let Some(spec) = &node.container {
                     if !spec.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
@@ -177,6 +196,20 @@ impl Graph {
                             format!("/nodes/{}/container/env_allowlist", node.id),
                             Some("Add env effect when using env_allowlist".to_string()),
                         );
+                    }
+                    for entry in &spec.env_allowlist {
+                        if !valid_env_allowlist_pattern(entry) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1027",
+                                format!("invalid container env allowlist entry: {}", entry),
+                                format!("/nodes/{}/container/env_allowlist", node.id),
+                                Some(
+                                    "Use letters, digits, underscores, and optional suffix '*'"
+                                        .to_string(),
+                                ),
+                            );
+                        }
                     }
                     if spec.engine != "docker" && spec.engine != "podman" {
                         emit_rule(
