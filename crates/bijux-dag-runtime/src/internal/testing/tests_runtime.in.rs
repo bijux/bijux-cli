@@ -1711,4 +1711,24 @@ exit 1
         assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
         assert!(rendered.contains("lineage visualization"));
     }
+
+    #[test]
+    fn timeline_export_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(dir.path(), "timeline-conflict", "observability.timeline.json");
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("timeline-conflict".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        let rendered = format!("{err}");
+        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(rendered.contains("timeline export"));
+    }
 }

@@ -1284,10 +1284,11 @@ pub fn execute(
             })
             .collect(),
     };
-    let _ = write_timeline_export(
+    write_timeline_export(
         ctx.run_dir.staging_path().join("observability.timeline.json"),
         &timeline,
-    );
+    )
+    .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
     let root_causes = summarize_failure_root_causes(&structured_events);
     let _ = ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.root-causes.json"),
