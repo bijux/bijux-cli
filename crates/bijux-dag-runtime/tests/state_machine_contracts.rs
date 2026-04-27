@@ -96,6 +96,7 @@ fn imported_runs_are_distinguishable_from_native_runs() {
         operator: "system".to_string(),
         labels: vec![],
         parent_run_id: None,
+        requested_selectors: vec![],
         selected_nodes: vec![],
         dependency_closure_enabled: true,
         replay_source_run_id: None,

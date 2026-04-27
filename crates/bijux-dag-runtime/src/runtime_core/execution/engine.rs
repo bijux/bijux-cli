@@ -167,15 +167,12 @@ pub fn execute(
         store,
         policy: options.policy.clone(),
     };
-    let selected_nodes = options
+    let requested_selectors = options
         .selectors
         .include
         .iter()
-        .map(|selector| match selector {
-            crate::Selector::IdPrefix(v) => format!("id_prefix:{v}"),
-            crate::Selector::Tag(v) => format!("tag:{v}"),
-            crate::Selector::Kind(v) => format!("kind:{v}"),
-        })
+        .chain(options.selectors.exclude.iter())
+        .map(crate::selector_label)
         .collect();
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -189,7 +186,8 @@ pub fn execute(
         operator: options.operator.clone(),
         labels: options.labels.clone(),
         parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
-        selected_nodes,
+        requested_selectors,
+        selected_nodes: plan.order.clone(),
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
         replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
     };

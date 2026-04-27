@@ -104,6 +104,8 @@ pub struct RunSnapshot {
     pub operator: String,
     pub labels: Vec<String>,
     pub parent_run_id: Option<RunId>,
+    #[serde(default)]
+    pub requested_selectors: Vec<String>,
     pub selected_nodes: Vec<String>,
     pub dependency_closure_enabled: bool,
     pub replay_source_run_id: Option<RunId>,
