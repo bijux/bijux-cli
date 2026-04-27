@@ -1341,8 +1341,12 @@ pub fn execute(
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {
-        let _ = runtime.fs.remove_file(&latest);
-        let _ = runtime.fs.symlink(&final_path, &latest);
+        match runtime.fs.remove_file(&latest) {
+            Ok(()) => {}
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+            Err(err) => return Err(RuntimeError::Io(err)),
+        }
+        runtime.fs.symlink(&final_path, &latest)?;
     }
     Ok(final_path)
 }

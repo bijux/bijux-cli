@@ -1749,4 +1749,22 @@ exit 1
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
     }
+
+    #[test]
+    fn latest_symlink_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime =
+            Runtime::with_io(Arc::new(InterceptFs::fail_symlink("latest")), Arc::new(SystemClock));
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    latest_symlink: Some(dir.path().join("latest")),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
 }
