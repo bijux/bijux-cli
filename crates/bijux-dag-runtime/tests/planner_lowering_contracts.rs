@@ -20,7 +20,7 @@ fn graph_a() -> &'static str {
       "nodes":[
         {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":1},"tags":["cosmetic"]},
         {"id":"right","kind":"const","inputs":[],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":2}},
-        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}}
+        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
       ],
       "edges":[
         {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"l"}},
@@ -34,7 +34,7 @@ fn graph_b_semantic_equivalent() -> &'static str {
       "spec":"bijux-dag/v0.1",
       "meta":{"name":"b","description":"cosmetic","owners":[],"tags":[]},
       "nodes":[
-        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}},
+        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]},
         {"id":"right","kind":"const","inputs":[],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":2}},
         {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":1},"tags":["changed-only"]}
       ],
@@ -52,6 +52,8 @@ fn semantically_equivalent_graphs_lower_to_same_planner_fingerprint() {
     let pa = build_plan(&a, &RuntimeConfig::default());
     let pb = build_plan(&b, &RuntimeConfig::default());
     assert_eq!(pa.planner_fingerprint, pb.planner_fingerprint);
+    assert_eq!(pa.execution_fingerprint, pb.execution_fingerprint);
+    assert_ne!(pa.evidence_fingerprint, pb.evidence_fingerprint);
 }
 
 #[test]
@@ -86,9 +88,9 @@ fn fan_in_fan_out_and_disconnected_lowering_are_supported() {
           "spec":"bijux-dag/v0.1",
           "nodes":[
             {"id":"root","kind":"const","inputs":[],"outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
-            {"id":"a","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["echo","a"]}},
-            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"argv":["echo","b"]}},
-            {"id":"join","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}},
+            {"id":"a","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["echo","a"]},"effects":["filesystem"]},
+            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"argv":["echo","b"]},"effects":["filesystem"]},
+            {"id":"join","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]},
             {"id":"isolated","kind":"const","inputs":[],"outputs":[{"name":"out","path":"isolated/out"}],"params":{"value":9}}
           ],
           "edges":[
@@ -135,4 +137,33 @@ fn schema_validation_errors_are_distinct_from_planner_errors() {
         .diagnostics
         .iter()
         .any(|d| d.contains("P4021") && d.contains("unsupported-runtime-capability")));
+}
+
+#[test]
+fn runtime_plan_preserves_execution_identity_changes_from_param_updates() {
+    let a = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"node","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"node/out"}],"params":{"argv":["echo","one"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse a");
+    let b = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"node","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"node/out"}],"params":{"argv":["echo","two"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse b");
+
+    let pa = build_plan(&a, &RuntimeConfig::default());
+    let pb = build_plan(&b, &RuntimeConfig::default());
+    assert_eq!(pa.planner_fingerprint, pb.planner_fingerprint);
+    assert_ne!(pa.execution_fingerprint, pb.execution_fingerprint);
 }

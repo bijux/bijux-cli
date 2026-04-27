@@ -23,6 +23,8 @@ pub struct ExecutionPlan {
     pub planner_contract_version: String,
     pub graph_fingerprint: String,
     pub planner_fingerprint: String,
+    pub execution_fingerprint: String,
+    pub evidence_fingerprint: String,
     pub planned_nodes: Vec<PlannedNode>,
     pub planned_dependencies: Vec<PlannedDependency>,
     pub diagnostics: Vec<String>,

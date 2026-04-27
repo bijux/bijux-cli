@@ -49,6 +49,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planner_contract_version,
         graph_fingerprint,
         planner_fingerprint,
+        execution_fingerprint,
+        evidence_fingerprint,
         planned_nodes,
         planned_dependencies,
         order,
@@ -70,6 +72,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                 plan.planner_contract_version,
                 plan.graph_fingerprint,
                 plan.planner_fingerprint,
+                plan.execution_fingerprint,
+                plan.evidence_fingerprint,
                 plan.nodes
                     .iter()
                     .map(|node| PlannedNode {
@@ -101,6 +105,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .graph_fingerprint()
                     .unwrap_or_else(|_| "graph-fingerprint-unavailable".to_string()),
                 "planner-fingerprint-unavailable".to_string(),
+                "execution-fingerprint-unavailable".to_string(),
+                "evidence-fingerprint-unavailable".to_string(),
                 canonical
                     .nodes
                     .iter()
@@ -149,6 +155,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planner_contract_version,
         graph_fingerprint,
         planner_fingerprint,
+        execution_fingerprint,
+        evidence_fingerprint,
         planned_nodes,
         planned_dependencies,
         diagnostics,
