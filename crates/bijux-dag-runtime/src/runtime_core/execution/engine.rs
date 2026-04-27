@@ -1210,10 +1210,11 @@ pub fn execute(
         &lineage_snapshot,
     )
     .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
-    let _ = bijux_dag_artifacts::lineage::export_lineage_visualization(
+    bijux_dag_artifacts::lineage::export_lineage_visualization(
         ctx.run_dir.staging_path().join("observability.lineage-visualization.json"),
         &lineage_snapshot,
-    );
+    )
+    .map_err(|err| RuntimeError::Executor(format!("lineage visualization write failed: {err}")))?;
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
     run_dir.write_manifest(&manifest)?;
     crate::append_event(
