@@ -63,6 +63,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: DatasetCommands,
     },
+    Governance {
+        #[command(subcommand)]
+        command: GovernanceCommands,
+    },
     CanonicalBytes {
         dag: PathBuf,
     },
@@ -442,6 +446,40 @@ pub(crate) enum ArtifactCommands {
 pub(crate) enum DatasetCommands {
     Mapping { simulation: PathBuf },
     Staleness { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum GovernanceCommands {
+    Contracts { dag: PathBuf },
+    Ownership { dag: PathBuf },
+    Tags { dag: PathBuf },
+    Cost {
+        dag: PathBuf,
+        #[arg(long, default_value_t = 0.04)]
+        cpu_core_hour_rate: f64,
+        #[arg(long, default_value_t = 0.005)]
+        memory_gb_hour_rate: f64,
+    },
+    Alerts {
+        dag: PathBuf,
+        #[arg(long, default_value = "run_failed")]
+        event: String,
+    },
+    #[command(name = "policy-check")]
+    PolicyCheck {
+        dag: PathBuf,
+        policy: PathBuf,
+    },
+    #[command(name = "catalog-export")]
+    CatalogExport {
+        dag: PathBuf,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+    },
+    #[command(name = "audit-event")]
+    AuditEvent { simulation: PathBuf },
+    Promotion { simulation: PathBuf },
+    Compliance { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

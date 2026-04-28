@@ -15,6 +15,7 @@ explain
 export
 fingerprint
 fsck
+governance
 graph
 graph-lint
 hash
