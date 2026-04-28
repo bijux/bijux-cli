@@ -17,7 +17,7 @@ use bijux_dag_core::{
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
-        "E1021", "E1022", "E1023", "E1024", "E1025",
+        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027",
     ];
 
     for code in expected_error_codes {
@@ -366,6 +366,13 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = base_graph();
             g.nodes[0].outputs =
                 vec![FileOutput { name: "out".to_string(), path: "../bad.out".to_string() }];
+            g
+        }
+        "E1027" => {
+            let mut g = base_graph();
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Env];
+            g.nodes[0].env_allowlist = vec!["*".to_string()];
             g
         }
         "W2001" => {

@@ -12,6 +12,14 @@ pub struct Manifest {
     pub status: String,
     pub spec: String,
     pub graph_fingerprint: String,
+    #[serde(default = "default_planner_contract_version")]
+    pub planner_contract_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
     pub tool_version: String,
     pub jobs: usize,
     pub adapters: Vec<AdapterInfo>,
@@ -39,6 +47,12 @@ pub struct NodeTrace {
     pub finished_unix_ms: u128,
     pub attempt: u32,
     pub fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_contract_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
     pub adapter_id: String,
     pub adapter_version: String,
     pub adapter_outputs_schema_version: String,
@@ -181,6 +195,20 @@ pub struct Provenance {
     pub arch: String,
     pub rustc: String,
     pub tool_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_contract_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub graph_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub planner_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_fingerprint: Option<String>,
     pub adapters: Vec<AdapterInfo>,
     pub policy: PolicyInfo,
     pub time_source: String,
@@ -227,4 +255,8 @@ pub struct InputFile {
 
 fn default_manifest_version() -> String {
     "run-manifest/v0.1".to_string()
+}
+
+fn default_planner_contract_version() -> String {
+    "bijux-dag-planner/v1".to_string()
 }

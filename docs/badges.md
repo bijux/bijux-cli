@@ -41,10 +41,10 @@ Link policy for GHCR badges is fixed here as part of the contract:
 
 <!-- bijux-core-badges:repository-summary:start -->
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
-[![Docs](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
-[![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
-[![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
+[![CI](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![Docs](https://github.com/bijux/bijux-core/workflows/deploy-docs/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
+[![Crates Publish](https://github.com/bijux/bijux-core/workflows/release-crates/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
+[![PyPI Publish](https://github.com/bijux/bijux-core/workflows/release-pypi/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 [![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20package-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
 [![Published packages](https://img.shields.io/badge/published%20packages-{{ public_package_count }}-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
@@ -56,7 +56,7 @@ Link policy for GHCR badges is fixed here as part of the contract:
 [![Crates.io](https://img.shields.io/crates/v/{{ crate_name }}?label=crates.io&logo=rust)]({{ crates_url }})
 [![Rust docs](https://img.shields.io/badge/rust--docs-{{ crate_badge_label }}-DEA584?logo=rust&logoColor=white)]({{ docsrs_url }})
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
+[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 <!-- bijux-core-badges:rust-package-summary:end -->
 
@@ -66,7 +66,7 @@ Link policy for GHCR badges is fixed here as part of the contract:
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)]({{ pypi_url }})
 [![PyPI](https://img.shields.io/pypi/v/{{ pypi_name }}?label=PyPI&logo=pypi)]({{ pypi_url }})
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml)
+[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 <!-- bijux-core-badges:python-package-summary:end -->
 

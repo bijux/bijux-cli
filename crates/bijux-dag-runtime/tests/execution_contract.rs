@@ -11,7 +11,7 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
+use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig, Selector, SelectorSet};
 use serde_json::Value;
 use std::fs;
 use std::path::Path;
@@ -75,6 +75,9 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
         .expect("trace parse");
     assert_eq!(trace["status"], "success");
     assert_eq!(trace["node_id"], "const1");
+    assert_eq!(trace["planner_contract_version"], "bijux-dag-planner/v1");
+    assert!(trace["execution_fingerprint"].as_str().is_some());
+    assert!(trace["evidence_fingerprint"].as_str().is_some());
 }
 
 #[test]
@@ -144,4 +147,48 @@ fn runtime_cache_contract_uses_cached_nodes_when_enabled() {
     assert_eq!(one_success, 1);
     assert_eq!(one_cached, 0);
     assert!(two_cached >= 1);
+}
+
+#[test]
+fn run_snapshot_records_requested_selectors_and_selected_nodes() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {
+              "id": "const1",
+              "kind": "const",
+              "tags": ["seed"],
+              "inputs": [],
+              "outputs": [{"name": "value", "path": "value.txt"}],
+              "params": {"value": "hello"}
+            }
+          ],
+          "edges": []
+        }"#,
+    )
+    .expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                selectors: SelectorSet {
+                    include: vec![Selector::Tag("seed".to_string())],
+                    exclude: vec![],
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let snapshot: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("run.snapshot.json")).expect("run snapshot"),
+    )
+    .expect("snapshot parse");
+    assert_eq!(snapshot["requested_selectors"], serde_json::json!(["include:tag:seed"]));
+    assert_eq!(snapshot["selected_nodes"], serde_json::json!(["const1"]));
 }

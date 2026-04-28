@@ -50,9 +50,13 @@ fn cache_key_is_stable_for_cosmetic_omissions_and_changes_for_meaningful_inputs(
 #[test]
 fn cache_proof_metadata_and_version_checks_reject_stale_or_missing() {
     let ok = serde_json::json!({
+        "cache_key": "cache-key-1",
         "node_fingerprint": "x",
         "adapter_id": "shell",
         "adapter_version": "1",
+        "policy_fingerprint": "policy-1",
+        "config_fingerprint": "config-1",
+        "backend_class": "local",
         "cache_metadata_version": "cache-meta/v0.1"
     });
     assert!(cache_entry_has_required_proof(&ok));
@@ -62,9 +66,13 @@ fn cache_proof_metadata_and_version_checks_reject_stale_or_missing() {
     assert!(!cache_entry_has_required_proof(&missing_proof));
 
     let stale = serde_json::json!({
+        "cache_key": "cache-key-1",
         "node_fingerprint": "x",
         "adapter_id": "shell",
         "adapter_version": "1",
+        "policy_fingerprint": "policy-1",
+        "config_fingerprint": "config-1",
+        "backend_class": "local",
         "cache_metadata_version": "cache-meta/v9.9"
     });
     assert!(!cache_metadata_version_supported(&stale));

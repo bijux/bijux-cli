@@ -97,6 +97,67 @@ fn planner_output_ordering_is_deterministic() {
 }
 
 #[test]
+fn planner_edges_preserve_port_bindings() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"ports","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"1"}},
+            {"id":"join","kind":"shell","inputs":["lhs"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
+          ],
+          "edges":[
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+          ]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    assert_eq!(plan.edges.len(), 1);
+    assert_eq!(plan.edges[0].from, "left");
+    assert_eq!(plan.edges[0].from_port, "out");
+    assert_eq!(plan.edges[0].to, "join");
+    assert_eq!(plan.edges[0].to_port, "lhs");
+}
+
+#[test]
+fn planner_nodes_preserve_io_contracts() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"io","owners":[],"tags":[]},
+          "inputs":{"threads":8},
+          "nodes":[
+            {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"1"}},
+            {
+              "id":"join",
+              "kind":"shell",
+              "inputs":["lhs"],
+              "outputs":[{"name":"out","path":"join/out"}],
+              "params":{
+                "argv":["echo","--threads",{"graph_input":"threads"}],
+                "seed":{"node_output":{"node_id":"left","path":"out"}}
+              },
+              "effects":["filesystem","env"],
+              "env_allowlist":["HOME"]
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+          ]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    let join = plan.nodes.iter().find(|node| node.id == "join").expect("join node");
+    assert_eq!(join.io_contract.inputs.len(), 1);
+    assert_eq!(join.io_contract.inputs[0].name, "lhs");
+    assert_eq!(join.io_contract.outputs[0].name, "out");
+    assert_eq!(join.io_contract.env_bindings[0].name, "HOME");
+    assert_eq!(join.io_contract.param_bindings.len(), 2);
+}
+
+#[test]
 fn unsupported_runtime_kind_is_planner_error() {
     let graph = graph_from(
         r#"{
@@ -188,4 +249,90 @@ fn execution_plan_shape_matches_schema_required_fields() {
             "plan must include schema required field `{field}`"
         );
     }
+}
+
+#[test]
+fn planner_reports_identity_omissions_explicitly() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"identity","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    assert!(
+        plan.omitted_from_execution_identity.contains(&"graph.meta".to_string()),
+        "cosmetic graph metadata should be disclosed as omitted from execution identity"
+    );
+    assert!(
+        plan.omitted_from_execution_identity.contains(&"node.group".to_string()),
+        "operator grouping is intentionally omitted from execution identity"
+    );
+    assert!(
+        !plan.omitted_from_execution_identity.contains(&"node.params".to_string()),
+        "behavior-affecting node params must not be reported as omitted from execution identity"
+    );
+}
+
+#[test]
+fn execution_identity_tracks_params_without_rewriting_plan_shape() {
+    let graph_a = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"sample":"a"},
+          "nodes":[
+            {"id":"a","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["/bin/echo","one"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let graph_b = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"sample":"a"},
+          "nodes":[
+            {"id":"a","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["/bin/echo","two"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan_a = lower_graph_to_execution_plan(&graph_a, PlanOptions::default()).expect("plan a");
+    let plan_b = lower_graph_to_execution_plan(&graph_b, PlanOptions::default()).expect("plan b");
+    assert_eq!(plan_a.planner_fingerprint, plan_b.planner_fingerprint);
+    assert_ne!(plan_a.execution_fingerprint, plan_b.execution_fingerprint);
+    assert_ne!(plan_a.evidence_fingerprint, plan_b.evidence_fingerprint);
+}
+
+#[test]
+fn evidence_identity_tracks_operator_metadata_without_rewriting_execution_identity() {
+    let graph_a = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let graph_b = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"},"tags":["operator"],"group":"batch-a"}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let plan_a = lower_graph_to_execution_plan(&graph_a, PlanOptions::default()).expect("plan a");
+    let plan_b = lower_graph_to_execution_plan(&graph_b, PlanOptions::default()).expect("plan b");
+    assert_eq!(plan_a.planner_fingerprint, plan_b.planner_fingerprint);
+    assert_eq!(plan_a.execution_fingerprint, plan_b.execution_fingerprint);
+    assert_ne!(plan_a.evidence_fingerprint, plan_b.evidence_fingerprint);
 }

@@ -1,10 +1,25 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
-use bijux_dag_core::{Graph, Node, NodeKind, PlanOptions, PlannerSeverity};
+use bijux_dag_core::{
+    node_io_contract, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,
+};
 use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     let canonical = graph.canonicalize();
+    let requested_selectors = options
+        .selectors
+        .include
+        .iter()
+        .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .selectors
+                .exclude
+                .iter()
+                .map(|selector| crate::requested_selector_label("exclude", selector)),
+        )
+        .collect::<Vec<_>>();
     let dep_map = build_dep_map(graph);
     let mut filter_reasons = HashMap::new();
     for node in &graph.nodes {
@@ -24,7 +39,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         }
         for node in &graph.nodes {
             if !keep.contains(&node.id) {
-                filter_reasons.insert(node.id.clone(), "filtered".to_string());
+                filter_reasons
+                    .entry(node.id.clone())
+                    .or_insert_with(|| "not_selected_by_dependency_closure".to_string());
             }
         }
     }
@@ -49,6 +66,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planner_contract_version,
         graph_fingerprint,
         planner_fingerprint,
+        execution_fingerprint,
+        evidence_fingerprint,
         planned_nodes,
         planned_dependencies,
         order,
@@ -70,12 +89,15 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                 plan.planner_contract_version,
                 plan.graph_fingerprint,
                 plan.planner_fingerprint,
+                plan.execution_fingerprint,
+                plan.evidence_fingerprint,
                 plan.nodes
                     .iter()
                     .map(|node| PlannedNode {
                         id: node.id.clone(),
                         kind: node.kind.clone(),
                         deps: node.deps.clone(),
+                        io_contract: node.io_contract.clone(),
                         outputs: node.outputs.clone(),
                         retry: node.retry.clone(),
                         timeout_ms: node.timeout_ms,
@@ -83,7 +105,12 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .collect::<Vec<_>>(),
                 plan.edges
                     .iter()
-                    .map(|edge| PlannedDependency { from: edge.from.clone(), to: edge.to.clone() })
+                    .map(|edge| PlannedDependency {
+                        from: edge.from.clone(),
+                        from_port: edge.from_port.clone(),
+                        to: edge.to.clone(),
+                        to_port: edge.to_port.clone(),
+                    })
                     .collect::<Vec<_>>(),
                 plan.ordering,
                 {
@@ -101,6 +128,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .graph_fingerprint()
                     .unwrap_or_else(|_| "graph-fingerprint-unavailable".to_string()),
                 "planner-fingerprint-unavailable".to_string(),
+                "execution-fingerprint-unavailable".to_string(),
+                "evidence-fingerprint-unavailable".to_string(),
                 canonical
                     .nodes
                     .iter()
@@ -113,6 +142,14 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                             .unwrap_or_default()
                             .into_iter()
                             .collect(),
+                        io_contract: node_io_contract(graph, &node.id).unwrap_or_else(|| {
+                            NodeIoContract {
+                                inputs: Vec::new(),
+                                param_bindings: Vec::new(),
+                                env_bindings: Vec::new(),
+                                outputs: Vec::new(),
+                            }
+                        }),
                         outputs: node.outputs.clone(),
                         retry: node.retry.clone(),
                         timeout_ms: node.timeout_ms,
@@ -123,7 +160,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .iter()
                     .map(|edge| PlannedDependency {
                         from: edge.from.node_id.clone(),
+                        from_port: edge.from.port.clone(),
                         to: edge.to.node_id.clone(),
+                        to_port: edge.to.port.clone(),
                     })
                     .collect::<Vec<_>>(),
                 canonical.nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>(),
@@ -149,6 +188,10 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planner_contract_version,
         graph_fingerprint,
         planner_fingerprint,
+        execution_fingerprint,
+        evidence_fingerprint,
+        requested_selectors,
+        dependency_closure_enabled: options.partial_rerun_dependency_closure,
         planned_nodes,
         planned_dependencies,
         diagnostics,
@@ -230,10 +273,10 @@ fn filter_reason(node: &Node, selectors: &SelectorSet) -> Option<String> {
     if !selectors.include.is_empty()
         && !selectors.include.iter().any(|sel| selector_matches(node, sel))
     {
-        return Some("filtered".to_string());
+        return Some("not_selected_by_include_selector".to_string());
     }
     if selectors.exclude.iter().any(|sel| selector_matches(node, sel)) {
-        return Some("filtered".to_string());
+        return Some("excluded_by_selector".to_string());
     }
     None
 }
@@ -319,7 +362,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("b"));
+        assert_eq!(
+            plan.filter_reasons.get("b").map(String::as_str),
+            Some("not_selected_by_include_selector")
+        );
         assert!(!plan.filter_reasons.contains_key("a"));
     }
 
@@ -334,7 +380,7 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("a"));
+        assert_eq!(plan.filter_reasons.get("a").map(String::as_str), Some("excluded_by_selector"));
         assert!(!plan.filter_reasons.contains_key("b"));
     }
 
@@ -349,7 +395,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let plan = build_plan(&graph, &options);
-        assert!(plan.filter_reasons.contains_key("a"));
-        assert!(plan.filter_reasons.contains_key("b"));
+        assert_eq!(plan.filter_reasons.get("a").map(String::as_str), Some("excluded_by_selector"));
+        assert_eq!(
+            plan.filter_reasons.get("b").map(String::as_str),
+            Some("not_selected_by_include_selector")
+        );
     }
 }

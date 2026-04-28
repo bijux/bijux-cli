@@ -70,6 +70,10 @@ pub use model::{
     Node, NodeKind, NodeOutputRef, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources,
     RetryPolicy, Severity, ValidationDiagnostic,
 };
+pub use node::{
+    node_input_bindings, node_io_contract, NodeEnvBinding, NodeInputBinding, NodeInputSource,
+    NodeIoContract, NodeOutputContract, NodeParamBinding, ParamBindingSource,
+};
 pub use parse::parse_graph_strict;
 pub use planner::{
     can_runtime_execute_plan_without_raw_graph, graph_lowering_boundary_note,
@@ -79,15 +83,47 @@ pub use planner::{
     ExecutionPlan, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic, PlannerError,
     PlannerSeverity, PLANNER_CONTRACT_VERSION,
 };
-pub use semantics::{
-    classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
-    migration_patch, normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
-    CompatibilityClassification, ConditionalExecution, DynamicEdgeExpansionRule,
-    GraphComplexityScore, GraphCompositionContract, GraphExplainabilityModel, GraphMigrationPatch,
-    GraphTemplate, JoinSemantics, LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph,
-    ParameterBindingSemantics, PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass,
-    SemanticDiffReport, StaticAnalysisReport, SubgraphEmbedding, WindowingSemantics,
-};
-
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
+
+pub mod stable {
+    pub use crate::{
+        canonical::{canonical_json, canonicalize_graph},
+        compile::{
+            compile_graph, compile_graph_contract, compile_graph_strict,
+            compile_graph_with_defaults, negotiate_spec_version, CompatibilityDecision,
+            DagCompilePlanHints, DagCompileResult,
+        },
+        contract::{DagSnapshot, GraphContract, GraphExecutionPolicy},
+        lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
+        validate::validate_graph,
+        ExecutionPlan, Graph, GraphError, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic,
+        PlannerError, PlannerSeverity, SPEC_VERSION,
+    };
+}
+
+pub mod prelude {
+    pub use crate::stable::{
+        canonical_json, canonicalize_graph, compile_graph, compile_graph_contract,
+        compile_graph_strict, compile_graph_with_defaults, negotiate_spec_version, validate_graph,
+        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot, ExecutionPlan,
+        Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge,
+        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
+    };
+    pub use crate::{
+        lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
+    };
+}
+
+pub mod experimental {
+    pub use crate::semantics::{
+        classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
+        migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
+        BranchDecisionNode, CompatibilityClassification, ConditionalExecution,
+        DynamicEdgeExpansionRule, GraphComplexityScore, GraphCompositionContract,
+        GraphExplainabilityModel, GraphMigrationPatch, GraphTemplate, JoinSemantics,
+        LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph, ParameterBindingSemantics,
+        PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass, SemanticDiffReport,
+        StaticAnalysisReport, SubgraphEmbedding, WindowingSemantics,
+    };
+}

@@ -436,6 +436,9 @@ pub enum NodeStatus {
 pub struct RunContext {
     pub run_dir: Arc<RunDir>,
     pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
+    pub planner_contract_version: String,
+    pub execution_fingerprint: String,
+    pub evidence_fingerprint: String,
     pub resolved_params: HashMap<String, Value>,
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
@@ -456,7 +459,7 @@ pub struct NodeResult {
     pub adapter_binary_sha256: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct AttemptEvent {
     pub attempt: u32,
     pub started_unix_ms: u128,
@@ -676,11 +679,16 @@ impl Adapter for ContainerAdapter {
                 format!("container engine not available: {}", engine).as_bytes(),
             )?;
             return Ok(NodeResult {
-                status: NodeStatus::Skipped,
+                status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
-                failure: None,
+                failure: Some(FailureInfo {
+                    kind: "Infrastructure".to_string(),
+                    code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
+                    message: format!("container engine not available: {}", engine),
+                    details: Some(serde_json::json!({ "engine": engine })),
+                }),
                 attempts: 1,
                 attempt_events: Vec::new(),
                 container_meta: Some(container_trace(spec, engine, None, engine_version)),
@@ -773,6 +781,16 @@ pub enum CacheMode {
 struct CacheRead {
     hit: bool,
     proof: Option<CacheProof>,
+}
+
+fn cache_hit_proof(cache_read: CacheRead) -> Result<Option<CacheProof>, RuntimeError> {
+    match (cache_read.hit, cache_read.proof) {
+        (true, Some(proof)) => Ok(Some(proof)),
+        (true, None) => {
+            Err(RuntimeError::Executor("cache hit missing verification proof".to_string()))
+        }
+        (false, proof) => Ok(proof),
+    }
 }
 
 #[derive(Clone)]
@@ -975,6 +993,9 @@ fn write_trace(
         finished_unix_ms,
         attempt,
         fingerprint: node_fingerprint_from_ctx(ctx, node_id),
+        planner_contract_version: Some(ctx.planner_contract_version.clone()),
+        execution_fingerprint: Some(ctx.execution_fingerprint.clone()),
+        evidence_fingerprint: Some(ctx.evidence_fingerprint.clone()),
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
         adapter_outputs_schema_version: adapter_outputs_schema_version.to_string(),
@@ -1012,11 +1033,61 @@ pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
     }
 }
 
+pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'static str {
+    match failure {
+        Some(failure) if failure.kind == "Policy" => "PolicyDenied",
+        Some(failure) if failure.code == "UPSTREAM_FAILED" => "DependencyFailed",
+        Some(failure) if failure.code == "RUN_ABORTED" => "ExecutionAborted",
+        Some(failure) if failure.code == "RUN_TIMEOUT" => "TimeoutExceeded",
+        Some(failure) if failure.code == "EXEC_TIMEOUT" => "TimeoutExceeded",
+        Some(failure) if failure.code == "CONTAINER_ENGINE_UNAVAILABLE" => "InfrastructureFailed",
+        Some(failure) if failure.code == "OUTPUT_MISSING" => "MissingRequiredOutput",
+        Some(failure) if failure.code == "INPUT_MISSING" => "MissingRequiredInput",
+        Some(failure) if failure.kind == "Infrastructure" => "InfrastructureFailed",
+        _ => "ExecutionFailed",
+    }
+}
+
+pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
+    match reason {
+        "filtered"
+        | "not_selected_by_include_selector"
+        | "excluded_by_selector"
+        | "not_selected_by_dependency_closure" => "SelectionFiltered",
+        "upstream_failed" => "DependencyFailed",
+        "cancelled" => "CancelRequested",
+        _ => "SelectionFiltered",
+    }
+}
+
+pub(crate) fn failure_propagation_cause(failure: Option<&FailureInfo>) -> &'static str {
+    match transition_cause_for_failure(failure) {
+        "PolicyDenied" => "policy_denied",
+        "DependencyFailed" => "upstream_failed",
+        "ExecutionAborted" => "execution_aborted",
+        "TimeoutExceeded" => "timeout_exceeded",
+        "InfrastructureFailed" => "infrastructure_failed",
+        "MissingRequiredOutput" => "missing_required_output",
+        "MissingRequiredInput" => "missing_required_input",
+        _ => "execution_failed",
+    }
+}
+
 fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
     let mut params = ctx.resolved_params.get(node_id).cloned().unwrap_or(Value::Null);
     sort_value_maps(&mut params);
     let data = serde_json::to_vec_pretty(&params)?;
     ctx.store.write_resolved_params(node_id, &data)?;
+    Ok(())
+}
+
+fn write_attempt_events(
+    ctx: &RunContext,
+    node_id: &str,
+    attempt_events: &[AttemptEvent],
+) -> Result<(), RuntimeError> {
+    let data = serde_json::to_vec_pretty(attempt_events)?;
+    ctx.store.write_attempts(node_id, &data)?;
     Ok(())
 }
 
@@ -1055,7 +1126,10 @@ fn execute_with_retries(
         attempt += 1;
         let started = ctx.clock.now_unix_ms();
         let node_ctx = NodeCtx { node, exec: ctx, params };
-        let mut result = adapter.execute(&node_ctx)?;
+        let mut result = match adapter.execute(&node_ctx) {
+            Ok(result) => result,
+            Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
+        };
         let finished = ctx.clock.now_unix_ms();
         attempt_events.push(AttemptEvent {
             attempt,
@@ -1078,6 +1152,50 @@ fn execute_with_retries(
                 std::thread::sleep(Duration::from_millis(wait));
             }
         }
+    }
+}
+
+fn failed_node_result_from_runtime_error(
+    ctx: &RunContext,
+    node: &Node,
+    error: RuntimeError,
+) -> NodeResult {
+    let node_dir = ctx.run_dir.node_dir(&node.id);
+    let outputs_dir = ctx.run_dir.node_outputs_dir(&node.id);
+    let stdout_path = ctx.run_dir.node_stdout_path(&node.id);
+    let stderr_path = ctx.run_dir.node_stderr_path(&node.id);
+    let (kind, code, message) = match error {
+        RuntimeError::Graph(err) => ("Internal", "GRAPH_ERROR", err.to_string()),
+        RuntimeError::Artifact(err) => ("Infrastructure", "ARTIFACT_ERROR", err.to_string()),
+        RuntimeError::Io(err) => ("Infrastructure", "IO_ERROR", err.to_string()),
+        RuntimeError::Json(err) => ("Internal", "JSON_ERROR", err.to_string()),
+        RuntimeError::Executor(message) => {
+            if message.contains("timed out") {
+                ("Execution", "EXEC_TIMEOUT", message)
+            } else {
+                ("Execution", "EXEC_ERROR", message)
+            }
+        }
+    };
+    let _ = ctx.fs.create_dir_all(&node_dir);
+    let _ = ctx.fs.create_dir_all(&outputs_dir);
+    let _ = ctx.fs.write(&stdout_path, b"");
+    let _ = ctx.fs.write(&stderr_path, message.as_bytes());
+    NodeResult {
+        status: NodeStatus::Failed,
+        stdout_path: stdout_path.display().to_string(),
+        stderr_path: stderr_path.display().to_string(),
+        outputs_dir: outputs_dir.display().to_string(),
+        failure: Some(FailureInfo {
+            kind: kind.to_string(),
+            code: code.to_string(),
+            message,
+            details: None,
+        }),
+        attempts: 1,
+        attempt_events: Vec::new(),
+        container_meta: None,
+        adapter_binary_sha256: None,
     }
 }
 
@@ -1106,6 +1224,93 @@ fn tool_version() -> String {
         }
     }
     base.to_string()
+}
+
+pub(crate) fn runtime_fingerprint(adapters: &[AdapterInfo]) -> String {
+    let payload = serde_json::json!({
+        "tool_version": tool_version(),
+        "adapters": adapters,
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
+pub(crate) fn policy_fingerprint(policy: &PolicyConfig) -> String {
+    let payload = serde_json::json!({
+        "deny_network": policy.deny_network,
+        "deny_env": policy.deny_env,
+        "deny_clock": policy.deny_clock,
+        "clean_env": policy.clean_env,
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
+fn selector_label(selector: &Selector) -> String {
+    match selector {
+        Selector::IdPrefix(v) => format!("id_prefix:{v}"),
+        Selector::Tag(v) => format!("tag:{v}"),
+        Selector::Kind(v) => format!("kind:{v}"),
+    }
+}
+
+pub(crate) fn requested_selector_label(scope: &str, selector: &Selector) -> String {
+    format!("{scope}:{}", selector_label(selector))
+}
+
+fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
+    match mode {
+        MaterializeMode::Copy => "copy",
+        MaterializeMode::Hardlink => "hardlink",
+        MaterializeMode::Symlink => "symlink",
+    }
+}
+
+fn failure_propagation_label(mode: &FailurePropagationMode) -> &'static str {
+    match mode {
+        FailurePropagationMode::FailFast => "fail_fast",
+        FailurePropagationMode::IsolateBranch => "isolate_branch",
+        FailurePropagationMode::ContinueIndependent => "continue_independent",
+        FailurePropagationMode::QuorumLikeFuture => "quorum_like_future",
+    }
+}
+
+fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
+    let include_selectors: Vec<String> =
+        options.selectors.include.iter().map(selector_label).collect();
+    let exclude_selectors: Vec<String> =
+        options.selectors.exclude.iter().map(selector_label).collect();
+    let payload = serde_json::json!({
+        "jobs": options.jobs,
+        "cpu_budget": options.cpu_budget,
+        "run_timeout_ms": options.run_timeout_ms,
+        "node_timeout_ms": options.node_timeout_ms,
+        "materialize_inputs": materialize_mode_label(options.materialize_inputs),
+        "scheduler_policy": options.scheduler_policy,
+        "failure_propagation": failure_propagation_label(&options.failure_propagation),
+        "partial_rerun_dependency_closure": options.partial_rerun_dependency_closure,
+        "selectors": {
+            "include": include_selectors,
+            "exclude": exclude_selectors,
+        },
+    });
+    sha256_bytes(payload.to_string().as_bytes())
+}
+
+fn cache_key_input_for_run(
+    options: &RuntimeConfig,
+    node_fingerprint: &str,
+    adapter_id: &str,
+    adapter_version: &str,
+    adapter_outputs_schema_version: &str,
+) -> CacheKeyInput {
+    CacheKeyInput {
+        node_fingerprint: node_fingerprint.to_string(),
+        adapter_id: adapter_id.to_string(),
+        adapter_version: adapter_version.to_string(),
+        output_schema_version: adapter_outputs_schema_version.to_string(),
+        policy_fingerprint: policy_fingerprint(&options.policy),
+        config_fingerprint: runtime_config_fingerprint(options),
+        backend_class: "local".to_string(),
+    }
 }
 
 pub fn registered_adapters() -> Vec<AdapterInfo> {
@@ -1206,18 +1411,18 @@ fn try_cache_read(
         None => return Ok(CacheRead { hit: false, proof: None }),
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
-        let key = node_fingerprint.to_string();
+        let key_input = cache_key_input_for_run(
+            options,
+            node_fingerprint,
+            adapter_id,
+            adapter_version,
+            adapter_outputs_schema_version,
+        );
+        let key = cache_key_explanation(&key_input).key;
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
-            if !verify_cache_entry(
-                store.fs(),
-                &entry,
-                &key,
-                adapter_id,
-                adapter_version,
-                adapter_outputs_schema_version,
-            )? {
+            if !verify_cache_entry(store.fs(), &entry, &key_input)? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -1255,14 +1460,7 @@ fn try_cache_read(
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
             if store.fs().metadata(&remote_entry).is_ok() {
-                if !verify_cache_entry(
-                    store.fs(),
-                    &remote_entry,
-                    &key,
-                    adapter_id,
-                    adapter_version,
-                    adapter_outputs_schema_version,
-                )? {
+                if !verify_cache_entry(store.fs(), &remote_entry, &key_input)? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -1323,16 +1521,28 @@ fn try_cache_write(
         Some(d) => RuntimeCacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
-    let key = node_fingerprint.to_string();
+    let key_input = cache_key_input_for_run(
+        options,
+        node_fingerprint,
+        adapter_id,
+        adapter_version,
+        adapter_outputs_schema_version,
+    );
+    let key = cache_key_explanation(&key_input).key;
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
     let meta = serde_json::json!({
+        "cache_metadata_version": "cache-meta/v0.1",
+        "cache_key": key,
         "node_id": node.id,
-        "node_fingerprint": key,
-        "adapter_id": adapter_id,
-        "adapter_version": adapter_version,
-        "produces_outputs_schema_version": adapter_outputs_schema_version,
+        "node_fingerprint": key_input.node_fingerprint,
+        "adapter_id": key_input.adapter_id,
+        "adapter_version": key_input.adapter_version,
+        "produces_outputs_schema_version": key_input.output_schema_version,
+        "policy_fingerprint": key_input.policy_fingerprint,
+        "config_fingerprint": key_input.config_fingerprint,
+        "backend_class": key_input.backend_class,
         "created_unix_ms": ctx.clock.now_unix_ms(),
         "cache_source": "local",
         "schema_version": "v0.1",
@@ -1358,10 +1568,7 @@ fn try_cache_write(
 fn verify_cache_entry(
     fs: &dyn Fs,
     entry: &Path,
-    expected_key: &str,
-    adapter_id: &str,
-    adapter_version: &str,
-    adapter_outputs_schema_version: &str,
+    expected_input: &CacheKeyInput,
 ) -> Result<bool, RuntimeError> {
     let index_path = entry.join("outputs").join("index.json");
     if fs.metadata(&index_path).is_err() {
@@ -1372,17 +1579,43 @@ fn verify_cache_entry(
         return Ok(false);
     }
     let meta: serde_json::Value = serde_json::from_str(&fs.read_to_string(&meta_path)?)?;
-    if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(expected_key) {
+    if !cache_metadata_version_supported(&meta) || !cache_entry_has_required_proof(&meta) {
         return Ok(false);
     }
-    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(adapter_id) {
+    let expected_key = cache_key_explanation(expected_input).key;
+    if meta.get("cache_key").and_then(|v| v.as_str()) != Some(expected_key.as_str()) {
         return Ok(false);
     }
-    if meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version) {
+    if meta.get("node_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.node_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_input.adapter_id.as_str()) {
+        return Ok(false);
+    }
+    if meta.get("adapter_version").and_then(|v| v.as_str())
+        != Some(expected_input.adapter_version.as_str())
+    {
         return Ok(false);
     }
     if meta.get("produces_outputs_schema_version").and_then(|v| v.as_str())
-        != Some(adapter_outputs_schema_version)
+        != Some(expected_input.output_schema_version.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("policy_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.policy_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("config_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.config_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("backend_class").and_then(|v| v.as_str())
+        != Some(expected_input.backend_class.as_str())
     {
         return Ok(false);
     }
@@ -1489,7 +1722,7 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
                 details: None,
             });
         }
-        if out.path.contains("..") || out.path.starts_with('/') || out.path.starts_with('\\') {
+        if !bijux_dag_artifacts::paths::is_normalized_relative_path(&out.path) {
             return Some(FailureInfo {
                 kind: "Execution".to_string(),
                 code: "OUTPUT_PATH_INVALID".to_string(),
@@ -1804,6 +2037,31 @@ fn materialize_file(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod cache_read_contract_tests {
+    use super::*;
+
+    #[test]
+    fn cache_hit_requires_proof() {
+        let err = cache_hit_proof(CacheRead { hit: true, proof: None }).expect_err("invalid hit");
+        assert!(err.to_string().contains("missing verification proof"));
+
+        let proof = CacheProof {
+            hit: true,
+            key: "k".to_string(),
+            source: "local".to_string(),
+            verified: true,
+            reason: "hit".to_string(),
+            corrupt_detected: false,
+        };
+        let hit_proof =
+            cache_hit_proof(CacheRead { hit: true, proof: Some(proof) }).expect("valid hit");
+        let hit_proof = hit_proof.expect("proof");
+        assert!(hit_proof.hit);
+        assert_eq!(hit_proof.key, "k");
+    }
 }
 
 #[cfg(test)]

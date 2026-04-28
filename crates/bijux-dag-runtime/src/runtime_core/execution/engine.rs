@@ -69,6 +69,10 @@ pub fn execute(
         status: "success".to_string(),
         spec: SPEC_VERSION.to_string(),
         graph_fingerprint: graph_fp,
+        planner_contract_version: plan.planner_contract_version.clone(),
+        planner_fingerprint: Some(plan.planner_fingerprint.clone()),
+        execution_fingerprint: Some(plan.execution_fingerprint.clone()),
+        evidence_fingerprint: Some(plan.evidence_fingerprint.clone()),
         tool_version: crate::tool_version(),
         jobs: options.jobs.max(1),
         adapters: registered_adapters(),
@@ -96,12 +100,20 @@ pub fn execute(
     });
     run_dir.write_manifest(&manifest)?;
 
+    let registered = registered_adapters();
     let prov = Provenance {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         rustc: crate::rustc_version(),
         tool_version: crate::tool_version(),
-        adapters: registered_adapters(),
+        planner_contract_version: Some(manifest.planner_contract_version.clone()),
+        graph_fingerprint: Some(manifest.graph_fingerprint.clone()),
+        planner_fingerprint: manifest.planner_fingerprint.clone(),
+        execution_fingerprint: manifest.execution_fingerprint.clone(),
+        evidence_fingerprint: manifest.evidence_fingerprint.clone(),
+        runtime_fingerprint: Some(crate::runtime_fingerprint(&registered)),
+        policy_fingerprint: Some(crate::policy_fingerprint(&options.policy)),
+        adapters: registered,
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
@@ -151,21 +163,27 @@ pub fn execute(
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
         graph_fingerprint: Arc::clone(&graph_fingerprint),
+        planner_contract_version: plan.planner_contract_version.clone(),
+        execution_fingerprint: plan.execution_fingerprint.clone(),
+        evidence_fingerprint: plan.evidence_fingerprint.clone(),
         resolved_params,
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
         store,
         policy: options.policy.clone(),
     };
-    let selected_nodes = options
+    let requested_selectors = options
         .selectors
         .include
         .iter()
-        .map(|selector| match selector {
-            crate::Selector::IdPrefix(v) => format!("id_prefix:{v}"),
-            crate::Selector::Tag(v) => format!("tag:{v}"),
-            crate::Selector::Kind(v) => format!("kind:{v}"),
-        })
+        .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .selectors
+                .exclude
+                .iter()
+                .map(|selector| crate::requested_selector_label("exclude", selector)),
+        )
         .collect();
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -179,12 +197,13 @@ pub fn execute(
         operator: options.operator.clone(),
         labels: options.labels.clone(),
         parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
-        selected_nodes,
+        requested_selectors,
+        selected_nodes: plan.order.clone(),
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
         replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
-    let _ = ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?);
+    ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?)?;
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -196,10 +215,12 @@ pub fn execute(
         },
     };
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
-    let _ = ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?);
+    ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?)?;
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
+    let mut fail_fast_aborted = false;
+    let mut run_timed_out = false;
     let dep_map = plan.dep_map.clone();
     let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
@@ -240,6 +261,7 @@ pub fn execute(
             break;
         }
         if decision.timed_out {
+            run_timed_out = true;
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -273,19 +295,37 @@ pub fn execute(
         let mut skipped: Vec<(String, String)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
+        let mut preflight_failures: Vec<(String, Node, FailureInfo, String)> = Vec::new();
 
         for node_id in &batch {
             if let Some(reason) = plan.filter_reasons.get(node_id) {
                 skipped.push((node_id.clone(), reason.clone()));
                 continue;
             }
+            let node = graph
+                .nodes
+                .iter()
+                .find(|n| n.id == *node_id)
+                .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
+                .clone();
             if cancel.load(Ordering::SeqCst) {
                 skipped.push((node_id.clone(), "cancelled".to_string()));
                 continue;
             }
             if let Some(limit) = options.run_timeout_ms {
                 if start.elapsed() > Duration::from_millis(limit) {
-                    skipped.push((node_id.clone(), "run_timeout".to_string()));
+                    run_timed_out = true;
+                    preflight_failures.push((
+                        node_id.clone(),
+                        node,
+                        FailureInfo {
+                            kind: "Execution".to_string(),
+                            code: "RUN_TIMEOUT".to_string(),
+                            message: "run timeout exceeded before node start".to_string(),
+                            details: Some(serde_json::json!({ "run_timeout_ms": limit })),
+                        },
+                        "TimeoutExceeded".to_string(),
+                    ));
                     continue;
                 }
             }
@@ -297,17 +337,21 @@ pub fn execute(
                         Some(NodeStatus::Failed) | Some(NodeStatus::Skipped)
                     )
                 }) {
-                    skipped.push((node_id.clone(), "upstream_failed".to_string()));
+                    preflight_failures.push((
+                        node_id.clone(),
+                        node,
+                        FailureInfo {
+                            kind: "Dependency".to_string(),
+                            code: "UPSTREAM_FAILED".to_string(),
+                            message: "upstream dependency did not complete successfully"
+                                .to_string(),
+                            details: Some(serde_json::json!({ "dependencies": deps })),
+                        },
+                        "DependencyFailed".to_string(),
+                    ));
                     continue;
                 }
             }
-
-            let node = graph
-                .nodes
-                .iter()
-                .find(|n| n.id == *node_id)
-                .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
-                .clone();
             let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
 
             if node.retry.max_attempts > 0
@@ -330,7 +374,18 @@ pub fn execute(
                         "reason": "network",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("network effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "network effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "network" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             if options.policy.deny_env && node.effects.contains(&Effect::Env) {
                 crate::append_event(
@@ -342,7 +397,18 @@ pub fn execute(
                         "reason": "env",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("env effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "env effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "env" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
                 crate::append_event(
@@ -354,7 +420,18 @@ pub fn execute(
                         "reason": "clock",
                     }),
                 )?;
-                return Err(RuntimeError::Executor("clock effect denied by policy".to_string()));
+                preflight_failures.push((
+                    node_id.clone(),
+                    node,
+                    FailureInfo {
+                        kind: "Policy".to_string(),
+                        code: "POLICY_DENIED".to_string(),
+                        message: "clock effect denied by policy".to_string(),
+                        details: Some(serde_json::json!({ "effect": "clock" })),
+                    },
+                    "PolicyDenied".to_string(),
+                ));
+                continue;
             }
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let required = adapter.required_effects();
@@ -388,12 +465,14 @@ pub fn execute(
                 &adapter_id.version,
                 &adapter_schema,
             )?;
-            if let Some(proof) = cache_read.proof.clone() {
-                if !cache_read.hit {
+            let hit = cache_read.hit;
+            let cache_proof = crate::cache_hit_proof(cache_read)?;
+            if let Some(proof) = cache_proof.clone() {
+                if !hit {
                     cache_proofs.insert(node_id.clone(), proof);
                 }
             }
-            if cache_read.hit {
+            if hit {
                 crate::append_event(
                     &mut run_log,
                     serde_json::json!({
@@ -407,7 +486,10 @@ pub fn execute(
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
                 }));
-                cached.push((node_id.clone(), node, cache_read.proof.unwrap()));
+                let proof = cache_proof.ok_or_else(|| {
+                    RuntimeError::Executor("cache hit missing verification proof".to_string())
+                })?;
+                cached.push((node_id.clone(), node, proof));
                 continue;
             }
             crate::append_event(
@@ -457,7 +539,7 @@ pub fn execute(
                 None,
                 adapter_hash,
                 Some(bijux_dag_artifacts::SkipReason { reason: reason.clone() }),
-                Some("SelectionFiltered".to_string()),
+                Some(crate::transition_cause_for_skip_reason(reason).to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
                     source_run_id: options.parent_run_id.clone(),
@@ -466,7 +548,7 @@ pub fn execute(
             failure_propagation_records.push(serde_json::json!({
                 "node_id": node_id,
                 "status": "skipped",
-                "cause": reason,
+                "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
             }));
             crate::append_event(
                 &mut run_log,
@@ -484,12 +566,67 @@ pub fn execute(
                 "reason": reason,
             }));
         }
+        preflight_failures.sort_by(|a, b| a.0.cmp(&b.0));
+        for (node_id, node, failure, transition_cause) in &preflight_failures {
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+            status_map.insert(node_id.clone(), NodeStatus::Failed);
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let adapter_hash =
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
+            let started = ctx.clock.now_unix_ms();
+            sacred_execution::run_write_trace(
+                &ctx,
+                graph,
+                node_id,
+                NodeStatus::Failed,
+                Some(failure.clone()),
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                &aschema,
+                None,
+                adapter_hash,
+                None,
+                Some(transition_cause.clone()),
+                Some(ReplayProvenance {
+                    node_action: "reexecuted".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
+            )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node_id,
+                "status": "failed",
+                "cause": crate::failure_propagation_cause(Some(failure)),
+            }));
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_finished",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "status": "failed",
+                }),
+            )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_finished",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "status": "failed",
+            }));
+        }
 
         let mut started_ids: Vec<String> = Vec::new();
         for (node_id, _, _) in &to_start {
             started_ids.push(node_id.clone());
         }
         for (node_id, _, _) in &cached {
+            started_ids.push(node_id.clone());
+        }
+        for (node_id, _, _, _) in &preflight_failures {
             started_ids.push(node_id.clone());
         }
         started_ids.sort();
@@ -605,6 +742,9 @@ pub fn execute(
             let ctx_clone = RunContext {
                 run_dir: Arc::clone(&ctx.run_dir),
                 graph_fingerprint: ctx.graph_fingerprint.clone(),
+                planner_contract_version: ctx.planner_contract_version.clone(),
+                execution_fingerprint: ctx.execution_fingerprint.clone(),
+                evidence_fingerprint: ctx.evidence_fingerprint.clone(),
                 resolved_params: ctx.resolved_params.clone(),
                 fs: Arc::clone(&ctx.fs),
                 clock: Arc::clone(&ctx.clock),
@@ -690,6 +830,7 @@ pub fn execute(
                             "status": crate::status_string(&attempt.status),
                         }));
                     }
+                    crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
                     let replay_action = match result.status {
                         NodeStatus::Cached => ReplayNodeAction::Reused,
                         NodeStatus::Skipped => ReplayNodeAction::Skipped,
@@ -722,7 +863,14 @@ pub fn execute(
                         result.container_meta.clone(),
                         adapter_hash,
                         None,
-                        Some(crate::transition_cause_for_status(&result.status).to_string()),
+                        Some(
+                            if result.status == NodeStatus::Failed {
+                                crate::transition_cause_for_failure(result.failure.as_ref())
+                            } else {
+                                crate::transition_cause_for_status(&result.status)
+                            }
+                            .to_string(),
+                        ),
                         Some(ReplayProvenance {
                             node_action: match replay_action {
                                 ReplayNodeAction::Reexecuted => "reexecuted",
@@ -754,7 +902,7 @@ pub fn execute(
                         failure_propagation_records.push(serde_json::json!({
                             "node_id": node_id,
                             "status": "failed",
-                            "cause": "execution_failed",
+                            "cause": crate::failure_propagation_cause(result.failure.as_ref()),
                         }));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
@@ -799,17 +947,18 @@ pub fn execute(
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     let adapter_hash =
                         runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
+                    let failure = FailureInfo {
+                        kind: "Internal".to_string(),
+                        code: "INTERNAL".to_string(),
+                        message: err.to_string(),
+                        details: None,
+                    };
                     sacred_execution::run_write_trace(
                         &ctx,
                         graph,
                         &node_id,
                         NodeStatus::Failed,
-                        Some(FailureInfo {
-                            kind: "Internal".to_string(),
-                            code: "INTERNAL".to_string(),
-                            message: err.to_string(),
-                            details: None,
-                        }),
+                        Some(failure.clone()),
                         started,
                         finished,
                         1,
@@ -820,7 +969,7 @@ pub fn execute(
                         None,
                         adapter_hash,
                         None,
-                        Some("ExecutionFailed".to_string()),
+                        Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                         Some(ReplayProvenance {
                             node_action: "reexecuted".to_string(),
                             source_run_id: options.parent_run_id.clone(),
@@ -829,7 +978,7 @@ pub fn execute(
                     failure_propagation_records.push(serde_json::json!({
                         "node_id": node_id,
                         "status": "failed",
-                        "cause": "internal_error",
+                        "cause": crate::failure_propagation_cause(Some(&failure)),
                     }));
                     crate::append_event(
                         &mut run_log,
@@ -872,7 +1021,102 @@ pub fn execute(
         if matches!(options.failure_propagation, crate::FailurePropagationMode::FailFast)
             && status_map.values().any(|s| *s == NodeStatus::Failed)
         {
+            fail_fast_aborted = true;
             break;
+        }
+    }
+
+    if run_timed_out {
+        for node in &graph.nodes {
+            if status_map.contains_key(&node.id) {
+                continue;
+            }
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+            status_map.insert(node.id.clone(), NodeStatus::Failed);
+            let failure = FailureInfo {
+                kind: "Execution".to_string(),
+                code: "RUN_TIMEOUT".to_string(),
+                message: "run timeout exceeded before node completion".to_string(),
+                details: options
+                    .run_timeout_ms
+                    .map(|limit| serde_json::json!({ "run_timeout_ms": limit })),
+            };
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let started = ctx.clock.now_unix_ms();
+            sacred_execution::run_write_trace(
+                &ctx,
+                graph,
+                &node.id,
+                NodeStatus::Failed,
+                Some(failure.clone()),
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                &aschema,
+                None,
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                None,
+                Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                Some(ReplayProvenance {
+                    node_action: "skipped".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
+            )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node.id,
+                "status": "failed",
+                "cause": crate::failure_propagation_cause(Some(&failure)),
+            }));
+        }
+    }
+
+    if fail_fast_aborted {
+        for node in &graph.nodes {
+            if status_map.contains_key(&node.id) {
+                continue;
+            }
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+            status_map.insert(node.id.clone(), NodeStatus::Failed);
+            let failure = FailureInfo {
+                kind: "Execution".to_string(),
+                code: "RUN_ABORTED".to_string(),
+                message: "run aborted after fail-fast trigger".to_string(),
+                details: None,
+            };
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let started = ctx.clock.now_unix_ms();
+            sacred_execution::run_write_trace(
+                &ctx,
+                graph,
+                &node.id,
+                NodeStatus::Failed,
+                Some(failure.clone()),
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                &aschema,
+                None,
+                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                None,
+                Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                Some(ReplayProvenance {
+                    node_action: "skipped".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
+            )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node.id,
+                "status": "failed",
+                "cause": crate::failure_propagation_cause(Some(&failure)),
+            }));
         }
     }
 
@@ -913,7 +1157,7 @@ pub fn execute(
                 failure_propagation_records.push(serde_json::json!({
                     "node_id": node.id,
                     "status": "skipped",
-                    "cause": "cancelled",
+                    "cause": "cancel_requested",
                 }));
             }
         }
@@ -923,6 +1167,8 @@ pub fn execute(
     let memory_before_materialization = current_process_memory_bytes().unwrap_or(0);
     if cancel.load(Ordering::SeqCst) {
         manifest.status = "cancelled".to_string();
+    } else if run_timed_out {
+        manifest.status = "failed".to_string();
     } else if status_map.values().any(|s| *s == NodeStatus::Failed) {
         manifest.status = "failed".to_string();
     }
@@ -960,14 +1206,16 @@ pub fn execute(
         schema_version: "v0.1".to_string(),
         edges: lineage_edges,
     };
-    let _ = bijux_dag_artifacts::lineage::write_lineage_snapshot(
+    bijux_dag_artifacts::lineage::write_lineage_snapshot(
         ctx.run_dir.staging_path().join("lineage.snapshot.json"),
         &lineage_snapshot,
-    );
-    let _ = bijux_dag_artifacts::lineage::export_lineage_visualization(
+    )
+    .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
+    bijux_dag_artifacts::lineage::export_lineage_visualization(
         ctx.run_dir.staging_path().join("observability.lineage-visualization.json"),
         &lineage_snapshot,
-    );
+    )
+    .map_err(|err| RuntimeError::Executor(format!("lineage visualization write failed: {err}")))?;
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
     run_dir.write_manifest(&manifest)?;
     crate::append_event(
@@ -1037,20 +1285,21 @@ pub fn execute(
             })
             .collect(),
     };
-    let _ = write_timeline_export(
+    write_timeline_export(
         ctx.run_dir.staging_path().join("observability.timeline.json"),
         &timeline,
-    );
+    )
+    .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
     let root_causes = summarize_failure_root_causes(&structured_events);
-    let _ = ctx.fs.write(
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.root-causes.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.events.json"),
         &serde_json::to_vec_pretty(&structured_events)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.metrics.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "node": metrics_registry.node_metrics,
@@ -1061,8 +1310,8 @@ pub fn execute(
                 "after_materialization_bytes": memory_after_materialization
             }
         }))?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.graph-visualization.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "nodes": graph.nodes.iter().map(|n| {
@@ -1077,24 +1326,28 @@ pub fn execute(
             "lineage_snapshot": "lineage.snapshot.json",
             "timeline": "observability.timeline.json"
         }))?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("run-log.index.json"),
         &serde_json::to_vec_pretty(&run_log_index)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("run.audit.json"),
         &serde_json::to_vec_pretty(&run_audit_events)?,
-    );
-    let _ = ctx.fs.write(
+    )?;
+    ctx.fs.write(
         &ctx.run_dir.staging_path().join("failure-propagation.json"),
         &serde_json::to_vec_pretty(&failure_propagation_records)?,
-    );
+    )?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {
-        let _ = runtime.fs.remove_file(&latest);
-        let _ = runtime.fs.symlink(&final_path, &latest);
+        match runtime.fs.remove_file(&latest) {
+            Ok(()) => {}
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+            Err(err) => return Err(RuntimeError::Io(err)),
+        }
+        runtime.fs.symlink(&final_path, &latest)?;
     }
     Ok(final_path)
 }

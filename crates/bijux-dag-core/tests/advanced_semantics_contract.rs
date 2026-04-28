@@ -8,7 +8,7 @@ use tempfile as _;
 use thiserror as _;
 use unicode_normalization as _;
 
-use bijux_dag_core::{
+use bijux_dag_core::experimental::{
     classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
     migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
     CompatibilityClassification, DynamicEdgeExpansionRule, LateBindingRule, SemanticDiffClass,

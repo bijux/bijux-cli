@@ -1,14 +1,151 @@
 mod tests {
     use super::*;
     use crate::clock::FixedClock;
+    use crate::{Fs, StdFs};
     use crate::test_support::{docker_available, param_object, sample_graph};
     use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
+    use std::ffi::OsString;
+    use std::io;
+    use std::path::{Path, PathBuf};
     use std::fs;
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::{Arc, Mutex, OnceLock};
 
     fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(())).lock().expect("lock")
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        original: Option<OsString>,
+    }
+
+    impl EnvVarGuard {
+        fn replace(key: &'static str, value: &str) -> Self {
+            let original = std::env::var_os(key);
+            std::env::set_var(key, value);
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    fn create_staging_conflict(base: &Path, run_id: &str, relative: &str) {
+        let conflict = base.join(format!("run.tmp-{run_id}")).join(relative);
+        fs::create_dir_all(conflict.parent().expect("conflict parent")).expect("create parent");
+        fs::create_dir_all(&conflict).expect("create conflict directory");
+    }
+
+    fn cache_entry_for_node(cache_root: &Path, node_id: &str) -> PathBuf {
+        fs::read_dir(cache_root)
+            .expect("read cache root")
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .find(|entry| {
+                let meta_path = entry.join("meta.json");
+                let raw = fs::read_to_string(&meta_path).ok();
+                raw.and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+                    .and_then(|meta| {
+                        meta.get("node_id").and_then(|value| value.as_str()).map(str::to_string)
+                    })
+                    .as_deref()
+                    == Some(node_id)
+            })
+            .unwrap_or_else(|| panic!("cache entry missing for node {node_id}"))
+    }
+
+    #[derive(Clone)]
+    struct InterceptFs {
+        inner: StdFs,
+        fail_write_suffix: Option<&'static str>,
+        fail_symlink_name: Option<&'static str>,
+    }
+
+    impl InterceptFs {
+        fn fail_write(suffix: &'static str) -> Self {
+            Self { inner: StdFs, fail_write_suffix: Some(suffix), fail_symlink_name: None }
+        }
+
+        fn fail_symlink(name: &'static str) -> Self {
+            Self { inner: StdFs, fail_write_suffix: None, fail_symlink_name: Some(name) }
+        }
+    }
+
+    impl Fs for InterceptFs {
+        fn create_dir_all(&self, path: &Path) -> io::Result<()> {
+            self.inner.create_dir_all(path)
+        }
+
+        fn read_to_string(&self, path: &Path) -> io::Result<String> {
+            self.inner.read_to_string(path)
+        }
+
+        fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+            self.inner.read(path)
+        }
+
+        fn write(&self, path: &Path, data: &[u8]) -> io::Result<()> {
+            if self
+                .fail_write_suffix
+                .is_some_and(|suffix| path.to_string_lossy().ends_with(suffix))
+            {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted write"));
+            }
+            self.inner.write(path, data)
+        }
+
+        fn open_append(&self, path: &Path) -> io::Result<fs::File> {
+            self.inner.open_append(path)
+        }
+
+        fn read_dir(&self, path: &Path) -> io::Result<Vec<fs::DirEntry>> {
+            self.inner.read_dir(path)
+        }
+
+        fn metadata(&self, path: &Path) -> io::Result<fs::Metadata> {
+            self.inner.metadata(path)
+        }
+
+        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.inner.rename(from, to)
+        }
+
+        fn remove_file(&self, path: &Path) -> io::Result<()> {
+            self.inner.remove_file(path)
+        }
+
+        fn copy(&self, from: &Path, to: &Path) -> io::Result<u64> {
+            self.inner.copy(from, to)
+        }
+
+        fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.inner.hard_link(from, to)
+        }
+
+        fn symlink(&self, from: &Path, to: &Path) -> io::Result<()> {
+            if self
+                .fail_symlink_name
+                .is_some_and(|name| to.file_name().and_then(|v| v.to_str()) == Some(name))
+            {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted symlink"));
+            }
+            self.inner.symlink(from, to)
+        }
+
+        fn set_permissions(&self, path: &Path, perms: fs::Permissions) -> io::Result<()> {
+            self.inner.set_permissions(path, perms)
+        }
+
+        fn canonicalize(&self, path: &Path) -> io::Result<PathBuf> {
+            self.inner.canonicalize(path)
+        }
     }
 
     #[test]
@@ -358,11 +495,7 @@ mod tests {
         let run1 = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
         // corrupt cache by deleting an output file
-        let entries: Vec<_> = fs::read_dir(cache_dir.path())
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        let entry = entries[0].path();
+        let entry = cache_entry_for_node(cache_dir.path(), "a");
         let index_path = entry.join("outputs").join("index.json");
         if let Ok(data) = fs::read_to_string(&index_path) {
             if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
@@ -384,10 +517,7 @@ mod tests {
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
 
         let trace_a = fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap();
-        let trace_b = fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap();
-        let has_corrupt =
-            trace_a.contains("\"corrupt_detected\"") || trace_b.contains("\"corrupt_detected\"");
-        assert!(has_corrupt);
+        assert!(trace_a.contains("\"corrupt_detected\": true"));
 
         // ensure outputs still exist
         assert!(run1
@@ -454,11 +584,7 @@ mod tests {
         };
         let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
-        let entries: Vec<_> = fs::read_dir(remote_cache.path())
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        let entry = entries[0].path();
+        let entry = cache_entry_for_node(remote_cache.path(), "a");
         let index_path = entry.join("outputs").join("index.json");
         if let Ok(data) = fs::read_to_string(&index_path) {
             if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
@@ -482,21 +608,12 @@ mod tests {
             &fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap(),
         )
         .unwrap();
-        let trace_b: serde_json::Value = serde_json::from_str(
-            &fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap(),
-        )
-        .unwrap();
         let bad_a = trace_a
             .get("cache_proof")
             .and_then(|v| v.get("corrupt_detected"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-        let bad_b = trace_b
-            .get("cache_proof")
-            .and_then(|v| v.get("corrupt_detected"))
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        assert!(bad_a || bad_b);
+        assert!(bad_a);
     }
 
     #[test]
@@ -895,6 +1012,55 @@ mod tests {
     }
 
     #[test]
+    fn missing_container_engine_fails_as_infrastructure_error() {
+        let _env_lock = process_env_lock();
+        let _path_guard = EnvVarGuard::replace("PATH", "");
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "c1".to_string(),
+                kind: NodeKind::Container,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out.txt".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: Some(ContainerSpec {
+                    image: "alpine:3.19".to_string(),
+                    argv: vec![
+                        "sh".to_string(),
+                        "-c".to_string(),
+                        "echo hi > /bijux/node/outputs/out.txt".to_string(),
+                    ],
+                    env_allowlist: vec![],
+                    workdir: Some("/bijux/node/work".to_string()),
+                    engine: "podman".to_string(),
+                }),
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("c1").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("\"status\": \"failed\""));
+        assert!(trace.contains("\"kind\": \"Infrastructure\""));
+        assert!(trace.contains("\"code\": \"CONTAINER_ENGINE_UNAVAILABLE\""));
+    }
+
+    #[test]
     fn shell_env_is_clean_except_allowlist() {
         let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
@@ -1176,6 +1342,18 @@ exit 1
     }
 
     #[test]
+    fn output_validation_rejects_non_normalized_declared_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let outputs = vec![FileOutput {
+            name: "bad".to_string(),
+            path: "nested//out.txt".to_string(),
+        }];
+        let failure = validate_outputs_dir(dir.path(), &outputs).expect("must fail");
+        assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
+        assert!(failure.message.contains("invalid output path"));
+    }
+
+    #[test]
     fn output_validation_skips_symlink_loops_during_undeclared_scan() {
         #[cfg(unix)]
         {
@@ -1235,6 +1413,10 @@ exit 1
         let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
             .unwrap();
         assert!(trace.contains("timed out"));
+        let run_log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
+        assert!(run_log.contains("\"event\":\"node_attempt_started\""));
+        assert!(run_log.contains("\"event\":\"node_attempt_finished\""));
+        assert!(run_log.contains("\"status\":\"failed\""));
     }
 
     #[test]
@@ -1491,5 +1673,121 @@ exit 1
         let second_manifest = fs::read_to_string(second.join("manifest.json")).unwrap();
         assert_eq!(first_manifest, first_manifest_after);
         assert_ne!(first_manifest_after, second_manifest);
+    }
+
+    #[test]
+    fn run_snapshot_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.snapshot.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
+
+    #[test]
+    fn run_attempt_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.attempts.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
+
+    #[test]
+    fn lineage_snapshot_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(dir.path(), "lineage-conflict", "lineage.snapshot.json");
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("lineage-conflict".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        let rendered = format!("{err}");
+        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(rendered.contains("lineage snapshot"));
+    }
+
+    #[test]
+    fn lineage_visualization_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(
+            dir.path(),
+            "lineage-visualization-conflict",
+            "observability.lineage-visualization.json",
+        );
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("lineage-visualization-conflict".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        let rendered = format!("{err}");
+        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(rendered.contains("lineage visualization"));
+    }
+
+    #[test]
+    fn timeline_export_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(dir.path(), "timeline-conflict", "observability.timeline.json");
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("timeline-conflict".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        let rendered = format!("{err}");
+        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(rendered.contains("timeline export"));
+    }
+
+    #[test]
+    fn observability_payload_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime =
+            Runtime::with_io(Arc::new(InterceptFs::fail_write("observability.root-causes.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
+
+    #[test]
+    fn audit_index_write_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime =
+            Runtime::with_io(Arc::new(InterceptFs::fail_write("run-log.index.json")), Arc::new(SystemClock));
+        let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
+    }
+
+    #[test]
+    fn latest_symlink_failures_abort_the_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime =
+            Runtime::with_io(Arc::new(InterceptFs::fail_symlink("latest")), Arc::new(SystemClock));
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    latest_symlink: Some(dir.path().join("latest")),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        assert!(matches!(err, RuntimeError::Io(_)));
     }
 }

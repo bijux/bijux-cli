@@ -9,10 +9,12 @@
     "spec",
     "graph_fingerprint",
     "planner_fingerprint",
+    "execution_fingerprint",
+    "evidence_fingerprint",
     "nodes",
     "edges",
     "ordering",
-    "erased_fields",
+    "omitted_from_execution_identity",
     "diagnostics"
   ],
   "properties": {
@@ -20,16 +22,19 @@
     "spec": { "type": "string" },
     "graph_fingerprint": { "type": "string" },
     "planner_fingerprint": { "type": "string" },
+    "execution_fingerprint": { "type": "string" },
+    "evidence_fingerprint": { "type": "string" },
     "nodes": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "kind", "deps", "outputs", "retry"],
+        "required": ["id", "kind", "deps", "io_contract", "outputs", "retry"],
         "properties": {
           "id": { "type": "string" },
           "kind": { "type": "string" },
           "deps": { "type": "array", "items": { "type": "string" } },
+          "io_contract": { "type": "object" },
           "outputs": { "type": "array" },
           "retry": { "type": "object" },
           "timeout_ms": { "type": ["integer", "null"] }
@@ -41,15 +46,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "to"],
+        "required": ["from", "from_port", "to", "to_port"],
         "properties": {
           "from": { "type": "string" },
-          "to": { "type": "string" }
+          "from_port": { "type": "string" },
+          "to": { "type": "string" },
+          "to_port": { "type": "string" }
         }
       }
     },
     "ordering": { "type": "array", "items": { "type": "string" } },
-    "erased_fields": { "type": "array", "items": { "type": "string" } },
+    "omitted_from_execution_identity": { "type": "array", "items": { "type": "string" } },
     "diagnostics": { "type": "array" }
   }
 }

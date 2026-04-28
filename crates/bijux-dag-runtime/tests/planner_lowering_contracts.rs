@@ -20,7 +20,7 @@ fn graph_a() -> &'static str {
       "nodes":[
         {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":1},"tags":["cosmetic"]},
         {"id":"right","kind":"const","inputs":[],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":2}},
-        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}}
+        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
       ],
       "edges":[
         {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"l"}},
@@ -34,7 +34,7 @@ fn graph_b_semantic_equivalent() -> &'static str {
       "spec":"bijux-dag/v0.1",
       "meta":{"name":"b","description":"cosmetic","owners":[],"tags":[]},
       "nodes":[
-        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}},
+        {"id":"join","kind":"shell","inputs":["l","r"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]},
         {"id":"right","kind":"const","inputs":[],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":2}},
         {"id":"left","kind":"const","inputs":[],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":1},"tags":["changed-only"]}
       ],
@@ -52,6 +52,8 @@ fn semantically_equivalent_graphs_lower_to_same_planner_fingerprint() {
     let pa = build_plan(&a, &RuntimeConfig::default());
     let pb = build_plan(&b, &RuntimeConfig::default());
     assert_eq!(pa.planner_fingerprint, pb.planner_fingerprint);
+    assert_eq!(pa.execution_fingerprint, pb.execution_fingerprint);
+    assert_ne!(pa.evidence_fingerprint, pb.evidence_fingerprint);
 }
 
 #[test]
@@ -60,6 +62,75 @@ fn plan_ordering_is_deterministic() {
     let first = build_plan(&graph, &RuntimeConfig::default());
     let second = build_plan(&graph, &RuntimeConfig::default());
     assert_eq!(first.order, second.order);
+}
+
+#[test]
+fn runtime_plan_preserves_dependency_port_bindings() {
+    let graph = parse_graph_strict(graph_a()).expect("parse graph");
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    assert_eq!(plan.planned_dependencies.len(), 2);
+    let left =
+        plan.planned_dependencies.iter().find(|edge| edge.from == "left").expect("left edge");
+    assert_eq!(left.from_port, "out");
+    assert_eq!(left.to, "join");
+    assert_eq!(left.to_port, "l");
+}
+
+#[test]
+fn runtime_plan_preserves_node_io_contracts() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "inputs":{"threads":8},
+          "nodes":[
+            {"id":"seed","kind":"const","inputs":[],"outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+            {
+              "id":"run",
+              "kind":"shell",
+              "inputs":["reads"],
+              "outputs":[{"name":"bam","path":"align/out.bam"}],
+              "params":{
+                "argv":["aligner","--threads",{"graph_input":"threads"}],
+                "seed":{"node_output":{"node_id":"seed","path":"out"}}
+              },
+              "effects":["filesystem","env"],
+              "env_allowlist":["REFGENOME"]
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"seed","port":"out"},"to":{"node_id":"run","port":"reads"}}
+          ]
+        }"#,
+    )
+    .expect("parse graph");
+
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let run = plan.planned_nodes.iter().find(|node| node.id == "run").expect("run node");
+    assert_eq!(run.io_contract.inputs[0].name, "reads");
+    assert_eq!(run.io_contract.outputs[0].name, "bam");
+    assert_eq!(run.io_contract.env_bindings[0].name, "REFGENOME");
+    assert_eq!(run.io_contract.param_bindings.len(), 2);
+}
+
+#[test]
+fn runtime_plan_records_selector_and_closure_provenance() {
+    let graph = parse_graph_strict(graph_a()).expect("parse graph");
+    let plan = build_plan(
+        &graph,
+        &RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![Selector::IdPrefix("join".to_string())],
+                exclude: vec![Selector::Kind("const".to_string())],
+            },
+            partial_rerun_dependency_closure: true,
+            ..RuntimeConfig::default()
+        },
+    );
+    assert_eq!(
+        plan.requested_selectors,
+        vec!["include:id_prefix:join".to_string(), "exclude:kind:const".to_string()]
+    );
+    assert!(plan.dependency_closure_enabled);
 }
 
 #[test]
@@ -86,9 +157,9 @@ fn fan_in_fan_out_and_disconnected_lowering_are_supported() {
           "spec":"bijux-dag/v0.1",
           "nodes":[
             {"id":"root","kind":"const","inputs":[],"outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
-            {"id":"a","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["echo","a"]}},
-            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"argv":["echo","b"]}},
-            {"id":"join","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]}},
+            {"id":"a","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"a/out"}],"params":{"argv":["echo","a"]},"effects":["filesystem"]},
+            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"argv":["echo","b"]},"effects":["filesystem"]},
+            {"id":"join","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]},
             {"id":"isolated","kind":"const","inputs":[],"outputs":[{"name":"out","path":"isolated/out"}],"params":{"value":9}}
           ],
           "edges":[
@@ -135,4 +206,33 @@ fn schema_validation_errors_are_distinct_from_planner_errors() {
         .diagnostics
         .iter()
         .any(|d| d.contains("P4021") && d.contains("unsupported-runtime-capability")));
+}
+
+#[test]
+fn runtime_plan_preserves_execution_identity_changes_from_param_updates() {
+    let a = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"node","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"node/out"}],"params":{"argv":["echo","one"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse a");
+    let b = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"node","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"node/out"}],"params":{"argv":["echo","two"]},"effects":["filesystem"]}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse b");
+
+    let pa = build_plan(&a, &RuntimeConfig::default());
+    let pb = build_plan(&b, &RuntimeConfig::default());
+    assert_eq!(pa.planner_fingerprint, pb.planner_fingerprint);
+    assert_ne!(pa.execution_fingerprint, pb.execution_fingerprint);
 }

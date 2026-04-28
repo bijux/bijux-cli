@@ -73,9 +73,13 @@ fn cache_key_changes_on_policy_or_config_change() {
 #[test]
 fn cache_proof_requires_explicit_metadata_fields() {
     let valid = json!({
+        "cache_key": "cache-key-1",
         "node_fingerprint": "node-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1.0.0",
+        "policy_fingerprint": "policy-fp-1",
+        "config_fingerprint": "config-fp-1",
+        "backend_class": "local-shell",
         "cache_metadata_version": "cache-meta/v0.1",
     });
     assert!(cache_entry_has_required_proof(&valid));
@@ -89,9 +93,13 @@ fn cache_proof_requires_explicit_metadata_fields() {
     assert!(!cache_entry_has_required_proof(&missing_proof));
 
     let stale_version = json!({
+        "cache_key": "cache-key-1",
         "node_fingerprint": "node-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1.0.0",
+        "policy_fingerprint": "policy-fp-1",
+        "config_fingerprint": "config-fp-1",
+        "backend_class": "local-shell",
         "cache_metadata_version": "cache-meta/v0.0",
     });
     assert!(!cache_metadata_version_supported(&stale_version));

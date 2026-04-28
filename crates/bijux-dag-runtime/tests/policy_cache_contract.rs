@@ -13,7 +13,7 @@ use thiserror as _;
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    registered_adapters, CacheMode, PolicyConfig, Runtime, RuntimeConfig, RuntimeError,
+    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, Runtime, RuntimeConfig,
 };
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -72,6 +72,127 @@ fn graph_with_two_const_nodes() -> String {
     graph.to_string()
 }
 
+fn graph_with_failed_upstream_dependency() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "true"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": ["in"],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "downstream"}
+            }
+        ],
+        "edges": [
+            {"from": {"node_id": "a", "port": "value"}, "to": {"node_id": "b", "port": "in"}}
+        ]
+    })
+    .to_string()
+}
+
+fn graph_with_fail_fast_abort() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "true"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "never-run"}
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn graph_with_run_timeout_pending_node() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "a.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "sleep 0.05; printf '%s' ok > ../outputs/a.txt"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "b",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "b.txt"}],
+                "params": {"value": "late"}
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn shell_graph_with_invalid_argv() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "node",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "value.txt"}],
+                "params": {
+                    "argv": "not-an-array"
+                },
+                "effects": ["filesystem"],
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn shell_retry_failure_graph() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "node",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "value.txt"}],
+                "params": {
+                    "argv": ["/bin/sh", "-c", "exit 1"]
+                },
+                "retry": {
+                    "max_attempts": 2,
+                    "backoff_ms": 0
+                },
+                "effects": ["filesystem"],
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
 fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     let data: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -79,6 +200,21 @@ fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     )
     .expect("parse trace");
     data["status"].as_str().unwrap_or("unknown").to_string()
+}
+
+fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
+            .expect("read trace"),
+    )
+    .expect("parse trace")
+}
+
+fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<Value> {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("failure-propagation.json")).expect("failure propagation"),
+    )
+    .expect("parse failure propagation")
 }
 
 #[test]
@@ -127,7 +263,7 @@ fn runtime_rejects_network_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -136,10 +272,14 @@ fn runtime_rejects_network_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny network");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("network effect denied by policy"))
-    );
+        .expect("deny network run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "network");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
+    let propagation = read_failure_propagation(&run_path);
+    assert_eq!(propagation[0]["cause"], "policy_denied");
 }
 
 #[test]
@@ -151,7 +291,7 @@ fn runtime_rejects_env_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -160,10 +300,12 @@ fn runtime_rejects_env_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny env");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("env effect denied by policy"))
-    );
+        .expect("deny env run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "env");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
 }
 
 #[test]
@@ -175,7 +317,7 @@ fn runtime_rejects_clock_effect_when_denied() {
     .expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let error = runtime
+    let run_path = runtime
         .run(
             &graph,
             out.path(),
@@ -184,10 +326,12 @@ fn runtime_rejects_clock_effect_when_denied() {
                 ..RuntimeConfig::default()
             },
         )
-        .expect_err("deny clock");
-    assert!(
-        matches!(error, RuntimeError::Executor(msg) if msg.contains("clock effect denied by policy"))
-    );
+        .expect("deny clock run");
+    let trace = read_node_trace(&run_path, "node");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["kind"], "Policy");
+    assert_eq!(trace["failure"]["details"]["effect"], "clock");
+    assert_eq!(trace["transition_cause"], "PolicyDenied");
 }
 
 #[test]
@@ -230,6 +374,9 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     .expect("parse trace");
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
+    assert_eq!(trace["transition_cause"], "MissingRequiredOutput");
+    let propagation = read_failure_propagation(&run_path);
+    assert_eq!(propagation[0]["cause"], "missing_required_output");
 }
 
 #[test]
@@ -273,6 +420,46 @@ fn runtime_cache_hit_uses_cached_nodes_when_mode_is_readwrite() {
     .expect("parse manifest");
     let cached = manifest["node_counts"]["cached"].as_u64().unwrap_or(0);
     assert!(cached >= 1);
+}
+
+#[test]
+fn runtime_cache_key_changes_when_policy_changes() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let run_with_different_policy = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                policy: PolicyConfig { deny_network: true, ..PolicyConfig::default() },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("policy-shift run");
+
+    assert_eq!(read_node_status(&run_with_different_policy, "node"), "success");
+
+    let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+    assert_eq!(cache_entries, 2);
 }
 
 #[test]
@@ -382,6 +569,53 @@ fn runtime_cache_verify_detects_corrupt_entry() {
 }
 
 #[test]
+fn runtime_cache_meta_records_policy_and_config_proof() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let meta_path = fs::read_dir(cache.path())
+        .expect("cache entries")
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            let meta = path.join("meta.json");
+            if meta.exists() {
+                Some(meta)
+            } else {
+                None
+            }
+        })
+        .next()
+        .expect("cache meta");
+    let meta: Value =
+        serde_json::from_str(&fs::read_to_string(meta_path).expect("cache meta json"))
+            .expect("parse cache meta");
+
+    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.1");
+    assert!(meta["cache_key"].is_string());
+    assert!(meta["node_fingerprint"].is_string());
+    assert!(meta["policy_fingerprint"].is_string());
+    assert!(meta["config_fingerprint"].is_string());
+    assert_eq!(meta["backend_class"], "local");
+}
+
+#[test]
 fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
     let runtime = Runtime::new();
@@ -394,6 +628,9 @@ fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     .expect("parse manifest");
     let expected_fp = graph.graph_fingerprint().expect("graph fingerprint");
     assert_eq!(manifest["graph_fingerprint"], expected_fp);
+    assert!(manifest["planner_fingerprint"].is_string());
+    assert!(manifest["execution_fingerprint"].is_string());
+    assert!(manifest["evidence_fingerprint"].is_string());
 
     let counts = &manifest["node_counts"];
     let total = counts["success"].as_u64().unwrap_or(0)
@@ -407,6 +644,28 @@ fn runtime_manifest_contains_expected_graph_fingerprint_and_counts() {
     )
     .expect("parse run outputs");
     assert_eq!(outputs.files.len(), 2);
+}
+
+#[test]
+fn runtime_provenance_contains_identity_fingerprints() {
+    let graph = parse_graph_strict(&graph_with_two_const_nodes()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
+
+    let provenance: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("provenance.json")).expect("provenance"),
+    )
+    .expect("parse provenance");
+    assert_eq!(
+        provenance["graph_fingerprint"],
+        graph.graph_fingerprint().expect("graph fingerprint")
+    );
+    assert!(provenance["planner_fingerprint"].is_string());
+    assert!(provenance["execution_fingerprint"].is_string());
+    assert!(provenance["evidence_fingerprint"].is_string());
+    assert!(provenance["runtime_fingerprint"].is_string());
+    assert!(provenance["policy_fingerprint"].is_string());
 }
 
 #[test]
@@ -442,4 +701,116 @@ fn runtime_failure_artifacts_include_traces_and_io_logs() {
     assert!(run_path.join("nodes").join("node").join("stdout.log").exists());
     assert!(run_path.join("nodes").join("node").join("stderr.log").exists());
     assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+}
+
+#[test]
+fn runtime_adapter_errors_materialize_failure_logs() {
+    let graph = parse_graph_strict(&shell_graph_with_invalid_argv()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    assert_eq!(read_node_status(&run_path, "node"), "failed");
+    assert_eq!(
+        fs::read_to_string(run_path.join("nodes").join("node").join("stdout.log")).expect("stdout"),
+        ""
+    );
+    let stderr =
+        fs::read_to_string(run_path.join("nodes").join("node").join("stderr.log")).expect("stderr");
+    assert!(stderr.contains("missing argv"));
+    assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+}
+
+#[test]
+fn runtime_marks_upstream_blocked_nodes_as_dependency_failures() {
+    let graph = parse_graph_strict(&graph_with_failed_upstream_dependency()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    let downstream = read_node_trace(&run_path, "b");
+    assert_eq!(downstream["status"], "failed");
+    assert_eq!(downstream["failure"]["code"], "UPSTREAM_FAILED");
+    assert_eq!(downstream["transition_cause"], "DependencyFailed");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "upstream_failed"));
+}
+
+#[test]
+fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
+    let graph = parse_graph_strict(&graph_with_fail_fast_abort()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::FailFast,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("failed run");
+
+    let trace = read_node_trace(&run_path, "b");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "RUN_ABORTED");
+    assert_eq!(trace["transition_cause"], "ExecutionAborted");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "execution_aborted"));
+}
+
+#[test]
+fn runtime_marks_pending_nodes_failed_when_run_times_out() {
+    let graph = parse_graph_strict(&graph_with_run_timeout_pending_node()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig { run_timeout_ms: Some(10), ..RuntimeConfig::default() },
+        )
+        .expect("timed run");
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
+    assert_eq!(manifest["status"], "failed");
+
+    let trace = read_node_trace(&run_path, "b");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "RUN_TIMEOUT");
+    assert_eq!(trace["transition_cause"], "TimeoutExceeded");
+
+    let propagation = read_failure_propagation(&run_path);
+    assert!(propagation
+        .iter()
+        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "timeout_exceeded"));
+}
+
+#[test]
+fn runtime_persists_node_attempt_history() {
+    let graph = parse_graph_strict(&shell_retry_failure_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+
+    let attempts: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("nodes").join("node").join("attempts.json"))
+            .expect("attempts"),
+    )
+    .expect("parse attempts");
+    let entries = attempts.as_array().expect("array");
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entries[0]["attempt"], 1);
+    assert_eq!(entries[2]["attempt"], 3);
+    assert!(entries.iter().all(|entry| entry["status"] == "Failed"));
 }

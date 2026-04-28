@@ -1,5 +1,6 @@
 use crate::{
-    transition_cause_for_status, NodeStatus, PolicyConfig, RuntimeConfig, Selector, SelectorSet,
+    transition_cause_for_failure, transition_cause_for_skip_reason, transition_cause_for_status,
+    FailureInfo, NodeStatus, PolicyConfig, RuntimeConfig, Selector, SelectorSet,
 };
 
 #[test]
@@ -37,4 +38,52 @@ fn transition_cause_mapping_is_stable() {
     assert_eq!(transition_cause_for_status(&NodeStatus::Failed), "ExecutionFailed");
     assert_eq!(transition_cause_for_status(&NodeStatus::Skipped), "SelectionFiltered");
     assert_eq!(transition_cause_for_status(&NodeStatus::Cached), "CachedReuse");
+    assert_eq!(
+        transition_cause_for_failure(Some(&FailureInfo {
+            kind: "Policy".to_string(),
+            code: "POLICY_DENIED".to_string(),
+            message: "policy denied".to_string(),
+            details: None,
+        })),
+        "PolicyDenied"
+    );
+    assert_eq!(
+        transition_cause_for_failure(Some(&FailureInfo {
+            kind: "Execution".to_string(),
+            code: "EXEC_TIMEOUT".to_string(),
+            message: "timed out".to_string(),
+            details: None,
+        })),
+        "TimeoutExceeded"
+    );
+    assert_eq!(
+        transition_cause_for_failure(Some(&FailureInfo {
+            kind: "Infrastructure".to_string(),
+            code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
+            message: "missing engine".to_string(),
+            details: None,
+        })),
+        "InfrastructureFailed"
+    );
+    assert_eq!(
+        transition_cause_for_failure(Some(&FailureInfo {
+            kind: "Execution".to_string(),
+            code: "OUTPUT_MISSING".to_string(),
+            message: "missing output".to_string(),
+            details: None,
+        })),
+        "MissingRequiredOutput"
+    );
+}
+
+#[test]
+fn skip_transition_causes_follow_recorded_skip_reason() {
+    assert_eq!(transition_cause_for_skip_reason("filtered"), "SelectionFiltered");
+    assert_eq!(
+        transition_cause_for_skip_reason("not_selected_by_include_selector"),
+        "SelectionFiltered"
+    );
+    assert_eq!(transition_cause_for_skip_reason("excluded_by_selector"), "SelectionFiltered");
+    assert_eq!(transition_cause_for_skip_reason("upstream_failed"), "DependencyFailed");
+    assert_eq!(transition_cause_for_skip_reason("cancelled"), "CancelRequested");
 }
