@@ -128,6 +128,38 @@ struct DegradedModeReport {
     degraded_mode_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct IncidentAnnotationSimulation {
+    incident_id: String,
+    author: String,
+    unix_ms: u128,
+    note: String,
+    #[serde(default)]
+    run_ids: Vec<String>,
+    #[serde(default)]
+    tenant_ids: Vec<String>,
+    #[serde(default)]
+    artifact_ids: Vec<String>,
+    #[serde(default)]
+    tags: Vec<String>,
+    #[serde(default)]
+    searchable_fields: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize)]
+struct IncidentAnnotationReport {
+    incident_id: String,
+    author: String,
+    unix_ms: u128,
+    run_ids: Vec<String>,
+    tenant_ids: Vec<String>,
+    artifact_ids: Vec<String>,
+    tags: Vec<String>,
+    search_index_keys: Vec<String>,
+    gaps: Vec<String>,
+    annotation_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -355,6 +387,50 @@ fn degraded_mode_payload(simulation: DegradedModeSimulation) -> (serde_json::Val
     (serde_json::to_value(report).expect("degraded mode report"), ok)
 }
 
+fn annotation_payload(simulation: IncidentAnnotationSimulation) -> (serde_json::Value, bool) {
+    let IncidentAnnotationSimulation {
+        incident_id,
+        author,
+        unix_ms,
+        note,
+        run_ids,
+        tenant_ids,
+        artifact_ids,
+        tags,
+        searchable_fields,
+    } = simulation;
+    let mut gaps = Vec::new();
+    if note.trim().is_empty() {
+        gaps.push("incident annotation requires a non-empty note".to_string());
+    }
+    if run_ids.is_empty() && tenant_ids.is_empty() && artifact_ids.is_empty() {
+        gaps.push("incident annotation should link at least one run, tenant, or artifact".to_string());
+    }
+    if author.trim().is_empty() {
+        gaps.push("incident annotation requires an author".to_string());
+    }
+    if searchable_fields.get("incident_id").map(String::as_str) != Some(incident_id.as_str()) {
+        gaps.push("incident annotation should index incident_id in searchable fields".to_string());
+    }
+    if searchable_fields.get("author").map(String::as_str) != Some(author.as_str()) {
+        gaps.push("incident annotation should index author in searchable fields".to_string());
+    }
+    let report = IncidentAnnotationReport {
+        incident_id,
+        author,
+        unix_ms,
+        run_ids,
+        tenant_ids,
+        artifact_ids,
+        tags,
+        search_index_keys: searchable_fields.keys().cloned().collect::<Vec<_>>(),
+        annotation_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.annotation_ready;
+    (serde_json::to_value(report).expect("incident annotation report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -380,6 +456,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = degraded_mode_payload(simulation);
             ("dag.incident.degraded-mode", payload, ok)
         }
+        IncidentCommands::Annotation { simulation } => {
+            let simulation: IncidentAnnotationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = annotation_payload(simulation);
+            ("dag.incident.annotation", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -398,7 +479,8 @@ pub(crate) fn handle_incident_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        blast_radius_payload, degraded_mode_payload, incident_mode_payload, safe_stop_payload,
+        annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
+        safe_stop_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         IncidentClassification, IncidentSeverity, PlatformHealthDashboard, ProductBoundary,
@@ -408,7 +490,7 @@ mod tests {
 
     use super::{
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
-        WorkflowImpact,
+        WorkflowImpact, IncidentAnnotationSimulation,
     };
 
     #[test]
@@ -616,5 +698,45 @@ mod tests {
         let (payload, ok) = degraded_mode_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn annotation_accepts_linked_searchable_context() {
+        let simulation = IncidentAnnotationSimulation {
+            incident_id: "inc-2026-04-28-3".to_string(),
+            author: "platform-oncall".to_string(),
+            unix_ms: 1_714_269_100_000,
+            note: "artifact promotion paused until trust domain mismatch is resolved".to_string(),
+            run_ids: vec!["run-1".to_string()],
+            tenant_ids: vec!["tenant-a".to_string()],
+            artifact_ids: vec!["artifact-7".to_string()],
+            tags: vec!["promotion".to_string(), "trust-domain".to_string()],
+            searchable_fields: BTreeMap::from([
+                ("incident_id".to_string(), "inc-2026-04-28-3".to_string()),
+                ("author".to_string(), "platform-oncall".to_string()),
+                ("tenant".to_string(), "tenant-a".to_string()),
+            ]),
+        };
+        let (payload, ok) = annotation_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["annotation_ready"], true);
+    }
+
+    #[test]
+    fn annotation_flags_unlinked_or_unindexed_notes() {
+        let simulation = IncidentAnnotationSimulation {
+            incident_id: "inc-2026-04-28-4".to_string(),
+            author: String::new(),
+            unix_ms: 1_714_269_200_000,
+            note: String::new(),
+            run_ids: Vec::new(),
+            tenant_ids: Vec::new(),
+            artifact_ids: Vec::new(),
+            tags: Vec::new(),
+            searchable_fields: BTreeMap::new(),
+        };
+        let (payload, ok) = annotation_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }
