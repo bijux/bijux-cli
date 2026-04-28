@@ -9,27 +9,20 @@ last_reviewed: 2026-04-06
 
 # Operator Workflows
 
-DAG operators should follow evidence-first workflows instead of retry loops
-without attribution.
+This page explains the normal operator path through a DAG run when the goal is
+to move from definition to evidence-backed judgment.
 
-## Visual Summary
+The important habit is simple: validate first, run once, inspect evidence, then
+use replay or diff instead of guessing.
+
+## Workflow Map
 
 ```mermaid
-journey
-  title Operator workflow
-  section Prepare
-    Read docs: 4: Operator
-    Set config: 4: Operator
-    Choose entrypoint: 3: Operator
-  section Execute
-    Run DAG package: 5: Operator
-    Inspect progress: 4: Operator
-  section Verify
-    Review artifacts: 5: Operator
-    Validate outputs: 5: Operator
-  section Follow-up
-    Triage failure: 3: Operator
-    Re-run with fixes: 4: Operator
+flowchart LR
+    define["validate definition"] --> run["execute run"]
+    run --> inspect["inspect run and artifacts"]
+    inspect --> replay["replay if reproducibility matters"]
+    replay --> diff["diff if attribution matters"]
 ```
 
 ## Baseline Workflow
@@ -56,6 +49,11 @@ bijux dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --e
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
 - `crates/bijux-dag-app/src/routes/replay_routes.rs`
 - `crates/bijux-dag-app/src/routes/diff_routes.rs`
+
+## Reading Rule
+
+Use this page when the question is not which DAG command exists, but which
+sequence turns a run into something you can defend with evidence.
 
 ## Next Reads
 
