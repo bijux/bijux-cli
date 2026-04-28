@@ -494,6 +494,7 @@ pub(crate) enum ReleaseCommands {
     Checkpoint { simulation: PathBuf },
     Shadow { simulation: PathBuf },
     Canary { simulation: PathBuf },
+    Rollback { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

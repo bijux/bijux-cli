@@ -138,6 +138,25 @@ struct ReleaseCanaryReport {
     blockers: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseRollbackSimulation {
+    current_revision_id: String,
+    rollback_revision_id: String,
+    rollback_artifacts_ready: bool,
+    rollback_policy_ready: bool,
+    replay_safe: bool,
+    operators_assigned: usize,
+    estimated_recovery_minutes: u32,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseRollbackReport {
+    current_revision_id: String,
+    rollback_revision_id: String,
+    guaranteed: bool,
+    blockers: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -377,6 +396,32 @@ fn canary_payload(simulation: &std::path::Path) -> Result<ReleaseCanaryReport, E
     Ok(ReleaseCanaryReport { target: simulation.target, within_scope, healthy, recommendation, blockers })
 }
 
+fn rollback_payload(simulation: &std::path::Path) -> Result<ReleaseRollbackReport, ExitCode> {
+    let simulation: ReleaseRollbackSimulation = load_json_file(simulation)?;
+    let mut blockers = Vec::new();
+    if !simulation.rollback_artifacts_ready {
+        blockers.push("rollback artifacts are not available".to_string());
+    }
+    if !simulation.rollback_policy_ready {
+        blockers.push("rollback policy is not ready".to_string());
+    }
+    if !simulation.replay_safe {
+        blockers.push("rollback path is not replay-safe".to_string());
+    }
+    if simulation.operators_assigned == 0 {
+        blockers.push("rollback path has no assigned operators".to_string());
+    }
+    if simulation.estimated_recovery_minutes > 30 {
+        blockers.push("rollback recovery time exceeds thirty minutes".to_string());
+    }
+    Ok(ReleaseRollbackReport {
+        current_revision_id: simulation.current_revision_id,
+        rollback_revision_id: simulation.rollback_revision_id,
+        guaranteed: blockers.is_empty(),
+        blockers,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -410,6 +455,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(canary_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.canary", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Rollback { simulation } => {
+            let payload =
+                serde_json::to_value(rollback_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.rollback", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -782,6 +832,64 @@ mod tests {
             "canary must limit tenant count",
             "error rate exceeds canary abort threshold",
             "sla breach rate exceeds canary abort threshold",
+        ] {
+            assert!(report.blockers.iter().any(|blocker| blocker == expected));
+        }
+    }
+
+    #[test]
+    fn release_rollback_accepts_prepared_recovery_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("rollback.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "current_revision_id":"graph:new",
+              "rollback_revision_id":"graph:old",
+              "rollback_artifacts_ready":true,
+              "rollback_policy_ready":true,
+              "replay_safe":true,
+              "operators_assigned":2,
+              "estimated_recovery_minutes":15
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Rollback { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Rollback { simulation: simulation.clone() },
+        )
+        .expect("rollback");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::rollback_payload(&simulation).expect("report");
+        assert!(report.guaranteed);
+    }
+
+    #[test]
+    fn release_rollback_flags_missing_recovery_requirements() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("rollback.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "current_revision_id":"graph:new",
+              "rollback_revision_id":"graph:old",
+              "rollback_artifacts_ready":false,
+              "rollback_policy_ready":false,
+              "replay_safe":false,
+              "operators_assigned":0,
+              "estimated_recovery_minutes":45
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::rollback_payload(&simulation).expect("report");
+        assert!(!report.guaranteed);
+        for expected in [
+            "rollback artifacts are not available",
+            "rollback policy is not ready",
+            "rollback path is not replay-safe",
+            "rollback path has no assigned operators",
+            "rollback recovery time exceeds thirty minutes",
         ] {
             assert!(report.blockers.iter().any(|blocker| blocker == expected));
         }
