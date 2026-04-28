@@ -35,7 +35,7 @@ pub const REQUIRED_RUNTIME_EVENT_NAMES: &[&str] = &[
     "node_attempt_started",
     "node_attempt_finished",
     "node_scheduled",
-    "node_failed",
+    "node_finished",
     "run_finished",
 ];
 
@@ -309,14 +309,16 @@ pub fn summarize_failure_root_causes(events: &[EventRecord]) -> Vec<String> {
 pub fn category_from_runtime_event_name(name: &str) -> EventCategory {
     match name {
         "plan_built" => EventCategory::Plan,
-        "node_scheduled" => EventCategory::Schedule,
+        "scheduler_decision" | "node_ready" | "node_scheduled" | "node_blocked" => {
+            EventCategory::Schedule
+        }
         "node_dispatch" => EventCategory::Dispatch,
         "node_started" | "run_started" => EventCategory::Start,
         "node_attempt_started" | "node_attempt_finished" => EventCategory::Retry,
         "run_timeout" => EventCategory::Timeout,
         "cache_hit" => EventCategory::CacheHit,
         "cache_miss" => EventCategory::CacheMiss,
-        "node_failed" | "policy_denied" => EventCategory::Failure,
+        "node_failed" | "node_finished" | "policy_denied" => EventCategory::Failure,
         "replay_reused" | "replay_reexecuted" => EventCategory::Replay,
         "verify_completed" => EventCategory::Verify,
         _ => EventCategory::Dispatch,

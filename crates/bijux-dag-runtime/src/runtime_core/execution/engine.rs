@@ -224,6 +224,7 @@ pub fn execute(
     let dep_map = plan.dep_map.clone();
     let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
+    let initial_ready = ready_queue.snapshot_sorted();
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
@@ -236,19 +237,15 @@ pub fn execute(
             "nodes": graph.nodes.len(),
         }),
     )?;
+    for node_id in &initial_ready {
+        scheduler_hook.on_node_eligible(node_id);
+    }
+    for event in engine_observe::node_eligible_events(&initial_ready, ctx.clock.now_unix_ms(), "root_ready")
+    {
+        engine_record::append_indexed_event(&mut run_log, &mut run_log_index, event)?;
+    }
     while !ready_queue.is_empty() {
         loop_index = loop_index.saturating_add(1);
-        let ready_vec: Vec<String> = ready_queue.snapshot_sorted();
-        for node_id in &ready_vec {
-            scheduler_hook.on_node_eligible(node_id);
-            let events = engine_observe::node_eligible_events(
-                std::slice::from_ref(node_id),
-                ctx.clock.now_unix_ms(),
-            );
-            for event in events {
-                crate::append_event(&mut run_log, event)?;
-            }
-        }
         let decision = engine_dispatch::next_scheduler_decision(
             scheduler.as_mut(),
             graph,
@@ -278,14 +275,28 @@ pub fn execute(
         let batch = decision.batch;
         let mut blocked_by_budget = decision.blocked_by_budget;
         blocked_by_budget.sort();
+        engine_record::append_indexed_event(
+            &mut run_log,
+            &mut run_log_index,
+            serde_json::json!({
+                "event": "scheduler_decision",
+                "ts": ctx.clock.now_unix_ms(),
+                "loop_index": loop_index,
+                "ready_queue_depth": ready_queue.len(),
+                "batch": batch.clone(),
+                "blocked_by_budget": blocked_by_budget.clone(),
+            }),
+        )?;
         for node_id in &blocked_by_budget {
             scheduler_hook.on_node_blocked_by_budget(node_id);
-            crate::append_event(
+            engine_record::append_indexed_event(
                 &mut run_log,
+                &mut run_log_index,
                 serde_json::json!({
-                    "event": "blocked_by_budget",
+                    "event": "node_blocked",
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
+                    "reason": "scheduler_budget",
                 }),
             )?;
         }
@@ -349,6 +360,17 @@ pub fn execute(
                         },
                         "DependencyFailed".to_string(),
                     ));
+                    engine_record::append_indexed_event(
+                        &mut run_log,
+                        &mut run_log_index,
+                        serde_json::json!({
+                            "event": "node_blocked",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "reason": "dependency_failed",
+                            "blocking_nodes": deps,
+                        }),
+                    )?;
                     continue;
                 }
             }
@@ -1014,6 +1036,18 @@ pub fn execute(
 
         for node_id in batch {
             for newly_ready in dependency_counter.mark_completed(&node_id) {
+                scheduler_hook.on_node_eligible(&newly_ready);
+                engine_record::append_indexed_event(
+                    &mut run_log,
+                    &mut run_log_index,
+                    serde_json::json!({
+                        "event": "node_ready",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": newly_ready,
+                        "reason": "dependencies_satisfied",
+                        "released_by": node_id,
+                    }),
+                )?;
                 ready_queue.insert(newly_ready);
             }
         }

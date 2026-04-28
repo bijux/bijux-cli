@@ -1020,7 +1020,7 @@ mod tests {
 {"event":"node_started","ts":5,"node_id":"n1"}
 {"event":"node_attempt_started","ts":6,"node_id":"n1"}
 {"event":"node_attempt_finished","ts":7,"node_id":"n1"}
-{"event":"node_failed","ts":8,"node_id":"n1","reason":"timeout"}
+{"event":"node_finished","ts":8,"node_id":"n1","status":"failed","reason":"timeout"}
 {"event":"run_finished","ts":9}"#,
         )
         .expect("run log");
@@ -1034,7 +1034,7 @@ mod tests {
               {"event":"node_started"},
               {"event":"node_attempt_started"},
               {"event":"node_attempt_finished"},
-              {"event":"node_failed"},
+              {"event":"node_finished"},
               {"event":"run_finished"}
             ]"#,
         )

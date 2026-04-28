@@ -37,7 +37,7 @@ fn required_runtime_event_names_are_present_for_reference_sequence() {
         base_event("node_attempt_started", 4),
         base_event("node_attempt_finished", 5),
         base_event("node_scheduled", 6),
-        base_event("node_failed", 7),
+        base_event("node_finished", 7),
         base_event("run_finished", 8),
     ];
     let missing = validate_required_event_names(&events);
@@ -94,7 +94,7 @@ fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
         base_event("node_attempt_started", 4),
         base_event("node_attempt_finished", 5),
         base_event("node_scheduled", 6),
-        base_event("node_failed", 7),
+        base_event("node_finished", 7),
         base_event("run_finished", 8),
     ];
     let timeline = reconstruct_timeline_from_events(&events);
