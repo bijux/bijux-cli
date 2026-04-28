@@ -185,11 +185,13 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
     .expect_err("shell should be rejected");
     assert!(matches!(
         capability_err,
-        PlannerError::UnsupportedNodeKind(ref k) if k == "shell"
+        PlannerError::UnsupportedNodeKinds(ref nodes)
+            if nodes == &vec!["transform:shell".to_string()]
     ));
 
     let planner_diags = planner_diagnostics_from_error(&capability_err);
-    assert_eq!(planner_diags[0].id, "P4000");
+    assert_eq!(planner_diags[0].id, "P4013");
+    assert_eq!(planner_diags[0].node_id.as_deref(), Some("transform"));
 }
 
 #[test]
@@ -251,7 +253,9 @@ fn validation_rejects_branch_contracts_that_do_not_match_conditional_edges() {
 
     let diags = graph.validate_with_warnings();
     assert!(diags.iter().any(|d| d.code == "E1028" && d.message.contains("right")));
-    assert!(diags.iter().any(|d| d.code == "E1030" && d.message.contains("must only drive conditional edges")));
+    assert!(diags
+        .iter()
+        .any(|d| d.code == "E1030" && d.message.contains("must only drive conditional edges")));
 }
 
 #[test]

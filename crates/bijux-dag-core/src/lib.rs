@@ -81,8 +81,8 @@ pub use planner::{
     lower_graph_to_execution_plan, map_planner_error_to_graph_error, node_kind_supported,
     planner_alignment_required_doc, planner_alignment_required_schema,
     planner_alignment_required_test, planner_diagnostics_from_error, planner_identity_for_graph,
-    ExecutionPlan, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic, PlannerError,
-    PlannerSeverity, PLANNER_CONTRACT_VERSION,
+    BranchPathAnalysis, ExecutionPlan, PlanOptions, PlannedBranchContract, PlannedEdge,
+    PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, PLANNER_CONTRACT_VERSION,
 };
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";

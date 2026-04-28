@@ -14,6 +14,7 @@
     "nodes",
     "edges",
     "ordering",
+    "branch_paths",
     "omitted_from_execution_identity",
     "diagnostics"
   ],
@@ -29,15 +30,47 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "kind", "deps", "io_contract", "outputs", "retry"],
+        "required": [
+          "id",
+          "kind",
+          "executor_kind",
+          "semantic_kind",
+          "deps",
+          "io_contract",
+          "outputs",
+          "side_effects",
+          "retry",
+          "trigger_rule"
+        ],
         "properties": {
           "id": { "type": "string" },
           "kind": { "type": "string" },
+          "executor_kind": { "type": "string" },
+          "semantic_kind": {
+            "type": "string",
+            "enum": ["task", "branch", "barrier", "map", "reduce"]
+          },
           "deps": { "type": "array", "items": { "type": "string" } },
           "io_contract": { "type": "object" },
           "outputs": { "type": "array" },
+          "side_effects": { "type": "array", "items": { "type": "string" } },
           "retry": { "type": "object" },
-          "timeout_ms": { "type": ["integer", "null"] }
+          "trigger_rule": {
+            "type": "string",
+            "enum": ["all_success", "any_success", "all_done", "none_failed"]
+          },
+          "timeout_ms": { "type": ["integer", "null"] },
+          "resources": { "type": ["object", "null"] },
+          "branch": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["decisions", "decision_output"],
+            "properties": {
+              "decisions": { "type": "array", "items": { "type": "string" } },
+              "default_decision": { "type": ["string", "null"] },
+              "decision_output": { "type": "string" }
+            }
+          }
         }
       }
     },
@@ -46,8 +79,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "from_port", "to", "to_port"],
+        "required": ["kind", "from", "from_port", "to", "to_port"],
         "properties": {
+          "id": { "type": ["string", "null"] },
+          "kind": {
+            "type": "string",
+            "enum": ["data", "control", "conditional"]
+          },
+          "decision": { "type": ["string", "null"] },
           "from": { "type": "string" },
           "from_port": { "type": "string" },
           "to": { "type": "string" },
@@ -56,6 +95,20 @@
       }
     },
     "ordering": { "type": "array", "items": { "type": "string" } },
+    "branch_paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["branch_node_id", "decision", "direct_targets", "reachable_nodes"],
+        "properties": {
+          "branch_node_id": { "type": "string" },
+          "decision": { "type": "string" },
+          "direct_targets": { "type": "array", "items": { "type": "string" } },
+          "reachable_nodes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
     "omitted_from_execution_identity": { "type": "array", "items": { "type": "string" } },
     "diagnostics": { "type": "array" }
   }

@@ -114,6 +114,9 @@ fn planner_edges_preserve_port_bindings() {
 
     let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
     assert_eq!(plan.edges.len(), 1);
+    assert_eq!(plan.edges[0].kind, bijux_dag_core::EdgeKind::Data);
+    assert_eq!(plan.edges[0].id, None);
+    assert_eq!(plan.edges[0].decision, None);
     assert_eq!(plan.edges[0].from, "left");
     assert_eq!(plan.edges[0].from_port, "out");
     assert_eq!(plan.edges[0].to, "join");
@@ -150,6 +153,8 @@ fn planner_nodes_preserve_io_contracts() {
 
     let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
     let join = plan.nodes.iter().find(|node| node.id == "join").expect("join node");
+    assert_eq!(join.semantic_kind, bijux_dag_core::SemanticNodeKind::Task);
+    assert_eq!(join.executor_kind, "shell");
     assert_eq!(join.io_contract.inputs.len(), 1);
     assert_eq!(join.io_contract.inputs[0].name, "lhs");
     assert_eq!(join.io_contract.outputs[0].name, "out");
@@ -172,7 +177,64 @@ fn unsupported_runtime_kind_is_planner_error() {
 
     let error =
         lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect_err("planner error");
-    assert!(matches!(error, PlannerError::UnsupportedNodeKind(_)));
+    assert!(matches!(
+        error,
+        PlannerError::UnsupportedNodeKinds(ref nodes) if nodes == &vec!["x:custom".to_string()]
+    ));
+}
+
+#[test]
+fn planner_preserves_branch_paths_and_conditional_edges() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"branch-plan","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"seed","kind":"const","inputs":[],"outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+            {
+              "id":"decide",
+              "kind":"shell",
+              "semantic_kind":"branch",
+              "inputs":["in"],
+              "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+              "effects":["filesystem"],
+              "params":{"argv":["echo","left"]},
+              "branch":{"decisions":["left","right"],"default_decision":"left","decision_output":"decision"}
+            },
+            {"id":"left","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"left"},"trigger_rule":"any_success"},
+            {"id":"right","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":"right"},"trigger_rule":"any_success"},
+            {"id":"join","kind":"shell","inputs":["lhs"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
+          ],
+          "edges":[
+            {"id":"seed-to-decide","from":{"node_id":"seed","port":"out"},"to":{"node_id":"decide","port":"in"}},
+            {"id":"branch-left","kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"left","port":"in"}},
+            {"id":"branch-right","kind":"conditional","decision":"right","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"right","port":"in"}},
+            {"id":"left-to-join","kind":"control","from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+          ]
+        }"#,
+    );
+
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    let branch = plan.nodes.iter().find(|node| node.id == "decide").expect("branch node");
+    assert_eq!(branch.semantic_kind, bijux_dag_core::SemanticNodeKind::Branch);
+    assert_eq!(branch.executor_kind, "shell");
+    assert_eq!(branch.branch.as_ref().expect("branch").decision_output, "decision");
+
+    let conditional = plan
+        .edges
+        .iter()
+        .find(|edge| edge.id.as_deref() == Some("branch-left"))
+        .expect("conditional edge");
+    assert_eq!(conditional.kind, bijux_dag_core::EdgeKind::Conditional);
+    assert_eq!(conditional.decision.as_deref(), Some("left"));
+
+    let path = plan
+        .branch_paths
+        .iter()
+        .find(|path| path.branch_node_id == "decide" && path.decision == "left")
+        .expect("branch path");
+    assert_eq!(path.direct_targets, vec!["left".to_string()]);
+    assert!(path.reachable_nodes.contains(&"join".to_string()));
 }
 
 #[test]
