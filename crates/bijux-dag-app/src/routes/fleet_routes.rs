@@ -2,9 +2,10 @@ use crate::commands::{DagCli, FleetCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::derive_autoscaling_hint;
 use bijux_dag_runtime::simulated_platform::{
-    check_scheduler_admission, check_worker_version_compatibility, validate_worker_identity,
-    worker_alive, validate_task_lease_semantics, worker_pool_satisfies_capability_request,
-    LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
+    cancellation_delivered_in_time, check_scheduler_admission,
+    check_worker_version_compatibility, validate_worker_identity, worker_alive,
+    validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
+    PlacementHint, QueuePartition, ReassignmentRule, SchedulerScalingPlan, TaskLeaseSemantics,
     TenantConcurrencyQuota, TenantQueueIsolationPolicy, TenantSchedulerAdmission, WorkLease,
     WorkerCapabilities, WorkerHeartbeat, WorkerPool, WorkerPoolCapabilityRequest,
     WorkerRegistration, WorkerVersionCompatibilityRule,
@@ -154,6 +155,31 @@ struct IsolationReport {
     foreign_tenants_observed: Vec<String>,
     gaps: Vec<String>,
     isolation_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct PreemptionSimulation {
+    node_id: String,
+    side_effect_class: String,
+    checkpointing_supported: bool,
+    preemptible_backend: bool,
+    cancellation_issued_unix_ms: u128,
+    cancellation_delivered_unix_ms: u128,
+    cancellation_deadline_ms: u64,
+    lease_semantics: TaskLeaseSemantics,
+    reassignment_rule: ReassignmentRule,
+}
+
+#[derive(Debug, Serialize)]
+struct PreemptionReport {
+    node_id: String,
+    side_effect_class: String,
+    checkpointing_supported: bool,
+    preemptible_backend: bool,
+    cancellation_delivered_in_time: bool,
+    preserve_attempt_lineage: bool,
+    gaps: Vec<String>,
+    preemption_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -471,6 +497,63 @@ fn isolation_payload(simulation: IsolationSimulation) -> (serde_json::Value, boo
     (serde_json::to_value(report).expect("isolation report"), ok)
 }
 
+fn preemption_payload(simulation: PreemptionSimulation) -> (serde_json::Value, bool) {
+    let PreemptionSimulation {
+        node_id,
+        side_effect_class,
+        checkpointing_supported,
+        preemptible_backend,
+        cancellation_issued_unix_ms,
+        cancellation_delivered_unix_ms,
+        cancellation_deadline_ms,
+        lease_semantics,
+        reassignment_rule,
+    } = simulation;
+    let semantics_valid = validate_task_lease_semantics(&lease_semantics).is_ok();
+    let delivered_in_time = cancellation_delivered_in_time(
+        cancellation_issued_unix_ms,
+        cancellation_delivered_unix_ms,
+        cancellation_deadline_ms,
+    );
+    let mut gaps = Vec::new();
+    if node_id.trim().is_empty() {
+        gaps.push("preemption policy requires a node identifier".to_string());
+    }
+    if side_effect_class.trim().is_empty() {
+        gaps.push("preemption policy requires a declared side-effect class".to_string());
+    }
+    if !semantics_valid {
+        gaps.push("preemption policy requires valid lease semantics".to_string());
+    }
+    if !preemptible_backend {
+        gaps.push("selected backend does not support safe task preemption".to_string());
+    }
+    if side_effect_class != "read-only" && !checkpointing_supported {
+        gaps.push("non-read-only work must be checkpointable before preemption".to_string());
+    }
+    if !reassignment_rule.preserve_attempt_lineage {
+        gaps.push("preemption must preserve attempt lineage during reassignment".to_string());
+    }
+    if reassignment_rule.max_reassignments == 0 {
+        gaps.push("preemption policy must declare a bounded reassignment budget".to_string());
+    }
+    if !delivered_in_time {
+        gaps.push("cancellation did not reach the worker before the deadline".to_string());
+    }
+    let report = PreemptionReport {
+        node_id,
+        side_effect_class,
+        checkpointing_supported,
+        preemptible_backend,
+        cancellation_delivered_in_time: delivered_in_time,
+        preserve_attempt_lineage: reassignment_rule.preserve_attempt_lineage,
+        preemption_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.preemption_ready;
+    (serde_json::to_value(report).expect("preemption report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -506,6 +589,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = isolation_payload(simulation);
             ("dag.fleet.isolation", payload, ok)
         }
+        FleetCommands::Preemption { simulation } => {
+            let simulation: PreemptionSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = preemption_payload(simulation);
+            ("dag.fleet.preemption", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -529,12 +617,13 @@ mod tests {
     use super::{
         autoscale_payload, capability_payload, drain_payload, registration_payload,
         warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
-        DrainSimulation, IsolationSimulation, RegistrationSimulation, WarmPoolSimulation,
+        DrainSimulation, IsolationSimulation, PreemptionSimulation, RegistrationSimulation,
+        WarmPoolSimulation, preemption_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
-        TenantConcurrencyQuota, TenantId, TenantQueueIsolationPolicy, TenantSchedulerAdmission,
-        WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
+        ReassignmentRule, TenantConcurrencyQuota, TenantId, TenantQueueIsolationPolicy,
+        TenantSchedulerAdmission, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
         WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
     };
     use std::collections::BTreeMap;
@@ -913,5 +1002,59 @@ mod tests {
         let (payload, ok) = isolation_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn preemption_accepts_checkpointed_and_bounded_reassignment() {
+        let simulation = PreemptionSimulation {
+            node_id: "train".to_string(),
+            side_effect_class: "checkpointed-write".to_string(),
+            checkpointing_supported: true,
+            preemptible_backend: true,
+            cancellation_issued_unix_ms: 1_000,
+            cancellation_delivered_unix_ms: 1_300,
+            cancellation_deadline_ms: 1_000,
+            lease_semantics: TaskLeaseSemantics {
+                lease_duration_ms: 5_000,
+                renew_before_expiry_ms: 1_000,
+                max_renewals: 3,
+                recovery_grace_ms: 2_000,
+            },
+            reassignment_rule: ReassignmentRule {
+                trigger: "capacity-rebalance".to_string(),
+                max_reassignments: 2,
+                preserve_attempt_lineage: true,
+            },
+        };
+        let (payload, ok) = preemption_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["preemption_ready"], true);
+    }
+
+    #[test]
+    fn preemption_flags_uncheckpointed_or_late_cancellation() {
+        let simulation = PreemptionSimulation {
+            node_id: String::new(),
+            side_effect_class: "mutating".to_string(),
+            checkpointing_supported: false,
+            preemptible_backend: false,
+            cancellation_issued_unix_ms: 1_000,
+            cancellation_delivered_unix_ms: 5_000,
+            cancellation_deadline_ms: 500,
+            lease_semantics: TaskLeaseSemantics {
+                lease_duration_ms: 0,
+                renew_before_expiry_ms: 0,
+                max_renewals: 0,
+                recovery_grace_ms: 0,
+            },
+            reassignment_rule: ReassignmentRule {
+                trigger: "manual".to_string(),
+                max_reassignments: 0,
+                preserve_attempt_lineage: false,
+            },
+        };
+        let (payload, ok) = preemption_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
     }
 }
