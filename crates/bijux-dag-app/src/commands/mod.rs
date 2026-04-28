@@ -508,6 +508,8 @@ pub(crate) enum IncidentCommands {
     #[command(name = "degraded-mode")]
     DegradedMode { simulation: PathBuf },
     Annotation { simulation: PathBuf },
+    #[command(name = "repair-window")]
+    RepairWindow { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -1,8 +1,8 @@
 use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    health_dashboard_score, IncidentClassification, IncidentSeverity, PlatformHealthDashboard,
-    ProductBoundary, RunbookEntry, SupportabilityModel,
+    health_dashboard_score, IncidentClassification, IncidentSeverity, LifecycleGovernanceRule,
+    PlatformHealthDashboard, ProductBoundary, RunbookEntry, SupportabilityModel,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -158,6 +158,44 @@ struct IncidentAnnotationReport {
     search_index_keys: Vec<String>,
     gaps: Vec<String>,
     annotation_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct RepairWindowSimulation {
+    incident_id: String,
+    requested_by: String,
+    #[serde(default)]
+    approved_by: Vec<String>,
+    start_utc: String,
+    end_utc: String,
+    #[serde(default)]
+    scope: Vec<String>,
+    #[serde(default)]
+    run_ids: Vec<String>,
+    #[serde(default)]
+    tenant_ids: Vec<String>,
+    #[serde(default)]
+    repair_actions: Vec<String>,
+    #[serde(default)]
+    outcome_tracking: Vec<String>,
+    lifecycle_rule: LifecycleGovernanceRule,
+}
+
+#[derive(Debug, Serialize)]
+struct RepairWindowReport {
+    incident_id: String,
+    requested_by: String,
+    approved_by: Vec<String>,
+    start_utc: String,
+    end_utc: String,
+    scope: Vec<String>,
+    run_ids: Vec<String>,
+    tenant_ids: Vec<String>,
+    repair_actions: Vec<String>,
+    outcome_tracking: Vec<String>,
+    lifecycle_state: String,
+    gaps: Vec<String>,
+    repair_window_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -431,6 +469,64 @@ fn annotation_payload(simulation: IncidentAnnotationSimulation) -> (serde_json::
     (serde_json::to_value(report).expect("incident annotation report"), ok)
 }
 
+fn repair_window_payload(simulation: RepairWindowSimulation) -> (serde_json::Value, bool) {
+    let RepairWindowSimulation {
+        incident_id,
+        requested_by,
+        approved_by,
+        start_utc,
+        end_utc,
+        scope,
+        run_ids,
+        tenant_ids,
+        repair_actions,
+        outcome_tracking,
+        lifecycle_rule,
+    } = simulation;
+    let mut gaps = Vec::new();
+    if requested_by.trim().is_empty() {
+        gaps.push("repair window requires a requesting operator".to_string());
+    }
+    if approved_by.is_empty() {
+        gaps.push("repair window requires at least one approval".to_string());
+    }
+    if start_utc.trim().is_empty() || end_utc.trim().is_empty() || start_utc == end_utc {
+        gaps.push("repair window requires distinct start and end timestamps".to_string());
+    }
+    if scope.is_empty() {
+        gaps.push("repair window requires explicit repair scope".to_string());
+    }
+    if run_ids.is_empty() && tenant_ids.is_empty() {
+        gaps.push("repair window should target at least one run or tenant".to_string());
+    }
+    if repair_actions.is_empty() {
+        gaps.push("repair window requires at least one repair action".to_string());
+    }
+    if outcome_tracking.is_empty() {
+        gaps.push("repair window requires outcome tracking fields".to_string());
+    }
+    if lifecycle_rule.state.trim().is_empty() {
+        gaps.push("repair window requires a lifecycle governance state".to_string());
+    }
+    let report = RepairWindowReport {
+        incident_id,
+        requested_by,
+        approved_by,
+        start_utc,
+        end_utc,
+        scope,
+        run_ids,
+        tenant_ids,
+        repair_actions,
+        outcome_tracking,
+        lifecycle_state: lifecycle_rule.state,
+        repair_window_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.repair_window_ready;
+    (serde_json::to_value(report).expect("repair window report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -461,6 +557,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = annotation_payload(simulation);
             ("dag.incident.annotation", payload, ok)
         }
+        IncidentCommands::RepairWindow { simulation } => {
+            let simulation: RepairWindowSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = repair_window_payload(simulation);
+            ("dag.incident.repair-window", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -480,17 +581,17 @@ pub(crate) fn handle_incident_command(
 mod tests {
     use super::{
         annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
-        safe_stop_payload,
+        repair_window_payload, safe_stop_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        IncidentClassification, IncidentSeverity, PlatformHealthDashboard, ProductBoundary,
-        RunbookEntry, SupportabilityModel,
+        IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
+        ProductBoundary, RunbookEntry, SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
-        WorkflowImpact, IncidentAnnotationSimulation,
+        WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
     };
 
     #[test]
@@ -738,5 +839,53 @@ mod tests {
         let (payload, ok) = annotation_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn repair_window_accepts_scoped_approved_repair_plan() {
+        let simulation = RepairWindowSimulation {
+            incident_id: "inc-2026-04-28-5".to_string(),
+            requested_by: "platform-oncall".to_string(),
+            approved_by: vec!["service-owner".to_string(), "tenant-admin".to_string()],
+            start_utc: "2026-04-28T11:00:00Z".to_string(),
+            end_utc: "2026-04-28T12:00:00Z".to_string(),
+            scope: vec!["tenant-a".to_string(), "artifact-registry".to_string()],
+            run_ids: vec!["run-9".to_string()],
+            tenant_ids: vec!["tenant-a".to_string()],
+            repair_actions: vec!["rebuild output index".to_string(), "replay failed branch".to_string()],
+            outcome_tracking: vec!["audit_event_id".to_string(), "post_check_status".to_string()],
+            lifecycle_rule: LifecycleGovernanceRule {
+                feature_name: "repair-window".to_string(),
+                state: "approved".to_string(),
+                decision_due_utc: "2026-04-28T13:00:00Z".to_string(),
+            },
+        };
+        let (payload, ok) = repair_window_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["repair_window_ready"], true);
+    }
+
+    #[test]
+    fn repair_window_flags_missing_scope_approval_or_tracking() {
+        let simulation = RepairWindowSimulation {
+            incident_id: "inc-2026-04-28-6".to_string(),
+            requested_by: String::new(),
+            approved_by: Vec::new(),
+            start_utc: "2026-04-28T11:00:00Z".to_string(),
+            end_utc: "2026-04-28T11:00:00Z".to_string(),
+            scope: Vec::new(),
+            run_ids: Vec::new(),
+            tenant_ids: Vec::new(),
+            repair_actions: Vec::new(),
+            outcome_tracking: Vec::new(),
+            lifecycle_rule: LifecycleGovernanceRule {
+                feature_name: "repair-window".to_string(),
+                state: String::new(),
+                decision_due_utc: "2026-04-28T13:00:00Z".to_string(),
+            },
+        };
+        let (payload, ok) = repair_window_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
     }
 }
