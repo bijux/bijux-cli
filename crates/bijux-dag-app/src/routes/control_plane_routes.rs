@@ -2,10 +2,12 @@ use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     deduplicate_across_replicas, fence_allows_mutation, idempotent_run_creation,
-    is_stale_leader, next_epoch, ordering_during_failover, validate_task_lease_semantics,
-    DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
-    QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord, SchedulerEpoch,
-    SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+    invalidate_decision_cache, is_stale_leader, next_epoch, ordering_during_failover,
+    resolve_environment_values, select_dag_version, validate_task_lease_semantics,
+    CompatibilityDecision, DagRegistry, DagVersionSelectionPolicy, DurableRunQueueEntry,
+    EnvironmentConfiguration, LeaderElectionState, PolicyDecisionCache, QueueOwnershipTransfer,
+    QueuePartition, QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord,
+    SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
     TypedControlPlaneResponse, WorkLease,
 };
 use serde::{Deserialize, Serialize};
@@ -171,6 +173,31 @@ struct BackpressureReport {
     hot_tenants_isolated: bool,
     gaps: Vec<String>,
     backpressure_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct CacheSimulation {
+    registry: DagRegistry,
+    dag_name: String,
+    selection_policy: DagVersionSelectionPolicy,
+    cache: PolicyDecisionCache,
+    current_policy_bundle_version: String,
+    current_env: EnvironmentConfiguration,
+    parent_env: Option<EnvironmentConfiguration>,
+}
+
+#[derive(Debug, Serialize)]
+struct CacheReport {
+    selected_version: Option<String>,
+    cache_entries_before: usize,
+    cache_entries_after: usize,
+    stale_entries_removed: usize,
+    environment_keys: usize,
+    selection_resolved: bool,
+    cache_disciplined: bool,
+    environment_resolved: bool,
+    gaps: Vec<String>,
+    cache_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -495,6 +522,71 @@ fn backpressure_payload(simulation: BackpressureSimulation) -> (serde_json::Valu
     (serde_json::to_value(report).expect("backpressure report"), ok)
 }
 
+fn cache_payload(simulation: CacheSimulation) -> (serde_json::Value, bool) {
+    let CacheSimulation {
+        registry,
+        dag_name,
+        selection_policy,
+        mut cache,
+        current_policy_bundle_version,
+        current_env,
+        parent_env,
+    } = simulation;
+    let decision = select_dag_version(&registry, &dag_name, &selection_policy);
+    let selected_version = match &decision {
+        CompatibilityDecision::Selected { version_id, .. } => Some(version_id.clone()),
+        CompatibilityDecision::Rejected { .. } => None,
+    };
+    let selection_resolved = matches!(decision, CompatibilityDecision::Selected { .. });
+    let cache_entries_before = cache.entries.len();
+    let had_stale_entries = cache
+        .entries
+        .iter()
+        .any(|entry| entry.policy_bundle_version != current_policy_bundle_version);
+    invalidate_decision_cache(&mut cache, &current_policy_bundle_version);
+    let cache_entries_after = cache.entries.len();
+    let stale_entries_removed = cache_entries_before.saturating_sub(cache_entries_after);
+    let cache_disciplined = cache
+        .entries
+        .iter()
+        .all(|entry| entry.policy_bundle_version == current_policy_bundle_version);
+    let resolved_environment = resolve_environment_values(&current_env, parent_env.as_ref());
+    let environment_resolved = !resolved_environment.is_empty();
+    let mut gaps = Vec::new();
+    if dag_name.trim().is_empty() {
+        gaps.push("cache discipline audit requires a dag name".to_string());
+    }
+    if !selection_resolved {
+        gaps.push("registry selection could not resolve an active dag version".to_string());
+    }
+    if had_stale_entries && stale_entries_removed == 0 {
+        gaps.push("stale policy cache entries were not invalidated".to_string());
+    }
+    if !cache_disciplined {
+        gaps.push("policy decision cache still mixes bundle versions".to_string());
+    }
+    if current_env.parent.is_some() && parent_env.is_none() {
+        gaps.push("environment inheritance declares a parent but no parent configuration".to_string());
+    }
+    if !environment_resolved {
+        gaps.push("effective environment values did not resolve".to_string());
+    }
+    let report = CacheReport {
+        selected_version,
+        cache_entries_before,
+        cache_entries_after,
+        stale_entries_removed,
+        environment_keys: resolved_environment.len(),
+        selection_resolved,
+        cache_disciplined,
+        environment_resolved,
+        cache_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.cache_ready;
+    (serde_json::to_value(report).expect("cache report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -535,6 +627,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = backpressure_payload(simulation);
             ("dag.control-plane.backpressure", payload, ok)
         }
+        ControlPlaneCommands::Cache { simulation } => {
+            let simulation: CacheSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = cache_payload(simulation);
+            ("dag.control-plane.cache", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -556,16 +653,19 @@ pub(crate) fn handle_control_plane_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        api_payload, backpressure_payload, leadership_payload, planning_payload, ApiSimulation,
-        BackpressureSimulation, LeadershipSimulation, IdempotencySimulation, LeasesSimulation,
-        PlanningSimulation, ShardingSimulation, idempotency_payload, leases_payload,
-        sharding_payload,
+        api_payload, backpressure_payload, cache_payload, leadership_payload, planning_payload,
+        ApiSimulation, BackpressureSimulation, CacheSimulation, LeadershipSimulation,
+        IdempotencySimulation, LeasesSimulation, PlanningSimulation, ShardingSimulation,
+        idempotency_payload, leases_payload, sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
-        QueueShardLease, RegionId, RegionQueuePartition, RunControlOperation,
-        ScheduleDedupRecord, SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics,
-        TypedControlPlaneRequest, TypedControlPlaneResponse, WorkLease,
+        DagRegistry, DagVersionRecord, DagVersionSelectionPolicy, DagVersionStatus,
+        DecisionType, DurableRunQueueEntry, EnvironmentConfiguration, EnvironmentMode,
+        LeaderElectionState, PolicyDecisionCache, PolicyDecisionCacheEntry,
+        QueueOwnershipTransfer, QueuePartition, QueueShardLease, RegionId,
+        RegionQueuePartition, RunControlOperation, ScheduleDedupRecord, SchedulerEpoch,
+        SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+        TypedControlPlaneResponse, WorkLease,
     };
     use serde_json::json;
     use std::collections::{BTreeMap, BTreeSet};
@@ -1001,6 +1101,88 @@ mod tests {
             hot_tenants: vec!["atlas".to_string(), "canon".to_string()],
         };
         let (payload, ok) = backpressure_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn cache_accepts_one_registry_line_and_one_policy_bundle_version() {
+        let mut registry = DagRegistry::default();
+        registry.entries.insert(
+            "atlas.load".to_string(),
+            bijux_dag_runtime::simulated_platform::DagRegistryEntry {
+                dag_name: "atlas.load".to_string(),
+                owner: "atlas".to_string(),
+                tags: vec!["critical".to_string()],
+                versions: vec![DagVersionRecord {
+                    version_id: "2026.04.28".to_string(),
+                    compatibility_line: "v1".to_string(),
+                    status: DagVersionStatus::Active,
+                    created_unix_ms: 100,
+                }],
+            },
+        );
+        let simulation = CacheSimulation {
+            registry,
+            dag_name: "atlas.load".to_string(),
+            selection_policy: DagVersionSelectionPolicy::RunLatest,
+            cache: PolicyDecisionCache {
+                entries: vec![PolicyDecisionCacheEntry {
+                    cache_key: "k1".to_string(),
+                    decision: DecisionType::Allow,
+                    policy_bundle_version: "2026.04".to_string(),
+                }],
+            },
+            current_policy_bundle_version: "2026.04".to_string(),
+            current_env: EnvironmentConfiguration {
+                mode: EnvironmentMode::Production,
+                parent: Some("shared".to_string()),
+                values: BTreeMap::from([("queue".to_string(), "atlas".to_string())]),
+                overrides: BTreeMap::from([("max_parallelism".to_string(), "8".to_string())]),
+            },
+            parent_env: Some(EnvironmentConfiguration {
+                mode: EnvironmentMode::Staging,
+                parent: None,
+                values: BTreeMap::from([("region".to_string(), "eu-north".to_string())]),
+                overrides: BTreeMap::new(),
+            }),
+        };
+        let (payload, ok) = cache_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["cache_ready"], true);
+        assert_eq!(payload["selected_version"], "2026.04.28");
+    }
+
+    #[test]
+    fn cache_flags_unresolved_selection_or_missing_parent_overlay() {
+        let simulation = CacheSimulation {
+            registry: DagRegistry::default(),
+            dag_name: String::new(),
+            selection_policy: DagVersionSelectionPolicy::RunLatest,
+            cache: PolicyDecisionCache {
+                entries: vec![
+                    PolicyDecisionCacheEntry {
+                        cache_key: "k1".to_string(),
+                        decision: DecisionType::Allow,
+                        policy_bundle_version: "2026.03".to_string(),
+                    },
+                    PolicyDecisionCacheEntry {
+                        cache_key: "k2".to_string(),
+                        decision: DecisionType::Deny,
+                        policy_bundle_version: "2026.02".to_string(),
+                    },
+                ],
+            },
+            current_policy_bundle_version: "2026.04".to_string(),
+            current_env: EnvironmentConfiguration {
+                mode: EnvironmentMode::Production,
+                parent: Some("shared".to_string()),
+                values: BTreeMap::new(),
+                overrides: BTreeMap::new(),
+            },
+            parent_env: None,
+        };
+        let (payload, ok) = cache_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
