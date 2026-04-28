@@ -67,6 +67,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: GovernanceCommands,
     },
+    Security {
+        #[command(subcommand)]
+        command: SecurityCommands,
+    },
     Release {
         #[command(subcommand)]
         command: ReleaseCommands,
@@ -484,6 +488,21 @@ pub(crate) enum GovernanceCommands {
     AuditEvent { simulation: PathBuf },
     Promotion { simulation: PathBuf },
     Compliance { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum SecurityCommands {
+    Auth { simulation: PathBuf },
+    Authz { simulation: PathBuf },
+    Tenant { simulation: PathBuf },
+    Secrets { simulation: PathBuf },
+    #[command(name = "supply-chain")]
+    SupplyChain { simulation: PathBuf },
+    #[command(name = "data-access")]
+    DataAccess { simulation: PathBuf },
+    Override { simulation: PathBuf },
+    #[command(name = "safe-defaults")]
+    SafeDefaults { dag: PathBuf },
 }
 
 #[derive(Subcommand)]
