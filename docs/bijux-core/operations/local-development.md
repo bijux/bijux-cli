@@ -9,16 +9,19 @@ last_reviewed: 2026-04-12
 
 # Local Development
 
-Repository-local development should start from root entrypoints so local work
-and CI stay aligned.
+This page explains the default local path for working in `bijux-core`.
+
+The rule is simple: start from documented root entrypoints so local work and CI
+keep telling the same story.
+
+## Local Flow
 
 ```mermaid
-flowchart TD
-    edit[edit code or docs] --> lint[run local static checks]
-    lint --> test[run targeted package and root tests]
-    test --> run[execute local workflow commands]
-    run --> inspect[inspect outputs and diagnostics]
-    inspect --> commit[commit when evidence is coherent]
+flowchart LR
+    edit["edit code or docs"] --> lint["run local static checks"]
+    lint --> test["run package and root tests"]
+    test --> inspect["inspect outputs and diagnostics"]
+    inspect --> commit["commit when evidence is coherent"]
     inspect --> edit
 ```
 
@@ -34,6 +37,11 @@ make docs-check
 
 If a workflow cannot be explained from `Makefile`, `makes/`, or a handbook
 page, it is not a healthy repository entrypoint yet.
+
+## Reading Rule
+
+Use this page when the work is local and the main question is which baseline
+commands should happen before review.
 
 ## Next Reads
 
