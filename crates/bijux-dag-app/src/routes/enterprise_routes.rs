@@ -6,11 +6,12 @@ use bijux_dag_runtime::{
 };
 use bijux_dag_runtime::simulated_platform::{
     approval_gate_ready,
-    authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
+    authorize, check_api_compatibility, ApiCompatibilityRule, ApiVersion, AuthContext,
+    AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, EventSubscription,
     can_renew_credential, credential_is_expired, ApprovalGateNode, CredentialLifecycle,
     CredentialScope, IncidentClassification, IncidentSeverity, QueueResource,
-    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
-    WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
+    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName,
+    WorkerCredentialBinding, WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -237,6 +238,27 @@ struct CredentialReport {
     worker_scoped: bool,
     gaps: Vec<String>,
     credential_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ExportSimulation {
+    api_version: ApiVersion,
+    compatibility: ApiCompatibilityRule,
+    sdk: ClientSdkShape,
+    subscriptions: Vec<EventSubscription>,
+    #[serde(default)]
+    exported_domains: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ExportReport {
+    api_version: String,
+    compatibility_ok: bool,
+    typed_models: bool,
+    active_subscription_count: usize,
+    exported_domains: Vec<String>,
+    gaps: Vec<String>,
+    export_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -667,6 +689,39 @@ fn credential_payload(simulation: CredentialSimulation) -> (serde_json::Value, b
     (serde_json::to_value(report).expect("credential report"), ok)
 }
 
+fn export_payload(simulation: ExportSimulation) -> (serde_json::Value, bool) {
+    let ExportSimulation { api_version, compatibility, sdk, subscriptions, exported_domains } =
+        simulation;
+    let compatibility_ok = check_api_compatibility(&api_version, &compatibility);
+    let active_subscription_count = subscriptions.iter().filter(|subscription| subscription.active).count();
+    let mut gaps = Vec::new();
+    if !compatibility_ok {
+        gaps.push("export API version is outside the supported compatibility window".to_string());
+    }
+    if !sdk.typed_models {
+        gaps.push("enterprise export surfaces should ship typed models".to_string());
+    }
+    if active_subscription_count == 0 {
+        gaps.push("enterprise export requires at least one active subscription".to_string());
+    }
+    for required in ["metrics", "audit", "lineage", "run-state"] {
+        if !exported_domains.iter().any(|domain| domain == required) {
+            gaps.push(format!("enterprise export is missing the {required} domain"));
+        }
+    }
+    let report = ExportReport {
+        api_version: format!("{}.{}", api_version.major, api_version.minor),
+        compatibility_ok,
+        typed_models: sdk.typed_models,
+        active_subscription_count,
+        exported_domains,
+        export_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.export_ready;
+    (serde_json::to_value(report).expect("export report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -717,6 +772,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = credential_payload(simulation);
             ("dag.enterprise.credentials", payload, ok)
         }
+        EnterpriseCommands::Export { simulation } => {
+            let simulation: ExportSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = export_payload(simulation);
+            ("dag.enterprise.export", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -736,21 +796,21 @@ pub(crate) fn handle_enterprise_command(
 mod tests {
     use super::{
         approval_payload, asset_link_payload, calendar_payload, credential_payload,
-        dependency_catalog_payload, incident_hook_payload, queue_payload,
+        dependency_catalog_payload, export_payload, incident_hook_payload, queue_payload,
         service_contract_payload, webhook_payload, ApprovalSimulation, AssetLinkSimulation,
-        CalendarSimulation, CredentialSimulation,
-        DependencyCatalogSimulation, IncidentHookSimulation, QueueSimulation,
-        ServiceContractSimulation, WebhookSimulation,
+        CalendarSimulation, CredentialSimulation, DependencyCatalogSimulation, ExportSimulation,
+        IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
     };
     use bijux_dag_runtime::simulated_platform::{
-        ApprovalGateNode, AuthContext, AuthenticationPrincipal, AuthorizationRule,
-        CredentialLifecycle, CredentialScope, EventSubscription, IncidentClassification,
-        IncidentSeverity, QueueResource, ServiceArchitectureNote, TenantId,
-        TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
-        WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
+        ApiCompatibilityRule, ApiVersion, ApprovalGateNode, AuthContext,
+        AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, CredentialLifecycle,
+        CredentialScope, EventSubscription, IncidentClassification, IncidentSeverity,
+        QueueResource, ServiceArchitectureNote, TenantId, TenantOwnershipMetadata,
+        TenantScopedDagName, WorkerCredentialBinding, WorkflowFamilyImpactAnalysis,
+        WorkflowPortfolio,
     };
 
     #[test]
@@ -1176,5 +1236,64 @@ mod tests {
         let (payload, ok) = credential_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn export_accepts_typed_supported_external_surfaces() {
+        let simulation = ExportSimulation {
+            api_version: ApiVersion { major: 1, minor: 2 },
+            compatibility: ApiCompatibilityRule {
+                min_supported_major: 1,
+                max_supported_major: 1,
+                supports_minor_additive_fields: true,
+            },
+            sdk: ClientSdkShape {
+                sdk_name: "bijux-enterprise-sdk".to_string(),
+                operations: vec!["list-runs".to_string(), "stream-audit".to_string()],
+                typed_models: true,
+            },
+            subscriptions: vec![EventSubscription {
+                subscription_id: "sub-export".to_string(),
+                topic: "audit.events".to_string(),
+                endpoint: "https://consumer.example/audit".to_string(),
+                active: true,
+            }],
+            exported_domains: vec![
+                "metrics".to_string(),
+                "audit".to_string(),
+                "lineage".to_string(),
+                "run-state".to_string(),
+            ],
+        };
+        let (payload, ok) = export_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["export_ready"], true);
+    }
+
+    #[test]
+    fn export_flags_unsupported_or_partial_public_surface() {
+        let simulation = ExportSimulation {
+            api_version: ApiVersion { major: 2, minor: 0 },
+            compatibility: ApiCompatibilityRule {
+                min_supported_major: 1,
+                max_supported_major: 1,
+                supports_minor_additive_fields: true,
+            },
+            sdk: ClientSdkShape {
+                sdk_name: "custom".to_string(),
+                operations: Vec::new(),
+                typed_models: false,
+            },
+            subscriptions: vec![EventSubscription {
+                subscription_id: "sub-export".to_string(),
+                topic: "audit.events".to_string(),
+                endpoint: "https://consumer.example/audit".to_string(),
+                active: false,
+            }],
+            exported_domains: vec!["metrics".to_string()],
+        };
+        let (payload, ok) = export_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }

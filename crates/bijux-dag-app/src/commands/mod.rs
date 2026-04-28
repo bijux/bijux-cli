@@ -483,6 +483,7 @@ pub(crate) enum EnterpriseCommands {
     #[command(name = "dependency-catalog")]
     DependencyCatalog { simulation: PathBuf },
     Credentials { simulation: PathBuf },
+    Export { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
