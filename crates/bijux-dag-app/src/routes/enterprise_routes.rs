@@ -5,9 +5,10 @@ use bijux_dag_runtime::{
     RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
 };
 use bijux_dag_runtime::simulated_platform::{
+    approval_gate_ready,
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-    IncidentClassification, IncidentSeverity, QueueResource, TenantOwnershipMetadata,
-    TenantScopedDagName, WorkflowPortfolio,
+    ApprovalGateNode, IncidentClassification, IncidentSeverity, QueueResource,
+    TenantOwnershipMetadata, TenantScopedDagName, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -167,6 +168,29 @@ struct CalendarReport {
     action_allowed: bool,
     gaps: Vec<String>,
     calendar_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ApprovalSimulation {
+    gate: ApprovalGateNode,
+    external_system: String,
+    #[serde(default)]
+    approval_ids: Vec<String>,
+    callback_received: bool,
+    approver_identity: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ApprovalReport {
+    node_id: String,
+    policy_ref: String,
+    external_system: String,
+    approval_count: usize,
+    callback_received: bool,
+    approver_identity: String,
+    gate_contract_ready: bool,
+    gaps: Vec<String>,
+    approval_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -475,6 +499,46 @@ fn calendar_payload(simulation: CalendarSimulation) -> (serde_json::Value, bool)
     (serde_json::to_value(report).expect("calendar report"), ok)
 }
 
+fn approval_payload(simulation: ApprovalSimulation) -> (serde_json::Value, bool) {
+    let ApprovalSimulation {
+        gate,
+        external_system,
+        approval_ids,
+        callback_received,
+        approver_identity,
+    } = simulation;
+    let gate_contract_ready = approval_gate_ready(&gate);
+    let mut gaps = Vec::new();
+    if !gate_contract_ready {
+        gaps.push("approval gate definition is incomplete".to_string());
+    }
+    if external_system.trim().is_empty() {
+        gaps.push("external approval integration requires a system name".to_string());
+    }
+    if approval_ids.is_empty() {
+        gaps.push("external approval integration requires at least one approval id".to_string());
+    }
+    if !callback_received {
+        gaps.push("approval callback has not been received".to_string());
+    }
+    if approver_identity.trim().is_empty() {
+        gaps.push("approval integration requires an approver identity".to_string());
+    }
+    let report = ApprovalReport {
+        node_id: gate.node_id,
+        policy_ref: gate.policy_ref,
+        external_system,
+        approval_count: approval_ids.len(),
+        callback_received,
+        approver_identity,
+        gate_contract_ready,
+        approval_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.approval_ready;
+    (serde_json::to_value(report).expect("approval report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -510,6 +574,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = calendar_payload(simulation);
             ("dag.enterprise.calendar", payload, ok)
         }
+        EnterpriseCommands::Approval { simulation } => {
+            let simulation: ApprovalSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = approval_payload(simulation);
+            ("dag.enterprise.approval", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -528,16 +597,17 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        asset_link_payload, calendar_payload, incident_hook_payload, queue_payload,
-        service_contract_payload, webhook_payload, AssetLinkSimulation, CalendarSimulation,
-        IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
+        approval_payload, asset_link_payload, calendar_payload, incident_hook_payload,
+        queue_payload, service_contract_payload, webhook_payload, ApprovalSimulation,
+        AssetLinkSimulation, CalendarSimulation, IncidentHookSimulation, QueueSimulation,
+        ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
     };
     use bijux_dag_runtime::simulated_platform::{
-        AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-        IncidentClassification, IncidentSeverity, QueueResource, TenantId,
+        ApprovalGateNode, AuthContext, AuthenticationPrincipal, AuthorizationRule,
+        EventSubscription, IncidentClassification, IncidentSeverity, QueueResource, TenantId,
         TenantOwnershipMetadata, TenantScopedDagName, WorkflowPortfolio,
     };
 
@@ -830,5 +900,41 @@ mod tests {
         let (payload, ok) = calendar_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn approval_accepts_complete_external_gate_signal() {
+        let simulation = ApprovalSimulation {
+            gate: ApprovalGateNode {
+                node_id: "approve-prod".to_string(),
+                policy_ref: "policy/prod".to_string(),
+                timeout_seconds: 3600,
+            },
+            external_system: "service-now".to_string(),
+            approval_ids: vec!["chg-1001".to_string()],
+            callback_received: true,
+            approver_identity: "approver@example.com".to_string(),
+        };
+        let (payload, ok) = approval_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["approval_ready"], true);
+    }
+
+    #[test]
+    fn approval_flags_missing_external_signal_path() {
+        let simulation = ApprovalSimulation {
+            gate: ApprovalGateNode {
+                node_id: String::new(),
+                policy_ref: String::new(),
+                timeout_seconds: 0,
+            },
+            external_system: String::new(),
+            approval_ids: Vec::new(),
+            callback_received: false,
+            approver_identity: String::new(),
+        };
+        let (payload, ok) = approval_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }
