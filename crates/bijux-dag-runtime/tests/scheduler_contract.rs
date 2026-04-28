@@ -79,7 +79,8 @@ fn scheduler_contract_profile_is_explicit_and_stable() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(format!("{:?}", profile.priority_model), "StaticHints");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
 }
 
 #[test]
@@ -202,6 +203,58 @@ fn cancellation_prevents_new_scheduling_batches() {
         scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), true);
     assert!(decision.batch.is_empty());
     assert!(decision.cancelled);
+}
+
+#[test]
+fn deterministic_scheduler_prefers_critical_work_over_standard_work() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"standard","kind":"const","outputs":[{"name":"out","path":"standard/out"}],"params":{"value":1}},
+            {"id":"critical","kind":"const","outputs":[{"name":"out","path":"critical/out"}],"tags":["critical"],"params":{"value":2}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.scheduler_policy.max_parallelism = 1;
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert_eq!(decision.batch, vec!["critical".to_string()]);
+}
+
+#[test]
+fn deterministic_scheduler_packs_smaller_ready_nodes_within_cpu_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"big","kind":"const","outputs":[{"name":"out","path":"big/out"}],"resources":{"cpu":3,"mem_mb":64},"params":{"value":1}},
+            {"id":"small-a","kind":"const","outputs":[{"name":"out","path":"small-a/out"}],"resources":{"cpu":1,"mem_mb":64},"params":{"value":2}},
+            {"id":"small-b","kind":"const","outputs":[{"name":"out","path":"small-b/out"}],"resources":{"cpu":1,"mem_mb":64},"params":{"value":3}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(2);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert_eq!(decision.batch, vec!["small-a".to_string(), "small-b".to_string()]);
+    assert!(decision.blocked_by_budget.contains(&"big".to_string()));
 }
 
 #[test]

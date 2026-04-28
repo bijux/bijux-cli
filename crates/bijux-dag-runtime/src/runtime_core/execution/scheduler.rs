@@ -183,12 +183,14 @@ pub enum SchedulerModel {
 #[serde(rename_all = "snake_case")]
 pub enum SchedulerPriorityModel {
     StaticAbsent,
+    StaticHints,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ReadyTieBreak {
     LexicographicNodeId,
+    PriorityCpuFitThenNodeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -203,8 +205,8 @@ pub fn scheduler_contract_profile() -> SchedulerContractProfile {
     SchedulerContractProfile {
         canonical_unit: SchedulerUnit::Node,
         model: SchedulerModel::EventDriven,
-        priority_model: SchedulerPriorityModel::StaticAbsent,
-        ready_tie_break: ReadyTieBreak::LexicographicNodeId,
+        priority_model: SchedulerPriorityModel::StaticHints,
+        ready_tie_break: ReadyTieBreak::PriorityCpuFitThenNodeId,
     }
 }
 
@@ -420,6 +422,14 @@ impl ReadyQueue {
         None
     }
 
+    pub fn take(&mut self, id: &str) -> Option<String> {
+        if !self.ordered.remove(id) {
+            return None;
+        }
+        self.queue.retain(|queued| queued != id);
+        Some(id.to_string())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.ordered.is_empty()
     }
@@ -467,6 +477,13 @@ impl DependencyCounter {
 
 pub struct DeterministicScheduler;
 
+#[derive(Debug, Clone)]
+struct ReadyCandidate {
+    node_id: String,
+    priority: u8,
+    cpu: u32,
+}
+
 fn preflight_decision(
     options: &RuntimeConfig,
     started: Instant,
@@ -513,26 +530,40 @@ impl Scheduler for DeterministicScheduler {
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
-        let mut candidates = ready_queue.snapshot_sorted();
-        for id in candidates.drain(..) {
+        let mut candidates = ready_queue
+            .snapshot_sorted()
+            .into_iter()
+            .map(|node_id| ReadyCandidate {
+                priority: node_priority(graph, &node_id),
+                cpu: node_cpu(graph, &node_id),
+                node_id,
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by(|a, b| {
+            b.priority
+                .cmp(&a.priority)
+                .then_with(|| a.cpu.cmp(&b.cpu))
+                .then_with(|| a.node_id.cmp(&b.node_id))
+        });
+        for candidate in &candidates {
             if batch.len()
                 >= options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
             {
-                blocked.push(id);
+                blocked.push(candidate.node_id.clone());
                 continue;
             }
-            let cpu = node_cpu(graph, &id);
-            if used_cpu + cpu > cpu_budget {
-                blocked.push(id);
+            if used_cpu + candidate.cpu > cpu_budget {
+                blocked.push(candidate.node_id.clone());
                 continue;
             }
-            used_cpu += cpu;
-            let _ = ready_queue.pop_deterministic();
-            batch.push(id);
+            used_cpu += candidate.cpu;
+            let _ = ready_queue.take(&candidate.node_id);
+            batch.push(candidate.node_id.clone());
         }
         if batch.is_empty() {
-            if let Some(id) = ready_queue.pop_deterministic() {
-                batch.push(id);
+            if let Some(candidate) = candidates.first() {
+                let _ = ready_queue.take(&candidate.node_id);
+                batch.push(candidate.node_id.clone());
             }
         }
         ScheduleDecision { batch, blocked_by_budget: blocked, timed_out: false, cancelled: false }
@@ -819,4 +850,19 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
         .and_then(|n| n.resources.as_ref().map(|r| r.cpu))
         .unwrap_or(1)
         .max(1)
+}
+
+fn node_priority(graph: &Graph, node_id: &str) -> u8 {
+    let Some(node) = graph.nodes.iter().find(|node| node.id == node_id) else {
+        return 1;
+    };
+    if node.tags.iter().any(|tag| tag == "critical" || tag == "priority:critical") {
+        4
+    } else if node.tags.iter().any(|tag| tag == "high" || tag == "priority:high") {
+        3
+    } else if node.tags.iter().any(|tag| tag == "low" || tag == "priority:low") {
+        1
+    } else {
+        2
+    }
 }
