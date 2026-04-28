@@ -371,6 +371,18 @@ pub(crate) enum ScheduleCommands {
 pub(crate) enum RuntimeCommands {
     Isolation { dag: PathBuf },
     Dispatch { simulation: PathBuf },
+    State { run_dir: PathBuf },
+    #[command(name = "write-discipline")]
+    WriteDiscipline { run_dir: PathBuf },
+    #[command(name = "worker-recovery")]
+    WorkerRecovery { simulation: PathBuf },
+    #[command(name = "control-recovery")]
+    ControlRecovery { simulation: PathBuf },
+    Repair {
+        run_dir: PathBuf,
+        #[arg(long)]
+        apply: bool,
+    },
     Retry {
         dag: PathBuf,
         #[arg(long)]
