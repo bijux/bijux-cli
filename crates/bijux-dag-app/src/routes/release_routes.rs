@@ -191,6 +191,25 @@ struct ReleaseEvidenceReport {
     missing_dimensions: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseHealthSimulation {
+    revision_id: String,
+    success_rate: f64,
+    error_rate: f64,
+    sla_breach_rate: f64,
+    rollback_triggered: bool,
+    page_count: u32,
+    canary_scope_percent: u8,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseHealthReport {
+    revision_id: String,
+    score: i32,
+    status: String,
+    reasons: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -574,6 +593,53 @@ fn evidence_payload(simulation: &std::path::Path) -> Result<ReleaseEvidenceRepor
     })
 }
 
+fn health_payload(simulation: &std::path::Path) -> Result<ReleaseHealthReport, ExitCode> {
+    let simulation: ReleaseHealthSimulation = load_json_file(simulation)?;
+    let mut score = 100_i32;
+    let mut reasons = Vec::new();
+
+    if simulation.success_rate < 0.99 {
+        score -= 15;
+        reasons.push("success rate is below ninety-nine percent".to_string());
+    }
+    if simulation.error_rate > 0.02 {
+        score -= 25;
+        reasons.push("error rate exceeds release threshold".to_string());
+    }
+    if simulation.sla_breach_rate > 0.01 {
+        score -= 20;
+        reasons.push("sla breach rate exceeds release threshold".to_string());
+    }
+    if simulation.rollback_triggered {
+        score -= 30;
+        reasons.push("rollback trigger fired".to_string());
+    }
+    if simulation.page_count > 3 {
+        score -= 10;
+        reasons.push("operator paging load is elevated".to_string());
+    }
+    if simulation.canary_scope_percent > 25 {
+        score -= 10;
+        reasons.push("canary scope exceeded guarded rollout size".to_string());
+    }
+
+    let status = if score >= 85 {
+        "healthy"
+    } else if score >= 65 {
+        "watch"
+    } else {
+        "hold_or_rollback"
+    }
+    .to_string();
+
+    Ok(ReleaseHealthReport {
+        revision_id: simulation.revision_id,
+        score,
+        status,
+        reasons,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -622,6 +688,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(evidence_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.evidence", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Health { simulation } => {
+            let payload =
+                serde_json::to_value(health_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.health", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -1177,5 +1248,57 @@ mod tests {
         for expected in ["tests", "simulations", "prior_runs", "approvals", "artifacts"] {
             assert!(report.missing_dimensions.iter().any(|value| value == expected));
         }
+    }
+
+    #[test]
+    fn release_health_scores_stable_revision_as_healthy() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("health.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:new",
+              "success_rate":0.995,
+              "error_rate":0.005,
+              "sla_breach_rate":0.0,
+              "rollback_triggered":false,
+              "page_count":1,
+              "canary_scope_percent":10
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Health { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Health { simulation: simulation.clone() },
+        )
+        .expect("health");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::health_payload(&simulation).expect("report");
+        assert_eq!(report.status, "healthy");
+        assert!(report.score >= 85);
+    }
+
+    #[test]
+    fn release_health_flags_revision_for_hold_or_rollback() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("health.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:new",
+              "success_rate":0.8,
+              "error_rate":0.1,
+              "sla_breach_rate":0.05,
+              "rollback_triggered":true,
+              "page_count":5,
+              "canary_scope_percent":40
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::health_payload(&simulation).expect("report");
+        assert_eq!(report.status, "hold_or_rollback");
+        assert!(report.score < 65);
+        assert!(report.reasons.iter().any(|reason| reason == "rollback trigger fired"));
     }
 }

@@ -497,6 +497,7 @@ pub(crate) enum ReleaseCommands {
     Rollback { simulation: PathBuf },
     Classify { before: PathBuf, after: PathBuf },
     Evidence { simulation: PathBuf },
+    Health { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
