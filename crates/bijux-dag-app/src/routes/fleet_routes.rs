@@ -2,9 +2,9 @@ use crate::commands::{DagCli, FleetCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     check_worker_version_compatibility, validate_worker_identity, worker_alive,
-    worker_pool_satisfies_capability_request, LivenessPolicy, PlacementHint, WorkerCapabilities,
-    WorkerHeartbeat, WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration,
-    WorkerVersionCompatibilityRule,
+    validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
+    PlacementHint, TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerPool,
+    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -51,6 +51,32 @@ struct CapabilityReport {
     preferred_label_match: bool,
     gaps: Vec<String>,
     capability_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct DrainSimulation {
+    worker_id: String,
+    heartbeat: WorkerHeartbeat,
+    lease_semantics: TaskLeaseSemantics,
+    #[serde(default)]
+    leases: Vec<WorkLease>,
+    draining_started_unix_ms: u128,
+    now_unix_ms: u128,
+    new_dispatch_blocked: bool,
+    replacement_pool_ready: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct DrainReport {
+    worker_id: String,
+    inflight_nodes: usize,
+    active_leases: usize,
+    expired_leases: usize,
+    recoverable_leases: usize,
+    new_dispatch_blocked: bool,
+    replacement_pool_ready: bool,
+    gaps: Vec<String>,
+    drain_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -155,6 +181,70 @@ fn capability_payload(simulation: CapabilitySimulation) -> (serde_json::Value, b
     (serde_json::to_value(report).expect("capability report"), ok)
 }
 
+fn drain_payload(simulation: DrainSimulation) -> (serde_json::Value, bool) {
+    let DrainSimulation {
+        worker_id,
+        heartbeat,
+        lease_semantics,
+        leases,
+        draining_started_unix_ms,
+        now_unix_ms,
+        new_dispatch_blocked,
+        replacement_pool_ready,
+    } = simulation;
+    let semantics_valid = validate_task_lease_semantics(&lease_semantics).is_ok();
+    let worker_leases: Vec<_> = leases.into_iter().filter(|lease| lease.worker_id == worker_id).collect();
+    let active_leases = worker_leases
+        .iter()
+        .filter(|lease| lease.expires_unix_ms >= now_unix_ms)
+        .count();
+    let expired_leases = worker_leases
+        .iter()
+        .filter(|lease| lease.expires_unix_ms < now_unix_ms)
+        .count();
+    let recoverable_leases = worker_leases
+        .iter()
+        .filter(|lease| {
+            now_unix_ms.saturating_sub(lease.expires_unix_ms) <= lease_semantics.recovery_grace_ms as u128
+        })
+        .count();
+    let mut gaps = Vec::new();
+    if worker_id.trim().is_empty() {
+        gaps.push("drain policy requires a worker identifier".to_string());
+    }
+    if heartbeat.worker_id != worker_id {
+        gaps.push("drain heartbeat does not match the targeted worker".to_string());
+    }
+    if draining_started_unix_ms == 0 {
+        gaps.push("drain flow must record when the worker entered drain mode".to_string());
+    }
+    if !semantics_valid {
+        gaps.push("drain flow requires valid task lease semantics".to_string());
+    }
+    if !new_dispatch_blocked {
+        gaps.push("new dispatch must be blocked before a worker is drained".to_string());
+    }
+    if active_leases > 0 && !replacement_pool_ready {
+        gaps.push("replacement capacity must be declared before draining active work".to_string());
+    }
+    if expired_leases > recoverable_leases {
+        gaps.push("some expired worker leases are outside the recovery grace window".to_string());
+    }
+    let report = DrainReport {
+        worker_id,
+        inflight_nodes: heartbeat.inflight_nodes.len(),
+        active_leases,
+        expired_leases,
+        recoverable_leases,
+        new_dispatch_blocked,
+        replacement_pool_ready,
+        drain_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.drain_ready;
+    (serde_json::to_value(report).expect("drain report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -169,6 +259,11 @@ pub(crate) fn handle_fleet_command(
             let simulation: CapabilitySimulation = parse_json_file(simulation)?;
             let (payload, ok) = capability_payload(simulation);
             ("dag.fleet.capabilities", payload, ok)
+        }
+        FleetCommands::Drain { simulation } => {
+            let simulation: DrainSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = drain_payload(simulation);
+            ("dag.fleet.drain", payload, ok)
         }
     };
     emit_json(
@@ -190,10 +285,14 @@ pub(crate) fn handle_fleet_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{capability_payload, registration_payload, CapabilitySimulation, RegistrationSimulation};
+    use super::{
+        capability_payload, drain_payload, registration_payload, CapabilitySimulation,
+        DrainSimulation, RegistrationSimulation,
+    };
     use bijux_dag_runtime::simulated_platform::{
-        LivenessPolicy, PlacementHint, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
-        WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
+        LivenessPolicy, PlacementHint, TaskLeaseSemantics, WorkLease, WorkerCapabilities,
+        WorkerHeartbeat, WorkerIdentity, WorkerPool, WorkerPoolCapabilityRequest,
+        WorkerRegistration, WorkerVersionCompatibilityRule,
     };
     use std::collections::BTreeMap;
 
@@ -344,5 +443,78 @@ mod tests {
         let (payload, ok) = capability_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn drain_accepts_blocked_dispatch_with_recoverable_inflight_work() {
+        let simulation = DrainSimulation {
+            worker_id: "worker-a".to_string(),
+            heartbeat: WorkerHeartbeat {
+                worker_id: "worker-a".to_string(),
+                unix_ms: 1_700_000_000_100,
+                inflight_nodes: vec!["node-a".to_string(), "node-b".to_string()],
+            },
+            lease_semantics: TaskLeaseSemantics {
+                lease_duration_ms: 5_000,
+                renew_before_expiry_ms: 1_000,
+                max_renewals: 3,
+                recovery_grace_ms: 2_000,
+            },
+            leases: vec![
+                WorkLease {
+                    lease_id: "lease-1".to_string(),
+                    run_id: "run-1".to_string(),
+                    node_id: "node-a".to_string(),
+                    worker_id: "worker-a".to_string(),
+                    expires_unix_ms: 1_700_000_001_500,
+                },
+                WorkLease {
+                    lease_id: "lease-2".to_string(),
+                    run_id: "run-1".to_string(),
+                    node_id: "node-b".to_string(),
+                    worker_id: "worker-a".to_string(),
+                    expires_unix_ms: 1_700_000_000_500,
+                },
+            ],
+            draining_started_unix_ms: 1_700_000_000_000,
+            now_unix_ms: 1_700_000_001_000,
+            new_dispatch_blocked: true,
+            replacement_pool_ready: true,
+        };
+        let (payload, ok) = drain_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["drain_ready"], true);
+    }
+
+    #[test]
+    fn drain_flags_unbounded_or_unprepared_maintenance() {
+        let simulation = DrainSimulation {
+            worker_id: "worker-a".to_string(),
+            heartbeat: WorkerHeartbeat {
+                worker_id: "other-worker".to_string(),
+                unix_ms: 1_700_000_000_100,
+                inflight_nodes: vec!["node-a".to_string()],
+            },
+            lease_semantics: TaskLeaseSemantics {
+                lease_duration_ms: 0,
+                renew_before_expiry_ms: 0,
+                max_renewals: 0,
+                recovery_grace_ms: 100,
+            },
+            leases: vec![WorkLease {
+                lease_id: "lease-1".to_string(),
+                run_id: "run-1".to_string(),
+                node_id: "node-a".to_string(),
+                worker_id: "worker-a".to_string(),
+                expires_unix_ms: 10,
+            }],
+            draining_started_unix_ms: 0,
+            now_unix_ms: 1_000,
+            new_dispatch_blocked: false,
+            replacement_pool_ready: false,
+        };
+        let (payload, ok) = drain_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }
