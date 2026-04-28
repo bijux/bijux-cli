@@ -6,7 +6,8 @@ use bijux_dag_runtime::{
 };
 use bijux_dag_runtime::simulated_platform::{
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-    IncidentClassification, IncidentSeverity, QueueResource,
+    IncidentClassification, IncidentSeverity, QueueResource, TenantOwnershipMetadata,
+    TenantScopedDagName, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -117,6 +118,30 @@ struct IncidentHookReport {
     context_fields: Vec<String>,
     gaps: Vec<String>,
     incident_hook_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct AssetLinkSimulation {
+    dag: TenantScopedDagName,
+    ownership: TenantOwnershipMetadata,
+    portfolio: WorkflowPortfolio,
+    #[serde(default)]
+    business_capabilities: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct AssetLinkReport {
+    dag_name: String,
+    tenant_id: String,
+    owner: String,
+    portfolio_id: String,
+    linked_workflows: usize,
+    linked_schedules: usize,
+    linked_datasets: usize,
+    linked_policies: usize,
+    business_capabilities: Vec<String>,
+    gaps: Vec<String>,
+    asset_link_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -340,6 +365,38 @@ fn incident_hook_payload(simulation: IncidentHookSimulation) -> (serde_json::Val
     (serde_json::to_value(report).expect("incident hook report"), ok)
 }
 
+fn asset_link_payload(simulation: AssetLinkSimulation) -> (serde_json::Value, bool) {
+    let AssetLinkSimulation { dag, ownership, portfolio, business_capabilities } = simulation;
+    let mut gaps = Vec::new();
+    if ownership.owner.trim().is_empty() {
+        gaps.push("asset link requires an owning team or operator".to_string());
+    }
+    if portfolio.dag_refs.is_empty() {
+        gaps.push("asset link requires at least one workflow reference".to_string());
+    }
+    if portfolio.dataset_refs.is_empty() {
+        gaps.push("asset link should reference at least one dataset".to_string());
+    }
+    if business_capabilities.is_empty() {
+        gaps.push("asset link should name at least one business capability".to_string());
+    }
+    let report = AssetLinkReport {
+        dag_name: format!("{}/{}", dag.namespace, dag.logical_name),
+        tenant_id: ownership.tenant_id.0,
+        owner: ownership.owner,
+        portfolio_id: portfolio.portfolio_id,
+        linked_workflows: portfolio.dag_refs.len(),
+        linked_schedules: portfolio.schedule_refs.len(),
+        linked_datasets: portfolio.dataset_refs.len(),
+        linked_policies: portfolio.policy_refs.len(),
+        business_capabilities,
+        asset_link_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.asset_link_ready;
+    (serde_json::to_value(report).expect("asset link report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -365,6 +422,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = incident_hook_payload(simulation);
             ("dag.enterprise.incident-hook", payload, ok)
         }
+        EnterpriseCommands::AssetLink { simulation } => {
+            let simulation: AssetLinkSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = asset_link_payload(simulation);
+            ("dag.enterprise.asset-link", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -383,15 +445,17 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        incident_hook_payload, queue_payload, service_contract_payload, webhook_payload,
-        IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
+        asset_link_payload, incident_hook_payload, queue_payload, service_contract_payload,
+        webhook_payload, AssetLinkSimulation, IncidentHookSimulation, QueueSimulation,
+        ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
     };
     use bijux_dag_runtime::simulated_platform::{
         AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-        IncidentClassification, IncidentSeverity, QueueResource,
+        IncidentClassification, IncidentSeverity, QueueResource, TenantId,
+        TenantOwnershipMetadata, TenantScopedDagName, WorkflowPortfolio,
     };
 
     #[test]
@@ -599,5 +663,59 @@ mod tests {
         let (payload, ok) = incident_hook_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn asset_link_accepts_owned_workflow_portfolio_mapping() {
+        let simulation = AssetLinkSimulation {
+            dag: TenantScopedDagName {
+                tenant_id: TenantId("tenant-a".to_string()),
+                namespace: "platform".to_string(),
+                logical_name: "catalog-refresh".to_string(),
+            },
+            ownership: TenantOwnershipMetadata {
+                tenant_id: TenantId("tenant-a".to_string()),
+                owner: "team-data".to_string(),
+                labels: vec!["critical".to_string()],
+            },
+            portfolio: WorkflowPortfolio {
+                portfolio_id: "portfolio-1".to_string(),
+                dag_refs: vec!["catalog-refresh".to_string()],
+                schedule_refs: vec!["daily-catalog".to_string()],
+                dataset_refs: vec!["catalog.dataset".to_string()],
+                policy_refs: vec!["policy-prod".to_string()],
+            },
+            business_capabilities: vec!["catalog freshness".to_string()],
+        };
+        let (payload, ok) = asset_link_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["asset_link_ready"], true);
+    }
+
+    #[test]
+    fn asset_link_flags_missing_owner_or_dataset_context() {
+        let simulation = AssetLinkSimulation {
+            dag: TenantScopedDagName {
+                tenant_id: TenantId("tenant-a".to_string()),
+                namespace: "platform".to_string(),
+                logical_name: "catalog-refresh".to_string(),
+            },
+            ownership: TenantOwnershipMetadata {
+                tenant_id: TenantId("tenant-a".to_string()),
+                owner: String::new(),
+                labels: Vec::new(),
+            },
+            portfolio: WorkflowPortfolio {
+                portfolio_id: "portfolio-2".to_string(),
+                dag_refs: Vec::new(),
+                schedule_refs: Vec::new(),
+                dataset_refs: Vec::new(),
+                policy_refs: Vec::new(),
+            },
+            business_capabilities: Vec::new(),
+        };
+        let (payload, ok) = asset_link_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }
