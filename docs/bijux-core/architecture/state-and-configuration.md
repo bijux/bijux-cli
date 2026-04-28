@@ -9,23 +9,21 @@ last_reviewed: 2026-04-06
 
 # State and Configuration
 
-State and configuration must be resolved deterministically so command behavior
-is reproducible and diagnosable.
+This page explains how `bijux-core` resolves state and configuration into a
+single runtime view.
 
-## Visual Summary
+The details matter because reproducibility depends on them. If defaults, config
+files, environment overrides, and flags are not resolved in a stable order,
+then debugging and automation both become harder than they should be.
+
+## Resolution Flow
 
 ```mermaid
-stateDiagram-v2
-    [*] --> DefaultsLoaded
-    DefaultsLoaded --> ConfigApplied
-    ConfigApplied --> EnvOverridesApplied
-    EnvOverridesApplied --> FlagsApplied
-    FlagsApplied --> ResolvedState
-    ResolvedState --> Running
-    Running --> Persisting
-    Persisting --> [*]
-    Running --> FailedResolution
-    FailedResolution --> [*]
+flowchart LR
+    defaults["defaults"] --> config["config files"]
+    config --> env["environment overrides"]
+    env --> flags["flags"]
+    flags --> resolved["resolved runtime state"]
 ```
 
 ## Resolution Rules
@@ -40,6 +38,11 @@ stateDiagram-v2
 - CLI state files are owned by CLI runtime contracts
 - DAG run state and artifact records are owned by DAG runtime and artifact crates
 - maintainer evidence state is generated, reviewable, and disposable
+
+## Reading Rule
+
+Use this page when behavior changes depending on where configuration came from
+and the first question is precedence or state ownership.
 
 ## Code Anchors
 
