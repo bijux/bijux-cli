@@ -323,6 +323,14 @@ pub(crate) enum PlanCommands {
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
     },
+    Backfill {
+        #[arg(long)]
+        window_start_unix_ms: u128,
+        #[arg(long)]
+        window_end_unix_ms: u128,
+        #[arg(long, action = clap::ArgAction::Append)]
+        partition_key: Vec<String>,
+    },
 }
 
 #[derive(Subcommand)]

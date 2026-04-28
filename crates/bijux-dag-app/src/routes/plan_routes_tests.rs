@@ -190,3 +190,18 @@ fn plan_closure_returns_success_for_selected_leaf() {
     .expect("plan closure");
     assert_eq!(code, ExitCode::SUCCESS);
 }
+
+#[test]
+fn plan_backfill_returns_success_for_partitioned_window() {
+    let cli = quiet_json_cli();
+    let code = handle_plan_command(
+        &cli,
+        &PlanCommands::Backfill {
+            window_start_unix_ms: 100,
+            window_end_unix_ms: 300,
+            partition_key: vec!["sample-a".to_string(), "sample-b".to_string()],
+        },
+    )
+    .expect("plan backfill");
+    assert_eq!(code, ExitCode::SUCCESS);
+}

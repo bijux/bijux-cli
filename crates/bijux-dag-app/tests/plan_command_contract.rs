@@ -232,3 +232,26 @@ fn plan_closure_supports_json_output() {
     let code = dag_run(&matches).expect("run");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn plan_backfill_supports_json_output() {
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "plan",
+            "backfill",
+            "--window-start-unix-ms",
+            "100",
+            "--window-end-unix-ms",
+            "300",
+            "--partition-key",
+            "sample-a",
+            "--partition-key",
+            "sample-b",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}

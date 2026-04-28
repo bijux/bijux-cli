@@ -1,8 +1,8 @@
 use crate::commands::{DagCli, PlanCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    build_planner_analysis, compute_partial_run_closure, diff_plans, explain_plan,
-    PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
+    build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
+    explain_plan, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
 };
 use serde_json::json;
 
@@ -203,6 +203,25 @@ pub(crate) fn handle_plan_command(
             for node_id in &closure {
                 println!("{node_id}");
             }
+            Ok(ExitCode::SUCCESS)
+        }
+        PlanCommands::Backfill { window_start_unix_ms, window_end_unix_ms, partition_key } => {
+            let plan = build_backfill_plan(
+                *window_start_unix_ms,
+                *window_end_unix_ms,
+                partition_key.clone(),
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.plan.backfill",
+                    true,
+                    serde_json::to_value(&plan).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&plan).unwrap());
             Ok(ExitCode::SUCCESS)
         }
     }
