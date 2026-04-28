@@ -5,11 +5,8 @@ use crate::{emit_json, ExitCode};
 use bijux_dag_core::SPEC_VERSION;
 use serde_json::json;
 
-pub(crate) fn handle_capabilities_command(
-    cli: &DagCli,
-    backend: &Option<String>,
-) -> Result<ExitCode, ExitCode> {
-    let payload = json!({
+fn capabilities_payload() -> serde_json::Value {
+    json!({
         "format": "capabilities/v1",
         "binary_version": env!("CARGO_PKG_VERSION"),
         "graph_schema_version": SPEC_VERSION,
@@ -31,9 +28,16 @@ pub(crate) fn handle_capabilities_command(
             backend_capability_payload("remote").unwrap()
         ],
         "operator_commands": [
-            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
+            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.state","runtime.write-discipline","runtime.worker-recovery","runtime.control-recovery","runtime.repair","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","artifact.registry","artifact.lineage","artifact.retention","dataset.mapping","dataset.staleness","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
         ]
-    });
+    })
+}
+
+pub(crate) fn handle_capabilities_command(
+    cli: &DagCli,
+    backend: &Option<String>,
+) -> Result<ExitCode, ExitCode> {
+    let payload = capabilities_payload();
     let payload = if let Some(name) = backend.as_deref() {
         match backend_capability_payload(name) {
             Some(entry) => entry,
@@ -207,21 +211,23 @@ mod tests {
         let cli = quiet_json_cli();
         let code = handle_capabilities_command(&cli, &None).expect("capabilities");
         assert_eq!(code, ExitCode::SUCCESS);
-        let payload = serde_json::json!({
-            "operator_commands": [
-                "runtime.isolation",
-                "runtime.dispatch",
-                "runtime.retry",
-                "runtime.timeout",
-                "runtime.heartbeat",
-                "runtime.cancel",
-                "runtime.pause",
-                "runtime.intervention",
-                "runtime.transition",
-                "runtime.events"
-            ]
-        });
-        assert!(payload["operator_commands"].as_array().unwrap().len() >= 10);
+        let payload = super::capabilities_payload();
+        let operator_commands =
+            payload["operator_commands"].as_array().expect("operator commands payload");
+        for expected in [
+            "runtime.state",
+            "runtime.write-discipline",
+            "runtime.worker-recovery",
+            "runtime.control-recovery",
+            "runtime.repair",
+            "artifact.registry",
+            "artifact.lineage",
+            "artifact.retention",
+            "dataset.mapping",
+            "dataset.staleness",
+        ] {
+            assert!(operator_commands.iter().any(|value| value.as_str() == Some(expected)));
+        }
     }
 
     #[test]
