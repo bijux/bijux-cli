@@ -13,14 +13,15 @@ The interfaces section defines what external callers can depend on: command
 surface, API facade modules, configuration behavior, typed data contracts, and
 compatibility commitments.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    cli["CLI surface"] --> api["API facade"]
-    api --> config["configuration surface"]
-    config --> contracts["data and artifact contracts"]
-    contracts --> compatibility["compatibility commitments"]
+    interfaces["CLI interfaces"] --> cli["CLI surface"]
+    interfaces --> api["API facade"]
+    interfaces --> config["configuration surface"]
+    interfaces --> contracts["data and artifact contracts"]
+    interfaces --> compatibility["compatibility commitments"]
 ```
 
 ## Interface Families
@@ -50,3 +51,9 @@ flowchart LR
 - [Operator Workflows](operator-workflows.md)
 - [Public Imports](public-imports.md)
 - [Compatibility Commitments](compatibility-commitments.md)
+
+## Reading Rule
+
+Use this section when the question is about what callers can rely on. Move back
+to Architecture when the next question is about internal assembly rather than
+public contracts.
