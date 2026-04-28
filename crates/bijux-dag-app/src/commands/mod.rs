@@ -482,6 +482,7 @@ pub(crate) enum EnterpriseCommands {
     Approval { simulation: PathBuf },
     #[command(name = "dependency-catalog")]
     DependencyCatalog { simulation: PathBuf },
+    Credentials { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

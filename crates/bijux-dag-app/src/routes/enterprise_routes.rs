@@ -7,8 +7,9 @@ use bijux_dag_runtime::{
 use bijux_dag_runtime::simulated_platform::{
     approval_gate_ready,
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-    ApprovalGateNode, IncidentClassification, IncidentSeverity, QueueResource,
-    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName,
+    can_renew_credential, credential_is_expired, ApprovalGateNode, CredentialLifecycle,
+    CredentialScope, IncidentClassification, IncidentSeverity, QueueResource,
+    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
     WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
@@ -214,6 +215,28 @@ struct DependencyCatalogReport {
     executor_boundary: String,
     gaps: Vec<String>,
     dependency_catalog_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct CredentialSimulation {
+    now_unix_ms: u128,
+    lifecycle: CredentialLifecycle,
+    renewal_count: u32,
+    scope: CredentialScope,
+    binding: WorkerCredentialBinding,
+    broker_class: String,
+}
+
+#[derive(Debug, Serialize)]
+struct CredentialReport {
+    worker_id: String,
+    lease_id: String,
+    expired: bool,
+    renewable_now: bool,
+    broker_class: String,
+    worker_scoped: bool,
+    gaps: Vec<String>,
+    credential_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -599,6 +622,51 @@ fn dependency_catalog_payload(
     (serde_json::to_value(report).expect("dependency catalog report"), ok)
 }
 
+fn credential_payload(simulation: CredentialSimulation) -> (serde_json::Value, bool) {
+    let CredentialSimulation {
+        now_unix_ms,
+        lifecycle,
+        renewal_count,
+        scope,
+        binding,
+        broker_class,
+    } = simulation;
+    let expired = credential_is_expired(now_unix_ms, &lifecycle);
+    let renewable_now = can_renew_credential(renewal_count, &lifecycle);
+    let worker_scoped = scope.worker && !scope.cli && !scope.api_client && !scope.scheduler;
+    let mut gaps = Vec::new();
+    if expired {
+        gaps.push("brokered credential is already expired".to_string());
+    }
+    if !renewable_now {
+        gaps.push("brokered credential cannot be renewed within policy".to_string());
+    }
+    if !worker_scoped {
+        gaps.push("credential should be worker-scoped by default".to_string());
+    }
+    if binding.worker_id.trim().is_empty() || binding.lease_id.trim().is_empty() {
+        gaps.push("worker credential binding must name worker and lease".to_string());
+    }
+    if binding.expires_unix_ms < lifecycle.expires_unix_ms {
+        gaps.push("worker binding expires before the credential lifecycle".to_string());
+    }
+    if broker_class.trim().is_empty() || broker_class == "static-secret" {
+        gaps.push("credential path is not using a brokered short-lived class".to_string());
+    }
+    let report = CredentialReport {
+        worker_id: binding.worker_id,
+        lease_id: binding.lease_id,
+        expired,
+        renewable_now,
+        broker_class,
+        worker_scoped,
+        credential_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.credential_ready;
+    (serde_json::to_value(report).expect("credential report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -644,6 +712,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = dependency_catalog_payload(simulation);
             ("dag.enterprise.dependency-catalog", payload, ok)
         }
+        EnterpriseCommands::Credentials { simulation } => {
+            let simulation: CredentialSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = credential_payload(simulation);
+            ("dag.enterprise.credentials", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -662,9 +735,10 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        approval_payload, asset_link_payload, calendar_payload, dependency_catalog_payload,
-        incident_hook_payload, queue_payload, service_contract_payload, webhook_payload,
-        ApprovalSimulation, AssetLinkSimulation, CalendarSimulation,
+        approval_payload, asset_link_payload, calendar_payload, credential_payload,
+        dependency_catalog_payload, incident_hook_payload, queue_payload,
+        service_contract_payload, webhook_payload, ApprovalSimulation, AssetLinkSimulation,
+        CalendarSimulation, CredentialSimulation,
         DependencyCatalogSimulation, IncidentHookSimulation, QueueSimulation,
         ServiceContractSimulation, WebhookSimulation,
     };
@@ -673,8 +747,9 @@ mod tests {
     };
     use bijux_dag_runtime::simulated_platform::{
         ApprovalGateNode, AuthContext, AuthenticationPrincipal, AuthorizationRule,
-        EventSubscription, IncidentClassification, IncidentSeverity, QueueResource,
-        ServiceArchitectureNote, TenantId, TenantOwnershipMetadata, TenantScopedDagName,
+        CredentialLifecycle, CredentialScope, EventSubscription, IncidentClassification,
+        IncidentSeverity, QueueResource, ServiceArchitectureNote, TenantId,
+        TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
         WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
     };
 
@@ -1049,6 +1124,56 @@ mod tests {
             dependencies: Vec::new(),
         };
         let (payload, ok) = dependency_catalog_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn credentials_accept_short_lived_brokered_worker_scope() {
+        let simulation = CredentialSimulation {
+            now_unix_ms: 100,
+            lifecycle: CredentialLifecycle {
+                issued_unix_ms: 10,
+                expires_unix_ms: 200,
+                renewable: true,
+                max_renewals: 3,
+            },
+            renewal_count: 1,
+            scope: CredentialScope { cli: false, api_client: false, scheduler: false, worker: true },
+            binding: WorkerCredentialBinding {
+                worker_id: "worker-1".to_string(),
+                lease_id: "lease-1".to_string(),
+                run_scope: Some("run-17".to_string()),
+                expires_unix_ms: 220,
+            },
+            broker_class: "oidc-broker".to_string(),
+        };
+        let (payload, ok) = credential_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["credential_ready"], true);
+    }
+
+    #[test]
+    fn credentials_flag_static_or_expired_paths() {
+        let simulation = CredentialSimulation {
+            now_unix_ms: 300,
+            lifecycle: CredentialLifecycle {
+                issued_unix_ms: 10,
+                expires_unix_ms: 200,
+                renewable: false,
+                max_renewals: 0,
+            },
+            renewal_count: 1,
+            scope: CredentialScope { cli: true, api_client: false, scheduler: false, worker: false },
+            binding: WorkerCredentialBinding {
+                worker_id: String::new(),
+                lease_id: String::new(),
+                run_scope: None,
+                expires_unix_ms: 100,
+            },
+            broker_class: "static-secret".to_string(),
+        };
+        let (payload, ok) = credential_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
