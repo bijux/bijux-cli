@@ -1,13 +1,18 @@
 use crate::commands::{DagCli, StateStoreCommands};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_artifacts::hash::sha256_hex;
 use bijux_dag_artifacts::NodeCounts;
 use bijux_dag_runtime::{
+    build_cost_model, forecast_storage_growth,
     check_run_consistency, event_names_emitted_once, required_event_fields_present,
-    validate_required_event_names, EventRecord, NodeState, PersistedRunSnapshotRef, RunCompactionPolicy,
-    RunId, RunState, RunSummaryV2,
+    validate_and_repair_run_metadata, validate_required_event_names, EventRecord, NodeState,
+    PersistedRunSnapshotRef, RunCompactionPolicy, RunId, RunState, RunSummaryV2,
+    StorageHealthReport, validate_storage_relative_path,
 };
+use bijux_dag_runtime::simulated_platform::{clock_within_assumption, SchedulerClockAssumption};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::fs;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -97,6 +102,130 @@ struct IndexReport {
     lookup_within_limit: bool,
     gaps: Vec<String>,
     index_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ArchiveSimulation {
+    archived_run_count: usize,
+    searchable_manifest_entries: usize,
+    reconstructible_run_count: usize,
+    daily_gb: f64,
+    hot_store_gb: f64,
+    cold_store_gb: f64,
+    hot_cost_per_gb: f64,
+    cold_cost_per_gb: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct ArchiveReport {
+    monthly_gb: f64,
+    annual_gb: f64,
+    searchable_after_archive: bool,
+    reconstructible_after_archive: bool,
+    cold_storage_cheaper: bool,
+    gaps: Vec<String>,
+    archive_ready: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ChecksumFileReport {
+    relative_path: String,
+    sha256: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ChecksumReport {
+    run_dir: String,
+    health: StorageHealthReport,
+    validated_paths: Vec<String>,
+    files: Vec<ChecksumFileReport>,
+    gaps: Vec<String>,
+    checksum_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct AmplificationSimulation {
+    logical_output_gb: f64,
+    journal_gb: f64,
+    snapshot_gb: f64,
+    index_gb: f64,
+    replicated_artifact_gb: f64,
+    max_write_amplification_ratio: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct AmplificationReport {
+    logical_output_gb: f64,
+    persisted_gb: f64,
+    write_amplification_ratio: f64,
+    within_budget: bool,
+    gaps: Vec<String>,
+    amplification_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct RetentionSimulation {
+    hot_partition_days: u64,
+    archive_partition_days: u64,
+    delete_partition_days: u64,
+    overlap_detected: bool,
+    unpartitioned_event_count: usize,
+    oldest_hot_age_days: u64,
+    oldest_archive_age_days: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct RetentionReport {
+    tiers_strictly_ordered: bool,
+    partitions_non_overlapping: bool,
+    all_events_partitioned: bool,
+    old_data_moved_out_of_hot_tier: bool,
+    gaps: Vec<String>,
+    retention_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConsistencySimulation {
+    manifest_exists: bool,
+    index_exists: bool,
+    repair_allowed: bool,
+    object_store_lag_s: u64,
+    search_index_lag_s: u64,
+    max_allowed_lag_s: u64,
+    manifest_run_id: String,
+    index_run_id: String,
+    lineage_run_id: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ConsistencyReport {
+    metadata_valid: bool,
+    repair_possible: bool,
+    lag_within_budget: bool,
+    run_identity_consistent: bool,
+    gaps: Vec<String>,
+    consistency_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClockSimulation {
+    planner_unix_ms: u128,
+    scheduler_unix_ms: u128,
+    reference_unix_ms: u128,
+    persisted_unix_ms: u128,
+    max_clock_skew_ms: u64,
+    tick_grace_ms: u64,
+    source_tags: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ClockReport {
+    planner_within_skew: bool,
+    scheduler_within_skew: bool,
+    persisted_after_reference: bool,
+    source_tags_present: bool,
+    gaps: Vec<String>,
+    clock_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -294,6 +423,257 @@ fn index_payload(simulation: IndexSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("index report"), ok)
 }
 
+fn archive_payload(simulation: ArchiveSimulation) -> (serde_json::Value, bool) {
+    let ArchiveSimulation {
+        archived_run_count,
+        searchable_manifest_entries,
+        reconstructible_run_count,
+        daily_gb,
+        hot_store_gb,
+        cold_store_gb,
+        hot_cost_per_gb,
+        cold_cost_per_gb,
+    } = simulation;
+    let growth = forecast_storage_growth(daily_gb);
+    let costs = build_cost_model(hot_store_gb, cold_store_gb, 0.0, hot_cost_per_gb, cold_cost_per_gb, 0.0);
+    let searchable_after_archive = searchable_manifest_entries >= archived_run_count;
+    let reconstructible_after_archive = reconstructible_run_count >= archived_run_count;
+    let cold_storage_cheaper = costs.object_store_monthly_cost < costs.local_store_monthly_cost;
+    let mut gaps = Vec::new();
+    if archived_run_count == 0 {
+        gaps.push("archive audit requires archived runs to evaluate".to_string());
+    }
+    if !searchable_after_archive {
+        gaps.push("archived runs are not fully searchable after export".to_string());
+    }
+    if !reconstructible_after_archive {
+        gaps.push("archived runs are not reconstructible from persisted export state".to_string());
+    }
+    if !cold_storage_cheaper {
+        gaps.push("cold storage does not improve monthly storage economics".to_string());
+    }
+    let report = ArchiveReport {
+        monthly_gb: growth.monthly_gb,
+        annual_gb: growth.annual_gb,
+        searchable_after_archive,
+        reconstructible_after_archive,
+        cold_storage_cheaper,
+        archive_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.archive_ready;
+    (serde_json::to_value(report).expect("archive report"), ok)
+}
+
+fn checksum_payload(run_dir: &Path) -> (serde_json::Value, bool) {
+    let required = [
+        "manifest.json",
+        "graph.snapshot.json",
+        "outputs/index.json",
+    ];
+    let mut files = Vec::new();
+    let mut validated_paths = Vec::new();
+    let mut anomalies = Vec::new();
+    for relative_path in required {
+        if validate_storage_relative_path(relative_path).is_ok() {
+            validated_paths.push(relative_path.to_string());
+        } else {
+            anomalies.push(format!("invalid storage path contract: {relative_path}"));
+            continue;
+        }
+        let path = run_dir.join(relative_path);
+        match fs::read(&path) {
+            Ok(bytes) => {
+                files.push(ChecksumFileReport {
+                    relative_path: relative_path.to_string(),
+                    sha256: sha256_hex(&bytes),
+                });
+            }
+            Err(_) => anomalies.push(format!("missing persisted file: {relative_path}")),
+        }
+    }
+    let health = StorageHealthReport {
+        run_dir: run_dir.display().to_string(),
+        healthy: anomalies.is_empty(),
+        anomalies: anomalies.clone(),
+    };
+    let mut gaps = Vec::new();
+    if !health.healthy {
+        gaps.extend(health.anomalies.iter().cloned());
+    }
+    if files.len() != required.len() {
+        gaps.push("required persisted files are not all checksummed".to_string());
+    }
+    let report = ChecksumReport {
+        run_dir: run_dir.display().to_string(),
+        health,
+        validated_paths,
+        files,
+        checksum_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.checksum_ready;
+    (serde_json::to_value(report).expect("checksum report"), ok)
+}
+
+fn amplification_payload(simulation: AmplificationSimulation) -> (serde_json::Value, bool) {
+    let AmplificationSimulation {
+        logical_output_gb,
+        journal_gb,
+        snapshot_gb,
+        index_gb,
+        replicated_artifact_gb,
+        max_write_amplification_ratio,
+    } = simulation;
+    let persisted_gb = journal_gb + snapshot_gb + index_gb + replicated_artifact_gb;
+    let write_amplification_ratio =
+        if logical_output_gb > 0.0 { persisted_gb / logical_output_gb } else { f64::INFINITY };
+    let within_budget = write_amplification_ratio <= max_write_amplification_ratio;
+    let mut gaps = Vec::new();
+    if logical_output_gb <= 0.0 {
+        gaps.push("amplification audit requires positive logical output volume".to_string());
+    }
+    if !within_budget {
+        gaps.push("persisted bytes exceed the declared write amplification budget".to_string());
+    }
+    let report = AmplificationReport {
+        logical_output_gb,
+        persisted_gb,
+        write_amplification_ratio,
+        within_budget,
+        amplification_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.amplification_ready;
+    (serde_json::to_value(report).expect("amplification report"), ok)
+}
+
+fn retention_payload(simulation: RetentionSimulation) -> (serde_json::Value, bool) {
+    let RetentionSimulation {
+        hot_partition_days,
+        archive_partition_days,
+        delete_partition_days,
+        overlap_detected,
+        unpartitioned_event_count,
+        oldest_hot_age_days,
+        oldest_archive_age_days,
+    } = simulation;
+    let tiers_strictly_ordered =
+        hot_partition_days < archive_partition_days && archive_partition_days < delete_partition_days;
+    let partitions_non_overlapping = !overlap_detected;
+    let all_events_partitioned = unpartitioned_event_count == 0;
+    let old_data_moved_out_of_hot_tier = oldest_hot_age_days <= hot_partition_days
+        && oldest_archive_age_days <= archive_partition_days;
+    let mut gaps = Vec::new();
+    if !tiers_strictly_ordered {
+        gaps.push("retention tiers are not strictly ordered from hot to delete".to_string());
+    }
+    if !partitions_non_overlapping {
+        gaps.push("retention partitions overlap and can double-own event history".to_string());
+    }
+    if !all_events_partitioned {
+        gaps.push("some events are not assigned to a retention partition".to_string());
+    }
+    if !old_data_moved_out_of_hot_tier {
+        gaps.push("aged data remains in a hotter tier than the retention policy allows".to_string());
+    }
+    let report = RetentionReport {
+        tiers_strictly_ordered,
+        partitions_non_overlapping,
+        all_events_partitioned,
+        old_data_moved_out_of_hot_tier,
+        retention_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.retention_ready;
+    (serde_json::to_value(report).expect("retention report"), ok)
+}
+
+fn consistency_payload(simulation: ConsistencySimulation) -> (serde_json::Value, bool) {
+    let ConsistencySimulation {
+        manifest_exists,
+        index_exists,
+        repair_allowed,
+        object_store_lag_s,
+        search_index_lag_s,
+        max_allowed_lag_s,
+        manifest_run_id,
+        index_run_id,
+        lineage_run_id,
+    } = simulation;
+    let repair = validate_and_repair_run_metadata(manifest_exists, index_exists, repair_allowed);
+    let metadata_valid = repair.manifest_valid && repair.index_valid;
+    let lag_within_budget =
+        object_store_lag_s <= max_allowed_lag_s && search_index_lag_s <= max_allowed_lag_s;
+    let run_identity_consistent = !manifest_run_id.trim().is_empty()
+        && manifest_run_id == index_run_id
+        && manifest_run_id == lineage_run_id;
+    let mut gaps = Vec::new();
+    if !metadata_valid {
+        gaps.push("manifest and index state are not durably consistent".to_string());
+    }
+    if !lag_within_budget {
+        gaps.push("cross-store lag exceeds the declared reconciliation budget".to_string());
+    }
+    if !run_identity_consistent {
+        gaps.push("manifest, index, and lineage stores disagree on run identity".to_string());
+    }
+    let report = ConsistencyReport {
+        metadata_valid,
+        repair_possible: repair.repaired_manifest || repair.repaired_index,
+        lag_within_budget,
+        run_identity_consistent,
+        consistency_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.consistency_ready;
+    (serde_json::to_value(report).expect("consistency report"), ok)
+}
+
+fn clock_payload(simulation: ClockSimulation) -> (serde_json::Value, bool) {
+    let ClockSimulation {
+        planner_unix_ms,
+        scheduler_unix_ms,
+        reference_unix_ms,
+        persisted_unix_ms,
+        max_clock_skew_ms,
+        tick_grace_ms,
+        source_tags,
+    } = simulation;
+    let assumption = SchedulerClockAssumption { max_clock_skew_ms, tick_grace_ms };
+    let planner_within_skew =
+        clock_within_assumption(planner_unix_ms, reference_unix_ms, &assumption);
+    let scheduler_within_skew =
+        clock_within_assumption(scheduler_unix_ms, reference_unix_ms, &assumption);
+    let persisted_after_reference = persisted_unix_ms + assumption.tick_grace_ms as u128 >= reference_unix_ms;
+    let source_tags_present = source_tags.iter().any(|tag| tag == "planner")
+        && source_tags.iter().any(|tag| tag == "scheduler")
+        && source_tags.iter().any(|tag| tag == "persistence");
+    let mut gaps = Vec::new();
+    if !planner_within_skew {
+        gaps.push("planner clock exceeds the declared skew assumption".to_string());
+    }
+    if !scheduler_within_skew {
+        gaps.push("scheduler clock exceeds the declared skew assumption".to_string());
+    }
+    if !persisted_after_reference {
+        gaps.push("persisted timestamps fall behind the authoritative schedule reference".to_string());
+    }
+    if !source_tags_present {
+        gaps.push("clock records are missing planner, scheduler, or persistence source tags".to_string());
+    }
+    let report = ClockReport {
+        planner_within_skew,
+        scheduler_within_skew,
+        persisted_after_reference,
+        source_tags_present,
+        clock_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.clock_ready;
+    (serde_json::to_value(report).expect("clock report"), ok)
+}
+
 pub(crate) fn handle_state_store_command(
     cli: &DagCli,
     command: &StateStoreCommands,
@@ -319,6 +699,35 @@ pub(crate) fn handle_state_store_command(
             let (payload, ok) = index_payload(simulation);
             ("dag.state-store.index", payload, ok)
         }
+        StateStoreCommands::Archive { simulation } => {
+            let simulation: ArchiveSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = archive_payload(simulation);
+            ("dag.state-store.archive", payload, ok)
+        }
+        StateStoreCommands::Checksum { run_dir } => {
+            let (payload, ok) = checksum_payload(run_dir);
+            ("dag.state-store.checksum", payload, ok)
+        }
+        StateStoreCommands::Amplification { simulation } => {
+            let simulation: AmplificationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = amplification_payload(simulation);
+            ("dag.state-store.amplification", payload, ok)
+        }
+        StateStoreCommands::Retention { simulation } => {
+            let simulation: RetentionSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = retention_payload(simulation);
+            ("dag.state-store.retention", payload, ok)
+        }
+        StateStoreCommands::Consistency { simulation } => {
+            let simulation: ConsistencySimulation = parse_json_file(simulation)?;
+            let (payload, ok) = consistency_payload(simulation);
+            ("dag.state-store.consistency", payload, ok)
+        }
+        StateStoreCommands::Clock { simulation } => {
+            let simulation: ClockSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = clock_payload(simulation);
+            ("dag.state-store.clock", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -340,15 +749,20 @@ pub(crate) fn handle_state_store_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        index_payload, journal_payload, snapshot_payload, transaction_payload, IndexSimulation,
-        JournalSimulation, NodeStateRecord, SnapshotSimulation, TransactionSimulation,
+        amplification_payload, archive_payload, checksum_payload, clock_payload,
+        consistency_payload, index_payload, journal_payload, retention_payload, snapshot_payload,
+        transaction_payload, AmplificationSimulation, ArchiveSimulation, ClockSimulation,
+        ConsistencySimulation, IndexSimulation, JournalSimulation, NodeStateRecord,
+        RetentionSimulation, SnapshotSimulation, TransactionSimulation,
     };
+    use bijux_dag_artifacts::RunDir;
     use bijux_dag_artifacts::NodeCounts;
     use bijux_dag_runtime::{
         EventCategory, EventRecord, NodeState, PersistedRunSnapshotRef, RunCompactionPolicy,
         RunState,
     };
     use serde_json::json;
+    use std::fs;
 
     #[test]
     fn transaction_accepts_consistent_atomic_visible_state() {
@@ -569,6 +983,205 @@ mod tests {
             max_lookup_ms: 100,
         };
         let (payload, ok) = index_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn archive_accepts_searchable_reconstructible_cold_exports() {
+        let simulation = ArchiveSimulation {
+            archived_run_count: 100,
+            searchable_manifest_entries: 100,
+            reconstructible_run_count: 100,
+            daily_gb: 50.0,
+            hot_store_gb: 5_000.0,
+            cold_store_gb: 5_000.0,
+            hot_cost_per_gb: 0.08,
+            cold_cost_per_gb: 0.02,
+        };
+        let (payload, ok) = archive_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["archive_ready"], true);
+    }
+
+    #[test]
+    fn archive_flags_unsearchable_or_cost_negative_exports() {
+        let simulation = ArchiveSimulation {
+            archived_run_count: 100,
+            searchable_manifest_entries: 50,
+            reconstructible_run_count: 40,
+            daily_gb: 50.0,
+            hot_store_gb: 5_000.0,
+            cold_store_gb: 5_000.0,
+            hot_cost_per_gb: 0.02,
+            cold_cost_per_gb: 0.03,
+        };
+        let (payload, ok) = archive_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn checksum_accepts_required_persisted_files() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let run_dir = RunDir::create(temp.path()).expect("run dir");
+        fs::write(
+            run_dir.staging_path().join("manifest.json"),
+            br#"{"run_id":"run-1","status":"success"}"#,
+        )
+        .expect("manifest");
+        run_dir
+            .write_graph_snapshot("{\"nodes\":[]}")
+            .expect("graph snapshot");
+        let outputs_index = run_dir.run_outputs_index_path();
+        let outputs_dir = outputs_index.parent().expect("outputs parent");
+        fs::create_dir_all(outputs_dir).expect("outputs dir");
+        fs::write(outputs_index, br#"{"files":[]}"#).expect("outputs index");
+        let (payload, ok) = checksum_payload(run_dir.staging_path());
+        assert!(ok);
+        assert_eq!(payload["checksum_ready"], true);
+        assert_eq!(payload["files"].as_array().expect("files").len(), 3);
+    }
+
+    #[test]
+    fn checksum_flags_missing_required_persisted_files() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let run_dir = RunDir::create(temp.path()).expect("run dir");
+        let (payload, ok) = checksum_payload(run_dir.staging_path());
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 2);
+    }
+
+    #[test]
+    fn amplification_accepts_bounded_persisted_write_ratio() {
+        let simulation = AmplificationSimulation {
+            logical_output_gb: 100.0,
+            journal_gb: 10.0,
+            snapshot_gb: 5.0,
+            index_gb: 3.0,
+            replicated_artifact_gb: 20.0,
+            max_write_amplification_ratio: 0.5,
+        };
+        let (payload, ok) = amplification_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["amplification_ready"], true);
+    }
+
+    #[test]
+    fn amplification_flags_overbudget_persisted_write_ratio() {
+        let simulation = AmplificationSimulation {
+            logical_output_gb: 10.0,
+            journal_gb: 8.0,
+            snapshot_gb: 4.0,
+            index_gb: 3.0,
+            replicated_artifact_gb: 6.0,
+            max_write_amplification_ratio: 1.0,
+        };
+        let (payload, ok) = amplification_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 1);
+    }
+
+    #[test]
+    fn retention_accepts_strict_non_overlapping_tiers() {
+        let simulation = RetentionSimulation {
+            hot_partition_days: 7,
+            archive_partition_days: 30,
+            delete_partition_days: 365,
+            overlap_detected: false,
+            unpartitioned_event_count: 0,
+            oldest_hot_age_days: 7,
+            oldest_archive_age_days: 30,
+        };
+        let (payload, ok) = retention_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["retention_ready"], true);
+    }
+
+    #[test]
+    fn retention_flags_overlap_or_unpartitioned_history() {
+        let simulation = RetentionSimulation {
+            hot_partition_days: 30,
+            archive_partition_days: 20,
+            delete_partition_days: 10,
+            overlap_detected: true,
+            unpartitioned_event_count: 4,
+            oldest_hot_age_days: 50,
+            oldest_archive_age_days: 40,
+        };
+        let (payload, ok) = retention_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn consistency_accepts_reconciled_metadata_and_store_identity() {
+        let simulation = ConsistencySimulation {
+            manifest_exists: true,
+            index_exists: true,
+            repair_allowed: false,
+            object_store_lag_s: 5,
+            search_index_lag_s: 10,
+            max_allowed_lag_s: 15,
+            manifest_run_id: "run-1".to_string(),
+            index_run_id: "run-1".to_string(),
+            lineage_run_id: "run-1".to_string(),
+        };
+        let (payload, ok) = consistency_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["consistency_ready"], true);
+    }
+
+    #[test]
+    fn consistency_flags_divergent_ids_or_excessive_lag() {
+        let simulation = ConsistencySimulation {
+            manifest_exists: false,
+            index_exists: false,
+            repair_allowed: false,
+            object_store_lag_s: 50,
+            search_index_lag_s: 75,
+            max_allowed_lag_s: 20,
+            manifest_run_id: "run-1".to_string(),
+            index_run_id: "run-2".to_string(),
+            lineage_run_id: String::new(),
+        };
+        let (payload, ok) = consistency_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn clock_accepts_bounded_skew_and_tagged_sources() {
+        let simulation = ClockSimulation {
+            planner_unix_ms: 1_000,
+            scheduler_unix_ms: 1_010,
+            reference_unix_ms: 1_005,
+            persisted_unix_ms: 1_007,
+            max_clock_skew_ms: 20,
+            tick_grace_ms: 5,
+            source_tags: vec![
+                "planner".to_string(),
+                "scheduler".to_string(),
+                "persistence".to_string(),
+            ],
+        };
+        let (payload, ok) = clock_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["clock_ready"], true);
+    }
+
+    #[test]
+    fn clock_flags_skew_drift_and_missing_sources() {
+        let simulation = ClockSimulation {
+            planner_unix_ms: 1_000,
+            scheduler_unix_ms: 1_100,
+            reference_unix_ms: 1_010,
+            persisted_unix_ms: 900,
+            max_clock_skew_ms: 20,
+            tick_grace_ms: 5,
+            source_tags: vec!["planner".to_string()],
+        };
+        let (payload, ok) = clock_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }

@@ -497,6 +497,12 @@ pub(crate) enum StateStoreCommands {
     Journal { simulation: PathBuf },
     Snapshot { simulation: PathBuf },
     Index { simulation: PathBuf },
+    Archive { simulation: PathBuf },
+    Checksum { run_dir: PathBuf },
+    Amplification { simulation: PathBuf },
+    Retention { simulation: PathBuf },
+    Consistency { simulation: PathBuf },
+    Clock { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
