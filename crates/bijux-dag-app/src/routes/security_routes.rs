@@ -20,6 +20,7 @@ use bijux_dag_runtime::simulated_platform::{
     TenantRegistryPartition, TenantSchedulerAdmission,
 };
 use bijux_dag_runtime::{
+    authorize_input_path, authorize_output_path,
     leak_conformance_check, secret_readiness, secret_scope_allows, secure_cleanup_required,
     secure_mode_effective, select_secret_version, summarize_sensitive_classes,
     validate_secret_delivery_mode, SecretDeliveryPolicy, SecretInjectionMode,
@@ -198,6 +199,28 @@ struct SupplyChainReport {
     promotion_allowed: bool,
     pinned_inputs: bool,
     trust_domain_bound: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct DataAccessSimulation {
+    input_root: String,
+    candidate_input: String,
+    output_root: String,
+    candidate_output: String,
+    allowed_dataset_ids: Vec<String>,
+    requested_dataset_ids: Vec<String>,
+    allowed_artifact_ids: Vec<String>,
+    requested_artifact_ids: Vec<String>,
+    tenant_id: String,
+}
+
+#[derive(Debug, Serialize)]
+struct DataAccessReport {
+    input_path_allowed: bool,
+    output_path_allowed: bool,
+    dataset_entitlements_ok: bool,
+    visible_artifact_ids: Vec<String>,
     gaps: Vec<String>,
 }
 
@@ -504,6 +527,45 @@ fn supply_chain_payload(simulation: &Path) -> Result<SupplyChainReport, ExitCode
     })
 }
 
+fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
+    let simulation: DataAccessSimulation = load_json_file(simulation)?;
+    let input_path_allowed =
+        authorize_input_path(Path::new(&simulation.input_root), Path::new(&simulation.candidate_input)).is_ok();
+    let output_path_allowed =
+        authorize_output_path(Path::new(&simulation.output_root), Path::new(&simulation.candidate_output)).is_ok();
+    let allowed_datasets =
+        simulation.allowed_dataset_ids.into_iter().collect::<std::collections::BTreeSet<_>>();
+    let dataset_entitlements_ok =
+        simulation.requested_dataset_ids.iter().all(|dataset| allowed_datasets.contains(dataset));
+    let lineage_scope = TenantLineageScope {
+        tenant_id: parse_tenant_id(&simulation.tenant_id)?,
+        allowed_artifact_ids: simulation.allowed_artifact_ids,
+    };
+    let visible_artifact_ids = scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
+
+    let mut gaps = Vec::new();
+    if !input_path_allowed {
+        gaps.push("requested input path escapes the authorized input root".to_string());
+    }
+    if !output_path_allowed {
+        gaps.push("requested output path escapes the authorized output root".to_string());
+    }
+    if !dataset_entitlements_ok {
+        gaps.push("requested datasets exceed declared entitlements".to_string());
+    }
+    if visible_artifact_ids.len() != simulation.requested_artifact_ids.len() {
+        gaps.push("artifact lineage query was narrowed by tenant scope".to_string());
+    }
+
+    Ok(DataAccessReport {
+        input_path_allowed,
+        output_path_allowed,
+        dataset_entitlements_ok,
+        visible_artifact_ids,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -529,6 +591,11 @@ pub(crate) fn handle_security_command(
             let payload =
                 serde_json::to_value(supply_chain_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.supply-chain", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::DataAccess { simulation } => {
+            let payload =
+                serde_json::to_value(data_access_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.data-access", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -988,6 +1055,100 @@ mod tests {
             "artifact promotion policy rejected this trust posture",
             "artifact digests are not fully pinned",
             "environment trust domain is missing",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_data_access_accepts_scoped_dataset_and_path_usage() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let input_root = dir.path().join("inputs");
+        let output_root = dir.path().join("outputs");
+        std::fs::create_dir_all(&input_root).expect("input root");
+        std::fs::create_dir_all(&output_root).expect("output root");
+        let candidate_input = input_root.join("a/file.txt");
+        let candidate_output = output_root.join("b/file.txt");
+        std::fs::create_dir_all(candidate_input.parent().expect("input parent")).expect("input parent");
+        std::fs::create_dir_all(candidate_output.parent().expect("output parent")).expect("output parent");
+        std::fs::write(&candidate_input, "ok").expect("write input");
+        std::fs::write(&candidate_output, "ok").expect("write output");
+        let simulation = dir.path().join("data-access.json");
+        std::fs::write(
+            &simulation,
+            format!(
+                r#"{{
+                  "input_root":"{}",
+                  "candidate_input":"{}",
+                  "output_root":"{}",
+                  "candidate_output":"{}",
+                  "allowed_dataset_ids":["ds1","ds2"],
+                  "requested_dataset_ids":["ds1"],
+                  "allowed_artifact_ids":["a1","a2"],
+                  "requested_artifact_ids":["a1","a2"],
+                  "tenant_id":"atlas"
+                }}"#,
+                input_root.display(),
+                candidate_input.display(),
+                output_root.display(),
+                candidate_output.display()
+            ),
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::DataAccess { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::DataAccess { simulation: simulation.clone() },
+        )
+        .expect("data access");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::data_access_payload(&simulation).expect("report");
+        assert!(report.input_path_allowed);
+        assert!(report.output_path_allowed);
+        assert!(report.dataset_entitlements_ok);
+        assert_eq!(report.visible_artifact_ids, vec!["a1".to_string(), "a2".to_string()]);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_data_access_flags_escaped_paths_and_unapproved_datasets() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let input_root = dir.path().join("inputs");
+        let output_root = dir.path().join("outputs");
+        std::fs::create_dir_all(&input_root).expect("input root");
+        std::fs::create_dir_all(&output_root).expect("output root");
+        let simulation = dir.path().join("data-access.json");
+        std::fs::write(
+            &simulation,
+            format!(
+                r#"{{
+                  "input_root":"{}",
+                  "candidate_input":"{}",
+                  "output_root":"{}",
+                  "candidate_output":"{}",
+                  "allowed_dataset_ids":["ds1"],
+                  "requested_dataset_ids":["ds1","ds2"],
+                  "allowed_artifact_ids":["a1"],
+                  "requested_artifact_ids":["a1","a2"],
+                  "tenant_id":"atlas"
+                }}"#,
+                input_root.display(),
+                dir.path().join("../outside.txt").display(),
+                output_root.display(),
+                dir.path().join("../outside-out.txt").display()
+            ),
+        )
+        .expect("write simulation");
+        let report = super::data_access_payload(&simulation).expect("report");
+        assert!(!report.input_path_allowed);
+        assert!(!report.output_path_allowed);
+        assert!(!report.dataset_entitlements_ok);
+        assert_eq!(report.visible_artifact_ids, vec!["a1".to_string()]);
+        for expected in [
+            "requested input path escapes the authorized input root",
+            "requested output path escapes the authorized output root",
+            "requested datasets exceed declared entitlements",
+            "artifact lineage query was narrowed by tenant scope",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
