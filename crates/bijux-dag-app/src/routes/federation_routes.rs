@@ -2,7 +2,7 @@ use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
-    delegation_allowed, domain_healthy, federation_conformance_passes,
+    delegation_allowed, domain_healthy, federation_conformance_passes, resolve_tenant_overlay,
     select_delegation_failure_action, ConsistencyBoundaryNote, ConsistencyClass,
     CrossDomainReplaySafety, CrossRegionFailoverRule, DelegationFailureAction,
     DelegationFailurePolicy, DisasterRecoveryPlaybook, DomainHealthSnapshot,
@@ -10,11 +10,11 @@ use bijux_dag_runtime::simulated_platform::{
     GeoSimulationScenario, InterSchedulerFlowControl, PeeringObservabilityContract,
     RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
     RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
-    TrustTierRoutingRule, WriteRoutingRule, replay_trust_warnings, trust_tier_allows_domain,
+    TenantConfigOverlay, TrustTierRoutingRule, WriteRoutingRule, replay_trust_warnings,
+    trust_tier_allows_domain,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde_json::json;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
@@ -163,6 +163,24 @@ struct DelegationReport {
     delegation_allowed: bool,
     target_domain_healthy: bool,
     failure_action: String,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ConfigInheritanceSimulation {
+    global_defaults: std::collections::BTreeMap<String, String>,
+    region_overlay: RegionPolicyOverlay,
+    region_values: std::collections::BTreeMap<String, String>,
+    tenant_overlay: TenantConfigOverlay,
+    explicit_overrides: std::collections::BTreeMap<String, String>,
+    review_required_keys: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ConfigInheritanceReport {
+    merged: std::collections::BTreeMap<String, String>,
+    review_required_keys_present: bool,
+    explicit_override_count: usize,
     gaps: Vec<String>,
 }
 
@@ -456,6 +474,36 @@ fn delegation_payload(simulation: &Path) -> Result<DelegationReport, ExitCode> {
     })
 }
 
+fn config_inheritance_payload(simulation: &Path) -> Result<ConfigInheritanceReport, ExitCode> {
+    let simulation: ConfigInheritanceSimulation = load_json_file(simulation)?;
+    let mut regional_defaults = simulation.global_defaults.clone();
+    for (key, value) in simulation.region_values {
+        regional_defaults.insert(key, value);
+    }
+    let mut merged = resolve_tenant_overlay(&regional_defaults, &simulation.tenant_overlay);
+    let explicit_override_count = simulation.explicit_overrides.len();
+    for (key, value) in simulation.explicit_overrides {
+        merged.insert(key, value);
+    }
+    let review_required_keys_present =
+        simulation.review_required_keys.iter().all(|key| merged.contains_key(key));
+    let mut gaps = Vec::new();
+    if simulation.region_overlay.regulatory_profile.trim().is_empty()
+        || simulation.region_overlay.infrastructure_profile.trim().is_empty()
+    {
+        gaps.push("region overlay metadata is incomplete".to_string());
+    }
+    if !review_required_keys_present {
+        gaps.push("merged configuration is missing review-required keys".to_string());
+    }
+    Ok(ConfigInheritanceReport {
+        explicit_override_count,
+        merged,
+        review_required_keys_present,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -513,14 +561,18 @@ pub(crate) fn handle_federation_command(
             let payload = serde_json::to_value(delegation_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.delegation", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
-        _ => emit_json(
-            cli,
-            "dag.federation",
-            false,
-            json!({"status":"not-yet-implemented"}),
-            vec![json!({"message":"federation surface not yet implemented for this command in the current commit boundary"})],
-            ExitCode::from(2),
-        ),
+        FederationCommands::ConfigInheritance { simulation } => {
+            let payload =
+                serde_json::to_value(config_inheritance_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.config-inheritance",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
     }
 }
 
@@ -1068,6 +1120,65 @@ mod tests {
         for expected in [
             "delegation exceeds configured inflight or rate limits",
             "target domain is not healthy enough to receive delegation",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_config_inheritance_merges_global_region_tenant_and_explicit_layers() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("config.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "global_defaults":{"retry":"2","queue":"global","region":"global"},
+              "region_overlay":{"region":"eu","regulatory_profile":"gdpr","cost_profile":"premium","infrastructure_profile":"primary"},
+              "region_values":{"queue":"eu-main","region":"eu"},
+              "tenant_overlay":{"tenant_id":"atlas","values":{"retention":"30d"},"overrides":{"retry":"5"}},
+              "explicit_overrides":{"queue":"eu-priority"},
+              "review_required_keys":["retry","queue","retention","region"]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(FederationCommands::ConfigInheritance { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::ConfigInheritance { simulation: simulation.clone() },
+        )
+        .expect("config inheritance");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::config_inheritance_payload(&simulation).expect("report");
+        assert!(report.review_required_keys_present);
+        assert_eq!(report.explicit_override_count, 1);
+        assert_eq!(report.merged.get("retry").map(String::as_str), Some("5"));
+        assert_eq!(report.merged.get("queue").map(String::as_str), Some("eu-priority"));
+        assert_eq!(report.merged.get("region").map(String::as_str), Some("eu"));
+        assert_eq!(report.merged.get("retention").map(String::as_str), Some("30d"));
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_config_inheritance_flags_missing_review_keys_or_overlay_metadata() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("config.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "global_defaults":{"retry":"2"},
+              "region_overlay":{"region":"eu","regulatory_profile":"","cost_profile":"premium","infrastructure_profile":""},
+              "region_values":{},
+              "tenant_overlay":{"tenant_id":"atlas","values":{},"overrides":{}},
+              "explicit_overrides":{},
+              "review_required_keys":["retry","queue"]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::config_inheritance_payload(&simulation).expect("report");
+        for expected in [
+            "region overlay metadata is incomplete",
+            "merged configuration is missing review-required keys",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
