@@ -1291,7 +1291,6 @@ fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
             "include": include_selectors,
             "exclude": exclude_selectors,
         },
-        "remote_cache_enabled": options.remote_cache_dir.is_some(),
     });
     sha256_bytes(payload.to_string().as_bytes())
 }

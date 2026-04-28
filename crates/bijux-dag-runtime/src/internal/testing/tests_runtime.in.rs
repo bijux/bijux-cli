@@ -20,6 +20,23 @@ mod tests {
         fs::create_dir_all(&conflict).expect("create conflict directory");
     }
 
+    fn cache_entry_for_node(cache_root: &Path, node_id: &str) -> PathBuf {
+        fs::read_dir(cache_root)
+            .expect("read cache root")
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .find(|entry| {
+                let meta_path = entry.join("meta.json");
+                let raw = fs::read_to_string(&meta_path).ok();
+                raw.and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+                    .and_then(|meta| {
+                        meta.get("node_id").and_then(|value| value.as_str()).map(str::to_string)
+                    })
+                    .as_deref()
+                    == Some(node_id)
+            })
+            .unwrap_or_else(|| panic!("cache entry missing for node {node_id}"))
+    }
+
     #[derive(Clone)]
     struct InterceptFs {
         inner: StdFs,
@@ -454,11 +471,7 @@ mod tests {
         let run1 = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
         // corrupt cache by deleting an output file
-        let entries: Vec<_> = fs::read_dir(cache_dir.path())
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        let entry = entries[0].path();
+        let entry = cache_entry_for_node(cache_dir.path(), "a");
         let index_path = entry.join("outputs").join("index.json");
         if let Ok(data) = fs::read_to_string(&index_path) {
             if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
@@ -480,10 +493,7 @@ mod tests {
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
 
         let trace_a = fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap();
-        let trace_b = fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap();
-        let has_corrupt =
-            trace_a.contains("\"corrupt_detected\"") || trace_b.contains("\"corrupt_detected\"");
-        assert!(has_corrupt);
+        assert!(trace_a.contains("\"corrupt_detected\": true"));
 
         // ensure outputs still exist
         assert!(run1
@@ -550,11 +560,7 @@ mod tests {
         };
         let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
-        let entries: Vec<_> = fs::read_dir(remote_cache.path())
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        let entry = entries[0].path();
+        let entry = cache_entry_for_node(remote_cache.path(), "a");
         let index_path = entry.join("outputs").join("index.json");
         if let Ok(data) = fs::read_to_string(&index_path) {
             if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
@@ -578,21 +584,12 @@ mod tests {
             &fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap(),
         )
         .unwrap();
-        let trace_b: serde_json::Value = serde_json::from_str(
-            &fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap(),
-        )
-        .unwrap();
         let bad_a = trace_a
             .get("cache_proof")
             .and_then(|v| v.get("corrupt_detected"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-        let bad_b = trace_b
-            .get("cache_proof")
-            .and_then(|v| v.get("corrupt_detected"))
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        assert!(bad_a || bad_b);
+        assert!(bad_a);
     }
 
     #[test]
