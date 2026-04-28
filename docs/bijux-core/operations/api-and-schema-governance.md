@@ -9,19 +9,21 @@ last_reviewed: 2026-04-12
 
 # API and Schema Governance
 
-Repository-level schema work exists to keep package contracts, published docs,
-and release expectations aligned.
+This page explains how repository-level API and schema work stays aligned across
+packages.
+
+The repository branch matters here when a schema or contract stops being a
+single-package concern and starts affecting docs, releases, or cross-program
+behavior.
+
+## Governance Map
 
 ```mermaid
-flowchart TD
-    behavior[package public behavior] --> schemas[shared contracts and schemas]
-    schemas --> pinned[pinned schema and contract snapshots]
-    pinned --> checks[drift and compatibility checks]
-    checks --> review[review and merge decision]
+flowchart LR
+    behavior["package public behavior"] --> schemas["shared contracts and schemas"]
+    schemas --> checks["drift and compatibility checks"]
+    checks --> review["review and merge"]
     review --> behavior
-
-    code_drift[behavior changed without schema update] --> checks
-    schema_drift[schema changed without stated intent] --> checks
 ```
 
 ## Root Governance Surfaces
@@ -34,6 +36,11 @@ flowchart TD
 
 If a schema or contract change crosses package boundaries, the repository
 handbook should explain that change before release notes try to summarize it.
+
+## Reading Rule
+
+Use this page when a schema or contract change reaches beyond one package and
+needs a repository-level explanation.
 
 ## Next Reads
 
