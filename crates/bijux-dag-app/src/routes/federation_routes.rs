@@ -5,6 +5,7 @@ use bijux_dag_runtime::simulated_platform::{
     federation_conformance_passes, ConsistencyBoundaryNote, ConsistencyClass,
     CrossDomainReplaySafety, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
     FederatedConformanceGate, GeoReadyAcceptanceGate, GeoSimulationScenario,
+    PeeringObservabilityContract,
     RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
     RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
     WriteRoutingRule, replay_trust_warnings,
@@ -112,6 +113,21 @@ struct PolicyDistributionReport {
     all_regions_covered: bool,
     conformance_passed: bool,
     distinct_profiles: usize,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AuditIntegritySimulation {
+    gate: FederatedConformanceGate,
+    observability: PeeringObservabilityContract,
+}
+
+#[derive(Debug, Serialize)]
+struct AuditIntegrityReport {
+    audit_exchange_enabled: bool,
+    metrics_exchange_enabled: bool,
+    redaction_profile: String,
+    integrity_passed: bool,
     gaps: Vec<String>,
 }
 
@@ -319,6 +335,32 @@ fn policy_distribution_payload(simulation: &Path) -> Result<PolicyDistributionRe
     Ok(PolicyDistributionReport { all_regions_covered, conformance_passed, distinct_profiles, gaps })
 }
 
+fn audit_integrity_payload(simulation: &Path) -> Result<AuditIntegrityReport, ExitCode> {
+    let simulation: AuditIntegritySimulation = load_json_file(simulation)?;
+    let audit_exchange_enabled = simulation.observability.exchange_audit_events;
+    let metrics_exchange_enabled = simulation.observability.exchange_metrics;
+    let integrity_passed = federation_conformance_passes(&simulation.gate)
+        && audit_exchange_enabled
+        && !simulation.observability.redaction_profile.trim().is_empty();
+    let mut gaps = Vec::new();
+    if !federation_conformance_passes(&simulation.gate) {
+        gaps.push("federated audit conformance gate is incomplete".to_string());
+    }
+    if !audit_exchange_enabled {
+        gaps.push("audit events are not exchanged across domains".to_string());
+    }
+    if simulation.observability.redaction_profile.trim().is_empty() {
+        gaps.push("audit exchange is missing a redaction profile".to_string());
+    }
+    Ok(AuditIntegrityReport {
+        audit_exchange_enabled,
+        metrics_exchange_enabled,
+        redaction_profile: simulation.observability.redaction_profile,
+        integrity_passed,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -350,6 +392,18 @@ pub(crate) fn handle_federation_command(
             emit_json(
                 cli,
                 "dag.federation.policy-distribution",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        FederationCommands::AuditIntegrity { simulation } => {
+            let payload =
+                serde_json::to_value(audit_integrity_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.audit-integrity",
                 true,
                 payload,
                 Vec::new(),
@@ -759,6 +813,54 @@ mod tests {
             "active regions are missing policy overlays",
             "federated policy distribution conformance gate is incomplete",
             "one or more region overlays are incomplete",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_audit_integrity_accepts_complete_cross_domain_audit_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("audit.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "gate":{"lineage_auditable":true,"routing_deterministic":true,"audit_events_complete":true},
+              "observability":{"exchange_metrics":true,"exchange_audit_events":true,"redaction_profile":"tenant-safe"}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::AuditIntegrity { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::AuditIntegrity { simulation: simulation.clone() },
+        )
+        .expect("audit integrity");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::audit_integrity_payload(&simulation).expect("report");
+        assert!(report.integrity_passed);
+        assert!(report.audit_exchange_enabled);
+        assert_eq!(report.redaction_profile, "tenant-safe");
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_audit_integrity_flags_missing_audit_exchange() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("audit.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "gate":{"lineage_auditable":true,"routing_deterministic":false,"audit_events_complete":false},
+              "observability":{"exchange_metrics":true,"exchange_audit_events":false,"redaction_profile":""}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::audit_integrity_payload(&simulation).expect("report");
+        for expected in [
+            "federated audit conformance gate is incomplete",
+            "audit events are not exchanged across domains",
+            "audit exchange is missing a redaction profile",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
