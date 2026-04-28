@@ -495,6 +495,7 @@ pub(crate) enum ControlPlaneCommands {
 pub(crate) enum StateStoreCommands {
     Transaction { simulation: PathBuf },
     Journal { simulation: PathBuf },
+    Snapshot { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -3,7 +3,8 @@ use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_artifacts::NodeCounts;
 use bijux_dag_runtime::{
     check_run_consistency, event_names_emitted_once, required_event_fields_present,
-    validate_required_event_names, EventRecord, NodeState, RunId, RunState, RunSummaryV2,
+    validate_required_event_names, EventRecord, NodeState, PersistedRunSnapshotRef, RunCompactionPolicy,
+    RunId, RunState, RunSummaryV2,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -54,6 +55,26 @@ struct JournalReport {
     singleton_boundaries_ok: bool,
     gaps: Vec<String>,
     journal_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct SnapshotSimulation {
+    snapshot: Option<PersistedRunSnapshotRef>,
+    compaction_policy: RunCompactionPolicy,
+    event_count: usize,
+    latest_attempts_kept: usize,
+    rebuildable_from_journal: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct SnapshotReport {
+    snapshot_present: bool,
+    compaction_due: bool,
+    persisted_after_threshold: bool,
+    keep_latest_attempts_respected: bool,
+    rebuildable_from_journal: bool,
+    gaps: Vec<String>,
+    snapshot_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -165,6 +186,50 @@ fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("journal report"), ok)
 }
 
+fn snapshot_payload(simulation: SnapshotSimulation) -> (serde_json::Value, bool) {
+    let SnapshotSimulation {
+        snapshot,
+        compaction_policy,
+        event_count,
+        latest_attempts_kept,
+        rebuildable_from_journal,
+    } = simulation;
+    let snapshot_present = snapshot.is_some();
+    let compaction_due = event_count >= compaction_policy.max_event_count_before_compaction;
+    let persisted_after_threshold = match snapshot.as_ref() {
+        Some(snapshot) => !snapshot.run_id.trim().is_empty()
+            && !snapshot.snapshot_path.trim().is_empty()
+            && snapshot.persisted_unix_ms > 0,
+        None => !compaction_due,
+    };
+    let keep_latest_attempts_respected =
+        latest_attempts_kept >= compaction_policy.keep_latest_attempts;
+    let mut gaps = Vec::new();
+    if compaction_due && !snapshot_present {
+        gaps.push("snapshot is missing even though compaction threshold has been crossed".to_string());
+    }
+    if !persisted_after_threshold {
+        gaps.push("persisted snapshot reference is incomplete or not durable".to_string());
+    }
+    if !keep_latest_attempts_respected {
+        gaps.push("snapshot retention does not preserve the configured latest attempts".to_string());
+    }
+    if !rebuildable_from_journal {
+        gaps.push("snapshot cannot be rebuilt from the append-only journal".to_string());
+    }
+    let report = SnapshotReport {
+        snapshot_present,
+        compaction_due,
+        persisted_after_threshold,
+        keep_latest_attempts_respected,
+        rebuildable_from_journal,
+        snapshot_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.snapshot_ready;
+    (serde_json::to_value(report).expect("snapshot report"), ok)
+}
+
 pub(crate) fn handle_state_store_command(
     cli: &DagCli,
     command: &StateStoreCommands,
@@ -179,6 +244,11 @@ pub(crate) fn handle_state_store_command(
             let simulation: JournalSimulation = parse_json_file(simulation)?;
             let (payload, ok) = journal_payload(simulation);
             ("dag.state-store.journal", payload, ok)
+        }
+        StateStoreCommands::Snapshot { simulation } => {
+            let simulation: SnapshotSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = snapshot_payload(simulation);
+            ("dag.state-store.snapshot", payload, ok)
         }
     };
     emit_json(
@@ -200,9 +270,15 @@ pub(crate) fn handle_state_store_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{journal_payload, transaction_payload, JournalSimulation, NodeStateRecord, TransactionSimulation};
+    use super::{
+        journal_payload, snapshot_payload, transaction_payload, JournalSimulation, NodeStateRecord,
+        SnapshotSimulation, TransactionSimulation,
+    };
     use bijux_dag_artifacts::NodeCounts;
-    use bijux_dag_runtime::{EventCategory, EventRecord, NodeState, RunState};
+    use bijux_dag_runtime::{
+        EventCategory, EventRecord, NodeState, PersistedRunSnapshotRef, RunCompactionPolicy,
+        RunState,
+    };
     use serde_json::json;
 
     #[test]
@@ -349,5 +425,43 @@ mod tests {
         let (payload, ok) = journal_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn snapshot_accepts_persisted_rebuildable_state_ref() {
+        let simulation = SnapshotSimulation {
+            snapshot: Some(PersistedRunSnapshotRef {
+                run_id: "run-1".to_string(),
+                snapshot_path: "snapshots/run-1.json".to_string(),
+                persisted_unix_ms: 100,
+            }),
+            compaction_policy: RunCompactionPolicy {
+                max_event_count_before_compaction: 10,
+                keep_latest_attempts: 3,
+            },
+            event_count: 12,
+            latest_attempts_kept: 3,
+            rebuildable_from_journal: true,
+        };
+        let (payload, ok) = snapshot_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["snapshot_ready"], true);
+    }
+
+    #[test]
+    fn snapshot_flags_missing_or_nonrebuildable_state_ref() {
+        let simulation = SnapshotSimulation {
+            snapshot: None,
+            compaction_policy: RunCompactionPolicy {
+                max_event_count_before_compaction: 10,
+                keep_latest_attempts: 4,
+            },
+            event_count: 20,
+            latest_attempts_kept: 2,
+            rebuildable_from_journal: false,
+        };
+        let (payload, ok) = snapshot_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
 }
