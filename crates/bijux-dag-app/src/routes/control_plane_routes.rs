@@ -1,8 +1,9 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    fence_allows_mutation, is_stale_leader, next_epoch, LeaderElectionState, QueueShardLease,
-    SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
+    fence_allows_mutation, is_stale_leader, next_epoch, DurableRunQueueEntry,
+    LeaderElectionState, QueueShardLease, SchedulerEpoch, SchedulerFenceToken,
+    TypedControlPlaneRequest, TypedControlPlaneResponse,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -49,6 +50,28 @@ struct LeadershipReport {
     next_epoch: u64,
     gaps: Vec<String>,
     leadership_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct PlanningSimulation {
+    dag_name: String,
+    plan_digest: String,
+    plan_persisted_unix_ms: u128,
+    dispatch_started_unix_ms: u128,
+    queue_entry: DurableRunQueueEntry,
+    review_recorded: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct PlanningReport {
+    dag_name: String,
+    schedule_id: String,
+    run_key: String,
+    plan_persisted_before_dispatch: bool,
+    review_recorded: bool,
+    queue_key: String,
+    gaps: Vec<String>,
+    planning_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -135,6 +158,48 @@ fn leadership_payload(simulation: LeadershipSimulation) -> (serde_json::Value, b
     (serde_json::to_value(report).expect("leadership report"), ok)
 }
 
+fn planning_payload(simulation: PlanningSimulation) -> (serde_json::Value, bool) {
+    let PlanningSimulation {
+        dag_name,
+        plan_digest,
+        plan_persisted_unix_ms,
+        dispatch_started_unix_ms,
+        queue_entry,
+        review_recorded,
+    } = simulation;
+    let plan_persisted_before_dispatch = plan_persisted_unix_ms > 0
+        && plan_persisted_unix_ms <= dispatch_started_unix_ms
+        && queue_entry.created_unix_ms >= plan_persisted_unix_ms;
+    let mut gaps = Vec::new();
+    if dag_name.trim().is_empty() {
+        gaps.push("planning audit requires a dag name".to_string());
+    }
+    if plan_digest.trim().is_empty() {
+        gaps.push("planning audit requires a durable plan digest".to_string());
+    }
+    if !plan_persisted_before_dispatch {
+        gaps.push("plan artifact was not durably persisted before dispatch began".to_string());
+    }
+    if !review_recorded {
+        gaps.push("plan review was not recorded before scheduling".to_string());
+    }
+    if queue_entry.schedule_id.trim().is_empty() || queue_entry.run_key.trim().is_empty() {
+        gaps.push("queued dispatch must reference schedule and run identity".to_string());
+    }
+    let report = PlanningReport {
+        dag_name,
+        schedule_id: queue_entry.schedule_id,
+        run_key: queue_entry.run_key,
+        plan_persisted_before_dispatch,
+        review_recorded,
+        queue_key: queue_entry.queue_key,
+        planning_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.planning_ready;
+    (serde_json::to_value(report).expect("planning report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -149,6 +214,11 @@ pub(crate) fn handle_control_plane_command(
             let simulation: LeadershipSimulation = parse_json_file(simulation)?;
             let (payload, ok) = leadership_payload(simulation);
             ("dag.control-plane.leadership", payload, ok)
+        }
+        ControlPlaneCommands::Planning { simulation } => {
+            let simulation: PlanningSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = planning_payload(simulation);
+            ("dag.control-plane.planning", payload, ok)
         }
     };
     emit_json(
@@ -170,10 +240,13 @@ pub(crate) fn handle_control_plane_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{api_payload, leadership_payload, ApiSimulation, LeadershipSimulation};
+    use super::{
+        api_payload, leadership_payload, planning_payload, ApiSimulation, LeadershipSimulation,
+        PlanningSimulation,
+    };
     use bijux_dag_runtime::simulated_platform::{
-        LeaderElectionState, QueueShardLease, RunControlOperation, SchedulerEpoch,
-        SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
+        DurableRunQueueEntry, LeaderElectionState, QueueShardLease, RunControlOperation,
+        SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
     };
     use serde_json::json;
 
@@ -280,6 +353,48 @@ mod tests {
             now_unix_ms: 1_500,
         };
         let (payload, ok) = leadership_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn planning_accepts_persisted_reviewed_plan_before_dispatch() {
+        let simulation = PlanningSimulation {
+            dag_name: "atlas.load".to_string(),
+            plan_digest: "plan-1".to_string(),
+            plan_persisted_unix_ms: 1_000,
+            dispatch_started_unix_ms: 1_500,
+            queue_entry: DurableRunQueueEntry {
+                queue_key: "atlas/default".to_string(),
+                tenant_id: Some("atlas".to_string()),
+                schedule_id: "sched-1".to_string(),
+                run_key: "run-1".to_string(),
+                created_unix_ms: 1_200,
+            },
+            review_recorded: true,
+        };
+        let (payload, ok) = planning_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["planning_ready"], true);
+    }
+
+    #[test]
+    fn planning_flags_queued_work_without_durable_plan() {
+        let simulation = PlanningSimulation {
+            dag_name: String::new(),
+            plan_digest: String::new(),
+            plan_persisted_unix_ms: 2_000,
+            dispatch_started_unix_ms: 1_500,
+            queue_entry: DurableRunQueueEntry {
+                queue_key: String::new(),
+                tenant_id: None,
+                schedule_id: String::new(),
+                run_key: String::new(),
+                created_unix_ms: 1_000,
+            },
+            review_recorded: false,
+        };
+        let (payload, ok) = planning_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }

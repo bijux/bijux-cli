@@ -475,6 +475,7 @@ pub(crate) enum ArtifactCommands {
 pub(crate) enum ControlPlaneCommands {
     Api { simulation: PathBuf },
     Leadership { simulation: PathBuf },
+    Planning { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
