@@ -474,6 +474,8 @@ pub(crate) enum EnterpriseCommands {
     Queue { simulation: PathBuf },
     #[command(name = "service-contract")]
     ServiceContract { simulation: PathBuf },
+    #[command(name = "incident-hook")]
+    IncidentHook { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

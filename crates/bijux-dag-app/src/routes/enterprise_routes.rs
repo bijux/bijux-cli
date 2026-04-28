@@ -6,7 +6,7 @@ use bijux_dag_runtime::{
 };
 use bijux_dag_runtime::simulated_platform::{
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-    QueueResource,
+    IncidentClassification, IncidentSeverity, QueueResource,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -93,6 +93,30 @@ struct ServiceContractReport {
     handoff_valid: bool,
     gaps: Vec<String>,
     service_contract_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct IncidentHookSimulation {
+    classification: IncidentClassification,
+    workflow_id: String,
+    #[serde(default)]
+    owners: Vec<String>,
+    ticket_system: String,
+    escalation_target: String,
+    #[serde(default)]
+    context_fields: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct IncidentHookReport {
+    workflow_id: String,
+    severity: String,
+    ticket_system: String,
+    escalation_target: String,
+    owner_count: usize,
+    context_fields: Vec<String>,
+    gaps: Vec<String>,
+    incident_hook_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -266,6 +290,56 @@ fn service_contract_payload(simulation: ServiceContractSimulation) -> (serde_jso
     (serde_json::to_value(report).expect("service contract report"), ok)
 }
 
+fn severity_name(severity: &IncidentSeverity) -> &'static str {
+    match severity {
+        IncidentSeverity::Critical => "critical",
+        IncidentSeverity::High => "high",
+        IncidentSeverity::Medium => "medium",
+        IncidentSeverity::Low => "low",
+    }
+}
+
+fn incident_hook_payload(simulation: IncidentHookSimulation) -> (serde_json::Value, bool) {
+    let IncidentHookSimulation {
+        classification,
+        workflow_id,
+        owners,
+        ticket_system,
+        escalation_target,
+        context_fields,
+    } = simulation;
+    let mut gaps = Vec::new();
+    if workflow_id.trim().is_empty() {
+        gaps.push("incident hook requires a workflow identifier".to_string());
+    }
+    if owners.is_empty() {
+        gaps.push("incident hook requires at least one workflow owner".to_string());
+    }
+    if ticket_system.trim().is_empty() {
+        gaps.push("incident hook requires a ticketing or incident system".to_string());
+    }
+    if escalation_target.trim().is_empty() {
+        gaps.push("incident hook requires an escalation target".to_string());
+    }
+    for required in ["run_id", "tenant_id", "severity", "owner"] {
+        if !context_fields.iter().any(|field| field == required) {
+            gaps.push(format!("incident hook is missing required context field {required}"));
+        }
+    }
+    let report = IncidentHookReport {
+        workflow_id,
+        severity: severity_name(&classification.severity).to_string(),
+        ticket_system,
+        escalation_target,
+        owner_count: owners.len(),
+        context_fields,
+        incident_hook_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.incident_hook_ready;
+    (serde_json::to_value(report).expect("incident hook report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -286,6 +360,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = service_contract_payload(simulation);
             ("dag.enterprise.service-contract", payload, ok)
         }
+        EnterpriseCommands::IncidentHook { simulation } => {
+            let simulation: IncidentHookSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = incident_hook_payload(simulation);
+            ("dag.enterprise.incident-hook", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -304,15 +383,15 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        queue_payload, service_contract_payload, webhook_payload, QueueSimulation,
-        ServiceContractSimulation, WebhookSimulation,
+        incident_hook_payload, queue_payload, service_contract_payload, webhook_payload,
+        IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
     };
     use bijux_dag_runtime::simulated_platform::{
         AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
-        QueueResource,
+        IncidentClassification, IncidentSeverity, QueueResource,
     };
 
     #[test]
@@ -475,6 +554,49 @@ mod tests {
             side_effect_class: "mutating".to_string(),
         };
         let (payload, ok) = service_contract_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn incident_hook_accepts_owned_context_rich_failure_routing() {
+        let simulation = IncidentHookSimulation {
+            classification: IncidentClassification {
+                incident_type: "workflow-failure".to_string(),
+                severity: IncidentSeverity::High,
+                routing: "platform-oncall".to_string(),
+            },
+            workflow_id: "tenant-a/catalog-refresh".to_string(),
+            owners: vec!["team-data".to_string()],
+            ticket_system: "jira".to_string(),
+            escalation_target: "platform-oncall".to_string(),
+            context_fields: vec![
+                "run_id".to_string(),
+                "tenant_id".to_string(),
+                "severity".to_string(),
+                "owner".to_string(),
+            ],
+        };
+        let (payload, ok) = incident_hook_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["incident_hook_ready"], true);
+    }
+
+    #[test]
+    fn incident_hook_flags_unowned_or_context_thin_routing() {
+        let simulation = IncidentHookSimulation {
+            classification: IncidentClassification {
+                incident_type: "workflow-failure".to_string(),
+                severity: IncidentSeverity::Critical,
+                routing: "platform-oncall".to_string(),
+            },
+            workflow_id: String::new(),
+            owners: Vec::new(),
+            ticket_system: String::new(),
+            escalation_target: String::new(),
+            context_fields: vec!["run_id".to_string()],
+        };
+        let (payload, ok) = incident_hook_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
