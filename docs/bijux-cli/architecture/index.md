@@ -9,19 +9,19 @@ last_reviewed: 2026-04-06
 
 # CLI Architecture
 
-The architecture section describes how `bijux-cli` is assembled: module
+The architecture section explains how `bijux-cli` is assembled: module
 boundaries, dependency flow, execution pipeline, persistence touchpoints,
 integration seams, and risk areas.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-flowchart TB
-    map["module map"] --> deps["dependency direction"]
-    deps --> exec["execution model"]
-    exec --> state["state and persistence"]
-    state --> seams["integration seams and extensibility"]
-    seams --> risk["architecture risks and review hotspots"]
+flowchart LR
+    architecture["CLI architecture"] --> map["module map"]
+    architecture --> deps["dependency direction"]
+    architecture --> exec["execution model"]
+    architecture --> state["state and persistence"]
+    architecture --> seams["integration seams"]
 ```
 
 ## Primary Code Anchors
@@ -44,3 +44,9 @@ flowchart TB
 - [Extensibility Model](extensibility-model.md)
 - [Code Navigation](code-navigation.md)
 - [Architecture Risks](architecture-risks.md)
+
+## Reading Rule
+
+Start here when the command runtime already makes sense but the internal shape
+does not. Move to Interfaces when the next question is about caller-visible
+contracts rather than implementation structure.
