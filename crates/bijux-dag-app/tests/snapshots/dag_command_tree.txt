@@ -43,6 +43,7 @@ security
 semantic-portability
 show-effective-graph
 show-effective-plan
+state-store
 status
 trace-artifact
 validate

@@ -64,6 +64,11 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: ControlPlaneCommands,
     },
+    #[command(name = "state-store")]
+    StateStore {
+        #[command(subcommand)]
+        command: StateStoreCommands,
+    },
     Dataset {
         #[command(subcommand)]
         command: DatasetCommands,
@@ -484,6 +489,11 @@ pub(crate) enum ControlPlaneCommands {
     Migration { simulation: PathBuf },
     #[command(name = "fan-in")]
     FanIn { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum StateStoreCommands {
+    Transaction { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -359,6 +359,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ControlPlane { command } => {
             routes::control_plane_routes::handle_control_plane_command(&cli, command)
         }
+        Commands::StateStore { command } => {
+            routes::state_store_routes::handle_state_store_command(&cli, command)
+        }
         Commands::Dataset { command } => {
             routes::dataset_routes::handle_dataset_command(&cli, command)
         }
