@@ -501,6 +501,8 @@ pub(crate) enum GovernanceCommands {
 #[derive(Subcommand)]
 pub(crate) enum IncidentCommands {
     Mode { simulation: PathBuf },
+    #[command(name = "blast-radius")]
+    BlastRadius { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

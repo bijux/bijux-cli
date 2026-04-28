@@ -6,6 +6,7 @@ use bijux_dag_runtime::simulated_platform::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -36,6 +37,39 @@ struct IncidentModeReport {
     official_plugins: Vec<String>,
     gaps: Vec<String>,
     incident_mode_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct BlastRadiusSimulation {
+    classification: IncidentClassification,
+    failing_components: Vec<String>,
+    #[serde(default)]
+    workflows: Vec<WorkflowImpact>,
+    #[serde(default)]
+    service_context: BTreeMap<String, Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WorkflowImpact {
+    workflow_id: String,
+    tenant_id: String,
+    #[serde(default)]
+    artifact_ids: Vec<String>,
+    #[serde(default)]
+    dependencies: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct BlastRadiusReport {
+    incident_type: String,
+    severity: String,
+    failing_components: Vec<String>,
+    impacted_workflows: Vec<String>,
+    impacted_tenants: Vec<String>,
+    impacted_artifacts: Vec<String>,
+    impacted_services: BTreeMap<String, Vec<String>>,
+    gaps: Vec<String>,
+    blast_radius_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -105,6 +139,62 @@ fn incident_mode_payload(simulation: IncidentModeSimulation) -> (serde_json::Val
     (serde_json::to_value(report).expect("incident mode report"), ok)
 }
 
+fn blast_radius_payload(simulation: BlastRadiusSimulation) -> (serde_json::Value, bool) {
+    let BlastRadiusSimulation { classification, failing_components, workflows, service_context } =
+        simulation;
+    let failing_set = failing_components.iter().cloned().collect::<BTreeSet<_>>();
+    let impacted_workflows = workflows
+        .iter()
+        .filter(|workflow| workflow.dependencies.iter().any(|dependency| failing_set.contains(dependency)))
+        .collect::<Vec<_>>();
+    let impacted_workflow_ids = impacted_workflows
+        .iter()
+        .map(|workflow| workflow.workflow_id.clone())
+        .collect::<Vec<_>>();
+    let impacted_tenants = impacted_workflows
+        .iter()
+        .map(|workflow| workflow.tenant_id.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let impacted_artifacts = impacted_workflows
+        .iter()
+        .flat_map(|workflow| workflow.artifact_ids.iter().cloned())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let impacted_services = service_context
+        .into_iter()
+        .filter(|(component, _)| failing_set.contains(component))
+        .collect::<BTreeMap<_, _>>();
+    let mut gaps = Vec::new();
+    if failing_components.is_empty() {
+        gaps.push("blast-radius analysis requires at least one failing component".to_string());
+    }
+    if impacted_workflow_ids.is_empty() {
+        gaps.push("blast-radius analysis did not resolve any impacted workflows".to_string());
+    }
+    if impacted_tenants.is_empty() {
+        gaps.push("blast-radius analysis should resolve at least one impacted tenant".to_string());
+    }
+    if impacted_services.len() != failing_set.len() {
+        gaps.push("service context is incomplete for one or more failing components".to_string());
+    }
+    let report = BlastRadiusReport {
+        incident_type: classification.incident_type,
+        severity: severity_name(&classification.severity).to_string(),
+        failing_components,
+        impacted_workflows: impacted_workflow_ids,
+        impacted_tenants,
+        impacted_artifacts,
+        impacted_services,
+        blast_radius_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.blast_radius_ready;
+    (serde_json::to_value(report).expect("blast radius report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -114,6 +204,11 @@ pub(crate) fn handle_incident_command(
             let simulation: IncidentModeSimulation = parse_json_file(simulation)?;
             let (payload, ok) = incident_mode_payload(simulation);
             ("dag.incident.mode", payload, ok)
+        }
+        IncidentCommands::BlastRadius { simulation } => {
+            let simulation: BlastRadiusSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = blast_radius_payload(simulation);
+            ("dag.incident.blast-radius", payload, ok)
         }
     };
     emit_json(
@@ -132,14 +227,14 @@ pub(crate) fn handle_incident_command(
 
 #[cfg(test)]
 mod tests {
-    use super::incident_mode_payload;
+    use super::{blast_radius_payload, incident_mode_payload};
     use bijux_dag_runtime::simulated_platform::{
         IncidentClassification, IncidentSeverity, PlatformHealthDashboard, RunbookEntry,
         SupportabilityModel,
     };
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
-    use super::IncidentModeSimulation;
+    use super::{BlastRadiusSimulation, IncidentModeSimulation, WorkflowImpact};
 
     #[test]
     fn incident_mode_accepts_reduced_action_surface_with_runbooks() {
@@ -202,5 +297,61 @@ mod tests {
         assert!(!ok);
         assert_eq!(payload["incident_mode_ready"], false);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn blast_radius_resolves_impacted_workflows_and_tenants() {
+        let simulation = BlastRadiusSimulation {
+            classification: IncidentClassification {
+                incident_type: "policy-store-outage".to_string(),
+                severity: IncidentSeverity::High,
+                routing: "platform-oncall".to_string(),
+            },
+            failing_components: vec!["policy-store".to_string()],
+            workflows: vec![
+                WorkflowImpact {
+                    workflow_id: "tenant-a/regulated-backfill".to_string(),
+                    tenant_id: "tenant-a".to_string(),
+                    artifact_ids: vec!["artifact-1".to_string(), "artifact-2".to_string()],
+                    dependencies: vec!["policy-store".to_string(), "artifact-store".to_string()],
+                },
+                WorkflowImpact {
+                    workflow_id: "tenant-b/analytics-refresh".to_string(),
+                    tenant_id: "tenant-b".to_string(),
+                    artifact_ids: vec!["artifact-3".to_string()],
+                    dependencies: vec!["scheduler".to_string()],
+                },
+            ],
+            service_context: BTreeMap::from([(
+                "policy-store".to_string(),
+                vec!["authz".to_string(), "release-gates".to_string()],
+            )]),
+        };
+        let (payload, ok) = blast_radius_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["impacted_workflows"].as_array().expect("workflows").len(), 1);
+        assert_eq!(payload["impacted_tenants"][0], "tenant-a");
+    }
+
+    #[test]
+    fn blast_radius_flags_missing_context_or_impacts() {
+        let simulation = BlastRadiusSimulation {
+            classification: IncidentClassification {
+                incident_type: "scheduler-drift".to_string(),
+                severity: IncidentSeverity::Medium,
+                routing: "platform-review".to_string(),
+            },
+            failing_components: vec!["scheduler".to_string(), "artifact-store".to_string()],
+            workflows: vec![WorkflowImpact {
+                workflow_id: "tenant-a/no-hit".to_string(),
+                tenant_id: "tenant-a".to_string(),
+                artifact_ids: Vec::new(),
+                dependencies: vec!["authz".to_string()],
+            }],
+            service_context: BTreeMap::from([("scheduler".to_string(), vec!["planner".to_string()])]),
+        };
+        let (payload, ok) = blast_radius_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 2);
     }
 }
