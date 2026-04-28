@@ -2,11 +2,12 @@ use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     fence_allows_mutation, is_stale_leader, next_epoch, DurableRunQueueEntry,
-    LeaderElectionState, QueueShardLease, SchedulerEpoch, SchedulerFenceToken,
-    TypedControlPlaneRequest, TypedControlPlaneResponse,
+    LeaderElectionState, QueuePartition, QueueShardLease, RegionId, RegionQueuePartition,
+    SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -72,6 +73,29 @@ struct PlanningReport {
     queue_key: String,
     gaps: Vec<String>,
     planning_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ShardingSimulation {
+    #[serde(default)]
+    queue_partitions: Vec<QueuePartition>,
+    #[serde(default)]
+    region_partitions: Vec<RegionQueuePartition>,
+    #[serde(default)]
+    active_tenants: Vec<String>,
+    #[serde(default)]
+    active_regions: Vec<RegionId>,
+}
+
+#[derive(Debug, Serialize)]
+struct ShardingReport {
+    tenant_partition_count: usize,
+    region_partition_count: usize,
+    all_tenants_assigned: bool,
+    all_regions_assigned: bool,
+    shared_region_edges: usize,
+    gaps: Vec<String>,
+    sharding_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -200,6 +224,50 @@ fn planning_payload(simulation: PlanningSimulation) -> (serde_json::Value, bool)
     (serde_json::to_value(report).expect("planning report"), ok)
 }
 
+fn sharding_payload(simulation: ShardingSimulation) -> (serde_json::Value, bool) {
+    let ShardingSimulation { queue_partitions, region_partitions, active_tenants, active_regions } =
+        simulation;
+    let assigned_tenants = queue_partitions
+        .iter()
+        .filter_map(|partition| partition.tenant_id.clone())
+        .collect::<BTreeSet<_>>();
+    let assigned_regions = region_partitions
+        .iter()
+        .map(|partition| partition.region.clone())
+        .collect::<BTreeSet<_>>();
+    let all_tenants_assigned = active_tenants.iter().all(|tenant| assigned_tenants.contains(tenant));
+    let all_regions_assigned = active_regions.iter().all(|region| assigned_regions.contains(region));
+    let shared_region_edges =
+        region_partitions.iter().map(|partition| partition.shared_with_regions.len()).sum::<usize>();
+    let mut gaps = Vec::new();
+    if queue_partitions.is_empty() {
+        gaps.push("control-plane sharding requires at least one queue partition".to_string());
+    }
+    if region_partitions.is_empty() {
+        gaps.push("control-plane sharding requires at least one region partition".to_string());
+    }
+    if !all_tenants_assigned {
+        gaps.push("not every active tenant is mapped to an explicit queue partition".to_string());
+    }
+    if !all_regions_assigned {
+        gaps.push("not every active region is mapped to an explicit region partition".to_string());
+    }
+    if shared_region_edges > region_partitions.len() {
+        gaps.push("regional partitions are overly shared and weaken shard isolation".to_string());
+    }
+    let report = ShardingReport {
+        tenant_partition_count: queue_partitions.len(),
+        region_partition_count: region_partitions.len(),
+        all_tenants_assigned,
+        all_regions_assigned,
+        shared_region_edges,
+        sharding_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.sharding_ready;
+    (serde_json::to_value(report).expect("sharding report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -219,6 +287,11 @@ pub(crate) fn handle_control_plane_command(
             let simulation: PlanningSimulation = parse_json_file(simulation)?;
             let (payload, ok) = planning_payload(simulation);
             ("dag.control-plane.planning", payload, ok)
+        }
+        ControlPlaneCommands::Sharding { simulation } => {
+            let simulation: ShardingSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = sharding_payload(simulation);
+            ("dag.control-plane.sharding", payload, ok)
         }
     };
     emit_json(
@@ -242,13 +315,15 @@ pub(crate) fn handle_control_plane_command(
 mod tests {
     use super::{
         api_payload, leadership_payload, planning_payload, ApiSimulation, LeadershipSimulation,
-        PlanningSimulation,
+        PlanningSimulation, ShardingSimulation, sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        DurableRunQueueEntry, LeaderElectionState, QueueShardLease, RunControlOperation,
-        SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
+        DurableRunQueueEntry, LeaderElectionState, QueuePartition, QueueShardLease, RegionId,
+        RegionQueuePartition, RunControlOperation, SchedulerEpoch, SchedulerFenceToken,
+        TypedControlPlaneRequest, TypedControlPlaneResponse,
     };
     use serde_json::json;
+    use std::collections::BTreeSet;
 
     #[test]
     fn api_accepts_load_balanced_consistent_replicas() {
@@ -397,5 +472,64 @@ mod tests {
         let (payload, ok) = planning_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn sharding_accepts_explicit_tenant_and_region_partitions() {
+        let simulation = ShardingSimulation {
+            queue_partitions: vec![
+                QueuePartition {
+                    queue_name: "atlas".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    max_concurrency: 32,
+                },
+                QueuePartition {
+                    queue_name: "canon".to_string(),
+                    tenant_id: Some("canon".to_string()),
+                    max_concurrency: 16,
+                },
+            ],
+            region_partitions: vec![
+                RegionQueuePartition {
+                    region: RegionId("eu-north".to_string()),
+                    queue_name: "atlas-eu".to_string(),
+                    shared_with_regions: BTreeSet::new(),
+                },
+                RegionQueuePartition {
+                    region: RegionId("us-east".to_string()),
+                    queue_name: "atlas-us".to_string(),
+                    shared_with_regions: BTreeSet::new(),
+                },
+            ],
+            active_tenants: vec!["atlas".to_string(), "canon".to_string()],
+            active_regions: vec![RegionId("eu-north".to_string()), RegionId("us-east".to_string())],
+        };
+        let (payload, ok) = sharding_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["sharding_ready"], true);
+    }
+
+    #[test]
+    fn sharding_flags_unassigned_or_overly_shared_partitions() {
+        let simulation = ShardingSimulation {
+            queue_partitions: vec![QueuePartition {
+                queue_name: "atlas".to_string(),
+                tenant_id: Some("atlas".to_string()),
+                max_concurrency: 32,
+            }],
+            region_partitions: vec![RegionQueuePartition {
+                region: RegionId("eu-north".to_string()),
+                queue_name: "atlas-eu".to_string(),
+                shared_with_regions: BTreeSet::from([
+                    RegionId("us-east".to_string()),
+                    RegionId("us-west".to_string()),
+                ]),
+            }],
+            active_tenants: vec!["atlas".to_string(), "canon".to_string()],
+            active_regions: vec![RegionId("eu-north".to_string()), RegionId("us-east".to_string())],
+        };
+        let (payload, ok) = sharding_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 2);
     }
 }

@@ -476,6 +476,7 @@ pub(crate) enum ControlPlaneCommands {
     Api { simulation: PathBuf },
     Leadership { simulation: PathBuf },
     Planning { simulation: PathBuf },
+    Sharding { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
