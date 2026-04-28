@@ -1,6 +1,6 @@
 //! DAG canonicalization entrypoints and helpers.
 
-use crate::{Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic};
+use crate::{BranchSpec, EdgeKind, Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use unicode_normalization::UnicodeNormalization;
@@ -23,9 +23,19 @@ impl Graph {
             if let Some(group) = &node.group {
                 node.group = Some(normalize_identity_text(group));
             }
+            if let Some(branch) = &node.branch {
+                node.branch = Some(BranchSpec {
+                    expression: normalize_identity_text(&branch.expression),
+                    true_port: normalize_identity_text(&branch.true_port),
+                    false_port: normalize_identity_text(&branch.false_port),
+                });
+            }
         }
 
         for edge in &mut edges {
+            if let Some(id) = &edge.id {
+                edge.id = Some(normalize_identity_text(id));
+            }
             edge.from.node_id = normalize_identity_text(&edge.from.node_id);
             edge.from.port = normalize_identity_text(&edge.from.port);
             edge.to.node_id = normalize_identity_text(&edge.to.node_id);
@@ -48,11 +58,21 @@ impl Graph {
         }
 
         edges.sort_by(|left, right| {
-            (&left.from.node_id, &left.from.port, &left.to.node_id, &left.to.port).cmp(&(
+            (
+                edge_kind_order(&left.kind),
+                &left.from.node_id,
+                &left.from.port,
+                &left.to.node_id,
+                &left.to.port,
+                &left.id,
+            )
+                .cmp(&(
+                edge_kind_order(&right.kind),
                 &right.from.node_id,
                 &right.from.port,
                 &right.to.node_id,
                 &right.to.port,
+                &right.id,
             ))
         });
 
@@ -208,5 +228,13 @@ fn effect_order(effect: &Effect) -> u8 {
         Effect::Network => 1,
         Effect::Env => 2,
         Effect::Clock => 3,
+    }
+}
+
+fn edge_kind_order(kind: &EdgeKind) -> u8 {
+    match kind {
+        EdgeKind::Data => 0,
+        EdgeKind::Control => 1,
+        EdgeKind::Conditional => 2,
     }
 }

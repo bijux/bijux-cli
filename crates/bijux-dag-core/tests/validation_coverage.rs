@@ -9,8 +9,8 @@ use thiserror as _;
 use unicode_normalization as _;
 
 use bijux_dag_core::{
-    parse_graph_strict, Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, PortRef, Severity,
-    SPEC_VERSION,
+    parse_graph_strict, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
+    PortRef, Severity, SPEC_VERSION, TriggerRule,
 };
 
 #[test]
@@ -104,10 +104,14 @@ fn topo_order_is_dependency_sensitive() {
         ],
         edges: vec![
             Edge {
+                id: None,
+                kind: EdgeKind::Data,
                 from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
             },
             Edge {
+                id: None,
+                kind: EdgeKind::Data,
                 from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "c".to_string(), port: "in".to_string() },
             },
@@ -141,6 +145,8 @@ fn property_duplicate_id_detection() {
 fn property_edge_target_validation() {
     let mut graph = base_graph();
     graph.edges.push(Edge {
+        id: None,
+        kind: EdgeKind::Data,
         from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
         to: PortRef { node_id: "missing".to_string(), port: "in".to_string() },
     });
@@ -193,6 +199,8 @@ fn base_graph() -> Graph {
         nondeterminism_allowed: false,
         nodes,
         edges: vec![Edge {
+            id: None,
+            kind: EdgeKind::Data,
             from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
             to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
         }],
@@ -209,6 +217,8 @@ fn graph_for_code(code: &str) -> Graph {
         "E1002" => {
             let mut g = base_graph();
             g.edges.push(Edge {
+                id: None,
+                kind: EdgeKind::Data,
                 from: PortRef { node_id: "missing".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
@@ -218,6 +228,8 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = base_graph();
             g.nodes[1].inputs = vec!["in".to_string()];
             g.edges.push(Edge {
+                id: None,
+                kind: EdgeKind::Data,
                 from: PortRef { node_id: "source".to_string(), port: "missing".to_string() },
                 to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
@@ -235,10 +247,14 @@ fn graph_for_code(code: &str) -> Graph {
                 ],
                 edges: vec![
                     Edge {
+                        id: None,
+                        kind: EdgeKind::Data,
                         from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
                         to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
                     },
                     Edge {
+                        id: None,
+                        kind: EdgeKind::Data,
                         from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
                         to: PortRef { node_id: "a".to_string(), port: "in".to_string() },
                     },
@@ -317,6 +333,8 @@ fn graph_for_code(code: &str) -> Graph {
                 effects: vec![],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: TriggerRule::AllSuccess,
+                branch: None,
             });
             g
         }
@@ -331,6 +349,8 @@ fn graph_for_code(code: &str) -> Graph {
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
                 edges: vec![Edge {
+                    id: None,
+                    kind: EdgeKind::Data,
                     from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
                     to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
                 }],
@@ -413,6 +433,8 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: TriggerRule::AllSuccess,
+        branch: None,
     }
 }
 
@@ -424,6 +446,8 @@ fn chain_graph(len: usize) -> Graph {
         nodes.push(build_node(&id, vec![], "out"));
         if idx > 0 {
             edges.push(Edge {
+                id: None,
+                kind: EdgeKind::Data,
                 from: PortRef { node_id: format!("n{}", idx - 1), port: "out".to_string() },
                 to: PortRef { node_id: id, port: "in".to_string() },
             });

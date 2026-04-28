@@ -77,7 +77,21 @@
           },
           "effects": {"type": "array", "items": {"type": "string"}},
           "env_allowlist": {"type": "array", "items": {"type": "string"}},
-          "group": {"type": ["string", "null"]}
+          "group": {"type": ["string", "null"]},
+          "trigger_rule": {
+            "type": "string",
+            "enum": ["all_success", "any_success", "all_done", "none_failed"]
+          },
+          "branch": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["expression", "true_port", "false_port"],
+            "properties": {
+              "expression": {"type": "string"},
+              "true_port": {"type": "string"},
+              "false_port": {"type": "string"}
+            }
+          }
         }
       }
     },
@@ -88,6 +102,11 @@
         "additionalProperties": false,
         "required": ["from", "to"],
         "properties": {
+          "id": {"type": ["string", "null"]},
+          "kind": {
+            "type": "string",
+            "enum": ["data", "control", "conditional"]
+          },
           "from": {
             "type": "object",
             "additionalProperties": false,

@@ -1,7 +1,7 @@
 use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
-    parse_graph_strict, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue,
-    PortRef, Resources, RetryPolicy,
+    parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphMeta, Node,
+    NodeKind, ParamValue, PortRef, Resources, RetryPolicy, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -59,6 +59,8 @@ impl DagBuilder {
 
     pub fn edge(mut self, from_node: &str, from_port: &str, to_node: &str, to_port: &str) -> Self {
         self.edges.push(Edge {
+            id: None,
+            kind: EdgeKind::Data,
             from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
             to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
         });
@@ -95,6 +97,8 @@ pub struct NodeBuilder {
     effects: Vec<Effect>,
     env_allowlist: Vec<String>,
     group: Option<String>,
+    trigger_rule: TriggerRule,
+    branch: Option<BranchSpec>,
 }
 
 impl Default for NodeBuilder {
@@ -112,6 +116,8 @@ impl Default for NodeBuilder {
             effects: Vec::new(),
             env_allowlist: Vec::new(),
             group: None,
+            trigger_rule: TriggerRule::AllSuccess,
+            branch: None,
         }
     }
 }
@@ -151,6 +157,16 @@ impl NodeBuilder {
         self
     }
 
+    pub fn trigger_rule(mut self, value: TriggerRule) -> Self {
+        self.trigger_rule = value;
+        self
+    }
+
+    pub fn branch(mut self, value: BranchSpec) -> Self {
+        self.branch = Some(value);
+        self
+    }
+
     pub fn build(self) -> Node {
         Node {
             id: self.id,
@@ -166,6 +182,8 @@ impl NodeBuilder {
             effects: self.effects,
             env_allowlist: self.env_allowlist,
             group: self.group,
+            trigger_rule: self.trigger_rule,
+            branch: self.branch,
         }
     }
 }

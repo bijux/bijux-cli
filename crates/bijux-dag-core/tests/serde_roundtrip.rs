@@ -43,6 +43,8 @@ fn serde_roundtrip_node_model() {
 #[test]
 fn serde_roundtrip_edge_and_port_models() {
     let edge = Edge {
+        id: None,
+        kind: bijux_dag_core::EdgeKind::Data,
         from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
         to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
     };
@@ -247,5 +249,7 @@ fn sample_node(id: &str) -> Node {
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+        branch: None,
     }
 }

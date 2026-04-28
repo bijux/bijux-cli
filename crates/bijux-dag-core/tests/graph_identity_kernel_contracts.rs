@@ -167,6 +167,8 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
             effects: Vec::new(),
             env_allowlist: Vec::new(),
             group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
         });
     }
 
@@ -174,6 +176,8 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
         for from in 0..to {
             if (lcg(&mut seed) % 4) == 0 {
                 graph.edges.push(bijux_dag_core::Edge {
+                    id: None,
+                    kind: bijux_dag_core::EdgeKind::Data,
                     from: bijux_dag_core::PortRef {
                         node_id: format!("n{:03}", from),
                         port: "out".to_string(),
