@@ -1,5 +1,9 @@
 use crate::commands::{DagCli, EnterpriseCommands};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_runtime::{
+    execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
+    RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
+};
 use bijux_dag_runtime::simulated_platform::{
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
     QueueResource,
@@ -62,6 +66,33 @@ struct QueueReport {
     dead_letter_enabled: bool,
     gaps: Vec<String>,
     queue_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ServiceContractSimulation {
+    identity: RemoteExecutionIdentity,
+    artifact_handoff: RemoteArtifactHandoff,
+    observability_handoff: RemoteObservabilityHandoff,
+    execution_mode: String,
+    retry_budget: u32,
+    timeout_seconds: u32,
+    idempotent: bool,
+    side_effect_class: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ServiceContractReport {
+    run_id: String,
+    node_id: String,
+    execution_mode: String,
+    execution_mode_status: String,
+    retry_budget: u32,
+    timeout_seconds: u32,
+    idempotent: bool,
+    side_effect_class: String,
+    handoff_valid: bool,
+    gaps: Vec<String>,
+    service_contract_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -178,6 +209,63 @@ fn queue_payload(simulation: QueueSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("queue report"), ok)
 }
 
+fn execution_mode_name(mode: ExecutionModeStatus) -> &'static str {
+    match mode {
+        ExecutionModeStatus::Implemented => "implemented",
+        ExecutionModeStatus::Simulated => "simulated",
+        ExecutionModeStatus::NotImplemented => "not-implemented",
+    }
+}
+
+fn service_contract_payload(simulation: ServiceContractSimulation) -> (serde_json::Value, bool) {
+    let ServiceContractSimulation {
+        identity,
+        artifact_handoff,
+        observability_handoff,
+        execution_mode,
+        retry_budget,
+        timeout_seconds,
+        idempotent,
+        side_effect_class,
+    } = simulation;
+    let mut gaps = Vec::new();
+    if let Err(err) = validate_remote_identity(&identity) {
+        gaps.push(err);
+    }
+    let mode_status = execution_mode_status(&execution_mode);
+    if matches!(mode_status, ExecutionModeStatus::NotImplemented) {
+        gaps.push("external service task targets an unsupported execution mode".to_string());
+    }
+    let handoff_valid = remote_handoff_valid(&artifact_handoff, &observability_handoff);
+    if !handoff_valid {
+        gaps.push("artifact or observability handoff is incomplete".to_string());
+    }
+    if retry_budget == 0 {
+        gaps.push("external service task should declare a retry budget".to_string());
+    }
+    if timeout_seconds == 0 {
+        gaps.push("external service task should declare a timeout".to_string());
+    }
+    if !idempotent && side_effect_class != "append-only" {
+        gaps.push("non-idempotent service tasks require stricter side-effect posture".to_string());
+    }
+    let report = ServiceContractReport {
+        run_id: identity.run_id,
+        node_id: identity.node_id,
+        execution_mode,
+        execution_mode_status: execution_mode_name(mode_status).to_string(),
+        retry_budget,
+        timeout_seconds,
+        idempotent,
+        side_effect_class,
+        handoff_valid,
+        service_contract_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.service_contract_ready;
+    (serde_json::to_value(report).expect("service contract report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -192,6 +280,11 @@ pub(crate) fn handle_enterprise_command(
             let simulation: QueueSimulation = parse_json_file(simulation)?;
             let (payload, ok) = queue_payload(simulation);
             ("dag.enterprise.queue", payload, ok)
+        }
+        EnterpriseCommands::ServiceContract { simulation } => {
+            let simulation: ServiceContractSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = service_contract_payload(simulation);
+            ("dag.enterprise.service-contract", payload, ok)
         }
     };
     emit_json(
@@ -210,7 +303,13 @@ pub(crate) fn handle_enterprise_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{queue_payload, webhook_payload, QueueSimulation, WebhookSimulation};
+    use super::{
+        queue_payload, service_contract_payload, webhook_payload, QueueSimulation,
+        ServiceContractSimulation, WebhookSimulation,
+    };
+    use bijux_dag_runtime::{
+        RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
+    };
     use bijux_dag_runtime::simulated_platform::{
         AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
         QueueResource,
@@ -316,6 +415,66 @@ mod tests {
             dead_letter_enabled: false,
         };
         let (payload, ok) = queue_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn service_contract_accepts_idempotent_remote_task() {
+        let simulation = ServiceContractSimulation {
+            identity: RemoteExecutionIdentity {
+                run_id: "run-1".to_string(),
+                node_id: "call-service".to_string(),
+                attempt_id: "1".to_string(),
+                backend_id: "remote-contract".to_string(),
+            },
+            artifact_handoff: RemoteArtifactHandoff {
+                upload_endpoint: "https://store/upload".to_string(),
+                download_endpoint: "https://store/download".to_string(),
+                integrity_required: true,
+            },
+            observability_handoff: RemoteObservabilityHandoff {
+                stream_mode: "structured".to_string(),
+                trace_forwarding: true,
+                retention_days_hint: 14,
+            },
+            execution_mode: "remote-contract".to_string(),
+            retry_budget: 3,
+            timeout_seconds: 120,
+            idempotent: true,
+            side_effect_class: "read-only".to_string(),
+        };
+        let (payload, ok) = service_contract_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["service_contract_ready"], true);
+    }
+
+    #[test]
+    fn service_contract_flags_unbounded_or_unsupported_service_call() {
+        let simulation = ServiceContractSimulation {
+            identity: RemoteExecutionIdentity {
+                run_id: String::new(),
+                node_id: "call-service".to_string(),
+                attempt_id: String::new(),
+                backend_id: String::new(),
+            },
+            artifact_handoff: RemoteArtifactHandoff {
+                upload_endpoint: String::new(),
+                download_endpoint: String::new(),
+                integrity_required: false,
+            },
+            observability_handoff: RemoteObservabilityHandoff {
+                stream_mode: String::new(),
+                trace_forwarding: false,
+                retention_days_hint: 0,
+            },
+            execution_mode: "unsupported-mode".to_string(),
+            retry_budget: 0,
+            timeout_seconds: 0,
+            idempotent: false,
+            side_effect_class: "mutating".to_string(),
+        };
+        let (payload, ok) = service_contract_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }

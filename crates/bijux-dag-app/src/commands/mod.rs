@@ -472,6 +472,8 @@ pub(crate) enum DatasetCommands {
 pub(crate) enum EnterpriseCommands {
     Webhook { simulation: PathBuf },
     Queue { simulation: PathBuf },
+    #[command(name = "service-contract")]
+    ServiceContract { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
