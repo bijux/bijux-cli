@@ -28,7 +28,7 @@ fn capabilities_payload() -> serde_json::Value {
             backend_capability_payload("remote").unwrap()
         ],
         "operator_commands": [
-            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.state","runtime.write-discipline","runtime.worker-recovery","runtime.control-recovery","runtime.repair","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","artifact.registry","artifact.lineage","artifact.retention","dataset.mapping","dataset.staleness","governance.contracts","governance.ownership","governance.tags","governance.cost","governance.alerts","governance.policy-check","governance.catalog-export","governance.audit-event","governance.promotion","governance.compliance","security.auth","security.authz","security.tenant","security.secrets","security.supply-chain","security.data-access","security.override","security.safe-defaults","release.version","release.promotion","release.deprecation","release.checkpoint","release.shadow","release.canary","release.rollback","release.classify","release.evidence","release.health","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
+            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.state","runtime.write-discipline","runtime.worker-recovery","runtime.control-recovery","runtime.repair","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","artifact.registry","artifact.lineage","artifact.retention","dataset.mapping","dataset.staleness","governance.contracts","governance.ownership","governance.tags","governance.cost","governance.alerts","governance.policy-check","governance.catalog-export","governance.audit-event","governance.promotion","governance.compliance","federation.schedule","federation.failover","federation.lineage","federation.sovereignty","federation.replay","federation.policy-distribution","federation.audit-integrity","federation.trust-tier","federation.delegation","federation.config-inheritance","security.auth","security.authz","security.tenant","security.secrets","security.supply-chain","security.data-access","security.override","security.safe-defaults","release.version","release.promotion","release.deprecation","release.checkpoint","release.shadow","release.canary","release.rollback","release.classify","release.evidence","release.health","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
         ]
     })
 }
@@ -235,6 +235,16 @@ mod tests {
             "governance.audit-event",
             "governance.promotion",
             "governance.compliance",
+            "federation.schedule",
+            "federation.failover",
+            "federation.lineage",
+            "federation.sovereignty",
+            "federation.replay",
+            "federation.policy-distribution",
+            "federation.audit-integrity",
+            "federation.trust-tier",
+            "federation.delegation",
+            "federation.config-inheritance",
             "security.auth",
             "security.authz",
             "security.tenant",
