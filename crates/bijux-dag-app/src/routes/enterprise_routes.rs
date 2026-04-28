@@ -2,6 +2,7 @@ use crate::commands::{DagCli, EnterpriseCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
+    QueueResource,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -34,6 +35,33 @@ struct WebhookReport {
     payload_schema_valid: bool,
     gaps: Vec<String>,
     webhook_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct QueueSimulation {
+    queue: QueueResource,
+    topic: String,
+    consumer_group: String,
+    start_offset: u64,
+    acked_offset: u64,
+    replay_from_offset: u64,
+    dedup_key: String,
+    #[serde(default)]
+    seen_dedup_keys: Vec<String>,
+    dead_letter_enabled: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct QueueReport {
+    queue_id: String,
+    topic: String,
+    consumer_group: String,
+    ack_advanced: bool,
+    replay_possible: bool,
+    duplicate: bool,
+    dead_letter_enabled: bool,
+    gaps: Vec<String>,
+    queue_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -98,6 +126,58 @@ fn webhook_payload(simulation: WebhookSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("webhook report"), ok)
 }
 
+fn queue_payload(simulation: QueueSimulation) -> (serde_json::Value, bool) {
+    let QueueSimulation {
+        queue,
+        topic,
+        consumer_group,
+        start_offset,
+        acked_offset,
+        replay_from_offset,
+        dedup_key,
+        seen_dedup_keys,
+        dead_letter_enabled,
+    } = simulation;
+    let duplicate = seen_dedup_keys.into_iter().collect::<BTreeSet<_>>().contains(&dedup_key);
+    let ack_advanced = acked_offset >= start_offset;
+    let replay_possible = replay_from_offset <= acked_offset;
+    let mut gaps = Vec::new();
+    if queue.queue_id.trim().is_empty() {
+        gaps.push("queue integration requires a queue identifier".to_string());
+    }
+    if topic.trim().is_empty() {
+        gaps.push("queue integration requires a topic or stream name".to_string());
+    }
+    if consumer_group.trim().is_empty() {
+        gaps.push("queue integration requires a consumer group".to_string());
+    }
+    if !ack_advanced {
+        gaps.push("acked offset must not fall behind the consumed offset".to_string());
+    }
+    if !replay_possible {
+        gaps.push("replay offset must not exceed the acknowledged offset".to_string());
+    }
+    if duplicate {
+        gaps.push("queue event deduplication failed".to_string());
+    }
+    if !dead_letter_enabled {
+        gaps.push("queue integration should define a dead-letter path".to_string());
+    }
+    let report = QueueReport {
+        queue_id: queue.queue_id,
+        topic,
+        consumer_group,
+        ack_advanced,
+        replay_possible,
+        duplicate,
+        dead_letter_enabled,
+        queue_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.queue_ready;
+    (serde_json::to_value(report).expect("queue report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -107,6 +187,11 @@ pub(crate) fn handle_enterprise_command(
             let simulation: WebhookSimulation = parse_json_file(simulation)?;
             let (payload, ok) = webhook_payload(simulation);
             ("dag.enterprise.webhook", payload, ok)
+        }
+        EnterpriseCommands::Queue { simulation } => {
+            let simulation: QueueSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = queue_payload(simulation);
+            ("dag.enterprise.queue", payload, ok)
         }
     };
     emit_json(
@@ -125,9 +210,10 @@ pub(crate) fn handle_enterprise_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{webhook_payload, WebhookSimulation};
+    use super::{queue_payload, webhook_payload, QueueSimulation, WebhookSimulation};
     use bijux_dag_runtime::simulated_platform::{
         AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
+        QueueResource,
     };
 
     #[test]
@@ -186,6 +272,50 @@ mod tests {
             payload_schema_valid: false,
         };
         let (payload, ok) = webhook_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn queue_accepts_monotonic_ack_and_replay_offsets() {
+        let simulation = QueueSimulation {
+            queue: QueueResource {
+                queue_id: "catalog-stream".to_string(),
+                tenant: Some("atlas".to_string()),
+                priority_policy: "fifo".to_string(),
+            },
+            topic: "runs.submitted".to_string(),
+            consumer_group: "dag-scheduler".to_string(),
+            start_offset: 100,
+            acked_offset: 104,
+            replay_from_offset: 102,
+            dedup_key: "msg-1".to_string(),
+            seen_dedup_keys: vec!["msg-0".to_string()],
+            dead_letter_enabled: true,
+        };
+        let (payload, ok) = queue_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["queue_ready"], true);
+    }
+
+    #[test]
+    fn queue_flags_replay_or_dedup_regressions() {
+        let simulation = QueueSimulation {
+            queue: QueueResource {
+                queue_id: String::new(),
+                tenant: Some("atlas".to_string()),
+                priority_policy: "fifo".to_string(),
+            },
+            topic: String::new(),
+            consumer_group: String::new(),
+            start_offset: 100,
+            acked_offset: 90,
+            replay_from_offset: 95,
+            dedup_key: "msg-2".to_string(),
+            seen_dedup_keys: vec!["msg-2".to_string()],
+            dead_letter_enabled: false,
+        };
+        let (payload, ok) = queue_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }

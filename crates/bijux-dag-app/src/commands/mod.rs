@@ -471,6 +471,7 @@ pub(crate) enum DatasetCommands {
 #[derive(Subcommand)]
 pub(crate) enum EnterpriseCommands {
     Webhook { simulation: PathBuf },
+    Queue { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
