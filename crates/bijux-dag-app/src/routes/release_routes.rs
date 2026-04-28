@@ -54,6 +54,28 @@ struct ReleasePromotionReport {
     evidence_count: usize,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseDeprecationSimulation {
+    surface: String,
+    replacement: String,
+    warn_after_unix_ms: u128,
+    remove_after_unix_ms: u128,
+    cli_notice: bool,
+    api_notice: bool,
+    docs_notice: bool,
+    migration_guide: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseDeprecationReport {
+    surface: String,
+    replacement: String,
+    notice_channels: Vec<String>,
+    lifecycle_valid: bool,
+    ready: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -166,6 +188,39 @@ fn promotion_payload(simulation: &std::path::Path) -> Result<ReleasePromotionRep
     })
 }
 
+fn deprecation_payload(simulation: &std::path::Path) -> Result<ReleaseDeprecationReport, ExitCode> {
+    let simulation: ReleaseDeprecationSimulation = load_json_file(simulation)?;
+    let mut notice_channels = Vec::new();
+    if simulation.cli_notice {
+        notice_channels.push("cli".to_string());
+    }
+    if simulation.api_notice {
+        notice_channels.push("api".to_string());
+    }
+    if simulation.docs_notice {
+        notice_channels.push("docs".to_string());
+    }
+    let lifecycle_valid = simulation.warn_after_unix_ms < simulation.remove_after_unix_ms;
+    let mut gaps = Vec::new();
+    if !lifecycle_valid {
+        gaps.push("deprecation window is not ordered".to_string());
+    }
+    if notice_channels.len() < 2 {
+        gaps.push("deprecation must be announced through at least two channels".to_string());
+    }
+    if !simulation.migration_guide {
+        gaps.push("deprecation is missing migration guidance".to_string());
+    }
+    Ok(ReleaseDeprecationReport {
+        surface: simulation.surface,
+        replacement: simulation.replacement,
+        notice_channels,
+        lifecycle_valid,
+        ready: gaps.is_empty(),
+        gaps,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -179,6 +234,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(promotion_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.promotion", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Deprecation { simulation } => {
+            let payload = serde_json::to_value(deprecation_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.deprecation", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -315,5 +375,62 @@ mod tests {
         for expected in ["tests", "simulations", "approvals", "rollback", "classification", "shadow", "canary"] {
             assert!(report.unmet_gates.iter().any(|gate| gate == expected));
         }
+    }
+
+    #[test]
+    fn release_deprecation_requires_ordered_lifecycle_and_guidance() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("deprecation.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "surface":"dag.run.legacy-mode",
+              "replacement":"dag.run.hermetic",
+              "warn_after_unix_ms":100,
+              "remove_after_unix_ms":200,
+              "cli_notice":true,
+              "api_notice":false,
+              "docs_notice":true,
+              "migration_guide":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Deprecation { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Deprecation { simulation: simulation.clone() },
+        )
+        .expect("deprecation");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::deprecation_payload(&simulation).expect("report");
+        assert!(report.ready);
+        assert_eq!(report.notice_channels, vec!["cli".to_string(), "docs".to_string()]);
+    }
+
+    #[test]
+    fn release_deprecation_rejects_missing_notices() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("deprecation.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "surface":"dag.run.legacy-mode",
+              "replacement":"dag.run.hermetic",
+              "warn_after_unix_ms":300,
+              "remove_after_unix_ms":200,
+              "cli_notice":true,
+              "api_notice":false,
+              "docs_notice":false,
+              "migration_guide":false
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::deprecation_payload(&simulation).expect("report");
+        assert!(!report.ready);
+        assert!(report.gaps.iter().any(|gap| gap == "deprecation window is not ordered"));
+        assert!(
+            report.gaps.iter().any(|gap| gap == "deprecation must be announced through at least two channels")
+        );
+        assert!(report.gaps.iter().any(|gap| gap == "deprecation is missing migration guidance"));
     }
 }
