@@ -1,11 +1,13 @@
 use crate::simulated_platform::{is_duplicate_dispatch, normalize_status_events, RemoteStatusEvent};
 use crate::{
-    default_forced_cleanup, duplicate_status_delivery_detected, validate_task_contracts,
-    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, RuntimeConfig, RuntimeError,
-    TaskIsolationMode,
+    default_forced_cleanup, duplicate_status_delivery_detected, retry_allowed,
+    validate_task_contracts, BackoffStrategy, BatchLifecycleEvent, ForcedCancellationCleanup,
+    Graph, RetryPolicyV2, RuntimeConfig, RuntimeError, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, BTreeSet};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExecutionIsolationNodeReport {
@@ -41,6 +43,21 @@ pub struct DispatchAuditReport {
     pub normalized_remote_statuses: usize,
     pub duplicate_batch_delivery_detected: bool,
     pub idempotent_dispatch_guarantee: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RetryDecisionReport {
+    pub node_id: String,
+    pub failure_class: String,
+    pub attempt: u32,
+    pub max_attempts: u32,
+    pub retryable: bool,
+    pub retry_allowed: bool,
+    pub next_attempt: Option<u32>,
+    pub backoff_strategy: String,
+    pub base_backoff_ms: u64,
+    pub deterministic_jitter_ms: u64,
+    pub next_wait_ms: Option<u64>,
 }
 
 pub fn build_execution_isolation_report(
@@ -150,11 +167,93 @@ pub fn audit_dispatch_discipline(
     }
 }
 
+pub fn build_retry_decision_report(
+    graph: &Graph,
+    options: &RuntimeConfig,
+    node_id: &str,
+    attempt: u32,
+    failure_class: &str,
+) -> Result<RetryDecisionReport, RuntimeError> {
+    let contracts = validate_task_contracts(graph, options)?;
+    let contract = contracts
+        .into_iter()
+        .find(|contract| contract.node_id == node_id)
+        .ok_or_else(|| RuntimeError::Executor(format!("unknown node '{node_id}'")))?;
+
+    let expected_failure_class = normalize_failure_class(failure_class);
+    let retryable = contract.retry_policy.retryable_failure_classes.iter().any(|class| {
+        normalize_failure_class(&format!("{:?}", class)) == expected_failure_class
+    });
+    let retry_allowed =
+        retryable && retry_allowed(attempt, &retry_policy_semantics(&contract.node_id, &contract.retry_policy));
+    let base_backoff_ms = backoff_for_attempt(&contract.retry_policy, attempt);
+    let deterministic_jitter_ms =
+        deterministic_jitter(&contract.node_id, attempt, failure_class, contract.retry_policy.jitter_ms);
+
+    Ok(RetryDecisionReport {
+        node_id: contract.node_id,
+        failure_class: failure_class.to_string(),
+        attempt,
+        max_attempts: contract.retry_policy.max_attempts,
+        retryable,
+        retry_allowed,
+        next_attempt: retry_allowed.then_some(attempt.saturating_add(1)),
+        backoff_strategy: format!("{:?}", contract.retry_policy.backoff_strategy).to_lowercase(),
+        base_backoff_ms,
+        deterministic_jitter_ms,
+        next_wait_ms: retry_allowed.then_some(base_backoff_ms.saturating_add(deterministic_jitter_ms)),
+    })
+}
+
+fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
+    let _ = node_id;
+    crate::RetryPolicySemantics {
+        max_attempts: policy.max_attempts,
+        initial_backoff_ms: policy.backoff_ms,
+        exponential: matches!(policy.backoff_strategy, BackoffStrategy::Exponential),
+    }
+}
+
+fn backoff_for_attempt(policy: &RetryPolicyV2, attempt: u32) -> u64 {
+    if attempt == 0 {
+        return 0;
+    }
+    let ordinal = attempt.saturating_sub(1) as u64;
+    match policy.backoff_strategy {
+        BackoffStrategy::Fixed => policy.backoff_ms,
+        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(ordinal),
+        BackoffStrategy::Exponential => {
+            let multiplier = 1u64.checked_shl(ordinal.min(20) as u32).unwrap_or(u64::MAX);
+            policy.backoff_ms.saturating_mul(multiplier)
+        }
+    }
+}
+
+fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter_ms: u64) -> u64 {
+    if jitter_ms == 0 {
+        return 0;
+    }
+    let mut hasher = DefaultHasher::new();
+    node_id.hash(&mut hasher);
+    attempt.hash(&mut hasher);
+    failure_class.hash(&mut hasher);
+    hasher.finish() % jitter_ms.saturating_add(1)
+}
+
+fn normalize_failure_class(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_lowercase())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
     use crate::{BatchLifecycleEvent, RuntimeConfig};
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
+    use std::collections::BTreeMap;
 
     fn graph_fixture() -> Graph {
         Graph {
@@ -173,7 +272,10 @@ mod tests {
                     kind: NodeKind::Const,
                     inputs: Vec::new(),
                     outputs: vec![FileOutput { name: "out".to_string(), path: "a/out".to_string() }],
-                    params: ParamValue::Literal(serde_json::json!({"value":"1"})),
+                    params: ParamValue::Object(BTreeMap::from([(
+                        "value".to_string(),
+                        ParamValue::Literal(serde_json::json!("1")),
+                    )])),
                     container: None,
                     timeout_ms: None,
                     resources: None,
@@ -188,7 +290,14 @@ mod tests {
                     kind: NodeKind::Shell,
                     inputs: vec!["in".to_string()],
                     outputs: vec![FileOutput { name: "out".to_string(), path: "b/out".to_string() }],
-                    params: ParamValue::Literal(serde_json::json!({"argv":["/bin/sh","-c","true"]})),
+                    params: ParamValue::Object(BTreeMap::from([(
+                        "argv".to_string(),
+                        ParamValue::Array(vec![
+                            ParamValue::Literal(serde_json::json!("/bin/sh")),
+                            ParamValue::Literal(serde_json::json!("-c")),
+                            ParamValue::Literal(serde_json::json!("true")),
+                        ]),
+                    )])),
                     container: None,
                     timeout_ms: None,
                     resources: None,
@@ -231,5 +340,51 @@ mod tests {
         );
         assert!(!report.idempotent_dispatch_guarantee);
         assert_eq!(report.duplicate_dispatch_keys, vec!["run-1:a".to_string()]);
+    }
+
+    #[test]
+    fn retry_report_uses_backoff_strategy_and_jitter() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].retry.max_attempts = 4;
+        graph.nodes[1].retry.backoff_ms = 10;
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([
+            (
+                "argv".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+                ]),
+            ),
+            (
+                "retry_backoff_strategy".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("exponential")),
+            ),
+            (
+                "retry_jitter_ms".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!(7)),
+            ),
+            (
+                "retryable_failure_classes".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("execution_transient")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("artifact_transient")),
+                ]),
+            ),
+        ]));
+
+        let report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            2,
+            "artifact_transient",
+        )
+        .expect("report");
+        assert!(report.retryable);
+        assert!(report.retry_allowed);
+        assert_eq!(report.base_backoff_ms, 20);
+        assert!(report.deterministic_jitter_ms <= 7);
+        assert_eq!(report.next_attempt, Some(3));
     }
 }

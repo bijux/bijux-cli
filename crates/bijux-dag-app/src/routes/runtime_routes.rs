@@ -1,8 +1,8 @@
 use crate::commands::{DagCli, RuntimeCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    audit_dispatch_discipline, build_execution_isolation_report, BatchLifecycleEvent,
-    DispatchKeyRecord, RuntimeConfig,
+    audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
+    BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -82,6 +82,29 @@ pub(crate) fn handle_runtime_command(
                 Err(ExitCode::from(3))
             }
         }
+        RuntimeCommands::Retry { dag, node_id, attempt, failure_class } => {
+            let graph = parse_graph(&read_file(dag)?)?;
+            let report = build_retry_decision_report(
+                &graph,
+                &RuntimeConfig::default(),
+                node_id,
+                *attempt,
+                failure_class,
+            )
+            .map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.retry",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
     }
 }
 
@@ -160,5 +183,55 @@ mod tests {
             );
         });
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn runtime_routes_support_retry_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"runtime","owners":[],"tags":[]},
+              "nodes":[
+                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {
+                  "id":"task1",
+                  "kind":"shell",
+                  "inputs":["in"],
+                  "outputs":[{"name":"out","path":"b/out"}],
+                  "retry":{"max_attempts":4,"backoff_ms":25},
+                  "effects":["filesystem"],
+                  "params":{
+                    "argv":["/bin/sh","-c","true"],
+                    "retry_backoff_strategy":"exponential",
+                    "retry_jitter_ms":5,
+                    "retryable_failure_classes":["execution_transient","artifact_transient"]
+                  }
+                }
+              ],
+              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+            }"#,
+        )
+        .expect("write dag");
+
+        let cli = quiet_json_cli(RuntimeCommands::Retry {
+            dag: dag.clone(),
+            node_id: "task1".to_string(),
+            attempt: 2,
+            failure_class: "artifact_transient".to_string(),
+        });
+        let code = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Retry {
+                dag,
+                node_id: "task1".to_string(),
+                attempt: 2,
+                failure_class: "artifact_transient".to_string(),
+            },
+        )
+        .expect("retry");
+        assert_eq!(code, ExitCode::SUCCESS);
     }
 }

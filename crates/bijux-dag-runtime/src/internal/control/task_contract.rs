@@ -216,23 +216,48 @@ fn isolation_mode_for_node(node: &Node) -> TaskIsolationMode {
 }
 
 fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
+    let strategy = match param_literal_str(node, "retry_backoff_strategy").unwrap_or("linear") {
+        "fixed" => BackoffStrategy::Fixed,
+        "exponential" => BackoffStrategy::Exponential,
+        _ => BackoffStrategy::Linear,
+    };
+    let retryable_failure_classes = param_literal_string_vec(node, "retryable_failure_classes")
+        .map(|values| {
+            values
+                .into_iter()
+                .filter_map(|value| match value.as_str() {
+                    "execution_transient" => Some(RetryableFailureClass::ExecutionTransient),
+                    "timeout_transient" => Some(RetryableFailureClass::TimeoutTransient),
+                    "artifact_transient" => Some(RetryableFailureClass::ArtifactTransient),
+                    "policy_transient" => Some(RetryableFailureClass::PolicyTransient),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|values| !values.is_empty())
+        .unwrap_or_else(|| {
+            vec![
+                RetryableFailureClass::ExecutionTransient,
+                RetryableFailureClass::TimeoutTransient,
+            ]
+        });
     RetryPolicyV2 {
         max_attempts: node.retry.max_attempts,
-        backoff_strategy: BackoffStrategy::Linear,
+        backoff_strategy: strategy,
         backoff_ms: node.retry.backoff_ms,
-        jitter_ms: 0,
-        retryable_failure_classes: vec![
-            RetryableFailureClass::ExecutionTransient,
-            RetryableFailureClass::TimeoutTransient,
-        ],
+        jitter_ms: param_literal_u64(node, "retry_jitter_ms").unwrap_or(0),
+        retryable_failure_classes,
     }
 }
 
 fn build_timeout_policy(node: &Node, options: &RuntimeConfig) -> TimeoutPolicy {
     TimeoutPolicy {
-        queue_timeout_ms: None,
-        execution_timeout_ms: node.timeout_ms.or(options.node_timeout_ms),
-        total_budget_timeout_ms: options.run_timeout_ms,
+        queue_timeout_ms: param_literal_u64(node, "queue_timeout_ms"),
+        execution_timeout_ms: param_literal_u64(node, "execution_timeout_ms")
+            .or(node.timeout_ms)
+            .or(options.node_timeout_ms),
+        total_budget_timeout_ms: param_literal_u64(node, "total_budget_timeout_ms")
+            .or(options.run_timeout_ms),
     }
 }
 
@@ -361,6 +386,42 @@ fn param_literal_bool(node: &Node, key: &str) -> Option<bool> {
     match &node.params {
         bijux_dag_core::ParamValue::Object(map) => match map.get(key) {
             Some(bijux_dag_core::ParamValue::Literal(value)) => value.as_bool(),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn param_literal_u64(node: &Node, key: &str) -> Option<u64> {
+    match &node.params {
+        bijux_dag_core::ParamValue::Object(map) => match map.get(key) {
+            Some(bijux_dag_core::ParamValue::Literal(value)) => value.as_u64(),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn param_literal_string_vec(node: &Node, key: &str) -> Option<Vec<String>> {
+    match &node.params {
+        bijux_dag_core::ParamValue::Object(map) => match map.get(key) {
+            Some(bijux_dag_core::ParamValue::Literal(value)) => value.as_array().map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_str().map(ToString::to_string))
+                    .collect::<Vec<_>>()
+            }),
+            Some(bijux_dag_core::ParamValue::Array(items)) => Some(
+                items
+                    .iter()
+                    .filter_map(|item| match item {
+                        bijux_dag_core::ParamValue::Literal(value) => {
+                            value.as_str().map(ToString::to_string)
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
             _ => None,
         },
         _ => None,

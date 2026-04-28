@@ -387,14 +387,16 @@ use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 pub use task_contract::{
-    build_task_contract, default_forced_cleanup, validate_task_contracts,
+    build_task_contract, default_forced_cleanup, validate_task_contracts, BackoffStrategy,
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
-    RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
-    TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
+    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
+    TimeoutPolicy,
 };
 pub use runtime_controls::{
-    audit_dispatch_discipline, build_execution_isolation_report, DispatchAuditReport,
-    DispatchKeyRecord, ExecutionIsolationNodeReport, ExecutionIsolationReport,
+    audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
+    DispatchAuditReport, DispatchKeyRecord, ExecutionIsolationNodeReport,
+    ExecutionIsolationReport, RetryDecisionReport,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,

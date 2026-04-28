@@ -371,6 +371,15 @@ pub(crate) enum ScheduleCommands {
 pub(crate) enum RuntimeCommands {
     Isolation { dag: PathBuf },
     Dispatch { simulation: PathBuf },
+    Retry {
+        dag: PathBuf,
+        #[arg(long)]
+        node_id: String,
+        #[arg(long)]
+        attempt: u32,
+        #[arg(long)]
+        failure_class: String,
+    },
 }
 
 #[derive(Subcommand)]
