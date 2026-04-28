@@ -513,6 +513,8 @@ pub(crate) enum IncidentCommands {
     Timeline { simulation: PathBuf },
     #[command(name = "replay-validation")]
     ReplayValidation { simulation: PathBuf },
+    #[command(name = "readiness-review")]
+    ReadinessReview { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -1,10 +1,12 @@
 use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    health_dashboard_score, replay_trust_warnings, release_policy_allows,
-    IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
+    evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
+    replay_trust_warnings, release_policy_allows, AuditReadinessChecklist,
+    IncidentClassification, IncidentSeverity, IntegratedVerificationLane,
+    LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformHealthDashboard,
     PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy, RunProvenanceAttestation,
-    RunbookEntry, SupportabilityModel,
+    RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective, SupportabilityModel,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -249,6 +251,36 @@ struct ReplayValidationReport {
     lineage_consistent: bool,
     gaps: Vec<String>,
     replay_validation_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReadinessReviewSimulation {
+    workflow_id: String,
+    #[serde(default)]
+    owners: Vec<String>,
+    #[serde(default)]
+    runbooks: Vec<RunbookEntry>,
+    training: OperatorTrainingCatalog,
+    audit_checklist: AuditReadinessChecklist,
+    objective: ServiceLevelObjective,
+    indicators: ServiceLevelIndicators,
+    #[serde(default)]
+    verification_lane: Option<IntegratedVerificationLane>,
+    supportability: SupportabilityModel,
+}
+
+#[derive(Debug, Serialize)]
+struct ReadinessReviewReport {
+    workflow_id: String,
+    owners: Vec<String>,
+    runbook_count: usize,
+    training_interventions: Vec<String>,
+    audit_checks: Vec<String>,
+    required_verification_domains: Vec<String>,
+    slo_violations: Vec<String>,
+    supported_backends: Vec<String>,
+    gaps: Vec<String>,
+    readiness_review_passed: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -662,6 +694,55 @@ fn replay_validation_payload(simulation: ReplayValidationSimulation) -> (serde_j
     (serde_json::to_value(report).expect("replay validation report"), ok)
 }
 
+fn readiness_review_payload(simulation: ReadinessReviewSimulation) -> (serde_json::Value, bool) {
+    let ReadinessReviewSimulation {
+        workflow_id,
+        owners,
+        runbooks,
+        training,
+        audit_checklist,
+        objective,
+        indicators,
+        verification_lane,
+        supportability,
+    } = simulation;
+    let slo = evaluate_slo(&objective, &indicators);
+    let verification_lane = verification_lane.unwrap_or_else(integrated_verification_lane_default);
+    let mut gaps = Vec::new();
+    if owners.is_empty() {
+        gaps.push("readiness review requires explicit owners".to_string());
+    }
+    if runbooks.is_empty() {
+        gaps.push("readiness review requires at least one runbook".to_string());
+    }
+    if training.interventions.is_empty() {
+        gaps.push("readiness review requires operator training interventions".to_string());
+    }
+    if audit_checklist.checks.is_empty() {
+        gaps.push("readiness review requires audit checks".to_string());
+    }
+    if supportability.supported_backends.is_empty() {
+        gaps.push("readiness review requires supported backend declarations".to_string());
+    }
+    if !slo.passed {
+        gaps.push("readiness review requires SLO conformance".to_string());
+    }
+    let report = ReadinessReviewReport {
+        workflow_id,
+        owners,
+        runbook_count: runbooks.len(),
+        training_interventions: training.interventions,
+        audit_checks: audit_checklist.checks,
+        required_verification_domains: verification_lane.required_domains,
+        slo_violations: slo.violations,
+        supported_backends: supportability.supported_backends.into_iter().collect::<Vec<_>>(),
+        readiness_review_passed: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.readiness_review_passed;
+    (serde_json::to_value(report).expect("readiness review report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -707,6 +788,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = replay_validation_payload(simulation);
             ("dag.incident.replay-validation", payload, ok)
         }
+        IncidentCommands::ReadinessReview { simulation } => {
+            let simulation: ReadinessReviewSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = readiness_review_payload(simulation);
+            ("dag.incident.readiness-review", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -726,20 +812,24 @@ pub(crate) fn handle_incident_command(
 mod tests {
     use super::{
         annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
-        repair_window_payload, replay_validation_payload, safe_stop_payload, timeline_payload,
+        readiness_review_payload, repair_window_payload, replay_validation_payload,
+        safe_stop_payload, timeline_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
-        BinaryComponent, BinaryProvenanceRecord, EnvironmentAttestation,
-        PluginProvenanceRecord, PluginTrustTier, PostmortemTemplate, ProductBoundary,
-        ReleaseGovernancePolicy, RunProvenanceAttestation, RunbookEntry, SupportabilityModel,
+        AuditReadinessChecklist, BinaryComponent, BinaryProvenanceRecord, EnvironmentAttestation,
+        IncidentClassification, IncidentSeverity, LifecycleGovernanceRule,
+        OperatorTrainingCatalog, PlatformHealthDashboard, PluginProvenanceRecord,
+        PluginTrustTier, PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy,
+        RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators,
+        ServiceLevelObjective, SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
         WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
-        IncidentTimelineEvent, IncidentTimelineSimulation, ReplayValidationSimulation,
+        IncidentTimelineEvent, IncidentTimelineSimulation, ReadinessReviewSimulation,
+        ReplayValidationSimulation,
     };
 
     #[test]
@@ -1167,5 +1257,75 @@ mod tests {
         let (payload, ok) = replay_validation_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn readiness_review_accepts_owned_runbook_backed_workflow() {
+        let simulation = ReadinessReviewSimulation {
+            workflow_id: "tenant-a/critical-refresh".to_string(),
+            owners: vec!["team-data".to_string(), "team-platform".to_string()],
+            runbooks: vec![RunbookEntry {
+                name: "critical refresh".to_string(),
+                trigger: "missed dispatch SLO".to_string(),
+                required_evidence: vec!["timeline".to_string(), "retry report".to_string()],
+            }],
+            training: OperatorTrainingCatalog {
+                interventions: vec!["pause queue".to_string(), "approve replay".to_string()],
+            },
+            audit_checklist: AuditReadinessChecklist {
+                checks: vec!["owner confirmed".to_string(), "runbook linked".to_string()],
+            },
+            objective: ServiceLevelObjective {
+                run_creation_latency_ms: 500.0,
+                dispatch_latency_ms: 800.0,
+                completion_reliability_ratio: 0.99,
+                artifact_availability_ratio: 0.995,
+            },
+            indicators: ServiceLevelIndicators {
+                measured_run_creation_latency_ms: 420.0,
+                measured_dispatch_latency_ms: 600.0,
+                measured_completion_reliability_ratio: 0.995,
+                measured_artifact_availability_ratio: 0.998,
+            },
+            verification_lane: None,
+            supportability: SupportabilityModel {
+                official_plugins: BTreeSet::from(["official-transfer".to_string()]),
+                supported_backends: BTreeSet::from(["remote".to_string(), "hpc".to_string()]),
+            },
+        };
+        let (payload, ok) = readiness_review_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["readiness_review_passed"], true);
+    }
+
+    #[test]
+    fn readiness_review_flags_missing_ownership_or_slo_conformance() {
+        let simulation = ReadinessReviewSimulation {
+            workflow_id: "tenant-b/unowned-refresh".to_string(),
+            owners: Vec::new(),
+            runbooks: Vec::new(),
+            training: OperatorTrainingCatalog { interventions: Vec::new() },
+            audit_checklist: AuditReadinessChecklist { checks: Vec::new() },
+            objective: ServiceLevelObjective {
+                run_creation_latency_ms: 100.0,
+                dispatch_latency_ms: 100.0,
+                completion_reliability_ratio: 0.99,
+                artifact_availability_ratio: 0.99,
+            },
+            indicators: ServiceLevelIndicators {
+                measured_run_creation_latency_ms: 400.0,
+                measured_dispatch_latency_ms: 300.0,
+                measured_completion_reliability_ratio: 0.80,
+                measured_artifact_availability_ratio: 0.85,
+            },
+            verification_lane: None,
+            supportability: SupportabilityModel {
+                official_plugins: BTreeSet::new(),
+                supported_backends: BTreeSet::new(),
+            },
+        };
+        let (payload, ok) = readiness_review_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }
