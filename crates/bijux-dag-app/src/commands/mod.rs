@@ -67,6 +67,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: GovernanceCommands,
     },
+    Release {
+        #[command(subcommand)]
+        command: ReleaseCommands,
+    },
     CanonicalBytes {
         dag: PathBuf,
     },
@@ -480,6 +484,11 @@ pub(crate) enum GovernanceCommands {
     AuditEvent { simulation: PathBuf },
     Promotion { simulation: PathBuf },
     Compliance { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ReleaseCommands {
+    Version { dag: PathBuf },
 }
 
 #[derive(Subcommand)]

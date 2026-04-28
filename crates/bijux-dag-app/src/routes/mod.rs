@@ -12,6 +12,7 @@ pub(crate) mod preconditions;
 pub(crate) mod prove_verify_routes;
 pub(crate) mod renderer;
 pub(crate) mod replay_routes;
+pub(crate) mod release_routes;
 pub(crate) mod response;
 pub(crate) mod runtime_routes;
 pub(crate) mod run_lookup;

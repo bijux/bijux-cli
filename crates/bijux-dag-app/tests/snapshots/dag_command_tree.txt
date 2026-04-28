@@ -28,6 +28,7 @@ plan
 policy
 proof-summary
 prove
+release
 replay
 run
 runs

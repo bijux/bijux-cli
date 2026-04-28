@@ -362,6 +362,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Governance { command } => {
             routes::governance_routes::handle_governance_command(&cli, command)
         }
+        Commands::Release { command } => routes::release_routes::handle_release_command(&cli, command),
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
