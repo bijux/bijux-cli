@@ -4,9 +4,10 @@ use bijux_dag_runtime::{
     audit_dispatch_discipline, build_cancellation_audit_report,
     build_execution_isolation_report, build_retry_decision_report,
     build_heartbeat_audit_report, build_manual_intervention_audit_report,
-    build_pause_resume_audit_report, build_timeout_audit_report, BatchAttemptState,
-    BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass, ManualInterventionRecord,
-    OperatorRetryPolicy, ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
+    build_pause_resume_audit_report, build_timeout_audit_report, build_transition_audit_report,
+    BatchAttemptState, BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass,
+    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
+    RunPausePolicy, RunState, RunTransition, RuntimeConfig, TaskIsolationMode,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -60,6 +61,15 @@ struct InterventionSimulation {
     record: ManualInterventionRecord,
     policy: OperatorRetryPolicy,
     manual_attempts_so_far: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct TransitionSimulation {
+    node_transitions: Vec<NodeTransition>,
+    run_transitions: Vec<RunTransition>,
+    final_run_state: RunState,
+    final_node_states: Vec<NodeState>,
+    causal_failure_count: usize,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -273,6 +283,39 @@ pub(crate) fn handle_runtime_command(
                             "id": "manual_intervention_rejected",
                             "severity": "error",
                             "message": "manual intervention violates runtime policy",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        RuntimeCommands::Transition { simulation } => {
+            let simulation: TransitionSimulation = parse_json_file(simulation)?;
+            let report = build_transition_audit_report(
+                &simulation.node_transitions,
+                &simulation.run_transitions,
+                simulation.final_run_state,
+                &simulation.final_node_states,
+                simulation.causal_failure_count,
+            );
+            let ok = report.node_transition_errors.is_empty()
+                && report.run_transition_errors.is_empty()
+                && report.consistency.valid;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.transition",
+                    ok,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"state_transition_violation",
+                            "severity":"error",
+                            "message":"transition trace or final run state is inconsistent",
                         })]
                     },
                     if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
@@ -581,5 +624,37 @@ mod tests {
         )
         .expect("intervention");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_reject_inconsistent_transition_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("transition.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "node_transitions":[
+                {"from":"Pending","to":"Eligible","cause":"SchedulerEligible"},
+                {"from":"Eligible","to":"Queued","cause":"SchedulerQueued"},
+                {"from":"Queued","to":"Running","cause":"ExecutionStarted"},
+                {"from":"Running","to":"Success","cause":"ExecutionSucceeded"}
+              ],
+              "run_transitions":[{"from":"Running","to":"Failed","cause":"ExecutionFailed"}],
+              "final_run_state":"Failed",
+              "final_node_states":["Success"],
+              "causal_failure_count":0
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli = quiet_json_cli(RuntimeCommands::Transition {
+            simulation: simulation.clone(),
+        });
+        let exit = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Transition { simulation },
+        )
+        .expect_err("transition");
+        assert_eq!(exit, ExitCode::from(3));
     }
 }

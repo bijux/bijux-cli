@@ -397,10 +397,10 @@ pub use runtime_controls::{
     audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
     build_cancellation_audit_report, build_heartbeat_audit_report, build_timeout_audit_report,
     build_manual_intervention_audit_report, build_pause_resume_audit_report,
-    CancellationAuditReport, DispatchAuditReport, DispatchKeyRecord,
-    ExecutionIsolationNodeReport, ExecutionIsolationReport, HeartbeatAuditReport,
-    ManualInterventionAuditReport, PauseResumeAuditReport, RetryDecisionReport,
-    TimeoutAuditReport,
+    build_transition_audit_report, CancellationAuditReport, DispatchAuditReport,
+    DispatchKeyRecord, ExecutionIsolationNodeReport, ExecutionIsolationReport,
+    HeartbeatAuditReport, ManualInterventionAuditReport, PauseResumeAuditReport,
+    RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,

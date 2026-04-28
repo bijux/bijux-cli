@@ -8,8 +8,9 @@ use crate::{
     cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
     retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
     BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass,
-    ManualInterventionRecord, OperatorRetryPolicy, RetryPolicyV2, ResumePolicy, RuntimeConfig,
-    RuntimeError, RunPausePolicy, TaskIsolationMode,
+    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, RetryPolicyV2,
+    ResumePolicy, RuntimeConfig, RuntimeError, RunPausePolicy, RunState, RunTransition,
+    StateConsistencyReport, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -121,6 +122,14 @@ pub struct ManualInterventionAuditReport {
     pub audit_required: bool,
     pub next_manual_attempt: Option<u32>,
     pub notes: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransitionAuditReport {
+    pub node_transition_errors: Vec<String>,
+    pub run_transition_errors: Vec<String>,
+    pub terminal_audit_events: Vec<crate::TransitionAuditEvent>,
+    pub consistency: StateConsistencyReport,
 }
 
 pub fn build_execution_isolation_report(
@@ -441,6 +450,33 @@ pub fn build_manual_intervention_audit_report(
     }
 }
 
+pub fn build_transition_audit_report(
+    node_transitions: &[NodeTransition],
+    run_transitions: &[RunTransition],
+    final_run_state: RunState,
+    final_node_states: &[NodeState],
+    causal_failure_count: usize,
+) -> TransitionAuditReport {
+    let node_transition_errors = node_transitions
+        .iter()
+        .filter_map(|transition| crate::validate_node_transition(transition).err())
+        .collect::<Vec<_>>();
+    let run_transition_errors = run_transitions
+        .iter()
+        .filter_map(|transition| crate::validate_run_transition(transition).err())
+        .collect::<Vec<_>>();
+    let consistency =
+        crate::verify_post_run_state_consistency(final_run_state, final_node_states, causal_failure_count);
+    let terminal_audit_events = crate::terminal_transition_audit_events(node_transitions, run_transitions);
+
+    TransitionAuditReport {
+        node_transition_errors,
+        run_transition_errors,
+        terminal_audit_events,
+        consistency,
+    }
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -511,8 +547,8 @@ mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
     use crate::{
         BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, InterruptionClass,
-        ManualInterventionRecord, OperatorRetryPolicy, ResumePolicy, RunPausePolicy,
-        RuntimeConfig, TaskIsolationMode,
+        ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
+        RunPausePolicy, RunState, RunTransition, RuntimeConfig, TaskIsolationMode,
     };
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
     use crate::simulated_platform::{
@@ -799,5 +835,45 @@ mod tests {
         );
         assert!(report.allowed);
         assert_eq!(report.next_manual_attempt, Some(2));
+    }
+
+    #[test]
+    fn transition_report_surfaces_invalid_run_trace_and_consistency_gaps() {
+        let report = super::build_transition_audit_report(
+            &[
+                NodeTransition {
+                    from: NodeState::Pending,
+                    to: NodeState::Eligible,
+                    cause: crate::TransitionCause::SchedulerEligible,
+                },
+                NodeTransition {
+                    from: NodeState::Eligible,
+                    to: NodeState::Queued,
+                    cause: crate::TransitionCause::SchedulerQueued,
+                },
+                NodeTransition {
+                    from: NodeState::Queued,
+                    to: NodeState::Running,
+                    cause: crate::TransitionCause::ExecutionStarted,
+                },
+                NodeTransition {
+                    from: NodeState::Running,
+                    to: NodeState::Success,
+                    cause: crate::TransitionCause::ExecutionSucceeded,
+                },
+            ],
+            &[RunTransition {
+                from: RunState::Running,
+                to: RunState::Failed,
+                cause: crate::TransitionCause::ExecutionFailed,
+            }],
+            RunState::Failed,
+            &[NodeState::Success],
+            0,
+        );
+        assert!(report.node_transition_errors.is_empty());
+        assert!(report.run_transition_errors.is_empty());
+        assert!(!report.consistency.valid);
+        assert!(!report.terminal_audit_events.is_empty());
     }
 }

@@ -401,6 +401,7 @@ pub(crate) enum RuntimeCommands {
     Cancel { simulation: PathBuf },
     Pause { simulation: PathBuf },
     Intervention { simulation: PathBuf },
+    Transition { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
