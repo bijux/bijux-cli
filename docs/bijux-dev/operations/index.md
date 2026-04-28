@@ -16,15 +16,16 @@ These pages explain the operational side of the maintainer package. For the
 root command surface itself, use [makes](../makes/index.md). For hosted
 automation entrypoints, use [gh-workflows](../gh-workflows/index.md).
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    setup[toolchain setup] --> commands[command surface]
-    commands --> gates[repository gates]
-    gates --> evidence[evidence collection]
-    evidence --> diagnostics[diagnostics and reporting]
-    diagnostics --> release[release operations]
+    operations["Dev operations"] --> setup["toolchain setup"]
+    operations --> commands["command surface"]
+    operations --> gates["repository gates"]
+    operations --> evidence["evidence collection"]
+    operations --> diagnostics["diagnostics and reporting"]
+    operations --> release["release operations"]
 ```
 
 ## Pages In This Section
@@ -44,3 +45,9 @@ flowchart LR
 - [Dev Governance](../governance/index.md)
 - [makes](../makes/index.md)
 - [gh-workflows](../gh-workflows/index.md)
+
+## Reading Rule
+
+Use this section when the question is about repeatable maintainer work. Move to
+Governance for policy decisions, to makes for local command entrypoints, and to
+GitHub workflows for hosted automation ownership.
