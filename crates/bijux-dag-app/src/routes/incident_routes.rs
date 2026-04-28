@@ -72,6 +72,36 @@ struct BlastRadiusReport {
     blast_radius_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct SafeStopSimulation {
+    incident_id: String,
+    #[serde(default)]
+    stop_scope: Vec<String>,
+    queued_runs: usize,
+    running_runs: usize,
+    stop_new_schedules: bool,
+    stop_new_dispatch: bool,
+    drain_running_work: bool,
+    preserve_artifact_commits: bool,
+    #[serde(default)]
+    restart_conditions: Vec<String>,
+    runbook: RunbookEntry,
+    approval_required: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct SafeStopReport {
+    incident_id: String,
+    stop_scope: Vec<String>,
+    queued_runs: usize,
+    running_runs: usize,
+    restart_conditions: Vec<String>,
+    approval_required: bool,
+    required_evidence: Vec<String>,
+    gaps: Vec<String>,
+    safe_stop_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -195,6 +225,57 @@ fn blast_radius_payload(simulation: BlastRadiusSimulation) -> (serde_json::Value
     (serde_json::to_value(report).expect("blast radius report"), ok)
 }
 
+fn safe_stop_payload(simulation: SafeStopSimulation) -> (serde_json::Value, bool) {
+    let SafeStopSimulation {
+        incident_id,
+        stop_scope,
+        queued_runs,
+        running_runs,
+        stop_new_schedules,
+        stop_new_dispatch,
+        drain_running_work,
+        preserve_artifact_commits,
+        restart_conditions,
+        runbook,
+        approval_required,
+    } = simulation;
+    let mut gaps = Vec::new();
+    if stop_scope.is_empty() {
+        gaps.push("safe-stop requires an explicit stop scope".to_string());
+    }
+    if !stop_new_schedules {
+        gaps.push("safe-stop must halt new schedule creation".to_string());
+    }
+    if !stop_new_dispatch {
+        gaps.push("safe-stop must halt new task dispatch".to_string());
+    }
+    if !drain_running_work {
+        gaps.push("safe-stop must define whether running work drains or is interrupted".to_string());
+    }
+    if !preserve_artifact_commits {
+        gaps.push("safe-stop should preserve artifact commit integrity".to_string());
+    }
+    if restart_conditions.is_empty() {
+        gaps.push("safe-stop requires explicit restart conditions".to_string());
+    }
+    if runbook.required_evidence.is_empty() {
+        gaps.push("safe-stop runbook must require recovery evidence".to_string());
+    }
+    let report = SafeStopReport {
+        incident_id,
+        stop_scope,
+        queued_runs,
+        running_runs,
+        restart_conditions,
+        approval_required,
+        required_evidence: runbook.required_evidence,
+        safe_stop_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.safe_stop_ready;
+    (serde_json::to_value(report).expect("safe stop report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -209,6 +290,11 @@ pub(crate) fn handle_incident_command(
             let simulation: BlastRadiusSimulation = parse_json_file(simulation)?;
             let (payload, ok) = blast_radius_payload(simulation);
             ("dag.incident.blast-radius", payload, ok)
+        }
+        IncidentCommands::SafeStop { simulation } => {
+            let simulation: SafeStopSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = safe_stop_payload(simulation);
+            ("dag.incident.safe-stop", payload, ok)
         }
     };
     emit_json(
@@ -227,14 +313,14 @@ pub(crate) fn handle_incident_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{blast_radius_payload, incident_mode_payload};
+    use super::{blast_radius_payload, incident_mode_payload, safe_stop_payload};
     use bijux_dag_runtime::simulated_platform::{
         IncidentClassification, IncidentSeverity, PlatformHealthDashboard, RunbookEntry,
         SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
-    use super::{BlastRadiusSimulation, IncidentModeSimulation, WorkflowImpact};
+    use super::{BlastRadiusSimulation, IncidentModeSimulation, SafeStopSimulation, WorkflowImpact};
 
     #[test]
     fn incident_mode_accepts_reduced_action_surface_with_runbooks() {
@@ -353,5 +439,53 @@ mod tests {
         let (payload, ok) = blast_radius_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 2);
+    }
+
+    #[test]
+    fn safe_stop_accepts_explicit_boundaries_and_restart_conditions() {
+        let simulation = SafeStopSimulation {
+            incident_id: "inc-2026-04-28-1".to_string(),
+            stop_scope: vec!["scheduler".to_string(), "tenant:regulated".to_string()],
+            queued_runs: 12,
+            running_runs: 3,
+            stop_new_schedules: true,
+            stop_new_dispatch: true,
+            drain_running_work: true,
+            preserve_artifact_commits: true,
+            restart_conditions: vec!["leadership stable".to_string(), "artifact store green".to_string()],
+            runbook: RunbookEntry {
+                name: "platform freeze".to_string(),
+                trigger: "severe control-plane instability".to_string(),
+                required_evidence: vec!["scheduler fence".to_string(), "queue snapshot".to_string()],
+            },
+            approval_required: true,
+        };
+        let (payload, ok) = safe_stop_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["safe_stop_ready"], true);
+    }
+
+    #[test]
+    fn safe_stop_flags_missing_freeze_boundaries() {
+        let simulation = SafeStopSimulation {
+            incident_id: "inc-2026-04-28-2".to_string(),
+            stop_scope: Vec::new(),
+            queued_runs: 4,
+            running_runs: 9,
+            stop_new_schedules: false,
+            stop_new_dispatch: false,
+            drain_running_work: false,
+            preserve_artifact_commits: false,
+            restart_conditions: Vec::new(),
+            runbook: RunbookEntry {
+                name: "incomplete".to_string(),
+                trigger: "missing".to_string(),
+                required_evidence: Vec::new(),
+            },
+            approval_required: false,
+        };
+        let (payload, ok) = safe_stop_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }
