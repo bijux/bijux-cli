@@ -9,20 +9,20 @@ last_reviewed: 2026-04-12
 
 # Review Expectations
 
-Repository review should verify ownership, evidence, and documentation together
-instead of treating root changes as glue that can skip normal standards.
+This page explains what good repository-level review is supposed to catch.
+
+Root changes are not glue work that gets a lighter bar. They still need clear
+ownership, matching evidence, and documentation that explains the new shape
+honestly.
+
+## Review Map
 
 ```mermaid
-flowchart TD
-    review[root change under review] --> owner{owning handbook branch clear?}
-    owner --> evidence{validation evidence matches scope?}
-    evidence --> surfaces{changed root surfaces named explicitly?}
-    surfaces --> docs{docs and navigation aligned?}
-    docs --> approve[approve]
-    owner --> request[request changes]
-    evidence --> request
-    surfaces --> request
-    docs --> request
+flowchart LR
+    review["root change under review"] --> owner["owning handbook clear"]
+    review --> evidence["evidence matches scope"]
+    review --> surfaces["changed root surfaces named"]
+    review --> docs["docs and navigation aligned"]
 ```
 
 ## Reviewer Checks
@@ -36,6 +36,11 @@ flowchart TD
 
 If the repository shape changed, the handbook should explain the new shape in
 the same commit history that introduced it.
+
+## Reading Rule
+
+Use this page when a change is technically valid but the review still feels
+underspecified.
 
 ## Next Reads
 
