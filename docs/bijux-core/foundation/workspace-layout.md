@@ -9,23 +9,22 @@ last_reviewed: 2026-04-12
 
 # Workspace Layout
 
-The workspace layout separates product code, maintainer code, shared contracts,
-and generated artifacts so repository concerns stay inspectable.
+This page explains why the repository root is shaped the way it is.
+
+The layout is meant to make ownership obvious at a glance. Source code,
+contracts, docs, workflows, and generated outputs live in separate roots so a
+reader can tell what a directory is for before opening it.
+
+## Root Map
 
 ```mermaid
-flowchart TD
-    root[repository root]
-    root --> crates[crates/]
-    root --> contracts[contracts/]
-    root --> docs[docs/]
-    root --> makes[makes/]
-    root --> workflows[.github/workflows/]
-    root --> artifacts[artifacts/]
-
-    crates --> code[product and maintainer code]
-    contracts --> machine[machine-checkable contracts]
-    docs --> handbook[published handbooks]
-    artifacts --> generated[generated outputs only]
+flowchart LR
+    root["repository root"] --> crates["crates"]
+    root --> contracts["contracts"]
+    root --> docs["docs"]
+    root --> makes["makes"]
+    root --> workflows["github workflows"]
+    root --> artifacts["artifacts"]
 ```
 
 ## Root Layout
@@ -41,6 +40,11 @@ flowchart TD
 
 Root directories should make ownership more obvious, not less. If a new root
 directory weakens that rule, it needs repository-handbook justification.
+
+## Reading Rule
+
+Use this page when the repository root feels crowded or ambiguous and the first
+question is where a new surface belongs.
 
 ## Next Reads
 
