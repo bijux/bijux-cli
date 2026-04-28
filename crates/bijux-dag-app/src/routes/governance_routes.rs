@@ -146,6 +146,66 @@ struct AuditEventRecord {
     fields: BTreeMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct PromotionSimulation {
+    trust_label: ArtifactTrustLabel,
+    policy: PromotionTrustPolicy,
+    gate: ProvenancePolicyGate,
+    #[serde(default)]
+    run_attestation: Option<RunProvenanceAttestation>,
+    #[serde(default)]
+    environment_attestation: Option<EnvironmentAttestation>,
+    #[serde(default)]
+    signed_artifacts: Vec<SignedArtifactManifest>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+enum ArtifactTrustLabel {
+    Unverified,
+    Verified,
+    Attested,
+    Approved,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct PromotionTrustPolicy {
+    minimum_required_label: ArtifactTrustLabel,
+    require_provenance_completeness: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct ProvenancePolicyGate {
+    require_run_attestation: bool,
+    require_environment_attestation: bool,
+    require_signed_artifacts: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct RunProvenanceAttestation {
+    run_id: String,
+    dag_snapshot_id: String,
+    plan_fingerprint: String,
+    policy_bundle_version: String,
+    binary_build_ids: Vec<String>,
+    output_artifact_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct EnvironmentAttestation {
+    run_id: String,
+    execution_backend: String,
+    capability_class: String,
+    trust_domain: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct SignedArtifactManifest {
+    artifact_id: String,
+    signature_algorithm: String,
+    signer_identity: String,
+    signature: String,
+}
+
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
     let input = read_file(path)?;
     parse_graph(&input)
@@ -584,6 +644,41 @@ fn catalog_export_payload(
     }))
 }
 
+fn verify_attestations(
+    run_attestation: Option<&RunProvenanceAttestation>,
+    environment_attestation: Option<&EnvironmentAttestation>,
+    signed_artifacts: &[SignedArtifactManifest],
+    gate: &ProvenancePolicyGate,
+) -> (bool, Vec<String>) {
+    let mut reasons = Vec::new();
+    if gate.require_run_attestation && run_attestation.is_none() {
+        reasons.push("run attestation missing".to_string());
+    }
+    if gate.require_environment_attestation && environment_attestation.is_none() {
+        reasons.push("environment attestation missing".to_string());
+    }
+    if gate.require_signed_artifacts && signed_artifacts.is_empty() {
+        reasons.push("signed artifacts missing".to_string());
+    }
+    (reasons.is_empty(), reasons)
+}
+
+fn provenance_complete_for_promotion(
+    trust_label: &ArtifactTrustLabel,
+    policy: &PromotionTrustPolicy,
+    attestation_verified: bool,
+) -> bool {
+    let label_rank = |label: &ArtifactTrustLabel| match label {
+        ArtifactTrustLabel::Unverified => 0,
+        ArtifactTrustLabel::Verified => 1,
+        ArtifactTrustLabel::Attested => 2,
+        ArtifactTrustLabel::Approved => 3,
+    };
+    let meets_label = label_rank(trust_label) >= label_rank(&policy.minimum_required_label);
+    let meets_attestation = !policy.require_provenance_completeness || attestation_verified;
+    meets_label && meets_attestation
+}
+
 fn audit_event_payload(simulation: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
     let simulation: AuditEventSimulation = parse_json_file(simulation)?;
     let ok = !simulation.actor.trim().is_empty()
@@ -611,6 +706,31 @@ fn audit_event_payload(simulation: &Path) -> Result<(serde_json::Value, bool), E
         fields: simulation.fields,
     };
     Ok((serde_json::to_value(event).map_err(|_| ExitCode::from(3))?, ok))
+}
+
+fn promotion_payload(simulation: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
+    let simulation: PromotionSimulation = parse_json_file(simulation)?;
+    let (attestation_verified, attestation_reasons) = verify_attestations(
+        simulation.run_attestation.as_ref(),
+        simulation.environment_attestation.as_ref(),
+        &simulation.signed_artifacts,
+        &simulation.gate,
+    );
+    let ready = provenance_complete_for_promotion(
+        &simulation.trust_label,
+        &simulation.policy,
+        attestation_verified,
+    );
+    let payload = json!({
+        "trust_label": simulation.trust_label,
+        "policy": simulation.policy,
+        "gate": simulation.gate,
+        "attestation_verified": attestation_verified,
+        "attestation_reasons": attestation_reasons,
+        "signed_artifact_count": simulation.signed_artifacts.len(),
+        "promotion_ready": ready,
+    });
+    Ok((payload, ready))
 }
 
 pub(crate) fn handle_governance_command(
@@ -798,7 +918,29 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
-        | GovernanceCommands::Promotion { .. }
+        GovernanceCommands::Promotion { simulation } => {
+            let (payload, ok) = promotion_payload(simulation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.promotion",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_promotion_gate_failed",
+                            "severity":"error",
+                            "message":"artifact promotion trust requirements are not satisfied",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
         | GovernanceCommands::Compliance { .. } => Err(ExitCode::from(2)),
     }
 }
@@ -1186,6 +1328,58 @@ mod tests {
             &GovernanceCommands::AuditEvent { simulation },
         )
         .expect_err("invalid audit event should fail");
+        assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_promotion_surface_accepts_attested_artifacts() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("promotion.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "trust_label":"Attested",
+              "policy":{"minimum_required_label":"Verified","require_provenance_completeness":true},
+              "gate":{"require_run_attestation":true,"require_environment_attestation":true,"require_signed_artifacts":true},
+              "run_attestation":{"run_id":"run-01","dag_snapshot_id":"snap-1","plan_fingerprint":"fp","policy_bundle_version":"std-1","binary_build_ids":["core-1"],"output_artifact_ids":["report"]},
+              "environment_attestation":{"run_id":"run-01","execution_backend":"kubernetes","capability_class":"standard","trust_domain":"bijux-prod"},
+              "signed_artifacts":[{"artifact_id":"report","signature_algorithm":"ed25519","signer_identity":"bijux-release","signature":"sig"}]
+            }"#,
+        )
+        .expect("promotion simulation");
+        let cli = quiet_json_cli(GovernanceCommands::Promotion {
+            simulation: simulation.clone(),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Promotion { simulation },
+        )
+        .expect("promotion");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_promotion_surface_rejects_incomplete_provenance() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("promotion.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "trust_label":"Verified",
+              "policy":{"minimum_required_label":"Attested","require_provenance_completeness":true},
+              "gate":{"require_run_attestation":true,"require_environment_attestation":true,"require_signed_artifacts":true},
+              "signed_artifacts":[]
+            }"#,
+        )
+        .expect("promotion simulation");
+        let cli = quiet_json_cli(GovernanceCommands::Promotion {
+            simulation: simulation.clone(),
+        });
+        let exit = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Promotion { simulation },
+        )
+        .expect_err("promotion should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 }
