@@ -489,6 +489,7 @@ pub(crate) enum GovernanceCommands {
 #[derive(Subcommand)]
 pub(crate) enum ReleaseCommands {
     Version { dag: PathBuf },
+    Promotion { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

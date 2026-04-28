@@ -1,7 +1,9 @@
 use crate::commands::{DagCli, ReleaseCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::fs;
 
 #[derive(Debug, Serialize)]
 struct WorkflowRevisionReport {
@@ -14,6 +16,47 @@ struct WorkflowRevisionReport {
     tags: Vec<String>,
     release_ready: bool,
     gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ReleasePromotionSimulation {
+    revision_id: String,
+    from_environment: String,
+    to_environment: String,
+    #[serde(default)]
+    test_results: Vec<ReleaseEvidenceCheck>,
+    #[serde(default)]
+    simulation_results: Vec<ReleaseEvidenceCheck>,
+    #[serde(default)]
+    approval_ids: Vec<String>,
+    rollback_revision_id: Option<String>,
+    change_classification: String,
+    shadow_consistent: bool,
+    canary_ready: bool,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseEvidenceCheck {
+    name: String,
+    passed: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleasePromotionReport {
+    revision_id: String,
+    from_environment: String,
+    to_environment: String,
+    ready: bool,
+    required_gates: Vec<String>,
+    satisfied_gates: Vec<String>,
+    unmet_gates: Vec<String>,
+    rollback_revision_id: Option<String>,
+    evidence_count: usize,
+}
+
+fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
+    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
+    serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
 }
 
 fn version_payload(dag: &std::path::Path) -> Result<WorkflowRevisionReport, ExitCode> {
@@ -53,6 +96,76 @@ fn version_payload(dag: &std::path::Path) -> Result<WorkflowRevisionReport, Exit
     })
 }
 
+fn promotion_payload(simulation: &std::path::Path) -> Result<ReleasePromotionReport, ExitCode> {
+    let simulation: ReleasePromotionSimulation = load_json_file(simulation)?;
+    let required_gates = vec![
+        "tests".to_string(),
+        "simulations".to_string(),
+        "approvals".to_string(),
+        "rollback".to_string(),
+        "classification".to_string(),
+        "shadow".to_string(),
+        "canary".to_string(),
+    ];
+    let mut satisfied_gates = Vec::new();
+    let mut unmet_gates = Vec::new();
+
+    if simulation.test_results.iter().all(|check| check.passed) && !simulation.test_results.is_empty() {
+        satisfied_gates.push("tests".to_string());
+    } else {
+        unmet_gates.push("tests".to_string());
+    }
+    if simulation.simulation_results.iter().all(|check| check.passed)
+        && !simulation.simulation_results.is_empty()
+    {
+        satisfied_gates.push("simulations".to_string());
+    } else {
+        unmet_gates.push("simulations".to_string());
+    }
+    if !simulation.approval_ids.is_empty() {
+        satisfied_gates.push("approvals".to_string());
+    } else {
+        unmet_gates.push("approvals".to_string());
+    }
+    if simulation.rollback_revision_id.as_ref().is_some_and(|value| !value.trim().is_empty()) {
+        satisfied_gates.push("rollback".to_string());
+    } else {
+        unmet_gates.push("rollback".to_string());
+    }
+    if matches!(
+        simulation.change_classification.as_str(),
+        "additive" | "reviewed-risky" | "compatible"
+    ) {
+        satisfied_gates.push("classification".to_string());
+    } else {
+        unmet_gates.push("classification".to_string());
+    }
+    if simulation.shadow_consistent {
+        satisfied_gates.push("shadow".to_string());
+    } else {
+        unmet_gates.push("shadow".to_string());
+    }
+    if simulation.canary_ready {
+        satisfied_gates.push("canary".to_string());
+    } else {
+        unmet_gates.push("canary".to_string());
+    }
+
+    Ok(ReleasePromotionReport {
+        revision_id: simulation.revision_id,
+        from_environment: simulation.from_environment,
+        to_environment: simulation.to_environment,
+        ready: unmet_gates.is_empty(),
+        required_gates,
+        satisfied_gates,
+        unmet_gates,
+        rollback_revision_id: simulation.rollback_revision_id,
+        evidence_count: simulation.test_results.len()
+            + simulation.simulation_results.len()
+            + simulation.approval_ids.len(),
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -61,6 +174,11 @@ pub(crate) fn handle_release_command(
         ReleaseCommands::Version { dag } => {
             let payload = serde_json::to_value(version_payload(dag)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.version", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Promotion { simulation } => {
+            let payload =
+                serde_json::to_value(promotion_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.promotion", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -137,5 +255,65 @@ mod tests {
             gaps.iter()
                 .any(|v| v.as_str() == Some("workflow revision has no release taxonomy tags"))
         );
+    }
+
+    #[test]
+    fn release_promotion_accepts_evidence_backed_revision() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("promotion.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:abc123",
+              "from_environment":"staging",
+              "to_environment":"prod",
+              "test_results":[{"name":"contracts","passed":true},{"name":"smoke","passed":true}],
+              "simulation_results":[{"name":"backfill","passed":true}],
+              "approval_ids":["chg-1001"],
+              "rollback_revision_id":"graph:prev999",
+              "change_classification":"reviewed-risky",
+              "shadow_consistent":true,
+              "canary_ready":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Promotion { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Promotion { simulation: simulation.clone() },
+        )
+        .expect("promotion");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::promotion_payload(&simulation).expect("report");
+        assert!(report.ready);
+        assert!(report.unmet_gates.is_empty());
+        assert_eq!(report.evidence_count, 4);
+    }
+
+    #[test]
+    fn release_promotion_blocks_missing_evidence_and_rollback() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("promotion.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:broken",
+              "from_environment":"staging",
+              "to_environment":"prod",
+              "test_results":[{"name":"contracts","passed":false}],
+              "simulation_results":[],
+              "approval_ids":[],
+              "rollback_revision_id":null,
+              "change_classification":"breaking",
+              "shadow_consistent":false,
+              "canary_ready":false
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::promotion_payload(&simulation).expect("report");
+        assert!(!report.ready);
+        for expected in ["tests", "simulations", "approvals", "rollback", "classification", "shadow", "canary"] {
+            assert!(report.unmet_gates.iter().any(|gate| gate == expected));
+        }
     }
 }
