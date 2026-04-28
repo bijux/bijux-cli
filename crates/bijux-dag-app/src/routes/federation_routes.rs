@@ -2,8 +2,8 @@ use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     geo_ready, CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation, RegionQueuePartition,
-    RegionScheduleRule,
+    GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord,
+    RegionQueuePartition, RegionScheduleRule,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -44,6 +44,21 @@ struct FailoverReport {
     within_rto: bool,
     playbook_complete: bool,
     scenario_covered: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct LineageSimulation {
+    record: RegionLineageRecord,
+    allowed_regions: BTreeSet<bijux_dag_runtime::simulated_platform::RegionId>,
+}
+
+#[derive(Debug, Serialize)]
+struct LineageReport {
+    producer_region: String,
+    visible_consumer_regions: Vec<String>,
+    queryable: bool,
+    regional_boundary_preserved: bool,
     gaps: Vec<String>,
 }
 
@@ -139,6 +154,33 @@ fn failover_payload(simulation: &Path) -> Result<FailoverReport, ExitCode> {
     Ok(FailoverReport { target_region, within_rto, playbook_complete, scenario_covered, gaps })
 }
 
+fn lineage_payload(simulation: &Path) -> Result<LineageReport, ExitCode> {
+    let simulation: LineageSimulation = load_json_file(simulation)?;
+    let visible_consumer_regions = simulation
+        .record
+        .consumer_regions
+        .intersection(&simulation.allowed_regions)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let regional_boundary_preserved =
+        visible_consumer_regions.len() == simulation.record.consumer_regions.len();
+    let queryable = simulation.record.lineage_queryable;
+    let mut gaps = Vec::new();
+    if !queryable {
+        gaps.push("cross-region lineage is not queryable".to_string());
+    }
+    if !regional_boundary_preserved {
+        gaps.push("consumer-region visibility exceeds the approved regional scope".to_string());
+    }
+    Ok(LineageReport {
+        producer_region: simulation.record.producer_region.0,
+        visible_consumer_regions: visible_consumer_regions.into_iter().map(|region| region.0).collect(),
+        queryable,
+        regional_boundary_preserved,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -151,6 +193,10 @@ pub(crate) fn handle_federation_command(
         FederationCommands::Failover { simulation } => {
             let payload = serde_json::to_value(failover_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.failover", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::Lineage { simulation } => {
+            let payload = serde_json::to_value(lineage_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.lineage", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -301,6 +347,65 @@ mod tests {
             "failover exceeds the configured recovery time objective",
             "disaster recovery playbook is incomplete for the primary region",
             "simulation does not cover primary-region loss",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_lineage_accepts_queryable_scoped_record() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("lineage.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "record":{
+                "artifact_id":"a1",
+                "producer_region":"eu",
+                "consumer_regions":["eu","us"],
+                "lineage_queryable":true
+              },
+              "allowed_regions":["eu","us"]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::Lineage { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::Lineage { simulation: simulation.clone() },
+        )
+        .expect("lineage");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::lineage_payload(&simulation).expect("report");
+        assert!(report.queryable);
+        assert!(report.regional_boundary_preserved);
+        assert_eq!(report.visible_consumer_regions, vec!["eu".to_string(), "us".to_string()]);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_lineage_flags_hidden_or_out_of_scope_consumers() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("lineage.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "record":{
+                "artifact_id":"a1",
+                "producer_region":"eu",
+                "consumer_regions":["eu","us"],
+                "lineage_queryable":false
+              },
+              "allowed_regions":["eu"]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::lineage_payload(&simulation).expect("report");
+        assert!(!report.queryable);
+        assert!(!report.regional_boundary_preserved);
+        for expected in [
+            "cross-region lineage is not queryable",
+            "consumer-region visibility exceeds the approved regional scope",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
