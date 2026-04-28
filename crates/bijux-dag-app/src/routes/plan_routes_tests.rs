@@ -91,14 +91,19 @@ fn plan_diagnostics_rejects_malformed_input_without_panic() {
 
 #[test]
 fn plan_concise_human_snapshot_is_stable() {
-    let expected = "a: included as graph root (no dependencies)\n\
-b: included because it depends on a";
+    let expected = "a: Execute via selected_by_default (selected, queue=default)\n\
+b: Execute via selected_by_default (selected, queue=default)";
     let (_tmp, dag) = write_graph_fixture();
     let raw = fs::read_to_string(dag).expect("read graph");
     let graph = crate::parse_graph(&raw).expect("graph");
-    let plan =
-        crate::lower_graph_to_execution_plan(&graph, crate::PlanOptions::default()).expect("plan");
-    let rendered = super::concise_plan_lines(&plan).join("\n");
+    let result = bijux_dag_runtime::build_planner_analysis(
+        &graph,
+        &bijux_dag_runtime::RuntimeConfig::default(),
+        &bijux_dag_runtime::RuntimeConfig::default().selectors,
+        &bijux_dag_runtime::PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("plan");
+    let rendered = super::concise_plan_lines(&result).join("\n");
     assert_eq!(rendered, expected);
 }
 
@@ -134,7 +139,13 @@ fn plan_explain_dump_flow_is_stable_for_valid_graph() {
     let (_tmp, dag) = write_graph_fixture();
     let raw = fs::read_to_string(dag).expect("read graph");
     let graph = crate::parse_graph(&raw).expect("graph");
-    let plan =
-        crate::lower_graph_to_execution_plan(&graph, crate::PlanOptions::default()).expect("plan");
-    assert!(!plan.ordering.is_empty(), "plan ordering should not be empty");
+    let result = bijux_dag_runtime::build_planner_analysis(
+        &graph,
+        &bijux_dag_runtime::RuntimeConfig::default(),
+        &bijux_dag_runtime::RuntimeConfig::default().selectors,
+        &bijux_dag_runtime::PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("plan");
+    assert!(!result.plan.order.is_empty(), "plan ordering should not be empty");
+    assert!(!result.plan_fingerprint.is_empty(), "planner analysis should expose a fingerprint");
 }
