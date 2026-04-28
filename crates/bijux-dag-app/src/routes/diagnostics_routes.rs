@@ -5,22 +5,21 @@ use crate::routes::renderer::print_pretty_json;
 use std::path::Path;
 use std::process::ExitCode;
 
-pub(crate) fn why_rerun_payload(run_a: &Path, run_b: &Path) -> Result<serde_json::Value, ExitCode> {
-    let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
-    Ok(serde_json::json!({
-        "root_cause_summary": diff.replay_equivalence.reason_report.summary,
-        "equivalent": diff.replay_equivalence.equivalent,
-        "reasons": diff.replay_equivalence.reasons,
-        "cause_groups": diff.replay_equivalence.cause_groups
-    }))
+pub(crate) fn why_rerun_payload(
+    run_a: &Path,
+    run_b: &Path,
+    node: Option<&str>,
+) -> Result<serde_json::Value, ExitCode> {
+    replay_service::why_rerun_payload(run_a, run_b, node)
 }
 
 pub(crate) fn handle_why_rerun_command(
     cli: &DagCli,
     run_a: &Path,
     run_b: &Path,
+    node: Option<&str>,
 ) -> Result<ExitCode, ExitCode> {
-    let payload = why_rerun_payload(run_a, run_b)?;
+    let payload = why_rerun_payload(run_a, run_b, node)?;
     if cli.json {
         return emit_json(cli, "dag.why-rerun", true, payload, Vec::new(), ExitCode::SUCCESS);
     }
@@ -75,7 +74,7 @@ mod tests {
     fn why_rerun_route_rejects_missing_run_dir_without_panic() {
         let cli = quiet_json_cli();
         let result =
-            handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"));
+            handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"), None);
         assert!(result.is_err());
     }
 
@@ -154,7 +153,7 @@ mod tests {
     #[test]
     fn diagnostics_success_paths_return_payloads() {
         let (_tmp, run_a, run_b) = write_diff_ready_runs();
-        let why = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        let why = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert!(why.get("root_cause_summary").is_some());
         let trace = trace_artifact_payload(&run_a, "extract:data.txt").expect("trace artifact");
         assert_eq!(trace["artifact_id"], "extract:data.txt");
@@ -164,7 +163,7 @@ mod tests {
     fn diagnostics_route_handlers_support_success_paths() {
         let (_tmp, run_a, run_b) = write_diff_ready_runs();
         let cli = quiet_json_cli();
-        let why = handle_why_rerun_command(&cli, &run_a, &run_b).expect("handle why rerun");
+        let why = handle_why_rerun_command(&cli, &run_a, &run_b, None).expect("handle why rerun");
         assert_eq!(why, ExitCode::SUCCESS);
         let trace = handle_trace_artifact_command(&cli, &run_a, "extract:data.txt")
             .expect("handle trace artifact");
@@ -175,7 +174,7 @@ mod tests {
     fn diagnostics_routes_do_not_panic_on_malformed_inputs() {
         let cli = quiet_json_cli();
         let why = std::panic::catch_unwind(|| {
-            handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"))
+            handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"), None)
         });
         let trace = std::panic::catch_unwind(|| {
             handle_trace_artifact_command(&cli, Path::new("/missing/run"), "broken")
@@ -196,7 +195,7 @@ mod tests {
         manifest["graph_fingerprint"] = json!("g2");
         write_json(&run_b.join("manifest.json"), &manifest);
 
-        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        let payload = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert_eq!(payload["equivalent"], false);
         assert!(payload["cause_groups"].get("graph_semantics").is_some());
     }
@@ -208,7 +207,7 @@ mod tests {
         manifest["policy"]["deny_env"] = json!(false);
         write_json(&run_b.join("manifest.json"), &manifest);
 
-        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        let payload = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert_eq!(payload["equivalent"], false);
         assert!(payload["cause_groups"].get("manifest_drift").is_some());
     }
@@ -221,7 +220,7 @@ mod tests {
             json!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         write_json(&run_b.join("nodes/extract/outputs/index.json"), &outputs);
 
-        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        let payload = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert_eq!(payload["equivalent"], false);
         assert!(payload["cause_groups"].get("artifact_payload").is_some());
     }
@@ -247,7 +246,7 @@ mod tests {
         manifest["jobs"] = json!(2);
         write_json(&run_b.join("manifest.json"), &manifest);
 
-        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        let payload = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert_eq!(payload["equivalent"], false);
         assert!(payload["cause_groups"].get("manifest_drift").is_some());
     }

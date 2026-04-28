@@ -542,11 +542,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::prove_verify_routes::handle_proof_summary_command(&cli, run_dir)
         }
         Commands::Runs { command } => routes::runs_routes::handle_runs_command(&cli, command),
-        Commands::Diff { run_a, run_b, mode: _mode, explain } => {
-            routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff")
+        Commands::Diff { run_a, run_b, mode, node, explain } => {
+            routes::diff_routes::handle_diff_command(
+                &cli,
+                run_a,
+                run_b,
+                *mode,
+                node.as_deref(),
+                *explain,
+                "dag.diff",
+            )
         }
-        Commands::WhyRerun { run_a, run_b } => {
-            routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)
+        Commands::WhyRerun { run_a, run_b, node } => {
+            routes::diagnostics_routes::handle_why_rerun_command(
+                &cli,
+                run_a,
+                run_b,
+                node.as_deref(),
+            )
         }
         Commands::WhyCacheMissed {
             key,

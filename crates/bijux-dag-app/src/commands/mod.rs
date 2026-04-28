@@ -223,12 +223,16 @@ pub(crate) enum Commands {
         #[arg(long, value_enum, default_value_t = DiffModeArg::Semantic)]
         mode: DiffModeArg,
         #[arg(long)]
+        node: Option<String>,
+        #[arg(long)]
         explain: bool,
     },
     #[command(name = "why-rerun")]
     WhyRerun {
         run_a: PathBuf,
         run_b: PathBuf,
+        #[arg(long)]
+        node: Option<String>,
     },
     #[command(name = "why-cache-missed")]
     WhyCacheMissed {
@@ -686,6 +690,8 @@ pub(crate) enum RunsCommands {
         #[arg(long, value_enum, default_value_t = DiffModeArg::Semantic)]
         mode: DiffModeArg,
         #[arg(long)]
+        node: Option<String>,
+        #[arg(long)]
         explain: bool,
     },
     Verify {
@@ -864,7 +870,14 @@ pub(crate) enum MaterializeModeArg {
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub(crate) enum DiffModeArg {
+    Summary,
     Semantic,
+    Artifact,
+    Provenance,
+    Timing,
+    Policy,
+    Cache,
+    Raw,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
