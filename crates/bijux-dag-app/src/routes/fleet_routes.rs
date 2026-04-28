@@ -103,6 +103,33 @@ struct AutoscaleReport {
     autoscale_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct WarmPoolSimulation {
+    pool: WorkerPool,
+    target_runtime_class: String,
+    #[serde(default)]
+    warm_worker_ids: Vec<String>,
+    #[serde(default)]
+    preloaded_profiles: Vec<String>,
+    cold_start_ms: u64,
+    warm_start_ms: u64,
+    monthly_cost_estimate: f64,
+    policy_id: String,
+}
+
+#[derive(Debug, Serialize)]
+struct WarmPoolReport {
+    pool_id: String,
+    target_runtime_class: String,
+    warm_worker_count: usize,
+    preloaded_profiles: Vec<String>,
+    startup_improvement_ms: u64,
+    monthly_cost_estimate: f64,
+    policy_id: String,
+    gaps: Vec<String>,
+    warm_pool_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -313,6 +340,61 @@ fn autoscale_payload(simulation: AutoscaleSimulation) -> (serde_json::Value, boo
     (serde_json::to_value(report).expect("autoscale report"), ok)
 }
 
+fn warm_pool_payload(simulation: WarmPoolSimulation) -> (serde_json::Value, bool) {
+    let WarmPoolSimulation {
+        pool,
+        target_runtime_class,
+        warm_worker_ids,
+        preloaded_profiles,
+        cold_start_ms,
+        warm_start_ms,
+        monthly_cost_estimate,
+        policy_id,
+    } = simulation;
+    let startup_improvement_ms = cold_start_ms.saturating_sub(warm_start_ms);
+    let mut gaps = Vec::new();
+    if pool.pool_id.trim().is_empty() || pool.class.trim().is_empty() {
+        gaps.push("warm pool requires a named worker pool and class".to_string());
+    }
+    if target_runtime_class.trim().is_empty() {
+        gaps.push("warm pool must declare its target runtime class".to_string());
+    }
+    if pool.class != target_runtime_class {
+        gaps.push("warm pool class must match the targeted runtime class".to_string());
+    }
+    if warm_worker_ids.is_empty() {
+        gaps.push("warm pool should keep at least one worker prewarmed".to_string());
+    }
+    if warm_worker_ids.iter().any(|worker| !pool.workers.iter().any(|id| id == worker)) {
+        gaps.push("all warm workers must belong to the declared worker pool".to_string());
+    }
+    if preloaded_profiles.is_empty() {
+        gaps.push("warm pool should declare at least one preloaded profile".to_string());
+    }
+    if startup_improvement_ms == 0 {
+        gaps.push("warm pool must demonstrate a startup improvement over cold capacity".to_string());
+    }
+    if monthly_cost_estimate <= 0.0 {
+        gaps.push("warm pool cost must be visible to operators".to_string());
+    }
+    if policy_id.trim().is_empty() {
+        gaps.push("warm pool requires a governing policy identifier".to_string());
+    }
+    let report = WarmPoolReport {
+        pool_id: pool.pool_id,
+        target_runtime_class,
+        warm_worker_count: warm_worker_ids.len(),
+        preloaded_profiles,
+        startup_improvement_ms,
+        monthly_cost_estimate,
+        policy_id,
+        warm_pool_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.warm_pool_ready;
+    (serde_json::to_value(report).expect("warm pool report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -338,6 +420,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = autoscale_payload(simulation);
             ("dag.fleet.autoscale", payload, ok)
         }
+        FleetCommands::WarmPool { simulation } => {
+            let simulation: WarmPoolSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = warm_pool_payload(simulation);
+            ("dag.fleet.warm-pool", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -360,7 +447,8 @@ pub(crate) fn handle_fleet_command(
 mod tests {
     use super::{
         autoscale_payload, capability_payload, drain_payload, registration_payload,
-        AutoscaleSimulation, CapabilitySimulation, DrainSimulation, RegistrationSimulation,
+        warm_pool_payload, AutoscaleSimulation, CapabilitySimulation, DrainSimulation,
+        RegistrationSimulation, WarmPoolSimulation,
     };
     use bijux_dag_runtime::simulated_platform::{
         LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
@@ -633,5 +721,47 @@ mod tests {
         let (payload, ok) = autoscale_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn warm_pool_accepts_cost_visible_prewarmed_capacity() {
+        let simulation = WarmPoolSimulation {
+            pool: WorkerPool {
+                pool_id: "container-prod".to_string(),
+                class: "container".to_string(),
+                workers: vec!["worker-a".to_string(), "worker-b".to_string()],
+            },
+            target_runtime_class: "container".to_string(),
+            warm_worker_ids: vec!["worker-a".to_string()],
+            preloaded_profiles: vec!["python-biomed".to_string()],
+            cold_start_ms: 12_000,
+            warm_start_ms: 2_000,
+            monthly_cost_estimate: 640.0,
+            policy_id: "warm-pool-prod".to_string(),
+        };
+        let (payload, ok) = warm_pool_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["warm_pool_ready"], true);
+    }
+
+    #[test]
+    fn warm_pool_flags_unscoped_or_cost_blind_capacity() {
+        let simulation = WarmPoolSimulation {
+            pool: WorkerPool {
+                pool_id: String::new(),
+                class: "general".to_string(),
+                workers: vec!["worker-b".to_string()],
+            },
+            target_runtime_class: String::new(),
+            warm_worker_ids: vec!["worker-a".to_string()],
+            preloaded_profiles: Vec::new(),
+            cold_start_ms: 2_000,
+            warm_start_ms: 2_000,
+            monthly_cost_estimate: 0.0,
+            policy_id: String::new(),
+        };
+        let (payload, ok) = warm_pool_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
     }
 }
