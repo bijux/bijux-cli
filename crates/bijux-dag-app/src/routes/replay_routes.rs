@@ -115,12 +115,26 @@ pub(crate) fn handle_replay_command(
     let run_path = runtime.run(&snapshot.graph, out, options).map_err(|_| ExitCode::from(3))?;
     let replay_proof = if prove {
         let diff = crate::replay_service::run_diff_from_dirs(run_dir, &run_path)?;
+        let source_evidence_gaps = crate::replay_service::replay_evidence_gaps(run_dir);
+        let replay_evidence_gaps = crate::replay_service::replay_evidence_gaps(&run_path);
+        let safety_level = if !source_evidence_gaps.is_empty() || !replay_evidence_gaps.is_empty() {
+            "incomplete_evidence".to_string()
+        } else {
+            serde_json::to_value(diff.replay_equivalence.safety_level)
+                .ok()
+                .and_then(|value| value.as_str().map(ToOwned::to_owned))
+                .unwrap_or_else(|| "unsupported".to_string())
+        };
         Some(json!({
             "fidelity_level": if diff.replay_equivalence.equivalent { "strict_equivalent" } else { "diverged" },
             "equivalent": diff.replay_equivalence.equivalent,
+            "safety_level": safety_level,
             "reasons": diff.replay_equivalence.reasons,
             "reason_report": diff.replay_equivalence.reason_report,
             "cause_groups": diff.replay_equivalence.cause_groups,
+            "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
+            "source_evidence_gaps": source_evidence_gaps,
+            "replay_evidence_gaps": replay_evidence_gaps,
             "source_run_id": read_run_id(run_dir)?,
             "replay_run_id": read_run_id(&run_path)?
         }))

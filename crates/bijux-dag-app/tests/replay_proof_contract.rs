@@ -102,6 +102,10 @@ fn replay_dry_run_and_prove_surfaces_are_machine_readable() {
     assert!(proved["data"]["run_dir"].is_string());
     assert!(proved["data"]["replay_proof"].is_object());
     assert!(proved["data"]["replay_proof"]["fidelity_level"].is_string());
+    assert!(proved["data"]["replay_proof"]["safety_level"].is_string());
+    assert!(proved["data"]["replay_proof"]["branch_decision_drift_nodes"].is_array());
+    assert!(proved["data"]["replay_proof"]["source_evidence_gaps"].is_array());
+    assert!(proved["data"]["replay_proof"]["replay_evidence_gaps"].is_array());
 }
 
 #[test]
@@ -140,6 +144,7 @@ fn replay_prove_reports_strict_equivalent_on_exact_pair() {
     );
     assert_eq!(proved["ok"], true);
     assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "strict_equivalent");
+    assert_eq!(proved["data"]["replay_proof"]["safety_level"], "equivalent");
 }
 
 #[test]
@@ -192,4 +197,5 @@ fn replay_prove_reports_diverged_on_corrupt_source_pair() {
     );
     assert_eq!(proved["ok"], true);
     assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "diverged");
+    assert_eq!(proved["data"]["replay_proof"]["safety_level"], "risky");
 }

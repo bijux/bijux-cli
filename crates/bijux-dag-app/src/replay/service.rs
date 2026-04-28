@@ -2,7 +2,7 @@ use crate::diff::{build_run_diff, RunDiff};
 use bijux_dag_artifacts::OutputsIndex;
 use serde::Deserialize;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
@@ -31,6 +31,87 @@ pub(crate) fn run_diff_from_dirs(run_a: &Path, run_b: &Path) -> Result<RunDiff, 
         &outputs_a,
         &outputs_b,
     ))
+}
+
+pub(crate) fn replay_evidence_gaps(run_dir: &Path) -> Vec<String> {
+    let mut gaps = BTreeSet::new();
+    let manifest_path = run_dir.join("manifest.json");
+    let graph_path = run_dir.join("graph.snapshot.json");
+    if !manifest_path.exists() {
+        gaps.insert("missing_manifest".to_string());
+    }
+    if !graph_path.exists() {
+        gaps.insert("missing_graph".to_string());
+    }
+
+    let manifest: Option<Value> = read_json(&manifest_path).ok();
+    if manifest
+        .as_ref()
+        .and_then(|value| value.get("policy"))
+        .is_none()
+    {
+        gaps.insert("missing_policy".to_string());
+    }
+
+    let nodes_dir = run_dir.join("nodes");
+    if nodes_dir.exists() {
+        let mut trace_seen = false;
+        if let Ok(entries) = fs::read_dir(&nodes_dir) {
+            for entry in entries.filter_map(Result::ok) {
+                let node_dir = entry.path();
+                if !node_dir.is_dir() {
+                    continue;
+                }
+                let trace_path = node_dir.join("trace.json");
+                if !trace_path.exists() {
+                    gaps.insert("missing_trace".to_string());
+                    continue;
+                }
+                trace_seen = true;
+                if let Ok(trace) = read_json(&trace_path) {
+                    let adapter_id_missing = trace
+                        .get("adapter_id")
+                        .and_then(Value::as_str)
+                        .map(|value| value.trim().is_empty())
+                        .unwrap_or(true);
+                    let adapter_version_missing = trace
+                        .get("adapter_version")
+                        .and_then(Value::as_str)
+                        .map(|value| value.trim().is_empty())
+                        .unwrap_or(true);
+                    if adapter_id_missing || adapter_version_missing {
+                        gaps.insert("missing_adapter_identity".to_string());
+                    }
+                    let terminal = trace
+                        .get("status")
+                        .and_then(Value::as_str)
+                        .map(|status| matches!(status, "success" | "cached"))
+                        .unwrap_or(false);
+                    if terminal {
+                        let outputs_index_path = node_dir.join("outputs").join("index.json");
+                        if !outputs_index_path.exists() {
+                            gaps.insert("missing_artifact_hash".to_string());
+                        } else if let Ok(index) = read_typed_json::<OutputsIndex>(&outputs_index_path) {
+                            if index.files.iter().any(|file| file.sha256.trim().is_empty()) {
+                                gaps.insert("missing_artifact_hash".to_string());
+                            }
+                        } else {
+                            gaps.insert("missing_artifact_hash".to_string());
+                        }
+                    }
+                } else {
+                    gaps.insert("missing_trace".to_string());
+                }
+            }
+        }
+        if !trace_seen {
+            gaps.insert("missing_trace".to_string());
+        }
+    } else {
+        gaps.insert("missing_trace".to_string());
+    }
+
+    gaps.into_iter().collect()
 }
 
 fn read_json(path: &Path) -> Result<Value, ExitCode> {
@@ -87,7 +168,7 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
 
 #[cfg(test)]
 mod tests {
-    use super::run_diff_from_dirs;
+    use super::{replay_evidence_gaps, run_diff_from_dirs};
     use std::fs;
 
     fn write(path: &std::path::Path, value: &str) {
@@ -218,5 +299,23 @@ mod tests {
             .reasons
             .iter()
             .any(|reason| reason.contains("graph fingerprint differs")));
+    }
+
+    #[test]
+    fn replay_service_classifies_missing_evidence_categories() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run = tmp.path().join("run-gap");
+        fs::create_dir_all(run.join("nodes/n1")).expect("create nodes");
+        write(&run.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(
+            &run.join("nodes/n1/trace.json"),
+            r#"{"status":"success","adapter_id":"","adapter_version":"1"}"#,
+        );
+
+        let gaps = replay_evidence_gaps(&run);
+        assert!(gaps.contains(&"missing_graph".to_string()));
+        assert!(gaps.contains(&"missing_policy".to_string()));
+        assert!(gaps.contains(&"missing_adapter_identity".to_string()));
+        assert!(gaps.contains(&"missing_artifact_hash".to_string()));
     }
 }
