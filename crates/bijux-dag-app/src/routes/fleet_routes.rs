@@ -231,6 +231,26 @@ struct GossipReport {
     gossip_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct FragmentationSimulation {
+    #[serde(default)]
+    workers: Vec<WorkerCapabilities>,
+    #[serde(default)]
+    requests: Vec<WorkerPoolCapabilityRequest>,
+}
+
+#[derive(Debug, Serialize)]
+struct FragmentationReport {
+    worker_count: usize,
+    request_count: usize,
+    total_cpu_capacity: u32,
+    total_memory_mb: u32,
+    unplaceable_requests: usize,
+    stranded_capacity_detected: bool,
+    gaps: Vec<String>,
+    fragmentation_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -708,6 +728,52 @@ fn gossip_payload(simulation: GossipSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("gossip report"), ok)
 }
 
+fn fragmentation_payload(simulation: FragmentationSimulation) -> (serde_json::Value, bool) {
+    let FragmentationSimulation { workers, requests } = simulation;
+    let total_cpu_capacity = workers.iter().map(|worker| worker.cpu_capacity).sum::<u32>();
+    let total_memory_mb = workers.iter().map(|worker| worker.memory_mb).sum::<u32>();
+    let mut unplaceable_requests = 0usize;
+    let mut stranded_capacity_detected = false;
+    for request in &requests {
+        let placeable = workers
+            .iter()
+            .any(|worker| worker_pool_satisfies_capability_request(worker, request));
+        if !placeable {
+            unplaceable_requests += 1;
+            if total_cpu_capacity >= request.required_min_cpu_capacity
+                && total_memory_mb >= request.required_min_memory_mb
+            {
+                stranded_capacity_detected = true;
+            }
+        }
+    }
+    let mut gaps = Vec::new();
+    if workers.is_empty() {
+        gaps.push("fragmentation audit requires at least one worker capacity profile".to_string());
+    }
+    if requests.is_empty() {
+        gaps.push("fragmentation audit requires at least one placement request".to_string());
+    }
+    if unplaceable_requests > 0 {
+        gaps.push("some placement requests cannot be satisfied by any individual worker".to_string());
+    }
+    if stranded_capacity_detected {
+        gaps.push("aggregate capacity exists but is stranded across incompatible worker shapes".to_string());
+    }
+    let report = FragmentationReport {
+        worker_count: workers.len(),
+        request_count: requests.len(),
+        total_cpu_capacity,
+        total_memory_mb,
+        unplaceable_requests,
+        stranded_capacity_detected,
+        fragmentation_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.fragmentation_ready;
+    (serde_json::to_value(report).expect("fragmentation report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -758,6 +824,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = gossip_payload(simulation);
             ("dag.fleet.gossip", payload, ok)
         }
+        FleetCommands::Fragmentation { simulation } => {
+            let simulation: FragmentationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = fragmentation_payload(simulation);
+            ("dag.fleet.fragmentation", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -782,7 +853,8 @@ mod tests {
         autoscale_payload, capability_payload, drain_payload, registration_payload,
         warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
         DrainSimulation, IsolationSimulation, PreemptionSimulation, RegistrationSimulation,
-        TrustSimulation, WarmPoolSimulation, GossipSimulation, gossip_payload,
+        TrustSimulation, WarmPoolSimulation, GossipSimulation, FragmentationSimulation,
+        fragmentation_payload, gossip_payload,
         preemption_payload, trust_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
@@ -1343,5 +1415,78 @@ mod tests {
         let (payload, ok) = gossip_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn fragmentation_accepts_placeable_mixed_capacity() {
+        let simulation = FragmentationSimulation {
+            workers: vec![
+                WorkerCapabilities {
+                    cpu_capacity: 16,
+                    memory_mb: 65_536,
+                    supports_gpu: false,
+                    supports_container: true,
+                    supports_sandbox_profiles: vec!["strict".to_string()],
+                },
+                WorkerCapabilities {
+                    cpu_capacity: 32,
+                    memory_mb: 131_072,
+                    supports_gpu: true,
+                    supports_container: true,
+                    supports_sandbox_profiles: vec!["strict".to_string(), "gpu".to_string()],
+                },
+            ],
+            requests: vec![
+                WorkerPoolCapabilityRequest {
+                    required_min_cpu_capacity: 8,
+                    required_min_memory_mb: 16_384,
+                    require_gpu: false,
+                    require_container_support: true,
+                    required_sandbox_profile: Some("strict".to_string()),
+                },
+                WorkerPoolCapabilityRequest {
+                    required_min_cpu_capacity: 16,
+                    required_min_memory_mb: 65_536,
+                    require_gpu: true,
+                    require_container_support: true,
+                    required_sandbox_profile: Some("gpu".to_string()),
+                },
+            ],
+        };
+        let (payload, ok) = fragmentation_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["fragmentation_ready"], true);
+    }
+
+    #[test]
+    fn fragmentation_flags_stranded_capacity() {
+        let simulation = FragmentationSimulation {
+            workers: vec![
+                WorkerCapabilities {
+                    cpu_capacity: 8,
+                    memory_mb: 32_768,
+                    supports_gpu: false,
+                    supports_container: true,
+                    supports_sandbox_profiles: vec!["strict".to_string()],
+                },
+                WorkerCapabilities {
+                    cpu_capacity: 8,
+                    memory_mb: 32_768,
+                    supports_gpu: false,
+                    supports_container: true,
+                    supports_sandbox_profiles: vec!["strict".to_string()],
+                },
+            ],
+            requests: vec![WorkerPoolCapabilityRequest {
+                required_min_cpu_capacity: 16,
+                required_min_memory_mb: 65_536,
+                require_gpu: false,
+                require_container_support: true,
+                required_sandbox_profile: Some("strict".to_string()),
+            }],
+        };
+        let (payload, ok) = fragmentation_payload(simulation);
+        assert!(!ok);
+        assert_eq!(payload["stranded_capacity_detected"], true);
     }
 }
