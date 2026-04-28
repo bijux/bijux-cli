@@ -655,9 +655,54 @@ pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), Str
 }
 
 pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> Result<(), String> {
+    if definition.id.trim().is_empty() {
+        return Err("schedule id must not be blank".to_string());
+    }
+    if definition.dag_name.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare dag_name", definition.id));
+    }
+    if definition.dag_version_policy.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare dag_version_policy", definition.id));
+    }
+    if definition.queue.queue_name.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare queue_name", definition.id));
+    }
+    if definition
+        .queue
+        .tenant
+        .as_deref()
+        .is_some_and(|tenant| tenant.trim().is_empty())
+    {
+        return Err(format!("schedule '{}' tenant must not be blank", definition.id));
+    }
+    for (name, value) in [
+        ("per_dag", definition.concurrency.per_dag),
+        ("per_queue", definition.concurrency.per_queue),
+        ("per_tenant", definition.concurrency.per_tenant),
+        ("per_node_group", definition.concurrency.per_node_group),
+    ] {
+        if value == Some(0) {
+            return Err(format!(
+                "schedule '{}' concurrency layer '{}' must be greater than zero",
+                definition.id, name
+            ));
+        }
+    }
     if definition.catch_up.enabled && definition.catch_up.max_catch_up_runs == 0 {
         return Err(format!(
             "schedule '{}' enables catch-up but max_catch_up_runs is zero",
+            definition.id
+        ));
+    }
+    if !definition.catch_up.enabled && definition.catch_up.max_catch_up_runs > 0 {
+        return Err(format!(
+            "schedule '{}' disables catch-up but leaves max_catch_up_runs non-zero",
+            definition.id
+        ));
+    }
+    if definition.catch_up.enabled && !matches!(definition.trigger, TriggerSpec::Cron { .. }) {
+        return Err(format!(
+            "schedule '{}' only supports catch-up on cron triggers",
             definition.id
         ));
     }
@@ -665,6 +710,12 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
         let TriggerSpec::Backfill(backfill) = &definition.trigger else {
             unreachable!();
         };
+        if backfill.window_end_unix_ms < backfill.window_start_unix_ms {
+            return Err(format!(
+                "schedule '{}' backfill window_end_unix_ms must not precede window_start_unix_ms",
+                definition.id
+            ));
+        }
         if backfill.max_parallelism == 0 {
             return Err(format!(
                 "schedule '{}' backfill requires max_parallelism > 0",
@@ -677,6 +728,21 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
                 definition.id
             ));
         }
+        if definition
+            .concurrency
+            .per_queue
+            .is_some_and(|cap| backfill.max_parallelism > cap)
+        {
+            return Err(format!(
+                "schedule '{}' backfill max_parallelism exceeds queue concurrency cap",
+                definition.id
+            ));
+        }
+    } else if definition.concurrency.per_queue.is_none() {
+        return Err(format!(
+            "schedule '{}' must declare queue concurrency cap",
+            definition.id
+        ));
     }
     Ok(())
 }
