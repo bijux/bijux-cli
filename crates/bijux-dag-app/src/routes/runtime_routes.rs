@@ -1,9 +1,10 @@
 use crate::commands::{DagCli, RuntimeCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
-    build_heartbeat_audit_report, build_timeout_audit_report, BatchLifecycleEvent,
-    DispatchKeyRecord, RuntimeConfig,
+    audit_dispatch_discipline, build_cancellation_audit_report,
+    build_execution_isolation_report, build_retry_decision_report,
+    build_heartbeat_audit_report, build_timeout_audit_report, BatchAttemptState,
+    BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig, TaskIsolationMode,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -30,6 +31,16 @@ struct HeartbeatSimulation {
     lease: Option<bijux_dag_runtime::simulated_platform::WorkLease>,
     #[serde(default)]
     lease_semantics: Option<bijux_dag_runtime::simulated_platform::TaskLeaseSemantics>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CancellationSimulation {
+    isolation_mode: TaskIsolationMode,
+    issued_unix_ms: u128,
+    delivered_unix_ms: u128,
+    deadline_ms: u64,
+    #[serde(default)]
+    batch_state: Option<BatchAttemptState>,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -168,6 +179,28 @@ pub(crate) fn handle_runtime_command(
                 return emit_json(
                     cli,
                     "dag.runtime.heartbeat",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        RuntimeCommands::Cancel { simulation } => {
+            let simulation: CancellationSimulation = parse_json_file(simulation)?;
+            let report = build_cancellation_audit_report(
+                simulation.isolation_mode,
+                simulation.issued_unix_ms,
+                simulation.delivered_unix_ms,
+                simulation.deadline_ms,
+                simulation.batch_state.as_ref(),
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.cancel",
                     true,
                     serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
@@ -388,6 +421,40 @@ mod tests {
             &RuntimeCommands::Heartbeat { simulation },
         )
         .expect("heartbeat");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_support_cancellation_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("cancel.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "isolation_mode":"Container",
+              "issued_unix_ms":1000,
+              "delivered_unix_ms":1300,
+              "deadline_ms":500,
+              "batch_state":{
+                "metadata":{
+                  "scheduler_id":"scheduler",
+                  "submission_time_unix_ms":1,
+                  "run_id":"run-1",
+                  "node_id":"node-a",
+                  "attempt_id":"1",
+                  "resource_request":"cpu=1",
+                  "status_mapping":"sim"
+                },
+                "events":[{"scheduler_id":"scheduler","status":"submitted","unix_ms":1}],
+                "cancelled":false
+              }
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli = quiet_json_cli(RuntimeCommands::Cancel { simulation: simulation.clone() });
+        let code =
+            handle_runtime_command(&cli, &RuntimeCommands::Cancel { simulation }).expect("cancel");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

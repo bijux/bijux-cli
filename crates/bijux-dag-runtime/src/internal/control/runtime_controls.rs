@@ -1,12 +1,14 @@
 use crate::simulated_platform::{
-    classify_heartbeat, is_duplicate_dispatch, normalize_status_events, recover_lost_lease,
-    should_reassign, worker_alive, HeartbeatClass, HeartbeatSemantics, LivenessPolicy,
-    RemoteStatusEvent, TaskLeaseSemantics, WorkLease, WorkerHeartbeat,
+    cancellation_delivered_in_time, classify_heartbeat, is_duplicate_dispatch,
+    normalize_status_events, recover_lost_lease, should_reassign, worker_alive,
+    HeartbeatClass, HeartbeatSemantics, LivenessPolicy, RemoteStatusEvent, TaskLeaseSemantics,
+    WorkLease, WorkerHeartbeat,
 };
 use crate::{
-    default_forced_cleanup, duplicate_status_delivery_detected, retry_allowed,
-    validate_task_contracts, BackoffStrategy, BatchLifecycleEvent, ForcedCancellationCleanup,
-    Graph, RetryPolicyV2, RuntimeConfig, RuntimeError, TaskIsolationMode,
+    cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
+    retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
+    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, RetryPolicyV2, RuntimeConfig,
+    RuntimeError, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -85,6 +87,15 @@ pub struct HeartbeatAuditReport {
     pub worker_alive: bool,
     pub should_reassign: bool,
     pub recoverable_lease_loss: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CancellationAuditReport {
+    pub isolation_mode: TaskIsolationMode,
+    pub forced_cleanup: ForcedCancellationCleanup,
+    pub delivered_in_time: bool,
+    pub batch_cancel_recorded: bool,
+    pub batch_cancelled: bool,
 }
 
 pub fn build_execution_isolation_report(
@@ -309,6 +320,37 @@ pub fn build_heartbeat_audit_report(
     }
 }
 
+pub fn build_cancellation_audit_report(
+    isolation_mode: TaskIsolationMode,
+    issued_unix_ms: u128,
+    delivered_unix_ms: u128,
+    deadline_ms: u64,
+    batch_state: Option<&BatchAttemptState>,
+) -> CancellationAuditReport {
+    let mut state = batch_state.cloned();
+    if let Some(batch_state) = state.as_mut() {
+        cancel_batch_attempt(batch_state);
+    }
+
+    let batch_cancel_recorded = state
+        .as_ref()
+        .map(|batch| batch.events.iter().any(|event| event.status == "cancel-requested"))
+        .unwrap_or(false);
+    let batch_cancelled = state.as_ref().map(|batch| batch.cancelled).unwrap_or(false);
+
+    CancellationAuditReport {
+        forced_cleanup: default_forced_cleanup(&isolation_mode),
+        delivered_in_time: cancellation_delivered_in_time(
+            issued_unix_ms,
+            delivered_unix_ms,
+            deadline_ms,
+        ),
+        isolation_mode,
+        batch_cancel_recorded,
+        batch_cancelled,
+    }
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -359,7 +401,10 @@ fn normalize_failure_class(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
-    use crate::{BatchLifecycleEvent, RuntimeConfig};
+    use crate::{
+        BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, RuntimeConfig,
+        TaskIsolationMode,
+    };
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
     use crate::simulated_platform::{
         HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
@@ -574,5 +619,36 @@ mod tests {
         assert!(report.worker_alive);
         assert!(report.should_reassign);
         assert_eq!(report.recoverable_lease_loss, Some(true));
+    }
+
+    #[test]
+    fn cancellation_report_tracks_delivery_and_batch_recording() {
+        let report = super::build_cancellation_audit_report(
+            TaskIsolationMode::Container,
+            1_000,
+            1_300,
+            500,
+            Some(&BatchAttemptState {
+                metadata: crate::BatchJobMetadata {
+                    scheduler_id: "scheduler".to_string(),
+                    submission_time_unix_ms: 1,
+                    run_id: "run-1".to_string(),
+                    node_id: "node-a".to_string(),
+                    attempt_id: "1".to_string(),
+                    resource_request: "cpu=1".to_string(),
+                    status_mapping: "sim".to_string(),
+                },
+                events: vec![BatchLifecycleEvent {
+                    scheduler_id: "scheduler".to_string(),
+                    status: "submitted".to_string(),
+                    unix_ms: 1,
+                }],
+                cancelled: false,
+            }),
+        );
+        assert!(report.delivered_in_time);
+        assert!(report.batch_cancel_recorded);
+        assert!(report.batch_cancelled);
+        assert_eq!(report.forced_cleanup, ForcedCancellationCleanup::ImmediateTerminate);
     }
 }

@@ -398,6 +398,7 @@ pub(crate) enum RuntimeCommands {
         sla_timeout_ms: Option<u64>,
     },
     Heartbeat { simulation: PathBuf },
+    Cancel { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
