@@ -231,12 +231,17 @@ struct OverrideSimulation {
     action_kind: ActionKind,
     resource_kind: ResourceKind,
     resource_id: String,
+    resource_tenant_id: Option<String>,
     environment: String,
     policy_bundle_version: String,
     granted_permissions: Vec<String>,
     environment_rules: Vec<EnvironmentAuthorizationRule>,
     reason: String,
     audit_event_id: Option<String>,
+    #[serde(default)]
+    approvers: Vec<String>,
+    #[serde(default)]
+    required_approvals: usize,
     break_glass: bool,
 }
 
@@ -247,6 +252,8 @@ struct OverrideReport {
     audit_recorded: bool,
     environment_allows: bool,
     break_glass_policy_valid: bool,
+    approval_quorum_met: bool,
+    scoped_to_tenant: bool,
     gaps: Vec<String>,
 }
 
@@ -330,7 +337,7 @@ fn authz_payload(simulation: &Path) -> Result<AuthzReport, ExitCode> {
             kind: simulation.subject_kind,
             tenant_id: simulation.tenant_id.clone(),
         },
-        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind },
+        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind.clone() },
         resource: ResourceRef {
             kind: simulation.resource_kind,
             id: simulation.resource_id,
@@ -615,13 +622,13 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
             kind: SubjectKind::User,
             tenant_id: simulation.tenant_id.clone(),
         },
-        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind },
+        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind.clone() },
         resource: ResourceRef {
             kind: simulation.resource_kind,
             id: simulation.resource_id,
-            tenant_id: simulation.tenant_id.clone(),
+            tenant_id: simulation.resource_tenant_id.clone(),
         },
-        scope: match simulation.tenant_id {
+        scope: match simulation.resource_tenant_id.clone().or(simulation.tenant_id.clone()) {
             Some(tenant_id) => ResourceScope::Tenant { tenant_id },
             None => ResourceScope::Global,
         },
@@ -633,7 +640,14 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
     let reason_recorded = !simulation.reason.trim().is_empty();
     let audit_recorded =
         simulation.audit_event_id.as_ref().is_some_and(|value| !value.trim().is_empty());
-    let break_glass_policy_valid = !simulation.break_glass || (reason_recorded && audit_recorded);
+    let approval_quorum_met = simulation.approvers.len() >= simulation.required_approvals;
+    let scoped_to_tenant = simulation.tenant_id.is_none()
+        || simulation.resource_tenant_id.is_none()
+        || simulation.tenant_id == simulation.resource_tenant_id;
+    let dual_control_required =
+        simulation.break_glass || matches!(simulation.action_kind, ActionKind::Administer);
+    let break_glass_policy_valid =
+        !simulation.break_glass || (reason_recorded && audit_recorded && approval_quorum_met);
     let mut gaps = Vec::new();
     if !dry_run.would_allow {
         gaps.push("override actor lacks the required permission".to_string());
@@ -647,15 +661,26 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
     if !audit_recorded {
         gaps.push("override audit record is missing".to_string());
     }
+    if !scoped_to_tenant {
+        gaps.push("override crosses tenant scope boundaries".to_string());
+    }
+    if dual_control_required && !approval_quorum_met {
+        gaps.push("override lacks the required approval quorum".to_string());
+    }
     if !break_glass_policy_valid {
         gaps.push("break-glass override is not fully justified".to_string());
     }
     Ok(OverrideReport {
-        override_allowed: dry_run.would_allow && environment_allows && break_glass_policy_valid,
+        override_allowed: dry_run.would_allow
+            && environment_allows
+            && break_glass_policy_valid
+            && scoped_to_tenant,
         reason_recorded,
         audit_recorded,
         environment_allows,
         break_glass_policy_valid,
+        approval_quorum_met,
+        scoped_to_tenant,
         gaps,
     })
 }
@@ -1321,12 +1346,15 @@ mod tests {
               "action_kind":"Manage",
               "resource_kind":"Run",
               "resource_id":"run-1",
+              "resource_tenant_id":"atlas",
               "environment":"prod",
               "policy_bundle_version":"2026-04-28",
               "granted_permissions":["run.repair"],
               "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
               "reason":"recover corrupted manifest",
               "audit_event_id":"audit-1",
+              "approvers":["owner-a","owner-b"],
+              "required_approvals":2,
               "break_glass":true
             }"#,
         )
@@ -1342,6 +1370,8 @@ mod tests {
         assert!(report.audit_recorded);
         assert!(report.environment_allows);
         assert!(report.break_glass_policy_valid);
+        assert!(report.approval_quorum_met);
+        assert!(report.scoped_to_tenant);
         assert!(report.gaps.is_empty());
     }
 
@@ -1358,12 +1388,15 @@ mod tests {
               "action_kind":"Administer",
               "resource_kind":"Run",
               "resource_id":"run-1",
+              "resource_tenant_id":"other",
               "environment":"prod",
               "policy_bundle_version":"2026-04-28",
               "granted_permissions":[],
               "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
               "reason":"",
               "audit_event_id":null,
+              "approvers":[],
+              "required_approvals":2,
               "break_glass":true
             }"#,
         )
@@ -1375,6 +1408,8 @@ mod tests {
             "override is denied in this environment",
             "override reason is missing",
             "override audit record is missing",
+            "override crosses tenant scope boundaries",
+            "override lacks the required approval quorum",
             "break-glass override is not fully justified",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
