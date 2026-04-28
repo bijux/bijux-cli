@@ -4,6 +4,7 @@ mod tests {
     use crate::{Fs, StdFs};
     use crate::test_support::{docker_available, param_object, sample_graph};
     use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
+    use std::ffi::OsString;
     use std::io;
     use std::path::{Path, PathBuf};
     use std::fs;
@@ -12,6 +13,29 @@ mod tests {
     fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(())).lock().expect("lock")
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        original: Option<OsString>,
+    }
+
+    impl EnvVarGuard {
+        fn replace(key: &'static str, value: &str) -> Self {
+            let original = std::env::var_os(key);
+            std::env::set_var(key, value);
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
     }
 
     fn create_staging_conflict(base: &Path, run_id: &str, relative: &str) {
@@ -989,6 +1013,8 @@ mod tests {
 
     #[test]
     fn missing_container_engine_fails_as_infrastructure_error() {
+        let _env_lock = process_env_lock();
+        let _path_guard = EnvVarGuard::replace("PATH", "");
         let dir = tempfile::tempdir().unwrap();
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
