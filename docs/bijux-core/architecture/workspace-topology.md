@@ -9,25 +9,22 @@ last_reviewed: 2026-04-06
 
 # Workspace Topology
 
-Workspace topology documents where source, policies, contracts, and generated
-assets live so contributors can navigate without guesswork.
+This page explains how the major repository surfaces fit together.
 
-## Visual Summary
+It is a navigation aid first. The topology is useful when a reader needs to see
+how source code, contracts, docs, and generated outputs relate before diving
+into one branch.
+
+## Topology Map
 
 ```mermaid
-flowchart TD
-    root[repository root]
-    root --> crates[crates/]
-    root --> configs[configs/]
-    root --> makes[makes/ and Makefile]
-    root --> docs[docs/]
-    root --> contracts[contracts/]
-    root --> artifacts[artifacts/]
-
-    crates --> runtime[runtime and maintainer crates]
-    docs --> programs[core/cli/dag/dev handbooks]
-    contracts --> api[contract snapshots and schemas]
-    artifacts --> generated[generated evidence only]
+flowchart LR
+    root["repository root"] --> crates["crates"]
+    root --> configs["configs"]
+    root --> makes["make entrypoints"]
+    root --> docs["docs"]
+    root --> contracts["contracts"]
+    root --> artifacts["artifacts"]
 ```
 
 ## Topology Rules
@@ -44,6 +41,11 @@ flowchart TD
 - `docs/bijux-cli`
 - `docs/bijux-dag`
 - `docs/bijux-dev`
+
+## Reading Rule
+
+Use this page when the repository surface is still unfamiliar and the question
+is where a concern lives before asking how it works.
 
 ## Code Anchors
 
