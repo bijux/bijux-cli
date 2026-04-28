@@ -495,6 +495,7 @@ pub(crate) enum FleetCommands {
     Register { simulation: PathBuf },
     Capabilities { simulation: PathBuf },
     Drain { simulation: PathBuf },
+    Autoscale { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

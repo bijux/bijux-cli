@@ -1,10 +1,12 @@
 use crate::commands::{DagCli, FleetCommands};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_runtime::derive_autoscaling_hint;
 use bijux_dag_runtime::simulated_platform::{
     check_worker_version_compatibility, validate_worker_identity, worker_alive,
     validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
-    PlacementHint, TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerPool,
-    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
+    PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics, WorkLease,
+    WorkerCapabilities, WorkerHeartbeat, WorkerPool, WorkerPoolCapabilityRequest,
+    WorkerRegistration, WorkerVersionCompatibilityRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -77,6 +79,28 @@ struct DrainReport {
     replacement_pool_ready: bool,
     gaps: Vec<String>,
     drain_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct AutoscaleSimulation {
+    queue_partition: QueuePartition,
+    scaling_plan: SchedulerScalingPlan,
+    queue_depth: usize,
+    dispatch_lag_seconds: u32,
+    saturation_pct: u32,
+    current_replicas: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct AutoscaleReport {
+    queue_name: String,
+    target_component: String,
+    current_replicas: usize,
+    recommended_replicas: usize,
+    worker_count_declared: u32,
+    sharding_key: String,
+    gaps: Vec<String>,
+    autoscale_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -245,6 +269,50 @@ fn drain_payload(simulation: DrainSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("drain report"), ok)
 }
 
+fn autoscale_payload(simulation: AutoscaleSimulation) -> (serde_json::Value, bool) {
+    let AutoscaleSimulation {
+        queue_partition,
+        scaling_plan,
+        queue_depth,
+        dispatch_lag_seconds,
+        saturation_pct,
+        current_replicas,
+    } = simulation;
+    let hint =
+        derive_autoscaling_hint(queue_depth, dispatch_lag_seconds, saturation_pct, current_replicas);
+    let mut gaps = Vec::new();
+    if queue_partition.queue_name.trim().is_empty() {
+        gaps.push("autoscaling hook requires a named queue partition".to_string());
+    }
+    if queue_partition.max_concurrency == 0 {
+        gaps.push("queue partition must declare a non-zero concurrency ceiling".to_string());
+    }
+    if scaling_plan.worker_count == 0 {
+        gaps.push("scheduler scaling plan must declare worker capacity".to_string());
+    }
+    if scaling_plan.sharding_key.trim().is_empty() {
+        gaps.push("scheduler scaling plan must declare a sharding key".to_string());
+    }
+    if hint.recommended_replicas < current_replicas {
+        gaps.push("autoscaling hint should not undercut the currently declared replicas".to_string());
+    }
+    if saturation_pct > 80 && hint.recommended_replicas == current_replicas {
+        gaps.push("high saturation should drive an increased replica recommendation".to_string());
+    }
+    let report = AutoscaleReport {
+        queue_name: queue_partition.queue_name,
+        target_component: hint.target_component,
+        current_replicas,
+        recommended_replicas: hint.recommended_replicas,
+        worker_count_declared: scaling_plan.worker_count,
+        sharding_key: scaling_plan.sharding_key,
+        autoscale_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.autoscale_ready;
+    (serde_json::to_value(report).expect("autoscale report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -264,6 +332,11 @@ pub(crate) fn handle_fleet_command(
             let simulation: DrainSimulation = parse_json_file(simulation)?;
             let (payload, ok) = drain_payload(simulation);
             ("dag.fleet.drain", payload, ok)
+        }
+        FleetCommands::Autoscale { simulation } => {
+            let simulation: AutoscaleSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = autoscale_payload(simulation);
+            ("dag.fleet.autoscale", payload, ok)
         }
     };
     emit_json(
@@ -286,13 +359,13 @@ pub(crate) fn handle_fleet_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        capability_payload, drain_payload, registration_payload, CapabilitySimulation,
-        DrainSimulation, RegistrationSimulation,
+        autoscale_payload, capability_payload, drain_payload, registration_payload,
+        AutoscaleSimulation, CapabilitySimulation, DrainSimulation, RegistrationSimulation,
     };
     use bijux_dag_runtime::simulated_platform::{
-        LivenessPolicy, PlacementHint, TaskLeaseSemantics, WorkLease, WorkerCapabilities,
-        WorkerHeartbeat, WorkerIdentity, WorkerPool, WorkerPoolCapabilityRequest,
-        WorkerRegistration, WorkerVersionCompatibilityRule,
+        LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
+        WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
+        WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
     };
     use std::collections::BTreeMap;
 
@@ -516,5 +589,49 @@ mod tests {
         let (payload, ok) = drain_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn autoscale_accepts_pressure_backed_replica_growth() {
+        let simulation = AutoscaleSimulation {
+            queue_partition: QueuePartition {
+                queue_name: "scheduler-workers".to_string(),
+                tenant_id: Some("atlas".to_string()),
+                max_concurrency: 64,
+            },
+            scaling_plan: SchedulerScalingPlan {
+                worker_count: 12,
+                sharding_key: "tenant".to_string(),
+            },
+            queue_depth: 2_000,
+            dispatch_lag_seconds: 45,
+            saturation_pct: 90,
+            current_replicas: 4,
+        };
+        let (payload, ok) = autoscale_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["recommended_replicas"], 6);
+    }
+
+    #[test]
+    fn autoscale_flags_missing_partition_or_nonresponsive_scaling_plan() {
+        let simulation = AutoscaleSimulation {
+            queue_partition: QueuePartition {
+                queue_name: String::new(),
+                tenant_id: None,
+                max_concurrency: 0,
+            },
+            scaling_plan: SchedulerScalingPlan {
+                worker_count: 0,
+                sharding_key: String::new(),
+            },
+            queue_depth: 2_000,
+            dispatch_lag_seconds: 45,
+            saturation_pct: 90,
+            current_replicas: 4,
+        };
+        let (payload, ok) = autoscale_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }
