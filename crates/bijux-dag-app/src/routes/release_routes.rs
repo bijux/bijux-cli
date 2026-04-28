@@ -117,6 +117,27 @@ struct ReleaseShadowReport {
     warnings: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseCanarySimulation {
+    target: String,
+    scope_percent: u8,
+    max_workflows: usize,
+    max_tenants: usize,
+    abort_on_error_rate: f64,
+    current_error_rate: f64,
+    abort_on_sla_breach_rate: f64,
+    current_sla_breach_rate: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseCanaryReport {
+    target: String,
+    within_scope: bool,
+    healthy: bool,
+    recommendation: String,
+    blockers: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -322,6 +343,40 @@ fn shadow_payload(simulation: &std::path::Path) -> Result<ReleaseShadowReport, E
     })
 }
 
+fn canary_payload(simulation: &std::path::Path) -> Result<ReleaseCanaryReport, ExitCode> {
+    let simulation: ReleaseCanarySimulation = load_json_file(simulation)?;
+    let mut blockers = Vec::new();
+    if simulation.scope_percent == 0 || simulation.scope_percent > 25 {
+        blockers.push("canary scope must stay between 1 and 25 percent".to_string());
+    }
+    if simulation.max_workflows == 0 {
+        blockers.push("canary must limit workflow count".to_string());
+    }
+    if simulation.max_tenants == 0 {
+        blockers.push("canary must limit tenant count".to_string());
+    }
+    if simulation.current_error_rate > simulation.abort_on_error_rate {
+        blockers.push("error rate exceeds canary abort threshold".to_string());
+    }
+    if simulation.current_sla_breach_rate > simulation.abort_on_sla_breach_rate {
+        blockers.push("sla breach rate exceeds canary abort threshold".to_string());
+    }
+    let within_scope = blockers.iter().all(|b| {
+        b != "canary scope must stay between 1 and 25 percent"
+            && b != "canary must limit workflow count"
+            && b != "canary must limit tenant count"
+    });
+    let healthy = !blockers.iter().any(|b| b.contains("exceeds"));
+    let recommendation = if blockers.is_empty() {
+        "hold_canary_scope".to_string()
+    } else if healthy {
+        "narrow_scope_before_rollout".to_string()
+    } else {
+        "abort_canary".to_string()
+    };
+    Ok(ReleaseCanaryReport { target: simulation.target, within_scope, healthy, recommendation, blockers })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -350,6 +405,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(shadow_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.shadow", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Canary { simulation } => {
+            let payload =
+                serde_json::to_value(canary_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.canary", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -660,6 +720,70 @@ mod tests {
             "shadow run reports critical drift",
         ] {
             assert!(report.warnings.iter().any(|warning| warning == expected));
+        }
+    }
+
+    #[test]
+    fn release_canary_accepts_bounded_healthy_rollout() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("canary.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "target":"scheduler-policy-v2",
+              "scope_percent":10,
+              "max_workflows":5,
+              "max_tenants":2,
+              "abort_on_error_rate":0.05,
+              "current_error_rate":0.01,
+              "abort_on_sla_breach_rate":0.02,
+              "current_sla_breach_rate":0.0
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Canary { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Canary { simulation: simulation.clone() },
+        )
+        .expect("canary");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::canary_payload(&simulation).expect("report");
+        assert!(report.within_scope);
+        assert!(report.healthy);
+        assert_eq!(report.recommendation, "hold_canary_scope");
+    }
+
+    #[test]
+    fn release_canary_blocks_wide_and_unhealthy_rollout() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("canary.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "target":"scheduler-policy-v2",
+              "scope_percent":40,
+              "max_workflows":0,
+              "max_tenants":0,
+              "abort_on_error_rate":0.05,
+              "current_error_rate":0.2,
+              "abort_on_sla_breach_rate":0.02,
+              "current_sla_breach_rate":0.1
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::canary_payload(&simulation).expect("report");
+        assert!(!report.within_scope);
+        assert!(!report.healthy);
+        assert_eq!(report.recommendation, "abort_canary");
+        for expected in [
+            "canary scope must stay between 1 and 25 percent",
+            "canary must limit workflow count",
+            "canary must limit tenant count",
+            "error rate exceeds canary abort threshold",
+            "sla breach rate exceeds canary abort threshold",
+        ] {
+            assert!(report.blockers.iter().any(|blocker| blocker == expected));
         }
     }
 }
