@@ -4,11 +4,11 @@ use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
     federation_conformance_passes, ConsistencyBoundaryNote, ConsistencyClass,
     CrossDomainReplaySafety, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
-    FederatedConformanceGate, GeoReadyAcceptanceGate, GeoSimulationScenario,
-    PeeringObservabilityContract,
+    FederatedConformanceGate, FederationDomainIdentity, GeoReadyAcceptanceGate,
+    GeoSimulationScenario, PeeringObservabilityContract,
     RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
     RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
-    WriteRoutingRule, replay_trust_warnings,
+    TrustTierRoutingRule, WriteRoutingRule, replay_trust_warnings, trust_tier_allows_domain,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -128,6 +128,20 @@ struct AuditIntegrityReport {
     metrics_exchange_enabled: bool,
     redaction_profile: String,
     integrity_passed: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct TrustTierSimulation {
+    rule: TrustTierRoutingRule,
+    domain: FederationDomainIdentity,
+}
+
+#[derive(Debug, Serialize)]
+struct TrustTierReport {
+    domain_allowed: bool,
+    tier_sufficient: bool,
+    selected_domain: String,
     gaps: Vec<String>,
 }
 
@@ -361,6 +375,36 @@ fn audit_integrity_payload(simulation: &Path) -> Result<AuditIntegrityReport, Ex
     })
 }
 
+fn trust_tier_rank(value: &str) -> usize {
+    match value {
+        "bronze" => 1,
+        "silver" => 2,
+        "gold" => 3,
+        "platinum" => 4,
+        _ => 0,
+    }
+}
+
+fn trust_tier_payload(simulation: &Path) -> Result<TrustTierReport, ExitCode> {
+    let simulation: TrustTierSimulation = load_json_file(simulation)?;
+    let domain_allowed = trust_tier_allows_domain(&simulation.rule, &simulation.domain.domain_id);
+    let tier_sufficient =
+        trust_tier_rank(&simulation.domain.trust_tier) >= trust_tier_rank(&simulation.rule.min_trust_tier);
+    let mut gaps = Vec::new();
+    if !domain_allowed {
+        gaps.push("selected domain is not in the allowed trust-tier routing set".to_string());
+    }
+    if !tier_sufficient {
+        gaps.push("selected domain trust tier is below the workflow minimum".to_string());
+    }
+    Ok(TrustTierReport {
+        domain_allowed,
+        tier_sufficient,
+        selected_domain: simulation.domain.domain_id.0,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -409,6 +453,10 @@ pub(crate) fn handle_federation_command(
                 Vec::new(),
                 ExitCode::SUCCESS,
             )
+        }
+        FederationCommands::TrustTier { simulation } => {
+            let payload = serde_json::to_value(trust_tier_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.trust-tier", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -861,6 +909,52 @@ mod tests {
             "federated audit conformance gate is incomplete",
             "audit events are not exchanged across domains",
             "audit exchange is missing a redaction profile",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_trust_tier_accepts_allowed_high_assurance_domain() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("trust-tier.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "rule":{"min_trust_tier":"gold","allowed_domains":["domain-eu","domain-us"]},
+              "domain":{"domain_id":"domain-eu","trust_tier":"platinum","issuer":"oidc-prod"}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::TrustTier { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::TrustTier { simulation: simulation.clone() },
+        )
+        .expect("trust tier");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::trust_tier_payload(&simulation).expect("report");
+        assert!(report.domain_allowed);
+        assert!(report.tier_sufficient);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_trust_tier_flags_unapproved_or_weak_domain() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("trust-tier.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "rule":{"min_trust_tier":"gold","allowed_domains":["domain-eu"]},
+              "domain":{"domain_id":"domain-us","trust_tier":"silver","issuer":"oidc-dev"}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::trust_tier_payload(&simulation).expect("report");
+        for expected in [
+            "selected domain is not in the allowed trust-tier routing set",
+            "selected domain trust tier is below the workflow minimum",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
