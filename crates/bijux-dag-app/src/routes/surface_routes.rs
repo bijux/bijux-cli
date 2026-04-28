@@ -28,7 +28,7 @@ fn capabilities_payload() -> serde_json::Value {
             backend_capability_payload("remote").unwrap()
         ],
         "operator_commands": [
-            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.state","runtime.write-discipline","runtime.worker-recovery","runtime.control-recovery","runtime.repair","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","artifact.registry","artifact.lineage","artifact.retention","dataset.mapping","dataset.staleness","governance.contracts","governance.ownership","governance.tags","governance.cost","governance.alerts","governance.policy-check","governance.catalog-export","governance.audit-event","governance.promotion","governance.compliance","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
+            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.state","runtime.write-discipline","runtime.worker-recovery","runtime.control-recovery","runtime.repair","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","artifact.registry","artifact.lineage","artifact.retention","dataset.mapping","dataset.staleness","governance.contracts","governance.ownership","governance.tags","governance.cost","governance.alerts","governance.policy-check","governance.catalog-export","governance.audit-event","governance.promotion","governance.compliance","release.version","release.promotion","release.deprecation","release.checkpoint","release.shadow","release.canary","release.rollback","release.classify","release.evidence","release.health","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
         ]
     })
 }
@@ -235,6 +235,16 @@ mod tests {
             "governance.audit-event",
             "governance.promotion",
             "governance.compliance",
+            "release.version",
+            "release.promotion",
+            "release.deprecation",
+            "release.checkpoint",
+            "release.shadow",
+            "release.canary",
+            "release.rollback",
+            "release.classify",
+            "release.evidence",
+            "release.health",
         ] {
             assert!(operator_commands.iter().any(|value| value.as_str() == Some(expected)));
         }
