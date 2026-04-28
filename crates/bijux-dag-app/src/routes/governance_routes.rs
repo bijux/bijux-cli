@@ -7,6 +7,9 @@ use serde_json::json;
 use std::collections::BTreeMap;
 use std::path::Path;
 
+const CRITICALITY_TAGS: &[&str] = &["critical", "high", "standard", "low"];
+const ENVIRONMENT_TAGS: &[&str] = &["dev", "staging", "prod"];
+
 #[derive(Debug, Serialize)]
 struct GovernanceGraphOutput {
     node_id: String,
@@ -29,9 +32,59 @@ struct GovernanceNodeContract {
     unresolved_inputs: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct OwnershipReport {
+    workflow_name: String,
+    owners: Vec<String>,
+    owner_count: usize,
+    criticality: Option<String>,
+    escalation_targets: Vec<String>,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct TagsReport {
+    workflow_name: String,
+    graph_tags: Vec<String>,
+    normalized_graph_tags: Vec<String>,
+    node_tags: BTreeMap<String, Vec<String>>,
+    unknown_tags: Vec<String>,
+    missing_dimensions: Vec<String>,
+}
+
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
     let input = read_file(path)?;
     parse_graph(&input)
+}
+
+fn graph_name(graph: &bijux_dag_core::Graph) -> String {
+    graph.meta
+        .as_ref()
+        .map(|meta| meta.name.clone())
+        .unwrap_or_else(|| "unnamed-workflow".to_string())
+}
+
+fn graph_tags(graph: &bijux_dag_core::Graph) -> Vec<String> {
+    graph.meta
+        .as_ref()
+        .map(|meta| meta.tags.clone())
+        .unwrap_or_default()
+}
+
+fn normalize_tag(tag: &str) -> String {
+    tag.trim().to_lowercase().replace([' ', '_'], "-")
+}
+
+fn criticality_tag(tags: &[String]) -> Option<String> {
+    tags.iter()
+        .map(|tag| normalize_tag(tag))
+        .find(|tag| CRITICALITY_TAGS.contains(&tag.as_str()))
+}
+
+fn environment_tag(tags: &[String]) -> Option<String> {
+    tags.iter()
+        .map(|tag| normalize_tag(tag))
+        .find(|tag| ENVIRONMENT_TAGS.contains(&tag.as_str()))
 }
 
 fn governance_contracts_payload(
@@ -153,6 +206,85 @@ fn governance_contracts_payload(
     ))
 }
 
+fn ownership_payload(dag: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
+    let graph = load_graph(dag)?;
+    let owners = graph
+        .meta
+        .as_ref()
+        .map(|meta| meta.owners.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|owner| owner.trim().to_string())
+        .filter(|owner| !owner.is_empty())
+        .collect::<Vec<_>>();
+    let tags = graph_tags(&graph);
+    let criticality = criticality_tag(&tags);
+    let mut gaps = Vec::new();
+    if owners.is_empty() {
+        gaps.push("workflow owners are missing".to_string());
+    }
+    if criticality.as_deref() == Some("critical") && owners.len() < 2 {
+        gaps.push("critical workflows require at least two owners".to_string());
+    }
+    let escalation_targets = owners
+        .iter()
+        .map(|owner| format!("pager:{owner}"))
+        .collect::<Vec<_>>();
+    let report = OwnershipReport {
+        workflow_name: graph_name(&graph),
+        owner_count: owners.len(),
+        owners,
+        criticality,
+        escalation_targets,
+        gaps: gaps.clone(),
+    };
+    Ok((serde_json::to_value(report).map_err(|_| ExitCode::from(3))?, gaps.is_empty()))
+}
+
+fn tags_payload(dag: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
+    let graph = load_graph(dag)?;
+    let graph_tags = graph_tags(&graph);
+    let normalized_graph_tags = graph_tags.iter().map(|tag| normalize_tag(tag)).collect::<Vec<_>>();
+    let mut node_tags = BTreeMap::new();
+    let mut unknown_tags = Vec::new();
+    for node in &graph.nodes {
+        let normalized = node.tags.iter().map(|tag| normalize_tag(tag)).collect::<Vec<_>>();
+        for tag in &normalized {
+            if !CRITICALITY_TAGS.contains(&tag.as_str())
+                && !ENVIRONMENT_TAGS.contains(&tag.as_str())
+                && !["finance", "etl", "analytics", "bioinformatics", "batch", "streaming"]
+                    .contains(&tag.as_str())
+            {
+                unknown_tags.push(tag.clone());
+            }
+        }
+        if !normalized.is_empty() {
+            node_tags.insert(node.id.clone(), normalized);
+        }
+    }
+    unknown_tags.sort();
+    unknown_tags.dedup();
+    let mut missing_dimensions = Vec::new();
+    if criticality_tag(&graph_tags).is_none() {
+        missing_dimensions.push("criticality".to_string());
+    }
+    if environment_tag(&graph_tags).is_none() {
+        missing_dimensions.push("environment".to_string());
+    }
+    let report = TagsReport {
+        workflow_name: graph_name(&graph),
+        graph_tags,
+        normalized_graph_tags,
+        node_tags,
+        unknown_tags: unknown_tags.clone(),
+        missing_dimensions: missing_dimensions.clone(),
+    };
+    Ok((
+        serde_json::to_value(report).map_err(|_| ExitCode::from(3))?,
+        unknown_tags.is_empty() && missing_dimensions.is_empty(),
+    ))
+}
+
 pub(crate) fn handle_governance_command(
     cli: &DagCli,
     command: &GovernanceCommands,
@@ -181,9 +313,53 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
-        GovernanceCommands::Ownership { .. }
-        | GovernanceCommands::Tags { .. }
-        | GovernanceCommands::Cost { .. }
+        GovernanceCommands::Ownership { dag } => {
+            let (payload, ok) = ownership_payload(dag)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.ownership",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_ownership_gap",
+                            "severity":"error",
+                            "message":"workflow ownership coverage is incomplete",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        GovernanceCommands::Tags { dag } => {
+            let (payload, ok) = tags_payload(dag)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.tags",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_tag_taxonomy_gap",
+                            "severity":"error",
+                            "message":"workflow tags do not satisfy the expected taxonomy",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        GovernanceCommands::Cost { .. }
         | GovernanceCommands::Alerts { .. }
         | GovernanceCommands::PolicyCheck { .. }
         | GovernanceCommands::CatalogExport { .. }
@@ -209,11 +385,11 @@ mod tests {
             path,
             r#"{
               "spec":"bijux-dag/v0.1",
-              "meta":{"name":"governance","owners":["platform@bijux"],"tags":["critical","finance"]},
+              "meta":{"name":"governance","owners":["platform@bijux","analytics@bijux"],"tags":["critical","prod","finance"]},
               "inputs":{"region":"eu"},
               "nodes":[
                 {"id":"extract","kind":"const","inputs":[],"outputs":[{"name":"dataset","path":"extract/dataset.json"}],"params":{"value":"x"}},
-                {"id":"score","kind":"const","inputs":["dataset"],"outputs":[{"name":"report","path":"score/report.json"}],"params":{"region":{"graph_input":"region"}}}
+                {"id":"score","kind":"const","inputs":["dataset"],"outputs":[{"name":"report","path":"score/report.json"}],"tags":["analytics"],"params":{"region":{"graph_input":"region"}}}
               ],
               "edges":[
                 {"from":{"node_id":"extract","port":"dataset"},"to":{"node_id":"score","port":"dataset"}}
@@ -272,5 +448,67 @@ mod tests {
             );
         });
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn governance_ownership_surface_accepts_critical_multi_owner_workflow() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        write_valid_graph(&dag);
+        let cli = quiet_json_cli(GovernanceCommands::Ownership { dag: dag.clone() });
+        let code =
+            handle_governance_command(&cli, &GovernanceCommands::Ownership { dag }).expect("ownership");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_ownership_surface_rejects_critical_single_owner_workflow() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"critical","owners":["platform@bijux"],"tags":["critical","prod"]},
+              "nodes":[{"id":"extract","kind":"const","inputs":[],"outputs":[],"params":{"value":"x"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("critical graph");
+        let cli = quiet_json_cli(GovernanceCommands::Ownership { dag: dag.clone() });
+        let exit = handle_governance_command(&cli, &GovernanceCommands::Ownership { dag })
+            .expect_err("critical ownership gap should fail");
+        assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_tags_surface_accepts_known_taxonomy() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        write_valid_graph(&dag);
+        let cli = quiet_json_cli(GovernanceCommands::Tags { dag: dag.clone() });
+        let code = handle_governance_command(&cli, &GovernanceCommands::Tags { dag })
+            .expect("tags");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_tags_surface_rejects_missing_dimensions_and_unknown_tags() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"untagged","owners":["platform@bijux"],"tags":["Finance Ops"]},
+              "nodes":[{"id":"extract","kind":"const","inputs":[],"outputs":[],"tags":["weird_tag"],"params":{"value":"x"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("untagged graph");
+        let cli = quiet_json_cli(GovernanceCommands::Tags { dag: dag.clone() });
+        let exit = handle_governance_command(&cli, &GovernanceCommands::Tags { dag })
+            .expect_err("tag taxonomy should fail");
+        assert_eq!(exit, ExitCode::from(3));
     }
 }
