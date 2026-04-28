@@ -2,9 +2,10 @@ use crate::commands::{DagCli, FleetCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::derive_autoscaling_hint;
 use bijux_dag_runtime::simulated_platform::{
-    check_worker_version_compatibility, validate_worker_identity, worker_alive,
-    validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
-    PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics, WorkLease,
+    check_scheduler_admission, check_worker_version_compatibility, validate_worker_identity,
+    worker_alive, validate_task_lease_semantics, worker_pool_satisfies_capability_request,
+    LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
+    TenantConcurrencyQuota, TenantQueueIsolationPolicy, TenantSchedulerAdmission, WorkLease,
     WorkerCapabilities, WorkerHeartbeat, WorkerPool, WorkerPoolCapabilityRequest,
     WorkerRegistration, WorkerVersionCompatibilityRule,
 };
@@ -128,6 +129,31 @@ struct WarmPoolReport {
     policy_id: String,
     gaps: Vec<String>,
     warm_pool_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct IsolationSimulation {
+    tenant_id: String,
+    queue_policy: TenantQueueIsolationPolicy,
+    quota: TenantConcurrencyQuota,
+    scheduler_admission: TenantSchedulerAdmission,
+    #[serde(default)]
+    queue_partitions: Vec<QueuePartition>,
+    queued_runs: usize,
+    pending_dispatches: usize,
+    #[serde(default)]
+    observed_foreign_tenants: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct IsolationReport {
+    tenant_id: String,
+    isolated_queues: Vec<String>,
+    scheduler_admitted: bool,
+    hard_isolation: bool,
+    foreign_tenants_observed: Vec<String>,
+    gaps: Vec<String>,
+    isolation_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -395,6 +421,56 @@ fn warm_pool_payload(simulation: WarmPoolSimulation) -> (serde_json::Value, bool
     (serde_json::to_value(report).expect("warm pool report"), ok)
 }
 
+fn isolation_payload(simulation: IsolationSimulation) -> (serde_json::Value, bool) {
+    let IsolationSimulation {
+        tenant_id,
+        queue_policy,
+        quota,
+        scheduler_admission,
+        queue_partitions,
+        queued_runs,
+        pending_dispatches,
+        observed_foreign_tenants,
+    } = simulation;
+    let scheduler_admitted =
+        check_scheduler_admission(queued_runs, pending_dispatches, &scheduler_admission);
+    let isolated_queues = queue_partitions
+        .iter()
+        .filter(|partition| partition.tenant_id.as_deref() == Some(queue_policy.tenant_id.0.as_str()))
+        .map(|partition| partition.queue_name.clone())
+        .collect::<Vec<_>>();
+    let mut gaps = Vec::new();
+    if tenant_id != queue_policy.tenant_id.0 || tenant_id != quota.tenant_id.0 || tenant_id != scheduler_admission.tenant_id.0 {
+        gaps.push("tenant isolation inputs must all target the same tenant".to_string());
+    }
+    if !queue_policy.hard_isolation {
+        gaps.push("noisy-neighbor protection requires hard queue isolation".to_string());
+    }
+    if isolated_queues.is_empty() {
+        gaps.push("tenant must own at least one dedicated queue partition".to_string());
+    }
+    if quota.max_runs == 0 || quota.max_nodes == 0 {
+        gaps.push("tenant quota must declare non-zero run and node ceilings".to_string());
+    }
+    if !scheduler_admitted {
+        gaps.push("scheduler admission limits are already saturated for this tenant".to_string());
+    }
+    if !observed_foreign_tenants.is_empty() {
+        gaps.push("foreign tenants were observed on a supposedly isolated fleet path".to_string());
+    }
+    let report = IsolationReport {
+        tenant_id,
+        isolated_queues,
+        scheduler_admitted,
+        hard_isolation: queue_policy.hard_isolation,
+        foreign_tenants_observed: observed_foreign_tenants,
+        isolation_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.isolation_ready;
+    (serde_json::to_value(report).expect("isolation report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -425,6 +501,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = warm_pool_payload(simulation);
             ("dag.fleet.warm-pool", payload, ok)
         }
+        FleetCommands::Isolation { simulation } => {
+            let simulation: IsolationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = isolation_payload(simulation);
+            ("dag.fleet.isolation", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -447,11 +528,12 @@ pub(crate) fn handle_fleet_command(
 mod tests {
     use super::{
         autoscale_payload, capability_payload, drain_payload, registration_payload,
-        warm_pool_payload, AutoscaleSimulation, CapabilitySimulation, DrainSimulation,
-        RegistrationSimulation, WarmPoolSimulation,
+        warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
+        DrainSimulation, IsolationSimulation, RegistrationSimulation, WarmPoolSimulation,
     };
     use bijux_dag_runtime::simulated_platform::{
         LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
+        TenantConcurrencyQuota, TenantId, TenantQueueIsolationPolicy, TenantSchedulerAdmission,
         WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
         WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
     };
@@ -763,5 +845,73 @@ mod tests {
         let (payload, ok) = warm_pool_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
+    }
+
+    #[test]
+    fn isolation_accepts_hard_isolated_tenant_capacity() {
+        let simulation = IsolationSimulation {
+            tenant_id: "atlas".to_string(),
+            queue_policy: TenantQueueIsolationPolicy {
+                tenant_id: TenantId("atlas".to_string()),
+                queue_names: vec!["atlas-high".to_string()],
+                hard_isolation: true,
+            },
+            quota: TenantConcurrencyQuota {
+                tenant_id: TenantId("atlas".to_string()),
+                max_runs: 50,
+                max_nodes: 500,
+                max_backfills: 5,
+            },
+            scheduler_admission: TenantSchedulerAdmission {
+                tenant_id: TenantId("atlas".to_string()),
+                max_enqueued_runs: 100,
+                max_dispatches_per_tick: 20,
+            },
+            queue_partitions: vec![QueuePartition {
+                queue_name: "atlas-high".to_string(),
+                tenant_id: Some("atlas".to_string()),
+                max_concurrency: 32,
+            }],
+            queued_runs: 40,
+            pending_dispatches: 10,
+            observed_foreign_tenants: Vec::new(),
+        };
+        let (payload, ok) = isolation_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["isolation_ready"], true);
+    }
+
+    #[test]
+    fn isolation_flags_shared_or_saturated_tenant_path() {
+        let simulation = IsolationSimulation {
+            tenant_id: "atlas".to_string(),
+            queue_policy: TenantQueueIsolationPolicy {
+                tenant_id: TenantId("other".to_string()),
+                queue_names: vec!["shared".to_string()],
+                hard_isolation: false,
+            },
+            quota: TenantConcurrencyQuota {
+                tenant_id: TenantId("atlas".to_string()),
+                max_runs: 0,
+                max_nodes: 0,
+                max_backfills: 0,
+            },
+            scheduler_admission: TenantSchedulerAdmission {
+                tenant_id: TenantId("atlas".to_string()),
+                max_enqueued_runs: 1,
+                max_dispatches_per_tick: 1,
+            },
+            queue_partitions: vec![QueuePartition {
+                queue_name: "shared".to_string(),
+                tenant_id: Some("other".to_string()),
+                max_concurrency: 8,
+            }],
+            queued_runs: 10,
+            pending_dispatches: 5,
+            observed_foreign_tenants: vec!["canon".to_string()],
+        };
+        let (payload, ok) = isolation_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }

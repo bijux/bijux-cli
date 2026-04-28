@@ -498,6 +498,7 @@ pub(crate) enum FleetCommands {
     Autoscale { simulation: PathBuf },
     #[command(name = "warm-pool")]
     WarmPool { simulation: PathBuf },
+    Isolation { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
