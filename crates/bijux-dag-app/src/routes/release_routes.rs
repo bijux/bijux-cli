@@ -1,8 +1,10 @@
 use crate::commands::{DagCli, ReleaseCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
+use bijux_dag_core::{Graph, Node};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fs;
 
 #[derive(Debug, Serialize)]
@@ -155,6 +157,15 @@ struct ReleaseRollbackReport {
     rollback_revision_id: String,
     guaranteed: bool,
     blockers: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseClassificationReport {
+    compatibility_class: String,
+    added_nodes: Vec<String>,
+    removed_nodes: Vec<String>,
+    changed_nodes: BTreeMap<String, Vec<String>>,
+    graph_policy_changed: bool,
 }
 
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
@@ -422,6 +433,90 @@ fn rollback_payload(simulation: &std::path::Path) -> Result<ReleaseRollbackRepor
     })
 }
 
+fn node_signature(node: &Node) -> Vec<String> {
+    let mut signature = Vec::new();
+    signature.push(format!("kind:{}", node.kind.as_str()));
+    signature.push(format!("inputs:{:?}", node.inputs));
+    let outputs =
+        node.outputs.iter().map(|output| format!("{}->{}", output.name, output.path)).collect::<Vec<_>>();
+    signature.push(format!("outputs:{outputs:?}"));
+    signature.push(format!("timeout:{:?}", node.timeout_ms));
+    signature.push(format!("resources:{:?}", node.resources.as_ref().map(|r| (r.cpu, r.mem_mb))));
+    signature.push(format!("retry:{}:{}", node.retry.max_attempts, node.retry.backoff_ms));
+    let mut effects = node
+        .effects
+        .iter()
+        .map(|effect| format!("{effect:?}").to_lowercase())
+        .collect::<Vec<_>>();
+    effects.sort();
+    signature.push(format!("effects:{effects:?}"));
+    signature
+}
+
+fn classify_payload(before: &std::path::Path, after: &std::path::Path) -> Result<ReleaseClassificationReport, ExitCode> {
+    let before_graph: Graph = parse_graph(&read_file(before)?)?;
+    let after_graph: Graph = parse_graph(&read_file(after)?)?;
+
+    let before_nodes =
+        before_graph.nodes.iter().map(|node| (node.id.clone(), node)).collect::<BTreeMap<_, _>>();
+    let after_nodes =
+        after_graph.nodes.iter().map(|node| (node.id.clone(), node)).collect::<BTreeMap<_, _>>();
+
+    let mut added_nodes = Vec::new();
+    let mut removed_nodes = Vec::new();
+    let mut changed_nodes = BTreeMap::new();
+
+    for node_id in after_nodes.keys() {
+        if !before_nodes.contains_key(node_id) {
+            added_nodes.push(node_id.clone());
+        }
+    }
+    for node_id in before_nodes.keys() {
+        if !after_nodes.contains_key(node_id) {
+            removed_nodes.push(node_id.clone());
+        }
+    }
+    for (node_id, before_node) in &before_nodes {
+        if let Some(after_node) = after_nodes.get(node_id) {
+            let before_signature = node_signature(before_node);
+            let after_signature = node_signature(after_node);
+            if before_signature != after_signature {
+                let mut changes = Vec::new();
+                for (before_entry, after_entry) in before_signature.iter().zip(after_signature.iter()) {
+                    if before_entry != after_entry {
+                        changes.push(format!("{before_entry} -> {after_entry}"));
+                    }
+                }
+                changed_nodes.insert(node_id.clone(), changes);
+            }
+        }
+    }
+
+    let graph_policy_changed = before_graph.meta.as_ref().map(|m| (&m.owners, &m.tags))
+        != after_graph.meta.as_ref().map(|m| (&m.owners, &m.tags));
+
+    let compatibility_class = if !removed_nodes.is_empty()
+        || changed_nodes.values().flatten().any(|change| {
+            change.starts_with("kind:") || change.starts_with("outputs:") || change.starts_with("inputs:")
+        }) {
+        "breaking".to_string()
+    } else if !changed_nodes.is_empty() || graph_policy_changed {
+        "risky".to_string()
+    } else if !added_nodes.is_empty() {
+        "additive".to_string()
+    } else {
+        "compatible".to_string()
+    };
+
+    Ok(ReleaseClassificationReport {
+        compatibility_class,
+        added_nodes,
+        removed_nodes,
+        changed_nodes,
+        graph_policy_changed,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -460,6 +555,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(rollback_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.rollback", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Classify { before, after } => {
+            let payload =
+                serde_json::to_value(classify_payload(before, after)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.classify", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -893,5 +993,75 @@ mod tests {
         ] {
             assert!(report.blockers.iter().any(|blocker| blocker == expected));
         }
+    }
+
+    #[test]
+    fn release_classification_marks_additive_change() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let before = dir.path().join("before.json");
+        let after = dir.path().join("after.json");
+        std::fs::write(
+            &before,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[{"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"x"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write before");
+        std::fs::write(
+            &after,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[
+                {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"x"}},
+                {"id":"b","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"y"}}
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("write after");
+        let cli = quiet_json_cli(ReleaseCommands::Classify { before: before.clone(), after: after.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Classify { before: before.clone(), after: after.clone() },
+        )
+        .expect("classify");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::classify_payload(&before, &after).expect("report");
+        assert_eq!(report.compatibility_class, "additive");
+        assert_eq!(report.added_nodes, vec!["b".to_string()]);
+    }
+
+    #[test]
+    fn release_classification_marks_breaking_contract_change() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let before = dir.path().join("before.json");
+        let after = dir.path().join("after.json");
+        std::fs::write(
+            &before,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[{"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"x"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write before");
+        std::fs::write(
+            &after,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[{"id":"a","kind":"shell","inputs":["in"],"outputs":[{"name":"other","path":"other"}],"params":{"argv":["/bin/true"]}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write after");
+        let report = super::classify_payload(&before, &after).expect("report");
+        assert_eq!(report.compatibility_class, "breaking");
+        assert!(report.changed_nodes.contains_key("a"));
     }
 }
