@@ -9,11 +9,13 @@ last_reviewed: 2026-04-06
 
 # Domain Language
 
-`bijux-cli` uses a small set of terms repeatedly across source, tests, and docs.
-This page defines those terms so reviewers and maintainers read behavior the
-same way.
+This page explains the handful of CLI terms that appear across source, tests,
+and public behavior.
 
-## Visual Summary
+If these words stay precise, command review stays faster and interface changes
+are easier to judge without reading every implementation detail.
+
+## Language Path
 
 ```mermaid
 flowchart LR
@@ -52,6 +54,12 @@ flowchart LR
 When adding new runtime behavior, prefer existing terminology. If new terms are
 necessary, define them here and reflect them in contracts and tests in the same
 change set.
+
+## Reading Rule
+
+Use this page when a CLI discussion keeps switching between commands, routes,
+policies, payloads, and plugins and the boundary between those terms starts to
+blur.
 
 ## Next Reads
 
