@@ -343,7 +343,8 @@ pub fn execute(
                         FailureInfo {
                             kind: "Dependency".to_string(),
                             code: "UPSTREAM_FAILED".to_string(),
-                            message: "upstream dependency did not complete successfully".to_string(),
+                            message: "upstream dependency did not complete successfully"
+                                .to_string(),
                             details: Some(serde_json::json!({ "dependencies": deps })),
                         },
                         "DependencyFailed".to_string(),

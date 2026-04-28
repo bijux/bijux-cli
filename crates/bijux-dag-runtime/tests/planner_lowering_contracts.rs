@@ -69,11 +69,8 @@ fn runtime_plan_preserves_dependency_port_bindings() {
     let graph = parse_graph_strict(graph_a()).expect("parse graph");
     let plan = build_plan(&graph, &RuntimeConfig::default());
     assert_eq!(plan.planned_dependencies.len(), 2);
-    let left = plan
-        .planned_dependencies
-        .iter()
-        .find(|edge| edge.from == "left")
-        .expect("left edge");
+    let left =
+        plan.planned_dependencies.iter().find(|edge| edge.from == "left").expect("left edge");
     assert_eq!(left.from_port, "out");
     assert_eq!(left.to, "join");
     assert_eq!(left.to_port, "l");

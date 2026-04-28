@@ -595,7 +595,11 @@ fn runtime_cache_meta_records_policy_and_config_proof() {
             let entry = entry.ok()?;
             let path = entry.path();
             let meta = path.join("meta.json");
-            if meta.exists() { Some(meta) } else { None }
+            if meta.exists() {
+                Some(meta)
+            } else {
+                None
+            }
         })
         .next()
         .expect("cache meta");

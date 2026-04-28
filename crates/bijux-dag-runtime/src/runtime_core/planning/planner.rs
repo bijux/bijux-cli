@@ -1,6 +1,8 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
-use bijux_dag_core::{node_io_contract, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity};
+use bijux_dag_core::{
+    node_io_contract, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,
+};
 use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
@@ -37,9 +39,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         }
         for node in &graph.nodes {
             if !keep.contains(&node.id) {
-                filter_reasons.entry(node.id.clone()).or_insert_with(|| {
-                    "not_selected_by_dependency_closure".to_string()
-                });
+                filter_reasons
+                    .entry(node.id.clone())
+                    .or_insert_with(|| "not_selected_by_dependency_closure".to_string());
             }
         }
     }
@@ -140,11 +142,13 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                             .unwrap_or_default()
                             .into_iter()
                             .collect(),
-                        io_contract: node_io_contract(graph, &node.id).unwrap_or_else(|| NodeIoContract {
-                            inputs: Vec::new(),
-                            param_bindings: Vec::new(),
-                            env_bindings: Vec::new(),
-                            outputs: Vec::new(),
+                        io_contract: node_io_contract(graph, &node.id).unwrap_or_else(|| {
+                            NodeIoContract {
+                                inputs: Vec::new(),
+                                param_bindings: Vec::new(),
+                                env_bindings: Vec::new(),
+                                outputs: Vec::new(),
+                            }
                         }),
                         outputs: node.outputs.clone(),
                         retry: node.retry.clone(),

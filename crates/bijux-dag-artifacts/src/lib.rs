@@ -248,12 +248,7 @@ pub fn now_unix_ms() -> u128 {
 fn generate_run_id() -> String {
     static RUN_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
     let seq = RUN_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-    format!(
-        "{}-{}-{:06}",
-        now_unix_ms(),
-        std::process::id(),
-        seq % 1_000_000
-    )
+    format!("{}-{}-{:06}", now_unix_ms(), std::process::id(), seq % 1_000_000)
 }
 
 fn normalize_run_id(run_id: &str) -> Result<String, ArtifactError> {
@@ -266,9 +261,7 @@ fn normalize_run_id(run_id: &str) -> Result<String, ArtifactError> {
         || normalized.contains('/')
         || normalized.contains('\\')
         || normalized.contains("..")
-        || !normalized
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_')
+        || !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_')
     {
         return Err(ArtifactError::PathViolation(format!("invalid run id: {run_id}")));
     }
@@ -307,7 +300,8 @@ mod tests {
         let run = RunDir::create(dir.path()).unwrap();
         run.write_graph_snapshot("{\"graph\":\"first\"}").unwrap();
         run.write_graph_snapshot("{\"graph\":\"second\"}").unwrap();
-        let snapshot = std_fs::read_to_string(run.staging_path().join("graph.snapshot.json")).unwrap();
+        let snapshot =
+            std_fs::read_to_string(run.staging_path().join("graph.snapshot.json")).unwrap();
         assert_eq!(snapshot, "{\"graph\":\"second\"}");
         assert!(!run.staging_path().join("graph.snapshot.tmp").exists());
     }

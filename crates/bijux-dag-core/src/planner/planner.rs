@@ -218,8 +218,7 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
             id: n.id.clone(),
             kind: n.kind.as_str().to_string(),
             deps: deps.get(&n.id).cloned().unwrap_or_default().into_iter().collect(),
-            io_contract: node_io_contract(&helper_graph, &n.id)
-            .unwrap_or_else(|| NodeIoContract {
+            io_contract: node_io_contract(&helper_graph, &n.id).unwrap_or_else(|| NodeIoContract {
                 inputs: Vec::new(),
                 param_bindings: Vec::new(),
                 env_bindings: Vec::new(),
@@ -294,7 +293,14 @@ fn execution_fingerprint(
     let identity_nodes = execution_identity_nodes(nodes, planned_nodes);
     let identity_edges = edges
         .iter()
-        .map(|edge| (edge.from.node_id.clone(), edge.from.port.clone(), edge.to.node_id.clone(), edge.to.port.clone()))
+        .map(|edge| {
+            (
+                edge.from.node_id.clone(),
+                edge.from.port.clone(),
+                edge.to.node_id.clone(),
+                edge.to.port.clone(),
+            )
+        })
         .collect::<Vec<_>>();
     let payload = serde_json::to_vec(&(
         &graph.spec,
@@ -326,7 +332,14 @@ fn evidence_fingerprint(
         .collect::<Vec<_>>();
     let identity_edges = edges
         .iter()
-        .map(|edge| (edge.from.node_id.clone(), edge.from.port.clone(), edge.to.node_id.clone(), edge.to.port.clone()))
+        .map(|edge| {
+            (
+                edge.from.node_id.clone(),
+                edge.from.port.clone(),
+                edge.to.node_id.clone(),
+                edge.to.port.clone(),
+            )
+        })
         .collect::<Vec<_>>();
     let payload = serde_json::to_vec(&(
         &graph.spec,
@@ -341,7 +354,10 @@ fn evidence_fingerprint(
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-fn execution_identity_nodes(nodes: &[Node], planned_nodes: &[PlannedNode]) -> Vec<ExecutionIdentityNode> {
+fn execution_identity_nodes(
+    nodes: &[Node],
+    planned_nodes: &[PlannedNode],
+) -> Vec<ExecutionIdentityNode> {
     let mut planned_by_id = BTreeMap::new();
     for planned in planned_nodes {
         planned_by_id.insert(planned.id.as_str(), planned);

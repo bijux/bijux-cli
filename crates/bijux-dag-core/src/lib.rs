@@ -96,8 +96,9 @@ pub mod stable {
         },
         contract::{DagSnapshot, GraphContract, GraphExecutionPolicy},
         lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
-        validate::validate_graph, ExecutionPlan, Graph, GraphError, PlanOptions, PlannedEdge,
-        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
+        validate::validate_graph,
+        ExecutionPlan, Graph, GraphError, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic,
+        PlannerError, PlannerSeverity, SPEC_VERSION,
     };
 }
 
@@ -105,20 +106,21 @@ pub mod prelude {
     pub use crate::stable::{
         canonical_json, canonicalize_graph, compile_graph, compile_graph_contract,
         compile_graph_strict, compile_graph_with_defaults, negotiate_spec_version, validate_graph,
-        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot,
-        ExecutionPlan, Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions,
-        PlannedEdge, PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity,
-        SPEC_VERSION,
+        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot, ExecutionPlan,
+        Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge,
+        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
     };
-    pub use crate::{lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph};
+    pub use crate::{
+        lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
+    };
 }
 
 pub mod experimental {
     pub use crate::semantics::{
-        classify_compatibility, complexity_score, enforce_late_binding_immutability,
-        explain_graph, migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
+        classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
+        migration_patch, normalize_semantic_graph, semantic_diff, static_analysis,
         BranchDecisionNode, CompatibilityClassification, ConditionalExecution,
-        DynamicEdgeExpansionRule, GraphCompositionContract, GraphComplexityScore,
+        DynamicEdgeExpansionRule, GraphComplexityScore, GraphCompositionContract,
         GraphExplainabilityModel, GraphMigrationPatch, GraphTemplate, JoinSemantics,
         LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph, ParameterBindingSemantics,
         PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass, SemanticDiffReport,

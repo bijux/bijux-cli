@@ -145,10 +145,14 @@ fn write_outputs_index_rejects_escaping_paths() {
 fn write_outputs_index_rejects_missing_declared_outputs() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("ok.txt"), b"ok").unwrap();
-    let err =
-        write_outputs_index(dir.path(), "node", "fp", &["ok.txt".to_string(), "missing.txt".to_string()])
-            .err()
-            .unwrap();
+    let err = write_outputs_index(
+        dir.path(),
+        "node",
+        "fp",
+        &["ok.txt".to_string(), "missing.txt".to_string()],
+    )
+    .err()
+    .unwrap();
     let msg = err.to_string();
     assert!(msg.contains("missing output"));
     assert!(msg.contains("missing.txt"));

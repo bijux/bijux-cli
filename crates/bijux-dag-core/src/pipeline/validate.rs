@@ -182,7 +182,9 @@ impl Graph {
                         "E1027",
                         format!("invalid env allowlist entry: {}", entry),
                         format!("/nodes/{}/env_allowlist", node.id),
-                        Some("Use letters, digits, underscores, and optional suffix '*'".to_string()),
+                        Some(
+                            "Use letters, digits, underscores, and optional suffix '*'".to_string(),
+                        ),
                     );
                 }
             }

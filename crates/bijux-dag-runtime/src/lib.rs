@@ -1050,7 +1050,9 @@ pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'s
 
 pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
     match reason {
-        "filtered" | "not_selected_by_include_selector" | "excluded_by_selector"
+        "filtered"
+        | "not_selected_by_include_selector"
+        | "excluded_by_selector"
         | "not_selected_by_dependency_closure" => "SelectionFiltered",
         "upstream_failed" => "DependencyFailed",
         "cancelled" => "CancelRequested",
@@ -1272,8 +1274,10 @@ fn failure_propagation_label(mode: &FailurePropagationMode) -> &'static str {
 }
 
 fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
-    let include_selectors: Vec<String> = options.selectors.include.iter().map(selector_label).collect();
-    let exclude_selectors: Vec<String> = options.selectors.exclude.iter().map(selector_label).collect();
+    let include_selectors: Vec<String> =
+        options.selectors.include.iter().map(selector_label).collect();
+    let exclude_selectors: Vec<String> =
+        options.selectors.exclude.iter().map(selector_label).collect();
     let payload = serde_json::json!({
         "jobs": options.jobs,
         "cpu_budget": options.cpu_budget,
@@ -1419,11 +1423,7 @@ fn try_cache_read(
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
-            if !verify_cache_entry(
-                store.fs(),
-                &entry,
-                &key_input,
-            )? {
+            if !verify_cache_entry(store.fs(), &entry, &key_input)? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -1461,11 +1461,7 @@ fn try_cache_read(
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
             if store.fs().metadata(&remote_entry).is_ok() {
-                if !verify_cache_entry(
-                    store.fs(),
-                    &remote_entry,
-                    &key_input,
-                )? {
+                if !verify_cache_entry(store.fs(), &remote_entry, &key_input)? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -1596,8 +1592,7 @@ fn verify_cache_entry(
     {
         return Ok(false);
     }
-    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_input.adapter_id.as_str())
-    {
+    if meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_input.adapter_id.as_str()) {
         return Ok(false);
     }
     if meta.get("adapter_version").and_then(|v| v.as_str())

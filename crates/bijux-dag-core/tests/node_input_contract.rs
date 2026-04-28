@@ -1,6 +1,5 @@
 use bijux_dag_core::{
-    node_input_bindings, node_io_contract, parse_graph_strict, NodeInputSource,
-    ParamBindingSource,
+    node_input_bindings, node_io_contract, parse_graph_strict, NodeInputSource, ParamBindingSource,
 };
 
 #[test]
