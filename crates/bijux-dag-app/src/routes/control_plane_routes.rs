@@ -1,6 +1,9 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
-use bijux_dag_runtime::simulated_platform::{TypedControlPlaneRequest, TypedControlPlaneResponse};
+use bijux_dag_runtime::simulated_platform::{
+    fence_allows_mutation, is_stale_leader, next_epoch, LeaderElectionState, QueueShardLease,
+    SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::path::Path;
@@ -25,6 +28,27 @@ struct ApiReport {
     response_consistent: bool,
     gaps: Vec<String>,
     api_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct LeadershipSimulation {
+    leader: LeaderElectionState,
+    shard_lease: QueueShardLease,
+    current_epoch: SchedulerEpoch,
+    fence_token: SchedulerFenceToken,
+    now_unix_ms: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct LeadershipReport {
+    leader_replica_id: String,
+    shard_id: String,
+    leader_stale: bool,
+    fence_allows_mutation: bool,
+    shard_owner_consistent: bool,
+    next_epoch: u64,
+    gaps: Vec<String>,
+    leadership_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -71,6 +95,46 @@ fn api_payload(simulation: ApiSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("api report"), ok)
 }
 
+fn leadership_payload(simulation: LeadershipSimulation) -> (serde_json::Value, bool) {
+    let LeadershipSimulation { leader, shard_lease, current_epoch, fence_token, now_unix_ms } =
+        simulation;
+    let leader_stale = is_stale_leader(&leader, now_unix_ms);
+    let next_epoch_value = next_epoch(&current_epoch).epoch;
+    let fence_allows = fence_allows_mutation(&fence_token, &current_epoch);
+    let shard_owner_consistent = shard_lease.owner_replica_id == leader.leader_replica_id;
+    let mut gaps = Vec::new();
+    if leader.leader_replica_id.trim().is_empty() {
+        gaps.push("leadership protocol requires a stable replica identity".to_string());
+    }
+    if shard_lease.shard_id.trim().is_empty() {
+        gaps.push("leadership protocol requires a shard identifier".to_string());
+    }
+    if leader_stale {
+        gaps.push("current leader lease is already stale".to_string());
+    }
+    if !fence_allows {
+        gaps.push("fence token does not authorize the current epoch to mutate".to_string());
+    }
+    if !shard_owner_consistent {
+        gaps.push("shard lease owner does not match the elected leader".to_string());
+    }
+    if current_epoch.replica_id != leader.leader_replica_id {
+        gaps.push("scheduler epoch replica id does not match the elected leader".to_string());
+    }
+    let report = LeadershipReport {
+        leader_replica_id: leader.leader_replica_id,
+        shard_id: shard_lease.shard_id,
+        leader_stale,
+        fence_allows_mutation: fence_allows,
+        shard_owner_consistent,
+        next_epoch: next_epoch_value,
+        leadership_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.leadership_ready;
+    (serde_json::to_value(report).expect("leadership report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -80,6 +144,11 @@ pub(crate) fn handle_control_plane_command(
             let simulation: ApiSimulation = parse_json_file(simulation)?;
             let (payload, ok) = api_payload(simulation);
             ("dag.control-plane.api", payload, ok)
+        }
+        ControlPlaneCommands::Leadership { simulation } => {
+            let simulation: LeadershipSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = leadership_payload(simulation);
+            ("dag.control-plane.leadership", payload, ok)
         }
     };
     emit_json(
@@ -101,9 +170,10 @@ pub(crate) fn handle_control_plane_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{api_payload, ApiSimulation};
+    use super::{api_payload, leadership_payload, ApiSimulation, LeadershipSimulation};
     use bijux_dag_runtime::simulated_platform::{
-        RunControlOperation, TypedControlPlaneRequest, TypedControlPlaneResponse,
+        LeaderElectionState, QueueShardLease, RunControlOperation, SchedulerEpoch,
+        SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
     };
     use serde_json::json;
 
@@ -158,6 +228,58 @@ mod tests {
             hidden_in_memory_authority: true,
         };
         let (payload, ok) = api_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn leadership_accepts_consistent_fenced_owner() {
+        let simulation = LeadershipSimulation {
+            leader: LeaderElectionState {
+                leader_replica_id: "scheduler-a".to_string(),
+                lease_expires_unix_ms: 2_000,
+                epoch: 7,
+            },
+            shard_lease: QueueShardLease {
+                shard_id: "tenant-atlas".to_string(),
+                owner_replica_id: "scheduler-a".to_string(),
+                lease_expires_unix_ms: 2_000,
+            },
+            current_epoch: SchedulerEpoch { replica_id: "scheduler-a".to_string(), epoch: 7 },
+            fence_token: SchedulerFenceToken {
+                replica_id: "scheduler-a".to_string(),
+                epoch: 7,
+                token: "fence-7".to_string(),
+            },
+            now_unix_ms: 1_500,
+        };
+        let (payload, ok) = leadership_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["leadership_ready"], true);
+    }
+
+    #[test]
+    fn leadership_flags_stale_or_mismatched_owner() {
+        let simulation = LeadershipSimulation {
+            leader: LeaderElectionState {
+                leader_replica_id: "scheduler-a".to_string(),
+                lease_expires_unix_ms: 100,
+                epoch: 7,
+            },
+            shard_lease: QueueShardLease {
+                shard_id: String::new(),
+                owner_replica_id: "scheduler-b".to_string(),
+                lease_expires_unix_ms: 2_000,
+            },
+            current_epoch: SchedulerEpoch { replica_id: "scheduler-b".to_string(), epoch: 8 },
+            fence_token: SchedulerFenceToken {
+                replica_id: "scheduler-a".to_string(),
+                epoch: 7,
+                token: "fence-7".to_string(),
+            },
+            now_unix_ms: 1_500,
+        };
+        let (payload, ok) = leadership_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
