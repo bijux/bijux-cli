@@ -7,21 +7,19 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-12
 ---
 
-# Core Handbook
+# Repository Handbook
 
-The repository handbook explains the parts of `bijux-core` that no single
-product handbook can own honestly on its own. It exists to explain why the
-workspace is split, where repository authority begins and ends, and how
-cross-program architecture and operations stay reviewable.
+The repository handbook covers the parts of `bijux-core` that sit above any
+single product surface. It explains why the workspace is split, where
+repository authority begins and ends, and how cross-program architecture,
+operations, and release rules stay reviewable.
 
-This root is not a shadow product package. It is where readers should go when a
-question crosses CLI, DAG, Python bridge, and maintainer boundaries or when the
-handbook tree itself needs arbitration.
+Open it when a question crosses CLI, DAG, Python bridge, and maintainer
+boundaries, or when the handbook tree itself needs a clear owner.
 
-<div class="bijux-callout"><strong>This handbook owns the repository boundary.</strong>
-Use it when ownership feels unclear, when a rule affects more than one program
-handbook, or when documentation claims need to be checked against root files,
-release surfaces, and shared automation.</div>
+<div class="bijux-callout"><strong>Use this branch when ownership is broader than one product.</strong>
+It is the right route for workspace rules, cross-program architecture, release
+boundaries, and shared automation at the repository root.</div>
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="foundation/">Open foundation</a>
@@ -29,30 +27,14 @@ release surfaces, and shared automation.</div>
 <a class="md-button" href="operations/">Open operations</a>
 </div>
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-mindmap
-  root((bijux-core repository handbook))
-    Foundation
-      repository scope
-      ownership model
-      package map
-      decision rules
-    Architecture
-      workspace topology
-      dependency direction
-      runtime surfaces
-      state and configuration
-    Operations
-      local development
-      testing and validation
-      release and versioning
-      change management
-    Program handbooks
-      CLI
-      DAG
-      Maintainer
+flowchart LR
+    repo["Repository handbook"] --> foundation["Foundation"]
+    repo --> architecture["Architecture"]
+    repo --> operations["Operations"]
+    repo --> governance["Governance"]
 ```
 
 ## Start Here
@@ -88,14 +70,3 @@ mindmap
 - [CLI Handbook](../bijux-cli/index.md)
 - [DAG Handbook](../bijux-dag/index.md)
 - [Maintainer Handbook](../bijux-dev/index.md)
-
-## Purpose
-
-This page routes readers into the repository-level handbook sections without
-pretending that the root owns behavior that belongs inside one package.
-
-## Stability
-
-Keep this page aligned with the root sections that actually exist in
-`docs/bijux-core/` and the shared repository surfaces that the root genuinely
-owns.
