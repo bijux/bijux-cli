@@ -1,7 +1,8 @@
 use crate::commands::{DagCli, PlanCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    build_planner_analysis, explain_plan, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
+    build_planner_analysis, diff_plans, explain_plan, PlannerBuildResult, PlannerGuardrails,
+    RuntimeConfig,
 };
 use serde_json::json;
 
@@ -128,6 +129,53 @@ pub(crate) fn handle_plan_command(
                     Err(ExitCode::from(3))
                 }
             }
+        }
+        PlanCommands::Diff { before, after } => {
+            let before_input = read_file(before)?;
+            let before_graph = parse_graph(&before_input)?;
+            let before_result =
+                build_default_planner_analysis(&before_graph).map_err(|_| ExitCode::from(3))?;
+
+            let after_input = read_file(after)?;
+            let after_graph = parse_graph(&after_input)?;
+            let after_result =
+                build_default_planner_analysis(&after_graph).map_err(|_| ExitCode::from(3))?;
+
+            let diff = diff_plans(&before_result, &after_result);
+            let changed = !diff.changed_order_nodes.is_empty()
+                || !diff.changed_filter_reasons.is_empty()
+                || !diff.changed_annotations.is_empty();
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.plan.diff",
+                    true,
+                    json!({
+                        "changed": changed,
+                        "before_plan_fingerprint": before_result.plan_fingerprint,
+                        "after_plan_fingerprint": after_result.plan_fingerprint,
+                        "before_resource_estimate": before_result.resource_estimate,
+                        "after_resource_estimate": after_result.resource_estimate,
+                        "diff": diff,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            if !changed {
+                println!("plan diff: no semantic planner differences");
+            } else {
+                if !diff.changed_order_nodes.is_empty() {
+                    println!("changed_order_nodes: {}", diff.changed_order_nodes.join(", "));
+                }
+                if !diff.changed_filter_reasons.is_empty() {
+                    println!("changed_filter_reasons: {}", diff.changed_filter_reasons.join(", "));
+                }
+                if !diff.changed_annotations.is_empty() {
+                    println!("changed_annotations: {}", diff.changed_annotations.join(", "));
+                }
+            }
+            Ok(ExitCode::SUCCESS)
         }
     }
 }

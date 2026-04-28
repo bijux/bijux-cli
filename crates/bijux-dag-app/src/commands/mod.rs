@@ -313,6 +313,7 @@ pub(crate) enum HashCommands {
 pub(crate) enum PlanCommands {
     Explain { dag: PathBuf },
     Diagnostics { dag: PathBuf },
+    Diff { before: PathBuf, after: PathBuf },
 }
 
 #[derive(Subcommand)]

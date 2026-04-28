@@ -79,12 +79,10 @@ use crate::cli_model::command_name as dag_command_name;
 use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use bijux_dag_core::{
-    lower_graph_to_execution_plan, planner_diagnostics_from_error, Graph, GraphError, PlanOptions,
-    Severity, SPEC_VERSION,
-};
+use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{
-    adapter_registry_dump, build_plan, registered_adapters, CacheMode, Runtime, RuntimeConfig,
+    adapter_registry_dump, build_planner_analysis, registered_adapters, CacheMode,
+    PlannerGuardrails, Runtime, RuntimeConfig,
 };
 #[cfg(test)]
 use bijux_dag_testkit as _;
@@ -424,8 +422,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ShowEffectivePlan { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let plan = build_plan(&graph, &RuntimeConfig::default());
-            let payload = serde_json::to_value(&plan).map_err(|_| ExitCode::from(3))?;
+            let config = RuntimeConfig::default();
+            let analysis = build_planner_analysis(
+                &graph,
+                &config,
+                &config.selectors,
+                &PlannerGuardrails { allow_semantic_optimizations: true },
+            )
+            .map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(&analysis).map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     &cli,

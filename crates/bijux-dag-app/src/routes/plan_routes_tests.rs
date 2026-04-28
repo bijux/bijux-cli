@@ -46,6 +46,25 @@ fn write_invalid_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn write_tagged_graph_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-tagged.json");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-routes-tagged","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"tags":["critical"],"params":{"value":"1"}},
+            {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"}}
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("write tagged graph");
+    (dir, dag)
+}
+
 #[test]
 fn plan_explain_success_path_returns_success() {
     let (_tmp, dag) = write_graph_fixture();
@@ -148,4 +167,14 @@ fn plan_explain_dump_flow_is_stable_for_valid_graph() {
     .expect("plan");
     assert!(!result.plan.order.is_empty(), "plan ordering should not be empty");
     assert!(!result.plan_fingerprint.is_empty(), "planner analysis should expose a fingerprint");
+}
+
+#[test]
+fn plan_diff_success_path_returns_success() {
+    let (_base_dir, before) = write_graph_fixture();
+    let (_tagged_dir, after) = write_tagged_graph_fixture();
+    let cli = quiet_json_cli();
+    let code =
+        handle_plan_command(&cli, &PlanCommands::Diff { before, after }).expect("plan diff");
+    assert_eq!(code, ExitCode::SUCCESS);
 }
