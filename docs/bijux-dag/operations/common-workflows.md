@@ -9,18 +9,20 @@ last_reviewed: 2026-04-06
 
 # Common Workflows
 
-Common workflows define the standard operator path from graph readiness to
-promotion decisions.
+This page captures the DAG workflow path people follow most often.
 
-## Visual Summary
+The sequence matters because DAG work is less about one command and more about
+moving safely from validation to evidence-backed decisions.
+
+## Workflow Map
 
 ```mermaid
 flowchart TD
-    define[prepare graph and inputs] --> validate[validate]
-    validate --> execute[run]
-    execute --> inspect[inspect status and artifacts]
-    inspect --> compare[replay and diff]
-    compare --> decide[promote or investigate]
+    define["prepare graph and inputs"] --> validate["validate"]
+    validate --> execute["run"]
+    execute --> inspect["inspect status and artifacts"]
+    inspect --> compare["replay and diff"]
+    compare --> decide["promote or investigate"]
 ```
 
 ## Workflow Catalog
@@ -51,6 +53,11 @@ bijux dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --
 - run completed with expected fidelity level
 - required artifact evidence present and verifiable
 - drift either absent or explicitly approved
+
+## Reading Rule
+
+Use this page when the DAG commands are already familiar but the correct
+operator sequence is still unclear.
 
 ## Next Reads
 
