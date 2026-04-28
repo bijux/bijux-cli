@@ -7,6 +7,7 @@ canonical-diff
 canonicalize
 capabilities
 config
+control-plane
 dataset
 diff
 doctor

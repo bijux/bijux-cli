@@ -356,6 +356,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Artifact { command } => {
             routes::artifact_routes::handle_artifact_command(&cli, command)
         }
+        Commands::ControlPlane { command } => {
+            routes::control_plane_routes::handle_control_plane_command(&cli, command)
+        }
         Commands::Dataset { command } => {
             routes::dataset_routes::handle_dataset_command(&cli, command)
         }

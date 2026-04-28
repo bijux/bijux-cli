@@ -59,6 +59,11 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: ArtifactCommands,
     },
+    #[command(name = "control-plane")]
+    ControlPlane {
+        #[command(subcommand)]
+        command: ControlPlaneCommands,
+    },
     Dataset {
         #[command(subcommand)]
         command: DatasetCommands,
@@ -464,6 +469,11 @@ pub(crate) enum ArtifactCommands {
     Retention {
         root: PathBuf,
     },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ControlPlaneCommands {
+    Api { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
