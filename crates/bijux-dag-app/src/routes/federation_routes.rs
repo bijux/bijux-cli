@@ -1,8 +1,9 @@
 use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    geo_ready, GeoReadyAcceptanceGate, RegionAffinityPolicy, RegionAwareDagActivation,
-    RegionQueuePartition, RegionScheduleRule,
+    geo_ready, CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
+    GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation, RegionQueuePartition,
+    RegionScheduleRule,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -27,6 +28,22 @@ struct ScheduleReport {
     affinity_preserved: bool,
     schedule_rules_complete: bool,
     queue_partitioned: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct FailoverSimulation {
+    rule: CrossRegionFailoverRule,
+    playbook: DisasterRecoveryPlaybook,
+    scenario: GeoSimulationScenario,
+}
+
+#[derive(Debug, Serialize)]
+struct FailoverReport {
+    target_region: Option<String>,
+    within_rto: bool,
+    playbook_complete: bool,
+    scenario_covered: bool,
     gaps: Vec<String>,
 }
 
@@ -94,6 +111,34 @@ fn schedule_payload(simulation: &Path) -> Result<ScheduleReport, ExitCode> {
     })
 }
 
+fn failover_payload(simulation: &Path) -> Result<FailoverReport, ExitCode> {
+    let simulation: FailoverSimulation = load_json_file(simulation)?;
+    let target_region = simulation.rule.secondary_regions.first().map(|region| region.0.clone());
+    let within_rto = simulation.scenario.delayed_failover_seconds <= simulation.rule.max_failover_seconds;
+    let playbook_complete = simulation.playbook.region == simulation.rule.primary_region
+        && !simulation.playbook.control_plane_outage_steps.is_empty()
+        && !simulation.playbook.artifact_store_outage_steps.is_empty();
+    let scenario_covered = simulation
+        .scenario
+        .region_loss
+        .as_ref()
+        .is_some_and(|region| region == &simulation.rule.primary_region);
+    let mut gaps = Vec::new();
+    if target_region.is_none() {
+        gaps.push("no secondary region is configured for failover".to_string());
+    }
+    if !within_rto {
+        gaps.push("failover exceeds the configured recovery time objective".to_string());
+    }
+    if !playbook_complete {
+        gaps.push("disaster recovery playbook is incomplete for the primary region".to_string());
+    }
+    if !scenario_covered {
+        gaps.push("simulation does not cover primary-region loss".to_string());
+    }
+    Ok(FailoverReport { target_region, within_rto, playbook_complete, scenario_covered, gaps })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -102,6 +147,10 @@ pub(crate) fn handle_federation_command(
         FederationCommands::Schedule { simulation } => {
             let payload = serde_json::to_value(schedule_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.schedule", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::Failover { simulation } => {
+            let payload = serde_json::to_value(failover_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.failover", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -200,6 +249,58 @@ mod tests {
             "no common region satisfies dag, run, artifact, and tenant affinity",
             "multi-region schedule rules are incomplete for selected regions",
             "selected regions are missing dedicated queue partitions",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_failover_accepts_documented_secondary_region() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("failover.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "rule":{"service":"scheduler","primary_region":"eu","secondary_regions":["us"],"max_failover_seconds":120},
+              "playbook":{"region":"eu","control_plane_outage_steps":["freeze-writes","promote-secondary"],"artifact_store_outage_steps":["switch-read-replica"]},
+              "scenario":{"name":"loss-of-eu","replication_lag_seconds":5,"region_loss":"eu","delayed_failover_seconds":90}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::Failover { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::Failover { simulation: simulation.clone() },
+        )
+        .expect("failover");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::failover_payload(&simulation).expect("report");
+        assert_eq!(report.target_region.as_deref(), Some("us"));
+        assert!(report.within_rto);
+        assert!(report.playbook_complete);
+        assert!(report.scenario_covered);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_failover_flags_missing_secondary_and_incomplete_playbook() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("failover.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "rule":{"service":"scheduler","primary_region":"eu","secondary_regions":[],"max_failover_seconds":60},
+              "playbook":{"region":"us","control_plane_outage_steps":[],"artifact_store_outage_steps":[]},
+              "scenario":{"name":"loss-of-us","replication_lag_seconds":30,"region_loss":"us","delayed_failover_seconds":180}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::failover_payload(&simulation).expect("report");
+        for expected in [
+            "no secondary region is configured for failover",
+            "failover exceeds the configured recovery time objective",
+            "disaster recovery playbook is incomplete for the primary region",
+            "simulation does not cover primary-region loss",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
