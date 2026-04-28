@@ -501,6 +501,7 @@ pub(crate) enum FleetCommands {
     Isolation { simulation: PathBuf },
     Preemption { simulation: PathBuf },
     Trust { simulation: PathBuf },
+    Gossip { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

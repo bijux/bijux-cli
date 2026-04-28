@@ -3,16 +3,17 @@ use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::derive_autoscaling_hint;
 use bijux_dag_runtime::simulated_platform::{
     cancellation_delivered_in_time, check_scheduler_admission,
-    check_worker_version_compatibility, validate_worker_identity, worker_alive,
+    check_worker_version_compatibility, classify_heartbeat, validate_worker_identity, worker_alive,
     validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
-    MutualAuthDesignNote, PlacementHint, QueuePartition, ReassignmentRule,
-    SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota,
+    HeartbeatClass, HeartbeatSemantics, MutualAuthDesignNote, PlacementHint, QueuePartition,
+    ReassignmentRule, SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota,
     TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain, WorkLease,
     WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
     WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -203,6 +204,31 @@ struct TrustReport {
     mutual_auth_required: bool,
     gaps: Vec<String>,
     trust_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct GossipSimulation {
+    #[serde(default)]
+    heartbeats: Vec<WorkerHeartbeat>,
+    heartbeat_semantics: HeartbeatSemantics,
+    now_unix_ms: u128,
+    max_peer_fanout: u32,
+    observed_peer_fanout: u32,
+    #[serde(default)]
+    authoritative_worker_ids: Vec<String>,
+    #[serde(default)]
+    gossip_worker_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct GossipReport {
+    healthy_workers: usize,
+    delayed_workers: usize,
+    lost_workers: usize,
+    authoritative_converged: bool,
+    fanout_bounded: bool,
+    gaps: Vec<String>,
+    gossip_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -626,6 +652,62 @@ fn trust_payload(simulation: TrustSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("trust report"), ok)
 }
 
+fn gossip_payload(simulation: GossipSimulation) -> (serde_json::Value, bool) {
+    let GossipSimulation {
+        heartbeats,
+        heartbeat_semantics,
+        now_unix_ms,
+        max_peer_fanout,
+        observed_peer_fanout,
+        authoritative_worker_ids,
+        gossip_worker_ids,
+    } = simulation;
+    let mut healthy_workers = 0usize;
+    let mut delayed_workers = 0usize;
+    let mut lost_workers = 0usize;
+    for heartbeat in &heartbeats {
+        match classify_heartbeat(heartbeat, now_unix_ms, &heartbeat_semantics) {
+            HeartbeatClass::Healthy => healthy_workers += 1,
+            HeartbeatClass::Delayed => delayed_workers += 1,
+            HeartbeatClass::Lost => lost_workers += 1,
+        }
+    }
+    let authoritative = authoritative_worker_ids.into_iter().collect::<BTreeSet<_>>();
+    let gossip = gossip_worker_ids.into_iter().collect::<BTreeSet<_>>();
+    let authoritative_converged = authoritative == gossip;
+    let fanout_bounded = observed_peer_fanout <= max_peer_fanout;
+    let mut gaps = Vec::new();
+    if heartbeats.is_empty() {
+        gaps.push("gossip audit requires at least one worker heartbeat".to_string());
+    }
+    if heartbeat_semantics.interval_ms == 0
+        || heartbeat_semantics.timeout_ms == 0
+        || heartbeat_semantics.delayed_threshold_ms == 0
+    {
+        gaps.push("gossip audit requires explicit heartbeat timing semantics".to_string());
+    }
+    if !fanout_bounded {
+        gaps.push("worker gossip fan-out exceeds the declared bound".to_string());
+    }
+    if !authoritative_converged {
+        gaps.push("gossip view does not converge to the authoritative worker set".to_string());
+    }
+    if lost_workers > 0 && delayed_workers == 0 {
+        gaps.push("lost workers must surface a delayed state before they become authoritative loss".to_string());
+    }
+    let report = GossipReport {
+        healthy_workers,
+        delayed_workers,
+        lost_workers,
+        authoritative_converged,
+        fanout_bounded,
+        gossip_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.gossip_ready;
+    (serde_json::to_value(report).expect("gossip report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -671,6 +753,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = trust_payload(simulation);
             ("dag.fleet.trust", payload, ok)
         }
+        FleetCommands::Gossip { simulation } => {
+            let simulation: GossipSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = gossip_payload(simulation);
+            ("dag.fleet.gossip", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -695,14 +782,15 @@ mod tests {
         autoscale_payload, capability_payload, drain_payload, registration_payload,
         warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
         DrainSimulation, IsolationSimulation, PreemptionSimulation, RegistrationSimulation,
-        TrustSimulation, WarmPoolSimulation, preemption_payload, trust_payload,
+        TrustSimulation, WarmPoolSimulation, GossipSimulation, gossip_payload,
+        preemption_payload, trust_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        LivenessPolicy, MutualAuthDesignNote, PlacementHint, QueuePartition, ReassignmentRule,
-        SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota, TenantId,
-        TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain,
-        WorkLease, WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
-        WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
+        HeartbeatSemantics, LivenessPolicy, MutualAuthDesignNote, PlacementHint, QueuePartition,
+        ReassignmentRule, SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota,
+        TenantId, TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain, WorkLease,
+        WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
+        WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
     };
     use std::collections::BTreeMap;
 
@@ -1200,5 +1288,60 @@ mod tests {
         let (payload, ok) = trust_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
+    }
+
+    #[test]
+    fn gossip_accepts_bounded_converged_worker_view() {
+        let simulation = GossipSimulation {
+            heartbeats: vec![
+                WorkerHeartbeat {
+                    worker_id: "worker-a".to_string(),
+                    unix_ms: 1_000,
+                    inflight_nodes: Vec::new(),
+                },
+                WorkerHeartbeat {
+                    worker_id: "worker-b".to_string(),
+                    unix_ms: 950,
+                    inflight_nodes: Vec::new(),
+                },
+            ],
+            heartbeat_semantics: HeartbeatSemantics {
+                interval_ms: 100,
+                timeout_ms: 500,
+                delayed_threshold_ms: 200,
+            },
+            now_unix_ms: 1_100,
+            max_peer_fanout: 5,
+            observed_peer_fanout: 2,
+            authoritative_worker_ids: vec!["worker-a".to_string(), "worker-b".to_string()],
+            gossip_worker_ids: vec!["worker-a".to_string(), "worker-b".to_string()],
+        };
+        let (payload, ok) = gossip_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["gossip_ready"], true);
+    }
+
+    #[test]
+    fn gossip_flags_split_brain_or_unbounded_fanout() {
+        let simulation = GossipSimulation {
+            heartbeats: vec![WorkerHeartbeat {
+                worker_id: "worker-a".to_string(),
+                unix_ms: 0,
+                inflight_nodes: Vec::new(),
+            }],
+            heartbeat_semantics: HeartbeatSemantics {
+                interval_ms: 0,
+                timeout_ms: 100,
+                delayed_threshold_ms: 0,
+            },
+            now_unix_ms: 1_000,
+            max_peer_fanout: 2,
+            observed_peer_fanout: 5,
+            authoritative_worker_ids: vec!["worker-a".to_string()],
+            gossip_worker_ids: vec!["worker-a".to_string(), "worker-b".to_string()],
+        };
+        let (payload, ok) = gossip_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
 }
