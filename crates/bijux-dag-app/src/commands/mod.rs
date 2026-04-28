@@ -55,6 +55,14 @@ pub(crate) enum Commands {
         run_dir: PathBuf,
         artifact_id: String,
     },
+    Artifact {
+        #[command(subcommand)]
+        command: ArtifactCommands,
+    },
+    Dataset {
+        #[command(subcommand)]
+        command: DatasetCommands,
+    },
     CanonicalBytes {
         dag: PathBuf,
     },
@@ -415,6 +423,25 @@ pub(crate) enum RuntimeCommands {
     Intervention { simulation: PathBuf },
     Transition { simulation: PathBuf },
     Events { run_dir: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ArtifactCommands {
+    Registry { run_dir: PathBuf },
+    Lineage {
+        run_dir: PathBuf,
+        #[arg(long)]
+        artifact_id: Option<String>,
+    },
+    Retention {
+        root: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DatasetCommands {
+    Mapping { simulation: PathBuf },
+    Staleness { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

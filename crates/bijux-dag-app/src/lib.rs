@@ -353,6 +353,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ArtifactInspect { run_dir, artifact_id } => {
             routes::artifact_routes::handle_artifact_inspect_command(&cli, run_dir, artifact_id)
         }
+        Commands::Artifact { command } => {
+            routes::artifact_routes::handle_artifact_command(&cli, command)
+        }
+        Commands::Dataset { command } => {
+            routes::dataset_routes::handle_dataset_command(&cli, command)
+        }
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
