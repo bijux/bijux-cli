@@ -482,6 +482,8 @@ pub(crate) enum ControlPlaneCommands {
     Backpressure { simulation: PathBuf },
     Cache { simulation: PathBuf },
     Migration { simulation: PathBuf },
+    #[command(name = "fan-in")]
+    FanIn { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

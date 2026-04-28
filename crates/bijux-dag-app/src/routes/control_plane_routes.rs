@@ -1,5 +1,6 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_runtime::{merge_timeout_and_exit_events, thread_safety_audit};
 use bijux_dag_runtime::simulated_platform::{
     deduplicate_across_replicas, fence_allows_mutation, idempotent_run_creation,
     invalidate_decision_cache, is_stale_leader, next_epoch, ordering_during_failover,
@@ -222,6 +223,28 @@ struct MigrationReport {
     mixed_writer_blocked: bool,
     gaps: Vec<String>,
     migration_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct FanInSimulation {
+    #[serde(default)]
+    timed_out_nodes: Vec<String>,
+    #[serde(default)]
+    exited_nodes: Vec<String>,
+    fan_in_limit: usize,
+    aggregator_threads: usize,
+    #[serde(default)]
+    required_audit_surfaces: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct FanInReport {
+    merged_event_count: usize,
+    fan_in_within_limit: bool,
+    aggregator_threads_bounded: bool,
+    audit_surfaces_present: bool,
+    gaps: Vec<String>,
+    fan_in_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -660,6 +683,46 @@ fn migration_payload(simulation: MigrationSimulation) -> (serde_json::Value, boo
     (serde_json::to_value(report).expect("migration report"), ok)
 }
 
+fn fan_in_payload(simulation: FanInSimulation) -> (serde_json::Value, bool) {
+    let FanInSimulation {
+        timed_out_nodes,
+        exited_nodes,
+        fan_in_limit,
+        aggregator_threads,
+        required_audit_surfaces,
+    } = simulation;
+    let merged = merge_timeout_and_exit_events(&timed_out_nodes, &exited_nodes);
+    let audited_surfaces =
+        thread_safety_audit().into_iter().map(|record| record.surface).collect::<BTreeSet<_>>();
+    let audit_surfaces_present =
+        required_audit_surfaces.iter().all(|surface| audited_surfaces.contains(surface));
+    let fan_in_within_limit = merged.len() <= fan_in_limit;
+    let aggregator_threads_bounded = aggregator_threads <= fan_in_limit.max(1);
+    let mut gaps = Vec::new();
+    if merged.is_empty() {
+        gaps.push("fan-in audit requires timeout or exit events".to_string());
+    }
+    if !fan_in_within_limit {
+        gaps.push("merged timeout and exit events exceed the declared fan-in bound".to_string());
+    }
+    if !aggregator_threads_bounded {
+        gaps.push("aggregator thread count exceeds the declared fan-in bound".to_string());
+    }
+    if !audit_surfaces_present {
+        gaps.push("required thread-safety audit surfaces are missing".to_string());
+    }
+    let report = FanInReport {
+        merged_event_count: merged.len(),
+        fan_in_within_limit,
+        aggregator_threads_bounded,
+        audit_surfaces_present,
+        fan_in_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.fan_in_ready;
+    (serde_json::to_value(report).expect("fan-in report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -710,6 +773,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = migration_payload(simulation);
             ("dag.control-plane.migration", payload, ok)
         }
+        ControlPlaneCommands::FanIn { simulation } => {
+            let simulation: FanInSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = fan_in_payload(simulation);
+            ("dag.control-plane.fan-in", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -732,10 +800,10 @@ pub(crate) fn handle_control_plane_command(
 mod tests {
     use super::{
         api_payload, backpressure_payload, cache_payload, leadership_payload, planning_payload,
-        migration_payload, ApiSimulation, BackpressureSimulation, CacheSimulation,
-        LeadershipSimulation, IdempotencySimulation, LeasesSimulation, MigrationSimulation,
-        PlanningSimulation, ShardingSimulation, idempotency_payload, leases_payload,
-        sharding_payload,
+        fan_in_payload, migration_payload, ApiSimulation, BackpressureSimulation,
+        CacheSimulation, FanInSimulation, LeadershipSimulation, IdempotencySimulation,
+        LeasesSimulation, MigrationSimulation, PlanningSimulation, ShardingSimulation,
+        idempotency_payload, leases_payload, sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         ApiCompatibilityRule, ApiVersion, DagRegistry, DagVersionRecord,
@@ -1337,5 +1405,40 @@ mod tests {
         let (payload, ok) = migration_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn fan_in_accepts_bounded_event_merge_with_audited_surfaces() {
+        let simulation = FanInSimulation {
+            timed_out_nodes: vec!["node-a".to_string()],
+            exited_nodes: vec!["node-b".to_string()],
+            fan_in_limit: 4,
+            aggregator_threads: 2,
+            required_audit_surfaces: vec![
+                "scheduler_state".to_string(),
+                "trace_write_ledger".to_string(),
+            ],
+        };
+        let (payload, ok) = fan_in_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["fan_in_ready"], true);
+    }
+
+    #[test]
+    fn fan_in_flags_unbounded_merge_or_missing_audit_coverage() {
+        let simulation = FanInSimulation {
+            timed_out_nodes: vec![
+                "node-a".to_string(),
+                "node-b".to_string(),
+                "node-c".to_string(),
+            ],
+            exited_nodes: vec!["node-d".to_string()],
+            fan_in_limit: 2,
+            aggregator_threads: 3,
+            required_audit_surfaces: vec!["missing_surface".to_string()],
+        };
+        let (payload, ok) = fan_in_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
 }
