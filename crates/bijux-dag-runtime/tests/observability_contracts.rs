@@ -12,7 +12,8 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     event_contains_sensitive_material, event_names_emitted_once, required_event_fields_present,
-    validate_required_event_names, EventCategory, EventRecord, REQUIRED_RUNTIME_EVENT_NAMES,
+    reconstruct_timeline_from_events, validate_required_event_names, verify_event_log_completeness,
+    EventCategory, EventRecord, TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 use serde_json::json;
 
@@ -68,4 +69,55 @@ fn required_event_name_catalog_contains_core_lifecycle_events() {
     for key in ["run_started", "node_ready", "run_finished"] {
         assert!(REQUIRED_RUNTIME_EVENT_NAMES.contains(&key));
     }
+}
+
+#[test]
+fn timeline_reconstruction_is_stable_from_event_log_only() {
+    let events = vec![
+        base_event("run_started", 1),
+        base_event("node_ready", 2),
+        base_event("run_finished", 3),
+    ];
+    let timeline = reconstruct_timeline_from_events(&events);
+    assert_eq!(timeline.schema_version, "v0.1");
+    assert_eq!(timeline.entries.len(), 3);
+    assert_eq!(timeline.entries[1].label, "node_ready");
+    assert_eq!(timeline.entries[1].category, "start");
+}
+
+#[test]
+fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
+    let events = vec![
+        base_event("run_started", 1),
+        base_event("node_ready", 2),
+        base_event("node_started", 3),
+        base_event("node_attempt_started", 4),
+        base_event("node_attempt_finished", 5),
+        base_event("node_scheduled", 6),
+        base_event("node_failed", 7),
+        base_event("run_finished", 8),
+    ];
+    let timeline = reconstruct_timeline_from_events(&events);
+    let report = verify_event_log_completeness(&events, Some(&timeline));
+    assert!(report.complete);
+    assert!(report.required_names_present);
+    assert!(report.required_event_field_gaps.is_empty());
+    assert!(report.missing_required_names.is_empty());
+    assert!(report.monotonic_timestamps);
+    assert!(report.timeline_matches_reconstruction);
+}
+
+#[test]
+fn completeness_verifier_flags_missing_names_and_timeline_drift() {
+    let events = vec![base_event("run_started", 2), base_event("run_finished", 1)];
+    let mismatched_timeline = TimelineExport {
+        schema_version: "v0.1".to_string(),
+        entries: vec![],
+    };
+    let report = verify_event_log_completeness(&events, Some(&mismatched_timeline));
+    assert!(!report.complete);
+    assert!(!report.required_names_present);
+    assert!(report.missing_required_names.iter().any(|name| name == "node_ready"));
+    assert!(!report.monotonic_timestamps);
+    assert!(!report.timeline_matches_reconstruction);
 }
