@@ -478,6 +478,7 @@ pub(crate) enum ControlPlaneCommands {
     Planning { simulation: PathBuf },
     Sharding { simulation: PathBuf },
     Leases { simulation: PathBuf },
+    Idempotency { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

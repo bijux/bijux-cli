@@ -1,14 +1,16 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    fence_allows_mutation, is_stale_leader, next_epoch, validate_task_lease_semantics,
+    deduplicate_across_replicas, fence_allows_mutation, idempotent_run_creation,
+    is_stale_leader, next_epoch, ordering_during_failover, validate_task_lease_semantics,
     DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
-    QueueShardLease, RegionId, RegionQueuePartition, SchedulerEpoch, SchedulerFenceToken,
-    TaskLeaseSemantics, TypedControlPlaneRequest, TypedControlPlaneResponse, WorkLease,
+    QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord, SchedulerEpoch,
+    SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+    TypedControlPlaneResponse, WorkLease,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +120,31 @@ struct LeasesReport {
     semantics_valid: bool,
     gaps: Vec<String>,
     leases_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct IdempotencySimulation {
+    #[serde(default)]
+    existing_dedup: BTreeMap<String, String>,
+    repeated_dedup_key: String,
+    first_run_key: String,
+    replayed_run_key: String,
+    #[serde(default)]
+    replica_records: Vec<ScheduleDedupRecord>,
+    proposed_record: ScheduleDedupRecord,
+    #[serde(default)]
+    queue_entries: Vec<DurableRunQueueEntry>,
+}
+
+#[derive(Debug, Serialize)]
+struct IdempotencyReport {
+    dedup_key: String,
+    canonical_run_key: String,
+    stable_run_key: bool,
+    replica_unique: bool,
+    queue_order_stable: bool,
+    gaps: Vec<String>,
+    idempotency_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -331,6 +358,62 @@ fn leases_payload(simulation: LeasesSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("leases report"), ok)
 }
 
+fn idempotency_payload(simulation: IdempotencySimulation) -> (serde_json::Value, bool) {
+    let IdempotencySimulation {
+        mut existing_dedup,
+        repeated_dedup_key,
+        first_run_key,
+        replayed_run_key,
+        replica_records,
+        proposed_record,
+        queue_entries,
+    } = simulation;
+    let canonical_run_key = idempotent_run_creation(
+        &mut existing_dedup,
+        &repeated_dedup_key,
+        &first_run_key,
+    );
+    let replay_run_key = idempotent_run_creation(
+        &mut existing_dedup,
+        &repeated_dedup_key,
+        &replayed_run_key,
+    );
+    let stable_run_key = canonical_run_key == replay_run_key;
+    let replica_unique = deduplicate_across_replicas(&replica_records, &proposed_record);
+    let canonical_order = ordering_during_failover(queue_entries.clone());
+    let queue_order_stable = !queue_entries.is_empty() && queue_entries == canonical_order;
+    let mut gaps = Vec::new();
+    if repeated_dedup_key.trim().is_empty() {
+        gaps.push("idempotent command audit requires a non-empty dedup key".to_string());
+    }
+    if !stable_run_key {
+        gaps.push("replayed command resolved to a different canonical run key".to_string());
+    }
+    if !replica_unique {
+        gaps.push("replica dedup ledger already contains the proposed schedule key".to_string());
+    }
+    if queue_entries.is_empty() {
+        gaps.push("idempotency audit requires durable queue entries".to_string());
+    }
+    if !queue_order_stable {
+        gaps.push("failover queue ordering is not deterministic".to_string());
+    }
+    if proposed_record.run_key != canonical_run_key {
+        gaps.push("proposed dedup record does not point at the canonical run key".to_string());
+    }
+    let report = IdempotencyReport {
+        dedup_key: repeated_dedup_key,
+        canonical_run_key,
+        stable_run_key,
+        replica_unique,
+        queue_order_stable,
+        idempotency_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.idempotency_ready;
+    (serde_json::to_value(report).expect("idempotency report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -361,6 +444,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = leases_payload(simulation);
             ("dag.control-plane.leases", payload, ok)
         }
+        ControlPlaneCommands::Idempotency { simulation } => {
+            let simulation: IdempotencySimulation = parse_json_file(simulation)?;
+            let (payload, ok) = idempotency_payload(simulation);
+            ("dag.control-plane.idempotency", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -383,17 +471,17 @@ pub(crate) fn handle_control_plane_command(
 mod tests {
     use super::{
         api_payload, leadership_payload, planning_payload, ApiSimulation, LeadershipSimulation,
-        LeasesSimulation, PlanningSimulation, ShardingSimulation, leases_payload,
-        sharding_payload,
+        IdempotencySimulation, LeasesSimulation, PlanningSimulation, ShardingSimulation,
+        idempotency_payload, leases_payload, sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
-        QueueShardLease, RegionId, RegionQueuePartition, RunControlOperation, SchedulerEpoch,
-        SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
-        TypedControlPlaneResponse, WorkLease,
+        QueueShardLease, RegionId, RegionQueuePartition, RunControlOperation,
+        ScheduleDedupRecord, SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics,
+        TypedControlPlaneRequest, TypedControlPlaneResponse, WorkLease,
     };
     use serde_json::json;
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
     #[test]
     fn api_accepts_load_balanced_consistent_replicas() {
@@ -669,5 +757,80 @@ mod tests {
         let (payload, ok) = leases_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn idempotency_accepts_replayed_commands_with_one_canonical_run() {
+        let simulation = IdempotencySimulation {
+            existing_dedup: BTreeMap::new(),
+            repeated_dedup_key: "atlas|2026-04-28T10".to_string(),
+            first_run_key: "run-1".to_string(),
+            replayed_run_key: "run-2".to_string(),
+            replica_records: Vec::new(),
+            proposed_record: ScheduleDedupRecord {
+                dedup_key: "atlas|2026-04-28T10".to_string(),
+                run_key: "run-1".to_string(),
+                epoch: 4,
+            },
+            queue_entries: vec![
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-a".to_string(),
+                    run_key: "run-1".to_string(),
+                    created_unix_ms: 100,
+                },
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-b".to_string(),
+                    run_key: "run-2".to_string(),
+                    created_unix_ms: 200,
+                },
+            ],
+        };
+        let (payload, ok) = idempotency_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["idempotency_ready"], true);
+        assert_eq!(payload["canonical_run_key"], "run-1");
+    }
+
+    #[test]
+    fn idempotency_flags_duplicate_dedup_or_unstable_ordering() {
+        let simulation = IdempotencySimulation {
+            existing_dedup: BTreeMap::new(),
+            repeated_dedup_key: String::new(),
+            first_run_key: "run-1".to_string(),
+            replayed_run_key: "run-2".to_string(),
+            replica_records: vec![ScheduleDedupRecord {
+                dedup_key: "atlas|2026-04-28T10".to_string(),
+                run_key: "run-0".to_string(),
+                epoch: 3,
+            }],
+            proposed_record: ScheduleDedupRecord {
+                dedup_key: "atlas|2026-04-28T10".to_string(),
+                run_key: "run-2".to_string(),
+                epoch: 4,
+            },
+            queue_entries: vec![
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-b".to_string(),
+                    run_key: "run-2".to_string(),
+                    created_unix_ms: 200,
+                },
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-a".to_string(),
+                    run_key: "run-1".to_string(),
+                    created_unix_ms: 100,
+                },
+            ],
+        };
+        let (payload, ok) = idempotency_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }
