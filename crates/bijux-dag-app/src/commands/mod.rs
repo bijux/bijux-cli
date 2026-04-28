@@ -493,6 +493,7 @@ pub(crate) enum EnterpriseCommands {
 #[derive(Subcommand)]
 pub(crate) enum FleetCommands {
     Register { simulation: PathBuf },
+    Capabilities { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
