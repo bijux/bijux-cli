@@ -505,6 +505,8 @@ pub(crate) enum IncidentCommands {
     BlastRadius { simulation: PathBuf },
     #[command(name = "safe-stop")]
     SafeStop { simulation: PathBuf },
+    #[command(name = "degraded-mode")]
+    DegradedMode { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

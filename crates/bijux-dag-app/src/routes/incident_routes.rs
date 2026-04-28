@@ -2,7 +2,7 @@ use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     health_dashboard_score, IncidentClassification, IncidentSeverity, PlatformHealthDashboard,
-    RunbookEntry, SupportabilityModel,
+    ProductBoundary, RunbookEntry, SupportabilityModel,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -100,6 +100,32 @@ struct SafeStopReport {
     required_evidence: Vec<String>,
     gaps: Vec<String>,
     safe_stop_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct DegradedModeSimulation {
+    #[serde(default)]
+    missing_dependencies: Vec<String>,
+    read_only_mode: bool,
+    limited_submit_mode: bool,
+    queue_drain_mode: bool,
+    #[serde(default)]
+    blocked_actions: Vec<String>,
+    #[serde(default)]
+    available_actions: Vec<String>,
+    boundary: ProductBoundary,
+}
+
+#[derive(Debug, Serialize)]
+struct DegradedModeReport {
+    missing_dependencies: Vec<String>,
+    available_modes: Vec<String>,
+    blocked_actions: Vec<String>,
+    available_actions: Vec<String>,
+    platform_guarantees: Vec<String>,
+    operator_responsibilities: Vec<String>,
+    gaps: Vec<String>,
+    degraded_mode_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -276,6 +302,59 @@ fn safe_stop_payload(simulation: SafeStopSimulation) -> (serde_json::Value, bool
     (serde_json::to_value(report).expect("safe stop report"), ok)
 }
 
+fn degraded_mode_payload(simulation: DegradedModeSimulation) -> (serde_json::Value, bool) {
+    let DegradedModeSimulation {
+        missing_dependencies,
+        read_only_mode,
+        limited_submit_mode,
+        queue_drain_mode,
+        blocked_actions,
+        available_actions,
+        boundary,
+    } = simulation;
+    let mut available_modes = Vec::new();
+    if read_only_mode {
+        available_modes.push("read-only".to_string());
+    }
+    if limited_submit_mode {
+        available_modes.push("limited-submit".to_string());
+    }
+    if queue_drain_mode {
+        available_modes.push("queue-drain".to_string());
+    }
+    let mut gaps = Vec::new();
+    if missing_dependencies.is_empty() {
+        gaps.push("degraded mode should state which dependencies are unavailable".to_string());
+    }
+    if available_modes.is_empty() {
+        gaps.push("degraded mode should preserve at least one useful operating mode".to_string());
+    }
+    if blocked_actions.is_empty() {
+        gaps.push("degraded mode should make blocked actions explicit".to_string());
+    }
+    if available_actions.is_empty() {
+        gaps.push("degraded mode should preserve at least one safe operator action".to_string());
+    }
+    if boundary.platform_guarantees.is_empty() {
+        gaps.push("degraded mode should state which platform guarantees still hold".to_string());
+    }
+    if boundary.operator_responsibilities.is_empty() {
+        gaps.push("degraded mode should state the operator responsibilities that remain".to_string());
+    }
+    let report = DegradedModeReport {
+        missing_dependencies,
+        available_modes,
+        blocked_actions,
+        available_actions,
+        platform_guarantees: boundary.platform_guarantees,
+        operator_responsibilities: boundary.operator_responsibilities,
+        degraded_mode_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.degraded_mode_ready;
+    (serde_json::to_value(report).expect("degraded mode report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -296,6 +375,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = safe_stop_payload(simulation);
             ("dag.incident.safe-stop", payload, ok)
         }
+        IncidentCommands::DegradedMode { simulation } => {
+            let simulation: DegradedModeSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = degraded_mode_payload(simulation);
+            ("dag.incident.degraded-mode", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -313,14 +397,19 @@ pub(crate) fn handle_incident_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{blast_radius_payload, incident_mode_payload, safe_stop_payload};
+    use super::{
+        blast_radius_payload, degraded_mode_payload, incident_mode_payload, safe_stop_payload,
+    };
     use bijux_dag_runtime::simulated_platform::{
-        IncidentClassification, IncidentSeverity, PlatformHealthDashboard, RunbookEntry,
-        SupportabilityModel,
+        IncidentClassification, IncidentSeverity, PlatformHealthDashboard, ProductBoundary,
+        RunbookEntry, SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
-    use super::{BlastRadiusSimulation, IncidentModeSimulation, SafeStopSimulation, WorkflowImpact};
+    use super::{
+        BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
+        WorkflowImpact,
+    };
 
     #[test]
     fn incident_mode_accepts_reduced_action_surface_with_runbooks() {
@@ -485,6 +574,46 @@ mod tests {
             approval_required: false,
         };
         let (payload, ok) = safe_stop_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn degraded_mode_accepts_useful_restricted_operation() {
+        let simulation = DegradedModeSimulation {
+            missing_dependencies: vec!["artifact-store".to_string()],
+            read_only_mode: true,
+            limited_submit_mode: false,
+            queue_drain_mode: true,
+            blocked_actions: vec!["new backfill".to_string(), "promotion".to_string()],
+            available_actions: vec!["inspect".to_string(), "cancel".to_string()],
+            boundary: ProductBoundary {
+                platform_guarantees: vec!["existing run state remains queryable".to_string()],
+                operator_responsibilities: vec![
+                    "avoid promotion while artifact store is unavailable".to_string(),
+                ],
+            },
+        };
+        let (payload, ok) = degraded_mode_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["degraded_mode_ready"], true);
+    }
+
+    #[test]
+    fn degraded_mode_flags_missing_visibility_and_boundaries() {
+        let simulation = DegradedModeSimulation {
+            missing_dependencies: Vec::new(),
+            read_only_mode: false,
+            limited_submit_mode: false,
+            queue_drain_mode: false,
+            blocked_actions: Vec::new(),
+            available_actions: Vec::new(),
+            boundary: ProductBoundary {
+                platform_guarantees: Vec::new(),
+                operator_responsibilities: Vec::new(),
+            },
+        };
+        let (payload, ok) = degraded_mode_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
