@@ -9,15 +9,15 @@ use thiserror as _;
 use unicode_normalization as _;
 
 use bijux_dag_core::{
-    parse_graph_strict, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
-    PortRef, Severity, SPEC_VERSION, TriggerRule,
+    parse_graph_strict, BranchSpec, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
+    PortRef, SemanticNodeKind, Severity, SPEC_VERSION, TriggerRule,
 };
 
 #[test]
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
-        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027",
+        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
     ];
 
     for code in expected_error_codes {
@@ -405,6 +405,112 @@ fn graph_for_code(code: &str) -> Graph {
             g.nodes[0].env_allowlist = vec!["*".to_string()];
             g
         }
+        "E1028" => {
+            let mut g = base_graph();
+            g.nodes[0].semantic_kind = SemanticNodeKind::Branch;
+            g.nodes[0].branch = Some(BranchSpec {
+                decisions: vec!["left".to_string()],
+                default_decision: Some("left".to_string()),
+                decision_output: "missing".to_string(),
+            });
+            g
+        }
+        "E1029" => {
+            let mut g = Graph {
+                spec: SPEC_VERSION.to_string(),
+                meta: None,
+                inputs: serde_json::Map::new(),
+                nondeterminism_allowed: false,
+                nodes: vec![
+                    Node {
+                        id: "branch".to_string(),
+                        kind: NodeKind::Shell,
+                        semantic_kind: SemanticNodeKind::Branch,
+                        inputs: vec!["in".to_string()],
+                        outputs: vec![FileOutput {
+                            name: "decision".to_string(),
+                            path: "branch/decision.txt".to_string(),
+                        }],
+                        params: bijux_dag_core::ParamValue::default(),
+                        container: None,
+                        timeout_ms: None,
+                        resources: None,
+                        tags: vec![],
+                        retry: Default::default(),
+                        effects: vec![bijux_dag_core::Effect::Filesystem],
+                        env_allowlist: vec![],
+                        group: None,
+                        trigger_rule: TriggerRule::AllSuccess,
+                        branch: Some(BranchSpec {
+                            decisions: vec!["left".to_string()],
+                            default_decision: Some("left".to_string()),
+                            decision_output: "decision".to_string(),
+                        }),
+                    },
+                    build_node("sink", vec!["in".to_string()], "out"),
+                ],
+                edges: vec![Edge {
+                    id: Some("branch-left".to_string()),
+                    kind: EdgeKind::Conditional,
+                    decision: Some("right".to_string()),
+                    from: PortRef {
+                        node_id: "branch".to_string(),
+                        port: "decision".to_string(),
+                    },
+                    to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
+                }],
+            };
+            g.nodes[1].trigger_rule = TriggerRule::AnySuccess;
+            g
+        }
+        "E1030" => {
+            let mut g = Graph {
+                spec: SPEC_VERSION.to_string(),
+                meta: None,
+                inputs: serde_json::Map::new(),
+                nondeterminism_allowed: false,
+                nodes: vec![
+                    Node {
+                        id: "branch".to_string(),
+                        kind: NodeKind::Shell,
+                        semantic_kind: SemanticNodeKind::Branch,
+                        inputs: vec!["in".to_string()],
+                        outputs: vec![FileOutput {
+                            name: "decision".to_string(),
+                            path: "branch/decision.txt".to_string(),
+                        }],
+                        params: bijux_dag_core::ParamValue::default(),
+                        container: None,
+                        timeout_ms: None,
+                        resources: None,
+                        tags: vec![],
+                        retry: Default::default(),
+                        effects: vec![bijux_dag_core::Effect::Filesystem],
+                        env_allowlist: vec![],
+                        group: None,
+                        trigger_rule: TriggerRule::AllSuccess,
+                        branch: Some(BranchSpec {
+                            decisions: vec!["left".to_string()],
+                            default_decision: Some("left".to_string()),
+                            decision_output: "decision".to_string(),
+                        }),
+                    },
+                    build_node("sink", vec!["in".to_string()], "out"),
+                ],
+                edges: vec![Edge {
+                    id: Some("branch-left".to_string()),
+                    kind: EdgeKind::Conditional,
+                    decision: Some("left".to_string()),
+                    from: PortRef {
+                        node_id: "branch".to_string(),
+                        port: "decision".to_string(),
+                    },
+                    to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
+                }],
+            };
+            g.nodes[1].trigger_rule = TriggerRule::AllSuccess;
+            g
+        }
         "W2001" => {
             let mut g = base_graph();
             g.nodes.push(build_node("isolated", vec!["in".to_string()], "out"));
@@ -432,7 +538,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Const,
-        semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+        semantic_kind: SemanticNodeKind::Task,
         inputs: std::mem::take(&mut inputs),
         outputs: vec![FileOutput { name: name.to_string(), path: format!("{id}/{name}.txt") }],
         params: bijux_dag_core::ParamValue::default(),

@@ -1,5 +1,8 @@
 use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
-use crate::{Effect, Graph, GraphError, Node, ParamValue, Severity, ValidationDiagnostic};
+use crate::{
+    EdgeKind, Effect, Graph, GraphError, Node, ParamValue, SemanticNodeKind, Severity,
+    TriggerRule, ValidationDiagnostic,
+};
 use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +40,9 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1025", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1026", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1027", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1028", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1029", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1030", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -74,12 +80,18 @@ fn valid_env_allowlist_pattern(pattern: &str) -> bool {
     core.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
+fn trigger_rule_supports_conditional_incoming(rule: &TriggerRule) -> bool {
+    matches!(rule, TriggerRule::AnySuccess | TriggerRule::AllDone)
+}
+
 impl Graph {
     pub fn validate_with_warnings(&self) -> Vec<ValidationDiagnostic> {
         let mut diagnostics = Vec::new();
 
         let mut ids = BTreeSet::new();
         let mut node_map: HashMap<&str, &Node> = HashMap::new();
+        let mut branch_output_by_node: HashMap<&str, &str> = HashMap::new();
+        let mut branch_decisions_by_node: HashMap<&str, BTreeSet<String>> = HashMap::new();
         for node in &self.nodes {
             if !ids.insert(node.id.as_str()) {
                 emit_rule(
@@ -233,11 +245,101 @@ impl Graph {
                     }
                 }
             }
+            match (&node.semantic_kind, &node.branch) {
+                (SemanticNodeKind::Branch, None) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1028",
+                        format!("branch node missing branch contract: {}", node.id),
+                        format!("/nodes/{}/branch", node.id),
+                        Some("Provide decisions and a decision_output for branch nodes".to_string()),
+                    );
+                }
+                (SemanticNodeKind::Branch, Some(branch)) => {
+                    let mut decisions = BTreeSet::new();
+                    let mut duplicate_decisions = BTreeSet::new();
+                    for decision in &branch.decisions {
+                        if !is_valid_canonical_name(decision) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1028",
+                                format!("illegal branch decision: {}", decision),
+                                format!("/nodes/{}/branch/decisions", node.id),
+                                Some("Use canonical names for branch decisions".to_string()),
+                            );
+                        }
+                        if !decisions.insert(decision.clone()) {
+                            duplicate_decisions.insert(decision.clone());
+                        }
+                    }
+                    if branch.decisions.is_empty() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1028",
+                            format!("branch node must declare at least one decision: {}", node.id),
+                            format!("/nodes/{}/branch/decisions", node.id),
+                            Some("Declare one or more named branch decisions".to_string()),
+                        );
+                    }
+                    for decision in duplicate_decisions {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1028",
+                            format!("duplicate branch decision: {}", decision),
+                            format!("/nodes/{}/branch/decisions", node.id),
+                            Some("Make each branch decision unique".to_string()),
+                        );
+                    }
+                    if !node.outputs.iter().any(|output| output.name == branch.decision_output) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1028",
+                            format!(
+                                "branch decision output '{}' is not declared on node {}",
+                                branch.decision_output, node.id
+                            ),
+                            format!("/nodes/{}/branch/decision_output", node.id),
+                            Some("decision_output must match a declared node output".to_string()),
+                        );
+                    }
+                    if let Some(default_decision) = &branch.default_decision {
+                        if !decisions.contains(default_decision) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1028",
+                                format!(
+                                    "default branch decision '{}' is not declared on node {}",
+                                    default_decision, node.id
+                                ),
+                                format!("/nodes/{}/branch/default_decision", node.id),
+                                Some("default_decision must be one of branch.decisions".to_string()),
+                            );
+                        }
+                    }
+                    branch_output_by_node.insert(node.id.as_str(), branch.decision_output.as_str());
+                    branch_decisions_by_node.insert(node.id.as_str(), decisions);
+                }
+                (_, Some(_)) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1028",
+                        format!(
+                            "branch contract is only allowed on semantic_kind=branch nodes: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/branch", node.id),
+                        Some("Set semantic_kind=branch or remove the branch contract".to_string()),
+                    );
+                }
+                _ => {}
+            }
             node_map.insert(node.id.as_str(), node);
         }
 
         let mut edge_pairs = BTreeSet::new();
         let mut target_bindings = BTreeSet::new();
+        let mut conditional_edge_counts = HashMap::<(String, String), usize>::new();
+        let mut conditional_incoming_targets = BTreeSet::new();
         for edge in &self.edges {
             let from_node = node_map.get(edge.from.node_id.as_str());
             let to_node = node_map.get(edge.to.node_id.as_str());
@@ -308,6 +410,117 @@ impl Graph {
                     ),
                     format!("/edges/to/{}/{}", edge.to.node_id, edge.to.port),
                     Some("Bind each input port from exactly one source output".to_string()),
+                );
+            }
+
+            if edge.kind == EdgeKind::Conditional {
+                conditional_incoming_targets.insert(edge.to.node_id.clone());
+                match branch_decisions_by_node.get(edge.from.node_id.as_str()) {
+                    None => emit_rule(
+                        &mut diagnostics,
+                        "E1029",
+                        format!(
+                            "conditional edge must originate from a branch node: {}.{}",
+                            edge.from.node_id, edge.from.port
+                        ),
+                        format!("/edges/from/{}/{}", edge.from.node_id, edge.from.port),
+                        Some("Use semantic_kind=branch on the source node".to_string()),
+                    ),
+                    Some(decisions) => {
+                        let expected_output =
+                            branch_output_by_node.get(edge.from.node_id.as_str()).copied();
+                        if expected_output != Some(edge.from.port.as_str()) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1029",
+                                format!(
+                                    "conditional edge must read branch decision output {}.{}",
+                                    edge.from.node_id,
+                                    expected_output.unwrap_or("<missing>")
+                                ),
+                                format!("/edges/from/{}/{}", edge.from.node_id, edge.from.port),
+                                Some("Point conditional edges at the declared decision_output".to_string()),
+                            );
+                        }
+                        match &edge.decision {
+                            None => emit_rule(
+                                &mut diagnostics,
+                                "E1029",
+                                format!(
+                                    "conditional edge missing decision label: {} -> {}",
+                                    edge.from.node_id, edge.to.node_id
+                                ),
+                                "/edges".to_string(),
+                                Some("Set edge.decision for conditional edges".to_string()),
+                            ),
+                            Some(decision) if !decisions.contains(decision) => emit_rule(
+                                &mut diagnostics,
+                                "E1029",
+                                format!(
+                                    "unknown branch decision '{}' on edge {} -> {}",
+                                    decision, edge.from.node_id, edge.to.node_id
+                                ),
+                                "/edges".to_string(),
+                                Some("Use one of the source branch node decisions".to_string()),
+                            ),
+                            Some(decision) => {
+                                *conditional_edge_counts
+                                    .entry((edge.from.node_id.clone(), decision.clone()))
+                                    .or_insert(0) += 1;
+                            }
+                        }
+                    }
+                }
+            } else if branch_output_by_node.get(edge.from.node_id.as_str()).copied()
+                == Some(edge.from.port.as_str())
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1030",
+                    format!(
+                        "branch decision output {}.{} must only drive conditional edges",
+                        edge.from.node_id, edge.from.port
+                    ),
+                    format!("/edges/from/{}/{}", edge.from.node_id, edge.from.port),
+                    Some("Use edge.kind=conditional with a valid edge.decision".to_string()),
+                );
+            }
+        }
+
+        for node in &self.nodes {
+            if let Some(decisions) = branch_decisions_by_node.get(node.id.as_str()) {
+                for decision in decisions {
+                    if conditional_edge_counts
+                        .get(&(node.id.clone(), decision.clone()))
+                        .copied()
+                        .unwrap_or_default()
+                        == 0
+                    {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1028",
+                            format!(
+                                "branch decision '{}' on node {} has no conditional edge",
+                                decision, node.id
+                            ),
+                            format!("/nodes/{}/branch/decisions", node.id),
+                            Some("Add a conditional edge for every declared branch decision".to_string()),
+                        );
+                    }
+                }
+            }
+            if conditional_incoming_targets.contains(&node.id)
+                && !trigger_rule_supports_conditional_incoming(&node.trigger_rule)
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1030",
+                    format!(
+                        "trigger_rule {:?} is incompatible with conditional incoming edges on node {}",
+                        node.trigger_rule, node.id
+                    ),
+                    format!("/nodes/{}/trigger_rule", node.id),
+                    Some("Use any_success or all_done for nodes fed by conditional edges".to_string()),
                 );
             }
         }
