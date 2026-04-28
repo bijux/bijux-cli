@@ -11,7 +11,10 @@ use bijux_dag_runtime::simulated_platform::{
     ResourceScope, SubjectIdentity, SubjectKind, TrustHealthReport,
     check_scheduler_admission, enforce_tenant_plugin_allowlist, resolve_tenant_overlay,
     scope_lineage_query, tenant_provisioning_bootstrap, validate_tenant_isolation,
+    can_promote_artifact, require_provenance_completeness, verify_attestation_or_fail,
+    ArtifactTrustLabel, PromotionPolicy, ProvenanceCompletenessPolicy,
     RuntimeSecretContract,
+    RunProvenanceAttestation, SignedArtifactManifest,
     TenantConfigOverlay, TenantId, TenantLineageScope, TenantPluginAllowlist,
     TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
     TenantRegistryPartition, TenantSchedulerAdmission,
@@ -177,6 +180,24 @@ struct SecretsReport {
     brokered_credentials: bool,
     region_allowed: bool,
     sensitive_classes: std::collections::BTreeMap<String, (u32, bool)>,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SupplyChainSimulation {
+    trust_label: ArtifactTrustLabel,
+    completeness_policy: ProvenanceCompletenessPolicy,
+    promotion_policy: PromotionPolicy,
+    attestation: RunProvenanceAttestation,
+    signed_manifests: Vec<SignedArtifactManifest>,
+}
+
+#[derive(Debug, Serialize)]
+struct SupplyChainReport {
+    completeness_passed: bool,
+    promotion_allowed: bool,
+    pinned_inputs: bool,
+    trust_domain_bound: bool,
     gaps: Vec<String>,
 }
 
@@ -447,6 +468,42 @@ fn secrets_payload(simulation: &Path) -> Result<SecretsReport, ExitCode> {
     })
 }
 
+fn supply_chain_payload(simulation: &Path) -> Result<SupplyChainReport, ExitCode> {
+    let simulation: SupplyChainSimulation = load_json_file(simulation)?;
+    let verification = require_provenance_completeness(
+        &simulation.attestation,
+        &simulation.signed_manifests,
+        &simulation.completeness_policy,
+    );
+    let completeness_passed = verify_attestation_or_fail(verification.clone()).is_ok();
+    let promotion_allowed =
+        can_promote_artifact(&simulation.trust_label, completeness_passed, &simulation.promotion_policy);
+    let pinned_inputs = !simulation.attestation.output_digests.is_empty()
+        && simulation
+            .signed_manifests
+            .iter()
+            .all(|manifest| !manifest.digest.trim().is_empty());
+    let trust_domain_bound = !simulation.attestation.environment.trust_domain.trim().is_empty();
+    let mut gaps = verification.errors;
+    if !promotion_allowed {
+        gaps.push("artifact promotion policy rejected this trust posture".to_string());
+    }
+    if !pinned_inputs {
+        gaps.push("artifact digests are not fully pinned".to_string());
+    }
+    if !trust_domain_bound {
+        gaps.push("environment trust domain is missing".to_string());
+    }
+
+    Ok(SupplyChainReport {
+        completeness_passed,
+        promotion_allowed,
+        pinned_inputs,
+        trust_domain_bound,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -467,6 +524,11 @@ pub(crate) fn handle_security_command(
         SecurityCommands::Secrets { simulation } => {
             let payload = serde_json::to_value(secrets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.secrets", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::SupplyChain { simulation } => {
+            let payload =
+                serde_json::to_value(supply_chain_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.supply-chain", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -835,6 +897,97 @@ mod tests {
             "workload still depends on static or non-brokered credentials",
             "requested region is outside the approved secret region set",
             "runtime secret contract is incomplete",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_supply_chain_accepts_complete_attested_artifact() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("supply.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "trust_label":"Approved",
+              "completeness_policy":{
+                "require_binary_provenance":true,
+                "require_plugin_provenance":true,
+                "require_environment_attestation":true,
+                "require_signed_artifacts":true
+              },
+              "promotion_policy":{"allowed_labels":["Approved","Attested"],"require_completeness":true},
+              "attestation":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"graph-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"v1",
+                "output_digests":["sha256:1"],
+                "binaries":[{"component":"Scheduler","version":"1","build_id":"b1","source_revision":"r1","build_timestamp_utc":"2026-04-28T00:00:00Z"}],
+                "plugins":[{"plugin_name":"builtin-python","version":"1","source":"bijux","trust_tier":"Official","approved":true}],
+                "environment":{"backend":"kubernetes","capability_class":"standard","trust_domain":"prod-eu"}
+              },
+              "signed_manifests":[{"artifact_id":"a1","digest":"sha256:1","signer_identity":"svc","signature":"sig"}]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::SupplyChain { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::SupplyChain { simulation: simulation.clone() },
+        )
+        .expect("supply");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::supply_chain_payload(&simulation).expect("report");
+        assert!(report.completeness_passed);
+        assert!(report.promotion_allowed);
+        assert!(report.pinned_inputs);
+        assert!(report.trust_domain_bound);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_supply_chain_rejects_incomplete_untrusted_artifact() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("supply.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "trust_label":"Verified",
+              "completeness_policy":{
+                "require_binary_provenance":true,
+                "require_plugin_provenance":true,
+                "require_environment_attestation":true,
+                "require_signed_artifacts":true
+              },
+              "promotion_policy":{"allowed_labels":["Approved"],"require_completeness":true},
+              "attestation":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"graph-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"v1",
+                "output_digests":[],
+                "binaries":[],
+                "plugins":[],
+                "environment":{"backend":"","capability_class":"","trust_domain":""}
+              },
+              "signed_manifests":[]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::supply_chain_payload(&simulation).expect("report");
+        assert!(!report.completeness_passed);
+        assert!(!report.promotion_allowed);
+        assert!(!report.pinned_inputs);
+        assert!(!report.trust_domain_bound);
+        for expected in [
+            "binary provenance is required",
+            "plugin provenance is required",
+            "environment attestation is incomplete",
+            "signed artifacts are required",
+            "artifact promotion policy rejected this trust posture",
+            "artifact digests are not fully pinned",
+            "environment trust domain is missing",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
