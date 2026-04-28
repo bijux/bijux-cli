@@ -1,9 +1,11 @@
 use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    geo_ready, CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord,
-    RegionQueuePartition, RegionScheduleRule,
+    build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
+    ConsistencyBoundaryNote, ConsistencyClass, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
+    GeoReadyAcceptanceGate, GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation,
+    RegionLineageRecord, RegionPolicyOverlay, RegionQueuePartition, RegionScheduleRule,
+    WriteRoutingRule,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -59,6 +61,24 @@ struct LineageReport {
     visible_consumer_regions: Vec<String>,
     queryable: bool,
     regional_boundary_preserved: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SovereigntySimulation {
+    resource: String,
+    write_rule: WriteRoutingRule,
+    requested_write_region: bijux_dag_runtime::simulated_platform::RegionId,
+    consistency_notes: Vec<ConsistencyBoundaryNote>,
+    overlay: RegionPolicyOverlay,
+}
+
+#[derive(Debug, Serialize)]
+struct SovereigntyReport {
+    write_allowed: bool,
+    consistency_class: String,
+    consistency_catalog_size: usize,
+    regulatory_profile: String,
     gaps: Vec<String>,
 }
 
@@ -181,6 +201,40 @@ fn lineage_payload(simulation: &Path) -> Result<LineageReport, ExitCode> {
     })
 }
 
+fn consistency_class_name(class: &ConsistencyClass) -> &'static str {
+    match class {
+        ConsistencyClass::StronglyConsistent => "strongly-consistent",
+        ConsistencyClass::RegionallyConsistent => "regionally-consistent",
+        ConsistencyClass::EventuallyReplicated => "eventually-replicated",
+    }
+}
+
+fn sovereignty_payload(simulation: &Path) -> Result<SovereigntyReport, ExitCode> {
+    let simulation: SovereigntySimulation = load_json_file(simulation)?;
+    let write_allowed = region_write_allowed(&simulation.write_rule, &simulation.requested_write_region);
+    let consistency_class = classify_resource_consistency(&simulation.resource, &simulation.consistency_notes);
+    let consistency_catalog = build_consistency_catalog(&simulation.consistency_notes);
+    let mut gaps = Vec::new();
+    if !write_allowed {
+        gaps.push("requested region is not allowed to perform writes for this resource".to_string());
+    }
+    if simulation.overlay.regulatory_profile.trim().is_empty() {
+        gaps.push("region overlay is missing a regulatory profile".to_string());
+    }
+    if simulation.overlay.regulatory_profile != "unrestricted"
+        && matches!(consistency_class, ConsistencyClass::EventuallyReplicated)
+    {
+        gaps.push("regulated region cannot rely on eventually replicated writes for this resource".to_string());
+    }
+    Ok(SovereigntyReport {
+        write_allowed,
+        consistency_class: consistency_class_name(&consistency_class).to_string(),
+        consistency_catalog_size: consistency_catalog.len(),
+        regulatory_profile: simulation.overlay.regulatory_profile,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -197,6 +251,10 @@ pub(crate) fn handle_federation_command(
         FederationCommands::Lineage { simulation } => {
             let payload = serde_json::to_value(lineage_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.lineage", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::Sovereignty { simulation } => {
+            let payload = serde_json::to_value(sovereignty_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.sovereignty", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -406,6 +464,58 @@ mod tests {
         for expected in [
             "cross-region lineage is not queryable",
             "consumer-region visibility exceeds the approved regional scope",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_sovereignty_accepts_region_bound_strong_write_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("sovereignty.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "resource":"artifact-registry",
+              "write_rule":{"resource":"artifact-registry","global_visible":false,"write_regions":["eu"]},
+              "requested_write_region":"eu",
+              "consistency_notes":[{"resource":"artifact-registry","class":"StronglyConsistent","rationale":"regulated metadata"}],
+              "overlay":{"region":"eu","regulatory_profile":"gdpr","cost_profile":"premium","infrastructure_profile":"primary"}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::Sovereignty { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::Sovereignty { simulation: simulation.clone() },
+        )
+        .expect("sovereignty");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::sovereignty_payload(&simulation).expect("report");
+        assert!(report.write_allowed);
+        assert_eq!(report.consistency_class, "strongly-consistent");
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_sovereignty_rejects_out_of_region_eventual_write_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("sovereignty.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "resource":"artifact-registry",
+              "write_rule":{"resource":"artifact-registry","global_visible":true,"write_regions":["us"]},
+              "requested_write_region":"eu",
+              "consistency_notes":[{"resource":"artifact-registry","class":"EventuallyReplicated","rationale":"cheap async mirror"}],
+              "overlay":{"region":"eu","regulatory_profile":"gdpr","cost_profile":"cheap","infrastructure_profile":"secondary"}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::sovereignty_payload(&simulation).expect("report");
+        for expected in [
+            "requested region is not allowed to perform writes for this resource",
+            "regulated region cannot rely on eventually replicated writes for this resource",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
