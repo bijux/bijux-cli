@@ -9,17 +9,21 @@ last_reviewed: 2026-04-06
 
 # Release and Versioning
 
-Release and versioning policy coordinates CLI, DAG, Python bridge, and docs so
-published behavior matches verified repository state.
+This page explains how release policy keeps published versions tied to verified
+repository state.
 
-## Visual Summary
+Versioning is only meaningful if it reflects real compatibility and real
+published behavior. That is why this page treats release notes, docs, and
+verification as part of the same release decision.
+
+## Release Flow
 
 ```mermaid
 flowchart TD
-    candidate[candidate commit] --> tests[validation suites]
-    tests --> compatibility[compatibility review]
-    compatibility --> docs[docs and changelog update]
-    docs --> tag[tag and publish]
+    candidate["candidate commit"] --> tests["validation suites"]
+    tests --> compatibility["compatibility review"]
+    compatibility --> docs["docs and changelog update"]
+    docs --> tag["tag and publish"]
 ```
 
 ## Release Rules
@@ -34,6 +38,11 @@ flowchart TD
 - incompatible behavior changes require explicit major version rationale
 - additive, compatible behavior follows minor version policy
 - patches must avoid silent contract changes
+
+## Reading Rule
+
+Use this page when a change may be releasable but the version impact is still
+unclear.
 
 ## Code Anchors
 
