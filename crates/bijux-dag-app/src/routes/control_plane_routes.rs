@@ -4,11 +4,12 @@ use bijux_dag_runtime::simulated_platform::{
     deduplicate_across_replicas, fence_allows_mutation, idempotent_run_creation,
     invalidate_decision_cache, is_stale_leader, next_epoch, ordering_during_failover,
     resolve_environment_values, select_dag_version, validate_task_lease_semantics,
-    CompatibilityDecision, DagRegistry, DagVersionSelectionPolicy, DurableRunQueueEntry,
-    EnvironmentConfiguration, LeaderElectionState, PolicyDecisionCache, QueueOwnershipTransfer,
-    QueuePartition, QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord,
-    SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
-    TypedControlPlaneResponse, WorkLease,
+    ApiCompatibilityRule, ApiVersion, CompatibilityDecision, DagRegistry,
+    DagVersionSelectionPolicy, DurableRunQueueEntry, EnvironmentConfiguration,
+    LeaderElectionState, PolicyDecisionCache, QueueOwnershipTransfer, QueuePartition,
+    QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord, SchedulerEpoch,
+    SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+    TypedControlPlaneResponse, WorkLease, check_api_compatibility,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -198,6 +199,29 @@ struct CacheReport {
     environment_resolved: bool,
     gaps: Vec<String>,
     cache_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct MigrationSimulation {
+    api_version: ApiVersion,
+    compatibility_rule: ApiCompatibilityRule,
+    source_registry: DagRegistry,
+    target_registry: DagRegistry,
+    dry_run_completed: bool,
+    rollback_plan_recorded: bool,
+    mixed_writer_blocked: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct MigrationReport {
+    compatibility_ok: bool,
+    source_dag_count: usize,
+    target_covers_all_dags: bool,
+    dry_run_completed: bool,
+    rollback_plan_recorded: bool,
+    mixed_writer_blocked: bool,
+    gaps: Vec<String>,
+    migration_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -587,6 +611,55 @@ fn cache_payload(simulation: CacheSimulation) -> (serde_json::Value, bool) {
     (serde_json::to_value(report).expect("cache report"), ok)
 }
 
+fn migration_payload(simulation: MigrationSimulation) -> (serde_json::Value, bool) {
+    let MigrationSimulation {
+        api_version,
+        compatibility_rule,
+        source_registry,
+        target_registry,
+        dry_run_completed,
+        rollback_plan_recorded,
+        mixed_writer_blocked,
+    } = simulation;
+    let compatibility_ok = check_api_compatibility(&api_version, &compatibility_rule);
+    let source_dag_count = source_registry.entries.len();
+    let target_covers_all_dags = source_registry
+        .entries
+        .keys()
+        .all(|dag_name| target_registry.entries.contains_key(dag_name));
+    let mut gaps = Vec::new();
+    if !compatibility_ok {
+        gaps.push("target api version is outside the supported migration window".to_string());
+    }
+    if source_dag_count == 0 {
+        gaps.push("migration audit requires at least one source registry entry".to_string());
+    }
+    if !target_covers_all_dags {
+        gaps.push("target registry does not cover every source dag".to_string());
+    }
+    if !dry_run_completed {
+        gaps.push("schema migration dry run was not completed".to_string());
+    }
+    if !rollback_plan_recorded {
+        gaps.push("schema migration rollback plan is missing".to_string());
+    }
+    if !mixed_writer_blocked {
+        gaps.push("mixed-version control-plane writes are not blocked".to_string());
+    }
+    let report = MigrationReport {
+        compatibility_ok,
+        source_dag_count,
+        target_covers_all_dags,
+        dry_run_completed,
+        rollback_plan_recorded,
+        mixed_writer_blocked,
+        migration_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.migration_ready;
+    (serde_json::to_value(report).expect("migration report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -632,6 +705,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = cache_payload(simulation);
             ("dag.control-plane.cache", payload, ok)
         }
+        ControlPlaneCommands::Migration { simulation } => {
+            let simulation: MigrationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = migration_payload(simulation);
+            ("dag.control-plane.migration", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -654,17 +732,18 @@ pub(crate) fn handle_control_plane_command(
 mod tests {
     use super::{
         api_payload, backpressure_payload, cache_payload, leadership_payload, planning_payload,
-        ApiSimulation, BackpressureSimulation, CacheSimulation, LeadershipSimulation,
-        IdempotencySimulation, LeasesSimulation, PlanningSimulation, ShardingSimulation,
-        idempotency_payload, leases_payload, sharding_payload,
+        migration_payload, ApiSimulation, BackpressureSimulation, CacheSimulation,
+        LeadershipSimulation, IdempotencySimulation, LeasesSimulation, MigrationSimulation,
+        PlanningSimulation, ShardingSimulation, idempotency_payload, leases_payload,
+        sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        DagRegistry, DagVersionRecord, DagVersionSelectionPolicy, DagVersionStatus,
-        DecisionType, DurableRunQueueEntry, EnvironmentConfiguration, EnvironmentMode,
-        LeaderElectionState, PolicyDecisionCache, PolicyDecisionCacheEntry,
-        QueueOwnershipTransfer, QueuePartition, QueueShardLease, RegionId,
-        RegionQueuePartition, RunControlOperation, ScheduleDedupRecord, SchedulerEpoch,
-        SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+        ApiCompatibilityRule, ApiVersion, DagRegistry, DagVersionRecord,
+        DagVersionSelectionPolicy, DagVersionStatus, DecisionType, DurableRunQueueEntry,
+        EnvironmentConfiguration, EnvironmentMode, LeaderElectionState, PolicyDecisionCache,
+        PolicyDecisionCacheEntry, QueueOwnershipTransfer, QueuePartition, QueueShardLease,
+        RegionId, RegionQueuePartition, RunControlOperation, ScheduleDedupRecord,
+        SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
         TypedControlPlaneResponse, WorkLease,
     };
     use serde_json::json;
@@ -1185,5 +1264,78 @@ mod tests {
         let (payload, ok) = cache_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn migration_accepts_compatible_api_and_guarded_rollout() {
+        let source_registry = DagRegistry {
+            entries: BTreeMap::from([(
+                "atlas.load".to_string(),
+                bijux_dag_runtime::simulated_platform::DagRegistryEntry {
+                    dag_name: "atlas.load".to_string(),
+                    owner: "atlas".to_string(),
+                    tags: vec!["critical".to_string()],
+                    versions: vec![DagVersionRecord {
+                        version_id: "2026.04.28".to_string(),
+                        compatibility_line: "v1".to_string(),
+                        status: DagVersionStatus::Active,
+                        created_unix_ms: 100,
+                    }],
+                },
+            )]),
+        };
+        let target_registry = source_registry.clone();
+        let simulation = MigrationSimulation {
+            api_version: ApiVersion { major: 1, minor: 2 },
+            compatibility_rule: ApiCompatibilityRule {
+                min_supported_major: 1,
+                max_supported_major: 2,
+                supports_minor_additive_fields: true,
+            },
+            source_registry,
+            target_registry,
+            dry_run_completed: true,
+            rollback_plan_recorded: true,
+            mixed_writer_blocked: true,
+        };
+        let (payload, ok) = migration_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["migration_ready"], true);
+    }
+
+    #[test]
+    fn migration_flags_incompatible_api_or_uncovered_registry() {
+        let source_registry = DagRegistry {
+            entries: BTreeMap::from([(
+                "atlas.load".to_string(),
+                bijux_dag_runtime::simulated_platform::DagRegistryEntry {
+                    dag_name: "atlas.load".to_string(),
+                    owner: "atlas".to_string(),
+                    tags: vec!["critical".to_string()],
+                    versions: vec![DagVersionRecord {
+                        version_id: "2026.04.28".to_string(),
+                        compatibility_line: "v1".to_string(),
+                        status: DagVersionStatus::Active,
+                        created_unix_ms: 100,
+                    }],
+                },
+            )]),
+        };
+        let simulation = MigrationSimulation {
+            api_version: ApiVersion { major: 3, minor: 0 },
+            compatibility_rule: ApiCompatibilityRule {
+                min_supported_major: 1,
+                max_supported_major: 2,
+                supports_minor_additive_fields: false,
+            },
+            source_registry,
+            target_registry: DagRegistry::default(),
+            dry_run_completed: false,
+            rollback_plan_recorded: false,
+            mixed_writer_blocked: false,
+        };
+        let (payload, ok) = migration_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
 }

@@ -481,6 +481,7 @@ pub(crate) enum ControlPlaneCommands {
     Idempotency { simulation: PathBuf },
     Backpressure { simulation: PathBuf },
     Cache { simulation: PathBuf },
+    Migration { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
