@@ -9,18 +9,23 @@ last_reviewed: 2026-04-12
 
 # Decision Rules
 
-When a reader is unsure where to start, the repository should offer routing
-rules instead of making them guess.
+This page explains how the repository routes questions before code changes even
+start.
+
+Good routing removes guesswork. The point is to land in the owning handbook
+fast enough that the rest of the repository stops feeling larger than it is.
+
+## Routing Map
 
 ```mermaid
 flowchart TD
-    A[New question or change] --> B{Is it about runtime command behavior?}
-    B -->|Yes| C[Route to CLI handbook]
-    B -->|No| D{Is it about graph execution, replay, or artifacts?}
-    D -->|Yes| E[Route to DAG handbook]
-    D -->|No| F{Is it about repository gates, release, or docs publishing?}
-    F -->|Yes| G[Route to Maintainer handbook]
-    F -->|No| H[Stay in repository handbook until ownership conflict is resolved]
+    question["new question or change"] --> cli{"runtime command behavior?"}
+    cli -->|yes| cli_handbook["CLI handbook"]
+    cli -->|no| dag{"graph execution, replay, or artifacts?"}
+    dag -->|yes| dag_handbook["DAG handbook"]
+    dag -->|no| dev{"gates, release, or docs publishing?"}
+    dev -->|yes| dev_handbook["Maintainer handbook"]
+    dev -->|no| core_handbook["Repository handbook"]
 ```
 
 ## Routing Rules
@@ -38,6 +43,12 @@ flowchart TD
 - the change affects more than one product handbook
 - the question involves root files or shared automation
 - the docs tree itself is inconsistent
+
+## Reading Rule
+
+Use this page when ownership is still ambiguous. Once the answer lands clearly
+in one handbook, move there and stay off the repository branch unless the
+boundary shifts again.
 
 ## Next Reads
 
