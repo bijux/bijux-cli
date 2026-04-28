@@ -9,16 +9,19 @@ last_reviewed: 2026-04-06
 
 # Definition of Done
 
-A `bijux-cli` change is done only when behavior, tests, and documentation are
-all aligned and reviewable.
+This page explains when a CLI change is actually ready to leave review.
 
-## Visual Summary
+The line between "implemented" and "done" matters here. A change is only done
+when the behavior, proof, and written contract all point at the same result.
+
+## Done Flow
 
 ```mermaid
 flowchart LR
     implementation["implementation complete"] --> tests["targeted tests pass"]
-    tests --> docs["handbook and diagrams updated"]
-    docs --> review["compatibility and boundary review complete"]
+    implementation --> docs["docs and examples updated"]
+    tests --> review["compatibility review"]
+    docs --> review
     review --> done["ready for release"]
 ```
 
@@ -43,6 +46,11 @@ flowchart LR
 - tests are missing for contract-impacting changes
 - compatibility risk is implied but not stated
 - review checklist items are skipped without rationale
+
+## Reading Rule
+
+Use this page when a change feels nearly finished but the review still needs a
+clear stop-or-go rule.
 
 ## Next Reads
 
