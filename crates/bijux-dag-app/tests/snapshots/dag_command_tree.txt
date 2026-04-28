@@ -28,6 +28,8 @@ prove
 replay
 run
 runs
+runtime
+schedule
 semantic-portability
 show-effective-graph
 show-effective-plan

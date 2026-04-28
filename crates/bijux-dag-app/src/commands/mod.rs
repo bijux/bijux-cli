@@ -75,6 +75,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: ScheduleCommands,
     },
+    Runtime {
+        #[command(subcommand)]
+        command: RuntimeCommands,
+    },
     Run {
         dag: PathBuf,
         #[arg(long)]
@@ -361,6 +365,12 @@ pub(crate) enum ScheduleCommands {
     Sla { simulation: PathBuf },
     Order { simulation: PathBuf },
     Throttle { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum RuntimeCommands {
+    Isolation { dag: PathBuf },
+    Dispatch { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

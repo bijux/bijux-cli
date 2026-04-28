@@ -120,6 +120,8 @@ pub mod run_context;
 mod run_state;
 #[path = "internal/control/runtime.rs"]
 mod runtime;
+#[path = "internal/control/runtime_controls.rs"]
+mod runtime_controls;
 #[cfg(test)]
 #[path = "internal/testing/runtime_boundary_tests.rs"]
 mod runtime_boundary_tests;
@@ -389,6 +391,10 @@ pub use task_contract::{
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
     RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
     TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+};
+pub use runtime_controls::{
+    audit_dispatch_discipline, build_execution_isolation_report, DispatchAuditReport,
+    DispatchKeyRecord, ExecutionIsolationNodeReport, ExecutionIsolationReport,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
