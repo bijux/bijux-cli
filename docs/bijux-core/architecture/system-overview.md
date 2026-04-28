@@ -9,24 +9,18 @@ last_reviewed: 2026-04-06
 
 # System Overview
 
-`bijux-core` is a single Rust workspace that hosts runtime programs, DAG
-execution crates, a Python bridge package, and a maintainer control-plane.
+`bijux-core` is a single Rust workspace that hosts the command runtime, the DAG
+execution system, a Python bridge package, and the repository machinery that
+governs them together.
 
-## Visual Summary
+## Workspace Map
 
 ```mermaid
-flowchart TB
-    Root[bijux-core workspace]
-    Root --> Programs[Runtime programs]
-    Root --> DAG[DAG execution crates]
-    Root --> Python[Python bridge package]
-    Root --> Maintain[Maintainer control plane]
-    Root --> Shared[Shared contracts and policies]
-
-    Programs --> Shared
-    DAG --> Shared
-    Python --> Shared
-    Maintain --> Shared
+flowchart LR
+    root["bijux-core workspace"] --> cli["CLI runtime"]
+    root --> dag["DAG execution"]
+    root --> python["Python bridge"]
+    root --> maintain["Maintainer surface"]
 ```
 
 ## System Components
@@ -41,6 +35,12 @@ flowchart TB
 - runtime behavior belongs to CLI and DAG program crates
 - repository policy and release evidence belong to maintainer workflows
 - shared workspace policy belongs to root manifests, configs, and make targets
+
+## Reading Rule
+
+Use this page to understand the whole workspace first. Move to Workspace
+Topology and Dependency Direction when the next question is about crate layout
+or one-way dependency rules.
 
 ## Non-Goals
 
