@@ -511,6 +511,8 @@ pub(crate) enum IncidentCommands {
     #[command(name = "repair-window")]
     RepairWindow { simulation: PathBuf },
     Timeline { simulation: PathBuf },
+    #[command(name = "replay-validation")]
+    ReplayValidation { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

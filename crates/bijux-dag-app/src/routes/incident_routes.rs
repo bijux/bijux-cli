@@ -1,9 +1,10 @@
 use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    health_dashboard_score, IncidentClassification, IncidentSeverity, LifecycleGovernanceRule,
-    PlatformHealthDashboard, PostmortemTemplate, ProductBoundary, RunbookEntry,
-    SupportabilityModel,
+    health_dashboard_score, replay_trust_warnings, release_policy_allows,
+    IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
+    PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy, RunProvenanceAttestation,
+    RunbookEntry, SupportabilityModel,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -227,6 +228,27 @@ struct IncidentTimelineReport {
     missing_postmortem_sections: Vec<String>,
     gaps: Vec<String>,
     timeline_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReplayValidationSimulation {
+    incident_id: String,
+    baseline: RunProvenanceAttestation,
+    candidate: RunProvenanceAttestation,
+    release_policy: ReleaseGovernancePolicy,
+    outputs_match: bool,
+    lineage_consistent: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ReplayValidationReport {
+    incident_id: String,
+    replay_trust_warnings: Vec<String>,
+    release_policy_ready: bool,
+    outputs_match: bool,
+    lineage_consistent: bool,
+    gaps: Vec<String>,
+    replay_validation_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -603,6 +625,43 @@ fn timeline_payload(simulation: IncidentTimelineSimulation) -> (serde_json::Valu
     (serde_json::to_value(report).expect("incident timeline report"), ok)
 }
 
+fn replay_validation_payload(simulation: ReplayValidationSimulation) -> (serde_json::Value, bool) {
+    let ReplayValidationSimulation {
+        incident_id,
+        baseline,
+        candidate,
+        release_policy,
+        outputs_match,
+        lineage_consistent,
+    } = simulation;
+    let trust = replay_trust_warnings(&candidate.run_id, &baseline, &candidate);
+    let release_policy_ready = release_policy_allows(&release_policy);
+    let mut gaps = Vec::new();
+    if !trust.warnings.is_empty() {
+        gaps.push("replay validation detected provenance drift".to_string());
+    }
+    if !release_policy_ready {
+        gaps.push("replay validation requires evidence, compatibility results, and rollback plan".to_string());
+    }
+    if !outputs_match {
+        gaps.push("replayed outputs do not match the expected recovery result".to_string());
+    }
+    if !lineage_consistent {
+        gaps.push("replayed lineage is not consistent with the baseline run".to_string());
+    }
+    let report = ReplayValidationReport {
+        incident_id,
+        replay_trust_warnings: trust.warnings,
+        release_policy_ready,
+        outputs_match,
+        lineage_consistent,
+        replay_validation_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.replay_validation_ready;
+    (serde_json::to_value(report).expect("replay validation report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -643,6 +702,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = timeline_payload(simulation);
             ("dag.incident.timeline", payload, ok)
         }
+        IncidentCommands::ReplayValidation { simulation } => {
+            let simulation: ReplayValidationSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = replay_validation_payload(simulation);
+            ("dag.incident.replay-validation", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -662,18 +726,20 @@ pub(crate) fn handle_incident_command(
 mod tests {
     use super::{
         annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
-        repair_window_payload, safe_stop_payload, timeline_payload,
+        repair_window_payload, replay_validation_payload, safe_stop_payload, timeline_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
-        PostmortemTemplate, ProductBoundary, RunbookEntry, SupportabilityModel,
+        BinaryComponent, BinaryProvenanceRecord, EnvironmentAttestation,
+        PluginProvenanceRecord, PluginTrustTier, PostmortemTemplate, ProductBoundary,
+        ReleaseGovernancePolicy, RunProvenanceAttestation, RunbookEntry, SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
         WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
-        IncidentTimelineEvent, IncidentTimelineSimulation,
+        IncidentTimelineEvent, IncidentTimelineSimulation, ReplayValidationSimulation,
     };
 
     #[test]
@@ -1032,6 +1098,73 @@ mod tests {
             },
         };
         let (payload, ok) = timeline_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    fn sample_attestation(run_id: &str, trust_domain: &str) -> RunProvenanceAttestation {
+        RunProvenanceAttestation {
+            run_id: run_id.to_string(),
+            dag_snapshot_id: "dag-snapshot-1".to_string(),
+            plan_fingerprint: "plan-1".to_string(),
+            policy_bundle_version: "policy-v1".to_string(),
+            output_digests: vec!["sha256:abc".to_string()],
+            binaries: vec![BinaryProvenanceRecord {
+                component: BinaryComponent::Scheduler,
+                version: "1.0.0".to_string(),
+                build_id: "build-1".to_string(),
+                source_revision: "rev-1".to_string(),
+                build_timestamp_utc: "2026-04-28T10:00:00Z".to_string(),
+            }],
+            plugins: vec![PluginProvenanceRecord {
+                plugin_name: "official-transfer".to_string(),
+                version: "1.0.0".to_string(),
+                source: "registry".to_string(),
+                trust_tier: PluginTrustTier::Official,
+                approved: true,
+            }],
+            environment: EnvironmentAttestation {
+                backend: "remote".to_string(),
+                capability_class: "regulated".to_string(),
+                trust_domain: trust_domain.to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn replay_validation_accepts_clean_recovery_replay() {
+        let simulation = ReplayValidationSimulation {
+            incident_id: "inc-2026-04-28-9".to_string(),
+            baseline: sample_attestation("run-12", "prod-trust"),
+            candidate: sample_attestation("run-12-replay", "prod-trust"),
+            release_policy: ReleaseGovernancePolicy {
+                requires_evidence_bundle: true,
+                requires_compatibility_results: true,
+                requires_rollback_plan: true,
+            },
+            outputs_match: true,
+            lineage_consistent: true,
+        };
+        let (payload, ok) = replay_validation_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["replay_validation_ready"], true);
+    }
+
+    #[test]
+    fn replay_validation_flags_provenance_or_policy_drift() {
+        let simulation = ReplayValidationSimulation {
+            incident_id: "inc-2026-04-28-10".to_string(),
+            baseline: sample_attestation("run-13", "prod-trust"),
+            candidate: sample_attestation("run-13-replay", "staging-trust"),
+            release_policy: ReleaseGovernancePolicy {
+                requires_evidence_bundle: true,
+                requires_compatibility_results: false,
+                requires_rollback_plan: true,
+            },
+            outputs_match: false,
+            lineage_consistent: false,
+        };
+        let (payload, ok) = replay_validation_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
