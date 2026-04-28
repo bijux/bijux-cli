@@ -178,3 +178,15 @@ fn plan_diff_success_path_returns_success() {
         handle_plan_command(&cli, &PlanCommands::Diff { before, after }).expect("plan diff");
     assert_eq!(code, ExitCode::SUCCESS);
 }
+
+#[test]
+fn plan_closure_returns_success_for_selected_leaf() {
+    let (_tmp, dag) = write_graph_fixture();
+    let cli = quiet_json_cli();
+    let code = handle_plan_command(
+        &cli,
+        &PlanCommands::Closure { dag, select: vec!["b".to_string()] },
+    )
+    .expect("plan closure");
+    assert_eq!(code, ExitCode::SUCCESS);
+}

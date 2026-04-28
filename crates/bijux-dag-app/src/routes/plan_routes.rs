@@ -1,8 +1,8 @@
 use crate::commands::{DagCli, PlanCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    build_planner_analysis, diff_plans, explain_plan, PlannerBuildResult, PlannerGuardrails,
-    RuntimeConfig,
+    build_planner_analysis, compute_partial_run_closure, diff_plans, explain_plan,
+    PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
 };
 use serde_json::json;
 
@@ -174,6 +174,34 @@ pub(crate) fn handle_plan_command(
                 if !diff.changed_annotations.is_empty() {
                     println!("changed_annotations: {}", diff.changed_annotations.join(", "));
                 }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        PlanCommands::Closure { dag, select } => {
+            if select.is_empty() {
+                return Err(ExitCode::from(2));
+            }
+            let input = read_file(dag)?;
+            let graph = parse_graph(&input)?;
+            let result = build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
+            let closure =
+                compute_partial_run_closure(&result.plan, select).into_iter().collect::<Vec<_>>();
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.plan.closure",
+                    true,
+                    json!({
+                        "selected_nodes": select,
+                        "closure": closure,
+                        "plan_fingerprint": result.plan_fingerprint,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            for node_id in &closure {
+                println!("{node_id}");
             }
             Ok(ExitCode::SUCCESS)
         }

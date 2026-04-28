@@ -213,3 +213,22 @@ fn schedule_compile_supports_json_output() {
     let code = dag_run(&matches).expect("run");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn plan_closure_supports_json_output() {
+    let (_dir, dag) = write_graph_fixture();
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "plan",
+            "closure",
+            dag.to_string_lossy().as_ref(),
+            "--select",
+            "b",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}

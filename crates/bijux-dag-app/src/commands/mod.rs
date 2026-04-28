@@ -318,6 +318,11 @@ pub(crate) enum PlanCommands {
     Explain { dag: PathBuf },
     Diagnostics { dag: PathBuf },
     Diff { before: PathBuf, after: PathBuf },
+    Closure {
+        dag: PathBuf,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
+    },
 }
 
 #[derive(Subcommand)]
