@@ -13,6 +13,7 @@ doctor
 equivalence-proof
 explain
 export
+federation
 fingerprint
 fsck
 governance

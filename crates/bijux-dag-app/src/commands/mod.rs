@@ -67,6 +67,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: GovernanceCommands,
     },
+    Federation {
+        #[command(subcommand)]
+        command: FederationCommands,
+    },
     Security {
         #[command(subcommand)]
         command: SecurityCommands,
@@ -488,6 +492,24 @@ pub(crate) enum GovernanceCommands {
     AuditEvent { simulation: PathBuf },
     Promotion { simulation: PathBuf },
     Compliance { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum FederationCommands {
+    Schedule { simulation: PathBuf },
+    Failover { simulation: PathBuf },
+    Lineage { simulation: PathBuf },
+    Sovereignty { simulation: PathBuf },
+    Replay { simulation: PathBuf },
+    #[command(name = "policy-distribution")]
+    PolicyDistribution { simulation: PathBuf },
+    #[command(name = "audit-integrity")]
+    AuditIntegrity { simulation: PathBuf },
+    #[command(name = "trust-tier")]
+    TrustTier { simulation: PathBuf },
+    Delegation { simulation: PathBuf },
+    #[command(name = "config-inheritance")]
+    ConfigInheritance { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

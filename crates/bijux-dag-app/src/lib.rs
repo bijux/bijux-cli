@@ -362,6 +362,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Governance { command } => {
             routes::governance_routes::handle_governance_command(&cli, command)
         }
+        Commands::Federation { command } => {
+            routes::federation_routes::handle_federation_command(&cli, command)
+        }
         Commands::Security { command } => routes::security_routes::handle_security_command(&cli, command),
         Commands::Release { command } => routes::release_routes::handle_release_command(&cli, command),
         Commands::CanonicalBytes { dag } => {
