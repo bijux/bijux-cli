@@ -1,7 +1,10 @@
 use crate::commands::{DagCli, StateStoreCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_artifacts::NodeCounts;
-use bijux_dag_runtime::{check_run_consistency, NodeState, RunId, RunState, RunSummaryV2};
+use bijux_dag_runtime::{
+    check_run_consistency, event_names_emitted_once, required_event_fields_present,
+    validate_required_event_names, EventRecord, NodeState, RunId, RunState, RunSummaryV2,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::path::Path;
@@ -34,6 +37,23 @@ struct TransactionReport {
     rollback_recorded: bool,
     gaps: Vec<String>,
     transaction_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct JournalSimulation {
+    events: Vec<EventRecord>,
+    rewrite_detected: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct JournalReport {
+    event_count: usize,
+    required_names_present: bool,
+    append_only: bool,
+    monotonic_timestamps: bool,
+    singleton_boundaries_ok: bool,
+    gaps: Vec<String>,
+    journal_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -103,6 +123,48 @@ fn transaction_payload(simulation: TransactionSimulation) -> (serde_json::Value,
     (serde_json::to_value(report).expect("transaction report"), ok)
 }
 
+fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
+    let JournalSimulation { events, rewrite_detected } = simulation;
+    let required_names_present = validate_required_event_names(&events).is_empty();
+    let append_only = !rewrite_detected;
+    let monotonic_timestamps = events
+        .windows(2)
+        .all(|pair| pair[0].unix_ms <= pair[1].unix_ms);
+    let singleton_boundaries_ok =
+        event_names_emitted_once(&events, &["run_started", "run_finished"]);
+    let all_fields_present = events.iter().all(required_event_fields_present);
+    let mut gaps = Vec::new();
+    if events.is_empty() {
+        gaps.push("journal audit requires at least one persisted event".to_string());
+    }
+    if !all_fields_present {
+        gaps.push("persisted events are missing required journal fields".to_string());
+    }
+    if !required_names_present {
+        gaps.push("journal is missing required lifecycle event names".to_string());
+    }
+    if !append_only {
+        gaps.push("journal rewrite was detected on an append-only surface".to_string());
+    }
+    if !monotonic_timestamps {
+        gaps.push("journal event timestamps are not monotonic".to_string());
+    }
+    if !singleton_boundaries_ok {
+        gaps.push("run boundary events are duplicated or missing".to_string());
+    }
+    let report = JournalReport {
+        event_count: events.len(),
+        required_names_present,
+        append_only,
+        monotonic_timestamps,
+        singleton_boundaries_ok,
+        journal_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.journal_ready;
+    (serde_json::to_value(report).expect("journal report"), ok)
+}
+
 pub(crate) fn handle_state_store_command(
     cli: &DagCli,
     command: &StateStoreCommands,
@@ -112,6 +174,11 @@ pub(crate) fn handle_state_store_command(
             let simulation: TransactionSimulation = parse_json_file(simulation)?;
             let (payload, ok) = transaction_payload(simulation);
             ("dag.state-store.transaction", payload, ok)
+        }
+        StateStoreCommands::Journal { simulation } => {
+            let simulation: JournalSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = journal_payload(simulation);
+            ("dag.state-store.journal", payload, ok)
         }
     };
     emit_json(
@@ -133,9 +200,10 @@ pub(crate) fn handle_state_store_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{transaction_payload, NodeStateRecord, TransactionSimulation};
+    use super::{journal_payload, transaction_payload, JournalSimulation, NodeStateRecord, TransactionSimulation};
     use bijux_dag_artifacts::NodeCounts;
-    use bijux_dag_runtime::{NodeState, RunState};
+    use bijux_dag_runtime::{EventCategory, EventRecord, NodeState, RunState};
+    use serde_json::json;
 
     #[test]
     fn transaction_accepts_consistent_atomic_visible_state() {
@@ -175,6 +243,110 @@ mod tests {
             rollback_recorded: false,
         };
         let (payload, ok) = transaction_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn journal_accepts_append_only_required_event_sequence() {
+        let simulation = JournalSimulation {
+            events: vec![
+                EventRecord {
+                    category: EventCategory::Plan,
+                    name: "run_started".to_string(),
+                    unix_ms: 1,
+                    node_id: None,
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Dispatch,
+                    name: "node_ready".to_string(),
+                    unix_ms: 2,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Start,
+                    name: "node_started".to_string(),
+                    unix_ms: 3,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Verify,
+                    name: "node_attempt_started".to_string(),
+                    unix_ms: 4,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Verify,
+                    name: "node_attempt_finished".to_string(),
+                    unix_ms: 5,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Schedule,
+                    name: "node_scheduled".to_string(),
+                    unix_ms: 6,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Failure,
+                    name: "node_failed".to_string(),
+                    unix_ms: 7,
+                    node_id: Some("extract".to_string()),
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Verify,
+                    name: "run_finished".to_string(),
+                    unix_ms: 8,
+                    node_id: None,
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+            ],
+            rewrite_detected: false,
+        };
+        let (payload, ok) = journal_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["journal_ready"], true);
+    }
+
+    #[test]
+    fn journal_flags_missing_names_and_rewrite_behavior() {
+        let simulation = JournalSimulation {
+            events: vec![
+                EventRecord {
+                    category: EventCategory::Plan,
+                    name: String::new(),
+                    unix_ms: 2,
+                    node_id: None,
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+                EventRecord {
+                    category: EventCategory::Verify,
+                    name: "run_finished".to_string(),
+                    unix_ms: 1,
+                    node_id: None,
+                    run_id: Some("run-1".to_string()),
+                    details: json!({}),
+                },
+            ],
+            rewrite_detected: true,
+        };
+        let (payload, ok) = journal_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }
