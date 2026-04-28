@@ -2,8 +2,8 @@ use crate::commands::DagCli;
 use crate::emit_json;
 use crate::replay_service;
 use crate::routes::renderer::print_pretty_json;
+use crate::{read_file, ExitCode};
 use std::path::Path;
-use std::process::ExitCode;
 
 pub(crate) fn why_rerun_payload(
     run_a: &Path,
@@ -53,11 +53,81 @@ pub(crate) fn handle_trace_artifact_command(
     Ok(ExitCode::SUCCESS)
 }
 
+pub(crate) fn trace_node_payload(
+    run_dir: &Path,
+    node_id: &str,
+) -> Result<serde_json::Value, ExitCode> {
+    let snapshot = read_file(&run_dir.join("graph.snapshot.json")).and_then(|raw| {
+        serde_json::from_str::<serde_json::Value>(&raw).map_err(|_| ExitCode::from(3))
+    })?;
+    let node = snapshot
+        .get("graph")
+        .and_then(|value| value.get("nodes"))
+        .and_then(|value| value.as_array())
+        .and_then(|nodes| {
+            nodes.iter().find(|candidate| candidate.get("id").and_then(|value| value.as_str()) == Some(node_id))
+        })
+        .cloned()
+        .ok_or(ExitCode::from(3))?;
+    let trace =
+        read_file(&run_dir.join("nodes").join(node_id).join("trace.json")).and_then(|raw| {
+            serde_json::from_str::<serde_json::Value>(&raw).map_err(|_| ExitCode::from(3))
+        })?;
+    let outputs_index = read_file(&run_dir.join("nodes").join(node_id).join("outputs").join("index.json"))
+        .ok()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok());
+    let deps = snapshot
+        .get("graph")
+        .and_then(|value| value.get("edges"))
+        .and_then(|value| value.as_array())
+        .map(|edges| {
+            edges
+                .iter()
+                .filter_map(|edge| {
+                    let to_node = edge
+                        .get("to")
+                        .and_then(|value| value.get("node_id"))
+                        .and_then(|value| value.as_str())?;
+                    if to_node != node_id {
+                        return None;
+                    }
+                    edge.get("from")
+                        .and_then(|value| value.get("node_id"))
+                        .and_then(|value| value.as_str())
+                        .map(ToOwned::to_owned)
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    Ok(serde_json::json!({
+        "node_id": node_id,
+        "kind": node.get("kind").cloned().unwrap_or(serde_json::Value::Null),
+        "deps": deps,
+        "outputs": node.get("outputs").cloned().unwrap_or(serde_json::Value::Null),
+        "effects": node.get("effects").cloned().unwrap_or_else(|| serde_json::json!([])),
+        "trace": trace,
+        "outputs_index": outputs_index,
+    }))
+}
+
+pub(crate) fn handle_trace_node_command(
+    cli: &DagCli,
+    run_dir: &Path,
+    node_id: &str,
+) -> Result<ExitCode, ExitCode> {
+    let payload = trace_node_payload(run_dir, node_id)?;
+    if cli.json {
+        return emit_json(cli, "dag.trace-node", true, payload, Vec::new(), ExitCode::SUCCESS);
+    }
+    print_pretty_json(&payload);
+    Ok(ExitCode::SUCCESS)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        handle_trace_artifact_command, handle_why_rerun_command, trace_artifact_payload,
-        why_rerun_payload,
+        handle_trace_artifact_command, handle_trace_node_command, handle_why_rerun_command,
+        trace_artifact_payload, trace_node_payload, why_rerun_payload,
     };
     use crate::commands::{Commands, DagCli};
     use crate::ExitCode;
@@ -137,6 +207,12 @@ mod tests {
                     .expect("node index"),
             )
             .expect("write node index");
+            fs::write(
+                run.join("nodes/extract/trace.json"),
+                serde_json::to_vec_pretty(&json!({"status":"success","attempt":1}))
+                    .expect("trace"),
+            )
+            .expect("write trace");
         }
         (dir, run_a, run_b)
     }
@@ -157,6 +233,8 @@ mod tests {
         assert!(why.get("root_cause_summary").is_some());
         let trace = trace_artifact_payload(&run_a, "extract:data.txt").expect("trace artifact");
         assert_eq!(trace["artifact_id"], "extract:data.txt");
+        let node = trace_node_payload(&run_a, "extract").expect("trace node");
+        assert_eq!(node["node_id"], "extract");
     }
 
     #[test]
@@ -168,6 +246,8 @@ mod tests {
         let trace = handle_trace_artifact_command(&cli, &run_a, "extract:data.txt")
             .expect("handle trace artifact");
         assert_eq!(trace, ExitCode::SUCCESS);
+        let node = handle_trace_node_command(&cli, &run_a, "extract").expect("handle trace node");
+        assert_eq!(node, ExitCode::SUCCESS);
     }
 
     #[test]

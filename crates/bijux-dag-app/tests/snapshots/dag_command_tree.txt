@@ -6,6 +6,7 @@ canonical-bytes
 canonical-diff
 canonicalize
 capabilities
+commands
 config
 control-plane
 dataset
@@ -14,6 +15,7 @@ doctor
 enterprise
 equivalence-proof
 explain
+explain-plan
 export
 federation
 fingerprint
@@ -26,6 +28,7 @@ hash
 import
 incident
 init
+lab
 lint
 migrate
 node
@@ -36,16 +39,17 @@ prove
 release
 replay
 run
+run-bundle
 runs
 runtime
 schedule
 security
 semantic-portability
 show-effective-graph
-show-effective-plan
 state-store
 status
 trace-artifact
+trace-node
 validate
 verify
 version

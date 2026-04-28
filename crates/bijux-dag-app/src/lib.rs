@@ -80,10 +80,7 @@ use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
-use bijux_dag_runtime::{
-    adapter_registry_dump, build_planner_analysis, registered_adapters, CacheMode,
-    PlannerGuardrails, Runtime, RuntimeConfig,
-};
+use bijux_dag_runtime::{adapter_registry_dump, registered_adapters, CacheMode, Runtime, RuntimeConfig};
 #[cfg(test)]
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
@@ -373,6 +370,23 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::governance_routes::handle_governance_command(&cli, command)
         }
         Commands::Incident { command } => routes::incident_routes::handle_incident_command(&cli, command),
+        Commands::Lab { command } => match command {
+            commands::LabCommands::Federation { command } => {
+                routes::federation_routes::handle_federation_command(&cli, command)
+            }
+            commands::LabCommands::Incident { command } => {
+                routes::incident_routes::handle_incident_command(&cli, command)
+            }
+            commands::LabCommands::Enterprise { command } => {
+                routes::enterprise_routes::handle_enterprise_command(&cli, command)
+            }
+            commands::LabCommands::Release { command } => {
+                routes::release_routes::handle_release_command(&cli, command)
+            }
+            commands::LabCommands::Security { command } => {
+                routes::security_routes::handle_security_command(&cli, command)
+            }
+        },
         Commands::Federation { command } => {
             routes::federation_routes::handle_federation_command(&cli, command)
         }
@@ -444,29 +458,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ShowEffectivePlan { dag } => {
+        Commands::ExplainPlan { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let config = RuntimeConfig::default();
-            let analysis = build_planner_analysis(
-                &graph,
-                &config,
-                &config.selectors,
-                &PlannerGuardrails { allow_semantic_optimizations: true },
-            )
-            .map_err(|_| ExitCode::from(3))?;
-            let payload = serde_json::to_value(&analysis).map_err(|_| ExitCode::from(3))?;
+            let analysis =
+                routes::plan_routes::build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
+            let payload = routes::plan_routes::plan_explain_payload(&analysis);
             if cli.json {
                 return emit_json(
                     &cli,
-                    "dag.show-effective-plan",
+                    "dag.explain-plan",
                     true,
                     payload,
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            for line in routes::plan_routes::concise_plan_lines(&analysis) {
+                println!("{line}");
+            }
             Ok(ExitCode::SUCCESS)
         }
         Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command),
@@ -601,6 +611,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::TraceArtifact { run_dir, artifact_id } => {
             routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
         }
+        Commands::TraceNode { run_dir, id } => {
+            routes::diagnostics_routes::handle_trace_node_command(&cli, run_dir, id)
+        }
         Commands::Run {
             dag,
             out,
@@ -621,6 +634,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             cache,
             cache_dir,
             remote_cache_dir,
+            preflight_only,
+            explain_scheduling,
         } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
@@ -643,7 +658,21 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 cache: *cache,
                 cache_dir: cache_dir.clone(),
                 remote_cache_dir: remote_cache_dir.clone(),
+                preflight_only: *preflight_only,
+                explain_scheduling: *explain_scheduling,
             },
+        ),
+        Commands::RunBundle { run_dir, out, redact } => routes::export_import_routes::handle_export_command(
+            &cli,
+            &Some(run_dir.clone()),
+            &None,
+            out,
+            false,
+            false,
+            false,
+            *redact,
+            true,
+            false,
         ),
         Commands::Explain { run_dir, node } => {
             routes::inspect_routes::handle_explain_command(&cli, run_dir, node)
@@ -680,6 +709,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 return Err(ExitCode::from(3));
             }
             Ok(ExitCode::SUCCESS)
+        }
+        Commands::CommandCatalog { groups } => {
+            routes::command_routes::handle_command_catalog_command(&cli, *groups)
         }
         Commands::Migrate { command } => {
             let msg = match command {

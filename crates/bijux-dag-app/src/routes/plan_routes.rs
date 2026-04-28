@@ -6,11 +6,11 @@ use bijux_dag_runtime::{
 };
 use serde_json::json;
 
-fn default_analysis_runtime_config() -> RuntimeConfig {
+pub(crate) fn default_analysis_runtime_config() -> RuntimeConfig {
     RuntimeConfig::default()
 }
 
-fn build_default_planner_analysis(
+pub(crate) fn build_default_planner_analysis(
     graph: &bijux_dag_core::Graph,
 ) -> Result<PlannerBuildResult, String> {
     let config = default_analysis_runtime_config();
@@ -22,7 +22,7 @@ fn build_default_planner_analysis(
     )
 }
 
-fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
+pub(crate) fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
     result
         .annotations
         .iter()
@@ -40,7 +40,7 @@ fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
         .collect()
 }
 
-fn plan_explain_payload(result: &PlannerBuildResult) -> serde_json::Value {
+pub(crate) fn plan_explain_payload(result: &PlannerBuildResult) -> serde_json::Value {
     let report = explain_plan(result);
     json!({
         "planner_contract_version": result.plan.planner_contract_version,

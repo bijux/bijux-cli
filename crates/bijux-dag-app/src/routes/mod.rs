@@ -1,4 +1,5 @@
 pub(crate) mod artifact_routes;
+pub(crate) mod command_routes;
 pub(crate) mod control_plane_routes;
 pub(crate) mod state_store_routes;
 pub(crate) mod dataset_routes;

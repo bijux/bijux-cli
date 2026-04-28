@@ -59,6 +59,11 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: ArtifactCommands,
     },
+    #[command(name = "commands")]
+    CommandCatalog {
+        #[arg(long)]
+        groups: bool,
+    },
     #[command(name = "control-plane")]
     ControlPlane {
         #[command(subcommand)]
@@ -89,6 +94,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: IncidentCommands,
     },
+    Lab {
+        #[command(subcommand)]
+        command: LabCommands,
+    },
     Federation {
         #[command(subcommand)]
         command: FederationCommands,
@@ -110,7 +119,8 @@ pub(crate) enum Commands {
     ShowEffectiveGraph {
         dag: PathBuf,
     },
-    ShowEffectivePlan {
+    #[command(name = "explain-plan", alias = "show-effective-plan")]
+    ExplainPlan {
         dag: PathBuf,
     },
     Plan {
@@ -163,6 +173,18 @@ pub(crate) enum Commands {
         cache_dir: Option<PathBuf>,
         #[arg(long)]
         remote_cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        preflight_only: bool,
+        #[arg(long)]
+        explain_scheduling: bool,
+    },
+    #[command(name = "run-bundle", alias = "bundle")]
+    RunBundle {
+        run_dir: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        redact: bool,
     },
     Replay {
         run_dir: PathBuf,
@@ -251,6 +273,12 @@ pub(crate) enum Commands {
         run_dir: PathBuf,
         artifact_id: String,
     },
+    #[command(name = "trace-node")]
+    TraceNode {
+        run_dir: PathBuf,
+        #[arg(long)]
+        id: String,
+    },
     Explain {
         run_dir: PathBuf,
         #[arg(long)]
@@ -278,7 +306,6 @@ pub(crate) enum Commands {
         #[arg(long)]
         strict: bool,
     },
-    #[command(hide = true)]
     Doctor,
     Migrate {
         #[command(subcommand)]
@@ -471,6 +498,12 @@ pub(crate) enum RuntimeCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum ArtifactCommands {
+    Fetch {
+        run_dir: PathBuf,
+        artifact_id: String,
+        #[arg(long)]
+        out: PathBuf,
+    },
     Registry { run_dir: PathBuf },
     Lineage {
         run_dir: PathBuf,
@@ -620,6 +653,30 @@ pub(crate) enum FederationCommands {
     Delegation { simulation: PathBuf },
     #[command(name = "config-inheritance")]
     ConfigInheritance { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum LabCommands {
+    Federation {
+        #[command(subcommand)]
+        command: FederationCommands,
+    },
+    Incident {
+        #[command(subcommand)]
+        command: IncidentCommands,
+    },
+    Enterprise {
+        #[command(subcommand)]
+        command: EnterpriseCommands,
+    },
+    Release {
+        #[command(subcommand)]
+        command: ReleaseCommands,
+    },
+    Security {
+        #[command(subcommand)]
+        command: SecurityCommands,
+    },
 }
 
 #[derive(Subcommand)]

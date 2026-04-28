@@ -100,6 +100,28 @@ fn artifact_registry_report(run_dir: &Path) -> Result<ArtifactRegistryReport, Ex
     })
 }
 
+fn artifact_payload_path(run_dir: &Path, artifact_id: &str) -> Result<std::path::PathBuf, ExitCode> {
+    let (node_id, file_name) = artifact_id.split_once(':').ok_or(ExitCode::from(2))?;
+    let index_raw = read_file(&run_dir.join("outputs").join("index.json"))?;
+    let index = serde_json::from_str::<serde_json::Value>(&index_raw).map_err(|_| ExitCode::from(3))?;
+    let relative = index
+        .get("files")
+        .and_then(|value| value.as_array())
+        .and_then(|files| {
+            files.iter().find_map(|file| {
+                let file_node_id = file.get("node_id").and_then(|value| value.as_str())?;
+                let path = file.get("path").and_then(|value| value.as_str())?;
+                if file_node_id == node_id && path.ends_with(&format!("/{file_name}")) {
+                    Some(path.to_string())
+                } else {
+                    None
+                }
+            })
+        })
+        .ok_or(ExitCode::from(3))?;
+    Ok(run_dir.join(relative))
+}
+
 pub(crate) fn handle_artifact_inspect_command(
     cli: &DagCli,
     run_dir: &Path,
@@ -125,6 +147,29 @@ pub(crate) fn handle_artifact_command(
     command: &ArtifactCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
+        ArtifactCommands::Fetch { run_dir, artifact_id, out } => {
+            let source = artifact_payload_path(run_dir, artifact_id)?;
+            let parent = out.parent().unwrap_or_else(|| Path::new("."));
+            fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
+            fs::copy(&source, out).map_err(|_| ExitCode::from(3))?;
+            let payload = json!({
+                "artifact_id": artifact_id,
+                "source": source,
+                "out": out,
+            });
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.artifact.fetch",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         ArtifactCommands::Registry { run_dir } => {
             let report = artifact_registry_report(run_dir)?;
             let payload = serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?;
@@ -265,7 +310,7 @@ mod tests {
     }
 
     #[test]
-    fn artifact_routes_support_registry_lineage_and_retention() {
+    fn artifact_routes_support_registry_lineage_retention_and_fetch() {
         let dir = tempfile::tempdir().expect("tmp");
         write_run_fixture(dir.path());
         std::fs::create_dir_all(dir.path().join("run-2026-01-01")).expect("run old");
@@ -302,6 +347,24 @@ mod tests {
         )
         .expect("retention");
         assert_eq!(retention, ExitCode::SUCCESS);
+
+        let fetch_out = dir.path().join("copied").join("report.json");
+        let fetch_cli = quiet_json_cli(ArtifactCommands::Fetch {
+            run_dir: dir.path().to_path_buf(),
+            artifact_id: "extract:report.json".to_string(),
+            out: fetch_out.clone(),
+        });
+        let fetch = handle_artifact_command(
+            &fetch_cli,
+            &ArtifactCommands::Fetch {
+                run_dir: dir.path().to_path_buf(),
+                artifact_id: "extract:report.json".to_string(),
+                out: fetch_out.clone(),
+            },
+        )
+        .expect("fetch");
+        assert_eq!(fetch, ExitCode::SUCCESS);
+        assert!(fetch_out.exists());
     }
 
     #[test]

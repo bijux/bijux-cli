@@ -49,6 +49,18 @@ fn write_temp_dag() -> String {
     path.to_string_lossy().into_owned()
 }
 
+fn run_simple_dag_json() -> (tempfile::TempDir, String, serde_json::Value) {
+    let dag = write_temp_dag();
+    let out_dir = tempfile::tempdir().expect("run out");
+    let output = dag_command()
+        .args(["dag", "--json", "run", &dag, "--out", out_dir.path().to_str().unwrap()])
+        .output()
+        .expect("run json");
+    assert!(output.status.success(), "run stderr: {}", String::from_utf8_lossy(&output.stderr));
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("run payload");
+    (out_dir, dag, payload)
+}
+
 #[test]
 fn dag_validate_help_is_stable_enough() {
     let output = dag_command().args(["dag", "validate", "--help"]).output().expect("validate help");
@@ -96,7 +108,21 @@ fn dag_command_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["validate", "run", "replay", "diff", "explain", "status", "cache", "adapters"] {
+    for token in [
+        "validate",
+        "run",
+        "replay",
+        "diff",
+        "explain",
+        "status",
+        "cache",
+        "adapters",
+        "commands",
+        "doctor",
+        "trace-node",
+        "run-bundle",
+        "lab",
+    ] {
         assert!(text.contains(token));
     }
 }
@@ -107,9 +133,169 @@ fn dag_run_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "--hermetic", "--deny-network", "--clean-env", "run"] {
+    for token in [
+        "--out",
+        "--hermetic",
+        "--deny-network",
+        "--clean-env",
+        "--preflight-only",
+        "--explain-scheduling",
+        "run",
+    ] {
         assert!(text.contains(token));
     }
+}
+
+#[test]
+fn dag_commands_groups_surface_is_stable_enough() {
+    let output = dag_command().args(["dag", "commands", "--groups"]).output().expect("commands");
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in ["core", "runtime", "evidence", "cache", "diagnostics", "lab"] {
+        assert!(text.contains(token), "missing group token: {token}");
+    }
+}
+
+#[test]
+fn dag_commands_json_exposes_group_and_maturity_metadata() {
+    let output =
+        dag_command().args(["dag", "--json", "commands"]).output().expect("commands json");
+    assert!(output.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("commands json");
+    let commands = payload["data"]["commands"].as_array().expect("commands array");
+    assert!(commands.iter().any(|entry| entry["path"] == "doctor"));
+    assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
+    assert!(commands.iter().all(|entry| entry.get("maturity").is_some()));
+    assert!(commands.iter().all(|entry| entry.get("group").is_some()));
+}
+
+#[test]
+fn dag_doctor_json_includes_schema_and_runtime_config_status() {
+    let output = dag_command().args(["dag", "--json", "doctor"]).output().expect("doctor json");
+    assert!(output.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("doctor payload");
+    assert!(payload["data"]["schema_files"]["count"].as_u64().is_some());
+    assert!(payload["data"]["runtime_config"]["defaults_fingerprint"].as_str().is_some());
+}
+
+#[test]
+fn dag_explain_plan_alias_and_legacy_alias_both_work() {
+    let dag = write_temp_dag();
+    for args in [
+        vec!["dag", "--json", "explain-plan", &dag],
+        vec!["dag", "--json", "show-effective-plan", &dag],
+    ] {
+        let output = dag_command().args(args).output().expect("explain plan");
+        assert!(output.status.success());
+        let payload: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("explain plan payload");
+        assert!(payload["data"]["planner_contract_version"].as_str().is_some());
+        assert!(payload["data"]["planned_nodes"].is_array());
+    }
+}
+
+#[test]
+fn dag_lab_namespace_help_exposes_simulation_families() {
+    let output = dag_command().args(["dag", "lab", "--help"]).output().expect("lab help");
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in ["federation", "incident", "enterprise", "release", "security"] {
+        assert!(text.contains(token));
+    }
+}
+
+#[test]
+fn dag_run_preflight_and_scheduling_surfaces_work_end_to_end() {
+    let dag = write_temp_dag();
+    let out_dir = tempfile::tempdir().expect("out");
+
+    let preflight = dag_command()
+        .args([
+            "dag",
+            "--json",
+            "run",
+            &dag,
+            "--out",
+            out_dir.path().to_str().unwrap(),
+            "--preflight-only",
+        ])
+        .output()
+        .expect("preflight");
+    assert!(preflight.status.success());
+    let preflight_payload: serde_json::Value =
+        serde_json::from_slice(&preflight.stdout).expect("preflight payload");
+    assert!(preflight_payload["data"]["scheduling"]["planned_nodes"].is_array());
+
+    let run = dag_command()
+        .args([
+            "dag",
+            "--json",
+            "run",
+            &dag,
+            "--out",
+            out_dir.path().to_str().unwrap(),
+            "--explain-scheduling",
+        ])
+        .output()
+        .expect("run explain scheduling");
+    assert!(run.status.success(), "run stderr: {}", String::from_utf8_lossy(&run.stderr));
+    let run_payload: serde_json::Value = serde_json::from_slice(&run.stdout).expect("run payload");
+    assert!(run_payload["data"]["run_dir"].as_str().is_some());
+    assert!(run_payload["data"]["scheduling"]["planned_nodes"].is_array());
+}
+
+#[test]
+fn dag_trace_node_artifact_fetch_and_bundle_surfaces_work_end_to_end() {
+    let (_out_dir, _dag, run_payload) = run_simple_dag_json();
+    let run_dir = run_payload["data"]["run_dir"].as_str().expect("run dir");
+
+    let trace = dag_command()
+        .args(["dag", "--json", "trace-node", run_dir, "--id", "const1"])
+        .output()
+        .expect("trace node");
+    assert!(trace.status.success(), "trace stderr: {}", String::from_utf8_lossy(&trace.stderr));
+    let trace_payload: serde_json::Value = serde_json::from_slice(&trace.stdout).expect("trace json");
+    assert_eq!(trace_payload["data"]["node_id"], "const1");
+
+    let copied = tempdir().expect("copy out");
+    let copied_path = copied.path().join("value.txt");
+    let fetch = dag_command()
+        .args([
+            "dag",
+            "--json",
+            "artifact",
+            "fetch",
+            run_dir,
+            "const1:value.txt",
+            "--out",
+            copied_path.to_str().unwrap(),
+        ])
+        .output()
+        .expect("artifact fetch");
+    assert!(fetch.status.success(), "fetch stderr: {}", String::from_utf8_lossy(&fetch.stderr));
+    assert_eq!(std::fs::read_to_string(&copied_path).expect("copied artifact"), "\"hello\"");
+
+    let bundle = tempdir().expect("bundle out");
+    let bundle_path = bundle.path().join("bundle.json");
+    let bundle_output = dag_command()
+        .args([
+            "dag",
+            "--json",
+            "run-bundle",
+            run_dir,
+            "--out",
+            bundle_path.to_str().unwrap(),
+        ])
+        .output()
+        .expect("run bundle");
+    assert!(bundle_output.status.success());
+    let bundle_payload: serde_json::Value =
+        serde_json::from_slice(&bundle_output.stdout).expect("bundle payload");
+    assert_eq!(bundle_payload["data"]["bundle"], bundle_path.to_string_lossy().to_string());
+    let bundle_json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&bundle_path).expect("bundle file")).expect("bundle json");
+    assert_eq!(bundle_json["bundle_version"], "export-bundle/v0.1");
+    assert!(bundle_json["files"].is_object());
 }
 
 #[test]
