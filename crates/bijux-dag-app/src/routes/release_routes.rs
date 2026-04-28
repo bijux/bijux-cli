@@ -97,6 +97,26 @@ struct ReleaseCheckpointReport {
     blockers: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseShadowSimulation {
+    baseline_revision_id: String,
+    candidate_revision_id: String,
+    compare_plan: bool,
+    compare_outcomes: bool,
+    side_effect_free: bool,
+    differing_nodes: usize,
+    critical_drift_nodes: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseShadowReport {
+    baseline_revision_id: String,
+    candidate_revision_id: String,
+    comparable: bool,
+    drift_class: String,
+    warnings: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -270,6 +290,38 @@ fn checkpoint_payload(simulation: &std::path::Path) -> Result<ReleaseCheckpointR
     Ok(ReleaseCheckpointReport { action: simulation.action, approval_state, ready: blockers.is_empty(), blockers })
 }
 
+fn shadow_payload(simulation: &std::path::Path) -> Result<ReleaseShadowReport, ExitCode> {
+    let simulation: ReleaseShadowSimulation = load_json_file(simulation)?;
+    let mut warnings = Vec::new();
+    if !simulation.compare_plan {
+        warnings.push("shadow run does not compare planner output".to_string());
+    }
+    if !simulation.compare_outcomes {
+        warnings.push("shadow run does not compare execution outcomes".to_string());
+    }
+    if !simulation.side_effect_free {
+        warnings.push("shadow run is not isolated from side effects".to_string());
+    }
+    if simulation.critical_drift_nodes > 0 {
+        warnings.push("shadow run reports critical drift".to_string());
+    }
+    let comparable = warnings.is_empty() || (warnings.len() == 1 && simulation.differing_nodes == 0);
+    let drift_class = if simulation.critical_drift_nodes > 0 {
+        "critical".to_string()
+    } else if simulation.differing_nodes > 0 {
+        "observable".to_string()
+    } else {
+        "clean".to_string()
+    };
+    Ok(ReleaseShadowReport {
+        baseline_revision_id: simulation.baseline_revision_id,
+        candidate_revision_id: simulation.candidate_revision_id,
+        comparable,
+        drift_class,
+        warnings,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -293,6 +345,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(checkpoint_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.checkpoint", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Shadow { simulation } => {
+            let payload =
+                serde_json::to_value(shadow_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.shadow", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -544,6 +601,65 @@ mod tests {
             "approval checkpoint has no resume actor",
         ] {
             assert!(report.blockers.iter().any(|blocker| blocker == expected));
+        }
+    }
+
+    #[test]
+    fn release_shadow_accepts_clean_side_effect_free_comparison() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("shadow.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "baseline_revision_id":"graph:stable",
+              "candidate_revision_id":"graph:candidate",
+              "compare_plan":true,
+              "compare_outcomes":true,
+              "side_effect_free":true,
+              "differing_nodes":0,
+              "critical_drift_nodes":0
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Shadow { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Shadow { simulation: simulation.clone() },
+        )
+        .expect("shadow");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::shadow_payload(&simulation).expect("report");
+        assert!(report.comparable);
+        assert_eq!(report.drift_class, "clean");
+    }
+
+    #[test]
+    fn release_shadow_flags_missing_comparisons_and_critical_drift() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("shadow.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "baseline_revision_id":"graph:stable",
+              "candidate_revision_id":"graph:candidate",
+              "compare_plan":false,
+              "compare_outcomes":false,
+              "side_effect_free":false,
+              "differing_nodes":4,
+              "critical_drift_nodes":2
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::shadow_payload(&simulation).expect("report");
+        assert!(!report.comparable);
+        assert_eq!(report.drift_class, "critical");
+        for expected in [
+            "shadow run does not compare planner output",
+            "shadow run does not compare execution outcomes",
+            "shadow run is not isolated from side effects",
+            "shadow run reports critical drift",
+        ] {
+            assert!(report.warnings.iter().any(|warning| warning == expected));
         }
     }
 }

@@ -492,6 +492,7 @@ pub(crate) enum ReleaseCommands {
     Promotion { simulation: PathBuf },
     Deprecation { simulation: PathBuf },
     Checkpoint { simulation: PathBuf },
+    Shadow { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
