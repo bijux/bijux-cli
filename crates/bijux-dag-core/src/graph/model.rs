@@ -42,6 +42,8 @@ pub struct Graph {
 pub struct Node {
     pub id: String,
     pub kind: NodeKind,
+    #[serde(default, skip_serializing_if = "semantic_kind_is_default")]
+    pub semantic_kind: SemanticNodeKind,
     #[serde(default)]
     pub inputs: Vec<String>,
     #[serde(default)]
@@ -178,6 +180,17 @@ pub enum Effect {
     Clock,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticNodeKind {
+    #[default]
+    Task,
+    Branch,
+    Barrier,
+    Map,
+    Reduce,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TriggerRule {
@@ -196,9 +209,10 @@ impl Default for TriggerRule {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct BranchSpec {
-    pub expression: String,
-    pub true_port: String,
-    pub false_port: String,
+    pub decisions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_decision: Option<String>,
+    pub decision_output: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -217,6 +231,8 @@ pub struct Edge {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "edge_kind_is_default")]
     pub kind: EdgeKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decision: Option<String>,
     pub from: PortRef,
     pub to: PortRef,
 }
@@ -271,6 +287,10 @@ pub enum Severity {
 
 pub fn trigger_rule_is_default(rule: &TriggerRule) -> bool {
     matches!(rule, TriggerRule::AllSuccess)
+}
+
+pub fn semantic_kind_is_default(kind: &SemanticNodeKind) -> bool {
+    matches!(kind, SemanticNodeKind::Task)
 }
 
 pub fn edge_kind_is_default(kind: &EdgeKind) -> bool {

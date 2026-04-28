@@ -151,6 +151,7 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
         graph.nodes.push(bijux_dag_core::Node {
             id,
             kind: bijux_dag_core::NodeKind::Const,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
             inputs: Vec::new(),
             outputs: vec![bijux_dag_core::FileOutput {
                 name: "out".to_string(),
@@ -178,6 +179,7 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
                 graph.edges.push(bijux_dag_core::Edge {
                     id: None,
                     kind: bijux_dag_core::EdgeKind::Data,
+                    decision: None,
                     from: bijux_dag_core::PortRef {
                         node_id: format!("n{:03}", from),
                         port: "out".to_string(),

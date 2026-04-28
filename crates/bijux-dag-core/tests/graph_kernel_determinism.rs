@@ -1,6 +1,6 @@
 use bijux_dag_core::{
     Edge, EdgeKind, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RefSpec, RetryPolicy,
-    SPEC_VERSION, TriggerRule,
+    SPEC_VERSION, SemanticNodeKind, TriggerRule,
 };
 use criterion as _;
 use hex as _;
@@ -22,6 +22,7 @@ fn base_graph() -> Graph {
             Node {
                 id: "a".to_string(),
                 kind: NodeKind::Const,
+                semantic_kind: SemanticNodeKind::Task,
                 inputs: vec![],
                 outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
@@ -39,6 +40,7 @@ fn base_graph() -> Graph {
             Node {
                 id: "b".to_string(),
                 kind: NodeKind::Const,
+                semantic_kind: SemanticNodeKind::Task,
                 inputs: vec!["in".to_string()],
                 outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
@@ -57,6 +59,7 @@ fn base_graph() -> Graph {
         edges: vec![Edge {
             id: None,
             kind: EdgeKind::Data,
+            decision: None,
             from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
             to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
         }],

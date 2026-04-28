@@ -29,6 +29,10 @@
         "properties": {
           "id": {"type": "string"},
           "kind": {"type": "string"},
+          "semantic_kind": {
+            "type": "string",
+            "enum": ["task", "branch", "barrier", "map", "reduce"]
+          },
           "inputs": {"type": "array", "items": {"type": "string"}},
           "outputs": {
             "type": "array",
@@ -85,11 +89,11 @@
           "branch": {
             "type": ["object", "null"],
             "additionalProperties": false,
-            "required": ["expression", "true_port", "false_port"],
+            "required": ["decisions", "decision_output"],
             "properties": {
-              "expression": {"type": "string"},
-              "true_port": {"type": "string"},
-              "false_port": {"type": "string"}
+              "decisions": {"type": "array", "items": {"type": "string"}},
+              "default_decision": {"type": ["string", "null"]},
+              "decision_output": {"type": "string"}
             }
           }
         }
@@ -107,6 +111,7 @@
             "type": "string",
             "enum": ["data", "control", "conditional"]
           },
+          "decision": {"type": ["string", "null"]},
           "from": {
             "type": "object",
             "additionalProperties": false,

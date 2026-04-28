@@ -106,12 +106,14 @@ fn topo_order_is_dependency_sensitive() {
             Edge {
                 id: None,
                 kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
             },
             Edge {
                 id: None,
                 kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "c".to_string(), port: "in".to_string() },
             },
@@ -147,6 +149,7 @@ fn property_edge_target_validation() {
     graph.edges.push(Edge {
         id: None,
         kind: EdgeKind::Data,
+        decision: None,
         from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
         to: PortRef { node_id: "missing".to_string(), port: "in".to_string() },
     });
@@ -201,6 +204,7 @@ fn base_graph() -> Graph {
         edges: vec![Edge {
             id: None,
             kind: EdgeKind::Data,
+            decision: None,
             from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
             to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
         }],
@@ -219,6 +223,7 @@ fn graph_for_code(code: &str) -> Graph {
             g.edges.push(Edge {
                 id: None,
                 kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: "missing".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
@@ -230,6 +235,7 @@ fn graph_for_code(code: &str) -> Graph {
             g.edges.push(Edge {
                 id: None,
                 kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: "source".to_string(), port: "missing".to_string() },
                 to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
             });
@@ -249,12 +255,14 @@ fn graph_for_code(code: &str) -> Graph {
                     Edge {
                         id: None,
                         kind: EdgeKind::Data,
+                        decision: None,
                         from: PortRef { node_id: "a".to_string(), port: "out".to_string() },
                         to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
                     },
                     Edge {
                         id: None,
                         kind: EdgeKind::Data,
+                        decision: None,
                         from: PortRef { node_id: "b".to_string(), port: "out".to_string() },
                         to: PortRef { node_id: "a".to_string(), port: "in".to_string() },
                     },
@@ -313,6 +321,7 @@ fn graph_for_code(code: &str) -> Graph {
             g.nodes.push(Node {
                 id: "dep".to_string(),
                 kind: NodeKind::Const,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec!["in".to_string()],
                 outputs: vec![FileOutput {
                     name: "out".to_string(),
@@ -351,6 +360,7 @@ fn graph_for_code(code: &str) -> Graph {
                 edges: vec![Edge {
                     id: None,
                     kind: EdgeKind::Data,
+                    decision: None,
                     from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
                     to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
                 }],
@@ -422,6 +432,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Const,
+        semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: std::mem::take(&mut inputs),
         outputs: vec![FileOutput { name: name.to_string(), path: format!("{id}/{name}.txt") }],
         params: bijux_dag_core::ParamValue::default(),
@@ -448,6 +459,7 @@ fn chain_graph(len: usize) -> Graph {
             edges.push(Edge {
                 id: None,
                 kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: format!("n{}", idx - 1), port: "out".to_string() },
                 to: PortRef { node_id: id, port: "in".to_string() },
             });

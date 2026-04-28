@@ -1,6 +1,8 @@
 //! DAG canonicalization entrypoints and helpers.
 
-use crate::{BranchSpec, EdgeKind, Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic};
+use crate::{
+    BranchSpec, EdgeKind, Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic,
+};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use unicode_normalization::UnicodeNormalization;
@@ -25,9 +27,16 @@ impl Graph {
             }
             if let Some(branch) = &node.branch {
                 node.branch = Some(BranchSpec {
-                    expression: normalize_identity_text(&branch.expression),
-                    true_port: normalize_identity_text(&branch.true_port),
-                    false_port: normalize_identity_text(&branch.false_port),
+                    decisions: branch
+                        .decisions
+                        .iter()
+                        .map(|decision| normalize_identity_text(decision))
+                        .collect(),
+                    default_decision: branch
+                        .default_decision
+                        .as_ref()
+                        .map(|decision| normalize_identity_text(decision)),
+                    decision_output: normalize_identity_text(&branch.decision_output),
                 });
             }
         }
@@ -35,6 +44,9 @@ impl Graph {
         for edge in &mut edges {
             if let Some(id) = &edge.id {
                 edge.id = Some(normalize_identity_text(id));
+            }
+            if let Some(decision) = &edge.decision {
+                edge.decision = Some(normalize_identity_text(decision));
             }
             edge.from.node_id = normalize_identity_text(&edge.from.node_id);
             edge.from.port = normalize_identity_text(&edge.from.port);
@@ -50,6 +62,9 @@ impl Graph {
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
             node.tags.sort();
+            if let Some(branch) = &mut node.branch {
+                branch.decisions.sort();
+            }
             if let Some(resources) = &node.resources {
                 if resources.cpu == 0 && resources.mem_mb == 0 {
                     node.resources = None;
@@ -65,6 +80,7 @@ impl Graph {
                 &left.to.node_id,
                 &left.to.port,
                 &left.id,
+                &left.decision,
             )
                 .cmp(&(
                 edge_kind_order(&right.kind),
@@ -73,6 +89,7 @@ impl Graph {
                 &right.to.node_id,
                 &right.to.port,
                 &right.id,
+                &right.decision,
             ))
         });
 

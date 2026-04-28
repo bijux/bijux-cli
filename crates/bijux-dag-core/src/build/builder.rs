@@ -1,7 +1,7 @@
 use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
     parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphMeta, Node,
-    NodeKind, ParamValue, PortRef, Resources, RetryPolicy, TriggerRule,
+    NodeKind, ParamValue, PortRef, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -61,6 +61,7 @@ impl DagBuilder {
         self.edges.push(Edge {
             id: None,
             kind: EdgeKind::Data,
+            decision: None,
             from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
             to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
         });
@@ -87,6 +88,7 @@ impl DagBuilder {
 pub struct NodeBuilder {
     id: String,
     kind: NodeKind,
+    semantic_kind: SemanticNodeKind,
     inputs: Vec<String>,
     outputs: Vec<FileOutput>,
     params: ParamValue,
@@ -106,6 +108,7 @@ impl Default for NodeBuilder {
         Self {
             id: String::new(),
             kind: NodeKind::Const,
+            semantic_kind: SemanticNodeKind::Task,
             inputs: Vec::new(),
             outputs: Vec::new(),
             params: ParamValue::Literal(Value::Null),
@@ -125,6 +128,11 @@ impl Default for NodeBuilder {
 impl NodeBuilder {
     pub fn new(id: &str, kind: NodeKind) -> Self {
         Self { id: id.to_string(), kind, ..Self::default() }
+    }
+
+    pub fn semantic_kind(mut self, value: SemanticNodeKind) -> Self {
+        self.semantic_kind = value;
+        self
     }
 
     pub fn input(mut self, name: &str) -> Self {
@@ -171,6 +179,7 @@ impl NodeBuilder {
         Node {
             id: self.id,
             kind: self.kind,
+            semantic_kind: self.semantic_kind,
             inputs: self.inputs,
             outputs: self.outputs,
             params: self.params,
