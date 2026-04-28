@@ -5,10 +5,11 @@ use bijux_dag_runtime::simulated_platform::{
     cancellation_delivered_in_time, check_scheduler_admission,
     check_worker_version_compatibility, validate_worker_identity, worker_alive,
     validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
-    PlacementHint, QueuePartition, ReassignmentRule, SchedulerScalingPlan, TaskLeaseSemantics,
-    TenantConcurrencyQuota, TenantQueueIsolationPolicy, TenantSchedulerAdmission, WorkLease,
-    WorkerCapabilities, WorkerHeartbeat, WorkerPool, WorkerPoolCapabilityRequest,
-    WorkerRegistration, WorkerVersionCompatibilityRule,
+    MutualAuthDesignNote, PlacementHint, QueuePartition, ReassignmentRule,
+    SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota,
+    TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain, WorkLease,
+    WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
+    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -180,6 +181,28 @@ struct PreemptionReport {
     preserve_attempt_lineage: bool,
     gaps: Vec<String>,
     preemption_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct TrustSimulation {
+    identity: WorkerIdentity,
+    bootstrap: WorkerBootstrapTrustFlow,
+    trust_domain: TrustDomain,
+    mutual_auth: MutualAuthDesignNote,
+    enrollment_approved: bool,
+    attested_image: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct TrustReport {
+    worker_id: String,
+    trust_domain: String,
+    transport: String,
+    enrollment_approved: bool,
+    attested_image: bool,
+    mutual_auth_required: bool,
+    gaps: Vec<String>,
+    trust_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -554,6 +577,55 @@ fn preemption_payload(simulation: PreemptionSimulation) -> (serde_json::Value, b
     (serde_json::to_value(report).expect("preemption report"), ok)
 }
 
+fn trust_payload(simulation: TrustSimulation) -> (serde_json::Value, bool) {
+    let TrustSimulation { identity, bootstrap, trust_domain, mutual_auth, enrollment_approved, attested_image } =
+        simulation;
+    let identity_valid = validate_worker_identity(&identity).is_ok();
+    let trust_domain_name = format!(
+        "{}/{}/{}",
+        trust_domain.tenant, trust_domain.environment, trust_domain.execution_backend
+    );
+    let mut gaps = Vec::new();
+    if !identity_valid {
+        gaps.push("worker trust flow requires a valid stable worker identity".to_string());
+    }
+    if bootstrap.worker_id != identity.worker_id {
+        gaps.push("worker bootstrap flow must bind to the same worker identity".to_string());
+    }
+    if bootstrap.trust_domain != trust_domain_name {
+        gaps.push("worker bootstrap flow is bound to a different trust domain".to_string());
+    }
+    if identity.backend_kind != trust_domain.execution_backend {
+        gaps.push("worker backend kind does not match the declared trust domain backend".to_string());
+    }
+    if !enrollment_approved {
+        gaps.push("ephemeral worker enrollment is not approved".to_string());
+    }
+    if !attested_image {
+        gaps.push("worker image provenance is not attested".to_string());
+    }
+    let mutual_auth_required =
+        mutual_auth.requirement.contains("mutual") || mutual_auth.requirement.contains("mTLS");
+    if mutual_auth.worker_identity != identity.worker_id {
+        gaps.push("mutual-auth contract references a different worker identity".to_string());
+    }
+    if !mutual_auth_required {
+        gaps.push("worker bootstrap must require mutual authentication".to_string());
+    }
+    let report = TrustReport {
+        worker_id: identity.worker_id,
+        trust_domain: trust_domain_name,
+        transport: mutual_auth.transport,
+        enrollment_approved,
+        attested_image,
+        mutual_auth_required,
+        trust_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.trust_ready;
+    (serde_json::to_value(report).expect("trust report"), ok)
+}
+
 pub(crate) fn handle_fleet_command(
     cli: &DagCli,
     command: &FleetCommands,
@@ -594,6 +666,11 @@ pub(crate) fn handle_fleet_command(
             let (payload, ok) = preemption_payload(simulation);
             ("dag.fleet.preemption", payload, ok)
         }
+        FleetCommands::Trust { simulation } => {
+            let simulation: TrustSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = trust_payload(simulation);
+            ("dag.fleet.trust", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -618,13 +695,14 @@ mod tests {
         autoscale_payload, capability_payload, drain_payload, registration_payload,
         warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
         DrainSimulation, IsolationSimulation, PreemptionSimulation, RegistrationSimulation,
-        WarmPoolSimulation, preemption_payload,
+        TrustSimulation, WarmPoolSimulation, preemption_payload, trust_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        LivenessPolicy, PlacementHint, QueuePartition, SchedulerScalingPlan, TaskLeaseSemantics,
-        ReassignmentRule, TenantConcurrencyQuota, TenantId, TenantQueueIsolationPolicy,
-        TenantSchedulerAdmission, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
-        WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
+        LivenessPolicy, MutualAuthDesignNote, PlacementHint, QueuePartition, ReassignmentRule,
+        SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota, TenantId,
+        TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain,
+        WorkLease, WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
+        WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
     };
     use std::collections::BTreeMap;
 
@@ -1054,6 +1132,72 @@ mod tests {
             },
         };
         let (payload, ok) = preemption_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
+    }
+
+    #[test]
+    fn trust_accepts_enrolled_and_attested_worker_bootstrap() {
+        let simulation = TrustSimulation {
+            identity: WorkerIdentity {
+                worker_id: "worker-a".to_string(),
+                worker_version: "1.5.0".to_string(),
+                backend_kind: "kubernetes".to_string(),
+                labels: BTreeMap::new(),
+            },
+            bootstrap: WorkerBootstrapTrustFlow {
+                worker_id: "worker-a".to_string(),
+                enrollment_token_id: "token-1".to_string(),
+                trust_domain: "atlas/prod/kubernetes".to_string(),
+            },
+            trust_domain: TrustDomain {
+                tenant: "atlas".to_string(),
+                environment: "prod".to_string(),
+                execution_backend: "kubernetes".to_string(),
+            },
+            mutual_auth: MutualAuthDesignNote {
+                control_plane_identity: "scheduler.prod".to_string(),
+                worker_identity: "worker-a".to_string(),
+                transport: "grpc".to_string(),
+                requirement: "mutual tls required".to_string(),
+            },
+            enrollment_approved: true,
+            attested_image: true,
+        };
+        let (payload, ok) = trust_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["trust_ready"], true);
+    }
+
+    #[test]
+    fn trust_flags_unapproved_or_mismatched_worker_bootstrap() {
+        let simulation = TrustSimulation {
+            identity: WorkerIdentity {
+                worker_id: String::new(),
+                worker_version: "1.5.0".to_string(),
+                backend_kind: "remote".to_string(),
+                labels: BTreeMap::new(),
+            },
+            bootstrap: WorkerBootstrapTrustFlow {
+                worker_id: "worker-b".to_string(),
+                enrollment_token_id: "token-1".to_string(),
+                trust_domain: "atlas/prod/kubernetes".to_string(),
+            },
+            trust_domain: TrustDomain {
+                tenant: "atlas".to_string(),
+                environment: "prod".to_string(),
+                execution_backend: "kubernetes".to_string(),
+            },
+            mutual_auth: MutualAuthDesignNote {
+                control_plane_identity: "scheduler.prod".to_string(),
+                worker_identity: "worker-c".to_string(),
+                transport: "http".to_string(),
+                requirement: "optional".to_string(),
+            },
+            enrollment_approved: false,
+            attested_image: false,
+        };
+        let (payload, ok) = trust_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
     }

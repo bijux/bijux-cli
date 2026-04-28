@@ -500,6 +500,7 @@ pub(crate) enum FleetCommands {
     WarmPool { simulation: PathBuf },
     Isolation { simulation: PathBuf },
     Preemption { simulation: PathBuf },
+    Trust { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
