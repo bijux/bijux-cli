@@ -52,6 +52,39 @@ struct TagsReport {
     missing_dimensions: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct CostNodeEstimate {
+    node_id: String,
+    cpu_cores: u32,
+    memory_gb: f64,
+    timeout_ms: u64,
+    max_attempts: u32,
+    estimated_cost: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct WorkflowCostReport {
+    workflow_name: String,
+    estimated_total_cost: f64,
+    cpu_core_hour_rate: f64,
+    memory_gb_hour_rate: f64,
+    estimable_nodes: usize,
+    nodes_missing_estimate_inputs: Vec<String>,
+    node_estimates: Vec<CostNodeEstimate>,
+}
+
+#[derive(Debug, Serialize)]
+struct AlertRoutingReport {
+    workflow_name: String,
+    event: String,
+    criticality: Option<String>,
+    owners: Vec<String>,
+    primary_targets: Vec<String>,
+    secondary_targets: Vec<String>,
+    escalation_mode: String,
+    gaps: Vec<String>,
+}
+
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
     let input = read_file(path)?;
     parse_graph(&input)
@@ -285,6 +318,100 @@ fn tags_payload(dag: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
     ))
 }
 
+fn cost_payload(
+    dag: &Path,
+    cpu_core_hour_rate: f64,
+    memory_gb_hour_rate: f64,
+) -> Result<(serde_json::Value, bool), ExitCode> {
+    let graph = load_graph(dag)?;
+    let mut node_estimates = Vec::new();
+    let mut missing = Vec::new();
+    let mut total = 0.0_f64;
+    for node in &graph.nodes {
+        let Some(resources) = &node.resources else {
+            missing.push(node.id.clone());
+            continue;
+        };
+        let Some(timeout_ms) = node.timeout_ms else {
+            missing.push(node.id.clone());
+            continue;
+        };
+        let attempts = node.retry.max_attempts.max(1);
+        let hours = timeout_ms as f64 / 3_600_000.0;
+        let memory_gb = resources.mem_mb as f64 / 1024.0;
+        let estimate = (resources.cpu as f64 * cpu_core_hour_rate * hours
+            + memory_gb * memory_gb_hour_rate * hours)
+            * attempts as f64;
+        total += estimate;
+        node_estimates.push(CostNodeEstimate {
+            node_id: node.id.clone(),
+            cpu_cores: resources.cpu,
+            memory_gb,
+            timeout_ms,
+            max_attempts: attempts,
+            estimated_cost: estimate,
+        });
+    }
+    let report = WorkflowCostReport {
+        workflow_name: graph_name(&graph),
+        estimated_total_cost: total,
+        cpu_core_hour_rate,
+        memory_gb_hour_rate,
+        estimable_nodes: node_estimates.len(),
+        nodes_missing_estimate_inputs: missing.clone(),
+        node_estimates,
+    };
+    Ok((serde_json::to_value(report).map_err(|_| ExitCode::from(3))?, missing.is_empty()))
+}
+
+fn alerts_payload(dag: &Path, event: &str) -> Result<(serde_json::Value, bool), ExitCode> {
+    let graph = load_graph(dag)?;
+    let owners = graph
+        .meta
+        .as_ref()
+        .map(|meta| meta.owners.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|owner| !owner.trim().is_empty())
+        .collect::<Vec<_>>();
+    let criticality = criticality_tag(&graph_tags(&graph));
+    let mut gaps = Vec::new();
+    if owners.is_empty() {
+        gaps.push("alert routing requires at least one owner".to_string());
+    }
+    let escalation_mode = match criticality.as_deref() {
+        Some("critical") => "page-immediately",
+        Some("high") => "page-during-business-hours",
+        _ => "ticket-and-email",
+    }
+    .to_string();
+    let primary_targets = owners
+        .iter()
+        .map(|owner| {
+            if escalation_mode.starts_with("page") {
+                format!("pager:{owner}")
+            } else {
+                format!("email:{owner}")
+            }
+        })
+        .collect::<Vec<_>>();
+    let secondary_targets = owners
+        .iter()
+        .map(|owner| format!("slack:{owner}"))
+        .collect::<Vec<_>>();
+    let report = AlertRoutingReport {
+        workflow_name: graph_name(&graph),
+        event: event.to_string(),
+        criticality,
+        owners,
+        primary_targets,
+        secondary_targets,
+        escalation_mode,
+        gaps: gaps.clone(),
+    };
+    Ok((serde_json::to_value(report).map_err(|_| ExitCode::from(3))?, gaps.is_empty()))
+}
+
 pub(crate) fn handle_governance_command(
     cli: &DagCli,
     command: &GovernanceCommands,
@@ -359,8 +486,56 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
-        GovernanceCommands::Cost { .. }
-        | GovernanceCommands::Alerts { .. }
+        GovernanceCommands::Cost {
+            dag,
+            cpu_core_hour_rate,
+            memory_gb_hour_rate,
+        } => {
+            let (payload, ok) = cost_payload(dag, *cpu_core_hour_rate, *memory_gb_hour_rate)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.cost",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_cost_missing_estimate_inputs",
+                            "severity":"error",
+                            "message":"workflow cost estimate is incomplete because some nodes are missing resources or timeouts",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        GovernanceCommands::Alerts { dag, event } => {
+            let (payload, ok) = alerts_payload(dag, event)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.alerts",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_alert_routing_gap",
+                            "severity":"error",
+                            "message":"workflow alert routing is incomplete because ownership metadata is missing",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
         | GovernanceCommands::PolicyCheck { .. }
         | GovernanceCommands::CatalogExport { .. }
         | GovernanceCommands::AuditEvent { .. }
@@ -509,6 +684,82 @@ mod tests {
         let cli = quiet_json_cli(GovernanceCommands::Tags { dag: dag.clone() });
         let exit = handle_governance_command(&cli, &GovernanceCommands::Tags { dag })
             .expect_err("tag taxonomy should fail");
+        assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_cost_surface_estimates_budgeted_workflow_cost() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"costed","owners":["platform@bijux"],"tags":["high","prod","etl"]},
+              "nodes":[
+                {"id":"extract","kind":"const","inputs":[],"outputs":[],"timeout_ms":600000,"resources":{"cpu":2,"mem_mb":2048},"retry":{"max_attempts":2,"backoff_ms":1000},"params":{"value":"x"}}
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("costed graph");
+        let cli = quiet_json_cli(GovernanceCommands::Cost {
+            dag: dag.clone(),
+            cpu_core_hour_rate: 0.04,
+            memory_gb_hour_rate: 0.005,
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Cost {
+                dag,
+                cpu_core_hour_rate: 0.04,
+                memory_gb_hour_rate: 0.005,
+            },
+        )
+        .expect("cost");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_alert_surface_routes_critical_failures_to_pager_targets() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        write_valid_graph(&dag);
+        let cli = quiet_json_cli(GovernanceCommands::Alerts {
+            dag: dag.clone(),
+            event: "run_failed".to_string(),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Alerts { dag, event: "run_failed".to_string() },
+        )
+        .expect("alerts");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_alert_surface_rejects_unowned_workflow() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"orphan","owners":[],"tags":["high","prod"]},
+              "nodes":[{"id":"extract","kind":"const","inputs":[],"outputs":[],"params":{"value":"x"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("orphan graph");
+        let cli = quiet_json_cli(GovernanceCommands::Alerts {
+            dag: dag.clone(),
+            event: "run_failed".to_string(),
+        });
+        let exit = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Alerts { dag, event: "run_failed".to_string() },
+        )
+        .expect_err("missing ownership should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 }
