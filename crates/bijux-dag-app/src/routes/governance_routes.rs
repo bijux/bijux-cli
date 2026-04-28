@@ -159,6 +159,19 @@ struct PromotionSimulation {
     signed_artifacts: Vec<SignedArtifactManifest>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ComplianceSimulation {
+    bundle: ComplianceEvidenceBundle,
+    gate: ProvenancePolicyGate,
+    export_profile: String,
+    #[serde(default)]
+    run_attestation: Option<RunProvenanceAttestation>,
+    #[serde(default)]
+    environment_attestation: Option<EnvironmentAttestation>,
+    #[serde(default)]
+    signed_artifacts: Vec<SignedArtifactManifest>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 enum ArtifactTrustLabel {
     Unverified,
@@ -204,6 +217,22 @@ struct SignedArtifactManifest {
     signature_algorithm: String,
     signer_identity: String,
     signature: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct ComplianceEvidenceBundle {
+    bundle_id: String,
+    run_id: String,
+    artifacts: Vec<String>,
+    attestations: Vec<String>,
+    immutable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct EvidenceExport {
+    bundle_id: String,
+    export_profile: String,
+    immutable_hash: String,
 }
 
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
@@ -733,6 +762,35 @@ fn promotion_payload(simulation: &Path) -> Result<(serde_json::Value, bool), Exi
     Ok((payload, ready))
 }
 
+fn compliance_payload(simulation: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
+    let simulation: ComplianceSimulation = parse_json_file(simulation)?;
+    let (attestation_verified, attestation_reasons) = verify_attestations(
+        simulation.run_attestation.as_ref(),
+        simulation.environment_attestation.as_ref(),
+        &simulation.signed_artifacts,
+        &simulation.gate,
+    );
+    let bundle_bytes = serde_json::to_vec(&simulation.bundle).map_err(|_| ExitCode::from(3))?;
+    let export = EvidenceExport {
+        bundle_id: simulation.bundle.bundle_id.clone(),
+        export_profile: simulation.export_profile,
+        immutable_hash: sha256_hex(&bundle_bytes),
+    };
+    let ready = attestation_verified
+        && simulation.bundle.immutable
+        && !simulation.bundle.artifacts.is_empty()
+        && !simulation.bundle.attestations.is_empty();
+    let payload = json!({
+        "bundle": simulation.bundle,
+        "export": export,
+        "attestation_verified": attestation_verified,
+        "attestation_reasons": attestation_reasons,
+        "signed_artifact_count": simulation.signed_artifacts.len(),
+        "compliance_ready": ready,
+    });
+    Ok((payload, ready))
+}
+
 pub(crate) fn handle_governance_command(
     cli: &DagCli,
     command: &GovernanceCommands,
@@ -941,7 +999,29 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
-        | GovernanceCommands::Compliance { .. } => Err(ExitCode::from(2)),
+        GovernanceCommands::Compliance { simulation } => {
+            let (payload, ok) = compliance_payload(simulation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.compliance",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_compliance_bundle_incomplete",
+                            "severity":"error",
+                            "message":"compliance evidence bundle is not complete enough for export",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
     }
 }
 
@@ -1380,6 +1460,57 @@ mod tests {
             &GovernanceCommands::Promotion { simulation },
         )
         .expect_err("promotion should fail");
+        assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_compliance_surface_exports_immutable_evidence_bundle() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("compliance.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "bundle":{"bundle_id":"bundle-01","run_id":"run-01","artifacts":["report"],"attestations":["run-attestation","env-attestation"],"immutable":true},
+              "gate":{"require_run_attestation":true,"require_environment_attestation":true,"require_signed_artifacts":true},
+              "export_profile":"regulated-audit",
+              "run_attestation":{"run_id":"run-01","dag_snapshot_id":"snap-1","plan_fingerprint":"fp","policy_bundle_version":"std-1","binary_build_ids":["core-1"],"output_artifact_ids":["report"]},
+              "environment_attestation":{"run_id":"run-01","execution_backend":"kubernetes","capability_class":"standard","trust_domain":"bijux-prod"},
+              "signed_artifacts":[{"artifact_id":"report","signature_algorithm":"ed25519","signer_identity":"bijux-release","signature":"sig"}]
+            }"#,
+        )
+        .expect("compliance simulation");
+        let cli = quiet_json_cli(GovernanceCommands::Compliance {
+            simulation: simulation.clone(),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Compliance { simulation },
+        )
+        .expect("compliance");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_compliance_surface_rejects_mutable_or_incomplete_bundle() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("compliance.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "bundle":{"bundle_id":"bundle-01","run_id":"run-01","artifacts":[],"attestations":[],"immutable":false},
+              "gate":{"require_run_attestation":true,"require_environment_attestation":false,"require_signed_artifacts":false},
+              "export_profile":"regulated-audit"
+            }"#,
+        )
+        .expect("compliance simulation");
+        let cli = quiet_json_cli(GovernanceCommands::Compliance {
+            simulation: simulation.clone(),
+        });
+        let exit = handle_governance_command(
+            &cli,
+            &GovernanceCommands::Compliance { simulation },
+        )
+        .expect_err("compliance should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 }
