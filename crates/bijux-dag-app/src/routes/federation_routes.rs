@@ -5,6 +5,7 @@ use bijux_dag_runtime::simulated_platform::{
     ConsistencyBoundaryNote, ConsistencyClass, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
     GeoReadyAcceptanceGate, GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation,
     RegionLineageRecord, RegionPolicyOverlay, RegionQueuePartition, RegionScheduleRule,
+    replay_trust_warnings, CrossDomainReplaySafety, ReplayTrustWarning, RunProvenanceAttestation,
     WriteRoutingRule,
 };
 use serde::de::DeserializeOwned;
@@ -79,6 +80,22 @@ struct SovereigntyReport {
     consistency_class: String,
     consistency_catalog_size: usize,
     regulatory_profile: String,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ReplaySimulation {
+    run_id: String,
+    safety: CrossDomainReplaySafety,
+    baseline: RunProvenanceAttestation,
+    candidate: RunProvenanceAttestation,
+}
+
+#[derive(Debug, Serialize)]
+struct ReplayReport {
+    replay_safe: bool,
+    warning_count: usize,
+    warnings: ReplayTrustWarning,
     gaps: Vec<String>,
 }
 
@@ -235,6 +252,20 @@ fn sovereignty_payload(simulation: &Path) -> Result<SovereigntyReport, ExitCode>
     })
 }
 
+fn replay_payload(simulation: &Path) -> Result<ReplayReport, ExitCode> {
+    let simulation: ReplaySimulation = load_json_file(simulation)?;
+    let replay_safe = bijux_dag_runtime::simulated_platform::cross_domain_replay_safe(&simulation.safety);
+    let warnings = replay_trust_warnings(&simulation.run_id, &simulation.baseline, &simulation.candidate);
+    let mut gaps = Vec::new();
+    if !replay_safe {
+        gaps.push("cross-domain replay safety contract does not hold".to_string());
+    }
+    if !warnings.warnings.is_empty() {
+        gaps.push("replay provenance changed across domains".to_string());
+    }
+    Ok(ReplayReport { warning_count: warnings.warnings.len(), warnings, replay_safe, gaps })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -255,6 +286,10 @@ pub(crate) fn handle_federation_command(
         FederationCommands::Sovereignty { simulation } => {
             let payload = serde_json::to_value(sovereignty_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.sovereignty", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::Replay { simulation } => {
+            let payload = serde_json::to_value(replay_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.replay", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -516,6 +551,94 @@ mod tests {
         for expected in [
             "requested region is not allowed to perform writes for this resource",
             "regulated region cannot rely on eventually replicated writes for this resource",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_replay_accepts_stable_cross_domain_provenance() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("replay.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-1",
+              "safety":{"artifact_compatible":true,"policy_compatible":true,"backend_compatible":true},
+              "baseline":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"dag-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"bundle-v1",
+                "output_digests":["sha256:o1"],
+                "binaries":[{"component":"Scheduler","version":"1.0.0","build_id":"build-a","source_revision":"rev-a","build_timestamp_utc":"2026-04-28T00:00:00Z"}],
+                "plugins":[{"plugin_name":"builtin-python","version":"1.0.0","source":"registry","trust_tier":"Official","approved":true}],
+                "environment":{"backend":"kubernetes","capability_class":"standard","trust_domain":"prod-eu"}
+              },
+              "candidate":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"dag-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"bundle-v1",
+                "output_digests":["sha256:o1"],
+                "binaries":[{"component":"Scheduler","version":"1.0.0","build_id":"build-a","source_revision":"rev-a","build_timestamp_utc":"2026-04-28T00:00:00Z"}],
+                "plugins":[{"plugin_name":"builtin-python","version":"1.0.0","source":"registry","trust_tier":"Official","approved":true}],
+                "environment":{"backend":"kubernetes","capability_class":"standard","trust_domain":"prod-eu"}
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::Replay { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::Replay { simulation: simulation.clone() },
+        )
+        .expect("replay");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::replay_payload(&simulation).expect("report");
+        assert!(report.replay_safe);
+        assert_eq!(report.warning_count, 0);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_replay_flags_cross_domain_provenance_drift() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("replay.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-1",
+              "safety":{"artifact_compatible":true,"policy_compatible":false,"backend_compatible":true},
+              "baseline":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"dag-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"bundle-v1",
+                "output_digests":["sha256:o1"],
+                "binaries":[{"component":"Scheduler","version":"1.0.0","build_id":"build-a","source_revision":"rev-a","build_timestamp_utc":"2026-04-28T00:00:00Z"}],
+                "plugins":[{"plugin_name":"builtin-python","version":"1.0.0","source":"registry","trust_tier":"Official","approved":true}],
+                "environment":{"backend":"kubernetes","capability_class":"standard","trust_domain":"prod-eu"}
+              },
+              "candidate":{
+                "run_id":"run-1",
+                "dag_snapshot_id":"dag-1",
+                "plan_fingerprint":"plan-1",
+                "policy_bundle_version":"bundle-v2",
+                "output_digests":["sha256:o2"],
+                "binaries":[{"component":"Scheduler","version":"1.1.0","build_id":"build-b","source_revision":"rev-b","build_timestamp_utc":"2026-04-29T00:00:00Z"}],
+                "plugins":[{"plugin_name":"builtin-python","version":"1.0.0","source":"registry","trust_tier":"Official","approved":false}],
+                "environment":{"backend":"kubernetes","capability_class":"standard","trust_domain":"prod-us"}
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::replay_payload(&simulation).expect("report");
+        assert!(!report.replay_safe);
+        assert!(report.warning_count > 0);
+        for expected in [
+            "cross-domain replay safety contract does not hold",
+            "replay provenance changed across domains",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
