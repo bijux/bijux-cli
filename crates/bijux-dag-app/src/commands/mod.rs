@@ -171,6 +171,8 @@ pub(crate) enum Commands {
         #[arg(long)]
         dry_run: bool,
         #[arg(long)]
+        sandbox: bool,
+        #[arg(long)]
         prove: bool,
         #[arg(long)]
         reuse_cache: bool,

@@ -16,6 +16,7 @@ pub(crate) fn handle_replay_command(
     run_dir: &Path,
     out: &Path,
     dry_run: bool,
+    sandbox: bool,
     prove: bool,
     reuse_cache: bool,
     cache: CacheModeArg,
@@ -62,17 +63,18 @@ pub(crate) fn handle_replay_command(
     if dry_run {
         let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
         let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
-        let plan = json!({
-            "source_run_dir": run_dir,
-            "target_out_dir": out,
-            "selectors": {
-                "select": dry_select,
-                "exclude": dry_exclude
-            },
-            "cache_mode": format!("{cache_mode:?}"),
-            "jobs": jobs,
-            "prove_requested": prove
-        });
+        let plan = crate::replay_service::replay_dry_run_plan(
+            run_dir,
+            out,
+            &snapshot,
+            source_run_id.as_deref(),
+            &dry_select,
+            &dry_exclude,
+            &format!("{cache_mode:?}"),
+            jobs,
+            prove,
+            sandbox,
+        )?;
         let response = ReplayCommandResponse {
             run_dir: None,
             dry_run_plan: Some(plan.clone()),
@@ -90,6 +92,9 @@ pub(crate) fn handle_replay_command(
         }
         println!("{}", serde_json::to_string_pretty(&plan).unwrap());
         return Ok(ExitCode::SUCCESS);
+    }
+    if sandbox && out.starts_with(run_dir) {
+        return Err(ExitCode::from(3));
     }
     let options = RuntimeConfig {
         jobs,
@@ -136,7 +141,8 @@ pub(crate) fn handle_replay_command(
             "source_evidence_gaps": source_evidence_gaps,
             "replay_evidence_gaps": replay_evidence_gaps,
             "source_run_id": read_run_id(run_dir)?,
-            "replay_run_id": read_run_id(&run_path)?
+            "replay_run_id": read_run_id(&run_path)?,
+            "sandbox_mode": if sandbox { "isolated" } else { "standard" }
         }))
     } else {
         None

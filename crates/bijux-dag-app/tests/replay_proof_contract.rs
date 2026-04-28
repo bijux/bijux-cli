@@ -78,12 +78,15 @@ fn replay_dry_run_and_prove_surfaces_are_machine_readable() {
             "--out",
             &output_path_string(&out_dir),
             "--dry-run",
+            "--sandbox",
             "--prove",
         ],
         &root,
     );
     assert!(dry["data"]["dry_run_plan"].is_object());
     assert!(dry["data"]["run_dir"].is_null());
+    assert_eq!(dry["data"]["dry_run_plan"]["sandbox_mode"], "isolated");
+    assert!(dry["data"]["dry_run_plan"]["planned_actions"].is_array());
 
     let proved = run_json(
         &[
