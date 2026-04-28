@@ -10,6 +10,7 @@ config
 dataset
 diff
 doctor
+enterprise
 equivalence-proof
 explain
 export

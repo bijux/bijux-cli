@@ -2,6 +2,7 @@ pub(crate) mod artifact_routes;
 pub(crate) mod dataset_routes;
 pub(crate) mod diagnostics_routes;
 pub(crate) mod diff_routes;
+pub(crate) mod enterprise_routes;
 pub(crate) mod export_import_routes;
 pub(crate) mod federation_routes;
 pub(crate) mod governance_routes;

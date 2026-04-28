@@ -359,6 +359,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Dataset { command } => {
             routes::dataset_routes::handle_dataset_command(&cli, command)
         }
+        Commands::Enterprise { command } => {
+            routes::enterprise_routes::handle_enterprise_command(&cli, command)
+        }
         Commands::Governance { command } => {
             routes::governance_routes::handle_governance_command(&cli, command)
         }

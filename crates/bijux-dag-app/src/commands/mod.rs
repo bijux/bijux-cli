@@ -63,6 +63,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: DatasetCommands,
     },
+    Enterprise {
+        #[command(subcommand)]
+        command: EnterpriseCommands,
+    },
     Governance {
         #[command(subcommand)]
         command: GovernanceCommands,
@@ -462,6 +466,11 @@ pub(crate) enum ArtifactCommands {
 pub(crate) enum DatasetCommands {
     Mapping { simulation: PathBuf },
     Staleness { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum EnterpriseCommands {
+    Webhook { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
