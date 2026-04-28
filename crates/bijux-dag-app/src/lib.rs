@@ -580,6 +580,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "key": key,
                 "eligible": report["eligible"],
                 "reasons": report["reasons"],
+                "taxonomy": report["taxonomy"],
+                "key_components": report["key_components"],
+                "proof_verified": report["proof_verified"],
                 "meta": report["meta"]
             });
             if cli.json {
