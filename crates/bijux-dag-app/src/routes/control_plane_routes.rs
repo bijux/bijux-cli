@@ -147,6 +147,32 @@ struct IdempotencyReport {
     idempotency_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct BackpressureSimulation {
+    #[serde(default)]
+    queue_entries: Vec<DurableRunQueueEntry>,
+    #[serde(default)]
+    queue_partitions: Vec<QueuePartition>,
+    dispatch_lag_ms: u64,
+    ready_worker_slots: usize,
+    high_watermark: usize,
+    max_dispatch_lag_ms: u64,
+    #[serde(default)]
+    hot_tenants: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct BackpressureReport {
+    queue_depth: usize,
+    partitioned_capacity: usize,
+    backlog_within_limit: bool,
+    lag_within_limit: bool,
+    enough_worker_slots: bool,
+    hot_tenants_isolated: bool,
+    gaps: Vec<String>,
+    backpressure_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -414,6 +440,61 @@ fn idempotency_payload(simulation: IdempotencySimulation) -> (serde_json::Value,
     (serde_json::to_value(report).expect("idempotency report"), ok)
 }
 
+fn backpressure_payload(simulation: BackpressureSimulation) -> (serde_json::Value, bool) {
+    let BackpressureSimulation {
+        queue_entries,
+        queue_partitions,
+        dispatch_lag_ms,
+        ready_worker_slots,
+        high_watermark,
+        max_dispatch_lag_ms,
+        hot_tenants,
+    } = simulation;
+    let queue_depth = queue_entries.len();
+    let partitioned_capacity =
+        queue_partitions.iter().map(|partition| partition.max_concurrency as usize).sum::<usize>();
+    let backlog_within_limit =
+        queue_depth <= high_watermark && queue_depth <= partitioned_capacity.max(high_watermark);
+    let lag_within_limit = dispatch_lag_ms <= max_dispatch_lag_ms;
+    let enough_worker_slots = ready_worker_slots >= queue_depth.min(partitioned_capacity.max(1));
+    let assigned_tenants = queue_partitions
+        .iter()
+        .filter_map(|partition| partition.tenant_id.clone())
+        .collect::<BTreeSet<_>>();
+    let hot_tenants_isolated = hot_tenants.iter().all(|tenant| assigned_tenants.contains(tenant));
+    let mut gaps = Vec::new();
+    if queue_entries.is_empty() {
+        gaps.push("backpressure audit requires queued work to evaluate".to_string());
+    }
+    if queue_partitions.is_empty() {
+        gaps.push("backpressure audit requires explicit queue partitions".to_string());
+    }
+    if !backlog_within_limit {
+        gaps.push("queued backlog exceeds the declared control-plane capacity".to_string());
+    }
+    if !lag_within_limit {
+        gaps.push("dispatch lag exceeds the allowed control-plane threshold".to_string());
+    }
+    if !enough_worker_slots {
+        gaps.push("ready worker slots cannot absorb the current queue pressure".to_string());
+    }
+    if !hot_tenants_isolated {
+        gaps.push("hot tenants are not isolated behind explicit queue partitions".to_string());
+    }
+    let report = BackpressureReport {
+        queue_depth,
+        partitioned_capacity,
+        backlog_within_limit,
+        lag_within_limit,
+        enough_worker_slots,
+        hot_tenants_isolated,
+        backpressure_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.backpressure_ready;
+    (serde_json::to_value(report).expect("backpressure report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -449,6 +530,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = idempotency_payload(simulation);
             ("dag.control-plane.idempotency", payload, ok)
         }
+        ControlPlaneCommands::Backpressure { simulation } => {
+            let simulation: BackpressureSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = backpressure_payload(simulation);
+            ("dag.control-plane.backpressure", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -470,9 +556,10 @@ pub(crate) fn handle_control_plane_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        api_payload, leadership_payload, planning_payload, ApiSimulation, LeadershipSimulation,
-        IdempotencySimulation, LeasesSimulation, PlanningSimulation, ShardingSimulation,
-        idempotency_payload, leases_payload, sharding_payload,
+        api_payload, backpressure_payload, leadership_payload, planning_payload, ApiSimulation,
+        BackpressureSimulation, LeadershipSimulation, IdempotencySimulation, LeasesSimulation,
+        PlanningSimulation, ShardingSimulation, idempotency_payload, leases_payload,
+        sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
@@ -832,5 +919,89 @@ mod tests {
         let (payload, ok) = idempotency_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn backpressure_accepts_partitioned_capacity_with_low_lag() {
+        let simulation = BackpressureSimulation {
+            queue_entries: vec![
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-a".to_string(),
+                    run_key: "run-1".to_string(),
+                    created_unix_ms: 100,
+                },
+                DurableRunQueueEntry {
+                    queue_key: "canon/default".to_string(),
+                    tenant_id: Some("canon".to_string()),
+                    schedule_id: "sched-b".to_string(),
+                    run_key: "run-2".to_string(),
+                    created_unix_ms: 200,
+                },
+            ],
+            queue_partitions: vec![
+                QueuePartition {
+                    queue_name: "atlas".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    max_concurrency: 4,
+                },
+                QueuePartition {
+                    queue_name: "canon".to_string(),
+                    tenant_id: Some("canon".to_string()),
+                    max_concurrency: 4,
+                },
+            ],
+            dispatch_lag_ms: 500,
+            ready_worker_slots: 4,
+            high_watermark: 8,
+            max_dispatch_lag_ms: 1_000,
+            hot_tenants: vec!["atlas".to_string(), "canon".to_string()],
+        };
+        let (payload, ok) = backpressure_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["backpressure_ready"], true);
+    }
+
+    #[test]
+    fn backpressure_flags_shared_hotspots_and_queue_saturation() {
+        let simulation = BackpressureSimulation {
+            queue_entries: vec![
+                DurableRunQueueEntry {
+                    queue_key: "atlas/default".to_string(),
+                    tenant_id: Some("atlas".to_string()),
+                    schedule_id: "sched-a".to_string(),
+                    run_key: "run-1".to_string(),
+                    created_unix_ms: 100,
+                },
+                DurableRunQueueEntry {
+                    queue_key: "canon/default".to_string(),
+                    tenant_id: Some("canon".to_string()),
+                    schedule_id: "sched-b".to_string(),
+                    run_key: "run-2".to_string(),
+                    created_unix_ms: 200,
+                },
+                DurableRunQueueEntry {
+                    queue_key: "canon/default".to_string(),
+                    tenant_id: Some("canon".to_string()),
+                    schedule_id: "sched-c".to_string(),
+                    run_key: "run-3".to_string(),
+                    created_unix_ms: 300,
+                },
+            ],
+            queue_partitions: vec![QueuePartition {
+                queue_name: "atlas".to_string(),
+                tenant_id: Some("atlas".to_string()),
+                max_concurrency: 1,
+            }],
+            dispatch_lag_ms: 5_000,
+            ready_worker_slots: 1,
+            high_watermark: 2,
+            max_dispatch_lag_ms: 1_000,
+            hot_tenants: vec!["atlas".to_string(), "canon".to_string()],
+        };
+        let (payload, ok) = backpressure_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
 }
