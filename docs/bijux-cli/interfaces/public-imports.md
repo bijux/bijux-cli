@@ -9,10 +9,13 @@ last_reviewed: 2026-04-06
 
 # Public Imports
 
-This page records preferred import paths for Rust callers that depend on
-`bijux-cli` runtime behavior.
+This page records the import paths `bijux-cli` wants downstream Rust callers to
+prefer.
 
-## Visual Summary
+The reason is simple: integrations stay easier to upgrade when they depend on
+the intended facade instead of deep internal paths.
+
+## Import Map
 
 ```mermaid
 flowchart TB
@@ -20,7 +23,7 @@ flowchart TB
     api --> runtime["runtime interfaces"]
     api --> parser["parser and routing interfaces"]
     api --> output["output interfaces"]
-    caller -.avoid direct reliance on.-> internals["deep internal module paths"]
+    caller -.avoid.-> internals["deep internal module paths"]
 ```
 
 ## Preferred Imports
@@ -37,6 +40,11 @@ flowchart TB
 - import from `api` when building tools or tests against runtime behavior
 - avoid importing private module internals that are not part of facade intent
 - when new facade exports are added, document them in this page
+
+## Reading Rule
+
+Use this page when a Rust integration needs CLI behavior but the correct import
+boundary is still unclear.
 
 ## Code Anchors
 
