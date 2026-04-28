@@ -350,6 +350,13 @@ pub(crate) enum ScheduleCommands {
         #[arg(long)]
         requested_unix_ms: u128,
     },
+    Audit {
+        registry: PathBuf,
+        #[arg(long)]
+        now_unix_ms: u128,
+        #[arg(long, default_value_t = 3)]
+        next_runs: usize,
+    },
     Order { simulation: PathBuf },
     Throttle { simulation: PathBuf },
 }

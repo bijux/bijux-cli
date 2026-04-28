@@ -1,9 +1,10 @@
 use crate::commands::{DagCli, ScheduleCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
-    apply_backfill_throttling, compile_submission_request, dry_run_schedule, materialize_next_runs,
-    validate_schedule_registry, weighted_priority_tie_break_order, BackfillThrottlingPolicy,
-    PriorityClass, ScheduleRegistry, ScheduledSubmission, WeightedPriorityPolicy,
+    apply_backfill_throttling, compile_submission_request, detect_cron_conflicts,
+    dry_run_schedule, materialize_next_runs, validate_schedule_registry,
+    weighted_priority_tie_break_order, BackfillThrottlingPolicy, PriorityClass, ScheduleRegistry,
+    ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -123,6 +124,38 @@ pub(crate) fn handle_schedule_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&request).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Audit { registry, now_unix_ms, next_runs } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let conflicts = detect_cron_conflicts(&registry.definitions);
+            let materialized = registry
+                .definitions
+                .iter()
+                .map(|definition| materialize_next_runs(definition, *now_unix_ms, *next_runs))
+                .collect::<Vec<_>>();
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.audit",
+                    true,
+                    json!({
+                        "conflicts": conflicts,
+                        "materialized_runs": materialized,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({
+                    "conflicts": conflicts,
+                    "materialized_runs": materialized,
+                }))
+                .unwrap()
+            );
             Ok(ExitCode::SUCCESS)
         }
         ScheduleCommands::Order { simulation } => {

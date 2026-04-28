@@ -192,3 +192,15 @@ fn schedule_throttle_returns_success_for_backfill_simulation() {
         .expect("schedule throttle");
     assert_eq!(code, ExitCode::SUCCESS);
 }
+
+#[test]
+fn schedule_audit_returns_success_for_valid_registry() {
+    let (_tmp, registry) = write_registry_fixture();
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Audit { registry, now_unix_ms: 1_000, next_runs: 2 },
+    )
+    .expect("schedule audit");
+    assert_eq!(code, ExitCode::SUCCESS);
+}
