@@ -2,9 +2,9 @@ use crate::commands::{DagCli, ScheduleCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
     apply_backfill_throttling, compile_submission_request, detect_cron_conflicts,
-    dry_run_schedule, materialize_next_runs, validate_schedule_registry,
-    weighted_priority_tie_break_order, BackfillThrottlingPolicy, PriorityClass, ScheduleRegistry,
-    ScheduledSubmission, WeightedPriorityPolicy,
+    deduplicate_trigger_events, dry_run_schedule, evaluate_sla_metrics, materialize_next_runs,
+    validate_schedule_registry, weighted_priority_tie_break_order, BackfillThrottlingPolicy,
+    PriorityClass, ScheduleRegistry, ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -21,6 +21,25 @@ struct BackfillThrottlingSimulation {
     pending_backfill_runs: usize,
     pending_live_runs: usize,
     policy: BackfillThrottlingPolicy,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct TriggerDedupSimulation {
+    events: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SlaSample {
+    observed_ms: u64,
+    expected_ms: u64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SlaSimulation {
+    start_samples: Vec<SlaSample>,
+    finish_samples: Vec<SlaSample>,
+    queue_saturation_count: u64,
+    fairness_drift_count: u64,
 }
 
 fn parse_schedule_registry(path: &std::path::Path) -> Result<ScheduleRegistry, ExitCode> {
@@ -156,6 +175,53 @@ pub(crate) fn handle_schedule_command(
                 }))
                 .unwrap()
             );
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Dedup { events } => {
+            let simulation: TriggerDedupSimulation = parse_json_file(events)?;
+            let decisions = deduplicate_trigger_events(&simulation.events);
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.dedup",
+                    true,
+                    json!({ "decisions": decisions }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&decisions).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Sla { simulation } => {
+            let simulation: SlaSimulation = parse_json_file(simulation)?;
+            let start_samples = simulation
+                .start_samples
+                .iter()
+                .map(|sample| (sample.observed_ms as u128, sample.expected_ms as u128))
+                .collect::<Vec<_>>();
+            let finish_samples = simulation
+                .finish_samples
+                .iter()
+                .map(|sample| (sample.observed_ms as u128, sample.expected_ms as u128))
+                .collect::<Vec<_>>();
+            let metrics = evaluate_sla_metrics(
+                &start_samples,
+                &finish_samples,
+                simulation.queue_saturation_count,
+                simulation.fairness_drift_count,
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.sla",
+                    true,
+                    serde_json::to_value(&metrics).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&metrics).unwrap());
             Ok(ExitCode::SUCCESS)
         }
         ScheduleCommands::Order { simulation } => {

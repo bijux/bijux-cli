@@ -130,6 +130,40 @@ fn write_throttling_simulation_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, simulation)
 }
 
+fn write_dedup_simulation_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let simulation = dir.path().join("schedule-dedup.json");
+    fs::write(
+        &simulation,
+        r#"{
+          "events": ["evt-1", "evt-1", "evt-2"]
+        }"#,
+    )
+    .expect("write dedup simulation");
+    (dir, simulation)
+}
+
+fn write_sla_simulation_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let simulation = dir.path().join("schedule-sla.json");
+    fs::write(
+        &simulation,
+        r#"{
+          "start_samples": [
+            {"observed_ms": 20, "expected_ms": 10},
+            {"observed_ms": 5, "expected_ms": 10}
+          ],
+          "finish_samples": [
+            {"observed_ms": 50, "expected_ms": 40}
+          ],
+          "queue_saturation_count": 2,
+          "fairness_drift_count": 1
+        }"#,
+    )
+    .expect("write sla simulation");
+    (dir, simulation)
+}
+
 #[test]
 fn schedule_validate_returns_success_for_valid_registry() {
     let (_tmp, registry) = write_registry_fixture();
@@ -202,5 +236,23 @@ fn schedule_audit_returns_success_for_valid_registry() {
         &ScheduleCommands::Audit { registry, now_unix_ms: 1_000, next_runs: 2 },
     )
     .expect("schedule audit");
+    assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_dedup_returns_success_for_event_stream() {
+    let (_tmp, events) = write_dedup_simulation_fixture();
+    let cli = quiet_json_cli();
+    let code =
+        handle_schedule_command(&cli, &ScheduleCommands::Dedup { events }).expect("schedule dedup");
+    assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_sla_returns_success_for_metric_simulation() {
+    let (_tmp, simulation) = write_sla_simulation_fixture();
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(&cli, &ScheduleCommands::Sla { simulation })
+        .expect("schedule sla");
     assert_eq!(code, ExitCode::SUCCESS);
 }

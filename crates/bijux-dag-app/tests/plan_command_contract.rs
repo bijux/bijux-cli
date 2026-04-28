@@ -306,3 +306,23 @@ fn schedule_audit_supports_json_output() {
     let code = dag_run(&matches).expect("run");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn schedule_dedup_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let events = dir.path().join("events.json");
+    fs::write(&events, r#"{ "events": ["evt-1", "evt-1", "evt-2"] }"#).expect("write events");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "dedup",
+            events.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}

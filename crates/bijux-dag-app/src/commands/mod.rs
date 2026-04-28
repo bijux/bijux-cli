@@ -357,6 +357,8 @@ pub(crate) enum ScheduleCommands {
         #[arg(long, default_value_t = 3)]
         next_runs: usize,
     },
+    Dedup { events: PathBuf },
+    Sla { simulation: PathBuf },
     Order { simulation: PathBuf },
     Throttle { simulation: PathBuf },
 }
