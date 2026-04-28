@@ -1,5 +1,6 @@
 use crate::commands::{DagCli, GovernanceCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
+use bijux_dag_artifacts::hash::sha256_hex;
 use bijux_dag_core::{compile_graph, node_io_contract, NodeInputSource, Severity};
 use bijux_dag_core::node::derive_interface;
 use serde::Serialize;
@@ -118,6 +119,31 @@ struct CatalogRunRecord {
     run_id: String,
     status: String,
     artifact_count: usize,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AuditEventSimulation {
+    actor: String,
+    action: String,
+    workflow_id: String,
+    reason: String,
+    unix_ms: u128,
+    #[serde(default)]
+    targets: Vec<String>,
+    #[serde(default)]
+    fields: BTreeMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+struct AuditEventRecord {
+    event_id: String,
+    actor: String,
+    action: String,
+    workflow_id: String,
+    reason: String,
+    unix_ms: u128,
+    targets: Vec<String>,
+    fields: BTreeMap<String, serde_json::Value>,
 }
 
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
@@ -558,6 +584,35 @@ fn catalog_export_payload(
     }))
 }
 
+fn audit_event_payload(simulation: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
+    let simulation: AuditEventSimulation = parse_json_file(simulation)?;
+    let ok = !simulation.actor.trim().is_empty()
+        && !simulation.action.trim().is_empty()
+        && !simulation.workflow_id.trim().is_empty()
+        && !simulation.reason.trim().is_empty();
+    let fingerprint_source = serde_json::to_vec(&json!({
+        "actor": simulation.actor,
+        "action": simulation.action,
+        "workflow_id": simulation.workflow_id,
+        "reason": simulation.reason,
+        "unix_ms": simulation.unix_ms,
+        "targets": simulation.targets,
+        "fields": simulation.fields,
+    }))
+    .map_err(|_| ExitCode::from(3))?;
+    let event = AuditEventRecord {
+        event_id: format!("audit-{}", sha256_hex(&fingerprint_source)),
+        actor: simulation.actor,
+        action: simulation.action,
+        workflow_id: simulation.workflow_id,
+        reason: simulation.reason,
+        unix_ms: simulation.unix_ms,
+        targets: simulation.targets,
+        fields: simulation.fields,
+    };
+    Ok((serde_json::to_value(event).map_err(|_| ExitCode::from(3))?, ok))
+}
+
 pub(crate) fn handle_governance_command(
     cli: &DagCli,
     command: &GovernanceCommands,
@@ -720,7 +775,29 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        | GovernanceCommands::AuditEvent { .. }
+        GovernanceCommands::AuditEvent { simulation } => {
+            let (payload, ok) = audit_event_payload(simulation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.audit-event",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_audit_event_invalid",
+                            "severity":"error",
+                            "message":"audit event input is missing required identity fields",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
         | GovernanceCommands::Promotion { .. }
         | GovernanceCommands::Compliance { .. } => Err(ExitCode::from(2)),
     }
@@ -1056,5 +1133,59 @@ mod tests {
         )
         .expect("catalog export");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_audit_event_surface_emits_stable_identity_record() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("audit.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"ops@bijux",
+              "action":"policy_override",
+              "workflow_id":"finance-close",
+              "reason":"temporary replay unblock",
+              "unix_ms":1700000000000,
+              "targets":["run-01","node:score"],
+              "fields":{"ticket":"OPS-42","scope":"limited"}
+            }"#,
+        )
+        .expect("audit simulation");
+        let cli = quiet_json_cli(GovernanceCommands::AuditEvent {
+            simulation: simulation.clone(),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::AuditEvent { simulation },
+        )
+        .expect("audit event");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_audit_event_surface_rejects_missing_identity_fields() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("audit.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"",
+              "action":"policy_override",
+              "workflow_id":"finance-close",
+              "reason":"",
+              "unix_ms":1700000000000
+            }"#,
+        )
+        .expect("audit simulation");
+        let cli = quiet_json_cli(GovernanceCommands::AuditEvent {
+            simulation: simulation.clone(),
+        });
+        let exit = handle_governance_command(
+            &cli,
+            &GovernanceCommands::AuditEvent { simulation },
+        )
+        .expect_err("invalid audit event should fail");
+        assert_eq!(exit, ExitCode::from(3));
     }
 }
