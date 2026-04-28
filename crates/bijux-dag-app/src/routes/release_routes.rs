@@ -76,6 +76,27 @@ struct ReleaseDeprecationReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseCheckpointSimulation {
+    action: String,
+    run_paused: bool,
+    approval_required: bool,
+    #[serde(default)]
+    approvers: Vec<String>,
+    #[serde(default)]
+    context_fields: Vec<String>,
+    audit_recorded: bool,
+    resume_actor: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseCheckpointReport {
+    action: String,
+    approval_state: String,
+    ready: bool,
+    blockers: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -221,6 +242,34 @@ fn deprecation_payload(simulation: &std::path::Path) -> Result<ReleaseDeprecatio
     })
 }
 
+fn checkpoint_payload(simulation: &std::path::Path) -> Result<ReleaseCheckpointReport, ExitCode> {
+    let simulation: ReleaseCheckpointSimulation = load_json_file(simulation)?;
+    let mut blockers = Vec::new();
+    if simulation.approval_required && simulation.approvers.is_empty() {
+        blockers.push("approval checkpoint has no approvers".to_string());
+    }
+    if simulation.approval_required && !simulation.run_paused {
+        blockers.push("approval-required action is not paused".to_string());
+    }
+    if simulation.context_fields.len() < 2 {
+        blockers.push("approval checkpoint context is too thin".to_string());
+    }
+    if !simulation.audit_recorded {
+        blockers.push("approval checkpoint is missing audit evidence".to_string());
+    }
+    if simulation.resume_actor.is_none() {
+        blockers.push("approval checkpoint has no resume actor".to_string());
+    }
+    let approval_state = if blockers.is_empty() {
+        "ready_to_resume".to_string()
+    } else if simulation.run_paused {
+        "awaiting_approval".to_string()
+    } else {
+        "unsafe".to_string()
+    };
+    Ok(ReleaseCheckpointReport { action: simulation.action, approval_state, ready: blockers.is_empty(), blockers })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -239,6 +288,11 @@ pub(crate) fn handle_release_command(
             let payload = serde_json::to_value(deprecation_payload(simulation)?)
                 .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.deprecation", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Checkpoint { simulation } => {
+            let payload =
+                serde_json::to_value(checkpoint_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.checkpoint", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -432,5 +486,64 @@ mod tests {
             report.gaps.iter().any(|gap| gap == "deprecation must be announced through at least two channels")
         );
         assert!(report.gaps.iter().any(|gap| gap == "deprecation is missing migration guidance"));
+    }
+
+    #[test]
+    fn release_checkpoint_accepts_audited_resume_gate() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("checkpoint.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "action":"publish-results",
+              "run_paused":true,
+              "approval_required":true,
+              "approvers":["owner-a","owner-b"],
+              "context_fields":["lineage","destination"],
+              "audit_recorded":true,
+              "resume_actor":"owner-a"
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Checkpoint { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Checkpoint { simulation: simulation.clone() },
+        )
+        .expect("checkpoint");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::checkpoint_payload(&simulation).expect("report");
+        assert!(report.ready);
+        assert_eq!(report.approval_state, "ready_to_resume");
+    }
+
+    #[test]
+    fn release_checkpoint_blocks_unpaused_and_unowned_gate() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("checkpoint.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "action":"publish-results",
+              "run_paused":false,
+              "approval_required":true,
+              "approvers":[],
+              "context_fields":["lineage"],
+              "audit_recorded":false,
+              "resume_actor":null
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::checkpoint_payload(&simulation).expect("report");
+        assert!(!report.ready);
+        for expected in [
+            "approval checkpoint has no approvers",
+            "approval-required action is not paused",
+            "approval checkpoint context is too thin",
+            "approval checkpoint is missing audit evidence",
+            "approval checkpoint has no resume actor",
+        ] {
+            assert!(report.blockers.iter().any(|blocker| blocker == expected));
+        }
     }
 }
