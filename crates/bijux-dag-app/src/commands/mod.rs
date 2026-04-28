@@ -330,6 +330,15 @@ pub(crate) enum ScheduleCommands {
         #[arg(long, default_value_t = 3)]
         next_runs: usize,
     },
+    Compile {
+        registry: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        requested_unix_ms: u128,
+    },
+    Order { simulation: PathBuf },
+    Throttle { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

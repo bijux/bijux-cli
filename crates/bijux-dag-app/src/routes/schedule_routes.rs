@@ -1,11 +1,33 @@
 use crate::commands::{DagCli, ScheduleCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
-    dry_run_schedule, materialize_next_runs, validate_schedule_registry, ScheduleRegistry,
+    apply_backfill_throttling, compile_submission_request, dry_run_schedule, materialize_next_runs,
+    validate_schedule_registry, weighted_priority_tie_break_order, BackfillThrottlingPolicy,
+    PriorityClass, ScheduleRegistry, ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
+use std::collections::BTreeMap;
+
+#[derive(Debug, serde::Deserialize)]
+struct ScheduleOrderingSimulation {
+    submissions: Vec<ScheduledSubmission>,
+    priorities: BTreeMap<String, PriorityClass>,
+    policy: WeightedPriorityPolicy,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct BackfillThrottlingSimulation {
+    pending_backfill_runs: usize,
+    pending_live_runs: usize,
+    policy: BackfillThrottlingPolicy,
+}
 
 fn parse_schedule_registry(path: &std::path::Path) -> Result<ScheduleRegistry, ExitCode> {
+    let raw = read_file(path)?;
+    serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
+}
+
+fn parse_json_file<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
 }
@@ -79,6 +101,74 @@ pub(crate) fn handle_schedule_command(
             for preview in previews {
                 println!("{}", serde_json::to_string_pretty(&preview).unwrap());
             }
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Compile { registry, schedule_id, requested_unix_ms } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let definition = registry
+                .definitions
+                .iter()
+                .find(|definition| definition.id == *schedule_id)
+                .ok_or_else(|| ExitCode::from(3))?;
+            let request = compile_submission_request(definition, *requested_unix_ms);
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.compile",
+                    true,
+                    serde_json::to_value(&request).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&request).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Order { simulation } => {
+            let simulation: ScheduleOrderingSimulation = parse_json_file(simulation)?;
+            let ordered = weighted_priority_tie_break_order(
+                simulation.submissions,
+                &simulation.priorities,
+                &simulation.policy,
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.order",
+                    true,
+                    json!({ "ordered": ordered }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&ordered).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Throttle { simulation } => {
+            let simulation: BackfillThrottlingSimulation = parse_json_file(simulation)?;
+            let (allowed_backfill_runs, pending_live_runs) = apply_backfill_throttling(
+                simulation.pending_backfill_runs,
+                simulation.pending_live_runs,
+                &simulation.policy,
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.throttle",
+                    true,
+                    json!({
+                        "allowed_backfill_runs": allowed_backfill_runs,
+                        "pending_live_runs": pending_live_runs,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!(
+                "allowed_backfill_runs={} pending_live_runs={}",
+                allowed_backfill_runs, pending_live_runs
+            );
             Ok(ExitCode::SUCCESS)
         }
     }

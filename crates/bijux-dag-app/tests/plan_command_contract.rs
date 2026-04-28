@@ -162,3 +162,54 @@ fn schedule_validate_supports_json_output() {
     let code = dag_run(&matches).expect("run");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn schedule_compile_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "nightly-catalog",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Cron": {
+                  "expression": "0 2 * * *",
+                  "timezone": "UTC"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "compile",
+            registry.to_string_lossy().as_ref(),
+            "--schedule-id",
+            "nightly-catalog",
+            "--requested-unix-ms",
+            "42",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
