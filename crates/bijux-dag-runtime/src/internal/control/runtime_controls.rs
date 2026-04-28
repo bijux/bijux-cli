@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{Hash, Hasher};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExecutionIsolationNodeReport {
@@ -130,6 +131,19 @@ pub struct TransitionAuditReport {
     pub run_transition_errors: Vec<String>,
     pub terminal_audit_events: Vec<crate::TransitionAuditEvent>,
     pub consistency: StateConsistencyReport,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventLogAuditReport {
+    pub run_id: String,
+    pub event_count: usize,
+    pub malformed_events: usize,
+    pub missing_required_events: Vec<String>,
+    pub singleton_event_violations: Vec<String>,
+    pub failure_roots: Vec<String>,
+    pub index_entry_count: Option<usize>,
+    pub index_in_sync: Option<bool>,
+    pub timeline_summary: Option<crate::TimelineTextSummary>,
 }
 
 pub fn build_execution_isolation_report(
@@ -475,6 +489,94 @@ pub fn build_transition_audit_report(
         terminal_audit_events,
         consistency,
     }
+}
+
+pub fn audit_run_event_log(run_dir: &Path) -> Result<EventLogAuditReport, String> {
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(run_dir.join("manifest.json")).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let run_id = manifest
+        .get("run_id")
+        .and_then(|value| value.as_str())
+        .unwrap_or("unknown-run")
+        .to_string();
+
+    let raw = std::fs::read_to_string(run_dir.join("run.log.jsonl")).map_err(|err| err.to_string())?;
+    let mut events = Vec::new();
+    let mut malformed_events = 0usize;
+    for line in raw.lines().filter(|line| !line.trim().is_empty()) {
+        let value: serde_json::Value = match serde_json::from_str(line) {
+            Ok(value) => value,
+            Err(_) => {
+                malformed_events += 1;
+                continue;
+            }
+        };
+        let Some(name) = value.get("event").and_then(|field| field.as_str()) else {
+            malformed_events += 1;
+            continue;
+        };
+        let Some(unix_ms) =
+            value.get("ts").and_then(|field| field.as_u64()).map(|value| value as u128).or_else(|| {
+                value.get("unix_ms").and_then(|field| field.as_u64()).map(|value| value as u128)
+            })
+        else {
+            malformed_events += 1;
+            continue;
+        };
+        events.push(crate::EventRecord {
+            category: crate::category_from_runtime_event_name(name),
+            name: name.to_string(),
+            unix_ms,
+            node_id: value.get("node_id").and_then(|field| field.as_str()).map(ToString::to_string),
+            run_id: Some(run_id.clone()),
+            details: value,
+        });
+    }
+
+    let missing_required_events = crate::validate_required_event_names(&events);
+    let singleton_names = ["run_started", "plan_built", "run_finished"];
+    let singleton_event_violations = singleton_names
+        .into_iter()
+        .filter(|name| !crate::event_names_emitted_once(&events, &[*name]))
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    let failure_roots = crate::summarize_failure_root_causes(&events);
+
+    let (index_entry_count, index_in_sync) = match std::fs::read(run_dir.join("run-log.index.json")) {
+        Ok(bytes) => {
+            let index: Vec<serde_json::Value> =
+                serde_json::from_slice(&bytes).map_err(|err| err.to_string())?;
+            let in_sync = index.len() == events.len()
+                && index.iter().zip(events.iter()).all(|(entry, event)| {
+                    entry.get("event").and_then(|value| value.as_str()) == Some(event.name.as_str())
+                });
+            (Some(index.len()), Some(in_sync))
+        }
+        Err(_) => (None, None),
+    };
+
+    let timeline_summary = match std::fs::read(run_dir.join("observability.timeline.json")) {
+        Ok(bytes) => {
+            let timeline: crate::TimelineExport =
+                serde_json::from_slice(&bytes).map_err(|err| err.to_string())?;
+            Some(crate::render_timeline_text(&timeline))
+        }
+        Err(_) => None,
+    };
+
+    Ok(EventLogAuditReport {
+        run_id,
+        event_count: events.len(),
+        malformed_events,
+        missing_required_events,
+        singleton_event_violations,
+        failure_roots,
+        index_entry_count,
+        index_in_sync,
+        timeline_summary,
+    })
 }
 
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
@@ -875,5 +977,53 @@ mod tests {
         assert!(report.run_transition_errors.is_empty());
         assert!(!report.consistency.valid);
         assert!(!report.terminal_audit_events.is_empty());
+    }
+
+    #[test]
+    fn event_log_audit_reconciles_log_index_and_timeline() {
+        let dir = tempfile::tempdir().expect("tmp");
+        std::fs::write(dir.path().join("manifest.json"), r#"{"run_id":"run-1"}"#)
+            .expect("manifest");
+        std::fs::write(
+            dir.path().join("run.log.jsonl"),
+            r#"{"event":"run_started","ts":1}
+{"event":"plan_built","ts":2}
+{"event":"node_ready","ts":3,"node_id":"n1"}
+{"event":"node_scheduled","ts":4,"node_id":"n1"}
+{"event":"node_started","ts":5,"node_id":"n1"}
+{"event":"node_attempt_started","ts":6,"node_id":"n1"}
+{"event":"node_attempt_finished","ts":7,"node_id":"n1"}
+{"event":"node_failed","ts":8,"node_id":"n1","reason":"timeout"}
+{"event":"run_finished","ts":9}"#,
+        )
+        .expect("run log");
+        std::fs::write(
+            dir.path().join("run-log.index.json"),
+            r#"[
+              {"event":"run_started"},
+              {"event":"plan_built"},
+              {"event":"node_ready"},
+              {"event":"node_scheduled"},
+              {"event":"node_started"},
+              {"event":"node_attempt_started"},
+              {"event":"node_attempt_finished"},
+              {"event":"node_failed"},
+              {"event":"run_finished"}
+            ]"#,
+        )
+        .expect("index");
+        std::fs::write(
+            dir.path().join("observability.timeline.json"),
+            r#"{"schema_version":"v0.1","entries":[{"unix_ms":1,"category":"start","label":"run","node_id":null}]}"#,
+        )
+        .expect("timeline");
+
+        let report = super::audit_run_event_log(dir.path()).expect("audit");
+        assert_eq!(report.run_id, "run-1");
+        assert_eq!(report.event_count, 9);
+        assert_eq!(report.malformed_events, 0);
+        assert!(report.missing_required_events.is_empty());
+        assert_eq!(report.index_in_sync, Some(true));
+        assert!(report.timeline_summary.is_some());
     }
 }

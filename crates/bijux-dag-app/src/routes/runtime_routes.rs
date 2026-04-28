@@ -1,7 +1,7 @@
 use crate::commands::{DagCli, RuntimeCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    audit_dispatch_discipline, build_cancellation_audit_report,
+    audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
     build_execution_isolation_report, build_retry_decision_report,
     build_heartbeat_audit_report, build_manual_intervention_audit_report,
     build_pause_resume_audit_report, build_timeout_audit_report, build_transition_audit_report,
@@ -316,6 +316,33 @@ pub(crate) fn handle_runtime_command(
                             "id":"state_transition_violation",
                             "severity":"error",
                             "message":"transition trace or final run state is inconsistent",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        RuntimeCommands::Events { run_dir } => {
+            let report = audit_run_event_log(run_dir).map_err(|_| ExitCode::from(3))?;
+            let ok = report.malformed_events == 0
+                && report.missing_required_events.is_empty()
+                && report.singleton_event_violations.is_empty()
+                && report.index_in_sync.unwrap_or(true);
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.events",
+                    ok,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"event_log_audit_failed",
+                            "severity":"error",
+                            "message":"run event history is incomplete or inconsistent",
                         })]
                     },
                     if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
@@ -656,5 +683,44 @@ mod tests {
         )
         .expect_err("transition");
         assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn runtime_routes_support_event_log_audits() {
+        let dir = tempfile::tempdir().expect("tmp");
+        std::fs::write(dir.path().join("manifest.json"), r#"{"run_id":"run-1"}"#)
+            .expect("manifest");
+        std::fs::write(
+            dir.path().join("run.log.jsonl"),
+            r#"{"event":"run_started","ts":1}
+{"event":"plan_built","ts":2}
+{"event":"node_ready","ts":3,"node_id":"n1"}
+{"event":"node_scheduled","ts":4,"node_id":"n1"}
+{"event":"node_started","ts":5,"node_id":"n1"}
+{"event":"node_attempt_started","ts":6,"node_id":"n1"}
+{"event":"node_attempt_finished","ts":7,"node_id":"n1"}
+{"event":"node_failed","ts":8,"node_id":"n1","reason":"timeout"}
+{"event":"run_finished","ts":9}"#,
+        )
+        .expect("run log");
+        std::fs::write(
+            dir.path().join("run-log.index.json"),
+            r#"[{"event":"run_started"},{"event":"plan_built"},{"event":"node_ready"},{"event":"node_scheduled"},{"event":"node_started"},{"event":"node_attempt_started"},{"event":"node_attempt_finished"},{"event":"node_failed"},{"event":"run_finished"}]"#,
+        )
+        .expect("index");
+        std::fs::write(
+            dir.path().join("observability.timeline.json"),
+            r#"{"schema_version":"v0.1","entries":[{"unix_ms":1,"category":"start","label":"run","node_id":null}]}"#,
+        )
+        .expect("timeline");
+
+        let cli =
+            quiet_json_cli(RuntimeCommands::Events { run_dir: dir.path().to_path_buf() });
+        let code = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Events { run_dir: dir.path().to_path_buf() },
+        )
+        .expect("events");
+        assert_eq!(code, ExitCode::SUCCESS);
     }
 }
