@@ -9,20 +9,23 @@ last_reviewed: 2026-04-06
 
 # Distribution Model
 
-Distribution model defines how runtime and maintainer capabilities are shipped
-without splitting repository ownership.
+This page explains how `bijux-core` ships runtime capabilities without splitting
+the repository into disconnected release stories.
 
-## Visual Summary
+The important point is that distribution follows repository truth. Tags,
+published packages, docs, and release evidence are all supposed to describe the
+same verified state.
+
+## Distribution Flow
 
 ```mermaid
 flowchart LR
-    commits[conventional commits] --> tag[version tag]
-    tag --> version[workspace version resolution]
-    version --> publish[publish workflows]
-    publish --> crates_release[Rust crate release]
-    publish --> python_release[Python bridge release]
-    publish --> docs_site[documentation publish]
-    publish --> evidence[evidence artifacts]
+    commits["verified commits"] --> tag["version tag"]
+    tag --> publish["publish workflows"]
+    publish --> crates_release["Rust crates"]
+    publish --> python_release["Python bridge"]
+    publish --> docs_site["documentation site"]
+    publish --> evidence["release evidence"]
 ```
 
 ## Distribution Surfaces
@@ -37,6 +40,11 @@ flowchart LR
 - release channels must map to tagged, verified repository state
 - runtime identity must stay consistent across CLI and Python surfaces
 - maintainer tooling remains repository-owned and audit-focused
+
+## Reading Rule
+
+Use this page when the question is how one repository turns into several public
+delivery surfaces without losing coherence.
 
 ## Code Anchors
 
