@@ -9,26 +9,21 @@ last_reviewed: 2026-04-06
 
 # Compatibility Commitments
 
-Compatibility commitments define what DAG behavior is expected to remain stable
-for operators, automation, and integrations.
+This page explains which parts of DAG behavior are expected to stay stable.
 
-## Visual Summary
+That stability matters because runs, artifacts, and replay semantics are often
+consumed long after a single command completes.
+
+## Compatibility Map
 
 ```mermaid
-flowchart TB
-    stable[Stable commitments]
-    stable --> api_shape[crate-root API shape]
-    stable --> cli_flags[documented CLI flags]
-    stable --> artifacts[versioned artifact shapes]
-    stable --> imports[public imports]
-
-    conditional[Conditional compatibility]
-    conditional --> defaults[defaults and configuration behavior]
-    conditional --> examples[example paths and docs]
-
-    unstable[Explicitly unstable]
-    unstable --> internals[private internals]
-    unstable --> experimental[experimental seams]
+flowchart LR
+    stable["stable commitments"] --> api_shape["crate-root APIs"]
+    stable --> cli_flags["documented CLI flags"]
+    stable --> artifacts["artifact shapes"]
+    stable --> imports["public imports"]
+    conditional["conditional compatibility"] --> defaults["defaults and config"]
+    unstable["explicitly unstable"] --> internals["private internals"]
 ```
 
 ## Compatibility Scope
@@ -43,6 +38,11 @@ flowchart TB
 - additive commands and fields are acceptable with documentation updates
 - internal module refactors are acceptable if external behavior stays stable
 - capability expansion is acceptable when downgrade semantics remain explicit
+
+## Reading Rule
+
+Use this page when a DAG change may alter what automation, stored runs, or
+integrations rely on across versions.
 
 ## Code Anchors
 
