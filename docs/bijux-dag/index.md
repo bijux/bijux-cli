@@ -10,14 +10,11 @@ last_reviewed: 2026-04-12
 # DAG Handbook
 
 `bijux-dag` is the graph execution and evidence subsystem in `bijux-core`. It
-owns deterministic DAG semantics, run/artifact identity, replay classification,
-and diff classification.
+owns deterministic DAG semantics, run and artifact identity, replay
+classification, and diff classification.
 
-This handbook is optimized for operational questions that need hard answers:
-
-- what changed (`graph`, `run`, or `artifact`)
-- whether replay stayed equivalent, drifted, or is incomplete
-- where ownership boundaries are between DAG crates
+Use this handbook when the question is about graph truth, execution policy,
+replay outcomes, artifact behavior, or how the DAG crates divide ownership.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-dag-core.md">Open the kernel package</a>
@@ -25,17 +22,14 @@ This handbook is optimized for operational questions that need hard answers:
 <a class="md-button" href="packages/bijux-dag-app.md">Open the app package</a>
 </div>
 
-## Visual Summary
+## Package Map
 
 ```mermaid
-flowchart TB
-    handbook["DAG handbook"]
-    handbook --> core["bijux-dag-core"]
-    handbook --> runtime["bijux-dag-runtime"]
-    handbook --> app["bijux-dag-app"]
-    handbook --> cli["bijux-dag-cli"]
-    handbook --> artifacts["bijux-dag-artifacts"]
-    handbook --> testkit["bijux-dag-testkit"]
+flowchart LR
+    handbook["DAG handbook"] --> core["core"]
+    handbook --> runtime["runtime"]
+    handbook --> app["app"]
+    handbook --> artifacts["artifacts"]
 ```
 
 ## Package Destinations
