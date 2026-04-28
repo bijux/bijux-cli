@@ -2,7 +2,7 @@ use crate::commands::{DagCli, RuntimeCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
     audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
-    BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig,
+    build_timeout_audit_report, BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -96,6 +96,42 @@ pub(crate) fn handle_runtime_command(
                 return emit_json(
                     cli,
                     "dag.runtime.retry",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        RuntimeCommands::Timeout {
+            dag,
+            node_id,
+            queue_wait_ms,
+            execution_ms,
+            total_elapsed_ms,
+            heartbeat_gap_ms,
+            heartbeat_timeout_ms,
+            sla_timeout_ms,
+        } => {
+            let graph = parse_graph(&read_file(dag)?)?;
+            let report = build_timeout_audit_report(
+                &graph,
+                &RuntimeConfig::default(),
+                node_id,
+                *queue_wait_ms,
+                *execution_ms,
+                *total_elapsed_ms,
+                *heartbeat_gap_ms,
+                *heartbeat_timeout_ms,
+                *sla_timeout_ms,
+            )
+            .map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.timeout",
                     true,
                     serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
@@ -232,6 +268,63 @@ mod tests {
             },
         )
         .expect("retry");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_support_timeout_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"runtime","owners":[],"tags":[]},
+              "nodes":[
+                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {
+                  "id":"task1",
+                  "kind":"shell",
+                  "inputs":["in"],
+                  "outputs":[{"name":"out","path":"b/out"}],
+                  "timeout_ms":40,
+                  "effects":["filesystem"],
+                  "params":{
+                    "argv":["/bin/sh","-c","true"],
+                    "queue_timeout_ms":10,
+                    "total_budget_timeout_ms":80
+                  }
+                }
+              ],
+              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+            }"#,
+        )
+        .expect("write dag");
+
+        let cli = quiet_json_cli(RuntimeCommands::Timeout {
+            dag: dag.clone(),
+            node_id: "task1".to_string(),
+            queue_wait_ms: Some(15),
+            execution_ms: Some(50),
+            total_elapsed_ms: Some(90),
+            heartbeat_gap_ms: Some(5),
+            heartbeat_timeout_ms: Some(20),
+            sla_timeout_ms: Some(100),
+        });
+        let code = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Timeout {
+                dag,
+                node_id: "task1".to_string(),
+                queue_wait_ms: Some(15),
+                execution_ms: Some(50),
+                total_elapsed_ms: Some(90),
+                heartbeat_gap_ms: Some(5),
+                heartbeat_timeout_ms: Some(20),
+                sla_timeout_ms: Some(100),
+            },
+        )
+        .expect("timeout");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

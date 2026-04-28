@@ -60,6 +60,20 @@ pub struct RetryDecisionReport {
     pub next_wait_ms: Option<u64>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TimeoutAuditReport {
+    pub node_id: String,
+    pub queue_timeout_ms: Option<u64>,
+    pub execution_timeout_ms: Option<u64>,
+    pub total_budget_timeout_ms: Option<u64>,
+    pub queue_triggered: bool,
+    pub execution_triggered: bool,
+    pub total_budget_triggered: bool,
+    pub heartbeat_triggered: bool,
+    pub sla_triggered: bool,
+    pub primary_timeout: Option<String>,
+}
+
 pub fn build_execution_isolation_report(
     graph: &Graph,
     options: &RuntimeConfig,
@@ -205,6 +219,59 @@ pub fn build_retry_decision_report(
     })
 }
 
+pub fn build_timeout_audit_report(
+    graph: &Graph,
+    options: &RuntimeConfig,
+    node_id: &str,
+    queue_wait_ms: Option<u64>,
+    execution_ms: Option<u64>,
+    total_elapsed_ms: Option<u64>,
+    heartbeat_gap_ms: Option<u64>,
+    heartbeat_timeout_ms: Option<u64>,
+    sla_timeout_ms: Option<u64>,
+) -> Result<TimeoutAuditReport, RuntimeError> {
+    let contracts = validate_task_contracts(graph, options)?;
+    let contract = contracts
+        .into_iter()
+        .find(|contract| contract.node_id == node_id)
+        .ok_or_else(|| RuntimeError::Executor(format!("unknown node '{node_id}'")))?;
+
+    let queue_triggered = duration_exceeds(queue_wait_ms, contract.timeout_policy.queue_timeout_ms);
+    let execution_triggered =
+        duration_exceeds(execution_ms, contract.timeout_policy.execution_timeout_ms);
+    let total_budget_triggered =
+        duration_exceeds(total_elapsed_ms, contract.timeout_policy.total_budget_timeout_ms);
+    let heartbeat_triggered = duration_exceeds(heartbeat_gap_ms, heartbeat_timeout_ms);
+    let sla_triggered = duration_exceeds(total_elapsed_ms, sla_timeout_ms);
+
+    let primary_timeout = if queue_triggered {
+        Some("queue".to_string())
+    } else if heartbeat_triggered {
+        Some("heartbeat".to_string())
+    } else if execution_triggered {
+        Some("execution".to_string())
+    } else if total_budget_triggered {
+        Some("total_budget".to_string())
+    } else if sla_triggered {
+        Some("sla".to_string())
+    } else {
+        None
+    };
+
+    Ok(TimeoutAuditReport {
+        node_id: contract.node_id,
+        queue_timeout_ms: contract.timeout_policy.queue_timeout_ms,
+        execution_timeout_ms: contract.timeout_policy.execution_timeout_ms,
+        total_budget_timeout_ms: contract.timeout_policy.total_budget_timeout_ms,
+        queue_triggered,
+        execution_triggered,
+        total_budget_triggered,
+        heartbeat_triggered,
+        sla_triggered,
+        primary_timeout,
+    })
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -238,6 +305,10 @@ fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter
     attempt.hash(&mut hasher);
     failure_class.hash(&mut hasher);
     hasher.finish() % jitter_ms.saturating_add(1)
+}
+
+fn duration_exceeds(observed_ms: Option<u64>, limit_ms: Option<u64>) -> bool {
+    matches!((observed_ms, limit_ms), (Some(observed), Some(limit)) if observed > limit)
 }
 
 fn normalize_failure_class(value: &str) -> String {
@@ -386,5 +457,46 @@ mod tests {
         assert_eq!(report.base_backoff_ms, 20);
         assert!(report.deterministic_jitter_ms <= 7);
         assert_eq!(report.next_attempt, Some(3));
+    }
+
+    #[test]
+    fn timeout_report_separates_queue_and_execution_timeouts() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].timeout_ms = Some(40);
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([
+            (
+                "argv".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+                ]),
+            ),
+            (
+                "queue_timeout_ms".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!(10)),
+            ),
+            (
+                "total_budget_timeout_ms".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!(80)),
+            ),
+        ]));
+
+        let report = super::build_timeout_audit_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            Some(15),
+            Some(50),
+            Some(90),
+            Some(5),
+            Some(20),
+            Some(100),
+        )
+        .expect("report");
+        assert!(report.queue_triggered);
+        assert!(report.execution_triggered);
+        assert!(report.total_budget_triggered);
+        assert_eq!(report.primary_timeout, Some("queue".to_string()));
     }
 }

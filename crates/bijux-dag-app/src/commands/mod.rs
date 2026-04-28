@@ -380,6 +380,23 @@ pub(crate) enum RuntimeCommands {
         #[arg(long)]
         failure_class: String,
     },
+    Timeout {
+        dag: PathBuf,
+        #[arg(long)]
+        node_id: String,
+        #[arg(long)]
+        queue_wait_ms: Option<u64>,
+        #[arg(long)]
+        execution_ms: Option<u64>,
+        #[arg(long)]
+        total_elapsed_ms: Option<u64>,
+        #[arg(long)]
+        heartbeat_gap_ms: Option<u64>,
+        #[arg(long)]
+        heartbeat_timeout_ms: Option<u64>,
+        #[arg(long)]
+        sla_timeout_ms: Option<u64>,
+    },
 }
 
 #[derive(Subcommand)]

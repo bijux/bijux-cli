@@ -395,8 +395,9 @@ pub use task_contract::{
 };
 pub use runtime_controls::{
     audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
-    DispatchAuditReport, DispatchKeyRecord, ExecutionIsolationNodeReport,
-    ExecutionIsolationReport, RetryDecisionReport,
+    build_timeout_audit_report, DispatchAuditReport, DispatchKeyRecord,
+    ExecutionIsolationNodeReport, ExecutionIsolationReport, RetryDecisionReport,
+    TimeoutAuditReport,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
