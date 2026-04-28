@@ -9,17 +9,19 @@ last_reviewed: 2026-04-06
 
 # Configuration Surface
 
-Configuration behavior is exposed through `config` and `cli config` routes with
-normalized keys, ASCII-safe values, and deterministic import/export behavior.
+This page explains the configuration commands that shape CLI behavior over time.
 
-## Visual Summary
+The important contract is not just that keys exist. It is that configuration
+stays inspectable, importable, and predictable across machines.
+
+## Configuration Flow
 
 ```mermaid
 flowchart LR
-    command["config command"] --> validate["key value validation"]
-    validate --> storage["config storage operations"]
-    storage --> result["structured command result"]
-    storage --> paths["resolved state paths"]
+    command["config command"] --> validate["key and value validation"]
+    validate --> storage["state update or query"]
+    storage --> result["structured result"]
+    storage --> paths["resolved config paths"]
 ```
 
 ## Configuration Commands
@@ -46,6 +48,11 @@ flowchart LR
 - `crates/bijux-cli/src/features/config/operations.rs`
 - `crates/bijux-cli/src/features/config/validation.rs`
 - `crates/bijux-cli/src/contracts/config.rs`
+
+## Reading Rule
+
+Use this page when CLI behavior depends on saved settings and the real question
+is whether the issue is in config input, validation, storage, or import/export.
 
 ## Next Reads
 
