@@ -16,6 +16,7 @@ explain
 export
 federation
 fingerprint
+fleet
 fsck
 governance
 graph

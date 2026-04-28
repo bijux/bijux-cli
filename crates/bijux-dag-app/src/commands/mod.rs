@@ -67,6 +67,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: EnterpriseCommands,
     },
+    Fleet {
+        #[command(subcommand)]
+        command: FleetCommands,
+    },
     Governance {
         #[command(subcommand)]
         command: GovernanceCommands,
@@ -484,6 +488,11 @@ pub(crate) enum EnterpriseCommands {
     DependencyCatalog { simulation: PathBuf },
     Credentials { simulation: PathBuf },
     Export { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum FleetCommands {
+    Register { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
