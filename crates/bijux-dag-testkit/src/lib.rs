@@ -2,7 +2,8 @@
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
 use bijux_dag_core::{
-    Edge, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy, SPEC_VERSION,
+    Edge, EdgeKind, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy,
+    SemanticNodeKind, TriggerRule, SPEC_VERSION,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -291,6 +292,9 @@ fn graph_from_nodes(nodes: Vec<Node>, edges: Vec<(&str, &str, &str, &str)>) -> G
         edges: edges
             .into_iter()
             .map(|(from_node, from_port, to_node, to_port)| Edge {
+                id: None,
+                kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
                 to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
             })
@@ -302,6 +306,7 @@ fn const_node(id: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Const,
+        semantic_kind: SemanticNodeKind::Task,
         inputs: vec![],
         outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![("value", Value::from("ok"))]),
@@ -313,6 +318,8 @@ fn const_node(id: &str) -> Node {
         effects: vec![],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: TriggerRule::AllSuccess,
+        branch: None,
     }
 }
 
@@ -320,6 +327,7 @@ fn shell_node(id: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Shell,
+        semantic_kind: SemanticNodeKind::Task,
         inputs: vec!["in".to_string()],
         outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![(
@@ -338,6 +346,8 @@ fn shell_node(id: &str) -> Node {
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: TriggerRule::AllSuccess,
+        branch: None,
     }
 }
 

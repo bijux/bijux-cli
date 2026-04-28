@@ -1,15 +1,15 @@
 use crate::simulated_platform::{
     cancellation_delivered_in_time, classify_heartbeat, is_duplicate_dispatch,
-    normalize_status_events, recover_lost_lease, should_reassign, worker_alive,
-    HeartbeatClass, HeartbeatSemantics, LivenessPolicy, RemoteStatusEvent, TaskLeaseSemantics,
-    WorkLease, WorkerHeartbeat,
+    normalize_status_events, recover_lost_lease, should_reassign, worker_alive, HeartbeatClass,
+    HeartbeatSemantics, LivenessPolicy, RemoteStatusEvent, TaskLeaseSemantics, WorkLease,
+    WorkerHeartbeat,
 };
 use crate::{
     cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
     retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
     BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass,
-    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, RetryPolicyV2,
-    ResumePolicy, RuntimeConfig, RuntimeError, RunPausePolicy, RunState, RunTransition,
+    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
+    RetryPolicyV2, RunPausePolicy, RunState, RunTransition, RuntimeConfig, RuntimeError,
     StateConsistencyReport, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
@@ -238,7 +238,8 @@ pub fn audit_dispatch_discipline(
         }
     }
 
-    let (normalized_remote_statuses, remote_duplicates) = normalize_status_events(remote_status_events);
+    let (normalized_remote_statuses, remote_duplicates) =
+        normalize_status_events(remote_status_events);
     let duplicate_batch_delivery_detected = duplicate_status_delivery_detected(batch_events);
     let idempotent_dispatch_guarantee =
         duplicate_dispatch_keys.is_empty() && !duplicate_batch_delivery_detected;
@@ -267,14 +268,22 @@ pub fn build_retry_decision_report(
         .ok_or_else(|| RuntimeError::Executor(format!("unknown node '{node_id}'")))?;
 
     let expected_failure_class = normalize_failure_class(failure_class);
-    let retryable = contract.retry_policy.retryable_failure_classes.iter().any(|class| {
-        normalize_failure_class(&format!("{:?}", class)) == expected_failure_class
-    });
-    let retry_allowed =
-        retryable && retry_allowed(attempt, &retry_policy_semantics(&contract.node_id, &contract.retry_policy));
+    let retryable =
+        contract.retry_policy.retryable_failure_classes.iter().any(|class| {
+            normalize_failure_class(&format!("{:?}", class)) == expected_failure_class
+        });
+    let retry_allowed = retryable
+        && retry_allowed(
+            attempt,
+            &retry_policy_semantics(&contract.node_id, &contract.retry_policy),
+        );
     let base_backoff_ms = backoff_for_attempt(&contract.retry_policy, attempt);
-    let deterministic_jitter_ms =
-        deterministic_jitter(&contract.node_id, attempt, failure_class, contract.retry_policy.jitter_ms);
+    let deterministic_jitter_ms = deterministic_jitter(
+        &contract.node_id,
+        attempt,
+        failure_class,
+        contract.retry_policy.jitter_ms,
+    );
 
     Ok(RetryDecisionReport {
         node_id: contract.node_id,
@@ -287,7 +296,8 @@ pub fn build_retry_decision_report(
         backoff_strategy: format!("{:?}", contract.retry_policy.backoff_strategy).to_lowercase(),
         base_backoff_ms,
         deterministic_jitter_ms,
-        next_wait_ms: retry_allowed.then_some(base_backoff_ms.saturating_add(deterministic_jitter_ms)),
+        next_wait_ms: retry_allowed
+            .then_some(base_backoff_ms.saturating_add(deterministic_jitter_ms)),
     })
 }
 
@@ -479,9 +489,13 @@ pub fn build_transition_audit_report(
         .iter()
         .filter_map(|transition| crate::validate_run_transition(transition).err())
         .collect::<Vec<_>>();
-    let consistency =
-        crate::verify_post_run_state_consistency(final_run_state, final_node_states, causal_failure_count);
-    let terminal_audit_events = crate::terminal_transition_audit_events(node_transitions, run_transitions);
+    let consistency = crate::verify_post_run_state_consistency(
+        final_run_state,
+        final_node_states,
+        causal_failure_count,
+    );
+    let terminal_audit_events =
+        crate::terminal_transition_audit_events(node_transitions, run_transitions);
 
     TransitionAuditReport {
         node_transition_errors,
@@ -502,7 +516,8 @@ pub fn audit_run_event_log(run_dir: &Path) -> Result<EventLogAuditReport, String
         .unwrap_or("unknown-run")
         .to_string();
 
-    let raw = std::fs::read_to_string(run_dir.join("run.log.jsonl")).map_err(|err| err.to_string())?;
+    let raw =
+        std::fs::read_to_string(run_dir.join("run.log.jsonl")).map_err(|err| err.to_string())?;
     let mut events = Vec::new();
     let mut malformed_events = 0usize;
     for line in raw.lines().filter(|line| !line.trim().is_empty()) {
@@ -518,9 +533,9 @@ pub fn audit_run_event_log(run_dir: &Path) -> Result<EventLogAuditReport, String
             continue;
         };
         let Some(unix_ms) =
-            value.get("ts").and_then(|field| field.as_u64()).map(|value| value as u128).or_else(|| {
-                value.get("unix_ms").and_then(|field| field.as_u64()).map(|value| value as u128)
-            })
+            value.get("ts").and_then(|field| field.as_u64()).map(|value| value as u128).or_else(
+                || value.get("unix_ms").and_then(|field| field.as_u64()).map(|value| value as u128),
+            )
         else {
             malformed_events += 1;
             continue;
@@ -544,7 +559,8 @@ pub fn audit_run_event_log(run_dir: &Path) -> Result<EventLogAuditReport, String
         .collect::<Vec<_>>();
     let failure_roots = crate::summarize_failure_root_causes(&events);
 
-    let (index_entry_count, index_in_sync) = match std::fs::read(run_dir.join("run-log.index.json")) {
+    let (index_entry_count, index_in_sync) = match std::fs::read(run_dir.join("run-log.index.json"))
+    {
         Ok(bytes) => {
             let index: Vec<serde_json::Value> =
                 serde_json::from_slice(&bytes).map_err(|err| err.to_string())?;
@@ -619,11 +635,7 @@ fn duration_exceeds(observed_ms: Option<u64>, limit_ms: Option<u64>) -> bool {
 }
 
 fn normalize_failure_class(value: &str) -> String {
-    value
-        .chars()
-        .filter(|ch| ch.is_ascii_alphanumeric())
-        .flat_map(|ch| ch.to_lowercase())
-        .collect()
+    value.chars().filter(|ch| ch.is_ascii_alphanumeric()).flat_map(|ch| ch.to_lowercase()).collect()
 }
 
 fn recommend_resume_action(
@@ -647,16 +659,16 @@ fn recommend_resume_action(
 #[cfg(test)]
 mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
+    use crate::simulated_platform::{
+        HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
+        WorkerHeartbeat,
+    };
     use crate::{
         BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, InterruptionClass,
         ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
         RunPausePolicy, RunState, RunTransition, RuntimeConfig, TaskIsolationMode,
     };
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
-    use crate::simulated_platform::{
-        HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
-        WorkerHeartbeat,
-    };
     use std::collections::BTreeMap;
 
     fn graph_fixture() -> Graph {
@@ -674,8 +686,12 @@ mod tests {
                 Node {
                     id: "const1".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: Vec::new(),
-                    outputs: vec![FileOutput { name: "out".to_string(), path: "a/out".to_string() }],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "a/out".to_string(),
+                    }],
                     params: ParamValue::Object(BTreeMap::from([(
                         "value".to_string(),
                         ParamValue::Literal(serde_json::json!("1")),
@@ -688,12 +704,18 @@ mod tests {
                     effects: Vec::new(),
                     env_allowlist: Vec::new(),
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "shell1".to_string(),
                     kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec!["in".to_string()],
-                    outputs: vec![FileOutput { name: "out".to_string(), path: "b/out".to_string() }],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "b/out".to_string(),
+                    }],
                     params: ParamValue::Object(BTreeMap::from([(
                         "argv".to_string(),
                         ParamValue::Array(vec![
@@ -710,9 +732,14 @@ mod tests {
                     effects: vec![bijux_dag_core::Effect::Filesystem],
                     env_allowlist: Vec::new(),
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: "const1".to_string(), port: "out".to_string() },
                 to: PortRef { node_id: "shell1".to_string(), port: "in".to_string() },
             }],
@@ -721,8 +748,8 @@ mod tests {
 
     #[test]
     fn isolation_report_distinguishes_inline_and_subprocess_nodes() {
-        let report =
-            build_execution_isolation_report(&graph_fixture(), &RuntimeConfig::default()).expect("report");
+        let report = build_execution_isolation_report(&graph_fixture(), &RuntimeConfig::default())
+            .expect("report");
         assert_eq!(report.total_nodes, 2);
         assert!(report.isolation_counts.contains_key("in_process"));
         assert!(report.isolation_counts.contains_key("subprocess"));
