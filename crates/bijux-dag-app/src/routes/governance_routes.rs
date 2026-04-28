@@ -85,9 +85,49 @@ struct AlertRoutingReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct GovernancePolicyInput {
+    require_owners: bool,
+    #[serde(default)]
+    required_graph_tags: Vec<String>,
+    require_node_tags: bool,
+    #[serde(default)]
+    forbidden_effects: Vec<String>,
+    require_retry_for_effectful_nodes: bool,
+    require_timeout_for_effectful_nodes: bool,
+    max_retry_attempts: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+struct GovernancePolicyReport {
+    workflow_name: String,
+    violations: Vec<String>,
+    checked_nodes: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct CatalogNodeRecord {
+    node_id: String,
+    kind: String,
+    tags: Vec<String>,
+    outputs: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct CatalogRunRecord {
+    run_id: String,
+    status: String,
+    artifact_count: usize,
+}
+
 fn load_graph(path: &Path) -> Result<bijux_dag_core::Graph, ExitCode> {
     let input = read_file(path)?;
     parse_graph(&input)
+}
+
+fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
+    let raw = read_file(path)?;
+    serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
 }
 
 fn graph_name(graph: &bijux_dag_core::Graph) -> String {
@@ -412,6 +452,112 @@ fn alerts_payload(dag: &Path, event: &str) -> Result<(serde_json::Value, bool), 
     Ok((serde_json::to_value(report).map_err(|_| ExitCode::from(3))?, gaps.is_empty()))
 }
 
+fn policy_check_payload(
+    dag: &Path,
+    policy_path: &Path,
+) -> Result<(serde_json::Value, bool), ExitCode> {
+    let graph = load_graph(dag)?;
+    let policy: GovernancePolicyInput = parse_json_file(policy_path)?;
+    let owners = graph
+        .meta
+        .as_ref()
+        .map(|meta| meta.owners.clone())
+        .unwrap_or_default();
+    let graph_tags = graph_tags(&graph).into_iter().map(|tag| normalize_tag(&tag)).collect::<Vec<_>>();
+    let forbidden_effects = policy
+        .forbidden_effects
+        .iter()
+        .map(|effect| normalize_tag(effect))
+        .collect::<Vec<_>>();
+    let mut violations = Vec::new();
+    if policy.require_owners && owners.is_empty() {
+        violations.push("workflow owners are required".to_string());
+    }
+    for required in &policy.required_graph_tags {
+        let required = normalize_tag(required);
+        if !graph_tags.iter().any(|tag| tag == &required) {
+            violations.push(format!("missing required graph tag: {required}"));
+        }
+    }
+    for node in &graph.nodes {
+        if policy.require_node_tags && node.tags.is_empty() {
+            violations.push(format!("node '{}' is missing tags", node.id));
+        }
+        let normalized_effects = node
+            .effects
+            .iter()
+            .map(|effect| format!("{effect:?}").to_lowercase())
+            .collect::<Vec<_>>();
+        for effect in &normalized_effects {
+            if forbidden_effects.iter().any(|forbidden| forbidden == effect) {
+                violations.push(format!("node '{}' uses forbidden effect '{}'", node.id, effect));
+            }
+        }
+        if policy.require_retry_for_effectful_nodes && !node.effects.is_empty() && node.retry.max_attempts == 0 {
+            violations.push(format!("effectful node '{}' requires retry policy", node.id));
+        }
+        if policy.require_timeout_for_effectful_nodes && !node.effects.is_empty() && node.timeout_ms.is_none() {
+            violations.push(format!("effectful node '{}' requires timeout_ms", node.id));
+        }
+        if let Some(max_retry_attempts) = policy.max_retry_attempts {
+            if node.retry.max_attempts > max_retry_attempts {
+                violations.push(format!(
+                    "node '{}' exceeds max retry attempts policy ({})",
+                    node.id, max_retry_attempts
+                ));
+            }
+        }
+    }
+    let report = GovernancePolicyReport {
+        workflow_name: graph_name(&graph),
+        checked_nodes: graph.nodes.len(),
+        violations: violations.clone(),
+    };
+    Ok((serde_json::to_value(report).map_err(|_| ExitCode::from(3))?, violations.is_empty()))
+}
+
+fn catalog_export_payload(
+    dag: &Path,
+    run_dir: &Option<std::path::PathBuf>,
+) -> Result<serde_json::Value, ExitCode> {
+    let graph = load_graph(dag)?;
+    let compiled = compile_graph(&graph).map_err(|_| ExitCode::from(3))?;
+    let nodes = graph
+        .nodes
+        .iter()
+        .map(|node| CatalogNodeRecord {
+            node_id: node.id.clone(),
+            kind: node.kind.as_str().to_string(),
+            tags: node.tags.iter().map(|tag| normalize_tag(tag)).collect(),
+            outputs: node.outputs.iter().map(|output| output.path.clone()).collect(),
+        })
+        .collect::<Vec<_>>();
+    let run_record = if let Some(run_dir) = run_dir {
+        let manifest: serde_json::Value = parse_json_file(&run_dir.join("manifest.json"))?;
+        let outputs_index: serde_json::Value = parse_json_file(&run_dir.join("outputs").join("index.json"))?;
+        Some(CatalogRunRecord {
+            run_id: manifest.get("run_id").and_then(serde_json::Value::as_str).unwrap_or("unknown-run").to_string(),
+            status: manifest.get("status").and_then(serde_json::Value::as_str).unwrap_or("unknown").to_string(),
+            artifact_count: outputs_index
+                .get("files")
+                .and_then(serde_json::Value::as_array)
+                .map_or(0, |files| files.len()),
+        })
+    } else {
+        None
+    };
+    Ok(json!({
+        "catalog_format": "dag-catalog/v1",
+        "workflow_name": graph_name(&graph),
+        "owners": graph.meta.as_ref().map(|meta| meta.owners.clone()).unwrap_or_default(),
+        "tags": graph_tags(&graph).into_iter().map(|tag| normalize_tag(&tag)).collect::<Vec<_>>(),
+        "graph_fingerprint": compiled.graph_fingerprint,
+        "graph_input_names": graph.inputs.keys().cloned().collect::<Vec<_>>(),
+        "nodes": nodes,
+        "run_record": run_record,
+    }))
+}
+
 pub(crate) fn handle_governance_command(
     cli: &DagCli,
     command: &GovernanceCommands,
@@ -536,8 +682,44 @@ pub(crate) fn handle_governance_command(
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
-        | GovernanceCommands::PolicyCheck { .. }
-        | GovernanceCommands::CatalogExport { .. }
+        GovernanceCommands::PolicyCheck { dag, policy } => {
+            let (payload, ok) = policy_check_payload(dag, policy)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.policy-check",
+                    ok,
+                    payload,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id":"governance_policy_check_failed",
+                            "severity":"error",
+                            "message":"workflow violates governance policy requirements",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+        }
+        GovernanceCommands::CatalogExport { dag, run_dir } => {
+            let payload = catalog_export_payload(dag, run_dir)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.governance.catalog-export",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         | GovernanceCommands::AuditEvent { .. }
         | GovernanceCommands::Promotion { .. }
         | GovernanceCommands::Compliance { .. } => Err(ExitCode::from(2)),
@@ -761,5 +943,118 @@ mod tests {
         )
         .expect_err("missing ownership should fail");
         assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_policy_check_surface_accepts_compliant_workflow() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"policy-ok","owners":["platform@bijux"],"tags":["critical","prod","finance"]},
+              "nodes":[
+                {"id":"extract","kind":"const","inputs":[],"outputs":[],"tags":["etl"],"timeout_ms":60000,"retry":{"max_attempts":1,"backoff_ms":1000},"effects":["filesystem"],"params":{"value":"x"}}
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("policy graph");
+        let policy = dir.path().join("policy.json");
+        std::fs::write(
+            &policy,
+            r#"{
+              "require_owners": true,
+              "required_graph_tags": ["critical", "prod"],
+              "require_node_tags": true,
+              "forbidden_effects": ["network"],
+              "require_retry_for_effectful_nodes": true,
+              "require_timeout_for_effectful_nodes": true,
+              "max_retry_attempts": 2
+            }"#,
+        )
+        .expect("policy");
+        let cli = quiet_json_cli(GovernanceCommands::PolicyCheck {
+            dag: dag.clone(),
+            policy: policy.clone(),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::PolicyCheck { dag, policy },
+        )
+        .expect("policy check");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn governance_policy_check_surface_rejects_policy_violations() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"policy-bad","owners":[],"tags":["dev"]},
+              "nodes":[
+                {"id":"extract","kind":"const","inputs":[],"outputs":[],"effects":["network"],"params":{"value":"x"}}
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("bad policy graph");
+        let policy = dir.path().join("policy.json");
+        std::fs::write(
+            &policy,
+            r#"{
+              "require_owners": true,
+              "required_graph_tags": ["critical"],
+              "require_node_tags": true,
+              "forbidden_effects": ["network"],
+              "require_retry_for_effectful_nodes": true,
+              "require_timeout_for_effectful_nodes": true,
+              "max_retry_attempts": 1
+            }"#,
+        )
+        .expect("policy");
+        let cli = quiet_json_cli(GovernanceCommands::PolicyCheck {
+            dag: dag.clone(),
+            policy: policy.clone(),
+        });
+        let exit = handle_governance_command(
+            &cli,
+            &GovernanceCommands::PolicyCheck { dag, policy },
+        )
+        .expect_err("policy violations should fail");
+        assert_eq!(exit, ExitCode::from(3));
+    }
+
+    #[test]
+    fn governance_catalog_export_surface_emits_external_catalog_payload() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        write_valid_graph(&dag);
+        let run_dir = dir.path().join("run-01");
+        std::fs::create_dir_all(run_dir.join("outputs")).expect("outputs");
+        std::fs::write(
+            run_dir.join("manifest.json"),
+            r#"{"run_id":"run-01","status":"success"}"#,
+        )
+        .expect("manifest");
+        std::fs::write(
+            run_dir.join("outputs").join("index.json"),
+            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","sha256":"abc","path":"nodes/extract/report.json"}]}"#,
+        )
+        .expect("index");
+        let cli = quiet_json_cli(GovernanceCommands::CatalogExport {
+            dag: dag.clone(),
+            run_dir: Some(run_dir.clone()),
+        });
+        let code = handle_governance_command(
+            &cli,
+            &GovernanceCommands::CatalogExport { dag, run_dir: Some(run_dir) },
+        )
+        .expect("catalog export");
+        assert_eq!(code, ExitCode::SUCCESS);
     }
 }
