@@ -7,8 +7,9 @@ use crate::simulated_platform::{
 use crate::{
     cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
     retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
-    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass, RetryPolicyV2,
-    ResumePolicy, RuntimeConfig, RuntimeError, RunPausePolicy, TaskIsolationMode,
+    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass,
+    ManualInterventionRecord, OperatorRetryPolicy, RetryPolicyV2, ResumePolicy, RuntimeConfig,
+    RuntimeError, RunPausePolicy, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -109,6 +110,17 @@ pub struct PauseResumeAuditReport {
     pub interruption_class: String,
     pub resume_policy: String,
     pub recommended_action: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManualInterventionAuditReport {
+    pub operator: String,
+    pub action: String,
+    pub allowed: bool,
+    pub reason_required: bool,
+    pub audit_required: bool,
+    pub next_manual_attempt: Option<u32>,
+    pub notes: Vec<String>,
 }
 
 pub fn build_execution_isolation_report(
@@ -386,6 +398,49 @@ pub fn build_pause_resume_audit_report(
     }
 }
 
+pub fn build_manual_intervention_audit_report(
+    record: &ManualInterventionRecord,
+    policy: &OperatorRetryPolicy,
+    manual_attempts_so_far: u32,
+) -> ManualInterventionAuditReport {
+    let mut notes = Vec::new();
+    let action = record.action.trim().to_lowercase();
+    let allowed_actions = ["approve", "skip", "retry", "mark-success"];
+    let mut allowed = true;
+
+    if record.operator.trim().is_empty() {
+        notes.push("operator must be non-empty".to_string());
+        allowed = false;
+    }
+    if !allowed_actions.contains(&action.as_str()) {
+        notes.push("unsupported intervention action".to_string());
+        allowed = false;
+    }
+    if policy.require_reason && record.reason.trim().is_empty() {
+        notes.push("reason is required by policy".to_string());
+        allowed = false;
+    }
+    if action == "retry" && manual_attempts_so_far >= policy.max_manual_attempts {
+        notes.push("manual retry budget exhausted".to_string());
+        allowed = false;
+    }
+    if policy.requires_audit_record && record.recorded_unix_ms == 0 {
+        notes.push("audit timestamp must be recorded".to_string());
+        allowed = false;
+    }
+
+    ManualInterventionAuditReport {
+        operator: record.operator.clone(),
+        action,
+        allowed,
+        reason_required: policy.require_reason,
+        audit_required: policy.requires_audit_record,
+        next_manual_attempt: (allowed && record.action == "retry")
+            .then_some(manual_attempts_so_far.saturating_add(1)),
+        notes,
+    }
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -456,7 +511,8 @@ mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
     use crate::{
         BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, InterruptionClass,
-        ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
+        ManualInterventionRecord, OperatorRetryPolicy, ResumePolicy, RunPausePolicy,
+        RuntimeConfig, TaskIsolationMode,
     };
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
     use crate::simulated_platform::{
@@ -721,5 +777,27 @@ mod tests {
         assert!(report.freeze_dispatch);
         assert!(report.freeze_ready_queue);
         assert_eq!(report.recommended_action, "verify-run-state-then-continue");
+    }
+
+    #[test]
+    fn manual_intervention_report_enforces_reason_and_retry_budget() {
+        let report = super::build_manual_intervention_audit_report(
+            &ManualInterventionRecord {
+                run_id: "run-1".to_string(),
+                node_id: Some("node-a".to_string()),
+                operator: "operator-a".to_string(),
+                action: "retry".to_string(),
+                reason: "transient artifact outage".to_string(),
+                recorded_unix_ms: 123,
+            },
+            &OperatorRetryPolicy {
+                max_manual_attempts: 2,
+                require_reason: true,
+                requires_audit_record: true,
+            },
+            1,
+        );
+        assert!(report.allowed);
+        assert_eq!(report.next_manual_attempt, Some(2));
     }
 }

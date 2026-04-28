@@ -3,9 +3,10 @@ use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
     audit_dispatch_discipline, build_cancellation_audit_report,
     build_execution_isolation_report, build_retry_decision_report,
-    build_heartbeat_audit_report, build_pause_resume_audit_report, build_timeout_audit_report,
-    BatchAttemptState, BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass,
-    ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
+    build_heartbeat_audit_report, build_manual_intervention_audit_report,
+    build_pause_resume_audit_report, build_timeout_audit_report, BatchAttemptState,
+    BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass, ManualInterventionRecord,
+    OperatorRetryPolicy, ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -52,6 +53,13 @@ struct PauseSimulation {
     running_count: usize,
     interruption_class: InterruptionClass,
     resume_policy: ResumePolicy,
+}
+
+#[derive(Debug, Deserialize)]
+struct InterventionSimulation {
+    record: ManualInterventionRecord,
+    policy: OperatorRetryPolicy,
+    manual_attempts_so_far: u32,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -243,6 +251,35 @@ pub(crate) fn handle_runtime_command(
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
             Ok(ExitCode::SUCCESS)
+        }
+        RuntimeCommands::Intervention { simulation } => {
+            let simulation: InterventionSimulation = parse_json_file(simulation)?;
+            let report = build_manual_intervention_audit_report(
+                &simulation.record,
+                &simulation.policy,
+                simulation.manual_attempts_so_far,
+            );
+            let ok = report.allowed;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.intervention",
+                    ok,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    if ok {
+                        Vec::new()
+                    } else {
+                        vec![json!({
+                            "id": "manual_intervention_rejected",
+                            "severity": "error",
+                            "message": "manual intervention violates runtime policy",
+                        })]
+                    },
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
         }
     }
 }
@@ -512,6 +549,37 @@ mod tests {
         let cli = quiet_json_cli(RuntimeCommands::Pause { simulation: simulation.clone() });
         let code =
             handle_runtime_command(&cli, &RuntimeCommands::Pause { simulation }).expect("pause");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_support_manual_intervention_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("intervention.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "record":{
+                "run_id":"run-1",
+                "node_id":"node-a",
+                "operator":"operator-a",
+                "action":"retry",
+                "reason":"transient artifact outage",
+                "recorded_unix_ms":123
+              },
+              "policy":{"max_manual_attempts":2,"require_reason":true,"requires_audit_record":true},
+              "manual_attempts_so_far":1
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli =
+            quiet_json_cli(RuntimeCommands::Intervention { simulation: simulation.clone() });
+        let code = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Intervention { simulation },
+        )
+        .expect("intervention");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

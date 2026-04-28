@@ -400,6 +400,7 @@ pub(crate) enum RuntimeCommands {
     Heartbeat { simulation: PathBuf },
     Cancel { simulation: PathBuf },
     Pause { simulation: PathBuf },
+    Intervention { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
