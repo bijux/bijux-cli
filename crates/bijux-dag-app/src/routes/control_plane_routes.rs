@@ -1,9 +1,10 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    fence_allows_mutation, is_stale_leader, next_epoch, DurableRunQueueEntry,
-    LeaderElectionState, QueuePartition, QueueShardLease, RegionId, RegionQueuePartition,
-    SchedulerEpoch, SchedulerFenceToken, TypedControlPlaneRequest, TypedControlPlaneResponse,
+    fence_allows_mutation, is_stale_leader, next_epoch, validate_task_lease_semantics,
+    DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
+    QueueShardLease, RegionId, RegionQueuePartition, SchedulerEpoch, SchedulerFenceToken,
+    TaskLeaseSemantics, TypedControlPlaneRequest, TypedControlPlaneResponse, WorkLease,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -96,6 +97,27 @@ struct ShardingReport {
     shared_region_edges: usize,
     gaps: Vec<String>,
     sharding_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct LeasesSimulation {
+    shard_lease: QueueShardLease,
+    ownership_transfer: QueueOwnershipTransfer,
+    work_lease: WorkLease,
+    semantics: TaskLeaseSemantics,
+    now_unix_ms: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct LeasesReport {
+    shard_id: String,
+    worker_id: String,
+    shard_lease_live: bool,
+    work_lease_live: bool,
+    transfer_recorded: bool,
+    semantics_valid: bool,
+    gaps: Vec<String>,
+    leases_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -268,6 +290,47 @@ fn sharding_payload(simulation: ShardingSimulation) -> (serde_json::Value, bool)
     (serde_json::to_value(report).expect("sharding report"), ok)
 }
 
+fn leases_payload(simulation: LeasesSimulation) -> (serde_json::Value, bool) {
+    let LeasesSimulation { shard_lease, ownership_transfer, work_lease, semantics, now_unix_ms } =
+        simulation;
+    let shard_lease_live = shard_lease.lease_expires_unix_ms >= now_unix_ms;
+    let work_lease_live = work_lease.expires_unix_ms >= now_unix_ms;
+    let transfer_recorded = ownership_transfer.shard_id == shard_lease.shard_id
+        && ownership_transfer.to_replica_id == shard_lease.owner_replica_id;
+    let semantics_valid = validate_task_lease_semantics(&semantics).is_ok();
+    let mut gaps = Vec::new();
+    if shard_lease.shard_id.trim().is_empty() {
+        gaps.push("durable lease audit requires a shard identifier".to_string());
+    }
+    if !shard_lease_live {
+        gaps.push("shard lease has already expired".to_string());
+    }
+    if !work_lease_live {
+        gaps.push("work lease has already expired".to_string());
+    }
+    if !transfer_recorded {
+        gaps.push("ownership transfer is not recorded against the active shard lease".to_string());
+    }
+    if !semantics_valid {
+        gaps.push("task lease semantics are invalid".to_string());
+    }
+    if work_lease.worker_id.trim().is_empty() {
+        gaps.push("work lease must bind to a worker".to_string());
+    }
+    let report = LeasesReport {
+        shard_id: shard_lease.shard_id,
+        worker_id: work_lease.worker_id,
+        shard_lease_live,
+        work_lease_live,
+        transfer_recorded,
+        semantics_valid,
+        leases_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.leases_ready;
+    (serde_json::to_value(report).expect("leases report"), ok)
+}
+
 pub(crate) fn handle_control_plane_command(
     cli: &DagCli,
     command: &ControlPlaneCommands,
@@ -293,6 +356,11 @@ pub(crate) fn handle_control_plane_command(
             let (payload, ok) = sharding_payload(simulation);
             ("dag.control-plane.sharding", payload, ok)
         }
+        ControlPlaneCommands::Leases { simulation } => {
+            let simulation: LeasesSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = leases_payload(simulation);
+            ("dag.control-plane.leases", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -315,12 +383,14 @@ pub(crate) fn handle_control_plane_command(
 mod tests {
     use super::{
         api_payload, leadership_payload, planning_payload, ApiSimulation, LeadershipSimulation,
-        PlanningSimulation, ShardingSimulation, sharding_payload,
+        LeasesSimulation, PlanningSimulation, ShardingSimulation, leases_payload,
+        sharding_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
-        DurableRunQueueEntry, LeaderElectionState, QueuePartition, QueueShardLease, RegionId,
-        RegionQueuePartition, RunControlOperation, SchedulerEpoch, SchedulerFenceToken,
-        TypedControlPlaneRequest, TypedControlPlaneResponse,
+        DurableRunQueueEntry, LeaderElectionState, QueueOwnershipTransfer, QueuePartition,
+        QueueShardLease, RegionId, RegionQueuePartition, RunControlOperation, SchedulerEpoch,
+        SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
+        TypedControlPlaneResponse, WorkLease,
     };
     use serde_json::json;
     use std::collections::BTreeSet;
@@ -531,5 +601,73 @@ mod tests {
         let (payload, ok) = sharding_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 2);
+    }
+
+    #[test]
+    fn leases_accept_live_scheduler_and_worker_ownership() {
+        let simulation = LeasesSimulation {
+            shard_lease: QueueShardLease {
+                shard_id: "atlas".to_string(),
+                owner_replica_id: "scheduler-a".to_string(),
+                lease_expires_unix_ms: 2_000,
+            },
+            ownership_transfer: QueueOwnershipTransfer {
+                shard_id: "atlas".to_string(),
+                from_replica_id: "scheduler-b".to_string(),
+                to_replica_id: "scheduler-a".to_string(),
+                transfer_unix_ms: 1_000,
+            },
+            work_lease: WorkLease {
+                lease_id: "lease-1".to_string(),
+                run_id: "run-1".to_string(),
+                node_id: "node-a".to_string(),
+                worker_id: "worker-a".to_string(),
+                expires_unix_ms: 2_000,
+            },
+            semantics: TaskLeaseSemantics {
+                lease_duration_ms: 5_000,
+                renew_before_expiry_ms: 1_000,
+                max_renewals: 3,
+                recovery_grace_ms: 2_000,
+            },
+            now_unix_ms: 1_500,
+        };
+        let (payload, ok) = leases_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["leases_ready"], true);
+    }
+
+    #[test]
+    fn leases_flag_expired_or_untracked_ownership() {
+        let simulation = LeasesSimulation {
+            shard_lease: QueueShardLease {
+                shard_id: String::new(),
+                owner_replica_id: "scheduler-a".to_string(),
+                lease_expires_unix_ms: 100,
+            },
+            ownership_transfer: QueueOwnershipTransfer {
+                shard_id: "other".to_string(),
+                from_replica_id: "scheduler-b".to_string(),
+                to_replica_id: "scheduler-c".to_string(),
+                transfer_unix_ms: 1_000,
+            },
+            work_lease: WorkLease {
+                lease_id: "lease-1".to_string(),
+                run_id: "run-1".to_string(),
+                node_id: "node-a".to_string(),
+                worker_id: String::new(),
+                expires_unix_ms: 100,
+            },
+            semantics: TaskLeaseSemantics {
+                lease_duration_ms: 0,
+                renew_before_expiry_ms: 0,
+                max_renewals: 0,
+                recovery_grace_ms: 0,
+            },
+            now_unix_ms: 1_500,
+        };
+        let (payload, ok) = leases_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
 }
