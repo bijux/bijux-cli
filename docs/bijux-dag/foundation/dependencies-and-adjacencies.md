@@ -9,18 +9,21 @@ last_reviewed: 2026-04-06
 
 # Dependencies and Adjacencies
 
-DAG crates rely on parsing, serialization, hashing, and command libraries, with
-strict adjacency rules between semantic, runtime, and artifact layers.
+This page explains which dependencies shape DAG meaning and which crate
+boundaries should stay explicit as the graph stack evolves.
 
-## Visual Summary
+The critical question is not dependency count. It is whether a dependency can
+alter identity, replay truth, artifact integrity, or crate direction.
+
+## Dependency Map
 
 ```mermaid
-flowchart TD
-    dag_core["dag-core"] --> serde["serde and serde_json"]
-    dag_core --> hash["sha2 and hex"]
-    dag_app["dag-app"] --> clap["clap command modeling"]
-    dag_runtime["dag-runtime"] --> ctrlc["interrupt handling"]
-    dag_runtime --> dag_artifacts["artifact persistence dependency"]
+flowchart LR
+    core["dag-core"] --> identity["identity and payload encoding"]
+    runtime["dag-runtime"] --> replay["replay and execution state"]
+    runtime --> artifacts["artifact persistence"]
+    app["dag-app"] --> commands["command modeling"]
+    stack["dag stack"] --> boundaries["crate adjacency rules"]
 ```
 
 ## Key Dependencies
@@ -43,6 +46,11 @@ flowchart TD
 - `crates/bijux-dag-runtime/Cargo.toml`
 - `crates/bijux-dag-app/Cargo.toml`
 - `crates/bijux-dag-cli/Cargo.toml`
+
+## Reading Rule
+
+Use this page when a dependency change or a crate-to-crate shortcut seems
+convenient but might blur semantic, runtime, or artifact responsibilities.
 
 ## Next Reads
 
