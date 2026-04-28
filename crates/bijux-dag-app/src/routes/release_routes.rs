@@ -168,6 +168,29 @@ struct ReleaseClassificationReport {
     graph_policy_changed: bool,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseEvidenceSimulation {
+    revision_id: String,
+    #[serde(default)]
+    tests: Vec<String>,
+    #[serde(default)]
+    simulations: Vec<String>,
+    #[serde(default)]
+    prior_runs: Vec<String>,
+    #[serde(default)]
+    approvals: Vec<String>,
+    #[serde(default)]
+    artifacts: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseEvidenceReport {
+    revision_id: String,
+    complete: bool,
+    evidence_refs: Vec<String>,
+    missing_dimensions: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -517,6 +540,40 @@ fn classify_payload(before: &std::path::Path, after: &std::path::Path) -> Result
     })
 }
 
+fn evidence_payload(simulation: &std::path::Path) -> Result<ReleaseEvidenceReport, ExitCode> {
+    let simulation: ReleaseEvidenceSimulation = load_json_file(simulation)?;
+    let mut evidence_refs = Vec::new();
+    evidence_refs.extend(simulation.tests.iter().map(|value| format!("test:{value}")));
+    evidence_refs.extend(simulation.simulations.iter().map(|value| format!("simulation:{value}")));
+    evidence_refs.extend(simulation.prior_runs.iter().map(|value| format!("run:{value}")));
+    evidence_refs.extend(simulation.approvals.iter().map(|value| format!("approval:{value}")));
+    evidence_refs.extend(simulation.artifacts.iter().map(|value| format!("artifact:{value}")));
+
+    let mut missing_dimensions = Vec::new();
+    if simulation.tests.is_empty() {
+        missing_dimensions.push("tests".to_string());
+    }
+    if simulation.simulations.is_empty() {
+        missing_dimensions.push("simulations".to_string());
+    }
+    if simulation.prior_runs.is_empty() {
+        missing_dimensions.push("prior_runs".to_string());
+    }
+    if simulation.approvals.is_empty() {
+        missing_dimensions.push("approvals".to_string());
+    }
+    if simulation.artifacts.is_empty() {
+        missing_dimensions.push("artifacts".to_string());
+    }
+
+    Ok(ReleaseEvidenceReport {
+        revision_id: simulation.revision_id,
+        complete: missing_dimensions.is_empty(),
+        evidence_refs,
+        missing_dimensions,
+    })
+}
+
 pub(crate) fn handle_release_command(
     cli: &DagCli,
     command: &ReleaseCommands,
@@ -560,6 +617,11 @@ pub(crate) fn handle_release_command(
             let payload =
                 serde_json::to_value(classify_payload(before, after)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.classify", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        ReleaseCommands::Evidence { simulation } => {
+            let payload =
+                serde_json::to_value(evidence_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.release.evidence", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
     }
 }
@@ -1063,5 +1125,57 @@ mod tests {
         let report = super::classify_payload(&before, &after).expect("report");
         assert_eq!(report.compatibility_class, "breaking");
         assert!(report.changed_nodes.contains_key("a"));
+    }
+
+    #[test]
+    fn release_evidence_links_promotion_inputs() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("evidence.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:new",
+              "tests":["contracts","smoke"],
+              "simulations":["shadow-clean"],
+              "prior_runs":["run-1001"],
+              "approvals":["chg-1"],
+              "artifacts":["bundle-1"]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(ReleaseCommands::Evidence { simulation: simulation.clone() });
+        let code = handle_release_command(
+            &cli,
+            &ReleaseCommands::Evidence { simulation: simulation.clone() },
+        )
+        .expect("evidence");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::evidence_payload(&simulation).expect("report");
+        assert!(report.complete);
+        assert!(report.evidence_refs.iter().any(|value| value == "test:contracts"));
+        assert!(report.evidence_refs.iter().any(|value| value == "run:run-1001"));
+    }
+
+    #[test]
+    fn release_evidence_reports_missing_dimensions() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("evidence.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "revision_id":"graph:new",
+              "tests":[],
+              "simulations":[],
+              "prior_runs":[],
+              "approvals":[],
+              "artifacts":[]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::evidence_payload(&simulation).expect("report");
+        assert!(!report.complete);
+        for expected in ["tests", "simulations", "prior_runs", "approvals", "artifacts"] {
+            assert!(report.missing_dimensions.iter().any(|value| value == expected));
+        }
     }
 }
