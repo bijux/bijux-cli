@@ -2,11 +2,12 @@ use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    replay_trust_warnings, release_policy_allows, AuditReadinessChecklist,
-    IncidentClassification, IncidentSeverity, IntegratedVerificationLane,
-    LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformHealthDashboard,
-    PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy, RunProvenanceAttestation,
-    RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective, SupportabilityModel,
+    replay_trust_warnings, release_policy_allows, AuditReadinessChecklist, ErrorBudgetPolicy,
+    GamedayScenario, IncidentClassification, IncidentSeverity, IntegratedVerificationLane,
+    LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformAcceptanceBoard,
+    PlatformHealthDashboard, PlatformInvariantCatalog, PostmortemTemplate, ProductBoundary,
+    ReleaseGovernancePolicy, RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators,
+    ServiceLevelObjective, SupportabilityModel, SustainabilityOwnership,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -281,6 +282,39 @@ struct ReadinessReviewReport {
     supported_backends: Vec<String>,
     gaps: Vec<String>,
     readiness_review_passed: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct ResilienceScorecardSimulation {
+    workflow_id: String,
+    objective: ServiceLevelObjective,
+    indicators: ServiceLevelIndicators,
+    dashboard: PlatformHealthDashboard,
+    #[serde(default)]
+    gamedays: Vec<GamedayScenario>,
+    postmortem: PostmortemTemplate,
+    #[serde(default)]
+    invariants: Option<PlatformInvariantCatalog>,
+    #[serde(default)]
+    verification_lane: Option<IntegratedVerificationLane>,
+    supportability: SupportabilityModel,
+    sustainability: SustainabilityOwnership,
+    acceptance_board: PlatformAcceptanceBoard,
+    error_budget: ErrorBudgetPolicy,
+}
+
+#[derive(Debug, Serialize)]
+struct ResilienceScorecardReport {
+    workflow_id: String,
+    score: f64,
+    slo_passed: bool,
+    dashboard_score: f64,
+    gameday_coverage: usize,
+    invariant_count: usize,
+    supported_backend_count: usize,
+    subsystem_owner_count: usize,
+    acceptance_criteria_count: usize,
+    weaknesses: Vec<String>,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -743,6 +777,108 @@ fn readiness_review_payload(simulation: ReadinessReviewSimulation) -> (serde_jso
     (serde_json::to_value(report).expect("readiness review report"), ok)
 }
 
+fn scorecard_payload(simulation: ResilienceScorecardSimulation) -> (serde_json::Value, bool) {
+    let ResilienceScorecardSimulation {
+        workflow_id,
+        objective,
+        indicators,
+        dashboard,
+        gamedays,
+        postmortem,
+        invariants,
+        verification_lane,
+        supportability,
+        sustainability,
+        acceptance_board,
+        error_budget,
+    } = simulation;
+    let slo = evaluate_slo(&objective, &indicators);
+    let dashboard_score = health_dashboard_score(&dashboard);
+    let invariant_catalog = invariants.unwrap_or_else(|| PlatformInvariantCatalog {
+        invariants: vec![
+            "deterministic planning".to_string(),
+            "immutable artifact identity".to_string(),
+            "tenant isolation cannot be bypassed".to_string(),
+        ],
+    });
+    let verification_lane = verification_lane.unwrap_or_else(integrated_verification_lane_default);
+    let mut score = 0.0_f64;
+    let mut weaknesses = Vec::new();
+    if slo.passed {
+        score += 25.0;
+    } else {
+        weaknesses.push("SLO commitments are not currently met".to_string());
+    }
+    score += dashboard_score * 20.0;
+    if gamedays.is_empty() {
+        weaknesses.push("no gameday drills are defined".to_string());
+    } else {
+        score += 10.0;
+    }
+    let required_sections = ["summary", "impact", "timeline", "actions"];
+    let postmortem_sections = postmortem
+        .required_sections
+        .iter()
+        .map(|section| section.trim().to_lowercase())
+        .collect::<BTreeSet<_>>();
+    let missing_sections = required_sections
+        .iter()
+        .filter(|section| !postmortem_sections.contains(**section))
+        .count();
+    if missing_sections == 0 {
+        score += 10.0;
+    } else {
+        weaknesses.push("postmortem template is missing core sections".to_string());
+    }
+    if !invariant_catalog.invariants.is_empty() {
+        score += 10.0;
+    } else {
+        weaknesses.push("no platform invariants are recorded".to_string());
+    }
+    if !supportability.supported_backends.is_empty() {
+        score += 10.0;
+    } else {
+        weaknesses.push("no supported backend set is declared".to_string());
+    }
+    if !sustainability.subsystem_owners.is_empty() && !sustainability.review_routing.is_empty() {
+        score += 10.0;
+    } else {
+        weaknesses.push("sustainability ownership is incomplete".to_string());
+    }
+    if !acceptance_board.preview_to_stable_criteria.is_empty() {
+        score += 5.0;
+    } else {
+        weaknesses.push("acceptance board criteria are missing".to_string());
+    }
+    if !verification_lane.required_evidence.is_empty() {
+        score += 5.0;
+    } else {
+        weaknesses.push("verification lane evidence is incomplete".to_string());
+    }
+    if error_budget.scheduler_outage_minutes_per_quarter <= 0.0
+        || error_budget.backend_degradation_minutes_per_quarter <= 0.0
+    {
+        weaknesses.push("error budget policy is not defined tightly enough".to_string());
+    } else {
+        score += 5.0;
+    }
+    let score = score.min(100.0);
+    let report = ResilienceScorecardReport {
+        workflow_id,
+        score,
+        slo_passed: slo.passed,
+        dashboard_score,
+        gameday_coverage: gamedays.len(),
+        invariant_count: invariant_catalog.invariants.len(),
+        supported_backend_count: supportability.supported_backends.len(),
+        subsystem_owner_count: sustainability.subsystem_owners.len(),
+        acceptance_criteria_count: acceptance_board.preview_to_stable_criteria.len(),
+        weaknesses,
+    };
+    let ok = report.score >= 75.0 && report.weaknesses.is_empty();
+    (serde_json::to_value(report).expect("resilience scorecard report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -793,6 +929,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = readiness_review_payload(simulation);
             ("dag.incident.readiness-review", payload, ok)
         }
+        IncidentCommands::Scorecard { simulation } => {
+            let simulation: ResilienceScorecardSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = scorecard_payload(simulation);
+            ("dag.incident.scorecard", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -813,15 +954,16 @@ mod tests {
     use super::{
         annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
         readiness_review_payload, repair_window_payload, replay_validation_payload,
-        safe_stop_payload, timeline_payload,
+        safe_stop_payload, scorecard_payload, timeline_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         AuditReadinessChecklist, BinaryComponent, BinaryProvenanceRecord, EnvironmentAttestation,
-        IncidentClassification, IncidentSeverity, LifecycleGovernanceRule,
-        OperatorTrainingCatalog, PlatformHealthDashboard, PluginProvenanceRecord,
+        ErrorBudgetPolicy, GamedayScenario, IncidentClassification, IncidentSeverity,
+        LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformAcceptanceBoard,
+        PlatformHealthDashboard, PlatformInvariantCatalog, PluginProvenanceRecord,
         PluginTrustTier, PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy,
-        RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators,
-        ServiceLevelObjective, SupportabilityModel,
+        RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective,
+        SupportabilityModel, SustainabilityOwnership, IntegratedVerificationLane,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
@@ -829,7 +971,7 @@ mod tests {
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
         WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
         IncidentTimelineEvent, IncidentTimelineSimulation, ReadinessReviewSimulation,
-        ReplayValidationSimulation,
+        ReplayValidationSimulation, ResilienceScorecardSimulation,
     };
 
     #[test]
@@ -1327,5 +1469,122 @@ mod tests {
         let (payload, ok) = readiness_review_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn scorecard_rewards_resilient_workflow_family() {
+        let simulation = ResilienceScorecardSimulation {
+            workflow_id: "tenant-a/resilient-refresh".to_string(),
+            objective: ServiceLevelObjective {
+                run_creation_latency_ms: 500.0,
+                dispatch_latency_ms: 800.0,
+                completion_reliability_ratio: 0.99,
+                artifact_availability_ratio: 0.995,
+            },
+            indicators: ServiceLevelIndicators {
+                measured_run_creation_latency_ms: 300.0,
+                measured_dispatch_latency_ms: 500.0,
+                measured_completion_reliability_ratio: 0.996,
+                measured_artifact_availability_ratio: 0.999,
+            },
+            dashboard: PlatformHealthDashboard {
+                engine_health: 0.92,
+                scheduler_health: 0.94,
+                artifact_store_health: 0.96,
+                auth_health: 0.95,
+                policy_health: 0.93,
+            },
+            gamedays: vec![GamedayScenario {
+                name: "scheduler failover".to_string(),
+                failure_class: "control-plane".to_string(),
+                expected_outcome: "queue ownership transfers cleanly".to_string(),
+            }],
+            postmortem: PostmortemTemplate {
+                required_sections: vec![
+                    "summary".to_string(),
+                    "impact".to_string(),
+                    "timeline".to_string(),
+                    "actions".to_string(),
+                ],
+            },
+            invariants: None,
+            verification_lane: None,
+            supportability: SupportabilityModel {
+                official_plugins: BTreeSet::from(["official-transfer".to_string()]),
+                supported_backends: BTreeSet::from(["remote".to_string(), "hpc".to_string()]),
+            },
+            sustainability: SustainabilityOwnership {
+                subsystem_owners: BTreeMap::from([("scheduler".to_string(), "team-platform".to_string())]),
+                review_routing: BTreeMap::from([("scheduler".to_string(), "platform-review".to_string())]),
+            },
+            acceptance_board: PlatformAcceptanceBoard {
+                members: vec!["platform".to_string(), "security".to_string()],
+                preview_to_stable_criteria: vec!["gameday green".to_string(), "slo green".to_string()],
+            },
+            error_budget: ErrorBudgetPolicy {
+                scheduler_outage_minutes_per_quarter: 20.0,
+                backend_degradation_minutes_per_quarter: 60.0,
+                artifact_corruption_incident_budget: 0,
+            },
+        };
+        let (payload, ok) = scorecard_payload(simulation);
+        assert!(ok);
+        assert!(payload["score"].as_f64().expect("score") >= 75.0);
+    }
+
+    #[test]
+    fn scorecard_penalizes_missing_resilience_foundations() {
+        let simulation = ResilienceScorecardSimulation {
+            workflow_id: "tenant-b/brittle-refresh".to_string(),
+            objective: ServiceLevelObjective {
+                run_creation_latency_ms: 100.0,
+                dispatch_latency_ms: 100.0,
+                completion_reliability_ratio: 0.99,
+                artifact_availability_ratio: 0.99,
+            },
+            indicators: ServiceLevelIndicators {
+                measured_run_creation_latency_ms: 500.0,
+                measured_dispatch_latency_ms: 500.0,
+                measured_completion_reliability_ratio: 0.70,
+                measured_artifact_availability_ratio: 0.80,
+            },
+            dashboard: PlatformHealthDashboard {
+                engine_health: 0.40,
+                scheduler_health: 0.35,
+                artifact_store_health: 0.30,
+                auth_health: 0.60,
+                policy_health: 0.55,
+            },
+            gamedays: Vec::new(),
+            postmortem: PostmortemTemplate {
+                required_sections: vec!["summary".to_string()],
+            },
+            invariants: Some(PlatformInvariantCatalog { invariants: Vec::new() }),
+            verification_lane: Some(IntegratedVerificationLane {
+                name: "thin".to_string(),
+                required_domains: Vec::new(),
+                required_evidence: Vec::new(),
+            }),
+            supportability: SupportabilityModel {
+                official_plugins: BTreeSet::new(),
+                supported_backends: BTreeSet::new(),
+            },
+            sustainability: SustainabilityOwnership {
+                subsystem_owners: BTreeMap::new(),
+                review_routing: BTreeMap::new(),
+            },
+            acceptance_board: PlatformAcceptanceBoard {
+                members: Vec::new(),
+                preview_to_stable_criteria: Vec::new(),
+            },
+            error_budget: ErrorBudgetPolicy {
+                scheduler_outage_minutes_per_quarter: 0.0,
+                backend_degradation_minutes_per_quarter: 0.0,
+                artifact_corruption_incident_budget: 1,
+            },
+        };
+        let (payload, ok) = scorecard_payload(simulation);
+        assert!(!ok);
+        assert!(payload["weaknesses"].as_array().expect("weaknesses").len() >= 5);
     }
 }
