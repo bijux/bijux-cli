@@ -496,6 +496,7 @@ pub(crate) enum StateStoreCommands {
     Transaction { simulation: PathBuf },
     Journal { simulation: PathBuf },
     Snapshot { simulation: PathBuf },
+    Index { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

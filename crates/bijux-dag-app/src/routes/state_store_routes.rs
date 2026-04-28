@@ -77,6 +77,28 @@ struct SnapshotReport {
     snapshot_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct IndexSimulation {
+    indexed_dimensions: Vec<String>,
+    run_count: usize,
+    owner_cardinality: usize,
+    tag_cardinality: usize,
+    partition_cardinality: usize,
+    failure_class_cardinality: usize,
+    p95_lookup_ms: u64,
+    max_lookup_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct IndexReport {
+    dimension_count: usize,
+    all_required_dimensions_indexed: bool,
+    high_cardinality_ready: bool,
+    lookup_within_limit: bool,
+    gaps: Vec<String>,
+    index_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -230,6 +252,48 @@ fn snapshot_payload(simulation: SnapshotSimulation) -> (serde_json::Value, bool)
     (serde_json::to_value(report).expect("snapshot report"), ok)
 }
 
+fn index_payload(simulation: IndexSimulation) -> (serde_json::Value, bool) {
+    let IndexSimulation {
+        indexed_dimensions,
+        run_count,
+        owner_cardinality,
+        tag_cardinality,
+        partition_cardinality,
+        failure_class_cardinality,
+        p95_lookup_ms,
+        max_lookup_ms,
+    } = simulation;
+    let required = ["owner", "tag", "partition", "failure_class"];
+    let all_required_dimensions_indexed =
+        required.iter().all(|dimension| indexed_dimensions.iter().any(|value| value == dimension));
+    let high_cardinality_ready =
+        owner_cardinality > 0 && tag_cardinality > 0 && partition_cardinality > 0 && failure_class_cardinality > 0;
+    let lookup_within_limit = p95_lookup_ms <= max_lookup_ms;
+    let mut gaps = Vec::new();
+    if run_count == 0 {
+        gaps.push("index audit requires non-zero history volume".to_string());
+    }
+    if !all_required_dimensions_indexed {
+        gaps.push("required query dimensions are missing from the run index".to_string());
+    }
+    if !high_cardinality_ready {
+        gaps.push("index does not cover the declared high-cardinality dimensions".to_string());
+    }
+    if !lookup_within_limit {
+        gaps.push("lookup latency exceeds the declared index budget".to_string());
+    }
+    let report = IndexReport {
+        dimension_count: indexed_dimensions.len(),
+        all_required_dimensions_indexed,
+        high_cardinality_ready,
+        lookup_within_limit,
+        index_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.index_ready;
+    (serde_json::to_value(report).expect("index report"), ok)
+}
+
 pub(crate) fn handle_state_store_command(
     cli: &DagCli,
     command: &StateStoreCommands,
@@ -249,6 +313,11 @@ pub(crate) fn handle_state_store_command(
             let simulation: SnapshotSimulation = parse_json_file(simulation)?;
             let (payload, ok) = snapshot_payload(simulation);
             ("dag.state-store.snapshot", payload, ok)
+        }
+        StateStoreCommands::Index { simulation } => {
+            let simulation: IndexSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = index_payload(simulation);
+            ("dag.state-store.index", payload, ok)
         }
     };
     emit_json(
@@ -271,8 +340,8 @@ pub(crate) fn handle_state_store_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        journal_payload, snapshot_payload, transaction_payload, JournalSimulation, NodeStateRecord,
-        SnapshotSimulation, TransactionSimulation,
+        index_payload, journal_payload, snapshot_payload, transaction_payload, IndexSimulation,
+        JournalSimulation, NodeStateRecord, SnapshotSimulation, TransactionSimulation,
     };
     use bijux_dag_artifacts::NodeCounts;
     use bijux_dag_runtime::{
@@ -461,6 +530,45 @@ mod tests {
             rebuildable_from_journal: false,
         };
         let (payload, ok) = snapshot_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
+    }
+
+    #[test]
+    fn index_accepts_covering_dimensions_with_bounded_lookup() {
+        let simulation = IndexSimulation {
+            indexed_dimensions: vec![
+                "owner".to_string(),
+                "tag".to_string(),
+                "partition".to_string(),
+                "failure_class".to_string(),
+            ],
+            run_count: 1_000_000,
+            owner_cardinality: 100,
+            tag_cardinality: 400,
+            partition_cardinality: 10_000,
+            failure_class_cardinality: 12,
+            p95_lookup_ms: 80,
+            max_lookup_ms: 100,
+        };
+        let (payload, ok) = index_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["index_ready"], true);
+    }
+
+    #[test]
+    fn index_flags_missing_dimensions_or_slow_lookup() {
+        let simulation = IndexSimulation {
+            indexed_dimensions: vec!["owner".to_string()],
+            run_count: 0,
+            owner_cardinality: 10,
+            tag_cardinality: 0,
+            partition_cardinality: 0,
+            failure_class_cardinality: 0,
+            p95_lookup_ms: 250,
+            max_lookup_ms: 100,
+        };
+        let (payload, ok) = index_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
