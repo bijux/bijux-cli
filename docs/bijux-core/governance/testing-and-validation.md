@@ -9,17 +9,22 @@ last_reviewed: 2026-04-06
 
 # Testing and Validation
 
-Testing and validation policy aligns workspace checks, program suites, and docs
-quality gates into one coherent evidence model.
+This page explains how `bijux-core` turns changes into reviewable evidence.
 
-## Visual Summary
+The repository uses several layers of verification, but the idea is not
+complicated: each layer answers a different kind of risk before a change moves
+forward.
+
+## Validation Flow
 
 ```mermaid
 flowchart TD
-    unit[targeted crate tests] --> integration[program integration suites]
-    integration --> contracts[contract and schema checks]
-    contracts --> docs[docs-check and link hygiene]
-    docs --> readiness[release readiness evidence]
+    change["proposed change"] --> unit["crate and package tests"]
+    change --> contracts["contract and schema checks"]
+    change --> docs["docs and link checks"]
+    unit --> readiness["merge or release evidence"]
+    contracts --> readiness
+    docs --> readiness
 ```
 
 ## Validation Layers
@@ -44,6 +49,12 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-p
 - contract-test confirmation for schema-sensitive changes
 - docs-check output for documentation-affected changes
 - explicit note for any skipped check with owner and follow-up date
+
+## Reading Rule
+
+Stay on this page when the question is what kind of proof a change needs. Move
+to the package or operations handbooks when the proof model is clear and the
+next question is how to run or debug a specific check.
 
 ## Code Anchors
 
