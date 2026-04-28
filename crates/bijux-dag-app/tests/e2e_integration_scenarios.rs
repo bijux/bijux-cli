@@ -444,6 +444,9 @@ fn e2e_container_and_real_world_orchestration() {
         graph.nodes.push(node);
         if idx > 0 {
             graph.edges.push(bijux_dag_core::Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
                 from: bijux_dag_core::PortRef {
                     node_id: format!("n{}", idx - 1),
                     port: "out".to_string(),

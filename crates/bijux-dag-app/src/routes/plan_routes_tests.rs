@@ -65,6 +65,13 @@ fn write_tagged_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn write_branch_graph_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-branch.json");
+    fs::write(&dag, bijux_dag_testkit::branch_semantics_graph_json()).expect("write branch graph");
+    (dir, dag)
+}
+
 #[test]
 fn plan_explain_success_path_returns_success() {
     let (_tmp, dag) = write_graph_fixture();
@@ -170,12 +177,46 @@ fn plan_explain_dump_flow_is_stable_for_valid_graph() {
 }
 
 #[test]
+fn plan_explain_payload_exposes_branch_contracts() {
+    let (_tmp, dag) = write_branch_graph_fixture();
+    let raw = fs::read_to_string(dag).expect("read branch graph");
+    let graph = crate::parse_graph(&raw).expect("graph");
+    let result = bijux_dag_runtime::build_planner_analysis(
+        &graph,
+        &bijux_dag_runtime::RuntimeConfig::default(),
+        &bijux_dag_runtime::RuntimeConfig::default().selectors,
+        &bijux_dag_runtime::PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("plan");
+
+    let payload = super::plan_explain_payload(&result);
+    let planned_edges = payload["planned_edges"].as_array().expect("planned edges array");
+    let branch_left = planned_edges
+        .iter()
+        .find(|edge| edge["id"].as_str() == Some("branch-left"))
+        .expect("branch-left edge");
+    let planned_nodes = payload["planned_nodes"].as_array().expect("planned nodes array");
+    let branch_node = planned_nodes
+        .iter()
+        .find(|node| node["id"].as_str() == Some("decide"))
+        .expect("branch planned node");
+
+    assert_eq!(payload["planner_contract_version"], "bijux-dag-planner/v1");
+    assert_eq!(payload["branch_paths"][0]["branch_node_id"], "decide");
+    assert_eq!(payload["branch_paths"][0]["decision"], "left");
+    assert_eq!(branch_left["kind"], "conditional");
+    assert_eq!(branch_left["decision"], "left");
+    assert_eq!(branch_node["semantic_kind"], "branch");
+    assert_eq!(branch_node["trigger_rule"], "all_success");
+    assert_eq!(branch_node["branch"]["decision_output"], "decision");
+}
+
+#[test]
 fn plan_diff_success_path_returns_success() {
     let (_base_dir, before) = write_graph_fixture();
     let (_tagged_dir, after) = write_tagged_graph_fixture();
     let cli = quiet_json_cli();
-    let code =
-        handle_plan_command(&cli, &PlanCommands::Diff { before, after }).expect("plan diff");
+    let code = handle_plan_command(&cli, &PlanCommands::Diff { before, after }).expect("plan diff");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 
@@ -183,11 +224,9 @@ fn plan_diff_success_path_returns_success() {
 fn plan_closure_returns_success_for_selected_leaf() {
     let (_tmp, dag) = write_graph_fixture();
     let cli = quiet_json_cli();
-    let code = handle_plan_command(
-        &cli,
-        &PlanCommands::Closure { dag, select: vec!["b".to_string()] },
-    )
-    .expect("plan closure");
+    let code =
+        handle_plan_command(&cli, &PlanCommands::Closure { dag, select: vec!["b".to_string()] })
+            .expect("plan closure");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 

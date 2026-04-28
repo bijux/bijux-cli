@@ -27,10 +27,7 @@ fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
         .annotations
         .iter()
         .map(|annotation| {
-            let queue_hint = annotation
-                .queue_hint
-                .as_deref()
-                .unwrap_or("default");
+            let queue_hint = annotation.queue_hint.as_deref().unwrap_or("default");
             format!(
                 "{}: {:?} via {} ({}, queue={})",
                 annotation.node_id,
@@ -43,6 +40,24 @@ fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
         .collect()
 }
 
+fn plan_explain_payload(result: &PlannerBuildResult) -> serde_json::Value {
+    let report = explain_plan(result);
+    json!({
+        "planner_contract_version": result.plan.planner_contract_version,
+        "plan_fingerprint": report.plan_fingerprint,
+        "phases": report.phases,
+        "ordering": result.plan.order,
+        "resource_estimate": result.resource_estimate,
+        "priority_inheritance": result.priority_inheritance,
+        "optimization_notes": report.optimization_notes,
+        "nodes": report.annotations,
+        "planned_nodes": result.plan.planned_nodes,
+        "planned_edges": result.plan.planned_dependencies,
+        "branch_paths": result.plan.branch_paths,
+        "diagnostics": result.plan.diagnostics,
+    })
+}
+
 pub(crate) fn handle_plan_command(
     cli: &DagCli,
     command: &PlanCommands,
@@ -52,22 +67,13 @@ pub(crate) fn handle_plan_command(
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
             let result = build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
-            let report = explain_plan(&result);
             let lines = concise_plan_lines(&result);
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.plan.explain",
                     true,
-                    json!({
-                        "plan_fingerprint": report.plan_fingerprint,
-                        "phases": report.phases,
-                        "ordering": result.plan.order,
-                        "resource_estimate": result.resource_estimate,
-                        "priority_inheritance": result.priority_inheritance,
-                        "optimization_notes": report.optimization_notes,
-                        "nodes": report.annotations,
-                    }),
+                    plan_explain_payload(&result),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
