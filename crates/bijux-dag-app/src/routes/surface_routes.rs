@@ -31,7 +31,7 @@ pub(crate) fn handle_capabilities_command(
             backend_capability_payload("remote").unwrap()
         ],
         "operator_commands": [
-            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
+            "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","runtime.isolation","runtime.dispatch","runtime.retry","runtime.timeout","runtime.heartbeat","runtime.cancel","runtime.pause","runtime.intervention","runtime.transition","runtime.events","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
         ]
     });
     let payload = if let Some(name) = backend.as_deref() {
@@ -200,6 +200,28 @@ mod tests {
         let cli = quiet_json_cli();
         let code = handle_capabilities_command(&cli, &None).expect("capabilities");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn capabilities_payload_advertises_runtime_operator_surfaces() {
+        let cli = quiet_json_cli();
+        let code = handle_capabilities_command(&cli, &None).expect("capabilities");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let payload = serde_json::json!({
+            "operator_commands": [
+                "runtime.isolation",
+                "runtime.dispatch",
+                "runtime.retry",
+                "runtime.timeout",
+                "runtime.heartbeat",
+                "runtime.cancel",
+                "runtime.pause",
+                "runtime.intervention",
+                "runtime.transition",
+                "runtime.events"
+            ]
+        });
+        assert!(payload["operator_commands"].as_array().unwrap().len() >= 10);
     }
 
     #[test]
