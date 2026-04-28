@@ -983,6 +983,7 @@ fn write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
     replay_provenance: Option<ReplayProvenance>,
@@ -1019,6 +1020,7 @@ fn write_trace(
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         container: container_meta,
         cache_proof,
+        branch_decision,
         skip_reason,
         failure,
         transition_cause,
@@ -1068,6 +1070,7 @@ pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
         | "not_selected_by_include_selector"
         | "excluded_by_selector"
         | "not_selected_by_dependency_closure" => "SelectionFiltered",
+        "branch_decision_not_selected" => "BranchDecisionFiltered",
         "upstream_failed" => "DependencyFailed",
         "cancelled" => "CancelRequested",
         _ => "SelectionFiltered",

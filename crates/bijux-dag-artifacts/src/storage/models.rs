@@ -69,6 +69,8 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_proof: Option<CacheProof>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch_decision: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_reason: Option<SkipReason>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureInfo>,
