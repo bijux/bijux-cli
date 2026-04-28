@@ -21,6 +21,7 @@ graph
 graph-lint
 hash
 import
+incident
 init
 lint
 migrate

@@ -5,6 +5,7 @@ pub(crate) mod diff_routes;
 pub(crate) mod export_import_routes;
 pub(crate) mod federation_routes;
 pub(crate) mod governance_routes;
+pub(crate) mod incident_routes;
 pub(crate) mod inspect_routes;
 pub(crate) mod output_selection;
 pub(crate) mod path_resolution;

@@ -67,6 +67,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: GovernanceCommands,
     },
+    Incident {
+        #[command(subcommand)]
+        command: IncidentCommands,
+    },
     Federation {
         #[command(subcommand)]
         command: FederationCommands,
@@ -492,6 +496,11 @@ pub(crate) enum GovernanceCommands {
     AuditEvent { simulation: PathBuf },
     Promotion { simulation: PathBuf },
     Compliance { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum IncidentCommands {
+    Mode { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
