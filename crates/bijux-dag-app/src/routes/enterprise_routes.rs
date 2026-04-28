@@ -144,6 +144,31 @@ struct AssetLinkReport {
     asset_link_ready: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct CalendarSimulation {
+    workflow_id: String,
+    action: String,
+    now_utc: String,
+    #[serde(default)]
+    blackout_windows: Vec<String>,
+    #[serde(default)]
+    maintenance_windows: Vec<String>,
+    approval_ticket: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct CalendarReport {
+    workflow_id: String,
+    action: String,
+    now_utc: String,
+    blackout_windows: Vec<String>,
+    maintenance_windows: Vec<String>,
+    approval_ticket: Option<String>,
+    action_allowed: bool,
+    gaps: Vec<String>,
+    calendar_ready: bool,
+}
+
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -397,6 +422,59 @@ fn asset_link_payload(simulation: AssetLinkSimulation) -> (serde_json::Value, bo
     (serde_json::to_value(report).expect("asset link report"), ok)
 }
 
+fn within_list(now_utc: &str, windows: &[String]) -> bool {
+    windows.iter().any(|window| window == now_utc)
+}
+
+fn calendar_payload(simulation: CalendarSimulation) -> (serde_json::Value, bool) {
+    let CalendarSimulation {
+        workflow_id,
+        action,
+        now_utc,
+        blackout_windows,
+        maintenance_windows,
+        approval_ticket,
+    } = simulation;
+    let in_blackout = within_list(&now_utc, &blackout_windows);
+    let in_maintenance = within_list(&now_utc, &maintenance_windows);
+    let action_allowed = if in_blackout {
+        false
+    } else if in_maintenance {
+        approval_ticket.as_deref().is_some_and(|ticket| !ticket.trim().is_empty())
+    } else {
+        true
+    };
+    let mut gaps = Vec::new();
+    if workflow_id.trim().is_empty() {
+        gaps.push("calendar policy requires a workflow identifier".to_string());
+    }
+    if action.trim().is_empty() {
+        gaps.push("calendar policy requires an action name".to_string());
+    }
+    if blackout_windows.is_empty() && maintenance_windows.is_empty() {
+        gaps.push("calendar policy should define blackout or maintenance windows".to_string());
+    }
+    if in_blackout {
+        gaps.push("requested action falls inside a blackout window".to_string());
+    }
+    if in_maintenance && approval_ticket.as_deref().is_none_or(|ticket| ticket.trim().is_empty()) {
+        gaps.push("maintenance window action requires an approval ticket".to_string());
+    }
+    let report = CalendarReport {
+        workflow_id,
+        action,
+        now_utc,
+        blackout_windows,
+        maintenance_windows,
+        approval_ticket,
+        action_allowed,
+        calendar_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.calendar_ready;
+    (serde_json::to_value(report).expect("calendar report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -427,6 +505,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = asset_link_payload(simulation);
             ("dag.enterprise.asset-link", payload, ok)
         }
+        EnterpriseCommands::Calendar { simulation } => {
+            let simulation: CalendarSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = calendar_payload(simulation);
+            ("dag.enterprise.calendar", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -445,9 +528,9 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        asset_link_payload, incident_hook_payload, queue_payload, service_contract_payload,
-        webhook_payload, AssetLinkSimulation, IncidentHookSimulation, QueueSimulation,
-        ServiceContractSimulation, WebhookSimulation,
+        asset_link_payload, calendar_payload, incident_hook_payload, queue_payload,
+        service_contract_payload, webhook_payload, AssetLinkSimulation, CalendarSimulation,
+        IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
@@ -715,6 +798,36 @@ mod tests {
             business_capabilities: Vec::new(),
         };
         let (payload, ok) = asset_link_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+    }
+
+    #[test]
+    fn calendar_accepts_normal_window_execution() {
+        let simulation = CalendarSimulation {
+            workflow_id: "tenant-a/catalog-refresh".to_string(),
+            action: "submit".to_string(),
+            now_utc: "2026-04-29T10:00:00Z".to_string(),
+            blackout_windows: vec!["2026-04-28T10:00:00Z".to_string()],
+            maintenance_windows: vec!["2026-04-28T22:00:00Z".to_string()],
+            approval_ticket: None,
+        };
+        let (payload, ok) = calendar_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["calendar_ready"], true);
+    }
+
+    #[test]
+    fn calendar_blocks_blackout_and_unapproved_maintenance() {
+        let simulation = CalendarSimulation {
+            workflow_id: String::new(),
+            action: String::new(),
+            now_utc: "2026-04-28T22:00:00Z".to_string(),
+            blackout_windows: vec!["2026-04-28T22:00:00Z".to_string()],
+            maintenance_windows: vec!["2026-04-28T22:00:00Z".to_string()],
+            approval_ticket: None,
+        };
+        let (payload, ok) = calendar_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
     }

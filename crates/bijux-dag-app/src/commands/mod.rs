@@ -478,6 +478,7 @@ pub(crate) enum EnterpriseCommands {
     IncidentHook { simulation: PathBuf },
     #[command(name = "asset-link")]
     AssetLink { simulation: PathBuf },
+    Calendar { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
