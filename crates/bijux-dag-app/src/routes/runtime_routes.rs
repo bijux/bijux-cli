@@ -3,8 +3,9 @@ use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
     audit_dispatch_discipline, build_cancellation_audit_report,
     build_execution_isolation_report, build_retry_decision_report,
-    build_heartbeat_audit_report, build_timeout_audit_report, BatchAttemptState,
-    BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig, TaskIsolationMode,
+    build_heartbeat_audit_report, build_pause_resume_audit_report, build_timeout_audit_report,
+    BatchAttemptState, BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass,
+    ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -41,6 +42,16 @@ struct CancellationSimulation {
     deadline_ms: u64,
     #[serde(default)]
     batch_state: Option<BatchAttemptState>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PauseSimulation {
+    policy: RunPausePolicy,
+    queued_count: usize,
+    ready_count: usize,
+    running_count: usize,
+    interruption_class: InterruptionClass,
+    resume_policy: ResumePolicy,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -201,6 +212,29 @@ pub(crate) fn handle_runtime_command(
                 return emit_json(
                     cli,
                     "dag.runtime.cancel",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        RuntimeCommands::Pause { simulation } => {
+            let simulation: PauseSimulation = parse_json_file(simulation)?;
+            let report = build_pause_resume_audit_report(
+                &simulation.policy,
+                simulation.queued_count,
+                simulation.ready_count,
+                simulation.running_count,
+                &simulation.interruption_class,
+                &simulation.resume_policy,
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.pause",
                     true,
                     serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
@@ -455,6 +489,29 @@ mod tests {
         let cli = quiet_json_cli(RuntimeCommands::Cancel { simulation: simulation.clone() });
         let code =
             handle_runtime_command(&cli, &RuntimeCommands::Cancel { simulation }).expect("cancel");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_support_pause_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("pause.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "policy":{"mode":"PauseAllNewDispatch","preserve_running_nodes":true},
+              "queued_count":2,
+              "ready_count":1,
+              "running_count":1,
+              "interruption_class":"WorkerLoss",
+              "resume_policy":"VerifyAndContinue"
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli = quiet_json_cli(RuntimeCommands::Pause { simulation: simulation.clone() });
+        let code =
+            handle_runtime_command(&cli, &RuntimeCommands::Pause { simulation }).expect("pause");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

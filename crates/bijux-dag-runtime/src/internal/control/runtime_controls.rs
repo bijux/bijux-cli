@@ -7,8 +7,8 @@ use crate::simulated_platform::{
 use crate::{
     cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
     retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
-    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, RetryPolicyV2, RuntimeConfig,
-    RuntimeError, TaskIsolationMode,
+    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass, RetryPolicyV2,
+    ResumePolicy, RuntimeConfig, RuntimeError, RunPausePolicy, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -96,6 +96,19 @@ pub struct CancellationAuditReport {
     pub delivered_in_time: bool,
     pub batch_cancel_recorded: bool,
     pub batch_cancelled: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PauseResumeAuditReport {
+    pub freeze_dispatch: bool,
+    pub freeze_ready_queue: bool,
+    pub preserve_running_nodes: bool,
+    pub has_queued: bool,
+    pub has_ready: bool,
+    pub has_running: bool,
+    pub interruption_class: String,
+    pub resume_policy: String,
+    pub recommended_action: String,
 }
 
 pub fn build_execution_isolation_report(
@@ -351,6 +364,28 @@ pub fn build_cancellation_audit_report(
     }
 }
 
+pub fn build_pause_resume_audit_report(
+    policy: &RunPausePolicy,
+    queued_count: usize,
+    ready_count: usize,
+    running_count: usize,
+    interruption_class: &InterruptionClass,
+    resume_policy: &ResumePolicy,
+) -> PauseResumeAuditReport {
+    let state = crate::evaluate_pause_state(policy, queued_count, ready_count, running_count);
+    PauseResumeAuditReport {
+        freeze_dispatch: *state.get("freeze_dispatch").unwrap_or(&false),
+        freeze_ready_queue: *state.get("freeze_ready_queue").unwrap_or(&false),
+        preserve_running_nodes: *state.get("preserve_running_nodes").unwrap_or(&false),
+        has_queued: *state.get("has_queued").unwrap_or(&false),
+        has_ready: *state.get("has_ready").unwrap_or(&false),
+        has_running: *state.get("has_running").unwrap_or(&false),
+        interruption_class: format!("{:?}", interruption_class).to_lowercase(),
+        resume_policy: format!("{:?}", resume_policy).to_lowercase(),
+        recommended_action: recommend_resume_action(interruption_class, resume_policy).to_string(),
+    }
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -398,12 +433,30 @@ fn normalize_failure_class(value: &str) -> String {
         .collect()
 }
 
+fn recommend_resume_action(
+    interruption_class: &InterruptionClass,
+    resume_policy: &ResumePolicy,
+) -> &'static str {
+    match (interruption_class, resume_policy) {
+        (_, ResumePolicy::FailSafeStop) => "halt-and-repair",
+        (InterruptionClass::CleanShutdown, ResumePolicy::Reattach) => "reattach-running-nodes",
+        (_, ResumePolicy::RerunIncompleteNodes) => "rerun-incomplete-nodes",
+        (InterruptionClass::ProcessCrash, ResumePolicy::VerifyAndContinue)
+        | (InterruptionClass::WorkerLoss, ResumePolicy::VerifyAndContinue)
+        | (InterruptionClass::BackendLoss, ResumePolicy::VerifyAndContinue) => {
+            "verify-run-state-then-continue"
+        }
+        (_, ResumePolicy::Reattach) => "reattach-when-lease-state-is-intact",
+        _ => "continue-under-operator-review",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
     use crate::{
-        BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, RuntimeConfig,
-        TaskIsolationMode,
+        BatchAttemptState, BatchLifecycleEvent, ForcedCancellationCleanup, InterruptionClass,
+        ResumePolicy, RunPausePolicy, RuntimeConfig, TaskIsolationMode,
     };
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
     use crate::simulated_platform::{
@@ -650,5 +703,23 @@ mod tests {
         assert!(report.batch_cancel_recorded);
         assert!(report.batch_cancelled);
         assert_eq!(report.forced_cleanup, ForcedCancellationCleanup::ImmediateTerminate);
+    }
+
+    #[test]
+    fn pause_resume_report_recommends_state_verification_after_worker_loss() {
+        let report = super::build_pause_resume_audit_report(
+            &RunPausePolicy {
+                mode: crate::RunPauseMode::PauseAllNewDispatch,
+                preserve_running_nodes: true,
+            },
+            2,
+            1,
+            1,
+            &InterruptionClass::WorkerLoss,
+            &ResumePolicy::VerifyAndContinue,
+        );
+        assert!(report.freeze_dispatch);
+        assert!(report.freeze_ready_queue);
+        assert_eq!(report.recommended_action, "verify-run-state-then-continue");
     }
 }
