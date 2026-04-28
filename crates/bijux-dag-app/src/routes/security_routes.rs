@@ -2,9 +2,13 @@ use crate::commands::{DagCli, SecurityCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix,
+    builtin_role_definitions, evaluate_authorization_acceptance, evaluate_dry_run,
+    is_action_allowed_in_environment, validate_custom_role,
     local_dev_bypass_allowed, readiness_for_federation, revoked_principals_set, trust_health_report,
-    AuthenticationEvent, CredentialLifecycle, CredentialRevocation, CredentialScope,
-    IdentityPrincipal, LocalDevAuthBypassRule, TrustHealthReport,
+    Action, ActionKind, AuthenticationEvent, CredentialLifecycle, CredentialRevocation,
+    CredentialScope, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
+    IdentityPrincipal, LocalDevAuthBypassRule, PolicyEvaluationRequest, ResourceKind, ResourceRef,
+    ResourceScope, SubjectIdentity, SubjectKind, TrustHealthReport,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -47,6 +51,41 @@ struct AuthReport {
     federation_ready: bool,
     trust_health: TrustHealthReport,
     gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AuthzSimulation {
+    subject_id: String,
+    subject_kind: SubjectKind,
+    tenant_id: Option<String>,
+    action_name: String,
+    action_kind: ActionKind,
+    resource_kind: ResourceKind,
+    resource_id: String,
+    resource_tenant_id: Option<String>,
+    environment: String,
+    policy_bundle_version: String,
+    #[serde(default)]
+    granted_permissions: Vec<String>,
+    #[serde(default)]
+    environment_rules: Vec<EnvironmentAuthorizationRule>,
+    #[serde(default)]
+    decisions: Vec<(String, DecisionType)>,
+    #[serde(default)]
+    cross_tenant_denials: Vec<bool>,
+    #[serde(default)]
+    custom_role: Option<CustomRoleDefinition>,
+}
+
+#[derive(Debug, Serialize)]
+struct AuthzReport {
+    built_in_roles: Vec<String>,
+    dry_run_allow: bool,
+    environment_allows: bool,
+    least_privilege_holds: bool,
+    cross_tenant_escalation_blocked: bool,
+    custom_role_valid: bool,
+    failures: Vec<String>,
 }
 
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -106,6 +145,58 @@ fn auth_payload(simulation: &Path) -> Result<AuthReport, ExitCode> {
     })
 }
 
+fn authz_payload(simulation: &Path) -> Result<AuthzReport, ExitCode> {
+    let simulation: AuthzSimulation = load_json_file(simulation)?;
+    let request = PolicyEvaluationRequest {
+        request_id: "security-authz".to_string(),
+        subject: SubjectIdentity {
+            subject_id: simulation.subject_id,
+            kind: simulation.subject_kind,
+            tenant_id: simulation.tenant_id.clone(),
+        },
+        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind },
+        resource: ResourceRef {
+            kind: simulation.resource_kind,
+            id: simulation.resource_id,
+            tenant_id: simulation.resource_tenant_id.clone(),
+        },
+        scope: match simulation.tenant_id.clone() {
+            Some(tenant_id) => ResourceScope::Tenant { tenant_id },
+            None => ResourceScope::Global,
+        },
+        environment: simulation.environment.clone(),
+    };
+    let dry_run = evaluate_dry_run(&request, &simulation.granted_permissions, &simulation.policy_bundle_version);
+    let environment_allows =
+        is_action_allowed_in_environment(&simulation.action_name, &simulation.environment, &simulation.environment_rules);
+    let acceptance =
+        evaluate_authorization_acceptance(&simulation.decisions, &simulation.cross_tenant_denials);
+    let custom_role_valid = simulation
+        .custom_role
+        .as_ref()
+        .map(|role| validate_custom_role(role).is_ok())
+        .unwrap_or(true);
+    let mut failures = acceptance.failures.clone();
+    if !environment_allows {
+        failures.push("environment rule denies this action".to_string());
+    }
+    if !custom_role_valid {
+        failures.push("custom role definition is invalid".to_string());
+    }
+    Ok(AuthzReport {
+        built_in_roles: builtin_role_definitions()
+            .into_iter()
+            .map(|role| format!("{:?}", role.role))
+            .collect(),
+        dry_run_allow: dry_run.would_allow,
+        environment_allows,
+        least_privilege_holds: acceptance.least_privilege_holds,
+        cross_tenant_escalation_blocked: acceptance.no_cross_tenant_escalation,
+        custom_role_valid,
+        failures,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -114,6 +205,10 @@ pub(crate) fn handle_security_command(
         SecurityCommands::Auth { simulation } => {
             let payload = serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.auth", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::Authz { simulation } => {
+            let payload = serde_json::to_value(authz_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.authz", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -210,6 +305,85 @@ mod tests {
             "authentication audit chain is incomplete",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_authz_accepts_least_privilege_policy_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("authz.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "subject_id":"operator-a",
+              "subject_kind":"User",
+              "tenant_id":"atlas",
+              "action_name":"run.cancel",
+              "action_kind":"Execute",
+              "resource_kind":"Run",
+              "resource_id":"run-01",
+              "resource_tenant_id":"atlas",
+              "environment":"prod",
+              "policy_bundle_version":"2026-04-28",
+              "granted_permissions":["run.cancel","run.read"],
+              "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
+              "decisions":[["run.cancel","Allow"],["platform.administer","Deny"]],
+              "cross_tenant_denials":[true,true],
+              "custom_role":{"role_name":"run-operator","permissions":["run.cancel","run.read"]}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::Authz { simulation: simulation.clone() });
+        let code =
+            handle_security_command(&cli, &SecurityCommands::Authz { simulation: simulation.clone() })
+                .expect("authz");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::authz_payload(&simulation).expect("report");
+        assert!(report.dry_run_allow);
+        assert!(report.environment_allows);
+        assert!(report.least_privilege_holds);
+        assert!(report.cross_tenant_escalation_blocked);
+        assert!(report.custom_role_valid);
+        assert!(report.failures.is_empty());
+    }
+
+    #[test]
+    fn security_authz_flags_environment_and_role_violations() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("authz.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "subject_id":"admin-a",
+              "subject_kind":"User",
+              "tenant_id":"atlas",
+              "action_name":"platform.administer",
+              "action_kind":"Administer",
+              "resource_kind":"Tenant",
+              "resource_id":"atlas",
+              "resource_tenant_id":"atlas",
+              "environment":"prod",
+              "policy_bundle_version":"2026-04-28",
+              "granted_permissions":["platform.administer","tenant.manage"],
+              "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
+              "decisions":[["platform.administer","Allow"]],
+              "cross_tenant_denials":[false],
+              "custom_role":{"role_name":"bad-admin","permissions":["platform.administer","tenant.manage"]}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::authz_payload(&simulation).expect("report");
+        assert!(!report.environment_allows);
+        assert!(!report.least_privilege_holds);
+        assert!(!report.cross_tenant_escalation_blocked);
+        assert!(!report.custom_role_valid);
+        for expected in [
+            "least-privilege boundary violated",
+            "cross-tenant escalation was allowed",
+            "environment rule denies this action",
+            "custom role definition is invalid",
+        ] {
+            assert!(report.failures.iter().any(|failure| failure == expected));
         }
     }
 }
