@@ -480,6 +480,8 @@ pub(crate) enum EnterpriseCommands {
     AssetLink { simulation: PathBuf },
     Calendar { simulation: PathBuf },
     Approval { simulation: PathBuf },
+    #[command(name = "dependency-catalog")]
+    DependencyCatalog { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -8,7 +8,8 @@ use bijux_dag_runtime::simulated_platform::{
     approval_gate_ready,
     authorize, AuthContext, AuthenticationPrincipal, AuthorizationRule, EventSubscription,
     ApprovalGateNode, IncidentClassification, IncidentSeverity, QueueResource,
-    TenantOwnershipMetadata, TenantScopedDagName, WorkflowPortfolio,
+    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName,
+    WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -191,6 +192,28 @@ struct ApprovalReport {
     gate_contract_ready: bool,
     gaps: Vec<String>,
     approval_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct DependencyCatalogSimulation {
+    workflow_family: String,
+    architecture: ServiceArchitectureNote,
+    impact: WorkflowFamilyImpactAnalysis,
+    #[serde(default)]
+    dependencies: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct DependencyCatalogReport {
+    workflow_family: String,
+    dependencies: Vec<String>,
+    impacted_workflows: Vec<String>,
+    api_boundary: String,
+    scheduler_boundary: String,
+    registry_boundary: String,
+    executor_boundary: String,
+    gaps: Vec<String>,
+    dependency_catalog_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -539,6 +562,43 @@ fn approval_payload(simulation: ApprovalSimulation) -> (serde_json::Value, bool)
     (serde_json::to_value(report).expect("approval report"), ok)
 }
 
+fn dependency_catalog_payload(
+    simulation: DependencyCatalogSimulation,
+) -> (serde_json::Value, bool) {
+    let DependencyCatalogSimulation { workflow_family, architecture, impact, dependencies } =
+        simulation;
+    let mut gaps = Vec::new();
+    if dependencies.is_empty() {
+        gaps.push("dependency catalog requires declared service dependencies".to_string());
+    }
+    for (name, value) in [
+        ("api", architecture.api_boundary.as_str()),
+        ("scheduler", architecture.scheduler_boundary.as_str()),
+        ("registry", architecture.registry_boundary.as_str()),
+        ("executor", architecture.executor_boundary.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            gaps.push(format!("dependency catalog is missing the {name} boundary"));
+        }
+    }
+    if impact.impacted_workflows.is_empty() {
+        gaps.push("dependency catalog should identify impacted workflows for outage analysis".to_string());
+    }
+    let report = DependencyCatalogReport {
+        workflow_family,
+        dependencies,
+        impacted_workflows: impact.impacted_workflows,
+        api_boundary: architecture.api_boundary,
+        scheduler_boundary: architecture.scheduler_boundary,
+        registry_boundary: architecture.registry_boundary,
+        executor_boundary: architecture.executor_boundary,
+        dependency_catalog_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.dependency_catalog_ready;
+    (serde_json::to_value(report).expect("dependency catalog report"), ok)
+}
+
 pub(crate) fn handle_enterprise_command(
     cli: &DagCli,
     command: &EnterpriseCommands,
@@ -579,6 +639,11 @@ pub(crate) fn handle_enterprise_command(
             let (payload, ok) = approval_payload(simulation);
             ("dag.enterprise.approval", payload, ok)
         }
+        EnterpriseCommands::DependencyCatalog { simulation } => {
+            let simulation: DependencyCatalogSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = dependency_catalog_payload(simulation);
+            ("dag.enterprise.dependency-catalog", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -597,9 +662,10 @@ pub(crate) fn handle_enterprise_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        approval_payload, asset_link_payload, calendar_payload, incident_hook_payload,
-        queue_payload, service_contract_payload, webhook_payload, ApprovalSimulation,
-        AssetLinkSimulation, CalendarSimulation, IncidentHookSimulation, QueueSimulation,
+        approval_payload, asset_link_payload, calendar_payload, dependency_catalog_payload,
+        incident_hook_payload, queue_payload, service_contract_payload, webhook_payload,
+        ApprovalSimulation, AssetLinkSimulation, CalendarSimulation,
+        DependencyCatalogSimulation, IncidentHookSimulation, QueueSimulation,
         ServiceContractSimulation, WebhookSimulation,
     };
     use bijux_dag_runtime::{
@@ -607,8 +673,9 @@ mod tests {
     };
     use bijux_dag_runtime::simulated_platform::{
         ApprovalGateNode, AuthContext, AuthenticationPrincipal, AuthorizationRule,
-        EventSubscription, IncidentClassification, IncidentSeverity, QueueResource, TenantId,
-        TenantOwnershipMetadata, TenantScopedDagName, WorkflowPortfolio,
+        EventSubscription, IncidentClassification, IncidentSeverity, QueueResource,
+        ServiceArchitectureNote, TenantId, TenantOwnershipMetadata, TenantScopedDagName,
+        WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
     };
 
     #[test]
@@ -934,6 +1001,54 @@ mod tests {
             approver_identity: String::new(),
         };
         let (payload, ok) = approval_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
+    }
+
+    #[test]
+    fn dependency_catalog_accepts_declared_service_boundaries() {
+        let simulation = DependencyCatalogSimulation {
+            workflow_family: "catalog-refresh".to_string(),
+            architecture: ServiceArchitectureNote {
+                api_boundary: "control-plane-api".to_string(),
+                scheduler_boundary: "ha-scheduler".to_string(),
+                registry_boundary: "artifact-registry".to_string(),
+                executor_boundary: "remote-worker".to_string(),
+            },
+            impact: WorkflowFamilyImpactAnalysis {
+                family_id: "catalog-refresh".to_string(),
+                impacted_workflows: vec!["catalog-refresh-eu".to_string()],
+                impact_reason: "registry outage".to_string(),
+            },
+            dependencies: vec![
+                "control-plane-api".to_string(),
+                "artifact-registry".to_string(),
+                "remote-worker".to_string(),
+            ],
+        };
+        let (payload, ok) = dependency_catalog_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["dependency_catalog_ready"], true);
+    }
+
+    #[test]
+    fn dependency_catalog_flags_missing_service_mapping() {
+        let simulation = DependencyCatalogSimulation {
+            workflow_family: "catalog-refresh".to_string(),
+            architecture: ServiceArchitectureNote {
+                api_boundary: String::new(),
+                scheduler_boundary: String::new(),
+                registry_boundary: String::new(),
+                executor_boundary: String::new(),
+            },
+            impact: WorkflowFamilyImpactAnalysis {
+                family_id: "catalog-refresh".to_string(),
+                impacted_workflows: Vec::new(),
+                impact_reason: String::new(),
+            },
+            dependencies: Vec::new(),
+        };
+        let (payload, ok) = dependency_catalog_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 5);
     }
