@@ -2,11 +2,12 @@ use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
-    ConsistencyBoundaryNote, ConsistencyClass, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
-    GeoReadyAcceptanceGate, GeoSimulationScenario, RegionAffinityPolicy, RegionAwareDagActivation,
-    RegionLineageRecord, RegionPolicyOverlay, RegionQueuePartition, RegionScheduleRule,
-    replay_trust_warnings, CrossDomainReplaySafety, ReplayTrustWarning, RunProvenanceAttestation,
-    WriteRoutingRule,
+    federation_conformance_passes, ConsistencyBoundaryNote, ConsistencyClass,
+    CrossDomainReplaySafety, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
+    FederatedConformanceGate, GeoReadyAcceptanceGate, GeoSimulationScenario,
+    RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
+    RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
+    WriteRoutingRule, replay_trust_warnings,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -96,6 +97,21 @@ struct ReplayReport {
     replay_safe: bool,
     warning_count: usize,
     warnings: ReplayTrustWarning,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct PolicyDistributionSimulation {
+    active_regions: BTreeSet<bijux_dag_runtime::simulated_platform::RegionId>,
+    overlays: Vec<RegionPolicyOverlay>,
+    gate: FederatedConformanceGate,
+}
+
+#[derive(Debug, Serialize)]
+struct PolicyDistributionReport {
+    all_regions_covered: bool,
+    conformance_passed: bool,
+    distinct_profiles: usize,
     gaps: Vec<String>,
 }
 
@@ -266,6 +282,43 @@ fn replay_payload(simulation: &Path) -> Result<ReplayReport, ExitCode> {
     Ok(ReplayReport { warning_count: warnings.warnings.len(), warnings, replay_safe, gaps })
 }
 
+fn policy_distribution_payload(simulation: &Path) -> Result<PolicyDistributionReport, ExitCode> {
+    let simulation: PolicyDistributionSimulation = load_json_file(simulation)?;
+    let covered_regions = simulation
+        .overlays
+        .iter()
+        .map(|overlay| overlay.region.clone())
+        .collect::<BTreeSet<_>>();
+    let all_regions_covered = simulation.active_regions.is_subset(&covered_regions);
+    let conformance_passed = federation_conformance_passes(&simulation.gate);
+    let distinct_profiles = simulation
+        .overlays
+        .iter()
+        .map(|overlay| {
+            format!(
+                "{}|{}|{}",
+                overlay.regulatory_profile, overlay.cost_profile, overlay.infrastructure_profile
+            )
+        })
+        .collect::<BTreeSet<_>>()
+        .len();
+    let mut gaps = Vec::new();
+    if !all_regions_covered {
+        gaps.push("active regions are missing policy overlays".to_string());
+    }
+    if !conformance_passed {
+        gaps.push("federated policy distribution conformance gate is incomplete".to_string());
+    }
+    if simulation.overlays.iter().any(|overlay| {
+        overlay.regulatory_profile.trim().is_empty()
+            || overlay.cost_profile.trim().is_empty()
+            || overlay.infrastructure_profile.trim().is_empty()
+    }) {
+        gaps.push("one or more region overlays are incomplete".to_string());
+    }
+    Ok(PolicyDistributionReport { all_regions_covered, conformance_passed, distinct_profiles, gaps })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -290,6 +343,18 @@ pub(crate) fn handle_federation_command(
         FederationCommands::Replay { simulation } => {
             let payload = serde_json::to_value(replay_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.replay", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::PolicyDistribution { simulation } => {
+            let payload =
+                serde_json::to_value(policy_distribution_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.policy-distribution",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         _ => emit_json(
             cli,
@@ -639,6 +704,61 @@ mod tests {
         for expected in [
             "cross-domain replay safety contract does not hold",
             "replay provenance changed across domains",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_policy_distribution_accepts_complete_region_overlay_set() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("policy.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "active_regions":["eu","us"],
+              "overlays":[
+                {"region":"eu","regulatory_profile":"gdpr","cost_profile":"premium","infrastructure_profile":"primary"},
+                {"region":"us","regulatory_profile":"ccpa","cost_profile":"standard","infrastructure_profile":"secondary"}
+              ],
+              "gate":{"lineage_auditable":true,"routing_deterministic":true,"audit_events_complete":true}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::PolicyDistribution { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::PolicyDistribution { simulation: simulation.clone() },
+        )
+        .expect("policy distribution");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::policy_distribution_payload(&simulation).expect("report");
+        assert!(report.all_regions_covered);
+        assert!(report.conformance_passed);
+        assert_eq!(report.distinct_profiles, 2);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_policy_distribution_flags_missing_or_incomplete_overlays() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("policy.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "active_regions":["eu","us"],
+              "overlays":[
+                {"region":"eu","regulatory_profile":"","cost_profile":"premium","infrastructure_profile":"primary"}
+              ],
+              "gate":{"lineage_auditable":true,"routing_deterministic":false,"audit_events_complete":false}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::policy_distribution_payload(&simulation).expect("report");
+        for expected in [
+            "active regions are missing policy overlays",
+            "federated policy distribution conformance gate is incomplete",
+            "one or more region overlays are incomplete",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
