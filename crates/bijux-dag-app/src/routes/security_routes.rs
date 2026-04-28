@@ -11,9 +11,17 @@ use bijux_dag_runtime::simulated_platform::{
     ResourceScope, SubjectIdentity, SubjectKind, TrustHealthReport,
     check_scheduler_admission, enforce_tenant_plugin_allowlist, resolve_tenant_overlay,
     scope_lineage_query, tenant_provisioning_bootstrap, validate_tenant_isolation,
+    RuntimeSecretContract,
     TenantConfigOverlay, TenantId, TenantLineageScope, TenantPluginAllowlist,
     TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
     TenantRegistryPartition, TenantSchedulerAdmission,
+};
+use bijux_dag_runtime::{
+    leak_conformance_check, secret_readiness, secret_scope_allows, secure_cleanup_required,
+    secure_mode_effective, select_secret_version, summarize_sensitive_classes,
+    validate_secret_delivery_mode, SecretDeliveryPolicy, SecretInjectionMode,
+    SecretMaskingPolicy, SecretRotationRule, SecretScopeRule, SecretSource, SecretUsageAuditEvent,
+    SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactRestriction,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -130,6 +138,46 @@ struct TenantReport {
     merged_config: std::collections::BTreeMap<String, String>,
     bootstrap_steps: Vec<String>,
     violations: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SecretsSimulation {
+    available_versions: Vec<String>,
+    pinned_version: Option<String>,
+    is_backfill: bool,
+    allowed_regions: Vec<String>,
+    requested_region: String,
+    uses_static_secret: bool,
+    secret_contract: RuntimeSecretContract,
+    rotation: SecretRotationRule,
+    delivery_policy: SecretDeliveryPolicy,
+    delivery_mode: SecretInjectionMode,
+    allowed_scope: SecretScopeRule,
+    requested_scope: SecretScopeRule,
+    masking_policy: SecretMaskingPolicy,
+    sources: Vec<SecretSource>,
+    audit_events: Vec<SecretUsageAuditEvent>,
+    secure_mode: SecureExecutionMode,
+    workspace_rule: SecureWorkspaceRule,
+    teardown_policy: SecureTeardownPolicy,
+    restrictions: Vec<SensitiveArtifactRestriction>,
+    observed_outputs: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct SecretsReport {
+    selected_version: Option<String>,
+    pinned: bool,
+    delivery_allowed: bool,
+    scope_allowed: bool,
+    readiness_ok: bool,
+    strict_mode_effective: bool,
+    cleanup_required: bool,
+    leak_clean: bool,
+    brokered_credentials: bool,
+    region_allowed: bool,
+    sensitive_classes: std::collections::BTreeMap<String, (u32, bool)>,
+    gaps: Vec<String>,
 }
 
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -322,6 +370,83 @@ fn tenant_payload(simulation: &Path) -> Result<TenantReport, ExitCode> {
     })
 }
 
+fn secrets_payload(simulation: &Path) -> Result<SecretsReport, ExitCode> {
+    let simulation: SecretsSimulation = load_json_file(simulation)?;
+    let selection = select_secret_version(
+        &simulation.available_versions,
+        simulation.pinned_version.as_deref(),
+        &simulation.rotation,
+        simulation.is_backfill,
+    );
+    let delivery_allowed = validate_secret_delivery_mode(&simulation.delivery_mode, &simulation.delivery_policy);
+    let scope_allowed = secret_scope_allows(&simulation.allowed_scope, &simulation.requested_scope);
+    let readiness = secret_readiness(
+        &simulation.sources,
+        &simulation.masking_policy,
+        &simulation.audit_events,
+        simulation.secure_mode.enabled,
+    );
+    let strict_mode_effective = secure_mode_effective(&simulation.secure_mode.environment, &simulation.secure_mode);
+    let cleanup_required = secure_cleanup_required(&simulation.workspace_rule, &simulation.teardown_policy);
+    let leak_clean = leak_conformance_check(&simulation.observed_outputs);
+    let brokered_credentials = !simulation.uses_static_secret
+        && simulation
+            .sources
+            .iter()
+            .any(|source| matches!(source, SecretSource::ExternalManager { .. }));
+    let region_allowed = simulation.allowed_regions.iter().any(|region| region == &simulation.requested_region);
+    let sensitive_classes = summarize_sensitive_classes(&simulation.restrictions);
+    let mut gaps = Vec::new();
+    if selection.is_none() {
+        gaps.push("no valid secret version could be selected".to_string());
+    }
+    if !delivery_allowed {
+        gaps.push("secret delivery mode is not allowed".to_string());
+    }
+    if !scope_allowed {
+        gaps.push("secret scope does not allow the requested access".to_string());
+    }
+    if !readiness.source_connected || !readiness.masking_enabled || !readiness.audit_enabled {
+        gaps.push("secret integration readiness is incomplete".to_string());
+    }
+    if !strict_mode_effective {
+        gaps.push("strict secret execution mode is not effective".to_string());
+    }
+    if !cleanup_required {
+        gaps.push("secure cleanup policy is incomplete".to_string());
+    }
+    if !leak_clean {
+        gaps.push("observed outputs contain secret-looking material".to_string());
+    }
+    if !brokered_credentials {
+        gaps.push("workload still depends on static or non-brokered credentials".to_string());
+    }
+    if !region_allowed {
+        gaps.push("requested region is outside the approved secret region set".to_string());
+    }
+    if simulation.secret_contract.secret_refs.is_empty() || !simulation.secret_contract.redaction_required {
+        gaps.push("runtime secret contract is incomplete".to_string());
+    }
+
+    Ok(SecretsReport {
+        selected_version: selection.as_ref().map(|item| item.selected_version.clone()),
+        pinned: selection.as_ref().map(|item| item.pinned).unwrap_or(false),
+        delivery_allowed,
+        scope_allowed,
+        readiness_ok: readiness.source_connected
+            && readiness.masking_enabled
+            && readiness.audit_enabled
+            && readiness.strict_mode_supported,
+        strict_mode_effective,
+        cleanup_required,
+        leak_clean,
+        brokered_credentials,
+        region_allowed,
+        sensitive_classes,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -338,6 +463,10 @@ pub(crate) fn handle_security_command(
         SecurityCommands::Tenant { simulation } => {
             let payload = serde_json::to_value(tenant_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.tenant", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::Secrets { simulation } => {
+            let payload = serde_json::to_value(secrets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.secrets", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -608,6 +737,106 @@ mod tests {
             "plugin allowlist rejected the requested plugin",
         ] {
             assert!(report.violations.iter().any(|violation| violation == expected));
+        }
+    }
+
+    #[test]
+    fn security_secrets_accepts_brokered_region_scoped_delivery() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("secrets.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "available_versions":["v1","v2"],
+              "pinned_version":"v2",
+              "is_backfill":false,
+              "allowed_regions":["eu","us"],
+              "requested_region":"eu",
+              "uses_static_secret":false,
+              "secret_contract":{"secret_refs":["vault:db"],"injection_mode":"backend-native","redaction_required":true},
+              "rotation":{"allow_latest":true,"require_pin_for_backfill":true},
+              "delivery_policy":{"allowed_modes":["BackendNative"],"deny_process_args":true},
+              "delivery_mode":"BackendNative",
+              "allowed_scope":{"tenant_id":"atlas","dag_id":"wf","run_id":null,"node_id":null,"worker_id":null},
+              "requested_scope":{"tenant_id":"atlas","dag_id":"wf","run_id":"run-1","node_id":"n1","worker_id":"w1"},
+              "masking_policy":{"redact_logs":true,"redact_diagnostics":true,"redact_manifests":true,"redact_exports":true},
+              "sources":[{"ExternalManager":{"provider":"vault","path":"secret/data/db"}}],
+              "audit_events":[{"secret_id":"db","node_id":"n1","run_id":"run-1","unix_ms":1,"access_mode":"read"}],
+              "secure_mode":{"enabled":true,"environment":"prod","strict_policy_bundle":"strict-v1"},
+              "workspace_rule":{"secure_temp_cleanup":true,"remove_secret_mounts_on_exit":true},
+              "teardown_policy":{"wipe_env_on_cancel":true,"wipe_files_on_cancel":true,"teardown_timeout_ms":1000},
+              "restrictions":[{"class":"Regulated","min_retention_days":30,"export_requires_approval":true}],
+              "observed_outputs":["all good"]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::Secrets { simulation: simulation.clone() });
+        let code =
+            handle_security_command(&cli, &SecurityCommands::Secrets { simulation: simulation.clone() })
+                .expect("secrets");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::secrets_payload(&simulation).expect("report");
+        assert_eq!(report.selected_version.as_deref(), Some("v2"));
+        assert!(report.delivery_allowed);
+        assert!(report.scope_allowed);
+        assert!(report.readiness_ok);
+        assert!(report.strict_mode_effective);
+        assert!(report.cleanup_required);
+        assert!(report.leak_clean);
+        assert!(report.brokered_credentials);
+        assert!(report.region_allowed);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_secrets_flags_static_leaky_cross_region_posture() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("secrets.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "available_versions":["v1"],
+              "pinned_version":null,
+              "is_backfill":true,
+              "allowed_regions":["eu"],
+              "requested_region":"us",
+              "uses_static_secret":true,
+              "secret_contract":{"secret_refs":[],"injection_mode":"env","redaction_required":false},
+              "rotation":{"allow_latest":false,"require_pin_for_backfill":true},
+              "delivery_policy":{"allowed_modes":["FileMount"],"deny_process_args":true},
+              "delivery_mode":"Env",
+              "allowed_scope":{"tenant_id":"atlas","dag_id":"wf","run_id":null,"node_id":null,"worker_id":null},
+              "requested_scope":{"tenant_id":"other","dag_id":"wf","run_id":"run-1","node_id":"n1","worker_id":"w1"},
+              "masking_policy":{"redact_logs":false,"redact_diagnostics":true,"redact_manifests":true,"redact_exports":true},
+              "sources":[],
+              "audit_events":[],
+              "secure_mode":{"enabled":true,"environment":"prod","strict_policy_bundle":"strict-v1"},
+              "workspace_rule":{"secure_temp_cleanup":false,"remove_secret_mounts_on_exit":true},
+              "teardown_policy":{"wipe_env_on_cancel":false,"wipe_files_on_cancel":false,"teardown_timeout_ms":1000},
+              "restrictions":[],
+              "observed_outputs":["password=plaintext"]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::secrets_payload(&simulation).expect("report");
+        assert!(report.selected_version.is_none());
+        assert!(!report.delivery_allowed);
+        assert!(!report.scope_allowed);
+        assert!(!report.leak_clean);
+        assert!(!report.brokered_credentials);
+        assert!(!report.region_allowed);
+        for expected in [
+            "no valid secret version could be selected",
+            "secret delivery mode is not allowed",
+            "secret scope does not allow the requested access",
+            "secret integration readiness is incomplete",
+            "secure cleanup policy is incomplete",
+            "observed outputs contain secret-looking material",
+            "workload still depends on static or non-brokered credentials",
+            "requested region is outside the approved secret region set",
+            "runtime secret contract is incomplete",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
         }
     }
 }
