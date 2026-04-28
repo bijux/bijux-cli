@@ -445,6 +445,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command),
+        Commands::Schedule { command } => {
+            routes::schedule_routes::handle_schedule_command(&cli, command)
+        }
         Commands::Graph { dag, format } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;

@@ -71,6 +71,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: PlanCommands,
     },
+    Schedule {
+        #[command(subcommand)]
+        command: ScheduleCommands,
+    },
     Run {
         dag: PathBuf,
         #[arg(long)]
@@ -314,6 +318,18 @@ pub(crate) enum PlanCommands {
     Explain { dag: PathBuf },
     Diagnostics { dag: PathBuf },
     Diff { before: PathBuf, after: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ScheduleCommands {
+    Validate { registry: PathBuf },
+    Preview {
+        registry: PathBuf,
+        #[arg(long)]
+        now_unix_ms: u128,
+        #[arg(long, default_value_t = 3)]
+        next_runs: usize,
+    },
 }
 
 #[derive(Subcommand)]

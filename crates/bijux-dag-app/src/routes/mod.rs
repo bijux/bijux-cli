@@ -14,5 +14,6 @@ pub(crate) mod response;
 pub(crate) mod run_lookup;
 pub(crate) mod run_routes;
 pub(crate) mod runs_routes;
+pub(crate) mod schedule_routes;
 pub(crate) mod surface_routes;
 pub(crate) mod validate_routes;
