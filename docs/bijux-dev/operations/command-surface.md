@@ -9,18 +9,19 @@ last_reviewed: 2026-04-06
 
 # Command Surface
 
-`bijux-dev-cli` and `bijux-dev-dag` provide maintainer-only command surfaces
-for governance, reporting, release readiness, and evidence verification.
+This page explains the command entrypoints that power repository proof work.
 
-## Visual Summary
+`bijux-dev-cli` carries the general repository workflow. `bijux-dev-dag` carries
+the DAG-specific verification and release surfaces that sit beside it.
+
+## Command Map
 
 ```mermaid
 flowchart LR
-    maintainer[maintainer user] --> dev_cli[bijux-dev-cli]
-    maintainer --> dev_dag[bijux-dev-dag]
-    dev_cli --> verify[workspace checks and reports]
-    dev_dag --> evidence[dag evidence and release checks]
-    dev_cli --> release[release and compatibility commands]
+    maintainer["repository maintainer"] --> dev_cli["bijux-dev-cli"]
+    maintainer --> dev_dag["bijux-dev-dag"]
+    dev_cli --> verify["workspace checks and reports"]
+    dev_dag --> evidence["DAG evidence and release checks"]
 ```
 
 ## Command Families
@@ -35,6 +36,12 @@ flowchart LR
 - commands must return actionable diagnostics
 - machine-readable output must remain stable for automation
 - command semantics must map to explicit ownership in code and docs
+
+## Reading Rule
+
+Use this page when you know the repository needs a maintainer command but have
+not yet decided which entrypoint owns the job. Move to Diagnostics, Release
+Operations, or Contract Governance once the command family is clear.
 
 ## Code Anchors
 
