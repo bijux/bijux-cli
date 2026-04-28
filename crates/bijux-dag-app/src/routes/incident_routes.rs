@@ -2,7 +2,8 @@ use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     health_dashboard_score, IncidentClassification, IncidentSeverity, LifecycleGovernanceRule,
-    PlatformHealthDashboard, ProductBoundary, RunbookEntry, SupportabilityModel,
+    PlatformHealthDashboard, PostmortemTemplate, ProductBoundary, RunbookEntry,
+    SupportabilityModel,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -196,6 +197,36 @@ struct RepairWindowReport {
     lifecycle_state: String,
     gaps: Vec<String>,
     repair_window_ready: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct IncidentTimelineSimulation {
+    incident_id: String,
+    events: Vec<IncidentTimelineEvent>,
+    postmortem: PostmortemTemplate,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct IncidentTimelineEvent {
+    unix_ms: u128,
+    source: String,
+    action: String,
+    phase: String,
+    #[serde(default)]
+    run_id: Option<String>,
+    #[serde(default)]
+    tenant_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct IncidentTimelineReport {
+    incident_id: String,
+    phases_present: Vec<String>,
+    event_count: usize,
+    ordered_events: Vec<IncidentTimelineEvent>,
+    missing_postmortem_sections: Vec<String>,
+    gaps: Vec<String>,
+    timeline_ready: bool,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -527,6 +558,51 @@ fn repair_window_payload(simulation: RepairWindowSimulation) -> (serde_json::Val
     (serde_json::to_value(report).expect("repair window report"), ok)
 }
 
+fn timeline_payload(simulation: IncidentTimelineSimulation) -> (serde_json::Value, bool) {
+    let IncidentTimelineSimulation { incident_id, mut events, postmortem } = simulation;
+    events.sort_by_key(|event| event.unix_ms);
+    let phases_present = events
+        .iter()
+        .map(|event| event.phase.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let required_postmortem_sections = ["summary", "impact", "timeline", "actions"];
+    let available_sections = postmortem
+        .required_sections
+        .iter()
+        .map(|section| section.trim().to_lowercase())
+        .collect::<BTreeSet<_>>();
+    let missing_postmortem_sections = required_postmortem_sections
+        .iter()
+        .filter(|section| !available_sections.contains(**section))
+        .map(|section| (*section).to_string())
+        .collect::<Vec<_>>();
+    let mut gaps = Vec::new();
+    if events.is_empty() {
+        gaps.push("incident timeline requires at least one event".to_string());
+    }
+    for phase in ["detection", "mitigation", "recovery"] {
+        if !phases_present.iter().any(|present| present == phase) {
+            gaps.push(format!("incident timeline is missing the {phase} phase"));
+        }
+    }
+    if !missing_postmortem_sections.is_empty() {
+        gaps.push("postmortem template is missing required incident sections".to_string());
+    }
+    let report = IncidentTimelineReport {
+        incident_id,
+        phases_present,
+        event_count: events.len(),
+        ordered_events: events,
+        missing_postmortem_sections,
+        timeline_ready: gaps.is_empty(),
+        gaps,
+    };
+    let ok = report.timeline_ready;
+    (serde_json::to_value(report).expect("incident timeline report"), ok)
+}
+
 pub(crate) fn handle_incident_command(
     cli: &DagCli,
     command: &IncidentCommands,
@@ -562,6 +638,11 @@ pub(crate) fn handle_incident_command(
             let (payload, ok) = repair_window_payload(simulation);
             ("dag.incident.repair-window", payload, ok)
         }
+        IncidentCommands::Timeline { simulation } => {
+            let simulation: IncidentTimelineSimulation = parse_json_file(simulation)?;
+            let (payload, ok) = timeline_payload(simulation);
+            ("dag.incident.timeline", payload, ok)
+        }
     };
     emit_json(
         cli,
@@ -581,17 +662,18 @@ pub(crate) fn handle_incident_command(
 mod tests {
     use super::{
         annotation_payload, blast_radius_payload, degraded_mode_payload, incident_mode_payload,
-        repair_window_payload, safe_stop_payload,
+        repair_window_payload, safe_stop_payload, timeline_payload,
     };
     use bijux_dag_runtime::simulated_platform::{
         IncidentClassification, IncidentSeverity, LifecycleGovernanceRule, PlatformHealthDashboard,
-        ProductBoundary, RunbookEntry, SupportabilityModel,
+        PostmortemTemplate, ProductBoundary, RunbookEntry, SupportabilityModel,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
         BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
         WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
+        IncidentTimelineEvent, IncidentTimelineSimulation,
     };
 
     #[test]
@@ -887,5 +969,70 @@ mod tests {
         let (payload, ok) = repair_window_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 6);
+    }
+
+    #[test]
+    fn timeline_accepts_ordered_events_with_postmortem_sections() {
+        let simulation = IncidentTimelineSimulation {
+            incident_id: "inc-2026-04-28-7".to_string(),
+            events: vec![
+                IncidentTimelineEvent {
+                    unix_ms: 10,
+                    source: "monitoring".to_string(),
+                    action: "detected scheduler latency spike".to_string(),
+                    phase: "detection".to_string(),
+                    run_id: None,
+                    tenant_id: Some("tenant-a".to_string()),
+                },
+                IncidentTimelineEvent {
+                    unix_ms: 20,
+                    source: "operator".to_string(),
+                    action: "entered safe stop".to_string(),
+                    phase: "mitigation".to_string(),
+                    run_id: Some("run-11".to_string()),
+                    tenant_id: Some("tenant-a".to_string()),
+                },
+                IncidentTimelineEvent {
+                    unix_ms: 30,
+                    source: "operator".to_string(),
+                    action: "resumed queues after repair".to_string(),
+                    phase: "recovery".to_string(),
+                    run_id: Some("run-11".to_string()),
+                    tenant_id: Some("tenant-a".to_string()),
+                },
+            ],
+            postmortem: PostmortemTemplate {
+                required_sections: vec![
+                    "summary".to_string(),
+                    "impact".to_string(),
+                    "timeline".to_string(),
+                    "actions".to_string(),
+                ],
+            },
+        };
+        let (payload, ok) = timeline_payload(simulation);
+        assert!(ok);
+        assert_eq!(payload["timeline_ready"], true);
+    }
+
+    #[test]
+    fn timeline_flags_missing_recovery_story() {
+        let simulation = IncidentTimelineSimulation {
+            incident_id: "inc-2026-04-28-8".to_string(),
+            events: vec![IncidentTimelineEvent {
+                unix_ms: 10,
+                source: "monitoring".to_string(),
+                action: "detected failure".to_string(),
+                phase: "detection".to_string(),
+                run_id: None,
+                tenant_id: None,
+            }],
+            postmortem: PostmortemTemplate {
+                required_sections: vec!["summary".to_string()],
+            },
+        };
+        let (payload, ok) = timeline_payload(simulation);
+        assert!(!ok);
+        assert!(payload["gaps"].as_array().expect("gaps").len() >= 3);
     }
 }

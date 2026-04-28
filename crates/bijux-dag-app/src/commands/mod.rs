@@ -510,6 +510,7 @@ pub(crate) enum IncidentCommands {
     Annotation { simulation: PathBuf },
     #[command(name = "repair-window")]
     RepairWindow { simulation: PathBuf },
+    Timeline { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
