@@ -2,10 +2,12 @@ use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
-    federation_conformance_passes, ConsistencyBoundaryNote, ConsistencyClass,
-    CrossDomainReplaySafety, CrossRegionFailoverRule, DisasterRecoveryPlaybook,
+    delegation_allowed, domain_healthy, federation_conformance_passes,
+    select_delegation_failure_action, ConsistencyBoundaryNote, ConsistencyClass,
+    CrossDomainReplaySafety, CrossRegionFailoverRule, DelegationFailureAction,
+    DelegationFailurePolicy, DisasterRecoveryPlaybook, DomainHealthSnapshot,
     FederatedConformanceGate, FederationDomainIdentity, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, PeeringObservabilityContract,
+    GeoSimulationScenario, InterSchedulerFlowControl, PeeringObservabilityContract,
     RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
     RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
     TrustTierRoutingRule, WriteRoutingRule, replay_trust_warnings, trust_tier_allows_domain,
@@ -142,6 +144,25 @@ struct TrustTierReport {
     domain_allowed: bool,
     tier_sufficient: bool,
     selected_domain: String,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct DelegationSimulation {
+    flow: InterSchedulerFlowControl,
+    target_domain: bijux_dag_runtime::simulated_platform::SchedulerDomainId,
+    health: Vec<DomainHealthSnapshot>,
+    inflight: usize,
+    per_minute: usize,
+    failure_policy: DelegationFailurePolicy,
+    persistent_failure: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct DelegationReport {
+    delegation_allowed: bool,
+    target_domain_healthy: bool,
+    failure_action: String,
     gaps: Vec<String>,
 }
 
@@ -405,6 +426,36 @@ fn trust_tier_payload(simulation: &Path) -> Result<TrustTierReport, ExitCode> {
     })
 }
 
+fn delegation_action_name(action: &DelegationFailureAction) -> &'static str {
+    match action {
+        DelegationFailureAction::RetrySameDomain => "retry-same-domain",
+        DelegationFailureAction::Reroute => "reroute",
+        DelegationFailureAction::Quarantine => "quarantine",
+    }
+}
+
+fn delegation_payload(simulation: &Path) -> Result<DelegationReport, ExitCode> {
+    let simulation: DelegationSimulation = load_json_file(simulation)?;
+    let delegation_allowed =
+        delegation_allowed(&simulation.flow, simulation.inflight, simulation.per_minute);
+    let target_domain_healthy = domain_healthy(&simulation.target_domain, &simulation.health);
+    let failure_action =
+        select_delegation_failure_action(&simulation.failure_policy, simulation.persistent_failure);
+    let mut gaps = Vec::new();
+    if !delegation_allowed {
+        gaps.push("delegation exceeds configured inflight or rate limits".to_string());
+    }
+    if !target_domain_healthy {
+        gaps.push("target domain is not healthy enough to receive delegation".to_string());
+    }
+    Ok(DelegationReport {
+        delegation_allowed,
+        target_domain_healthy,
+        failure_action: delegation_action_name(&failure_action).to_string(),
+        gaps,
+    })
+}
+
 pub(crate) fn handle_federation_command(
     cli: &DagCli,
     command: &FederationCommands,
@@ -457,6 +508,10 @@ pub(crate) fn handle_federation_command(
         FederationCommands::TrustTier { simulation } => {
             let payload = serde_json::to_value(trust_tier_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.trust-tier", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        FederationCommands::Delegation { simulation } => {
+            let payload = serde_json::to_value(delegation_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.federation.delegation", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -955,6 +1010,64 @@ mod tests {
         for expected in [
             "selected domain is not in the allowed trust-tier routing set",
             "selected domain trust tier is below the workflow minimum",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn federation_delegation_accepts_healthy_target_within_limits() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("delegation.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "flow":{"source_domain":"domain-eu","target_domain":"domain-us","max_inflight_delegations":5,"max_delegations_per_minute":20},
+              "target_domain":"domain-us",
+              "health":[{"domain_id":"domain-us","healthy":true,"impairment_reason":null}],
+              "inflight":2,
+              "per_minute":4,
+              "failure_policy":{"transient_action":"RetrySameDomain","persistent_action":"Reroute"},
+              "persistent_failure":false
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(FederationCommands::Delegation { simulation: simulation.clone() });
+        let code = handle_federation_command(
+            &cli,
+            &FederationCommands::Delegation { simulation: simulation.clone() },
+        )
+        .expect("delegation");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::delegation_payload(&simulation).expect("report");
+        assert!(report.delegation_allowed);
+        assert!(report.target_domain_healthy);
+        assert_eq!(report.failure_action, "retry-same-domain");
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn federation_delegation_flags_unhealthy_or_rate_limited_target() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("delegation.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "flow":{"source_domain":"domain-eu","target_domain":"domain-us","max_inflight_delegations":1,"max_delegations_per_minute":2},
+              "target_domain":"domain-us",
+              "health":[{"domain_id":"domain-us","healthy":false,"impairment_reason":"storage-pressure"}],
+              "inflight":2,
+              "per_minute":3,
+              "failure_policy":{"transient_action":"RetrySameDomain","persistent_action":"Quarantine"},
+              "persistent_failure":true
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::delegation_payload(&simulation).expect("report");
+        assert_eq!(report.failure_action, "quarantine");
+        for expected in [
+            "delegation exceeds configured inflight or rate limits",
+            "target domain is not healthy enough to receive delegation",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
