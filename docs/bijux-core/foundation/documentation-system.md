@@ -9,21 +9,21 @@ last_reviewed: 2026-04-12
 
 # Documentation System
 
-The documentation system exists so repository behavior stays readable from
-checked-in pages instead of being reconstructed from code and CI alone.
+This page explains how the repository keeps its behavior readable in checked-in
+docs instead of scattering the story across code and CI.
+
+The split matters because each handbook answers a different kind of question.
+The documentation system works when a reader can tell where to go next without
+reconstructing the repository from implementation details.
+
+## Handbook Map
 
 ```mermaid
-flowchart TD
-    site[documentation system]
-    site --> core[docs/bijux-core]
-    site --> cli[docs/bijux-cli]
-    site --> dag[docs/bijux-dag]
-    site --> dev[docs/bijux-dev]
-
-    core --> rules[cross-program rules]
-    cli --> runtime[CLI runtime ownership]
-    dag --> execution[DAG execution ownership]
-    dev --> health[repository-health automation]
+flowchart LR
+    site["documentation system"] --> core["bijux-core"]
+    site --> cli["bijux-cli"]
+    site --> dag["bijux-dag"]
+    site --> dev["bijux-dev"]
 ```
 
 ## Handbook Roots
@@ -39,6 +39,11 @@ flowchart TD
 - navigation should follow durable ownership boundaries
 - package tabs should point to concrete package docs, not abstract placeholders
 - docs claims should link to code, contracts, tests, or workflows
+
+## Reading Rule
+
+Use this page when the repository shape is still unclear and the first need is
+to understand how the handbooks divide responsibility.
 
 ## Code Anchors
 
