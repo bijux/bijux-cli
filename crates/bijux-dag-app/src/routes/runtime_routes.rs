@@ -2,7 +2,8 @@ use crate::commands::{DagCli, RuntimeCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
     audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
-    build_timeout_audit_report, BatchLifecycleEvent, DispatchKeyRecord, RuntimeConfig,
+    build_heartbeat_audit_report, build_timeout_audit_report, BatchLifecycleEvent,
+    DispatchKeyRecord, RuntimeConfig,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
@@ -17,6 +18,18 @@ struct DispatchSimulation {
     remote_status_events: Vec<RemoteStatusEvent>,
     #[serde(default)]
     batch_events: Vec<BatchLifecycleEvent>,
+}
+
+#[derive(Debug, Deserialize)]
+struct HeartbeatSimulation {
+    heartbeat: bijux_dag_runtime::simulated_platform::WorkerHeartbeat,
+    now_unix_ms: u128,
+    liveness_policy: bijux_dag_runtime::simulated_platform::LivenessPolicy,
+    heartbeat_semantics: bijux_dag_runtime::simulated_platform::HeartbeatSemantics,
+    #[serde(default)]
+    lease: Option<bijux_dag_runtime::simulated_platform::WorkLease>,
+    #[serde(default)]
+    lease_semantics: Option<bijux_dag_runtime::simulated_platform::TaskLeaseSemantics>,
 }
 
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -132,6 +145,29 @@ pub(crate) fn handle_runtime_command(
                 return emit_json(
                     cli,
                     "dag.runtime.timeout",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        RuntimeCommands::Heartbeat { simulation } => {
+            let simulation: HeartbeatSimulation = parse_json_file(simulation)?;
+            let report = build_heartbeat_audit_report(
+                &simulation.heartbeat,
+                simulation.now_unix_ms,
+                &simulation.liveness_policy,
+                &simulation.heartbeat_semantics,
+                simulation.lease.as_ref(),
+                simulation.lease_semantics.as_ref(),
+            );
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runtime.heartbeat",
                     true,
                     serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
@@ -325,6 +361,33 @@ mod tests {
             },
         )
         .expect("timeout");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_support_heartbeat_reports() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("heartbeat.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "heartbeat":{"worker_id":"worker-a","unix_ms":1000,"inflight_nodes":["node-a"]},
+              "now_unix_ms":2200,
+              "liveness_policy":{"heartbeat_timeout_ms":1500,"grace_retries":2},
+              "heartbeat_semantics":{"interval_ms":500,"timeout_ms":2500,"delayed_threshold_ms":1000},
+              "lease":{"lease_id":"lease-1","run_id":"run-1","node_id":"node-a","worker_id":"worker-a","expires_unix_ms":1700},
+              "lease_semantics":{"lease_duration_ms":2000,"renew_before_expiry_ms":500,"max_renewals":2,"recovery_grace_ms":800}
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli =
+            quiet_json_cli(RuntimeCommands::Heartbeat { simulation: simulation.clone() });
+        let code = handle_runtime_command(
+            &cli,
+            &RuntimeCommands::Heartbeat { simulation },
+        )
+        .expect("heartbeat");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }

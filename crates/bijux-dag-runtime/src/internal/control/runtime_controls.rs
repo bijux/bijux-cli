@@ -1,4 +1,8 @@
-use crate::simulated_platform::{is_duplicate_dispatch, normalize_status_events, RemoteStatusEvent};
+use crate::simulated_platform::{
+    classify_heartbeat, is_duplicate_dispatch, normalize_status_events, recover_lost_lease,
+    should_reassign, worker_alive, HeartbeatClass, HeartbeatSemantics, LivenessPolicy,
+    RemoteStatusEvent, TaskLeaseSemantics, WorkLease, WorkerHeartbeat,
+};
 use crate::{
     default_forced_cleanup, duplicate_status_delivery_detected, retry_allowed,
     validate_task_contracts, BackoffStrategy, BatchLifecycleEvent, ForcedCancellationCleanup,
@@ -72,6 +76,15 @@ pub struct TimeoutAuditReport {
     pub heartbeat_triggered: bool,
     pub sla_triggered: bool,
     pub primary_timeout: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeartbeatAuditReport {
+    pub worker_id: String,
+    pub heartbeat_class: HeartbeatClass,
+    pub worker_alive: bool,
+    pub should_reassign: bool,
+    pub recoverable_lease_loss: Option<bool>,
 }
 
 pub fn build_execution_isolation_report(
@@ -272,6 +285,30 @@ pub fn build_timeout_audit_report(
     })
 }
 
+pub fn build_heartbeat_audit_report(
+    heartbeat: &WorkerHeartbeat,
+    now_unix_ms: u128,
+    liveness_policy: &LivenessPolicy,
+    heartbeat_semantics: &HeartbeatSemantics,
+    lease: Option<&WorkLease>,
+    lease_semantics: Option<&TaskLeaseSemantics>,
+) -> HeartbeatAuditReport {
+    let heartbeat_class = classify_heartbeat(heartbeat, now_unix_ms, heartbeat_semantics);
+    let worker_alive = worker_alive(heartbeat, now_unix_ms, liveness_policy);
+    let should_reassign = lease.map(|lease| should_reassign(lease, now_unix_ms)).unwrap_or(false);
+    let recoverable_lease_loss = lease
+        .zip(lease_semantics)
+        .map(|(lease, semantics)| recover_lost_lease(lease, now_unix_ms, semantics));
+
+    HeartbeatAuditReport {
+        worker_id: heartbeat.worker_id.clone(),
+        heartbeat_class,
+        worker_alive,
+        should_reassign,
+        recoverable_lease_loss,
+    }
+}
+
 fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::RetryPolicySemantics {
     let _ = node_id;
     crate::RetryPolicySemantics {
@@ -324,6 +361,10 @@ mod tests {
     use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
     use crate::{BatchLifecycleEvent, RuntimeConfig};
     use bijux_dag_core::{Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef};
+    use crate::simulated_platform::{
+        HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
+        WorkerHeartbeat,
+    };
     use std::collections::BTreeMap;
 
     fn graph_fixture() -> Graph {
@@ -498,5 +539,40 @@ mod tests {
         assert!(report.execution_triggered);
         assert!(report.total_budget_triggered);
         assert_eq!(report.primary_timeout, Some("queue".to_string()));
+    }
+
+    #[test]
+    fn heartbeat_report_distinguishes_delayed_and_recoverable_leases() {
+        let report = super::build_heartbeat_audit_report(
+            &WorkerHeartbeat {
+                worker_id: "worker-a".to_string(),
+                unix_ms: 1_000,
+                inflight_nodes: vec!["node-a".to_string()],
+            },
+            2_200,
+            &LivenessPolicy { heartbeat_timeout_ms: 1_500, grace_retries: 2 },
+            &HeartbeatSemantics {
+                interval_ms: 500,
+                timeout_ms: 2_500,
+                delayed_threshold_ms: 1_000,
+            },
+            Some(&WorkLease {
+                lease_id: "lease-1".to_string(),
+                run_id: "run-1".to_string(),
+                node_id: "node-a".to_string(),
+                worker_id: "worker-a".to_string(),
+                expires_unix_ms: 1_700,
+            }),
+            Some(&TaskLeaseSemantics {
+                lease_duration_ms: 2_000,
+                renew_before_expiry_ms: 500,
+                max_renewals: 2,
+                recovery_grace_ms: 800,
+            }),
+        );
+        assert_eq!(report.heartbeat_class, HeartbeatClass::Delayed);
+        assert!(report.worker_alive);
+        assert!(report.should_reassign);
+        assert_eq!(report.recoverable_lease_loss, Some(true));
     }
 }
