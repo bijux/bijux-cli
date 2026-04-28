@@ -11,26 +11,23 @@ last_reviewed: 2026-04-12
 
 `bijux-cli` is the operator-facing runtime for the `bijux` command surface. It
 owns command normalization, runtime policy resolution, route execution,
-structured output, exit behavior, and plugin routing boundaries for the workspace.
+structured output, exit behavior, and plugin routing boundaries.
 
-This handbook is written for two outcomes:
-
-- a reader can find the right page without reading the whole repository
-- a reviewer can trace each claim to concrete `crates/bijux-cli` code
+Use this handbook when the question is about command behavior, route ownership,
+plugin boundaries, REPL behavior, or the Python bridge that distributes the
+same runtime.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-cli.md">Open the runtime package</a>
 <a class="md-button" href="packages/bijux-cli-python.md">Open the Python bridge package</a>
 </div>
 
-## Visual Summary
+## Package Map
 
 ```mermaid
-flowchart TB
-    handbook["CLI handbook"]
-    handbook --> runtime["bijux-cli"]
-    handbook --> python["bijux-cli-python"]
-    handbook --> sections["foundation | architecture | interfaces | operations | quality"]
+flowchart LR
+    handbook["CLI handbook"] --> runtime["bijux-cli runtime"]
+    handbook --> python["bijux-cli-python bridge"]
 ```
 
 ## Package Destinations
