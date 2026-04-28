@@ -68,3 +68,8 @@ flowchart TB
 - [Repository Handbook](../bijux-core/index.md)
 - [CLI Handbook](../bijux-cli/index.md)
 - [Maintainer Handbook](../bijux-dev/index.md)
+
+## Contract Anchors
+
+- [Planner Contract](../spec/PLANNER_CONTRACT.md)
+- [Replay Contract](../spec/REPLAY_CONTRACT.md)
