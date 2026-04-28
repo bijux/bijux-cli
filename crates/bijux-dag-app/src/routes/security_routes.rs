@@ -9,6 +9,11 @@ use bijux_dag_runtime::simulated_platform::{
     CredentialScope, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
     IdentityPrincipal, LocalDevAuthBypassRule, PolicyEvaluationRequest, ResourceKind, ResourceRef,
     ResourceScope, SubjectIdentity, SubjectKind, TrustHealthReport,
+    check_scheduler_admission, enforce_tenant_plugin_allowlist, resolve_tenant_overlay,
+    scope_lineage_query, tenant_provisioning_bootstrap, validate_tenant_isolation,
+    TenantConfigOverlay, TenantId, TenantLineageScope, TenantPluginAllowlist,
+    TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
+    TenantRegistryPartition, TenantSchedulerAdmission,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -86,6 +91,45 @@ struct AuthzReport {
     cross_tenant_escalation_blocked: bool,
     custom_role_valid: bool,
     failures: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct TenantSimulation {
+    requested_tenant: String,
+    api_tenant: String,
+    scheduler_tenant: String,
+    artifact_tenant: String,
+    metrics_tenant: String,
+    lineage_tenant: String,
+    queued_runs: usize,
+    pending_dispatches: usize,
+    plugin_name: String,
+    requested_artifact_ids: Vec<String>,
+    #[serde(default)]
+    global_defaults: std::collections::BTreeMap<String, String>,
+    overlay_values: std::collections::BTreeMap<String, String>,
+    overlay_overrides: std::collections::BTreeMap<String, String>,
+    queue_names: Vec<String>,
+    allowed_plugins: Vec<String>,
+    allowed_artifact_ids: Vec<String>,
+    namespace: String,
+    storage_partition: String,
+    index_prefix: String,
+    policy_bundle_id: String,
+    policy_bundle_version: String,
+    max_enqueued_runs: usize,
+    max_dispatches_per_tick: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct TenantReport {
+    isolated: bool,
+    scheduler_admitted: bool,
+    plugin_allowed: bool,
+    visible_artifact_ids: Vec<String>,
+    merged_config: std::collections::BTreeMap<String, String>,
+    bootstrap_steps: Vec<String>,
+    violations: Vec<String>,
 }
 
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
@@ -197,6 +241,87 @@ fn authz_payload(simulation: &Path) -> Result<AuthzReport, ExitCode> {
     })
 }
 
+fn parse_tenant_id(value: &str) -> Result<TenantId, ExitCode> {
+    TenantId::parse(value).map_err(|_| ExitCode::from(2))
+}
+
+fn tenant_payload(simulation: &Path) -> Result<TenantReport, ExitCode> {
+    let simulation: TenantSimulation = load_json_file(simulation)?;
+    let requested_tenant = parse_tenant_id(&simulation.requested_tenant)?;
+    let api_tenant = parse_tenant_id(&simulation.api_tenant)?;
+    let scheduler_tenant = parse_tenant_id(&simulation.scheduler_tenant)?;
+    let artifact_tenant = parse_tenant_id(&simulation.artifact_tenant)?;
+    let metrics_tenant = parse_tenant_id(&simulation.metrics_tenant)?;
+    let lineage_tenant = parse_tenant_id(&simulation.lineage_tenant)?;
+
+    let isolation = validate_tenant_isolation(
+        &requested_tenant,
+        &api_tenant,
+        &scheduler_tenant,
+        &artifact_tenant,
+        &metrics_tenant,
+        &lineage_tenant,
+    );
+    let admission = TenantSchedulerAdmission {
+        tenant_id: requested_tenant.clone(),
+        max_enqueued_runs: simulation.max_enqueued_runs,
+        max_dispatches_per_tick: simulation.max_dispatches_per_tick,
+    };
+    let scheduler_admitted =
+        check_scheduler_admission(simulation.queued_runs, simulation.pending_dispatches, &admission);
+    let allowlist =
+        TenantPluginAllowlist { tenant_id: requested_tenant.clone(), allowed_plugins: simulation.allowed_plugins };
+    let plugin_allowed = enforce_tenant_plugin_allowlist(&simulation.plugin_name, &allowlist);
+    let lineage_scope = TenantLineageScope {
+        tenant_id: requested_tenant.clone(),
+        allowed_artifact_ids: simulation.allowed_artifact_ids,
+    };
+    let visible_artifact_ids = scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
+    let overlay = TenantConfigOverlay {
+        tenant_id: requested_tenant.clone(),
+        values: simulation.overlay_values,
+        overrides: simulation.overlay_overrides,
+    };
+    let merged_config = resolve_tenant_overlay(&simulation.global_defaults, &overlay);
+    let provisioning = TenantProvisioningSpec {
+        tenant_id: requested_tenant,
+        namespace: simulation.namespace,
+        registry_partition: TenantRegistryPartition {
+            tenant_id: parse_tenant_id(&simulation.requested_tenant)?,
+            storage_partition: simulation.storage_partition,
+            index_prefix: simulation.index_prefix,
+        },
+        default_queue_isolation: TenantQueueIsolationPolicy {
+            tenant_id: parse_tenant_id(&simulation.requested_tenant)?,
+            queue_names: simulation.queue_names,
+            hard_isolation: true,
+        },
+        default_policy_bundle: TenantPolicyBundleRef {
+            tenant_id: parse_tenant_id(&simulation.requested_tenant)?,
+            policy_bundle_id: simulation.policy_bundle_id,
+            policy_bundle_version: simulation.policy_bundle_version,
+        },
+    };
+    let bootstrap_steps = tenant_provisioning_bootstrap(&provisioning);
+    let mut violations = isolation.violations;
+    if !scheduler_admitted {
+        violations.push("scheduler admission quota exceeded".to_string());
+    }
+    if !plugin_allowed {
+        violations.push("plugin allowlist rejected the requested plugin".to_string());
+    }
+
+    Ok(TenantReport {
+        isolated: violations.iter().all(|v| !v.contains("tenant scope mismatch")),
+        scheduler_admitted,
+        plugin_allowed,
+        visible_artifact_ids,
+        merged_config,
+        bootstrap_steps,
+        violations,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -209,6 +334,10 @@ pub(crate) fn handle_security_command(
         SecurityCommands::Authz { simulation } => {
             let payload = serde_json::to_value(authz_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.authz", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::Tenant { simulation } => {
+            let payload = serde_json::to_value(tenant_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.tenant", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -384,6 +513,101 @@ mod tests {
             "custom role definition is invalid",
         ] {
             assert!(report.failures.iter().any(|failure| failure == expected));
+        }
+    }
+
+    #[test]
+    fn security_tenant_accepts_fully_isolated_request() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("tenant.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "requested_tenant":"atlas",
+              "api_tenant":"atlas",
+              "scheduler_tenant":"atlas",
+              "artifact_tenant":"atlas",
+              "metrics_tenant":"atlas",
+              "lineage_tenant":"atlas",
+              "queued_runs":2,
+              "pending_dispatches":1,
+              "plugin_name":"builtin-python",
+              "requested_artifact_ids":["a1","a2"],
+              "global_defaults":{"retry":"3"},
+              "overlay_values":{"region":"eu"},
+              "overlay_overrides":{"retry":"5"},
+              "queue_names":["atlas-main"],
+              "allowed_plugins":["builtin-python","builtin-shell"],
+              "allowed_artifact_ids":["a1","a2","a3"],
+              "namespace":"atlas-prod",
+              "storage_partition":"s3://atlas",
+              "index_prefix":"atlas/",
+              "policy_bundle_id":"bundle-1",
+              "policy_bundle_version":"v1",
+              "max_enqueued_runs":5,
+              "max_dispatches_per_tick":3
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::Tenant { simulation: simulation.clone() });
+        let code = handle_security_command(&cli, &SecurityCommands::Tenant { simulation: simulation.clone() })
+            .expect("tenant");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::tenant_payload(&simulation).expect("report");
+        assert!(report.isolated);
+        assert!(report.scheduler_admitted);
+        assert!(report.plugin_allowed);
+        assert_eq!(report.visible_artifact_ids, vec!["a1".to_string(), "a2".to_string()]);
+        assert_eq!(report.merged_config.get("retry").map(String::as_str), Some("5"));
+        assert!(report.violations.is_empty());
+    }
+
+    #[test]
+    fn security_tenant_flags_scope_admission_and_plugin_violations() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("tenant.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "requested_tenant":"atlas",
+              "api_tenant":"other",
+              "scheduler_tenant":"atlas",
+              "artifact_tenant":"other",
+              "metrics_tenant":"atlas",
+              "lineage_tenant":"other",
+              "queued_runs":20,
+              "pending_dispatches":10,
+              "plugin_name":"unapproved",
+              "requested_artifact_ids":["a1","a2"],
+              "global_defaults":{},
+              "overlay_values":{},
+              "overlay_overrides":{},
+              "queue_names":["atlas-main"],
+              "allowed_plugins":["builtin-python"],
+              "allowed_artifact_ids":["a1"],
+              "namespace":"atlas-prod",
+              "storage_partition":"s3://atlas",
+              "index_prefix":"atlas/",
+              "policy_bundle_id":"bundle-1",
+              "policy_bundle_version":"v1",
+              "max_enqueued_runs":5,
+              "max_dispatches_per_tick":3
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::tenant_payload(&simulation).expect("report");
+        assert!(!report.isolated);
+        assert!(!report.scheduler_admitted);
+        assert!(!report.plugin_allowed);
+        assert_eq!(report.visible_artifact_ids, vec!["a1".to_string()]);
+        for expected in [
+            "api tenant scope mismatch",
+            "artifact tenant scope mismatch",
+            "lineage tenant scope mismatch",
+            "scheduler admission quota exceeded",
+            "plugin allowlist rejected the requested plugin",
+        ] {
+            assert!(report.violations.iter().any(|violation| violation == expected));
         }
     }
 }
