@@ -9,19 +9,14 @@ last_reviewed: 2026-04-12
 
 # Package Map
 
-The package map exists so readers can route from a repository question to the
-owning package family before they inspect source files.
+The package map helps readers move from a repository question to the owning
+package family before they inspect source files.
 
 ```mermaid
-flowchart TD
-    Q[What is your question about?]
-    Q --> R1[operator-facing command behavior]
-    Q --> R2[graph execution, replay, artifacts]
-    Q --> R3[repository-health automation and release control]
-
-    R1 --> P1[bijux-cli and bijux-cli-python]
-    R2 --> P2[bijux-dag package family]
-    R3 --> P3[bijux-dev]
+flowchart LR
+    question["Your question"] --> cli["CLI behavior and Python distribution"]
+    question --> dag["graph execution, replay, and artifacts"]
+    question --> dev["repository health, diagnostics, and release control"]
 ```
 
 ## Package Families
@@ -34,8 +29,8 @@ flowchart TD
 
 ## Reading Rule
 
-Use the repository handbook only long enough to choose the correct branch. Once
-the owner is clear, move to the owning handbook and package page.
+Use this page only long enough to choose the correct branch. Once the owner is
+clear, move to the owning handbook and package page.
 
 ## Next Reads
 
