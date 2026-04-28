@@ -224,6 +224,33 @@ struct DataAccessReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct OverrideSimulation {
+    actor: String,
+    tenant_id: Option<String>,
+    action_name: String,
+    action_kind: ActionKind,
+    resource_kind: ResourceKind,
+    resource_id: String,
+    environment: String,
+    policy_bundle_version: String,
+    granted_permissions: Vec<String>,
+    environment_rules: Vec<EnvironmentAuthorizationRule>,
+    reason: String,
+    audit_event_id: Option<String>,
+    break_glass: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct OverrideReport {
+    override_allowed: bool,
+    reason_recorded: bool,
+    audit_recorded: bool,
+    environment_allows: bool,
+    break_glass_policy_valid: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -566,6 +593,60 @@ fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> 
     })
 }
 
+fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
+    let simulation: OverrideSimulation = load_json_file(simulation)?;
+    let request = PolicyEvaluationRequest {
+        request_id: "security-override".to_string(),
+        subject: SubjectIdentity {
+            subject_id: simulation.actor,
+            kind: SubjectKind::User,
+            tenant_id: simulation.tenant_id.clone(),
+        },
+        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind },
+        resource: ResourceRef {
+            kind: simulation.resource_kind,
+            id: simulation.resource_id,
+            tenant_id: simulation.tenant_id.clone(),
+        },
+        scope: match simulation.tenant_id {
+            Some(tenant_id) => ResourceScope::Tenant { tenant_id },
+            None => ResourceScope::Global,
+        },
+        environment: simulation.environment.clone(),
+    };
+    let dry_run = evaluate_dry_run(&request, &simulation.granted_permissions, &simulation.policy_bundle_version);
+    let environment_allows =
+        is_action_allowed_in_environment(&simulation.action_name, &simulation.environment, &simulation.environment_rules);
+    let reason_recorded = !simulation.reason.trim().is_empty();
+    let audit_recorded =
+        simulation.audit_event_id.as_ref().is_some_and(|value| !value.trim().is_empty());
+    let break_glass_policy_valid = !simulation.break_glass || (reason_recorded && audit_recorded);
+    let mut gaps = Vec::new();
+    if !dry_run.would_allow {
+        gaps.push("override actor lacks the required permission".to_string());
+    }
+    if !environment_allows {
+        gaps.push("override is denied in this environment".to_string());
+    }
+    if !reason_recorded {
+        gaps.push("override reason is missing".to_string());
+    }
+    if !audit_recorded {
+        gaps.push("override audit record is missing".to_string());
+    }
+    if !break_glass_policy_valid {
+        gaps.push("break-glass override is not fully justified".to_string());
+    }
+    Ok(OverrideReport {
+        override_allowed: dry_run.would_allow && environment_allows && break_glass_policy_valid,
+        reason_recorded,
+        audit_recorded,
+        environment_allows,
+        break_glass_policy_valid,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -596,6 +677,11 @@ pub(crate) fn handle_security_command(
             let payload =
                 serde_json::to_value(data_access_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.data-access", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::Override { simulation } => {
+            let payload =
+                serde_json::to_value(override_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.override", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         _ => emit_json(
             cli,
@@ -1153,4 +1239,78 @@ mod tests {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
     }
+
+    #[test]
+    fn security_override_accepts_audited_break_glass_action() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("override.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"operator-a",
+              "tenant_id":"atlas",
+              "action_name":"run.repair",
+              "action_kind":"Manage",
+              "resource_kind":"Run",
+              "resource_id":"run-1",
+              "environment":"prod",
+              "policy_bundle_version":"2026-04-28",
+              "granted_permissions":["run.repair"],
+              "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
+              "reason":"recover corrupted manifest",
+              "audit_event_id":"audit-1",
+              "break_glass":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::Override { simulation: simulation.clone() });
+        let code =
+            handle_security_command(&cli, &SecurityCommands::Override { simulation: simulation.clone() })
+                .expect("override");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::override_payload(&simulation).expect("report");
+        assert!(report.override_allowed);
+        assert!(report.reason_recorded);
+        assert!(report.audit_recorded);
+        assert!(report.environment_allows);
+        assert!(report.break_glass_policy_valid);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_override_rejects_unaudited_override() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("override.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"operator-a",
+              "tenant_id":"atlas",
+              "action_name":"platform.administer",
+              "action_kind":"Administer",
+              "resource_kind":"Run",
+              "resource_id":"run-1",
+              "environment":"prod",
+              "policy_bundle_version":"2026-04-28",
+              "granted_permissions":[],
+              "environment_rules":[{"environment":"prod","denied_actions":["platform.administer"]}],
+              "reason":"",
+              "audit_event_id":null,
+              "break_glass":true
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::override_payload(&simulation).expect("report");
+        assert!(!report.override_allowed);
+        for expected in [
+            "override actor lacks the required permission",
+            "override is denied in this environment",
+            "override reason is missing",
+            "override audit record is missing",
+            "break-glass override is not fully justified",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
 }
