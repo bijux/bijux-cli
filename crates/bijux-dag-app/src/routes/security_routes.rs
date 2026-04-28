@@ -1,5 +1,5 @@
 use crate::commands::{DagCli, SecurityCommands};
-use crate::{emit_json, ExitCode};
+use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix,
     builtin_role_definitions, evaluate_authorization_acceptance, evaluate_dry_run,
@@ -29,7 +29,6 @@ use bijux_dag_runtime::{
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde_json::json;
 use std::fs;
 use std::path::Path;
 
@@ -248,6 +247,20 @@ struct OverrideReport {
     audit_recorded: bool,
     environment_allows: bool,
     break_glass_policy_valid: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct SafeDefaultsNodeReport {
+    node_id: String,
+    risky_defaults: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct SafeDefaultsReport {
+    workflow_name: String,
+    safe_by_default: bool,
+    nodes: Vec<SafeDefaultsNodeReport>,
     gaps: Vec<String>,
 }
 
@@ -647,6 +660,64 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
     })
 }
 
+fn safe_defaults_payload(dag: &Path) -> Result<SafeDefaultsReport, ExitCode> {
+    let graph = parse_graph(&read_file(dag)?)?;
+    let workflow_name = graph
+        .meta
+        .as_ref()
+        .map(|meta| meta.name.clone())
+        .unwrap_or_else(|| "unnamed".to_string());
+    let mut nodes = Vec::new();
+    let mut gaps = Vec::new();
+    if graph.meta.as_ref().is_none_or(|meta| meta.owners.is_empty()) {
+        gaps.push("workflow has no owners".to_string());
+    }
+    if graph.meta.as_ref().is_none_or(|meta| meta.tags.is_empty()) {
+        gaps.push("workflow has no taxonomy tags".to_string());
+    }
+    if graph.nondeterminism_allowed {
+        gaps.push("workflow permits nondeterministic execution by default".to_string());
+    }
+    for node in &graph.nodes {
+        let mut risky_defaults = Vec::new();
+        let container_env_allowlist = node
+            .container
+            .as_ref()
+            .map(|spec| spec.env_allowlist.as_slice())
+            .unwrap_or(&[]);
+        if node.timeout_ms.is_none() {
+            risky_defaults.push("missing-timeout".to_string());
+        }
+        if node.resources.is_none() {
+            risky_defaults.push("missing-resource-bounds".to_string());
+        }
+        if !node.effects.is_empty() && node.tags.is_empty() {
+            risky_defaults.push("effectful-node-without-tags".to_string());
+        }
+        if node.effects.iter().any(|effect| matches!(effect, bijux_dag_core::Effect::Network)) {
+            risky_defaults.push("network-effect-enabled".to_string());
+        }
+        if node.effects.iter().any(|effect| matches!(effect, bijux_dag_core::Effect::Clock)) {
+            risky_defaults.push("clock-effect-enabled".to_string());
+        }
+        if node.effects.iter().any(|effect| matches!(effect, bijux_dag_core::Effect::Env))
+            && node.env_allowlist.is_empty()
+            && container_env_allowlist.is_empty()
+        {
+            risky_defaults.push("env-effect-without-allowlist".to_string());
+        }
+        if !risky_defaults.is_empty() {
+            gaps.push(format!(
+                "node {} has unsafe defaults: {}",
+                node.id,
+                risky_defaults.join(",")
+            ));
+        }
+        nodes.push(SafeDefaultsNodeReport { node_id: node.id.clone(), risky_defaults });
+    }
+    Ok(SafeDefaultsReport { workflow_name, safe_by_default: gaps.is_empty(), nodes, gaps })
+}
+
 pub(crate) fn handle_security_command(
     cli: &DagCli,
     command: &SecurityCommands,
@@ -683,14 +754,11 @@ pub(crate) fn handle_security_command(
                 serde_json::to_value(override_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.override", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
-        _ => emit_json(
-            cli,
-            "dag.security",
-            false,
-            json!({"status":"not-yet-implemented"}),
-            vec![json!({"message":"security surface not yet implemented for this command in the current commit boundary"})],
-            ExitCode::from(2),
-        ),
+        SecurityCommands::SafeDefaults { dag } => {
+            let payload =
+                serde_json::to_value(safe_defaults_payload(dag)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(cli, "dag.security.safe-defaults", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
     }
 }
 
@@ -1310,6 +1378,94 @@ mod tests {
             "break-glass override is not fully justified",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_safe_defaults_accepts_bounded_workflow() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let dag = dir.path().join("dag.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"safe","owners":["team-core"],"tags":["prod","reviewed"]},
+              "nodes":[
+                {
+                  "id":"n1",
+                  "kind":"shell",
+                  "inputs":[],
+                  "outputs":[{"name":"out","path":"out"}],
+                  "params":{"argv":["/bin/true"]},
+                  "timeout_ms":1000,
+                  "resources":{"cpu":1,"mem_mb":128},
+                  "tags":["filesystem-reviewed"],
+                  "retry":{"max_attempts":1,"backoff_ms":100},
+                  "effects":["filesystem"]
+                }
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("write dag");
+        let cli = quiet_json_cli(SecurityCommands::SafeDefaults { dag: dag.clone() });
+        let code =
+            handle_security_command(&cli, &SecurityCommands::SafeDefaults { dag: dag.clone() })
+                .expect("safe defaults");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::safe_defaults_payload(&dag).expect("report");
+        assert!(report.safe_by_default);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_safe_defaults_flags_unsafe_workflow_defaults() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let dag = dir.path().join("dag.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"unsafe","owners":[],"tags":[]},
+              "nondeterminism_allowed":true,
+              "nodes":[
+                {
+                  "id":"n1",
+                  "kind":"shell",
+                  "inputs":[],
+                  "outputs":[{"name":"out","path":"out"}],
+                  "params":{"argv":["/bin/true"]},
+                  "retry":{"max_attempts":0,"backoff_ms":0},
+                  "effects":["network","env","clock"]
+                }
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("write dag");
+        let report = super::safe_defaults_payload(&dag).expect("report");
+        assert!(!report.safe_by_default);
+        for expected in [
+            "workflow has no owners",
+            "workflow has no taxonomy tags",
+            "workflow permits nondeterministic execution by default",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+        let node_gap = report
+            .gaps
+            .iter()
+            .find(|gap| gap.starts_with("node n1 has unsafe defaults:"))
+            .expect("node gap");
+        for expected in [
+            "missing-timeout",
+            "missing-resource-bounds",
+            "effectful-node-without-tags",
+            "network-effect-enabled",
+            "clock-effect-enabled",
+            "env-effect-without-allowlist",
+        ] {
+            assert!(node_gap.contains(expected));
         }
     }
 
