@@ -9,17 +9,21 @@ last_reviewed: 2026-04-12
 
 # Artifact Governance
 
-Generated outputs are useful only when they stay auditable and do not leak into
-tracked source roots by accident.
+This page explains how generated outputs stay useful without turning into
+accidental source of truth.
+
+The rule is straightforward: source stays in tracked roots, generated outputs
+stay in `artifacts/`, and review should never have to guess which category a
+file belongs to.
+
+## Artifact Map
 
 ```mermaid
-flowchart TD
-    source[canonical source and contracts]
-    source --> tracked[tracked reference assets]
-    source --> docs[checked docs and metadata]
-    tracked --> review[reviewed and versioned]
-    generated[generated outputs] --> artifacts[artifacts/]
-    artifacts --> disposable[local or CI disposable outputs]
+flowchart LR
+    source["canonical source and contracts"] --> tracked["tracked reference assets"]
+    source --> docs["checked docs and metadata"]
+    generated["generated outputs"] --> artifacts["artifacts"]
+    artifacts --> disposable["local or CI disposable outputs"]
 ```
 
 ## Repository Rules
@@ -34,6 +38,11 @@ flowchart TD
 - docs output under `artifacts/docs/site`
 - Python build output under `artifacts/python/build`
 - Rust test, lint, and coverage reports under `artifacts/rust/`
+
+## Reading Rule
+
+Use this page when a new output file appears and the question is whether it
+belongs in source, docs, or disposable artifacts.
 
 ## Code Anchors
 
