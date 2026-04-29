@@ -52,6 +52,15 @@ fn read_counts(manifest: &Path) -> (u32, u32, u32, u32) {
     )
 }
 
+fn read_run_events(run_dir: &Path) -> Vec<Value> {
+    fs::read_to_string(run_dir.join("run.log.jsonl"))
+        .expect("run log")
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str::<Value>(line).expect("event json"))
+        .collect()
+}
+
 #[test]
 fn runtime_executes_const_graph_and_emits_output_trace() {
     let graph = parse_graph_strict(&simple_const_graph()).expect("parse graph");
@@ -194,4 +203,142 @@ fn run_snapshot_records_requested_selectors_and_selected_nodes() {
     .expect("snapshot parse");
     assert_eq!(snapshot["requested_selectors"], serde_json::json!(["include:tag:seed"]));
     assert_eq!(snapshot["selected_nodes"], serde_json::json!(["const1"]));
+}
+
+#[test]
+fn finalized_run_removes_incomplete_marker_and_keeps_completion_marker() {
+    let graph = parse_graph_strict(&simple_const_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+    assert!(!run_dir.join(".run-incomplete.json").exists());
+    assert!(run_dir.join(".run-complete.json").exists());
+}
+
+#[test]
+fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+            {"id":"big","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"big/out"}],"resources":{"cpu":3,"mem_mb":64},"params":{"value":2}},
+            {"id":"small","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"small/out"}],"resources":{"cpu":1,"mem_mb":64},"params":{"value":3}}
+          ],
+          "edges":[
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"big","port":"in"}},
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"small","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                jobs: 2,
+                scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+                    max_parallelism: 2,
+                    cpu_budget: Some(1),
+                    ..bijux_dag_runtime::SchedulerPolicy::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let events = read_run_events(&run_dir);
+    let root_ready = events
+        .iter()
+        .find(|event| event["event"] == "node_ready" && event["node_id"] == "root")
+        .expect("root ready");
+    assert_eq!(root_ready["reason"]["code"], "root_ready");
+
+    let downstream_ready = events
+        .iter()
+        .find(|event| event["event"] == "node_ready" && event["node_id"] == "small")
+        .expect("downstream ready");
+    assert_eq!(downstream_ready["reason"]["code"], "dependencies_satisfied");
+    assert_eq!(downstream_ready["reason"]["released_by"], "root");
+
+    let scheduler_decision = events
+        .iter()
+        .find(|event| {
+            event["event"] == "scheduler_decision"
+                && event["blocked_reasons"]["big"] == "blocked_by_cpu"
+        })
+        .expect("scheduler decision");
+    assert_eq!(scheduler_decision["blocked_reasons"]["big"], "blocked_by_cpu");
+}
+
+#[test]
+fn partial_rerun_requires_dependency_closure_and_records_invalidation_contract() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"extract","kind":"const","outputs":[{"name":"out","path":"extract/out"}],"params":{"value":1}},
+            {"id":"transform","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"transform/out"}],"params":{"value":2}},
+            {"id":"publish","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"publish/out"}],"params":{"value":3}}
+          ],
+          "edges":[
+            {"from":{"node_id":"extract","port":"out"},"to":{"node_id":"transform","port":"in"}},
+            {"from":{"node_id":"transform","port":"out"},"to":{"node_id":"publish","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let error = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                parent_run_id: Some("run-parent".to_string()),
+                selectors: SelectorSet {
+                    include: vec![Selector::IdPrefix("transform".to_string())],
+                    exclude: vec![],
+                },
+                partial_rerun_dependency_closure: false,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect_err("partial rerun without dependency closure must fail");
+    assert!(error.to_string().contains("partial rerun requires dependency closure"));
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                parent_run_id: Some("run-parent".to_string()),
+                selectors: SelectorSet {
+                    include: vec![Selector::IdPrefix("transform".to_string())],
+                    exclude: vec![],
+                },
+                partial_rerun_dependency_closure: true,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("closure-enabled rerun");
+    let snapshot: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("run.snapshot.json")).expect("run snapshot"),
+    )
+    .expect("snapshot parse");
+    assert_eq!(
+        snapshot["partial_rerun_contract"]["selected_nodes"],
+        serde_json::json!(["transform"])
+    );
+    assert_eq!(
+        snapshot["partial_rerun_contract"]["invalidated_downstream_nodes"],
+        serde_json::json!(["publish"])
+    );
+    assert_eq!(snapshot["partial_rerun_contract"]["stale_downstream_reuse_forbidden"], true);
 }

@@ -19,9 +19,9 @@ mod engine_observe;
 #[path = "engine_record.rs"]
 mod engine_record;
 use bijux_dag_artifacts::{
-    finalize_run_manifest, write_provenance, write_run_outputs_index, write_run_schema_index,
-    FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirSchemaIndex,
-    RunMetadata,
+    finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
+    write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
+    RunDir, RunDirSchemaIndex, RunMetadata,
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION};
 use serde_json::Value;
@@ -36,14 +36,18 @@ struct BranchResolution {
     used_default: bool,
 }
 
-fn resolve_branch_decision(ctx: &RunContext, node: &Node) -> Result<Option<BranchResolution>, FailureInfo> {
+fn resolve_branch_decision(
+    ctx: &RunContext,
+    node: &Node,
+) -> Result<Option<BranchResolution>, FailureInfo> {
     if node.semantic_kind != SemanticNodeKind::Branch {
         return Ok(None);
     }
     let Some(branch) = &node.branch else {
         return Ok(None);
     };
-    let Some(output) = node.outputs.iter().find(|output| output.name == branch.decision_output) else {
+    let Some(output) = node.outputs.iter().find(|output| output.name == branch.decision_output)
+    else {
         return Err(FailureInfo {
             kind: "Execution".to_string(),
             code: "BRANCH_OUTPUT_MISSING".to_string(),
@@ -77,10 +81,7 @@ fn resolve_branch_decision(ctx: &RunContext, node: &Node) -> Result<Option<Branc
         })
         .unwrap_or_else(|| raw.trim().to_string());
     if branch.decisions.iter().any(|candidate| candidate == &decision) {
-        return Ok(Some(BranchResolution {
-            decision: decision.clone(),
-            used_default: false,
-        }));
+        return Ok(Some(BranchResolution { decision: decision.clone(), used_default: false }));
     }
     if let Some(default_decision) = &branch.default_decision {
         return Ok(Some(BranchResolution {
@@ -91,10 +92,7 @@ fn resolve_branch_decision(ctx: &RunContext, node: &Node) -> Result<Option<Branc
     Err(FailureInfo {
         kind: "Execution".to_string(),
         code: "INVALID_BRANCH_DECISION".to_string(),
-        message: format!(
-            "branch node {} produced undeclared decision {}",
-            node.id, decision
-        ),
+        message: format!("branch node {} produced undeclared decision {}", node.id, decision),
         details: Some(serde_json::json!({
             "node_id": node.id,
             "produced_decision": decision,
@@ -103,7 +101,11 @@ fn resolve_branch_decision(ctx: &RunContext, node: &Node) -> Result<Option<Branc
     })
 }
 
-fn branch_nodes_to_skip(plan: &crate::ExecutionPlan, branch_node_id: &str, selected_decision: &str) -> Vec<String> {
+fn branch_nodes_to_skip(
+    plan: &crate::ExecutionPlan,
+    branch_node_id: &str,
+    selected_decision: &str,
+) -> Vec<String> {
     let mut selected_reachable = BTreeSet::new();
     let mut by_decision = BTreeMap::<String, BTreeSet<String>>::new();
     for path in plan.branch_paths.iter().filter(|path| path.branch_node_id == branch_node_id) {
@@ -126,6 +128,94 @@ fn branch_nodes_to_skip(plan: &crate::ExecutionPlan, branch_node_id: &str, selec
         }
     }
     pruned.into_iter().collect()
+}
+
+fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
+    options.parent_run_id.is_some() && !options.selectors.include.is_empty()
+}
+
+fn selector_matches(node: &Node, selector: &crate::Selector) -> bool {
+    match selector {
+        crate::Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
+        crate::Selector::Tag(tag) => node.tags.iter().any(|candidate| candidate == tag),
+        crate::Selector::Kind(kind) => node.kind.as_str() == kind,
+    }
+}
+
+fn selected_rerun_targets(graph: &Graph, options: &RuntimeConfig) -> Vec<String> {
+    let mut selected = graph
+        .nodes
+        .iter()
+        .filter(|node| {
+            options.selectors.include.iter().any(|selector| selector_matches(node, selector))
+                && !options
+                    .selectors
+                    .exclude
+                    .iter()
+                    .any(|selector| selector_matches(node, selector))
+        })
+        .map(|node| node.id.clone())
+        .collect::<Vec<_>>();
+    selected.sort();
+    selected
+}
+
+fn trigger_rule_value(graph: &Graph, node_id: &str) -> serde_json::Value {
+    graph
+        .nodes
+        .iter()
+        .find(|node| node.id == node_id)
+        .and_then(|node| serde_json::to_value(&node.trigger_rule).ok())
+        .unwrap_or_else(|| serde_json::Value::String("unknown".to_string()))
+}
+
+fn upstream_nodes(dep_map: &HashMap<String, BTreeSet<String>>, node_id: &str) -> Vec<String> {
+    let mut upstreams = dep_map
+        .get(node_id)
+        .map(|deps| deps.iter().cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    upstreams.sort();
+    upstreams
+}
+
+fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec<String> {
+    let mut adjacency = BTreeMap::<String, Vec<String>>::new();
+    for edge in &graph.edges {
+        adjacency.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
+    }
+    let mut visited = BTreeSet::new();
+    let mut queue = selected_nodes.iter().cloned().collect::<Vec<_>>();
+    while let Some(node_id) = queue.pop() {
+        if let Some(children) = adjacency.get(&node_id) {
+            for child in children {
+                if visited.insert(child.clone()) {
+                    queue.push(child.clone());
+                }
+            }
+        }
+    }
+    for selected in selected_nodes {
+        visited.remove(selected);
+    }
+    visited.into_iter().collect()
+}
+
+fn write_scheduler_invariant_bundle(
+    ctx: &RunContext,
+    loop_index: u64,
+    checkpoint: &ExecutionCheckpoint,
+    violations: &[String],
+) -> Result<(), RuntimeError> {
+    let payload = serde_json::json!({
+        "loop_index": loop_index,
+        "checkpoint": checkpoint,
+        "violations": violations,
+    });
+    ctx.fs.write(
+        &ctx.run_dir.staging_path().join("scheduler.invariant-bundle.json"),
+        &serde_json::to_vec_pretty(&payload)?,
+    )?;
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -363,6 +453,22 @@ pub fn execute(
                 .map(|selector| crate::requested_selector_label("exclude", selector)),
         )
         .collect();
+    if partial_rerun_selected(&options) && !options.partial_rerun_dependency_closure {
+        return Err(RuntimeError::Executor(
+            "partial rerun requires dependency closure to prevent stale downstream reuse"
+                .to_string(),
+        ));
+    }
+    let explicit_rerun_targets = selected_rerun_targets(graph, &options);
+    let partial_rerun_contract =
+        partial_rerun_selected(&options).then(|| crate::PartialRerunContract {
+            selected_nodes: explicit_rerun_targets.clone(),
+            invalidated_downstream_nodes: invalidated_downstream_nodes(
+                graph,
+                &explicit_rerun_targets,
+            ),
+            stale_downstream_reuse_forbidden: true,
+        });
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
         graph_snapshot_path: "graph.snapshot.json".to_string(),
@@ -379,9 +485,15 @@ pub fn execute(
         selected_nodes: plan.order.clone(),
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
         replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
+        partial_rerun_contract,
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
     ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?)?;
+    write_incomplete_run_marker(
+        ctx.run_dir.staging_path(),
+        "run not finalized; recover or repair before treating artifacts as complete",
+    )
+    .map_err(|err| RuntimeError::Executor(format!("incomplete run marker write failed: {err}")))?;
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -419,8 +531,12 @@ pub fn execute(
     for node_id in &initial_ready {
         scheduler_hook.on_node_eligible(node_id);
     }
-    for event in engine_observe::node_eligible_events(&initial_ready, ctx.clock.now_unix_ms(), "root_ready")
-    {
+    for event in engine_observe::node_eligible_events(
+        &initial_ready,
+        ctx.clock.now_unix_ms(),
+        "root_ready",
+        "all_success",
+    ) {
         engine_record::append_indexed_event(&mut run_log, &mut run_log_index, event)?;
     }
     while !ready_queue.is_empty() {
@@ -451,6 +567,10 @@ pub fn execute(
             }));
             break;
         }
+        let ready_candidates = decision.ready_candidates.clone();
+        let blocked_reasons = decision.blocked_reasons.clone();
+        let decision_reason = decision.decision_reason.clone();
+        let tie_break_reason = decision.tie_break_reason.clone();
         let batch = decision.batch;
         let mut blocked_by_budget = decision.blocked_by_budget;
         blocked_by_budget.sort();
@@ -462,12 +582,20 @@ pub fn execute(
                 "ts": ctx.clock.now_unix_ms(),
                 "loop_index": loop_index,
                 "ready_queue_depth": ready_queue.len(),
+                "ready_candidates": ready_candidates,
                 "batch": batch.clone(),
                 "blocked_by_budget": blocked_by_budget.clone(),
+                "blocked_reasons": blocked_reasons.clone(),
+                "decision_reason": decision_reason,
+                "tie_break_reason": tie_break_reason,
             }),
         )?;
         for node_id in &blocked_by_budget {
             scheduler_hook.on_node_blocked_by_budget(node_id);
+            let reason_code = blocked_reasons
+                .get(node_id)
+                .cloned()
+                .unwrap_or_else(|| "blocked_by_policy".to_string());
             engine_record::append_indexed_event(
                 &mut run_log,
                 &mut run_log_index,
@@ -475,7 +603,7 @@ pub fn execute(
                     "event": "node_blocked",
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
-                    "reason": "scheduler_budget",
+                    "reason": reason_code,
                 }),
             )?;
         }
@@ -553,7 +681,7 @@ pub fn execute(
                             "event": "node_blocked",
                             "ts": ctx.clock.now_unix_ms(),
                             "node_id": node_id,
-                            "reason": "dependency_failed",
+                            "reason": "blocked_by_dependency",
                             "blocking_nodes": deps,
                         }),
                     )?;
@@ -820,14 +948,38 @@ pub fn execute(
         let checkpoint = ExecutionCheckpoint {
             loop_index,
             ready_queue_depth: ready_queue.len(),
+            ready_queue: ready_queue.snapshot_sorted(),
+            inflight: started_ids.clone(),
             scheduled: started_ids.clone(),
             blocked_by_budget: blocked_by_budget.clone(),
+            blocked_reasons: blocked_reasons.clone(),
+            completed_statuses: status_map
+                .iter()
+                .filter_map(|(node_id, status)| match status {
+                    NodeStatus::Success => Some((node_id.clone(), "success".to_string())),
+                    NodeStatus::Failed => Some((node_id.clone(), "failed".to_string())),
+                    NodeStatus::Skipped => Some((node_id.clone(), "skipped".to_string())),
+                    NodeStatus::Cached => Some((node_id.clone(), "cached".to_string())),
+                })
+                .collect(),
+            failure_propagation_mode: crate::failure_mode_name(&options.failure_propagation)
+                .to_string(),
+            dependency_closure_enabled: options.partial_rerun_dependency_closure,
             generated_unix_ms: ctx.clock.now_unix_ms(),
         };
         let checkpoint_path = ctx.run_dir.staging_path().join("scheduler.checkpoint.json");
         let _ = ctx
             .fs
             .write(&checkpoint_path, &serde_json::to_vec_pretty(&checkpoint).unwrap_or_default());
+        let replay_state = crate::replay_scheduler_checkpoint(&plan, &checkpoint)
+            .map_err(RuntimeError::Executor)?;
+        let replay_violations = crate::scheduler_invariant_violations(&replay_state);
+        if !replay_violations.is_empty() {
+            write_scheduler_invariant_bundle(&ctx, loop_index, &checkpoint, &replay_violations)?;
+            return Err(RuntimeError::Executor(
+                "scheduler state invariants violated after checkpoint replay".to_string(),
+            ));
+        }
         for node_id in &started_ids {
             crate::append_event(
                 &mut run_log,
@@ -1038,18 +1190,19 @@ pub fn execute(
                                 &mut run_log,
                                 &mut run_log_index,
                                 serde_json::json!({
-                                    "event": "branch_decision_selected",
-                                    "ts": ctx.clock.now_unix_ms(),
-                                    "node_id": node_id,
-                                    "decision": selection.decision,
-                            "used_default": selection.used_default,
-                        }),
-                    )?;
-                    for pruned in branch_nodes_to_skip(&plan, &node_id, &selection.decision) {
-                        branch_pruned_nodes.insert(pruned.clone());
-                        branch_pruned.insert(pruned);
-                    }
-                    Some(selection.decision)
+                                            "event": "branch_decision_selected",
+                                            "ts": ctx.clock.now_unix_ms(),
+                                            "node_id": node_id,
+                                            "decision": selection.decision,
+                                    "used_default": selection.used_default,
+                                }),
+                            )?;
+                            for pruned in branch_nodes_to_skip(&plan, &node_id, &selection.decision)
+                            {
+                                branch_pruned_nodes.insert(pruned.clone());
+                                branch_pruned.insert(pruned);
+                            }
+                            Some(selection.decision)
                         }
                         Ok(None) => None,
                         Err(failure) => {
@@ -1272,8 +1425,12 @@ pub fn execute(
                         "event": "node_ready",
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": newly_ready,
-                        "reason": "dependencies_satisfied",
-                        "released_by": node_id,
+                        "reason": {
+                            "code": "dependencies_satisfied",
+                            "upstreams": upstream_nodes(&dep_map, &newly_ready),
+                            "trigger_rule": trigger_rule_value(graph, &newly_ready),
+                            "released_by": node_id,
+                        },
                     }),
                 )?;
                 ready_queue.insert(newly_ready);
@@ -1609,8 +1766,9 @@ pub fn execute(
         &RunDirSchemaIndex::default(),
     )
     .map_err(|err| RuntimeError::Executor(format!("run schema index write failed: {err}")))?;
-    finalize_run_manifest(ctx.run_dir.staging_path())
-        .map_err(|err| RuntimeError::Executor(format!("run finalization marker write failed: {err}")))?;
+    finalize_run_manifest(ctx.run_dir.staging_path()).map_err(|err| {
+        RuntimeError::Executor(format!("run finalization marker write failed: {err}"))
+    })?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {

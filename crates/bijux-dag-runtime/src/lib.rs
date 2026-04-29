@@ -120,11 +120,11 @@ pub mod run_context;
 mod run_state;
 #[path = "internal/control/runtime.rs"]
 mod runtime;
-#[path = "internal/control/runtime_controls.rs"]
-mod runtime_controls;
 #[cfg(test)]
 #[path = "internal/testing/runtime_boundary_tests.rs"]
 mod runtime_boundary_tests;
+#[path = "internal/control/runtime_controls.rs"]
+mod runtime_controls;
 pub mod runtime_core;
 #[cfg(test)]
 #[path = "internal/testing/runtime_policy_trace_tests.rs"]
@@ -273,13 +273,12 @@ use io::{Fs, StdFs};
 pub use local_executor::LocalExecutor;
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
-    event_contains_sensitive_material, event_names_emitted_once, required_event_fields_present,
-    reconstruct_timeline_from_events, summarize_failure_root_causes,
-    validate_required_event_names, verify_event_log_completeness, write_timeline_export,
-    EventCategory, EventLogCompletenessReport, EventRecord, EventSink, FileEventSink,
-    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
-    SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
-    REQUIRED_RUNTIME_EVENT_NAMES,
+    event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
+    required_event_fields_present, summarize_failure_root_causes, validate_required_event_names,
+    verify_event_log_completeness, write_timeline_export, EventCategory,
+    EventLogCompletenessReport, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry,
+    MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind,
+    StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 pub use observability_deep::{
     build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,
@@ -327,23 +326,34 @@ pub use remote_executor::{
 pub use run_state::{
     imported_run_distinguishable, node_transition_invariant_id, run_transition_invariant_id,
     terminal_transition_audit_events, validate_node_transition, validate_run_transition,
-    verify_post_run_state_consistency, NodeState, NodeTransition, ReplayNodeAction,
-    ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId, RunSnapshot,
-    RunState, RunSummaryV2, RunTransition, StateConsistencyReport, TransitionAuditEvent,
-    TransitionCause, INV_NODE_TERMINAL_NO_REVERT, INV_RUN_FAILED_CAUSAL_FAILURE,
+    verify_post_run_state_consistency, NodeState, NodeTransition, PartialRerunContract,
+    ReplayNodeAction, ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId,
+    RunSnapshot, RunState, RunSummaryV2, RunTransition, StateConsistencyReport,
+    TransitionAuditEvent, TransitionCause, INV_NODE_TERMINAL_NO_REVERT,
+    INV_RUN_FAILED_CAUSAL_FAILURE,
+};
+pub use runtime_controls::{
+    audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
+    build_execution_isolation_report, build_heartbeat_audit_report,
+    build_manual_intervention_audit_report, build_pause_resume_audit_report,
+    build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
+    CancellationAuditReport, DispatchAuditReport, DispatchKeyRecord, EventLogAuditReport,
+    ExecutionIsolationNodeReport, ExecutionIsolationReport, HeartbeatAuditReport,
+    ManualInterventionAuditReport, PauseResumeAuditReport, RetryDecisionReport, TimeoutAuditReport,
+    TransitionAuditReport,
 };
 pub use runtime_semantics::*;
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
-    failure_allows_downstream_readiness, failure_mode_name, scheduler_contract_profile,
-    scheduler_debug_event_log, scheduler_invariants_hold, validate_cron_expression,
-    validate_schedule_policy_combination, validate_schedule_registry, BackfillRequest,
-    CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter, DeterministicScheduler,
-    ExecutionCheckpoint, ExecutionSubmissionRequest, FailurePropagationMode,
-    NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
-    ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview,
-    ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, Scheduler,
-    SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
+    failure_allows_downstream_readiness, failure_mode_name, replay_scheduler_checkpoint,
+    scheduler_contract_profile, scheduler_debug_event_log, scheduler_invariant_violations,
+    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
+    validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
+    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
+    FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,
+    QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition,
+    ScheduleDryRunPreview, ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission,
+    Scheduler, SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
     SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
     SchedulerUnit, ThroughputScheduler, TriggerSpec,
 };
@@ -394,15 +404,6 @@ pub use task_contract::{
     RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
     TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
     TimeoutPolicy,
-};
-pub use runtime_controls::{
-    audit_dispatch_discipline, build_execution_isolation_report, build_retry_decision_report,
-    build_cancellation_audit_report, build_heartbeat_audit_report, build_timeout_audit_report,
-    build_manual_intervention_audit_report, build_pause_resume_audit_report,
-    build_transition_audit_report, audit_run_event_log, CancellationAuditReport, DispatchAuditReport,
-    DispatchKeyRecord, ExecutionIsolationNodeReport, ExecutionIsolationReport,
-    EventLogAuditReport, HeartbeatAuditReport, ManualInterventionAuditReport,
-    PauseResumeAuditReport, RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
