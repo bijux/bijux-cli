@@ -1,26 +1,34 @@
 {
-  "artifact_id": "produce_outputs:primary.json",
+  "artifact_id": "run=art-fixed;node=produce_outputs;path=nodes/produce_outputs/outputs/primary.json;sha256=682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
   "artifact_sha256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
   "identity_explain": {
-    "artifact_id": "produce_outputs:primary.json",
+    "artifact_id": "run=art-fixed;node=produce_outputs;path=nodes/produce_outputs/outputs/primary.json;sha256=682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+    "canonical_artifact_id": "run=art-fixed;node=produce_outputs;path=nodes/produce_outputs/outputs/primary.json;sha256=682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+    "collision_safe": true,
     "composed_from": {
       "artifact_sha256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
       "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
       "node_id": "produce_outputs",
+      "output_name": "primary.json",
       "path": "nodes/produce_outputs/outputs/primary.json",
       "run_id": "art-fixed"
     },
     "hash_algorithm": "sha256",
-    "identity_scope": "artifact content + provenance"
+    "identity_scope": "artifact content + provenance",
+    "legacy_artifact_id": "produce_outputs:primary.json"
   },
+  "legacy_artifact_id": "produce_outputs:primary.json",
   "lineage": {
     "downstream_artifact_ids": [],
+    "subject_artifact_id": "run=art-fixed;node=produce_outputs;path=nodes/produce_outputs/outputs/primary.json;sha256=682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+    "subject_legacy_artifact_id": "produce_outputs:primary.json",
     "upstream_artifact_ids": [
       "seed:*"
     ]
   },
   "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
   "node_id": "produce_outputs",
+  "output_name": "primary.json",
   "path": "nodes/produce_outputs/outputs/primary.json",
   "payload_missing": false,
   "provenance": {

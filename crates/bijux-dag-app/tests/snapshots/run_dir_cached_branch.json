@@ -1,8 +1,10 @@
 {
   "files": [
+    ".run-complete.json",
     "failure-propagation.json",
     "graph.snapshot.json",
     "lineage.snapshot.json",
+    "manifest.finalized.json",
     "manifest.json",
     "nodes/branch_a_transform/attempts.json",
     "nodes/branch_a_transform/inputs/index.json",
@@ -48,6 +50,7 @@
     "run.attempts.json",
     "run.audit.json",
     "run.log.jsonl",
+    "run.schema.json",
     "run.snapshot.json",
     "scheduler.checkpoint.json"
   ],
@@ -586,13 +589,21 @@
     {
       "event": "node_ready",
       "node_id": "seed_a",
-      "reason": "root_ready",
+      "reason": {
+        "code": "root_ready",
+        "trigger_rule": "all_success",
+        "upstreams": []
+      },
       "ts": 0
     },
     {
       "event": "node_ready",
       "node_id": "seed_b",
-      "reason": "root_ready",
+      "reason": {
+        "code": "root_ready",
+        "trigger_rule": "all_success",
+        "upstreams": []
+      },
       "ts": 0
     },
     {
@@ -602,15 +613,24 @@
       "blocked_by_budget": [
         "seed_b"
       ],
+      "blocked_reasons": {
+        "seed_b": "blocked_by_parallelism"
+      },
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 1,
+      "ready_candidates": [
+        "seed_a",
+        "seed_b"
+      ],
       "ready_queue_depth": 1,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
       "event": "node_blocked",
       "node_id": "seed_b",
-      "reason": "scheduler_budget",
+      "reason": "blocked_by_parallelism",
       "ts": 0
     },
     {
@@ -651,8 +671,14 @@
     {
       "event": "node_ready",
       "node_id": "branch_a_transform",
-      "reason": "dependencies_satisfied",
-      "released_by": "seed_a",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed_a",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed_a"
+        ]
+      },
       "ts": 0
     },
     {
@@ -662,15 +688,24 @@
       "blocked_by_budget": [
         "seed_b"
       ],
+      "blocked_reasons": {
+        "seed_b": "blocked_by_parallelism"
+      },
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 2,
+      "ready_candidates": [
+        "branch_a_transform",
+        "seed_b"
+      ],
       "ready_queue_depth": 1,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
       "event": "node_blocked",
       "node_id": "seed_b",
-      "reason": "scheduler_budget",
+      "reason": "blocked_by_parallelism",
       "ts": 0
     },
     {
@@ -713,9 +748,15 @@
         "seed_b"
       ],
       "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 3,
+      "ready_candidates": [
+        "seed_b"
+      ],
       "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
@@ -756,8 +797,14 @@
     {
       "event": "node_ready",
       "node_id": "branch_b_transform",
-      "reason": "dependencies_satisfied",
-      "released_by": "seed_b",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed_b",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed_b"
+        ]
+      },
       "ts": 0
     },
     {
@@ -765,9 +812,15 @@
         "branch_b_transform"
       ],
       "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 4,
+      "ready_candidates": [
+        "branch_b_transform"
+      ],
       "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
@@ -808,8 +861,15 @@
     {
       "event": "node_ready",
       "node_id": "join_report",
-      "reason": "dependencies_satisfied",
-      "released_by": "branch_b_transform",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "branch_b_transform",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "branch_a_transform",
+          "branch_b_transform"
+        ]
+      },
       "ts": 0
     },
     {
@@ -817,9 +877,15 @@
         "join_report"
       ],
       "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 5,
+      "ready_candidates": [
+        "join_report"
+      ],
       "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
@@ -829,7 +895,7 @@
       ],
       "event": "node_blocked",
       "node_id": "join_report",
-      "reason": "dependency_failed",
+      "reason": "blocked_by_dependency",
       "ts": 0
     },
     {

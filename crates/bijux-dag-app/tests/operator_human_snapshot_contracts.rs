@@ -38,23 +38,34 @@ fn dag_command(root: &Path) -> Command {
     command
 }
 
-fn run_human(root: &Path, args: &[&str]) -> String {
+fn run_human_with_code(root: &Path, expected_code: i32, args: &[&str]) -> String {
     let output = dag_command(root).args(args).output().expect("run dag command");
     assert_eq!(
         output.status.code().unwrap_or(1),
-        0,
+        expected_code,
         "command failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
     String::from_utf8_lossy(&output.stdout).to_string()
 }
 
+fn run_human(root: &Path, args: &[&str]) -> String {
+    run_human_with_code(root, 0, args)
+}
+
 fn write_run_with_fixed_id(root: &Path, graph: &Path, out_dir: &Path, run_id: &str) -> PathBuf {
     fs::create_dir_all(out_dir).expect("create run output root");
     let graph_arg = graph.to_string_lossy().to_string();
     let out_arg = out_dir.to_string_lossy().to_string();
-    run_human(root, &["run", graph_arg.as_str(), "--out", out_arg.as_str(), "--run-id", run_id]);
-    out_dir.join(format!("run-{run_id}"))
+    let output = run_human(
+        root,
+        &["run", graph_arg.as_str(), "--out", out_arg.as_str(), "--run-id", run_id],
+    );
+    let run_dir = output
+        .lines()
+        .find_map(|line| line.strip_prefix("run dir: "))
+        .expect("run output includes run dir");
+    PathBuf::from(run_dir)
 }
 
 fn normalize_paths(text: &str, tmp_root: &Path) -> String {
@@ -185,7 +196,7 @@ fn prove_human_output_snapshot_is_stable() {
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let prove = run_human(&root, &["prove", run_dir.to_string_lossy().as_ref()]);
+    let prove = run_human_with_code(&root, 3, &["prove", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(prove, include_str!("snapshots/prove_human_output_contract.txt"));
 }
 
@@ -197,7 +208,7 @@ fn verify_human_output_snapshot_is_stable() {
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let verify = run_human(&root, &["verify", run_dir.to_string_lossy().as_ref()]);
+    let verify = run_human_with_code(&root, 3, &["verify", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(verify, include_str!("snapshots/verify_human_output_contract.txt"));
 }
 

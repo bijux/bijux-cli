@@ -870,12 +870,12 @@ mod tests {
                     details: json!({}),
                 },
                 EventRecord {
-                    category: EventCategory::Failure,
-                    name: "node_failed".to_string(),
+                    category: EventCategory::Verify,
+                    name: "node_finished".to_string(),
                     unix_ms: 7,
                     node_id: Some("extract".to_string()),
                     run_id: Some("run-1".to_string()),
-                    details: json!({}),
+                    details: json!({ "status": "success" }),
                 },
                 EventRecord {
                     category: EventCategory::Verify,

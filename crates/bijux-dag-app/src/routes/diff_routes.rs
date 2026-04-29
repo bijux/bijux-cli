@@ -11,17 +11,27 @@ pub(crate) fn handle_diff_command(
     explain: bool,
     command_name: &str,
 ) -> Result<ExitCode, ExitCode> {
+    let semantic_diff = matches!(mode, DiffModeArg::Semantic)
+        .then(|| replay_service::run_diff_from_dirs(run_a, run_b))
+        .transpose()?;
     let payload = replay_service::run_diff_mode_payload(run_a, run_b, mode, node)?;
     if cli.json {
         return emit_json(cli, command_name, true, payload.clone(), Vec::new(), ExitCode::SUCCESS);
     }
     if matches!(mode, DiffModeArg::Semantic) {
-        print_human_diff(&payload);
+        if let Some(diff) = semantic_diff {
+            let human = serde_json::to_value(diff).map_err(|_| ExitCode::from(3))?;
+            print_human_diff(&human);
+        } else {
+            print_human_diff(&payload);
+        }
     } else {
         println!("{}", serde_json::to_string_pretty(&payload).unwrap());
     }
     if explain {
         if matches!(mode, DiffModeArg::Semantic | DiffModeArg::Summary | DiffModeArg::Raw) {
+            println!("explain: graph fingerprint change implies cache invalidation");
+            println!("explain: node fingerprint changes indicate recomputation scope");
             let semantic = if matches!(mode, DiffModeArg::Semantic) {
                 Some(&payload)
             } else {

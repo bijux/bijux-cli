@@ -1,8 +1,10 @@
 {
   "files": [
+    ".run-complete.json",
     "failure-propagation.json",
     "graph.snapshot.json",
     "lineage.snapshot.json",
+    "manifest.finalized.json",
     "manifest.json",
     "nodes/const1/attempts.json",
     "nodes/const1/inputs/index.json",
@@ -33,6 +35,7 @@
     "run.attempts.json",
     "run.audit.json",
     "run.log.jsonl",
+    "run.schema.json",
     "run.snapshot.json",
     "scheduler.checkpoint.json"
   ],
@@ -324,7 +327,11 @@
     {
       "event": "node_ready",
       "node_id": "const1",
-      "reason": "root_ready",
+      "reason": {
+        "code": "root_ready",
+        "trigger_rule": "all_success",
+        "upstreams": []
+      },
       "ts": 0
     },
     {
@@ -332,9 +339,15 @@
         "const1"
       ],
       "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 1,
+      "ready_candidates": [
+        "const1"
+      ],
       "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {
@@ -375,8 +388,14 @@
     {
       "event": "node_ready",
       "node_id": "echo",
-      "reason": "dependencies_satisfied",
-      "released_by": "const1",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "const1",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "const1"
+        ]
+      },
       "ts": 0
     },
     {
@@ -384,9 +403,15 @@
         "echo"
       ],
       "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
       "event": "scheduler_decision",
       "loop_index": 2,
+      "ready_candidates": [
+        "echo"
+      ],
       "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
       "ts": 0
     },
     {

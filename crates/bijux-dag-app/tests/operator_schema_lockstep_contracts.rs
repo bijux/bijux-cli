@@ -38,15 +38,19 @@ fn dag_command(root: &Path) -> Command {
     command
 }
 
-fn run_json(root: &Path, args: &[&str]) -> serde_json::Value {
+fn run_json_with_code(root: &Path, expected_code: i32, args: &[&str]) -> serde_json::Value {
     let output = dag_command(root).args(args).output().expect("run dag command");
     assert_eq!(
         output.status.code().unwrap_or(1),
-        0,
+        expected_code,
         "command failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("parse json envelope")
+}
+
+fn run_json(root: &Path, args: &[&str]) -> serde_json::Value {
+    run_json_with_code(root, 0, args)
 }
 
 fn required_fields(schema_rel: &str) -> Vec<String> {
@@ -93,9 +97,10 @@ fn verify_output_schema_lockstep() {
             "run-fixed",
         ],
     );
-    let verify = run_json(
+    let verify = run_json_with_code(
         &root,
-        &["--json", "verify", out_dir.join("run-run-fixed").to_string_lossy().as_ref()],
+        3,
+        &["--json", "verify", out_dir.join("run-fixed").to_string_lossy().as_ref()],
     );
     let data = verify["data"].as_object().expect("verify data");
     for field in required_fields("configs/dag/schema/operator/verify_output.schema.json") {
@@ -123,9 +128,10 @@ fn prove_output_schema_lockstep() {
             "run-fixed",
         ],
     );
-    let prove = run_json(
+    let prove = run_json_with_code(
         &root,
-        &["--json", "prove", out_dir.join("run-run-fixed").to_string_lossy().as_ref()],
+        3,
+        &["--json", "prove", out_dir.join("run-fixed").to_string_lossy().as_ref()],
     );
     let data = prove["data"].as_object().expect("prove data");
     for field in required_fields("configs/dag/schema/operator/prove_output.schema.json") {
@@ -159,7 +165,7 @@ fn export_summary_schema_lockstep() {
         &[
             "--json",
             "export",
-            out_dir.join("run-run-fixed").to_string_lossy().as_ref(),
+            out_dir.join("run-fixed").to_string_lossy().as_ref(),
             "--out",
             bundle.to_string_lossy().as_ref(),
             "--manifest-only",

@@ -1,2 +1,2 @@
-const1: included as graph root (no dependencies)
-echo: included because it depends on const1
+const1: Execute via selected_by_default (selected, queue=default)
+echo: Execute via selected_by_default (selected, queue=default)

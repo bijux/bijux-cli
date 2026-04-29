@@ -1,11 +1,32 @@
 {
   "cache_mode": "Off",
+  "forbid_reason": null,
   "jobs": 1,
+  "mutates_source": false,
+  "parent_run_id": "run-fixed",
+  "planned_actions": [
+    {
+      "action": "reexecute",
+      "evidence_complete": true,
+      "node_id": "const1",
+      "reason": "node must be replayed under the current selector and policy set",
+      "source_status": "success"
+    },
+    {
+      "action": "reexecute",
+      "evidence_complete": true,
+      "node_id": "echo",
+      "reason": "node must be replayed under the current selector and policy set",
+      "source_status": "success"
+    }
+  ],
   "prove_requested": false,
+  "sandbox_mode": "standard",
   "selectors": {
     "exclude": [],
     "select": []
   },
-  "source_run_dir": "<TMP>/runs/run-run-fixed",
+  "source_run_dir": "<TMP>/runs/run-fixed",
+  "source_run_id": "run-fixed",
   "target_out_dir": "<TMP>/runs"
 }
