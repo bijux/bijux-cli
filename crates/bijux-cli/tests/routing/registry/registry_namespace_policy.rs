@@ -6,7 +6,10 @@ use std::fs;
 use std::sync::{Arc, Barrier, Mutex};
 
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::contracts::{known_bijux_tools, official_product_namespaces};
+use bijux_cli::contracts::{
+    known_bijux_tool_by_query, known_bijux_tools, official_product_namespaces,
+    official_product_registry_schema,
+};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
@@ -20,7 +23,9 @@ use thiserror as _;
 #[test]
 fn official_reserved_namespaces_take_precedence() {
     let mut registry = RouteRegistry::default();
-    for ns in ["cli", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"] {
+    for ns in
+        ["apps", "cli", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"]
+    {
         let result = registry.register_plugin_namespace(ns);
         assert!(
             matches!(result, Err(RouteError::Reserved(_))),
@@ -72,12 +77,18 @@ struct OfficialProductRegistry {
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 struct OfficialProductRegistryEntry {
     namespace: String,
+    display_name: String,
+    aliases: Vec<String>,
     runtime_binary: String,
     control_binary: String,
     runtime_package: String,
     control_package: String,
     repository: String,
     status: String,
+    language: String,
+    version: Option<String>,
+    help_summary: String,
+    capabilities: Vec<String>,
 }
 
 #[test]
@@ -96,12 +107,22 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
                 tool.namespace.to_string(),
                 OfficialProductRegistryEntry {
                     namespace: tool.namespace.to_string(),
+                    display_name: tool.display_name.to_string(),
+                    aliases: tool.aliases.iter().map(|value| (*value).to_string()).collect(),
                     runtime_binary: tool.runtime_binary(),
                     control_binary: tool.control_binary(),
                     runtime_package: tool.runtime_package(),
                     control_package: tool.control_package(),
                     repository: tool.repository(),
                     status: tool.status.to_string(),
+                    language: tool.language.to_string(),
+                    version: tool.version.map(ToOwned::to_owned),
+                    help_summary: tool.help_summary.to_string(),
+                    capabilities: tool
+                        .capabilities
+                        .iter()
+                        .map(|value| (*value).to_string())
+                        .collect(),
                 },
             )
         })
@@ -111,6 +132,35 @@ fn official_product_registry_doc_stays_in_sync_with_known_tool_contracts() {
         registry.entries.into_iter().map(|entry| (entry.namespace.clone(), entry)).collect();
 
     assert_eq!(actual, expected);
+}
+
+#[test]
+fn official_product_registry_schema_exposes_descriptor_fields() {
+    let schema = serde_json::to_value(official_product_registry_schema()).expect("schema json");
+    let properties = schema["definitions"]["ProductRegistryEntry"]["properties"]
+        .as_object()
+        .expect("product registry entry properties");
+    for field in [
+        "namespace",
+        "display_name",
+        "aliases",
+        "runtime_binary",
+        "control_binary",
+        "help_summary",
+        "capabilities",
+    ] {
+        assert!(
+            properties.contains_key(field),
+            "official product registry schema should expose field `{field}`"
+        );
+    }
+}
+
+#[test]
+fn official_product_alias_queries_resolve_through_contract_registry() {
+    let tool = known_bijux_tool_by_query("workflow").expect("dag alias should resolve");
+    assert_eq!(tool.namespace, "dag");
+    assert!(tool.capabilities.contains(&"run"));
 }
 
 #[test]

@@ -5,75 +5,123 @@
   "entries": [
     {
       "namespace": "agent",
+      "display_name": "Bijux Agent",
+      "aliases": [],
       "runtime_binary": "bijux-agent",
       "control_binary": "bijux-dev-agent",
       "runtime_package": "bijux-agent",
       "control_package": "bijux-dev-agent",
       "repository": "bijux-agent",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "Agent orchestration runtime",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "atlas",
+      "display_name": "Bijux Atlas",
+      "aliases": [],
       "runtime_binary": "bijux-atlas",
       "control_binary": "bijux-dev-atlas",
       "runtime_package": "bijux-atlas",
       "control_package": "bijux-dev-atlas",
       "repository": "bijux-atlas",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "Atlas project workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "dag",
+      "display_name": "Bijux DAG",
+      "aliases": ["workflow"],
       "runtime_binary": "bijux-dag",
       "control_binary": "bijux-dev-dag",
       "runtime_package": "bijux-dag",
       "control_package": "bijux-dev-dag",
       "repository": "bijux-dag",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "DAG execution and evidence system",
+      "capabilities": ["json_output", "completion", "doctor", "config", "run", "validate", "replay"]
     },
     {
       "namespace": "dna",
+      "display_name": "Bijux DNA",
+      "aliases": [],
       "runtime_binary": "bijux-dna",
       "control_binary": "bijux-dev-dna",
       "runtime_package": "bijux-dna",
       "control_package": "bijux-dev-dna",
       "repository": "bijux-dna",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "DNA analysis workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "gnss",
+      "display_name": "Bijux GNSS",
+      "aliases": [],
       "runtime_binary": "bijux-gnss",
       "control_binary": "bijux-dev-gnss",
       "runtime_package": "bijux-gnss",
       "control_package": "bijux-dev-gnss",
       "repository": "bijux-gnss",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "GNSS analysis workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "rag",
+      "display_name": "Bijux RAG",
+      "aliases": [],
       "runtime_binary": "bijux-rag",
       "control_binary": "bijux-dev-rag",
       "runtime_package": "bijux-rag",
       "control_package": "bijux-dev-rag",
       "repository": "bijux-rag",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "Retrieval-augmented generation workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "rar",
+      "display_name": "Bijux RAR",
+      "aliases": [],
       "runtime_binary": "bijux-rar",
       "control_binary": "bijux-dev-rar",
       "runtime_package": "bijux-rar",
       "control_package": "bijux-dev-rar",
       "repository": "bijux-rar",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "Research artifact review workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     },
     {
       "namespace": "vex",
+      "display_name": "Bijux VEX",
+      "aliases": [],
       "runtime_binary": "bijux-vex",
       "control_binary": "bijux-dev-vex",
       "runtime_package": "bijux-vex",
       "control_package": "bijux-dev-vex",
       "repository": "bijux-vex",
-      "status": "declared"
+      "status": "declared",
+      "language": "rust",
+      "version": null,
+      "help_summary": "VEX and advisory workflows",
+      "capabilities": ["json_output", "completion", "doctor", "config"]
     }
   ]
 }
