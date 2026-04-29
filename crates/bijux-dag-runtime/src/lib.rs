@@ -175,6 +175,7 @@ mod upgrade_compatibility;
 #[path = "internal/workflow/workflow_product.rs"]
 mod workflow_product;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
+pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
@@ -228,7 +229,9 @@ pub use cache::{
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
-    container_env_isolated, map_local_path_to_container, validate_container_contract,
+    container_engine_discovery, container_env_isolated, container_network_policy_args,
+    container_volume_contract, map_local_path_to_container, supported_container_engines,
+    validate_container_contract, validate_container_mount_contract,
     validate_container_relative_path, ContainerExecutionContract, ContainerMount,
 };
 pub use coordination::{
@@ -253,6 +256,9 @@ pub use extension_catalog::{
     InternalHookPromotionChecklist, OfficialPluginPolicy, PlatformMaturityScorecard,
     PluginBoundaryKind, PluginConformanceSuiteResult, PluginIsolationPolicy, PluginLifecycleState,
     PluginLoadingMode, PluginMetadata, PluginTrustPolicy,
+};
+pub use external_adapter::{
+    probe_external_adapters, ExternalAdapterHandshakeReport, ExternalAdapterHandshakeStatus,
 };
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
@@ -623,6 +629,7 @@ impl Adapter for ShellAdapter {
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
+        let exit_code = output.status.code();
         let failure = if success {
             None
         } else {
@@ -630,7 +637,7 @@ impl Adapter for ShellAdapter {
                 kind: "Execution".to_string(),
                 code: "EXEC_FAIL".to_string(),
                 message: "command failed".to_string(),
-                details: None,
+                details: Some(serde_json::json!({ "exit_code": exit_code })),
             })
         };
 
@@ -677,8 +684,10 @@ impl Adapter for ContainerAdapter {
             .ok_or_else(|| RuntimeError::Executor("missing container spec".to_string()))?;
 
         let node_dir = exec.run_dir.node_dir(&node.id);
+        let inputs_dir = exec.run_dir.node_inputs_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
+        exec.fs.create_dir_all(&inputs_dir)?;
         exec.fs.create_dir_all(&outputs_dir)?;
         exec.fs.create_dir_all(&node_dir)?;
         exec.fs.create_dir_all(&work_dir)?;
@@ -686,27 +695,54 @@ impl Adapter for ContainerAdapter {
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
         let engine = spec.engine.as_str();
-        let engine_version = engine_version(engine);
-        if engine_version.is_none() {
+        let engine_version = match container_execution::container_engine_discovery(engine) {
+            Ok(version) => version,
+            Err(message) => {
+                exec.fs.write(&stdout_path, b"")?;
+                exec.fs.write(&stderr_path, message.as_bytes())?;
+                return Ok(NodeResult {
+                    status: NodeStatus::Failed,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    failure: Some(FailureInfo {
+                        kind: "Infrastructure".to_string(),
+                        code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
+                        message: message.clone(),
+                        details: Some(serde_json::json!({ "engine": engine })),
+                    }),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: Some(container_trace(spec, engine, None, None)),
+                    adapter_binary_sha256: None,
+                });
+            }
+        };
+        let mounts = container_execution::container_volume_contract(&node_dir);
+        if let Err(message) =
+            container_execution::validate_container_mount_contract(&mounts, &node_dir)
+        {
             exec.fs.write(&stdout_path, b"")?;
-            exec.fs.write(
-                &stderr_path,
-                format!("container engine not available: {}", engine).as_bytes(),
-            )?;
+            exec.fs.write(&stderr_path, message.as_bytes())?;
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
                 failure: Some(FailureInfo {
-                    kind: "Infrastructure".to_string(),
-                    code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
-                    message: format!("container engine not available: {}", engine),
+                    kind: "Execution".to_string(),
+                    code: "CONTAINER_VOLUME_CONTRACT_INVALID".to_string(),
+                    message,
                     details: Some(serde_json::json!({ "engine": engine })),
                 }),
                 attempts: 1,
                 attempt_events: Vec::new(),
-                container_meta: Some(container_trace(spec, engine, None, engine_version)),
+                container_meta: Some(container_trace(
+                    spec,
+                    engine,
+                    None,
+                    Some(engine_version.clone()),
+                )),
                 adapter_binary_sha256: None,
             });
         }
@@ -714,11 +750,45 @@ impl Adapter for ContainerAdapter {
         let mut cmd = subprocess::command(engine);
         cmd.arg("run").arg("--rm");
 
-        if !node.effects.contains(&Effect::Network) || exec.policy.deny_network {
-            cmd.args(["--network", "none"]);
+        let deny_network = !node.effects.contains(&Effect::Network) || exec.policy.deny_network;
+        let network_args =
+            match container_execution::container_network_policy_args(engine, deny_network) {
+                Ok(args) => args,
+                Err(message) => {
+                    exec.fs.write(&stdout_path, b"")?;
+                    exec.fs.write(&stderr_path, message.as_bytes())?;
+                    return Ok(NodeResult {
+                        status: NodeStatus::Failed,
+                        stdout_path: stdout_path.display().to_string(),
+                        stderr_path: stderr_path.display().to_string(),
+                        outputs_dir: outputs_dir.display().to_string(),
+                        failure: Some(FailureInfo {
+                            kind: "Policy".to_string(),
+                            code: "POLICY_UNENFORCEABLE".to_string(),
+                            message,
+                            details: Some(
+                                serde_json::json!({ "engine": engine, "effect": "network" }),
+                            ),
+                        }),
+                        attempts: 1,
+                        attempt_events: Vec::new(),
+                        container_meta: Some(container_trace(
+                            spec,
+                            engine,
+                            None,
+                            Some(engine_version.clone()),
+                        )),
+                        adapter_binary_sha256: None,
+                    });
+                }
+            };
+        for arg in network_args {
+            cmd.arg(arg);
         }
-
-        cmd.args(["-v", &format!("{}:/bijux/node", node_dir.display())]);
+        for mount in &mounts {
+            let mode = if mount.readonly { "ro" } else { "rw" };
+            cmd.args(["-v", &format!("{}:{}:{}", mount.local_path, mount.container_path, mode)]);
+        }
 
         let workdir = spec.workdir.clone().unwrap_or_else(|| "/bijux/node/work".to_string());
         cmd.args(["--workdir", &workdir]);
@@ -752,7 +822,7 @@ impl Adapter for ContainerAdapter {
                     spec,
                     engine,
                     exit_code,
-                    engine_version.clone(),
+                    Some(engine_version.clone()),
                 )),
                 adapter_binary_sha256: None,
             });
@@ -780,7 +850,7 @@ impl Adapter for ContainerAdapter {
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
-            container_meta: Some(container_trace(spec, engine, exit_code, engine_version)),
+            container_meta: Some(container_trace(spec, engine, exit_code, Some(engine_version))),
             adapter_binary_sha256: None,
         })
     }
@@ -1331,6 +1401,22 @@ fn cache_key_input_for_run(
     }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct AdapterAdmissionEntry {
+    pub node_id: String,
+    pub node_kind: String,
+    pub supported: bool,
+    pub adapter_id: Option<String>,
+    pub adapter_version: Option<String>,
+    pub reasons: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct AdapterAdmissionReport {
+    pub supported: bool,
+    pub entries: Vec<AdapterAdmissionEntry>,
+}
+
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
@@ -1339,6 +1425,83 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     ])
     .unwrap_or_else(|_| AdapterRegistry::new());
     registry.list()
+}
+
+pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
+    let registry = build_registry(vec![
+        Arc::new(ConstAdapter),
+        Arc::new(ShellAdapter),
+        Arc::new(ContainerAdapter),
+    ])
+    .unwrap_or_else(|_| AdapterRegistry::new());
+    registry.descriptors()
+}
+
+pub fn adapter_admission_matrix(graph: &Graph) -> AdapterAdmissionReport {
+    let descriptors = registered_adapter_descriptors();
+    let mut by_kind = std::collections::BTreeMap::new();
+    for descriptor in &descriptors {
+        for kind in &descriptor.supported_kinds {
+            by_kind.insert(kind.clone(), descriptor.clone());
+        }
+    }
+
+    let mut entries = Vec::new();
+    for node in &graph.nodes {
+        let kind = node.kind.as_str().to_string();
+        let descriptor = by_kind.get(&kind);
+        let mut reasons = Vec::new();
+        if descriptor.is_none() {
+            reasons.push(format!("no registered adapter supports node kind {}", kind));
+        }
+        if let Some(descriptor) = descriptor {
+            let conformance = adapter_conformance::validate_descriptor(descriptor);
+            reasons.extend(conformance.violations);
+            if matches!(node.kind, NodeKind::Container) {
+                let Some(spec) = node.container.as_ref() else {
+                    reasons.push("container node missing container spec".to_string());
+                    entries.push(AdapterAdmissionEntry {
+                        node_id: node.id.clone(),
+                        node_kind: kind,
+                        supported: reasons.is_empty(),
+                        adapter_id: Some(descriptor.id.clone()),
+                        adapter_version: Some(descriptor.version.clone()),
+                        reasons,
+                    });
+                    continue;
+                };
+                if let Err(error) = container_execution::container_engine_discovery(&spec.engine) {
+                    reasons.push(error);
+                }
+                if let Err(error) = container_execution::container_network_policy_args(
+                    &spec.engine,
+                    !node.effects.contains(&Effect::Network),
+                ) {
+                    reasons.push(error);
+                }
+                let mounts = container_execution::container_volume_contract(Path::new(
+                    "/synthetic-node-root",
+                ));
+                if let Err(error) = container_execution::validate_container_mount_contract(
+                    &mounts,
+                    Path::new("/synthetic-node-root"),
+                ) {
+                    reasons.push(error);
+                }
+            }
+        }
+        let supported = reasons.is_empty();
+        entries.push(AdapterAdmissionEntry {
+            node_id: node.id.clone(),
+            node_kind: kind,
+            supported,
+            adapter_id: descriptor.map(|value| value.id.clone()),
+            adapter_version: descriptor.map(|value| value.version.clone()),
+            reasons,
+        });
+    }
+    let supported = entries.iter().all(|entry| entry.supported);
+    AdapterAdmissionReport { supported, entries }
 }
 
 pub fn adapter_registry_dump() -> serde_json::Value {
@@ -1928,21 +2091,6 @@ fn container_trace(
         engine_version,
         exit_code,
     }
-}
-
-fn engine_version(engine: &str) -> Option<String> {
-    subprocess::output(engine, &["--version"]).ok().and_then(|out| {
-        if out.status.success() {
-            let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if v.is_empty() {
-                None
-            } else {
-                Some(v)
-            }
-        } else {
-            None
-        }
-    })
 }
 
 fn collect_outputs_summary(

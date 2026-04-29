@@ -1,7 +1,7 @@
-use crate::adapter::Adapter;
+use crate::adapter::{Adapter, AdapterDescriptor};
 use crate::external_adapter;
 use crate::{AdapterInfo, RuntimeError};
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 
 pub struct AdapterRegistry {
@@ -67,6 +67,21 @@ impl AdapterRegistry {
         }
         list.sort_by(|a, b| a.adapter_id.cmp(&b.adapter_id));
         list
+    }
+
+    pub fn descriptors(&self) -> Vec<AdapterDescriptor> {
+        let mut seen = BTreeSet::new();
+        let mut descriptors = Vec::new();
+        for adapter in self.by_kind.values() {
+            let descriptor = adapter.descriptor();
+            let key = format!("{}@{}", descriptor.id, descriptor.version);
+            if seen.insert(key) {
+                descriptors.push(descriptor);
+            }
+        }
+        descriptors
+            .sort_by(|left, right| left.id.cmp(&right.id).then(left.version.cmp(&right.version)));
+        descriptors
     }
 }
 

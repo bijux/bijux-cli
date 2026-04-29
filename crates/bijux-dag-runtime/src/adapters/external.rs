@@ -1,9 +1,10 @@
 use crate::{
-    adapter::{AdapterOrigin, EffectSet},
-    Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError,
+    adapter::{AdapterDescriptor, AdapterOrigin, EffectSet},
+    adapter_conformance, Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError,
 };
 use bijux_dag_artifacts::write_outputs_index;
 use serde::Deserialize;
+use serde::Serialize;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
@@ -13,12 +14,15 @@ const MAX_NODE_SPEC_BYTES: usize = 256 * 1024;
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalAdapterInfo {
-    pub id: String,
-    pub version: String,
+    pub protocol_version: String,
+    #[serde(alias = "id")]
+    pub adapter_id: String,
+    #[serde(alias = "version")]
+    pub adapter_version: String,
     pub required_effects: ExternalEffectSet,
     pub supported_kinds: Vec<String>,
-    #[serde(default = "default_outputs_schema_version")]
-    pub produces_outputs_schema_version: String,
+    #[serde(alias = "produces_outputs_schema_version", alias = "output_schema")]
+    pub output_schema: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -45,7 +49,7 @@ impl ExternalAdapter {
 
 impl Adapter for ExternalAdapter {
     fn id(&self) -> AdapterId {
-        AdapterId { id: self.info.id.clone(), version: self.info.version.clone() }
+        AdapterId { id: self.info.adapter_id.clone(), version: self.info.adapter_version.clone() }
     }
 
     fn supported_kinds(&self) -> Vec<String> {
@@ -62,7 +66,11 @@ impl Adapter for ExternalAdapter {
     }
 
     fn produces_outputs_schema_version(&self) -> String {
-        self.info.produces_outputs_schema_version.clone()
+        self.info.output_schema.clone()
+    }
+
+    fn protocol_version(&self) -> String {
+        self.info.protocol_version.clone()
     }
 
     fn origin(&self) -> AdapterOrigin {
@@ -161,7 +169,25 @@ impl Adapter for ExternalAdapter {
     }
 }
 
-pub fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ExternalAdapterHandshakeStatus {
+    Ok,
+    Rejected,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ExternalAdapterHandshakeReport {
+    pub path: String,
+    pub status: ExternalAdapterHandshakeStatus,
+    pub adapter_id: Option<String>,
+    pub adapter_version: Option<String>,
+    pub descriptor: Option<AdapterDescriptor>,
+    pub violations: Vec<String>,
+    pub reason: Option<String>,
+}
+
+pub fn probe_external_adapters() -> Result<Vec<ExternalAdapterHandshakeReport>, RuntimeError> {
     let dir = match std::env::var("BIJUX_DAG_ADAPTERS_DIR") {
         Ok(v) if !v.is_empty() => PathBuf::from(v),
         _ => return Ok(Vec::new()),
@@ -171,35 +197,131 @@ pub fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeErro
     }
     let mut entries: Vec<_> = std::fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
     entries.sort_by_key(|e| e.file_name());
-    let mut adapters: Vec<Arc<dyn Adapter>> = Vec::new();
+    let mut reports = Vec::new();
     for entry in entries {
-        let path = entry.path();
-        if !path.is_file() {
+        let original_path = entry.path();
+        if !original_path.is_file() {
             continue;
         }
-        let path = match canonicalize_external_adapter_path(&path) {
-            Some(path) => path,
-            None => continue,
+        let Some(path) = canonicalize_external_adapter_path(&original_path) else {
+            continue;
         };
-        let info = match Command::new(&path).args(["info", "--json"]).output() {
+        let handshake = Command::new(&path).args(["info", "--json"]).output();
+        let (report, _) = match handshake {
             Ok(out) if out.status.success() => {
-                serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout).ok()
+                match serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout) {
+                    Ok(info) => {
+                        let binary_hash =
+                            std::fs::read(&path).ok().map(|b| crate::sha256_bytes(&b));
+                        let adapter = ExternalAdapter::new(path.clone(), info, binary_hash);
+                        let descriptor = adapter.descriptor();
+                        let conformance = adapter_conformance::validate_descriptor(&descriptor);
+                        let status = if conformance.passed {
+                            ExternalAdapterHandshakeStatus::Ok
+                        } else {
+                            ExternalAdapterHandshakeStatus::Rejected
+                        };
+                        (
+                            ExternalAdapterHandshakeReport {
+                                path: path.display().to_string(),
+                                status,
+                                adapter_id: Some(descriptor.id.clone()),
+                                adapter_version: Some(descriptor.version.clone()),
+                                descriptor: Some(descriptor),
+                                violations: conformance.violations.clone(),
+                                reason: if conformance.passed {
+                                    None
+                                } else {
+                                    Some("descriptor validation failed".to_string())
+                                },
+                            },
+                            Some(Arc::new(adapter) as Arc<dyn Adapter>),
+                        )
+                    }
+                    Err(error) => (
+                        ExternalAdapterHandshakeReport {
+                            path: path.display().to_string(),
+                            status: ExternalAdapterHandshakeStatus::Rejected,
+                            adapter_id: None,
+                            adapter_version: None,
+                            descriptor: None,
+                            violations: Vec::new(),
+                            reason: Some(format!("invalid adapter manifest: {error}")),
+                        },
+                        None,
+                    ),
+                }
             }
-            _ => None,
+            Ok(out) => (
+                ExternalAdapterHandshakeReport {
+                    path: path.display().to_string(),
+                    status: ExternalAdapterHandshakeStatus::Rejected,
+                    adapter_id: None,
+                    adapter_version: None,
+                    descriptor: None,
+                    violations: Vec::new(),
+                    reason: Some(format!(
+                        "info handshake failed with exit code {}",
+                        out.status.code().unwrap_or(-1)
+                    )),
+                },
+                None,
+            ),
+            Err(error) => (
+                ExternalAdapterHandshakeReport {
+                    path: path.display().to_string(),
+                    status: ExternalAdapterHandshakeStatus::Rejected,
+                    adapter_id: None,
+                    adapter_version: None,
+                    descriptor: None,
+                    violations: Vec::new(),
+                    reason: Some(format!("failed to launch adapter info handshake: {error}")),
+                },
+                None,
+            ),
         };
-        let info = match info {
-            Some(i) => i,
-            None => continue,
+        reports.push(report);
+    }
+    Ok(reports)
+}
+
+pub fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
+    let mut adapters: Vec<Arc<dyn Adapter>> = Vec::new();
+    let dir = match std::env::var("BIJUX_DAG_ADAPTERS_DIR") {
+        Ok(v) if !v.is_empty() => PathBuf::from(v),
+        _ => return Ok(adapters),
+    };
+    if !dir.exists() {
+        return Ok(adapters);
+    }
+    let mut entries: Vec<_> = std::fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let original_path = entry.path();
+        if !original_path.is_file() {
+            continue;
+        }
+        let Some(path) = canonicalize_external_adapter_path(&original_path) else {
+            continue;
+        };
+        let Ok(out) = Command::new(&path).args(["info", "--json"]).output() else {
+            continue;
+        };
+        if !out.status.success() {
+            continue;
+        }
+        let Ok(info) = serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout) else {
+            continue;
         };
         let binary_hash = std::fs::read(&path).ok().map(|b| crate::sha256_bytes(&b));
         let adapter = ExternalAdapter::new(path.clone(), info, binary_hash);
+        let descriptor = adapter.descriptor();
+        if !adapter_conformance::validate_descriptor(&descriptor).passed {
+            continue;
+        }
         adapters.push(Arc::new(adapter));
     }
     Ok(adapters)
-}
-
-fn default_outputs_schema_version() -> String {
-    "v0.1".to_string()
 }
 
 fn canonicalize_external_adapter_path(path: &PathBuf) -> Option<PathBuf> {

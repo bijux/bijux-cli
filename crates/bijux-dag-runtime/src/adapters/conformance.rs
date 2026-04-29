@@ -23,6 +23,9 @@ pub fn validate_descriptor(descriptor: &AdapterDescriptor) -> AdapterConformance
     if descriptor.produces_outputs_schema_version.trim().is_empty() {
         violations.push("missing outputs schema version".to_string());
     }
+    if descriptor.protocol_version.trim().is_empty() {
+        violations.push("missing adapter protocol version".to_string());
+    }
     if matches!(descriptor.origin, AdapterOrigin::External)
         && !descriptor.required_effects.filesystem
         && !descriptor.required_effects.env
@@ -30,6 +33,9 @@ pub fn validate_descriptor(descriptor: &AdapterDescriptor) -> AdapterConformance
         && !descriptor.required_effects.clock
     {
         violations.push("external adapter declares no required effects".to_string());
+    }
+    if matches!(descriptor.origin, AdapterOrigin::External) && descriptor.binary_hash.is_none() {
+        violations.push("external adapter missing binary hash".to_string());
     }
 
     AdapterConformanceReport {

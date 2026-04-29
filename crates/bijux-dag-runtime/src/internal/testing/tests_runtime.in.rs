@@ -1104,7 +1104,7 @@ inputs: vec!["in".to_string()],
             &adapter_path,
             r#"#!/bin/sh
 if [ "$1" = "info" ]; then
-  echo '{"id":"fake","version":"0.1","required_effects":{"filesystem":true,"env":true,"network":false,"clock":false},"supported_kinds":["fake"],"produces_outputs_schema_version":"v0.1"}'
+  echo '{"protocol_version":"bijux-dag-adapter/v1","adapter_id":"fake","adapter_version":"0.1","required_effects":{"filesystem":true,"env":true,"network":false,"clock":false},"supported_kinds":["fake"],"output_schema":"v0.1"}'
   exit 0
 fi
 if [ "$1" = "execute" ]; then
