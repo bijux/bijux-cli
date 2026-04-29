@@ -100,6 +100,16 @@ interpreter from the active environment or project `.venv`, and exposes
 The companion package guide lives at
 [`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md).
 
+## Runtime Diagnostics
+
+The root `doctor` surface now acts as the operator-facing runtime diagnostic entrypoint:
+
+- `bijux doctor`: unified install, state-path, plugin, app-mount, routing, and shim health
+- `bijux doctor paths`: resolved state files plus read/write diagnostics
+- `bijux doctor routing`: canonical built-in routes, aliases, and namespace inventory
+- `bijux doctor shims`: legacy `bijux-<app>` PATH shim detection
+- `bijux doctor <app>`: focused official app discovery and runtime diagnostics
+
 ## Tests
 
 - [`tests/architecture.rs`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/tests/architecture.rs): boundary and ownership checks.
