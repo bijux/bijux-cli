@@ -125,6 +125,7 @@ pub(crate) fn why_rerun_payload(
         "reasons": diff.replay_equivalence.reasons,
         "cause_groups": diff.replay_equivalence.cause_groups,
         "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
+        "container_digest_drift_nodes": diff.replay_equivalence.container_digest_drift_nodes,
         "causal_chain": build_causal_chain(&material_a, &material_b, &diff, node),
     }))
 }
