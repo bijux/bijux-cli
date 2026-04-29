@@ -182,6 +182,7 @@ fn config_subcommand_help(command: &str) -> &'static str {
         "reload" => "Validate and reload current file",
         "validate" => "Validate layered config and project discovery",
         "schema" => "Show the config schema registry",
+        "docs" => "Generate markdown config reference from the schema",
         "explain" => "Explain the effective value and source of one key",
         "repair" => "Recover a malformed config file and write a backup",
         "export" => "Write config to a target path",
@@ -318,7 +319,9 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ],
         ["doctor"] => vec![
             "bijux doctor".to_string(),
+            "bijux doctor --bundle".to_string(),
             "bijux doctor paths".to_string(),
+            "bijux doctor python".to_string(),
             "bijux doctor routing --format json".to_string(),
             "bijux doctor dag".to_string(),
             "bijux doctor shims".to_string(),
@@ -328,6 +331,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux config list".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
+            "bijux config docs cli".to_string(),
             "bijux config export ./bijux.env".to_string(),
         ],
         ["plugins"] => vec![

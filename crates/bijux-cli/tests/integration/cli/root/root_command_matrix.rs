@@ -160,6 +160,33 @@ fn doctor_routing_reports_routes_aliases_and_registry() {
 }
 
 #[test]
+fn doctor_python_reports_bridge_inventory() {
+    let payload = run_ok_json(&["doctor", "python", "--format", "json", "--no-pretty"]);
+    assert!(payload["interpreters"].is_array());
+    assert!(payload["bridge"].is_object());
+    assert!(payload["environment"].is_object());
+}
+
+#[test]
+fn doctor_bundle_writes_artifacts_under_current_directory() {
+    let temp = TempDir::new().expect("tempdir");
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .current_dir(temp.path())
+        .args(["doctor", "--bundle", "--format", "json", "--no-pretty"])
+        .output()
+        .expect("binary should execute");
+    assert!(out.status.success(), "stderr:\n{}", String::from_utf8_lossy(&out.stderr));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    let bundle_path = payload["bundle"]["path"].as_str().expect("bundle path");
+    assert!(bundle_path.ends_with("artifacts/bijux-cli/doctor-bundle"));
+    assert!(temp.path().join("artifacts/bijux-cli/doctor-bundle/doctor.json").exists());
+    assert!(temp
+        .path()
+        .join("artifacts/bijux-cli/doctor-bundle/generated-config-reference.md")
+        .exists());
+}
+
+#[test]
 fn doctor_app_subject_delegates_to_official_app_doctor() {
     let canonical = known_bijux_tool_by_query("dag").expect("known official app");
     let root = run_ok_json(&["doctor", "dag", "--format", "json", "--no-pretty"]);

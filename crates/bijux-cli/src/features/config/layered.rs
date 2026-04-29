@@ -63,6 +63,16 @@ pub(crate) fn schema_report(scope: Option<&str>) -> Result<Value, ConfigError> {
     }))
 }
 
+pub(crate) fn schema_docs_report(scope: Option<&str>) -> Result<Value, ConfigError> {
+    let markdown = schema_docs_markdown(scope)?;
+    Ok(json!({
+        "status": "ok",
+        "schema_version": "bijux-cli-config-schema-v1",
+        "scope": scope,
+        "markdown": markdown,
+    }))
+}
+
 pub(crate) fn validate_report(
     global_config_path: &Path,
     cwd: &Path,
@@ -587,6 +597,62 @@ fn validate_entries(values: &BTreeMap<String, String>) -> Vec<String> {
     errors
 }
 
+fn schema_docs_markdown(scope: Option<&str>) -> Result<String, ConfigError> {
+    let scopes = if let Some(scope_name) = scope {
+        vec![config_schema_scope(scope_name).ok_or_else(|| {
+            ConfigError::not_found(format!("Unknown config schema scope: {scope_name}"))
+        })?]
+    } else {
+        config_schema_registry()
+    };
+
+    let mut markdown = String::from(
+        "---\n\
+title: Generated Config Reference\n\
+audience: mixed\n\
+type: generated-reference\n\
+status: canonical\n\
+owner: bijux-cli-docs\n\
+generated_from: bijux-cli-config-schema-v1\n\
+---\n\n\
+# Generated Config Reference\n\n\
+This page is generated from the built-in `bijux-cli` config schema registry.\n\
+Use `bijux config docs --format json` when you need the same content from the runtime.\n",
+    );
+
+    for scope_entry in scopes {
+        markdown.push_str("\n## `");
+        markdown.push_str(&scope_entry.scope);
+        markdown.push_str("`\n\n");
+        markdown.push_str("| Logical key | Storage key | Type | Environment | Sensitive | Description |\n");
+        markdown.push_str("| --- | --- | --- | --- | --- | --- |\n");
+        for field in &scope_entry.fields {
+            let env_vars = if field.env_vars.is_empty() {
+                "-".to_string()
+            } else {
+                field.env_vars
+                    .iter()
+                    .map(|value| format!("`{value}`"))
+                    .collect::<Vec<_>>()
+                    .join("<br>")
+            };
+            markdown.push_str(&format!(
+                "| `{}` | `{}` | `{}` | {} | `{}` | {} |\n",
+                field.logical_key,
+                field.storage_key,
+                serde_json::to_string(&field.value_kind)
+                    .unwrap_or_else(|_| "\"string\"".to_string())
+                    .trim_matches('"'),
+                env_vars,
+                if field.sensitive { "yes" } else { "no" },
+                field.description.replace('|', "\\|"),
+            ));
+        }
+    }
+
+    Ok(markdown)
+}
+
 fn normalize_selector(raw_key: &str) -> Result<String, ConfigError> {
     normalize_selector_to_storage_key(raw_key)
 }
@@ -695,7 +761,7 @@ mod tests {
 
     use super::{
         discover_project_config, explain_report, parse_portable_entries, repair_env_text,
-        resolve_layered_config, schema_report, LayeredConfigOptions,
+        resolve_layered_config, schema_docs_report, schema_report, LayeredConfigOptions,
     };
 
     fn temp_dir(name: &str) -> PathBuf {
@@ -711,6 +777,15 @@ mod tests {
         let payload = schema_report(Some("cli")).expect("schema");
         assert_eq!(payload["scope"], "cli");
         assert!(payload["fields"].as_array().is_some_and(|items| !items.is_empty()));
+    }
+
+    #[test]
+    fn schema_docs_report_emits_markdown_reference() {
+        let payload = schema_docs_report(Some("cli")).expect("docs");
+        let markdown = payload["markdown"].as_str().expect("markdown");
+        assert!(markdown.contains("# Generated Config Reference"));
+        assert!(markdown.contains("## `cli`"));
+        assert!(markdown.contains("`cli.access_token`"));
     }
 
     #[test]

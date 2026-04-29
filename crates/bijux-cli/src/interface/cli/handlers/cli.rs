@@ -3,10 +3,13 @@
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::env;
+use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 use crate::api::config::validate_config_file;
 use crate::api::version::{runtime_semver, runtime_version_info};
+use crate::features::config::layered::schema_docs_report;
 use crate::features::apps::{app_doctor_report, apps_doctor_report};
 use crate::features::diagnostics::state_paths::{state_diagnostics, ResolvedStatePaths};
 use crate::features::diagnostics::{registry_inventory, route_inventory, state_diagnostics_query};
@@ -17,8 +20,50 @@ use crate::features::install::{
 use crate::features::plugins::{
     compatibility_warnings, list_plugins, plugin_doctor, plugin_origin_metadata,
 };
+use crate::features::plugins::runtime::{detected_python_interpreters, resolve_python_interpreter};
 use crate::routing::registry::RouteRegistry;
-use crate::shared::argv::{command_option_value, command_positionals};
+use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
+
+const PYTHON_BRIDGE_DOCTOR_PROBE: &str = r#"import importlib, importlib.metadata, importlib.util, json
+payload = {
+    "module": "bijux_cli_py",
+    "module_spec": None,
+    "import_ok": False,
+    "import_error": None,
+    "package_version": None,
+    "console_scripts": [],
+}
+spec = importlib.util.find_spec("bijux_cli_py")
+if spec is not None:
+    payload["module_spec"] = spec.origin
+try:
+    importlib.import_module("bijux_cli_py")
+    payload["import_ok"] = True
+except Exception as exc:
+    payload["import_error"] = f"{type(exc).__name__}: {exc}"
+for candidate in ("bijux-cli", "bijux_cli_py"):
+    try:
+        payload["package_version"] = importlib.metadata.version(candidate)
+        break
+    except importlib.metadata.PackageNotFoundError:
+        pass
+try:
+    entry_points = importlib.metadata.entry_points()
+    if hasattr(entry_points, "select"):
+        selected = entry_points.select(group="console_scripts")
+    else:
+        selected = entry_points.get("console_scripts", [])
+    payload["console_scripts"] = sorted(
+        {
+            ep.name: ep.value
+            for ep in selected
+            if ep.name == "bijux" or ep.value.startswith("bijux_cli_py")
+        }.items()
+    )
+except Exception:
+    payload["console_scripts"] = []
+print(json.dumps(payload))
+"#;
 
 fn completion_shell_name(shell: CompletionShell) -> &'static str {
     match shell {
@@ -422,6 +467,184 @@ fn shim_doctor_report() -> Value {
     })
 }
 
+fn python_bridge_doctor_report() -> Value {
+    let interpreters = detected_python_interpreters()
+        .into_iter()
+        .map(|candidate| {
+            json!({
+                "command": candidate.command,
+                "version": candidate.version,
+                "supported": candidate.supported,
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let mut issues = Vec::<Value>::new();
+    let mut suggestions = Vec::<String>::new();
+    let configured_interpreter = env::var_os("BIJUX_PYTHON_BIN")
+        .map(|value| value.to_string_lossy().into_owned());
+    let active_venv = env::var_os("VIRTUAL_ENV").map(|value| value.to_string_lossy().into_owned());
+
+    let mut bridge = json!({
+        "module": "bijux_cli_py",
+        "module_spec": Value::Null,
+        "import_ok": false,
+        "import_error": Value::Null,
+        "package_version": Value::Null,
+        "console_scripts": Vec::<Value>::new(),
+    });
+
+    let selected = resolve_python_interpreter();
+    if selected.is_none() {
+        issues.push(doctor_issue(
+            "python",
+            "warning",
+            "python 3.11 or newer was not discovered for the bridge runtime",
+        ));
+        suggestions.push(
+            "Install Python 3.11 or newer, or point `BIJUX_PYTHON_BIN` at a supported interpreter."
+                .to_string(),
+        );
+    }
+
+    if let Some(interpreter) = &selected {
+        match Command::new(&interpreter.command).arg("-c").arg(PYTHON_BRIDGE_DOCTOR_PROBE).output()
+        {
+            Ok(output) if output.status.success() => {
+                if let Ok(payload) = serde_json::from_slice::<Value>(&output.stdout) {
+                    bridge = payload;
+                } else {
+                    issues.push(doctor_issue(
+                        "python",
+                        "warning",
+                        "python bridge probe returned invalid JSON",
+                    ));
+                }
+            }
+            Ok(output) => {
+                issues.push(doctor_issue(
+                    "python",
+                    "warning",
+                    format!(
+                        "python bridge probe exited with {}",
+                        output.status.code().unwrap_or(1)
+                    ),
+                ));
+            }
+            Err(error) => {
+                issues.push(doctor_issue(
+                    "python",
+                    "warning",
+                    format!("failed to launch python bridge probe: {error}"),
+                ));
+            }
+        }
+    }
+
+    if bridge.get("import_ok") != Some(&json!(true)) {
+        issues.push(doctor_issue(
+            "python",
+            "warning",
+            "the active Python runtime cannot import `bijux_cli_py`",
+        ));
+        suggestions.push(
+            "Install the `bijux-cli` Python package in the selected interpreter when Python bridge parity matters."
+                .to_string(),
+        );
+    }
+
+    if bridge
+        .get("console_scripts")
+        .and_then(Value::as_array)
+        .is_none_or(|items| items.is_empty())
+    {
+        issues.push(doctor_issue(
+            "python",
+            "info",
+            "no Python console-script entrypoints were discovered for `bijux-cli`",
+        ));
+        suggestions.push(
+            "Use `python -m bijux_cli_py version` or install the wheel with console scripts when validating Python packaging."
+                .to_string(),
+        );
+    }
+
+    let severity = max_severity(
+        issues.iter().filter_map(|issue| issue.get("severity").and_then(Value::as_str)),
+    );
+
+    json!({
+        "status": status_from_severity(severity),
+        "severity": severity,
+        "environment": {
+            "virtual_env": active_venv,
+            "configured_interpreter": configured_interpreter,
+        },
+        "selected_interpreter": selected.as_ref().map(|candidate| json!({
+            "command": candidate.command,
+            "version": candidate.version,
+            "supported": candidate.supported,
+        })),
+        "interpreters": interpreters,
+        "bridge": bridge,
+        "issues": issues,
+        "suggestions": suggestions,
+    })
+}
+
+fn doctor_bundle_root() -> Result<std::path::PathBuf, String> {
+    let cwd = env::current_dir().map_err(|error| format!("failed to resolve current directory: {error}"))?;
+    Ok(cwd.join("artifacts").join("bijux-cli").join("doctor-bundle"))
+}
+
+fn write_bundle_text(path: &Path, contents: &str) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
+    }
+    crate::infrastructure::fs_store::atomic_write_text(path, contents)
+        .map_err(|error| format!("failed to write {}: {error}", path.display()))
+}
+
+fn write_bundle_json(path: &Path, payload: &Value) -> Result<(), String> {
+    let rendered =
+        serde_json::to_string_pretty(payload).map_err(|error| format!("failed to render JSON: {error}"))?;
+    write_bundle_text(path, &(rendered + "\n"))
+}
+
+fn export_doctor_bundle(report: &Value) -> Result<Value, String> {
+    let root = doctor_bundle_root()?;
+    let docs_report = docs_inventory_report();
+    let config_docs = schema_docs_report(None).map_err(|error| error.to_string())?;
+    let config_markdown = config_docs
+        .get("markdown")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "config docs report is missing markdown".to_string())?;
+
+    let doctor_path = root.join("doctor.json");
+    let docs_path = root.join("docs.json");
+    let config_path = root.join("generated-config-reference.md");
+    let readme_path = root.join("README.txt");
+
+    write_bundle_json(&doctor_path, report)?;
+    write_bundle_json(&docs_path, &docs_report)?;
+    write_bundle_text(&config_path, config_markdown)?;
+    write_bundle_text(
+        &readme_path,
+        "bijux doctor bundle\n\nFiles:\n- doctor.json\n- docs.json\n- generated-config-reference.md\n",
+    )?;
+
+    Ok(json!({
+        "status": "ok",
+        "path": root,
+        "files": [
+            doctor_path,
+            docs_path,
+            config_path,
+            readme_path,
+        ],
+    }))
+}
+
 pub(crate) fn doctor_report(
     paths: &ResolvedStatePaths,
     registry: &RouteRegistry,
@@ -432,6 +655,7 @@ pub(crate) fn doctor_report(
     let state = state_paths_doctor_report(paths);
     let shims = shim_doctor_report();
     let routing = routing_doctor_report(registry);
+    let python = python_bridge_doctor_report();
     let apps = serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
         .expect("apps doctor report");
     let plugins = match plugin_doctor(plugin_registry_path) {
@@ -528,9 +752,34 @@ pub(crate) fn doctor_report(
             .map(ToOwned::to_owned)
             .collect(),
     );
+    let python_check = doctor_check(
+        "python",
+        python["severity"].as_str().unwrap_or("ok"),
+        if python["issues"].as_array().is_some_and(|items| items.is_empty()) {
+            "python bridge runtime evaluated"
+        } else {
+            "python bridge runtime needs attention"
+        },
+        python.clone(),
+        python["suggestions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect(),
+    );
 
-    let checks = vec![install_check, state_check, plugins, apps_check, routing_check, shims_check];
-    for report in [&state, &shims] {
+    let checks = vec![
+        install_check,
+        state_check,
+        plugins,
+        apps_check,
+        routing_check,
+        shims_check,
+        python_check,
+    ];
+    for report in [&state, &shims, &python] {
         if let Some(items) = report.get("issues").and_then(Value::as_array) {
             issues.extend(items.iter().cloned());
         }
@@ -565,6 +814,7 @@ pub(crate) fn doctor_report(
         "paths": state,
         "apps": apps,
         "shims": shims,
+        "python": python,
         "issues": issues,
         "suggestions": aggregate_suggestions(&checks),
     })
@@ -578,12 +828,27 @@ fn doctor_topic_report(
 ) -> Value {
     let subject = command_positionals(argv, &["cli", "doctor"]).first().cloned();
     match subject.as_deref() {
-        None => doctor_report(paths, registry, plugin_registry_path),
+        None => {
+            let report = doctor_report(paths, registry, plugin_registry_path);
+            if command_has_flag(argv, "--bundle") {
+                match export_doctor_bundle(&report) {
+                    Ok(bundle) => {
+                        let mut object = report.as_object().cloned().unwrap_or_default();
+                        object.insert("bundle".to_string(), bundle);
+                        Value::Object(object)
+                    }
+                    Err(error) => runtime_error_payload(error),
+                }
+            } else {
+                report
+            }
+        }
         Some("routing") => routing_doctor_report(registry),
         Some("paths") => state_paths_doctor_report(paths),
         Some("apps") => serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
             .expect("apps doctor report"),
         Some("shims") => shim_doctor_report(),
+        Some("python") => python_bridge_doctor_report(),
         Some(query) => match app_doctor_report(query, paths) {
             Ok(report) => serde_json::to_value(report).expect("app doctor report"),
             Err(_) => runtime_error_payload(format!("unknown doctor topic: {query}")),
@@ -746,8 +1011,16 @@ fn docs_inventory_report_at(workspace_root: &Path) -> Value {
     let references = [
         ("overview", "README.md"),
         ("cli-handbook", "docs/bijux-cli/index.md"),
+        ("root-cli-architecture", "docs/bijux-cli/architecture/root-cli-architecture.md"),
+        ("app-integration", "docs/bijux-cli/interfaces/app-integration-guide.md"),
+        ("generated-config-reference", "docs/bijux-cli/interfaces/generated-config-reference.md"),
+        ("config-guide", "docs/bijux-cli/interfaces/config-guide.md"),
         ("installation", "docs/bijux-cli/operations/installation-and-setup.md"),
+        ("migration-guide", "docs/bijux-cli/operations/migration-guide.md"),
+        ("diagnostics-guide", "docs/bijux-cli/operations/diagnostics-guide.md"),
         ("plugin-workflows", "docs/bijux-cli/interfaces/operator-workflows.md"),
+        ("python-bridge-guide", "docs/bijux-cli/packages/python-bridge-guide.md"),
+        ("examples", "docs/bijux-cli/interfaces/examples.md"),
         ("compatibility", "docs/bijux-cli/interfaces/compatibility-commitments.md"),
         ("quality-review", "docs/bijux-cli/quality/review-checklist.md"),
     ]
@@ -1002,11 +1275,13 @@ pub(crate) fn try_handle(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use tempfile::tempdir;
 
     use super::{
-        completion_report, doctor_report, doctor_topic_report, runtime_audit_report,
-        runtime_status_report,
+        completion_report, doctor_report, doctor_topic_report, docs_inventory_report_at,
+        runtime_audit_report, runtime_status_report,
     };
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
     use crate::routing::registry::RouteRegistry;
@@ -1137,6 +1412,41 @@ mod tests {
         assert_eq!(report["status"], serde_json::json!("ok"));
         assert!(report["summary"]["route_count"].as_u64().unwrap_or_default() > 0);
         assert!(report["aliases"].as_array().is_some_and(|items| !items.is_empty()));
+    }
+
+    #[test]
+    fn doctor_python_topic_reports_bridge_inventory() {
+        let temp = tempdir().expect("temp dir");
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let argv = vec!["bijux".to_string(), "doctor".to_string(), "python".to_string()];
+
+        let report = doctor_topic_report(
+            &argv,
+            &paths,
+            &RouteRegistry::default(),
+            &paths.plugin_registry_file,
+        );
+
+        assert!(report["interpreters"].is_array());
+        assert!(report["bridge"].is_object());
+        assert!(report["environment"].is_object());
+    }
+
+    #[test]
+    fn docs_inventory_references_generated_guides() {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let report = docs_inventory_report_at(&workspace_root);
+        let references = report["references"].as_array().expect("references");
+        assert!(references.iter().any(|item| item["path"] == "docs/bijux-cli/interfaces/generated-config-reference.md"));
+        assert!(references.iter().any(|item| item["path"] == "docs/bijux-cli/operations/migration-guide.md"));
     }
 
     #[test]

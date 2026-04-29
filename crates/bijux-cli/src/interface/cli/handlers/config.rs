@@ -23,6 +23,7 @@ pub(crate) fn execute_config_command(
     let reload_tokens = config_command_tokens(argv, &["reload"]);
     let validate_tokens = config_command_tokens(argv, &["validate"]);
     let schema_tokens = config_command_tokens(argv, &["schema"]);
+    let docs_tokens = config_command_tokens(argv, &["docs"]);
     let explain_tokens = config_command_tokens(argv, &["explain"]);
     let repair_tokens = config_command_tokens(argv, &["repair"]);
     let export_tokens = config_command_tokens(argv, &["export"]);
@@ -76,6 +77,10 @@ pub(crate) fn execute_config_command(
         [a, b, c] if a == "cli" && b == "config" && c == "schema" => {
             let positional = command_positionals(argv, schema_tokens);
             Some(config_operations::schema(positional.first().map(String::as_str))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "docs" => {
+            let positional = command_positionals(argv, docs_tokens);
+            Some(config_operations::docs(positional.first().map(String::as_str))?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "explain" => {
             let positional = command_positionals(argv, explain_tokens);
@@ -146,6 +151,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["reload"] => &["config", "reload"],
             ["validate"] => &["config", "validate"],
             ["schema"] => &["config", "schema"],
+            ["docs"] => &["config", "docs"],
             ["explain"] => &["config", "explain"],
             ["repair"] => &["config", "repair"],
             ["export"] => &["config", "export"],
@@ -162,6 +168,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["reload"] => &["cli", "config", "reload"],
             ["validate"] => &["cli", "config", "validate"],
             ["schema"] => &["cli", "config", "schema"],
+            ["docs"] => &["cli", "config", "docs"],
             ["explain"] => &["cli", "config", "explain"],
             ["repair"] => &["cli", "config", "repair"],
             ["export"] => &["cli", "config", "export"],

@@ -81,6 +81,20 @@ fn config_schema_and_validate_cover_project_profile_and_env_override() {
 }
 
 #[test]
+fn config_docs_emits_generated_markdown_reference() {
+    let root = temp_dir("docs");
+    let docs = assert_success_json(&run_in(
+        &root,
+        &["config", "docs", "cli", "--format", "json", "--no-pretty"],
+        &[],
+    ));
+    let markdown = docs["markdown"].as_str().expect("markdown");
+    assert!(markdown.contains("# Generated Config Reference"));
+    assert!(markdown.contains("## `cli`"));
+    assert!(markdown.contains("`cli.log_level`"));
+}
+
+#[test]
 fn config_explain_redacts_sensitive_values_and_reports_candidates() {
     let root = temp_dir("explain");
     let global = root.join("global.env");

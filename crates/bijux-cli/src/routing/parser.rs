@@ -258,6 +258,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("reload"))
         .subcommand(Command::new("validate").arg(profile_arg()))
         .subcommand(Command::new("schema").arg(Arg::new("scope").num_args(1)))
+        .subcommand(Command::new("docs").arg(Arg::new("scope").num_args(1)))
         .subcommand(
             Command::new("explain")
                 .arg(Arg::new("key").num_args(1))
@@ -328,7 +329,16 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
-        .subcommand(Command::new("doctor").arg(Arg::new("subject").num_args(1)))
+        .subcommand(
+            Command::new("doctor")
+                .arg(Arg::new("subject").num_args(1))
+                .arg(
+                    Arg::new("bundle")
+                        .long("bundle")
+                        .action(ArgAction::SetTrue)
+                        .help("Write a diagnostics bundle under ./artifacts"),
+                ),
+        )
         .subcommand(Command::new("version"))
         .subcommand(Command::new("repl"))
         .subcommand(completion_group.clone())
@@ -375,7 +385,16 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
         .subcommand(Command::new("docs"))
-        .subcommand(Command::new("doctor").arg(Arg::new("subject").num_args(1)))
+        .subcommand(
+            Command::new("doctor")
+                .arg(Arg::new("subject").num_args(1))
+                .arg(
+                    Arg::new("bundle")
+                        .long("bundle")
+                        .action(ArgAction::SetTrue)
+                        .help("Write a diagnostics bundle under ./artifacts"),
+                ),
+        )
         .subcommand(Command::new("version"))
         .subcommand(
             Command::new("install")

@@ -59,6 +59,10 @@ pub(crate) fn schema(scope: Option<&str>) -> Result<Value> {
     layered::schema_report(scope).map_err(|err| anyhow!(err.to_string()))
 }
 
+pub(crate) fn docs(scope: Option<&str>) -> Result<Value> {
+    layered::schema_docs_report(scope).map_err(|err| anyhow!(err.to_string()))
+}
+
 pub(crate) fn validate(config_file: &Path, cwd: &Path, profile: Option<&str>) -> Result<Value> {
     layered::validate_report(config_file, cwd, profile).map_err(|err| anyhow!(err.to_string()))
 }
