@@ -17,6 +17,7 @@ use crate::contracts::{
 };
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::plugins::list_plugins;
+use crate::sdk::{FeatureCapabilityDeclaration, ProductMount};
 
 const DEFAULT_SYSTEM_APPS_DIR: &str = "/etc/bijux/apps";
 const BIJUX_APP_PATH: &str = "BIJUX_APP_PATH";
@@ -1549,14 +1550,18 @@ pub fn scaffold_app_mount(
             )
             .map_err(|error| format!("failed to write python module main: {error}"))?;
 
-            ProductMountDescriptor::builder(namespace.clone())
+            ProductMount::new(namespace.as_str())?
                 .display_name(format!("{} App", namespace.as_str()))
-                .entrypoint(ProductEntrypointKind::PythonModule, module_name.clone())
-                .control_entrypoint(ProductEntrypointKind::PythonModule, module_name)
-                .help_summary(format!("Scaffolded Python app for {}", namespace.as_str()))
+                .python_module(module_name.clone())
+                .control_python_module(module_name)
+                .summary(format!("Scaffolded Python app for {}", namespace.as_str()))
                 .capability("json_output")
+                .feature_capabilities(FeatureCapabilityDeclaration {
+                    supports_completion: true,
+                    ..FeatureCapabilityDeclaration::default()
+                })
                 .version(APP_SCAFFOLD_VERSION)
-                .build()?
+                .build_descriptor()?
         }
         "rust" => {
             let binary_name = rust_app_entrypoint_name(namespace.as_str());
@@ -1588,20 +1593,19 @@ pub fn scaffold_app_mount(
                 .map_err(|error| format!("failed to write Rust app entrypoint wrapper: {error}"))?;
             mark_executable(&wrapper)?;
 
-            ProductMountDescriptor::builder(namespace.clone())
+            ProductMount::new(namespace.as_str())?
                 .display_name(format!("{} App", namespace.as_str()))
-                .entrypoint(
-                    ProductEntrypointKind::PluginProcess,
-                    format!("../../{binary_name}"),
-                )
-                .control_entrypoint(
-                    ProductEntrypointKind::PluginProcess,
-                    format!("../../{binary_name}"),
-                )
-                .help_summary(format!("Scaffolded Rust app for {}", namespace.as_str()))
+                .plugin_process(format!("../../{binary_name}"))
+                .control_plugin_process(format!("../../{binary_name}"))
+                .summary(format!("Scaffolded Rust app for {}", namespace.as_str()))
                 .capability("json_output")
+                .feature_capabilities(FeatureCapabilityDeclaration {
+                    supports_completion: true,
+                    supports_repl: true,
+                    ..FeatureCapabilityDeclaration::default()
+                })
                 .version(APP_SCAFFOLD_VERSION)
-                .build()?
+                .build_descriptor()?
         }
         other => return Err(format!("app scaffold kind must be one of: python, rust; got `{other}`")),
     };
