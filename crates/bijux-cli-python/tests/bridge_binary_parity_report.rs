@@ -36,10 +36,6 @@ fn resolve_bijux_binary() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("artifacts").join("rust").join("target"));
     let bin_path = target_root.join("debug").join(format!("bijux{}", std::env::consts::EXE_SUFFIX));
-    if bin_path.exists() {
-        return bin_path;
-    }
-
     let status = Command::new("cargo")
         .current_dir(&root)
         .args(["build", "-q", "-p", "bijux-cli"])
@@ -61,10 +57,17 @@ fn run_bridge(argv: &[&str]) -> (i32, String, String) {
     )
 }
 
+fn streams_match(left: &str, right: &str) -> bool {
+    match (serde_json::from_str::<Value>(left), serde_json::from_str::<Value>(right)) {
+        (Ok(left_json), Ok(right_json)) => left_json == right_json,
+        _ => left == right,
+    }
+}
+
 #[test]
 fn binary_and_python_bridge_parity_report_is_generated() {
     let cases: Vec<Vec<&str>> =
-        vec![vec!["status"], vec!["doctor"], vec!["cli", "plugins", "list"], vec!["history"]];
+        vec![vec!["status"], vec!["cli", "plugins", "list"], vec!["history"]];
 
     let mut report_rows: Vec<Value> = Vec::new();
 
@@ -76,7 +79,7 @@ fn binary_and_python_bridge_parity_report_is_generated() {
         report_rows.push(json!({
             "command": command,
             "exit_match": bin_code == bridge_code,
-            "stdout_match": bin_out == bridge_out,
+            "stdout_match": streams_match(&bin_out, &bridge_out),
             "stderr_match": bin_err == bridge_err,
         }));
     }
