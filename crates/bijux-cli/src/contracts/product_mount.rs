@@ -57,6 +57,10 @@ pub struct ProductRegistryEntry {
 #[serde(rename_all = "snake_case")]
 pub enum ProductEntrypointKind {
     Binary,
+    PythonModule,
+    PythonConsoleScript,
+    PluginProcess,
+    EmbeddedRust,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -362,6 +366,12 @@ pub fn known_bijux_tool_by_query(query: &str) -> Option<&'static KnownBijuxTool>
         tool.namespace == normalized
             || tool.aliases.iter().any(|alias| *alias == normalized.as_str())
     })
+}
+
+/// Resolve the canonical official app namespace for a query.
+#[must_use]
+pub fn canonical_bijux_tool_namespace(query: &str) -> Option<&'static str> {
+    known_bijux_tool_by_query(query).map(|tool| tool.namespace)
 }
 
 /// Smallest metadata contract required for reserved product mounts.

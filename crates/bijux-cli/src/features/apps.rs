@@ -43,6 +43,13 @@ pub enum AppHealth {
     Disabled,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AppQueryMatch {
+    Namespace,
+    Alias,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppDiscoveryPath {
     pub source: AppDiscoverySource,
@@ -64,12 +71,15 @@ pub struct AppMountReport {
     pub display_name: String,
     pub aliases: Vec<String>,
     pub source: AppDiscoverySource,
+    pub entrypoint_kind: ProductEntrypointKind,
     pub entrypoint: String,
     pub status: String,
     pub version: Option<String>,
     pub version_source: Option<String>,
     pub health: AppHealth,
     pub resolved_entrypoint: Option<String>,
+    pub resolution_policy: String,
+    pub shadowed_plugins: Vec<String>,
     pub capabilities: Vec<String>,
     pub discovery_paths: Vec<AppDiscoveryPath>,
     pub probes: Vec<AppProbe>,
@@ -109,10 +119,14 @@ pub struct AppsDoctorReport {
 pub struct AppWhichReport {
     pub status: String,
     pub query: String,
+    pub matched_via: AppQueryMatch,
     pub namespace: String,
     pub source: AppDiscoverySource,
+    pub entrypoint_kind: ProductEntrypointKind,
     pub resolved_entrypoint: Option<String>,
     pub health: AppHealth,
+    pub resolution_policy: String,
+    pub shadowed_plugins: Vec<String>,
     pub discovery_paths: Vec<AppDiscoveryPath>,
     pub probes: Vec<AppProbe>,
     pub issues: Vec<String>,
@@ -122,6 +136,7 @@ pub struct AppWhichReport {
 pub struct AppVersionReport {
     pub status: String,
     pub query: String,
+    pub matched_via: AppQueryMatch,
     pub namespace: String,
     pub version: Option<String>,
     pub source: Option<String>,
@@ -133,7 +148,9 @@ pub struct AppVersionReport {
 pub struct AppCapabilitiesReport {
     pub status: String,
     pub query: String,
+    pub matched_via: AppQueryMatch,
     pub namespace: String,
+    pub entrypoint_kind: ProductEntrypointKind,
     pub capabilities: Vec<String>,
     pub aliases: Vec<String>,
     pub source: AppDiscoverySource,
@@ -144,7 +161,12 @@ pub struct AppCapabilitiesReport {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedAppCommand {
     pub command: String,
+    pub args: Vec<String>,
+    pub display_command: String,
     pub source: AppDiscoverySource,
+    pub kind: ProductEntrypointKind,
+    pub namespace: String,
+    pub descriptor: ProductMountDescriptor,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -169,8 +191,35 @@ struct ProductMountOverride {
     disabled: Option<bool>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+enum DisabledProductsRegistry {
+    Object { disabled: Vec<String> },
+    Array(Vec<String>),
+}
+
+impl DisabledProductsRegistry {
+    fn contains(&self, query: &str) -> bool {
+        let normalized = crate::contracts::Namespace::normalize(query);
+        match self {
+            Self::Object { disabled } => disabled
+                .iter()
+                .any(|value| crate::contracts::Namespace::normalize(value) == normalized),
+            Self::Array(disabled) => disabled
+                .iter()
+                .any(|value| crate::contracts::Namespace::normalize(value) == normalized),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct OverrideCandidate {
+    source: AppDiscoverySource,
+    location: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+struct DisabledRegistryCandidate {
     source: AppDiscoverySource,
     location: PathBuf,
 }
@@ -186,6 +235,7 @@ struct AppResolution {
     descriptor_source: AppDiscoverySource,
     runtime_resolution: Option<ResolvedAppCommand>,
     health: AppHealth,
+    shadowed_plugins: Vec<String>,
     issues: Vec<String>,
     discovery_paths: Vec<AppDiscoveryPath>,
     probes: Vec<AppProbe>,
@@ -220,8 +270,20 @@ fn env_apps_dirs() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
-fn descriptor_path(dir: &Path, namespace: &str) -> PathBuf {
+fn primary_descriptor_path(dir: &Path, namespace: &str) -> PathBuf {
+    dir.join(format!("{namespace}.mount.json"))
+}
+
+fn legacy_descriptor_path(dir: &Path, namespace: &str) -> PathBuf {
     dir.join(format!("{namespace}.json"))
+}
+
+fn descriptor_paths(dir: &Path, namespace: &str) -> Vec<PathBuf> {
+    vec![primary_descriptor_path(dir, namespace), legacy_descriptor_path(dir, namespace)]
+}
+
+fn disabled_registry_path(dir: &Path) -> PathBuf {
+    dir.join("disabled.json")
 }
 
 fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDiscoveryPath> {
@@ -234,7 +296,9 @@ fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDi
     if let Ok(cwd) = env::current_dir() {
         rows.push(AppDiscoveryPath {
             source: AppDiscoverySource::ProjectLocal,
-            location: descriptor_path(&cwd.join(".bijux/apps"), namespace).display().to_string(),
+            location: primary_descriptor_path(&cwd.join(".bijux/apps"), namespace)
+                .display()
+                .to_string(),
             precedence: 1,
         });
     }
@@ -242,7 +306,7 @@ fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDi
     for directory in env_apps_dirs() {
         rows.push(AppDiscoveryPath {
             source: AppDiscoverySource::EnvironmentPath,
-            location: descriptor_path(&directory, namespace).display().to_string(),
+            location: primary_descriptor_path(&directory, namespace).display().to_string(),
             precedence: 2,
         });
     }
@@ -250,14 +314,14 @@ fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDi
     if let Some(directory) = user_apps_dir() {
         rows.push(AppDiscoveryPath {
             source: AppDiscoverySource::UserLocal,
-            location: descriptor_path(&directory, namespace).display().to_string(),
+            location: primary_descriptor_path(&directory, namespace).display().to_string(),
             precedence: 3,
         });
     }
 
     rows.push(AppDiscoveryPath {
         source: AppDiscoverySource::SystemLocal,
-        location: descriptor_path(&system_apps_dir(), namespace).display().to_string(),
+        location: primary_descriptor_path(&system_apps_dir(), namespace).display().to_string(),
         precedence: 4,
     });
     rows.push(AppDiscoveryPath {
@@ -276,24 +340,57 @@ fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDi
 fn override_candidates(namespace: &str) -> Vec<OverrideCandidate> {
     let mut rows = Vec::new();
     if let Ok(cwd) = env::current_dir() {
-        rows.push(OverrideCandidate {
+        rows.extend(
+            descriptor_paths(&cwd.join(".bijux/apps"), namespace)
+                .into_iter()
+                .map(|location| OverrideCandidate {
+                    source: AppDiscoverySource::ProjectLocal,
+                    location,
+                }),
+        );
+    }
+    for directory in env_apps_dirs() {
+        rows.extend(descriptor_paths(&directory, namespace).into_iter().map(|location| {
+            OverrideCandidate { source: AppDiscoverySource::EnvironmentPath, location }
+        }));
+    }
+    if let Some(directory) = user_apps_dir() {
+        rows.extend(
+            descriptor_paths(&directory, namespace).into_iter().map(|location| OverrideCandidate {
+                source: AppDiscoverySource::UserLocal,
+                location,
+            }),
+        );
+    }
+    rows.extend(
+        descriptor_paths(&system_apps_dir(), namespace).into_iter().map(|location| {
+            OverrideCandidate { source: AppDiscoverySource::SystemLocal, location }
+        }),
+    );
+    rows
+}
+
+fn disabled_registry_candidates() -> Vec<DisabledRegistryCandidate> {
+    let mut rows = Vec::new();
+    if let Ok(cwd) = env::current_dir() {
+        rows.push(DisabledRegistryCandidate {
             source: AppDiscoverySource::ProjectLocal,
-            location: descriptor_path(&cwd.join(".bijux/apps"), namespace),
+            location: disabled_registry_path(&cwd.join(".bijux/apps")),
         });
     }
-    rows.extend(env_apps_dirs().into_iter().map(|directory| OverrideCandidate {
+    rows.extend(env_apps_dirs().into_iter().map(|directory| DisabledRegistryCandidate {
         source: AppDiscoverySource::EnvironmentPath,
-        location: descriptor_path(&directory, namespace),
+        location: disabled_registry_path(&directory),
     }));
     if let Some(directory) = user_apps_dir() {
-        rows.push(OverrideCandidate {
+        rows.push(DisabledRegistryCandidate {
             source: AppDiscoverySource::UserLocal,
-            location: descriptor_path(&directory, namespace),
+            location: disabled_registry_path(&directory),
         });
     }
-    rows.push(OverrideCandidate {
+    rows.push(DisabledRegistryCandidate {
         source: AppDiscoverySource::SystemLocal,
-        location: descriptor_path(&system_apps_dir(), namespace),
+        location: disabled_registry_path(&system_apps_dir()),
     });
     rows
 }
@@ -380,7 +477,12 @@ fn absolutize_entrypoint(
     mut entrypoint: ProductEntrypoint,
     base_dir: Option<&Path>,
 ) -> ProductEntrypoint {
-    if matches!(entrypoint.kind, ProductEntrypointKind::Binary) {
+    if matches!(
+        entrypoint.kind,
+        ProductEntrypointKind::Binary
+            | ProductEntrypointKind::PythonConsoleScript
+            | ProductEntrypointKind::PluginProcess
+    ) {
         let path = Path::new(&entrypoint.command);
         if path.components().count() > 1 && path.is_relative() {
             if let Some(base) = base_dir {
@@ -391,8 +493,29 @@ fn absolutize_entrypoint(
     entrypoint
 }
 
-fn probe_version(command: &str) -> Option<String> {
-    let output = std::process::Command::new(command).arg("--version").output().ok()?;
+fn format_display_command(command: &str, args: &[String]) -> String {
+    if args.is_empty() {
+        command.to_string()
+    } else {
+        format!("{command} {}", args.join(" "))
+    }
+}
+
+fn resolve_python_interpreter() -> Option<PathBuf> {
+    if let Some(explicit) = env::var_os("BIJUX_PYTHON_BIN") {
+        let path = PathBuf::from(explicit);
+        return path.exists().then_some(path);
+    }
+
+    which_in_path("python3").or_else(|| which_in_path("python"))
+}
+
+fn probe_version(invocation: &ResolvedAppCommand) -> Option<String> {
+    let output = std::process::Command::new(&invocation.command)
+        .args(&invocation.args)
+        .arg("--version")
+        .output()
+        .ok()?;
     if !output.status.success() {
         return None;
     }
@@ -402,23 +525,65 @@ fn probe_version(command: &str) -> Option<String> {
         .map(|line| line.trim().to_string())
 }
 
-fn plugin_conflict_issue(tool: &KnownBijuxTool, plugin_registry_path: &Path) -> Option<String> {
-    let installed = list_plugins(plugin_registry_path).ok()?;
-    for plugin in installed {
-        let namespace = plugin.manifest.namespace.0;
-        if namespace == tool.namespace
-            || tool.aliases.iter().any(|alias| *alias == namespace)
-            || plugin.manifest.aliases.iter().any(|alias| {
-                alias == tool.namespace || tool.aliases.iter().any(|value| *value == alias)
-            })
+fn plugin_conflicts(tool: &KnownBijuxTool, plugin_registry_path: &Path) -> Vec<String> {
+    let Ok(installed) = list_plugins(plugin_registry_path) else {
+        return Vec::new();
+    };
+
+    installed
+        .into_iter()
+        .filter_map(|plugin| {
+            let namespace = plugin.manifest.namespace.0;
+            let collides = namespace == tool.namespace
+                || tool.aliases.iter().any(|alias| *alias == namespace)
+                || plugin.manifest.aliases.iter().any(|alias| {
+                    alias == tool.namespace || tool.aliases.iter().any(|value| *value == alias)
+                });
+            collides.then_some(namespace)
+        })
+        .collect()
+}
+
+fn query_match(tool: &KnownBijuxTool, query: &str) -> AppQueryMatch {
+    if crate::contracts::Namespace::normalize(query) == tool.namespace {
+        AppQueryMatch::Namespace
+    } else {
+        AppQueryMatch::Alias
+    }
+}
+
+fn resolution_policy(shadowed_plugins: &[String]) -> String {
+    if shadowed_plugins.is_empty() {
+        "standard_precedence".to_string()
+    } else {
+        "official_wins".to_string()
+    }
+}
+
+fn is_disabled_by_registry(tool: &KnownBijuxTool, probes: &mut Vec<AppProbe>) -> Result<bool, String> {
+    for candidate in disabled_registry_candidates() {
+        if !candidate.location.exists() {
+            continue;
+        }
+
+        let raw = fs::read_to_string(&candidate.location)
+            .map_err(|error| format!("failed to read disabled registry: {error}"))?;
+        let registry = serde_json::from_str::<DisabledProductsRegistry>(&raw)
+            .map_err(|error| format!("failed to parse disabled registry JSON: {error}"))?;
+        if registry.contains(tool.namespace)
+            || tool.aliases.iter().any(|alias| registry.contains(alias))
         {
-            return Some(format!(
-                "plugin registry advertises `{}` and collides with official app `{}`",
-                namespace, tool.namespace
-            ));
+            probes.push(AppProbe {
+                source: candidate.source,
+                location: candidate.location.display().to_string(),
+                status: "disabled".to_string(),
+                message: "product disabled by registry".to_string(),
+            });
+            return Ok(true);
         }
     }
-    None
+
+    Ok(false)
 }
 
 fn resolve_tool(
@@ -429,57 +594,90 @@ fn resolve_tool(
     let mut descriptor = tool.descriptor();
     let mut descriptor_source = AppDiscoverySource::CompiledOfficialRegistry;
     let mut health = AppHealth::Missing;
+    let mut shadowed_plugins = Vec::new();
     let mut issues = Vec::new();
     let mut probes = Vec::new();
     let discovery_paths = discovery_paths_for(tool.namespace, paths);
     let mut disabled = false;
 
-    for candidate in override_candidates(tool.namespace) {
-        if !candidate.location.exists() {
-            probes.push(AppProbe {
-                source: candidate.source,
-                location: candidate.location.display().to_string(),
-                status: "missing".to_string(),
-                message: "descriptor file not present".to_string(),
-            });
-            continue;
+    match is_disabled_by_registry(tool, &mut probes) {
+        Ok(true) => {
+            disabled = true;
         }
+        Ok(false) => {}
+        Err(error) => {
+            health = AppHealth::BadManifest;
+            issues.push(error.clone());
+            probes.push(AppProbe {
+                source: AppDiscoverySource::ProjectLocal,
+                location: "disabled.json".to_string(),
+                status: "bad_manifest".to_string(),
+                message: error,
+            });
+        }
+    }
 
-        match fs::read_to_string(&candidate.location) {
-            Ok(raw) => match serde_json::from_str::<ProductMountOverride>(&raw) {
-                Ok(overlay) => match apply_override(&mut descriptor, overlay.clone(), &candidate) {
-                    Ok(applied_or_disabled) => {
-                        descriptor_source = candidate.source;
-                        disabled = overlay.disabled.unwrap_or(false);
-                        probes.push(AppProbe {
-                            source: candidate.source,
-                            location: candidate.location.display().to_string(),
-                            status: "ok".to_string(),
-                            message: if disabled {
-                                "descriptor loaded and explicitly disabled".to_string()
-                            } else if applied_or_disabled {
-                                "descriptor loaded and applied".to_string()
-                            } else {
-                                "descriptor loaded with no changes".to_string()
-                            },
-                        });
-                        break;
-                    }
+    if !matches!(health, AppHealth::BadManifest) {
+        for candidate in override_candidates(tool.namespace) {
+            if !candidate.location.exists() {
+                probes.push(AppProbe {
+                    source: candidate.source,
+                    location: candidate.location.display().to_string(),
+                    status: "missing".to_string(),
+                    message: "descriptor file not present".to_string(),
+                });
+                continue;
+            }
+
+            match fs::read_to_string(&candidate.location) {
+                Ok(raw) => match serde_json::from_str::<ProductMountOverride>(&raw) {
+                    Ok(overlay) => match apply_override(&mut descriptor, overlay.clone(), &candidate)
+                    {
+                        Ok(applied_or_disabled) => {
+                            descriptor_source = candidate.source;
+                            disabled = disabled || overlay.disabled.unwrap_or(false);
+                            probes.push(AppProbe {
+                                source: candidate.source,
+                                location: candidate.location.display().to_string(),
+                                status: "ok".to_string(),
+                                message: if disabled {
+                                    "descriptor loaded and product is disabled".to_string()
+                                } else if applied_or_disabled {
+                                    "descriptor loaded and applied".to_string()
+                                } else {
+                                    "descriptor loaded with no changes".to_string()
+                                },
+                            });
+                            break;
+                        }
+                        Err(error) => {
+                            health = AppHealth::BadManifest;
+                            issues.push(error.clone());
+                            probes.push(AppProbe {
+                                source: candidate.source,
+                                location: candidate.location.display().to_string(),
+                                status: "bad_manifest".to_string(),
+                                message: error,
+                            });
+                            break;
+                        }
+                    },
                     Err(error) => {
                         health = AppHealth::BadManifest;
-                        issues.push(error.clone());
+                        let message = format!("failed to parse descriptor JSON: {error}");
+                        issues.push(message.clone());
                         probes.push(AppProbe {
                             source: candidate.source,
                             location: candidate.location.display().to_string(),
                             status: "bad_manifest".to_string(),
-                            message: error,
+                            message,
                         });
                         break;
                     }
                 },
                 Err(error) => {
                     health = AppHealth::BadManifest;
-                    let message = format!("failed to parse descriptor JSON: {error}");
+                    let message = format!("failed to read descriptor file: {error}");
                     issues.push(message.clone());
                     probes.push(AppProbe {
                         source: candidate.source,
@@ -489,18 +687,6 @@ fn resolve_tool(
                     });
                     break;
                 }
-            },
-            Err(error) => {
-                health = AppHealth::BadManifest;
-                let message = format!("failed to read descriptor file: {error}");
-                issues.push(message.clone());
-                probes.push(AppProbe {
-                    source: candidate.source,
-                    location: candidate.location.display().to_string(),
-                    status: "bad_manifest".to_string(),
-                    message,
-                });
-                break;
             }
         }
     }
@@ -512,6 +698,7 @@ fn resolve_tool(
             descriptor_source,
             runtime_resolution: None,
             health,
+            shadowed_plugins,
             issues,
             discovery_paths,
             probes,
@@ -520,7 +707,12 @@ fn resolve_tool(
         };
     }
 
-    if let Some(conflict) = plugin_conflict_issue(tool, &paths.plugin_registry_file) {
+    shadowed_plugins = plugin_conflicts(tool, &paths.plugin_registry_file);
+    if !shadowed_plugins.is_empty() {
+        let conflict = format!(
+            "plugin registry advertises conflicting plugin namespaces: {}",
+            shadowed_plugins.join(", ")
+        );
         probes.push(AppProbe {
             source: AppDiscoverySource::PluginRegistry,
             location: paths.plugin_registry_file.display().to_string(),
@@ -531,73 +723,207 @@ fn resolve_tool(
         health = AppHealth::Conflict;
     }
 
-    let runtime_command = descriptor.entrypoint.command.clone();
-    let resolved_binary = which_in_path(&runtime_command);
-    let runtime_resolution = resolved_binary.as_ref().map(|path| ResolvedAppCommand {
-        command: path.display().to_string(),
-        source: AppDiscoverySource::PathFallback,
-    });
+    let runtime_resolution = match descriptor.entrypoint.kind {
+        ProductEntrypointKind::Binary
+        | ProductEntrypointKind::PythonConsoleScript
+        | ProductEntrypointKind::PluginProcess => {
+            let runtime_command = descriptor.entrypoint.command.clone();
+            match which_in_path(&runtime_command) {
+                Some(path) if !is_executable(&path) => {
+                    health = AppHealth::PermissionDenied;
+                    issues.push(format!(
+                        "resolved entrypoint exists but is not executable: {}",
+                        path.display()
+                    ));
+                    probes.push(AppProbe {
+                        source: AppDiscoverySource::PathFallback,
+                        location: path.display().to_string(),
+                        status: "permission_denied".to_string(),
+                        message: "resolved entrypoint is not executable".to_string(),
+                    });
+                    Some(ResolvedAppCommand {
+                        command: path.display().to_string(),
+                        args: Vec::new(),
+                        display_command: path.display().to_string(),
+                        source: AppDiscoverySource::PathFallback,
+                        kind: descriptor.entrypoint.kind.clone(),
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
+                }
+                Some(path) => {
+                    probes.push(AppProbe {
+                        source: AppDiscoverySource::PathFallback,
+                        location: path.display().to_string(),
+                        status: "ok".to_string(),
+                        message: "runtime entrypoint resolved from PATH".to_string(),
+                    });
+                    if !matches!(health, AppHealth::Conflict) {
+                        health = AppHealth::Ok;
+                    }
+                    Some(ResolvedAppCommand {
+                        command: path.display().to_string(),
+                        args: Vec::new(),
+                        display_command: path.display().to_string(),
+                        source: AppDiscoverySource::PathFallback,
+                        kind: descriptor.entrypoint.kind.clone(),
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
+                }
+                None => {
+                    probes.push(AppProbe {
+                        source: AppDiscoverySource::PathFallback,
+                        location: runtime_command.clone(),
+                        status: "missing".to_string(),
+                        message: "runtime entrypoint was not found on PATH".to_string(),
+                    });
+                    if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
+                        health = AppHealth::Missing;
+                    }
+                    Some(ResolvedAppCommand {
+                        command: runtime_command.clone(),
+                        args: Vec::new(),
+                        display_command: runtime_command,
+                        source: AppDiscoverySource::PathFallback,
+                        kind: descriptor.entrypoint.kind.clone(),
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
+                }
+            }
+        }
+        ProductEntrypointKind::PythonModule => match resolve_python_interpreter() {
+            Some(path) if !is_executable(&path) => {
+                health = AppHealth::PermissionDenied;
+                issues.push(format!(
+                    "resolved python interpreter exists but is not executable: {}",
+                    path.display()
+                ));
+                probes.push(AppProbe {
+                    source: AppDiscoverySource::PathFallback,
+                    location: path.display().to_string(),
+                    status: "permission_denied".to_string(),
+                    message: "python interpreter is not executable".to_string(),
+                });
+                Some(ResolvedAppCommand {
+                    command: path.display().to_string(),
+                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
+                    display_command: format!(
+                        "{} -m {}",
+                        path.display(),
+                        descriptor.entrypoint.command
+                    ),
+                    source: AppDiscoverySource::PathFallback,
+                    kind: ProductEntrypointKind::PythonModule,
+                    namespace: tool.namespace.to_string(),
+                    descriptor: descriptor.clone(),
+                })
+            }
+            Some(path) => {
+                probes.push(AppProbe {
+                    source: AppDiscoverySource::PathFallback,
+                    location: path.display().to_string(),
+                    status: "ok".to_string(),
+                    message: "python module will be executed through resolved interpreter".to_string(),
+                });
+                if !matches!(health, AppHealth::Conflict) {
+                    health = AppHealth::Ok;
+                }
+                Some(ResolvedAppCommand {
+                    command: path.display().to_string(),
+                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
+                    display_command: format!(
+                        "{} -m {}",
+                        path.display(),
+                        descriptor.entrypoint.command
+                    ),
+                    source: AppDiscoverySource::PathFallback,
+                    kind: ProductEntrypointKind::PythonModule,
+                    namespace: tool.namespace.to_string(),
+                    descriptor: descriptor.clone(),
+                })
+            }
+            None => {
+                probes.push(AppProbe {
+                    source: AppDiscoverySource::PathFallback,
+                    location: "python3|python".to_string(),
+                    status: "missing".to_string(),
+                    message: "python interpreter was not found on PATH".to_string(),
+                });
+                if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
+                    health = AppHealth::Missing;
+                }
+                Some(ResolvedAppCommand {
+                    command: env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string()),
+                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
+                    display_command: format!(
+                        "{} -m {}",
+                        env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string()),
+                        descriptor.entrypoint.command
+                    ),
+                    source: AppDiscoverySource::PathFallback,
+                    kind: ProductEntrypointKind::PythonModule,
+                    namespace: tool.namespace.to_string(),
+                    descriptor: descriptor.clone(),
+                })
+            }
+        },
+        ProductEntrypointKind::EmbeddedRust => {
+            probes.push(AppProbe {
+                source: descriptor_source,
+                location: format!("embedded:{}", descriptor.entrypoint.command),
+                status: "ok".to_string(),
+                message: "embedded runtime handler is active".to_string(),
+            });
+            if !matches!(health, AppHealth::Conflict) {
+                health = AppHealth::Ok;
+            }
+            Some(ResolvedAppCommand {
+                command: descriptor.entrypoint.command.clone(),
+                args: Vec::new(),
+                display_command: format!("embedded:{}", descriptor.entrypoint.command),
+                source: descriptor_source,
+                kind: ProductEntrypointKind::EmbeddedRust,
+                namespace: tool.namespace.to_string(),
+                descriptor: descriptor.clone(),
+            })
+        }
+    };
 
     let mut version = descriptor.version.clone();
     let mut version_source = descriptor.version.as_ref().map(|_| "manifest".to_string());
 
-    match resolved_binary.as_ref() {
-        Some(path) if !is_executable(path) => {
-            health = AppHealth::PermissionDenied;
-            issues.push(format!(
-                "resolved entrypoint exists but is not executable: {}",
-                path.display()
-            ));
-            probes.push(AppProbe {
-                source: AppDiscoverySource::PathFallback,
-                location: path.display().to_string(),
-                status: "permission_denied".to_string(),
-                message: "resolved entrypoint is not executable".to_string(),
-            });
-        }
-        Some(path) => {
-            probes.push(AppProbe {
-                source: AppDiscoverySource::PathFallback,
-                location: path.display().to_string(),
-                status: "ok".to_string(),
-                message: "runtime entrypoint resolved from PATH".to_string(),
-            });
-            if config.probe_version && version.is_none() {
-                version = probe_version(&path.display().to_string());
+    if config.probe_version
+        && version.is_none()
+        && matches!(health, AppHealth::Ok | AppHealth::Conflict)
+    {
+        if let Some(invocation) = runtime_resolution.as_ref() {
+            if !matches!(invocation.kind, ProductEntrypointKind::EmbeddedRust) {
+                version = probe_version(invocation);
                 if version.is_some() {
                     version_source = Some("binary_probe".to_string());
                 }
-            }
-            if !matches!(health, AppHealth::Conflict) {
-                health = AppHealth::Ok;
-            }
-        }
-        None => {
-            probes.push(AppProbe {
-                source: AppDiscoverySource::PathFallback,
-                location: runtime_command.clone(),
-                status: "missing".to_string(),
-                message: "runtime entrypoint was not found on PATH".to_string(),
-            });
-            if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
-                health = AppHealth::Missing;
             }
         }
     }
 
     if config.probe_version
         && descriptor.version.is_some()
-        && resolved_binary.is_some()
         && matches!(health, AppHealth::Ok | AppHealth::Conflict)
     {
-        if let Some(probed_version) = probe_version(&runtime_command) {
-            if descriptor.version.as_deref() != Some(probed_version.as_str()) {
-                health = AppHealth::VersionMismatch;
-                issues.push(format!(
-                    "manifest version `{}` does not match runtime probe `{}`",
-                    descriptor.version.as_deref().unwrap_or_default(),
-                    probed_version
-                ));
+        if let Some(invocation) = runtime_resolution.as_ref() {
+            if !matches!(invocation.kind, ProductEntrypointKind::EmbeddedRust) {
+                if let Some(probed_version) = probe_version(invocation) {
+                    if descriptor.version.as_deref() != Some(probed_version.as_str()) {
+                        health = AppHealth::VersionMismatch;
+                        issues.push(format!(
+                            "manifest version `{}` does not match runtime probe `{}`",
+                            descriptor.version.as_deref().unwrap_or_default(),
+                            probed_version
+                        ));
+                    }
+                }
             }
         }
     }
@@ -607,6 +933,7 @@ fn resolve_tool(
         descriptor_source,
         runtime_resolution,
         health,
+        shadowed_plugins,
         issues,
         discovery_paths,
         probes,
@@ -626,17 +953,21 @@ fn status_from_healths(healths: &[AppHealth]) -> String {
 }
 
 fn mount_report(tool: &KnownBijuxTool, resolution: AppResolution) -> AppMountReport {
+    let resolution_policy = resolution_policy(&resolution.shadowed_plugins);
     AppMountReport {
         namespace: tool.namespace.to_string(),
         display_name: resolution.descriptor.display_name,
         aliases: resolution.descriptor.aliases.into_iter().map(|alias| alias.0).collect(),
         source: resolution.descriptor_source,
+        entrypoint_kind: resolution.descriptor.entrypoint.kind.clone(),
         entrypoint: resolution.descriptor.entrypoint.command,
         status: tool.status.to_string(),
         version: resolution.version,
         version_source: resolution.version_source,
         health: resolution.health,
-        resolved_entrypoint: resolution.runtime_resolution.map(|value| value.command),
+        resolved_entrypoint: resolution.runtime_resolution.map(|value| value.display_command),
+        resolution_policy,
+        shadowed_plugins: resolution.shadowed_plugins,
         capabilities: resolution.descriptor.capabilities,
         discovery_paths: resolution.discovery_paths,
         probes: resolution.probes,
@@ -683,9 +1014,17 @@ pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
     };
     let resolution = resolve_tool(tool, &paths, ResolutionConfig { probe_version: false });
     resolution.runtime_resolution.or_else(|| {
+        let descriptor = resolution.descriptor;
+        let command = descriptor.entrypoint.command.clone();
+        let kind = descriptor.entrypoint.kind.clone();
         Some(ResolvedAppCommand {
-            command: resolution.descriptor.entrypoint.command,
+            command: command.clone(),
+            args: Vec::new(),
+            display_command: command,
             source: resolution.descriptor_source,
+            kind,
+            namespace: tool.namespace.to_string(),
+            descriptor,
         })
     })
 }
@@ -693,10 +1032,52 @@ pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
 /// Resolve the control-plane command used for official app delegation.
 pub fn resolve_control_command(query: &str) -> Option<ResolvedAppCommand> {
     let tool = known_bijux_tool_by_query(query)?;
-    let command = tool.descriptor().control_entrypoint.command;
-    let resolved =
-        which_in_path(&command).map(|path| path.display().to_string()).unwrap_or(command);
-    Some(ResolvedAppCommand { command: resolved, source: AppDiscoverySource::PathFallback })
+    let descriptor = tool.descriptor();
+    let entrypoint = descriptor.control_entrypoint.clone();
+    match entrypoint.kind {
+        ProductEntrypointKind::Binary
+        | ProductEntrypointKind::PythonConsoleScript
+        | ProductEntrypointKind::PluginProcess => {
+            let command = entrypoint.command;
+            let resolved =
+                which_in_path(&command).map(|path| path.display().to_string()).unwrap_or(command);
+            Some(ResolvedAppCommand {
+                display_command: resolved.clone(),
+                command: resolved,
+                args: Vec::new(),
+                source: AppDiscoverySource::PathFallback,
+                kind: entrypoint.kind,
+                namespace: tool.namespace.to_string(),
+                descriptor,
+            })
+        }
+        ProductEntrypointKind::PythonModule => {
+            let interpreter = resolve_python_interpreter()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| {
+                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
+                });
+            let args = vec!["-m".to_string(), entrypoint.command.clone()];
+            Some(ResolvedAppCommand {
+                display_command: format_display_command(&interpreter, &args),
+                command: interpreter,
+                args,
+                source: AppDiscoverySource::PathFallback,
+                kind: ProductEntrypointKind::PythonModule,
+                namespace: tool.namespace.to_string(),
+                descriptor,
+            })
+        }
+        ProductEntrypointKind::EmbeddedRust => Some(ResolvedAppCommand {
+            display_command: format!("embedded:{}", entrypoint.command),
+            command: entrypoint.command,
+            args: Vec::new(),
+            source: AppDiscoverySource::CompiledOfficialRegistry,
+            kind: ProductEntrypointKind::EmbeddedRust,
+            namespace: tool.namespace.to_string(),
+            descriptor,
+        }),
+    }
 }
 
 /// Build root `apps list` output.
@@ -752,13 +1133,18 @@ pub fn app_which_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppWh
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
     let resolution = resolve_tool(tool, paths, ResolutionConfig { probe_version: false });
     let status = status_from_healths(&[resolution.health]);
+    let resolution_policy = resolution_policy(&resolution.shadowed_plugins);
     Ok(AppWhichReport {
         status,
         query: query.to_string(),
+        matched_via: query_match(tool, query),
         namespace: tool.namespace.to_string(),
         source: resolution.descriptor_source,
-        resolved_entrypoint: resolution.runtime_resolution.map(|value| value.command),
+        entrypoint_kind: resolution.descriptor.entrypoint.kind.clone(),
+        resolved_entrypoint: resolution.runtime_resolution.map(|value| value.display_command),
         health: resolution.health,
+        resolution_policy,
+        shadowed_plugins: resolution.shadowed_plugins,
         discovery_paths: resolution.discovery_paths,
         probes: resolution.probes,
         issues: resolution.issues,
@@ -776,6 +1162,7 @@ pub fn app_version_report(
     Ok(AppVersionReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
+        matched_via: query_match(tool, query),
         namespace: tool.namespace.to_string(),
         version: resolution.version,
         source: resolution.version_source,
@@ -795,7 +1182,9 @@ pub fn app_capabilities_report(
     Ok(AppCapabilitiesReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
+        matched_via: query_match(tool, query),
         namespace: tool.namespace.to_string(),
+        entrypoint_kind: resolution.descriptor.entrypoint.kind.clone(),
         capabilities: resolution.descriptor.capabilities,
         aliases: resolution.descriptor.aliases.into_iter().map(|alias| alias.0).collect(),
         source: resolution.descriptor_source,
