@@ -12,29 +12,18 @@ use serde_json::Value;
 use sha2 as _;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use tar as _;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
-    let output = Command::new("cargo")
-        .current_dir(cwd)
-        .env("RUSTFLAGS", "-Awarnings")
-        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
-        .args(["run", "-p", "bijux-dag-cli", "--", "dag"])
-        .args(args)
-        .output()
-        .expect("run dag command");
-    (
-        output.status.code().unwrap_or(1),
-        String::from_utf8_lossy(&output.stdout).to_string(),
-        String::from_utf8_lossy(&output.stderr).to_string(),
-    )
+    support::run_dag_command(args, cwd)
 }
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
@@ -78,12 +67,15 @@ fn replay_dry_run_and_prove_surfaces_are_machine_readable() {
             "--out",
             &output_path_string(&out_dir),
             "--dry-run",
+            "--sandbox",
             "--prove",
         ],
         &root,
     );
     assert!(dry["data"]["dry_run_plan"].is_object());
     assert!(dry["data"]["run_dir"].is_null());
+    assert_eq!(dry["data"]["dry_run_plan"]["sandbox_mode"], "isolated");
+    assert!(dry["data"]["dry_run_plan"]["planned_actions"].is_array());
 
     let proved = run_json(
         &[
@@ -102,6 +94,10 @@ fn replay_dry_run_and_prove_surfaces_are_machine_readable() {
     assert!(proved["data"]["run_dir"].is_string());
     assert!(proved["data"]["replay_proof"].is_object());
     assert!(proved["data"]["replay_proof"]["fidelity_level"].is_string());
+    assert!(proved["data"]["replay_proof"]["safety_level"].is_string());
+    assert!(proved["data"]["replay_proof"]["branch_decision_drift_nodes"].is_array());
+    assert!(proved["data"]["replay_proof"]["source_evidence_gaps"].is_array());
+    assert!(proved["data"]["replay_proof"]["replay_evidence_gaps"].is_array());
 }
 
 #[test]
@@ -140,6 +136,7 @@ fn replay_prove_reports_strict_equivalent_on_exact_pair() {
     );
     assert_eq!(proved["ok"], true);
     assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "strict_equivalent");
+    assert_eq!(proved["data"]["replay_proof"]["safety_level"], "equivalent");
 }
 
 #[test]
@@ -192,4 +189,5 @@ fn replay_prove_reports_diverged_on_corrupt_source_pair() {
     );
     assert_eq!(proved["ok"], true);
     assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "diverged");
+    assert_eq!(proved["data"]["replay_proof"]["safety_level"], "risky");
 }

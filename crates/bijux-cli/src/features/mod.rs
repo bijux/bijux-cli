@@ -2,6 +2,8 @@
 //! Feature modules containing business behavior and policies.
 
 /// Configuration domain logic and command behavior.
+pub mod apps;
+/// Configuration domain logic and command behavior.
 pub mod config;
 /// Read-only runtime diagnostics query providers.
 pub mod diagnostics;

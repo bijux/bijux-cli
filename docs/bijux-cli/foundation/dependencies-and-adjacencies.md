@@ -9,20 +9,21 @@ last_reviewed: 2026-04-06
 
 # Dependencies and Adjacencies
 
-`bijux-cli` depends on libraries for parsing, serialization, schema generation,
-error handling, and semver compatibility logic. It also has adjacency contracts
-with other workspace handbooks that should remain explicit.
+This page explains which dependencies shape CLI behavior and which neighboring
+surfaces the CLI should leave alone.
 
-## Visual Summary
+Most dependency churn is ordinary. The pages that matter are the ones where a
+dependency can change command grammar, payload shape, or plugin compatibility.
+
+## Dependency Map
 
 ```mermaid
-flowchart TD
-    cli["bijux-cli"] --> clap["clap parser model"]
-    cli --> serde["serde and serde_json"]
-    cli --> schemars["JSON schema generation"]
-    cli --> semver["plugin compatibility checks"]
-    cli --> anyhow["handler-level error plumbing"]
-    cli --> thiserror["typed route and parse errors"]
+flowchart LR
+    cli["bijux-cli"] --> parse["command parsing"]
+    cli --> payload["payload and schema contracts"]
+    cli --> plugin["plugin compatibility checks"]
+    cli --> errors["typed runtime errors"]
+    cli --> adjacent["adjacent workspace boundaries"]
 ```
 
 ## Runtime Dependencies with Contract Pressure
@@ -51,6 +52,12 @@ flowchart TD
 Any dependency update that changes parser grammar, payload encoding, schema
 shape, or semver comparison behavior requires targeted tests and handbook updates
 in the same pull request.
+
+## Reading Rule
+
+Use this page when a dependency bump or a new crate looks harmless at first but
+may shift command behavior, output contracts, or the line between the CLI and
+the rest of the workspace.
 
 ## Next Reads
 

@@ -38,6 +38,9 @@ fn engine_flow_executes_minimal_graph_and_materializes_run_dir() {
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run succeeds");
     assert!(run_dir.join("manifest.json").exists());
+    assert!(run_dir.join("manifest.finalized.json").exists());
+    assert!(run_dir.join(".run-complete.json").exists());
+    assert!(run_dir.join("run.schema.json").exists());
     assert!(run_dir.join("graph.snapshot.json").exists());
 }
 
@@ -47,7 +50,7 @@ fn scheduler_profile_is_deterministic_and_lexicographic() {
     let as_json = serde_json::to_value(profile).expect("serialize");
     assert_eq!(as_json["canonical_unit"], "node");
     assert_eq!(as_json["model"], "event_driven");
-    assert_eq!(as_json["ready_tie_break"], "lexicographic_node_id");
+    assert_eq!(as_json["ready_tie_break"], "priority_cpu_fit_then_node_id");
 }
 
 #[test]

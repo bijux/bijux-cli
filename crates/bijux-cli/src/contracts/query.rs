@@ -18,6 +18,7 @@ pub fn contracts_schema_query() -> ContractsSchemaQuery {
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
             "plugin-manifest-v2".to_string(),
+            "product-mount-descriptor-v1".to_string(),
         ],
         schema_version: "v2".to_string(),
     }

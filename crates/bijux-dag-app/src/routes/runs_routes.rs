@@ -111,26 +111,43 @@ pub(crate) fn handle_runs_command(
             println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::Diff { run_a, run_b, mode: _mode, explain } => {
-            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
+        RunsCommands::Diff { run_a, run_b, mode, node, explain } => {
+            let payload =
+                replay_service::run_diff_mode_payload(run_a, run_b, *mode, node.as_deref())?;
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.runs.diff",
                     true,
-                    serde_json::to_value(&diff).unwrap(),
+                    payload.clone(),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            print_human_diff(&serde_json::to_value(&diff).unwrap());
+            if matches!(mode, crate::commands::DiffModeArg::Semantic) {
+                print_human_diff(&payload);
+            } else {
+                println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            }
             if *explain {
-                println!("explain: graph fingerprint change implies cache invalidation");
-                println!("replay_reason: {}", diff.replay_equivalence.reason_report.summary);
-                if !diff.replay_equivalence.cause_groups.is_empty() {
+                if let Some(summary) = payload
+                    .get("root_cause_summary")
+                    .or_else(|| {
+                        payload
+                            .get("replay_equivalence")
+                            .and_then(|v| v.get("reason_report"))
+                            .and_then(|v| v.get("summary"))
+                    })
+                    .and_then(serde_json::Value::as_str)
+                {
+                    println!("replay_reason: {summary}");
+                }
+                if let Some(cause_groups) = payload.get("cause_groups").or_else(|| {
+                    payload.get("replay_equivalence").and_then(|v| v.get("cause_groups"))
+                }) {
                     println!(
                         "replay_cause_groups: {}",
-                        serde_json::to_string(&diff.replay_equivalence.cause_groups).unwrap()
+                        serde_json::to_string(cause_groups).unwrap()
                     );
                 }
             }

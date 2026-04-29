@@ -9,16 +9,19 @@ last_reviewed: 2026-04-06
 
 # Documentation Standard
 
-Maintainer documentation must be practical, testable, and consistent with the
-shared handbook format used across Bijux repositories.
+This page explains what makes the `bijux-dev` handbook readable and reliable.
 
-## Visual Summary
+The standard is not about decorative consistency. It exists so operational
+pages stay easy to scan, easy to verify, and easy to trust under real change.
+
+## Documentation Flow
 
 ```mermaid
 flowchart LR
-    structure[section structure contract] --> language_style[language and tone consistency]
-    language_style --> anchors[code anchors and examples]
-    anchors --> validation[docs-check validation]
+    structure["page structure"] --> language_style["language and tone"]
+    structure --> anchors["anchors and examples"]
+    language_style --> validation["docs-check validation"]
+    anchors --> validation
 ```
 
 ## Standards
@@ -35,6 +38,12 @@ flowchart LR
 - avoid hand-wavy phrasing that cannot be validated by commands or files
 - prefer short sentences that map directly to maintainer actions
 - keep remediation guidance concrete and ordered when incidents are involved
+
+## Reading Rule
+
+Use this page when a docs change feels technically correct but still reads
+poorly, or when a new handbook page needs the shortest path back to the local
+documentation contract.
 
 ## Required Alignment
 

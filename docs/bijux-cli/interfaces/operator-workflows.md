@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # Operator Workflows
 
-Operator workflows in `bijux-cli` focus on repeatable status checks, state
-management, plugin lifecycle control, and diagnostics-driven triage.
+This page explains the normal operator paths through the CLI when the goal is
+to inspect state, change state, or recover confidence.
 
-## Visual Summary
+The workflows are ordinary on purpose: check health, adjust state, verify the
+result, and keep the next run easier to explain.
+
+## Workflow Map
 
 ```mermaid
 flowchart LR
-    start["start session"] --> status["status and doctor"]
-    status --> state["config memory history workflows"]
-    state --> plugins["plugin lifecycle workflows"]
-    plugins --> verify["audit and diagnostics verification"]
+    start["start session"] --> status["health checks"]
+    status --> state["state review or config change"]
+    state --> plugins["plugin management if needed"]
+    plugins --> verify["audit and diagnostics follow-up"]
 ```
 
 ## Core Workflows
@@ -44,6 +47,11 @@ flowchart LR
 - `crates/bijux-cli/src/interface/cli/handlers/history.rs`
 - `crates/bijux-cli/src/interface/cli/handlers/memory.rs`
 - `crates/bijux-cli/src/interface/cli/handlers/plugins.rs`
+
+## Reading Rule
+
+Use this page when the question is not which single command exists, but which
+safe sequence gets an operator from uncertainty back to a verified state.
 
 ## Next Reads
 

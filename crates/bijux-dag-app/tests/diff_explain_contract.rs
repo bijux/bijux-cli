@@ -123,10 +123,27 @@ fn why_rerun_reports_equivalence_for_identical_runs() {
         .try_get_matches_from([
             "dag",
             "--json",
-            "why-rerun",
+            "diff",
+            "--mode",
+            "summary",
+            "--node",
+            "extract",
             run_a.to_string_lossy().as_ref(),
             run_b.to_string_lossy().as_ref(),
         ])
         .expect("parse");
     assert_eq!(dag_run(&cmd).expect("run"), std::process::ExitCode::SUCCESS);
+
+    let why = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "why-rerun",
+            "--node",
+            "extract",
+            run_a.to_string_lossy().as_ref(),
+            run_b.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert_eq!(dag_run(&why).expect("run"), std::process::ExitCode::SUCCESS);
 }

@@ -79,19 +79,14 @@ use crate::cli_model::command_name as dag_command_name;
 use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use bijux_dag_core::{
-    lower_graph_to_execution_plan, planner_diagnostics_from_error, Graph, GraphError, PlanOptions,
-    Severity, SPEC_VERSION,
-};
-use bijux_dag_runtime::{
-    adapter_registry_dump, build_plan, registered_adapters, CacheMode, Runtime, RuntimeConfig,
-};
+use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
+use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 #[cfg(test)]
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    AdaptersCommands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
-    HashCommands, MigrateCommands, PolicyCommands,
+    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
+    PolicyCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -355,6 +350,54 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ArtifactInspect { run_dir, artifact_id } => {
             routes::artifact_routes::handle_artifact_inspect_command(&cli, run_dir, artifact_id)
         }
+        Commands::Artifact { command } => {
+            routes::artifact_routes::handle_artifact_command(&cli, command)
+        }
+        Commands::ControlPlane { command } => {
+            routes::control_plane_routes::handle_control_plane_command(&cli, command)
+        }
+        Commands::StateStore { command } => {
+            routes::state_store_routes::handle_state_store_command(&cli, command)
+        }
+        Commands::Dataset { command } => {
+            routes::dataset_routes::handle_dataset_command(&cli, command)
+        }
+        Commands::Enterprise { command } => {
+            routes::enterprise_routes::handle_enterprise_command(&cli, command)
+        }
+        Commands::Fleet { command } => routes::fleet_routes::handle_fleet_command(&cli, command),
+        Commands::Governance { command } => {
+            routes::governance_routes::handle_governance_command(&cli, command)
+        }
+        Commands::Incident { command } => {
+            routes::incident_routes::handle_incident_command(&cli, command)
+        }
+        Commands::Lab { command } => match command {
+            commands::LabCommands::Federation { command } => {
+                routes::federation_routes::handle_federation_command(&cli, command)
+            }
+            commands::LabCommands::Incident { command } => {
+                routes::incident_routes::handle_incident_command(&cli, command)
+            }
+            commands::LabCommands::Enterprise { command } => {
+                routes::enterprise_routes::handle_enterprise_command(&cli, command)
+            }
+            commands::LabCommands::Release { command } => {
+                routes::release_routes::handle_release_command(&cli, command)
+            }
+            commands::LabCommands::Security { command } => {
+                routes::security_routes::handle_security_command(&cli, command)
+            }
+        },
+        Commands::Federation { command } => {
+            routes::federation_routes::handle_federation_command(&cli, command)
+        }
+        Commands::Security { command } => {
+            routes::security_routes::handle_security_command(&cli, command)
+        }
+        Commands::Release { command } => {
+            routes::release_routes::handle_release_command(&cli, command)
+        }
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -421,25 +464,34 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ShowEffectivePlan { dag } => {
+        Commands::ExplainPlan { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let plan = build_plan(&graph, &RuntimeConfig::default());
-            let payload = serde_json::to_value(&plan).map_err(|_| ExitCode::from(3))?;
+            let analysis = routes::plan_routes::build_default_planner_analysis(&graph)
+                .map_err(|_| ExitCode::from(3))?;
+            let payload = routes::plan_routes::plan_explain_payload(&analysis);
             if cli.json {
                 return emit_json(
                     &cli,
-                    "dag.show-effective-plan",
+                    "dag.explain-plan",
                     true,
                     payload,
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            for line in routes::plan_routes::concise_plan_lines(&analysis) {
+                println!("{line}");
+            }
             Ok(ExitCode::SUCCESS)
         }
         Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command),
+        Commands::Schedule { command } => {
+            routes::schedule_routes::handle_schedule_command(&cli, command)
+        }
+        Commands::Runtime { command } => {
+            routes::runtime_routes::handle_runtime_command(&cli, command)
+        }
         Commands::Graph { dag, format } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -465,6 +517,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_dir,
             out,
             dry_run,
+            sandbox,
             prove,
             reuse_cache,
             cache,
@@ -485,6 +538,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_dir,
             out,
             *dry_run,
+            *sandbox,
             *prove,
             *reuse_cache,
             *cache,
@@ -508,11 +562,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::prove_verify_routes::handle_proof_summary_command(&cli, run_dir)
         }
         Commands::Runs { command } => routes::runs_routes::handle_runs_command(&cli, command),
-        Commands::Diff { run_a, run_b, mode: _mode, explain } => {
-            routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff")
+        Commands::Diff { run_a, run_b, mode, node, explain } => {
+            routes::diff_routes::handle_diff_command(
+                &cli,
+                run_a,
+                run_b,
+                *mode,
+                node.as_deref(),
+                *explain,
+                "dag.diff",
+            )
         }
-        Commands::WhyRerun { run_a, run_b } => {
-            routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)
+        Commands::WhyRerun { run_a, run_b, node } => {
+            routes::diagnostics_routes::handle_why_rerun_command(
+                &cli,
+                run_a,
+                run_b,
+                node.as_deref(),
+            )
         }
         Commands::WhyCacheMissed {
             key,
@@ -531,6 +598,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "key": key,
                 "eligible": report["eligible"],
                 "reasons": report["reasons"],
+                "taxonomy": report["taxonomy"],
+                "key_components": report["key_components"],
+                "proof_verified": report["proof_verified"],
                 "meta": report["meta"]
             });
             if cli.json {
@@ -548,6 +618,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::TraceArtifact { run_dir, artifact_id } => {
             routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
+        }
+        Commands::TraceNode { run_dir, id } => {
+            routes::diagnostics_routes::handle_trace_node_command(&cli, run_dir, id)
         }
         Commands::Run {
             dag,
@@ -569,6 +642,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             cache,
             cache_dir,
             remote_cache_dir,
+            preflight_only,
+            explain_scheduling,
         } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
@@ -591,8 +666,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 cache: *cache,
                 cache_dir: cache_dir.clone(),
                 remote_cache_dir: remote_cache_dir.clone(),
+                preflight_only: *preflight_only,
+                explain_scheduling: *explain_scheduling,
             },
         ),
+        Commands::RunBundle { run_dir, out, redact } => {
+            routes::export_import_routes::handle_export_command(
+                &cli,
+                &Some(run_dir.clone()),
+                &None,
+                out,
+                false,
+                false,
+                false,
+                *redact,
+                true,
+                false,
+            )
+        }
         Commands::Explain { run_dir, node } => {
             routes::inspect_routes::handle_explain_command(&cli, run_dir, node)
         }
@@ -628,6 +719,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 return Err(ExitCode::from(3));
             }
             Ok(ExitCode::SUCCESS)
+        }
+        Commands::CommandCatalog { groups } => {
+            routes::command_routes::handle_command_catalog_command(&cli, *groups)
         }
         Commands::Migrate { command } => {
             let msg = match command {
@@ -861,78 +955,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
         },
-        Commands::Adapters { command } => match command {
-            AdaptersCommands::Ls => {
-                let adapters = registered_adapters();
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.ls",
-                        true,
-                        json!(adapters),
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                } else {
-                    for a in adapters {
-                        println!("{} {} effects={:?}", a.adapter_id, a.adapter_version, a.effects);
-                    }
-                }
-                Ok(ExitCode::SUCCESS)
-            }
-            AdaptersCommands::Dump => {
-                let data = adapter_registry_dump();
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.dump",
-                        true,
-                        data,
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                }
-                println!("{}", serde_json::to_string_pretty(&data).map_err(|_| ExitCode::from(3))?);
-                Ok(ExitCode::SUCCESS)
-            }
-            AdaptersCommands::Doctor => {
-                let docker = check_engine("docker");
-                let podman = check_engine("podman");
-                if cli.json {
-                    let ok = docker
-                        .get("status")
-                        .and_then(|v| v.as_str())
-                        .map(|v| v == "ok")
-                        .unwrap_or(false)
-                        || podman
-                            .get("status")
-                            .and_then(|v| v.as_str())
-                            .map(|v| v == "ok")
-                            .unwrap_or(false);
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.doctor",
-                        ok,
-                        json!({ "docker": docker, "podman": podman }),
-                        Vec::new(),
-                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
-                    );
-                } else {
-                    println!("docker: {}", docker["status"]);
-                    if let Some(v) = docker.get("version").and_then(|v| v.as_str()) {
-                        println!("docker_version: {}", v);
-                    }
-                    println!("podman: {}", podman["status"]);
-                    if let Some(v) = podman.get("version").and_then(|v| v.as_str()) {
-                        println!("podman_version: {}", v);
-                    }
-                }
-                if docker["status"] != "ok" && podman["status"] != "ok" {
-                    return Err(ExitCode::from(3));
-                }
-                Ok(ExitCode::SUCCESS)
-            }
-        },
+        Commands::Adapters { command } => {
+            routes::adapter_routes::handle_adapters_command(&cli, command)
+        }
         Commands::Export {
             run_dir,
             from_run,

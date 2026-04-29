@@ -97,7 +97,7 @@ fn render_template(text: &str) -> String {
 }
 
 fn expected_template_reserved_namespaces() -> BTreeSet<String> {
-    ["cli", "completion", "dev", "doctor", "help", "inspect", "plugins", "repl", "version"]
+    ["apps", "cli", "completion", "dev", "doctor", "help", "inspect", "plugins", "repl", "version"]
         .into_iter()
         .map(str::to_string)
         .chain(known_bijux_tool_namespaces().iter().map(|value| (*value).to_string()))

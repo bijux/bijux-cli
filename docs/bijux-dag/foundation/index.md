@@ -10,17 +10,17 @@ last_reviewed: 2026-04-06
 # DAG Foundation
 
 The foundation section defines DAG intent and limits before architecture or
-command details: mission, scope boundaries, domain vocabulary, lifecycle model,
-and change principles.
+command details. Start here when you need the mission, boundaries, vocabulary,
+and lifecycle model to make sense before reading execution or interface pages.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-flowchart TD
-    identity["package identity"] --> boundaries["ownership boundaries"]
-    boundaries --> language["domain language"]
-    language --> lifecycle["graph to replay lifecycle"]
-    lifecycle --> principles["change principles"]
+flowchart LR
+    foundation["DAG foundation"] --> identity["package identity"]
+    foundation --> boundaries["ownership boundaries"]
+    foundation --> language["domain language"]
+    foundation --> lifecycle["graph to replay lifecycle"]
 ```
 
 ## What This Section Covers
@@ -49,3 +49,8 @@ flowchart TD
 - [Lifecycle Overview](lifecycle-overview.md)
 - [Dependencies and Adjacencies](dependencies-and-adjacencies.md)
 - [Change Principles](change-principles.md)
+
+## Reading Rule
+
+Start here when the graph system itself is still unclear. Move to Architecture
+or Interfaces once the package purpose and boundaries already make sense.

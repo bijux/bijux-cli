@@ -9,17 +9,18 @@ last_reviewed: 2026-04-06
 
 # CLI Quality
 
-The quality section defines how `bijux-cli` changes are validated, reviewed, and
-documented before release.
+The quality section defines how `bijux-cli` changes are validated, reviewed,
+and documented before release.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    strategy["test strategy"] --> invariants["invariants"]
-    invariants --> review["review checklist"]
-    review --> docs["documentation standards"]
-    docs --> governance["change and dependency governance"]
+    quality["CLI quality"] --> strategy["test strategy"]
+    quality --> invariants["invariants"]
+    quality --> review["review checklist"]
+    quality --> docs["documentation standards"]
+    quality --> governance["change and dependency governance"]
 ```
 
 ## Quality Scope
@@ -48,3 +49,9 @@ flowchart LR
 - [Change Validation](change-validation.md)
 - [Known Limitations](known-limitations.md)
 - [Risk Register](risk-register.md)
+
+## Reading Rule
+
+Use this section when the question is about what proof is required before a
+change can be trusted. Move back to Operations when the next question is how to
+run the checks rather than what the checks must prove.

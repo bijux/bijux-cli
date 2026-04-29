@@ -9,16 +9,19 @@ last_reviewed: 2026-04-06
 
 # CI and Automation
 
-CI and automation policy ensures local workflows and hosted pipelines evaluate
-the same gates with predictable outcomes.
+This page explains how local workflows and hosted pipelines stay aligned in
+`bijux-core`.
 
-## Visual Summary
+The repository depends on that alignment because a green PR only means something
+when the same work can be reproduced before the push as well.
+
+## Automation Flow
 
 ```mermaid
 flowchart TD
-    local[local gate execution] --> pr[pr workflows]
-    pr --> required[required status checks]
-    required --> release[release workflow triggers]
+    local["local gate execution"] --> pr["PR workflows"]
+    pr --> required["required status checks"]
+    required --> release["release workflow triggers"]
 ```
 
 ## Automation Scope
@@ -41,6 +44,12 @@ Every required workflow must declare:
 - owning maintainer role
 - owning handbook page for remediation guidance
 - escalation path when the owner is unavailable
+
+## Reading Rule
+
+Use this page when the question is whether CI is enforcing the same contract the
+repository expects locally. Move to GitHub workflows or Repository Gates once
+the mismatch is narrowed to one workflow or gate family.
 
 ## Code Anchors
 

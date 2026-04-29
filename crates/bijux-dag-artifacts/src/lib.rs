@@ -237,12 +237,46 @@ pub fn write_provenance(path: impl AsRef<Path>, prov: &Provenance) -> Result<(),
     write_json_atomic(path, prov)
 }
 
+pub fn write_run_schema_index(
+    path: impl AsRef<Path>,
+    schema: &RunDirSchemaIndex,
+) -> Result<(), ArtifactError> {
+    write_json_atomic(path, schema)
+}
+
 pub fn write_inputs_index(dir: impl AsRef<Path>, index: &InputsIndex) -> Result<(), ArtifactError> {
     write_json_atomic(dir.as_ref().join("index.json"), index)
 }
 
 pub fn now_unix_ms() -> u128 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
+}
+
+pub fn build_artifact_identity(
+    run_id: &str,
+    node_id: &str,
+    output_path: &str,
+    node_fingerprint: &str,
+    artifact_sha256: &str,
+) -> ArtifactIdentity {
+    let output_name = Path::new(output_path)
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or(output_path)
+        .to_string();
+    let legacy_artifact_id = format!("{node_id}:{output_name}");
+    let canonical_artifact_id =
+        format!("run={run_id};node={node_id};path={output_path};sha256={artifact_sha256}");
+    ArtifactIdentity {
+        canonical_artifact_id,
+        legacy_artifact_id,
+        run_id: run_id.to_string(),
+        node_id: node_id.to_string(),
+        output_name,
+        output_path: output_path.to_string(),
+        node_fingerprint: node_fingerprint.to_string(),
+        artifact_sha256: artifact_sha256.to_string(),
+    }
 }
 
 fn generate_run_id() -> String {

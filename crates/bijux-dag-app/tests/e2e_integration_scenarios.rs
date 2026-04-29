@@ -21,8 +21,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+mod support;
+
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn write_graph(path: &Path, graph: &Graph) {
@@ -31,19 +33,7 @@ fn write_graph(path: &Path, graph: &Graph) {
 }
 
 fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
-    let output = Command::new("cargo")
-        .current_dir(cwd)
-        .env("RUSTFLAGS", "-Awarnings")
-        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
-        .args(["run", "-p", "bijux-dag-cli", "--", "dag"])
-        .args(args)
-        .output()
-        .expect("run dag command");
-    (
-        output.status.code().unwrap_or(1),
-        String::from_utf8_lossy(&output.stdout).to_string(),
-        String::from_utf8_lossy(&output.stderr).to_string(),
-    )
+    support::run_dag_command(args, cwd)
 }
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
@@ -444,6 +434,9 @@ fn e2e_container_and_real_world_orchestration() {
         graph.nodes.push(node);
         if idx > 0 {
             graph.edges.push(bijux_dag_core::Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
                 from: bijux_dag_core::PortRef {
                     node_id: format!("n{}", idx - 1),
                     port: "out".to_string(),

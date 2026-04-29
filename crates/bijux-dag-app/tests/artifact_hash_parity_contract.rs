@@ -12,12 +12,13 @@ use serde_json as _;
 use sha2 as _;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use tar as _;
 use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::{dag_command, dag_run};
+
+mod support;
 
 #[test]
 #[ignore = "slow"]
@@ -52,23 +53,11 @@ fn hash_artifact_cli_output_matches_internal_sha256() {
 }
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("workspace crates parent")
-        .parent()
-        .expect("workspace root")
-        .to_path_buf()
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn run_dag_json(args: &[&str], cwd: &Path) -> serde_json::Value {
-    let out = Command::new("cargo")
-        .current_dir(cwd)
-        .env("RUSTFLAGS", "-Awarnings")
-        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
-        .args(["run", "-p", "bijux-dag-cli", "--", "dag"])
-        .args(args)
-        .output()
-        .expect("run dag");
-    assert!(out.status.success(), "stderr={}", String::from_utf8_lossy(&out.stderr));
-    serde_json::from_slice(&out.stdout).expect("json stdout")
+    let out = support::run_dag_command(args, cwd);
+    assert_eq!(out.0, 0, "stderr={}", out.2);
+    serde_json::from_str(&out.1).expect("json stdout")
 }

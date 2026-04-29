@@ -9,21 +9,22 @@ last_reviewed: 2026-04-06
 
 # Runtime Surfaces
 
-Runtime surfaces define how users and automation interact with CLI and DAG
-behavior while preserving shared contracts.
+This page explains the public runtime surfaces that `bijux-core` exposes.
 
-## Visual Summary
+The important boundary is not just between commands. It is between user-facing
+behavior, DAG execution behavior, and the shared contracts that keep their
+outputs understandable to both people and automation.
+
+## Surface Map
 
 ```mermaid
 flowchart LR
-    user[User and automation] --> cli[bijux CLI surface]
-    user --> dag[bijux DAG surface]
-    cli --> handlers[CLI handlers and plugins]
-    dag --> routes[DAG routes]
-    routes --> engine[DAG runtime engine]
-    handlers --> envelopes[structured output envelopes]
-    engine --> envelopes
-    envelopes --> contracts[shared output contracts]
+    user["users and automation"] --> cli["CLI surface"]
+    user --> dag["DAG surface"]
+    cli --> handlers["handlers and plugins"]
+    dag --> engine["routes and runtime"]
+    handlers --> contracts["shared output contracts"]
+    engine --> contracts
 ```
 
 ## Surface Contract
@@ -44,6 +45,11 @@ flowchart LR
 1. does this change alter public command meaning?
 2. does it change output schema or reason-code vocabulary?
 3. are docs and contract tests updated in the same change set?
+
+## Reading Rule
+
+Use this page when the question is which runtime-facing surface a behavior
+belongs to before drilling into CLI or DAG specifics.
 
 ## Code Anchors
 

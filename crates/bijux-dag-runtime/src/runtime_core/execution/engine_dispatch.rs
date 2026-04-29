@@ -37,8 +37,12 @@ mod tests {
         ) -> ScheduleDecision {
             self.seen_cancel_flag = Some(cancellation_requested);
             ScheduleDecision {
+                ready_candidates: vec!["n1".to_string()],
                 batch: vec!["n1".to_string()],
                 blocked_by_budget: vec![],
+                blocked_reasons: std::collections::BTreeMap::new(),
+                decision_reason: "test".to_string(),
+                tie_break_reason: Some("lexicographic".to_string()),
                 timed_out: false,
                 cancelled: cancellation_requested,
             }

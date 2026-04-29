@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # Repository Gates
 
-Repository gates ensure CLI, DAG, docs, and maintainer changes are verified with
-shared entrypoints before merge.
+This page explains the gate structure that protects `bijux-core` before merge.
 
-## Visual Summary
+The gates are shared on purpose. They let reviewers see the same proof locally,
+in CI, and in release preparation instead of depending on one narrow signal.
+
+## Gate Flow
 
 ```mermaid
 flowchart TD
-    change[proposed change] --> local[local gate run]
-    local --> ci[ci gate run]
-    ci --> review[review evidence]
-    review --> merge[merge decision]
+    change["proposed change"] --> local["local gate run"]
+    change --> ci["CI gate run"]
+    local --> review["review evidence"]
+    ci --> review
+    review --> merge["merge decision"]
 ```
 
 ## Gate Layers
@@ -49,6 +52,12 @@ When a gate fails, classify first before retrying:
 
 Classification controls which maintainer commands and handbook pages to use
 next.
+
+## Reading Rule
+
+Use this page when a failure is real but the right gate family is still unclear.
+Move to the more specific operations pages once the failure is clearly about
+docs, automation, contracts, or release work.
 
 ## Code Anchors
 

@@ -9,32 +9,24 @@ last_reviewed: 2026-04-06
 
 # Dependency Direction
 
-Dependency direction keeps program behavior stable by enforcing which crates may
-depend on which layers.
+This page explains which dependency moves the repository treats as normal and
+which ones it treats as architectural drift.
 
-## Visual Summary
+The goal is not purity for its own sake. Direction matters because it keeps
+runtime behavior, DAG behavior, and maintainer proof from collapsing into one
+another.
+
+## Dependency Map
 
 ```mermaid
-flowchart TB
-    entry[Entrypoints: bijux-cli, bijux-dag-cli]
-    app[Application: bijux-dag-app]
-    domain[Domain/runtime: bijux-dag-core and bijux-dag-runtime]
-    ports[Contracts and shared interfaces]
-    adapters[External adapters]
-    store[Persistence/artifacts: bijux-dag-artifacts]
-    maintain[Maintainer layer: bijux-dev]
-
-    entry --> app
-    app --> domain
-    domain --> ports
-    adapters --> ports
-    adapters --> store
-    maintain --> entry
+flowchart LR
+    entry["entrypoints"] --> app["application layer"]
+    app --> domain["runtime and DAG domain"]
+    domain --> ports["contracts and interfaces"]
+    adapters["external adapters"] --> ports
+    adapters --> store["artifacts and persistence"]
+    maintain["maintainer layer"] --> entry
     maintain --> app
-
-    entry -. forbidden .-> store
-    store -. forbidden .-> domain
-    domain -. forbidden .-> maintain
 ```
 
 ## Direction Rules
@@ -49,6 +41,11 @@ flowchart TB
 - runtime crate importing maintainer-specific modules
 - DAG core importing app-route modules
 - duplicate policy logic in multiple binary entrypoints
+
+## Reading Rule
+
+Use this page when a new dependency feels convenient but might weaken the
+repository split.
 
 ## Code Anchors
 

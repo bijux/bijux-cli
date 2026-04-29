@@ -9,22 +9,23 @@ last_reviewed: 2026-04-06
 
 # Definition Of Done
 
-A DAG change is done only when behavior, evidence, and documentation are all
-updated and coherent.
+This page explains when a DAG change is actually finished.
 
-## Visual Summary
+For DAG work, "done" has to cover more than code correctness. The repository
+also needs trustworthy evidence, updated docs, and a review path that can
+defend the result later.
+
+## Done Flow
 
 ```mermaid
-flowchart TD
-  Work[Proposed complete work] --> Code{Code correct and owned?}
-  Code -->|No| Rework[Rework]
-  Code -->|Yes| Tests{Tests and validation complete?}
-  Tests -->|No| Rework
-  Tests -->|Yes| Docs{Docs and links updated?}
-  Docs -->|No| Rework
-  Docs -->|Yes| Review{Review checklist passed?}
-  Review -->|No| Rework
-  Review -->|Yes| Done[Done]
+flowchart LR
+  work["proposed complete work"] --> code["owned behavior"]
+  work --> tests["tests and validation"]
+  work --> docs["docs and links"]
+  code --> review["review checklist"]
+  tests --> review
+  docs --> review
+  review --> done["done"]
 ```
 
 ## Done Criteria
@@ -40,6 +41,11 @@ flowchart TD
 - tests missing for behavior-changing logic
 - docs references stale command names or code anchors
 - compatibility-sensitive behavior changed without explicit statement
+
+## Reading Rule
+
+Use this page when a DAG change is close to merge but the review still needs a
+clear standard for what complete work actually means.
 
 ## Next Reads
 

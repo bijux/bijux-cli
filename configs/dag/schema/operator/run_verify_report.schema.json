@@ -2,19 +2,55 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "run_verify_report",
   "type": "object",
-  "required": ["status", "mode", "artifacts_checked", "errors", "invariant_violations"],
+  "required": [
+    "status",
+    "mode",
+    "artifacts_checked",
+    "evidence_completeness",
+    "lineage_completeness",
+    "event_log_completeness",
+    "errors",
+    "invariant_violations"
+  ],
   "properties": {
     "status": { "type": "string", "enum": ["ok", "error"] },
     "mode": { "type": "string", "enum": ["standard", "deep", "strict"] },
     "artifacts_checked": {
       "type": "object",
-      "required": ["manifest", "outputs_index", "outputs_files"],
+      "required": [
+        "manifest",
+        "outputs_index",
+        "outputs_files",
+        "schema_index",
+        "manifest_finalized",
+        "run_complete_marker"
+      ],
       "properties": {
         "manifest": { "type": "boolean" },
         "outputs_index": { "type": "boolean" },
-        "outputs_files": { "type": "integer", "minimum": 0 }
+        "outputs_files": { "type": "integer", "minimum": 0 },
+        "schema_index": { "type": "boolean" },
+        "manifest_finalized": { "type": "boolean" },
+        "run_complete_marker": { "type": "boolean" }
       }
     },
+    "evidence_completeness": {
+      "type": "object",
+      "required": ["required_root_files", "missing_root_files", "per_node"],
+      "properties": {
+        "required_root_files": { "type": "object" },
+        "missing_root_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "per_node": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "lineage_completeness": { "type": "object" },
+    "event_log_completeness": { "type": "object" },
     "errors": { "type": "array", "items": { "type": "string" } },
     "invariant_violations": { "type": "array", "items": { "type": "string" } }
   },

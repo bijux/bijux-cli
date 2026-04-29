@@ -9,23 +9,23 @@ last_reviewed: 2026-04-06
 
 # Dev Governance
 
-This section defines maintainership governance for `bijux-dev` command behavior,
-quality expectations, and policy controls.
+This section defines maintainership governance for `bijux-dev` command
+behavior, quality expectations, and policy controls.
 
 Use this section for policy and boundary questions. Use
 [Dev Operations](../operations/index.md) for runbooks and evidence flows,
 [makes](../makes/index.md) for root command entrypoints, and
 [gh-workflows](../gh-workflows/index.md) for hosted automation triggers.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    ownership[ownership model] --> quality[quality policy]
-    quality --> tests[test policy]
-    tests --> change[change control]
-    change --> contracts[contract governance]
-    contracts --> limits[known limitations]
+    governance["Dev governance"] --> ownership["ownership model"]
+    governance --> quality["quality policy"]
+    governance --> tests["test policy"]
+    governance --> change["change control"]
+    governance --> contracts["contract governance"]
 ```
 
 ## Pages In This Section
@@ -45,3 +45,9 @@ flowchart LR
 - [Dev Operations](../operations/index.md)
 - [makes](../makes/index.md)
 - [gh-workflows](../gh-workflows/index.md)
+
+## Reading Rule
+
+Use this section when the question is about which maintainer rule applies or
+how a policy boundary is defined. Move to Dev Operations when the rule is clear
+and the next question is how to execute it.

@@ -32,6 +32,8 @@ fn lib_routes_command_families_through_route_modules() {
         fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
     for token in [
         "routes::validate_routes::handle_validate_command",
+        "routes::command_routes::handle_command_catalog_command",
+        "routes::adapter_routes::handle_adapters_command",
         "routes::plan_routes::handle_plan_command",
         "routes::run_routes::handle_run_command",
         "routes::inspect_routes::handle_explain_command",
@@ -56,6 +58,8 @@ fn extracted_route_modules_exist_for_command_families() {
     let root = repo_root();
     for rel in [
         "crates/bijux-dag-app/src/routes/export_import_routes.rs",
+        "crates/bijux-dag-app/src/routes/command_routes.rs",
+        "crates/bijux-dag-app/src/routes/adapter_routes.rs",
         "crates/bijux-dag-app/src/routes/artifact_routes.rs",
         "crates/bijux-dag-app/src/routes/inspect_routes.rs",
         "crates/bijux-dag-app/src/routes/replay_routes.rs",

@@ -30,12 +30,96 @@ pub struct GenericBatchExecutorContract {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlurmAdapterDesignContractReport {
+    pub contract: SlurmExecutorContract,
+    pub submit_status_cancel_documented: bool,
+    pub log_collection_mode: String,
+    pub artifact_collection_mode: String,
+    pub failure_mapping_examples: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KubernetesAdapterContractReport {
+    pub contract: KubernetesExecutorContractV2,
+    pub job_spec_mapping: String,
+    pub pod_status_mapping: String,
+    pub log_collection_mode: String,
+    pub artifact_collection_mode: String,
+    pub timeout_cancel_behavior: String,
+    pub unsupported_field_rejection: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackendCapabilityDescriptor {
     pub cpu_class: String,
     pub memory_class: String,
     pub gpu_class: Option<String>,
     pub ephemeral_storage_class: String,
     pub network_class: String,
+}
+
+pub fn slurm_adapter_design_contract() -> SlurmAdapterDesignContractReport {
+    SlurmAdapterDesignContractReport {
+        contract: SlurmExecutorContract {
+            partition: "cpu-standard".to_string(),
+            submit_command: "sbatch".to_string(),
+            poll_command: "sacct".to_string(),
+            cancel_command: "scancel".to_string(),
+            result_mapping: "slurm-exit-code-and-state".to_string(),
+        },
+        submit_status_cancel_documented: true,
+        log_collection_mode: hpc_log_collection_semantics(2).mode,
+        artifact_collection_mode: "stage outputs from scratch to run-dir artifact store"
+            .to_string(),
+        failure_mapping_examples: BTreeMap::from([
+            (
+                "SLURM_WALLTIME_EXCEEDED".to_string(),
+                classify_hpc_failure("SLURM_WALLTIME_EXCEEDED").runtime_failure_kind,
+            ),
+            (
+                "SLURM_PREEMPTED".to_string(),
+                classify_hpc_failure("SLURM_PREEMPTED").runtime_failure_kind,
+            ),
+            (
+                "SLURM_INVALID_ACCOUNT".to_string(),
+                classify_hpc_failure("SLURM_INVALID_ACCOUNT").runtime_failure_kind,
+            ),
+        ]),
+    }
+}
+
+pub fn kubernetes_adapter_contract() -> KubernetesAdapterContractReport {
+    KubernetesAdapterContractReport {
+        contract: KubernetesExecutorContractV2 {
+            namespace: "bijux-dag".to_string(),
+            pod_spec_source: "generated-job-spec".to_string(),
+            image_resolution_policy: "digest-pinned".to_string(),
+            artifact_flow: "mount-workdir-and-collect-outputs".to_string(),
+            log_flow: "stdout-stderr-pod-log-stream".to_string(),
+            cancellation_behavior: "delete-job-with-grace-period".to_string(),
+        },
+        job_spec_mapping:
+            "node resources and retry policy map into Job requests, limits, deadline, and backoff"
+                .to_string(),
+        pod_status_mapping:
+            "terminal pod phases reconcile into runtime success/failure with retry classification"
+                .to_string(),
+        log_collection_mode: "stdout/stderr streamed from pod logs and copied into node evidence"
+            .to_string(),
+        artifact_collection_mode:
+            "declared output files collected from mounted workdir after terminal pod state"
+                .to_string(),
+        timeout_cancel_behavior:
+            "active deadline seconds and termination grace map from node timeout and cancel policy"
+                .to_string(),
+        unsupported_field_rejection: vec![
+            "hostNetwork".to_string(),
+            "hostPID".to_string(),
+            "privileged".to_string(),
+            "hostPath".to_string(),
+            "runtimeClassName".to_string(),
+        ],
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -10,23 +10,18 @@ last_reviewed: 2026-04-06
 # DAG Interfaces
 
 The interfaces section defines what operators and integrators can rely on:
-command surfaces, crate APIs, config/policy surfaces, and identity-bearing data
-contracts.
+command surfaces, crate APIs, config and policy surfaces, and identity-bearing
+data contracts.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-mindmap
-  root((DAG Interfaces))
-    CLI Surface
-    API Surface
-    Configuration Surface
-    Data Contracts
-    Artifact Contracts
-    Public Imports
-    Compatibility Commitments
-    Operator Workflows
-    Entrypoints and Examples
+flowchart LR
+    interfaces["DAG interfaces"] --> cli["CLI surface"]
+    interfaces --> api["API surface"]
+    interfaces --> config["configuration surface"]
+    interfaces --> data["data and artifact contracts"]
+    interfaces --> compatibility["compatibility commitments"]
 ```
 
 ## Interface Scope
@@ -55,3 +50,9 @@ mindmap
 - [Operator Workflows](operator-workflows.md)
 - [Public Imports](public-imports.md)
 - [Compatibility Commitments](compatibility-commitments.md)
+
+## Reading Rule
+
+Use this section when the question is about what operators, tools, or other
+crates can depend on. Move back to Architecture when the next question is about
+engine structure instead of public contracts.

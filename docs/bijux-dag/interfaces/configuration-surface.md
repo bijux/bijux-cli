@@ -9,24 +9,21 @@ last_reviewed: 2026-04-06
 
 # Configuration Surface
 
-DAG configuration controls runtime behavior, policy interpretation, cache mode,
-and execution materialization choices.
+This page explains the settings that shape how DAG work is interpreted and run.
 
-## Visual Summary
+The real contract is not just precedence. It is that effective policy stays
+visible enough for replay, diff, and incident review.
+
+## Configuration Flow
 
 ```mermaid
-flowchart TD
-    start[Start configuration load] --> sources[Read sources]
-    sources --> defaults[Defaults]
-    sources --> file[Config file]
-    sources --> env[Environment]
-    sources --> flags[CLI flags]
-    defaults --> merge[Merge precedence]
-    file --> merge
-    env --> merge
-    flags --> merge
-    merge --> validate[Validate]
-    validate --> effective[Effective config]
+flowchart LR
+    defaults["defaults"] --> merge["merge precedence"]
+    file["config file"] --> merge
+    env["environment"] --> merge
+    flags["cli flags"] --> merge
+    merge --> validate["policy validation"]
+    validate --> effective["effective config"]
 ```
 
 ## Configuration Inputs
@@ -54,6 +51,12 @@ flowchart TD
 - effective config must be inspectable and explainable
 - policy effects must be visible in replay/diff context
 - defaults must not silently weaken safety or determinism expectations
+
+## Reading Rule
+
+Use this page when a DAG outcome depends on settings and the hard part is
+working out whether the source of truth is defaults, files, environment, flags,
+or policy validation.
 
 ## Next Reads
 

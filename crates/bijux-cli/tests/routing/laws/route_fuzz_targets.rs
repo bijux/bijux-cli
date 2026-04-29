@@ -89,7 +89,7 @@ fn fuzz_normalized_collision_registration_rejects_equivalent_namespaces() {
 fn fuzz_hidden_alias_collision_registration_rejects_alias_roots() {
     let mut registry = RouteRegistry::default();
 
-    for blocked in ["config", "doctor", "inspect", "plugins", "cli", "version"] {
+    for blocked in ["apps", "config", "doctor", "inspect", "plugins", "cli", "version"] {
         let err = registry
             .register_plugin_namespace(blocked)
             .expect_err("alias/root collision must be rejected");

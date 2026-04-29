@@ -9,18 +9,21 @@ last_reviewed: 2026-04-06
 
 # Capability Map
 
-This page lists the major capabilities `bijux-cli` currently provides and maps
-those capabilities to concrete source areas.
+This page explains what `bijux-cli` is meant to do before it explains how the
+code is arranged.
 
-## Visual Summary
+The map is useful because it separates first-class runtime capabilities from the
+implementation details that support them.
+
+## Capability Map
 
 ```mermaid
-flowchart TB
-    runtime["Runtime capabilities"] --> parse["command parsing and normalization"]
-    runtime --> routes["route resolution and alias rewrites"]
-    runtime --> handlers["config, plugins, history, memory handlers"]
-    runtime --> output["structured output and error shaping"]
-    runtime --> diagnostics["status, doctor, audit diagnostics"]
+flowchart LR
+    runtime["CLI runtime"] --> parse["parsing and normalization"]
+    runtime --> routes["route resolution"]
+    runtime --> handlers["built-in handlers"]
+    runtime --> output["output and error shaping"]
+    runtime --> diagnostics["status and audit diagnostics"]
 ```
 
 ## Capability Inventory
@@ -52,6 +55,11 @@ flowchart TB
 - what a user or automation script can expect from the current CLI runtime
 - which features are first-class capabilities versus implementation details
 - where to start code review for each major command domain
+
+## Reading Rule
+
+Use this page when the question is what the CLI is responsible for before
+looking at package, module, or command-level detail.
 
 ## Next Reads
 

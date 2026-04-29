@@ -1,3 +1,4 @@
+use crate::adapter::CacheCompatibilityMode;
 use crate::adapter::{AdapterDescriptor, AdapterOrigin, EffectSet};
 use crate::adapter_conformance::validate_descriptor;
 
@@ -10,6 +11,11 @@ fn adapter_descriptor_requires_identity_and_schema_version() {
         required_effects: EffectSet::default(),
         produces_outputs_schema_version: "".to_string(),
         origin: AdapterOrigin::BuiltIn,
+        protocol_version: "".to_string(),
+        cache_compatibility: CacheCompatibilityMode::FingerprintExact,
+        supports_timeout: true,
+        supports_cancel: false,
+        binary_hash: None,
     };
     let report = validate_descriptor(&descriptor);
     assert!(!report.passed);
@@ -25,6 +31,11 @@ fn external_adapter_requires_effect_declaration() {
         required_effects: EffectSet::default(),
         produces_outputs_schema_version: "v0.1".to_string(),
         origin: AdapterOrigin::External,
+        protocol_version: "bijux-dag-adapter/v1".to_string(),
+        cache_compatibility: CacheCompatibilityMode::FingerprintExact,
+        supports_timeout: true,
+        supports_cancel: false,
+        binary_hash: None,
     };
     let report = validate_descriptor(&descriptor);
     assert!(!report.passed);
@@ -40,6 +51,11 @@ fn built_in_descriptor_can_pass_with_minimum_contract() {
         required_effects: EffectSet::default(),
         produces_outputs_schema_version: "v0.1".to_string(),
         origin: AdapterOrigin::BuiltIn,
+        protocol_version: "bijux-dag-adapter/v1".to_string(),
+        cache_compatibility: CacheCompatibilityMode::FingerprintExact,
+        supports_timeout: true,
+        supports_cancel: false,
+        binary_hash: None,
     };
     let report = validate_descriptor(&descriptor);
     assert!(report.passed);

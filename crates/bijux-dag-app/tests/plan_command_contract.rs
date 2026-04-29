@@ -65,3 +65,264 @@ fn plan_diagnostics_supports_json_payload() {
     let payload: Value = serde_json::json!({"assertion":"routing only"});
     assert!(payload.is_object());
 }
+
+#[test]
+fn plan_diff_supports_json_output() {
+    let (_before_dir, before) = write_graph_fixture();
+    let after_dir = tempfile::tempdir().expect("tmp");
+    let after = after_dir.path().join("graph-tagged.json");
+    fs::write(
+        &after,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-cmd-tagged","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"tags":["critical"],"params":{"value":"1"}},
+            {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"}}
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("write graph");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "plan",
+            "diff",
+            before.to_string_lossy().as_ref(),
+            after.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn show_effective_plan_supports_json_output() {
+    let (_dir, dag) = write_graph_fixture();
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "show-effective-plan",
+            dag.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_validate_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "nightly-catalog",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Cron": {
+                  "expression": "0 2 * * *",
+                  "timezone": "UTC"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "validate",
+            registry.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_compile_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "nightly-catalog",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Cron": {
+                  "expression": "0 2 * * *",
+                  "timezone": "UTC"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "compile",
+            registry.to_string_lossy().as_ref(),
+            "--schedule-id",
+            "nightly-catalog",
+            "--requested-unix-ms",
+            "42",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn plan_closure_supports_json_output() {
+    let (_dir, dag) = write_graph_fixture();
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "plan",
+            "closure",
+            dag.to_string_lossy().as_ref(),
+            "--select",
+            "b",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn plan_backfill_supports_json_output() {
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "plan",
+            "backfill",
+            "--window-start-unix-ms",
+            "100",
+            "--window-end-unix-ms",
+            "300",
+            "--partition-key",
+            "sample-a",
+            "--partition-key",
+            "sample-b",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_audit_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "nightly-catalog",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Cron": {
+                  "expression": "0 2 * * *",
+                  "timezone": "UTC"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "audit",
+            registry.to_string_lossy().as_ref(),
+            "--now-unix-ms",
+            "1000",
+            "--next-runs",
+            "2",
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_dedup_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let events = dir.path().join("events.json");
+    fs::write(&events, r#"{ "events": ["evt-1", "evt-1", "evt-2"] }"#).expect("write events");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "schedule",
+            "dedup",
+            events.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = dag_run(&matches).expect("run");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}

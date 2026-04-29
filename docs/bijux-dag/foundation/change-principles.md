@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # Change Principles
 
-DAG change quality depends on explicit tradeoffs. These principles preserve
-contract clarity while the implementation evolves.
+This page explains the rules that keep DAG change moving without making runs,
+artifacts, or replay behavior less trustworthy.
 
-## Visual Summary
+The DAG surface changes more slowly than the CLI, but when it moves, the
+semantic cost is usually higher and needs to stay visible.
+
+## Change Flow
 
 ```mermaid
 flowchart LR
-    proposal["change proposal"] --> classify["classify contract impact"]
+    proposal["proposed change"] --> classify["classify semantic impact"]
     classify --> evidence["tests and docs evidence"]
-    evidence --> review["scope and compatibility review"]
-    review --> release["release decision with explicit risk"]
+    evidence --> review["runtime and artifact review"]
+    review --> release["explicit release risk if needed"]
 ```
 
 ## Principles
@@ -43,6 +46,11 @@ flowchart LR
 - `crates/bijux-dag-runtime/src/replay/`
 - `crates/bijux-dag-runtime/src/runtime_core/`
 - `crates/bijux-dag-artifacts/src/integrity/`
+
+## Reading Rule
+
+Use this page when a DAG change looks local in one crate but could alter graph
+identity, replay truth, artifact lineage, or operator expectations.
 
 ## Next Reads
 

@@ -132,14 +132,21 @@ fn artifact_identity_explain_covers_provenance_and_lineage_traversal() {
 
     assert_eq!(inspected["node_id"], "extract");
     assert_eq!(inspected["provenance"]["run_id"], "run-1");
+    assert_eq!(inspected["legacy_artifact_id"], "extract:data.csv");
     assert_eq!(inspected["lineage"]["upstream_artifact_ids"][0], "source:input.csv");
     assert_eq!(inspected["lineage"]["downstream_artifact_ids"][0], "train:model.bin");
 
     let explain = &inspected["identity_explain"];
-    assert_eq!(explain["artifact_id"], "extract:data.csv");
+    assert_eq!(explain["legacy_artifact_id"], "extract:data.csv");
+    assert!(explain["artifact_id"]
+        .as_str()
+        .expect("canonical artifact id")
+        .starts_with("run=run-1;node=extract;path=nodes/extract/outputs/data.csv;sha256="));
     assert_eq!(explain["composed_from"]["run_id"], "run-1");
     assert_eq!(explain["composed_from"]["node_id"], "extract");
+    assert_eq!(explain["composed_from"]["output_name"], "data.csv");
     assert_eq!(explain["hash_algorithm"], "sha256");
+    assert_eq!(explain["collision_safe"], true);
 }
 
 #[test]
@@ -165,6 +172,16 @@ fn provenance_serialization_is_stable_for_repeated_inspection() {
     let first_json = serde_json::to_string(&first).expect("serialize first");
     let second_json = serde_json::to_string(&second).expect("serialize second");
     assert_eq!(first_json, second_json);
+}
+
+#[test]
+fn canonical_artifact_id_is_accepted_for_lookup() {
+    let (_tmp, run) = setup_run_with_lineage();
+    let legacy = inspect_artifact(&run, "extract:data.csv").expect("legacy inspect");
+    let canonical_id = legacy["artifact_id"].as_str().expect("canonical id").to_string();
+    let canonical = inspect_artifact(&run, &canonical_id).expect("canonical inspect");
+    assert_eq!(canonical["artifact_id"], legacy["artifact_id"]);
+    assert_eq!(canonical["legacy_artifact_id"], "extract:data.csv");
 }
 
 #[test]
@@ -244,6 +261,9 @@ fn provenance_query_latency_contract_on_large_lineage_snapshot() {
     let start = Instant::now();
     let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
     let elapsed_ms = start.elapsed().as_millis();
-    assert_eq!(inspected["artifact_id"], "extract:data.csv");
+    assert!(inspected["artifact_id"]
+        .as_str()
+        .expect("canonical artifact id")
+        .starts_with("run=run-latency;node=extract;path=nodes/extract/outputs/data.csv;sha256="));
     assert!(elapsed_ms < 2000, "provenance query latency exceeded contract bound: {elapsed_ms}ms");
 }

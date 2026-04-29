@@ -35,6 +35,7 @@ fn direct_dependency_names(crate_name: &str) -> BTreeSet<String> {
         .as_array()
         .expect("dependencies array")
         .iter()
+        .filter(|dep| dep["kind"].is_null())
         .filter_map(|dep| dep["name"].as_str().map(|v| v.to_string()))
         .collect()
 }
@@ -121,13 +122,11 @@ fn runtime_dependencies_match_runtime_allowed_list() {
     let allowed: BTreeSet<String> = [
         "bijux-dag-artifacts",
         "bijux-dag-core",
-        "bijux-dag-testkit",
         "ctrlc",
         "hex",
         "serde",
         "serde_json",
         "sha2",
-        "tempfile",
         "thiserror",
     ]
     .into_iter()

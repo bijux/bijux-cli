@@ -1,0 +1,196 @@
+use bijux_dag_artifacts::{hash::sha256_hex, OutputFile, OutputsIndex};
+use serde_json::{json, Value};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+fn dag_bin(cwd: &Path) -> Command {
+    let cargo_bin = std::env::var("CARGO")
+        .ok()
+        .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
+        .unwrap_or_else(|| "cargo".to_string());
+    let mut command = Command::new(cargo_bin);
+    command.current_dir(cwd).env("CARGO_TARGET_DIR", cwd.join("artifacts/target")).args([
+        "run",
+        "--quiet",
+        "-p",
+        "bijux-dag-cli",
+        "--",
+    ]);
+    command
+}
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn run_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
+    let output = dag_bin(cwd).args(args).output().expect("run dag command");
+    let code = output.status.code().unwrap_or(1);
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    (code, stdout, stderr)
+}
+
+fn parse_json(stdout: &str, code: i32, stderr: &str) -> Value {
+    serde_json::from_str(stdout)
+        .unwrap_or_else(|error| panic!("parse json output: {error}; code={code}; stderr={stderr}"))
+}
+
+fn default_meta(key: &str) -> Value {
+    json!({
+        "cache_metadata_version":"cache-meta/v0.1",
+        "cache_key": key,
+        "node_fingerprint": key,
+        "adapter_id":"shell",
+        "adapter_version":"0.1",
+        "produces_outputs_schema_version":"v0.1",
+        "policy_fingerprint":"policy-fixed",
+        "config_fingerprint":"config-fixed",
+        "backend_class":"local",
+        "source_run_id":"run-fixed",
+        "cache_source":"local"
+    })
+}
+
+fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
+    let entry = base.join(key);
+    fs::create_dir_all(entry.join("outputs")).expect("create outputs dir");
+    fs::write(entry.join("outputs").join("payload.bin"), payload).expect("write payload");
+    let index = OutputsIndex {
+        files: vec![OutputFile {
+            path: "payload.bin".to_string(),
+            sha256: sha256_hex(payload),
+            node_id: "node-a".to_string(),
+            node_fingerprint: key.to_string(),
+        }],
+    };
+    fs::write(
+        entry.join("outputs").join("index.json"),
+        serde_json::to_vec_pretty(&index).expect("serialize outputs index"),
+    )
+    .expect("write outputs index");
+    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(meta).expect("serialize meta"))
+        .expect("write meta");
+}
+
+fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
+    let key = "node-fp-1".to_string();
+    write_cache_entry(cache_dir, &key, &default_meta(&key), b"ok\n");
+    let entry = cache_dir.join(&key);
+    match fixture_name {
+        "hash_mismatch" => {
+            fs::write(entry.join("outputs").join("payload.bin"), b"tampered\n")
+                .expect("tamper payload");
+        }
+        "missing_meta" => {
+            fs::remove_file(entry.join("meta.json")).expect("remove meta");
+        }
+        "missing_outputs_proof" => {
+            let proofless = json!({
+                "cache_metadata_version":"cache-meta/v0.1",
+                "node_fingerprint": key,
+                "adapter_id":"shell",
+                "adapter_version":"0.1",
+                "source_run_id":"run-fixed",
+                "cache_source":"local"
+            });
+            fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&proofless).unwrap())
+                .expect("write proofless meta");
+        }
+        "truncated_meta" => {
+            fs::write(entry.join("meta.json"), b"{\"cache_metadata_version\":\"cache-meta/v0.1\"")
+                .expect("truncate meta");
+        }
+        "unsupported_metadata_version" => {
+            let mut meta = default_meta(&key);
+            meta["cache_metadata_version"] = Value::String("cache-meta/v9.9".to_string());
+            fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta).unwrap())
+                .expect("write unsupported meta");
+        }
+        other => panic!("unsupported corruption fixture: {other}"),
+    }
+    key
+}
+
+#[test]
+fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
+    let root = repo_root();
+    let fixture_root = root.join("evidence/dag/cache/corrupt");
+    for fixture in [
+        "hash_mismatch",
+        "missing_meta",
+        "missing_outputs_proof",
+        "truncated_meta",
+        "unsupported_metadata_version",
+    ] {
+        let _fixture_payload = fs::read_to_string(fixture_root.join(format!("{fixture}.json")))
+            .expect("read evidence fixture");
+        let temp = tempfile::tempdir().expect("tempdir");
+        let cache_dir = temp.path().join("cache");
+        fs::create_dir_all(&cache_dir).expect("create cache dir");
+        let key = apply_corruption(&cache_dir, fixture);
+
+        let (verify_code, verify_stdout, verify_stderr) = run_command(
+            &["dag", "--json", "cache", "verify", "--cache-dir", cache_dir.to_str().unwrap()],
+            &root,
+        );
+        let verify_payload = parse_json(&verify_stdout, verify_code, &verify_stderr);
+        assert!(verify_code == 0 || verify_code == 3);
+        let corrupt_total = verify_payload["data"]["corrupt_total"].as_u64().unwrap_or(0);
+        let expected_corrupt = matches!(fixture, "hash_mismatch" | "missing_meta");
+        assert_eq!(
+            corrupt_total > 0,
+            expected_corrupt,
+            "unexpected verify classification for fixture {fixture}"
+        );
+
+        let (explain_code, explain_stdout, explain_stderr) = run_command(
+            &[
+                "dag",
+                "--json",
+                "cache",
+                "explain",
+                "--cache-dir",
+                cache_dir.to_str().unwrap(),
+                "--key",
+                key.as_str(),
+            ],
+            &root,
+        );
+        if fixture == "truncated_meta" {
+            assert_ne!(explain_code, 0);
+            assert!(
+                explain_stdout.trim().is_empty(),
+                "expected fatal malformed-meta path to emit no json payload, got: {explain_stdout}"
+            );
+            assert!(
+                explain_stderr.trim().is_empty(),
+                "unexpected stderr for truncated meta fixture: {explain_stderr}"
+            );
+            continue;
+        }
+        let explain_payload = parse_json(&explain_stdout, explain_code, &explain_stderr);
+        assert!(explain_code == 0 || explain_code == 3);
+        let taxonomy = explain_payload["data"]["taxonomy"].as_array().expect("taxonomy");
+        assert!(!taxonomy.is_empty(), "expected explain taxonomy for corruption fixture {fixture}");
+        let expected_labels: &[&str] = match fixture {
+            "hash_mismatch" => &["hash_mismatch", "artifact_corrupt"],
+            "missing_meta" => &["artifact_missing"],
+            "missing_outputs_proof" => &["policy_mismatch"],
+            "unsupported_metadata_version" => &["schema_mismatch"],
+            other => panic!("unexpected corruption fixture: {other}"),
+        };
+        assert!(
+            taxonomy.iter().any(|entry| {
+                entry
+                    .as_str()
+                    .is_some_and(|label| expected_labels.iter().any(|expected| label == *expected))
+            }),
+            "taxonomy {:?} missing expected labels {:?} for fixture {}",
+            taxonomy,
+            expected_labels,
+            fixture
+        );
+    }
+}

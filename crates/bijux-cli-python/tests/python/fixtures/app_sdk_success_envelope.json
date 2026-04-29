@@ -1,0 +1,15 @@
+{
+  "status": "ok",
+  "data": {
+    "value": 1
+  },
+  "meta": {
+    "version": "v1",
+    "command": {
+      "segments": [
+        "sample"
+      ]
+    },
+    "timestamp": "2026-01-01T00:00:00Z"
+  }
+}

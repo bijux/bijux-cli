@@ -2,8 +2,11 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
 
 use crate::features::install::run_config_migrations;
+use crate::features::install::{acquire_state_lock, CompatibilityError, StateLockGuard};
 use serde_json::{json, Value};
 
 use super::error::ConfigError;
@@ -60,6 +63,26 @@ where
     P: ConfigPathProvider,
     R: ConfigRepository,
 {
+    fn config_lock(&self) -> Result<StateLockGuard, ConfigError> {
+        let config_path = self.path_provider.config_path();
+        let file_name =
+            config_path.file_name().and_then(|entry| entry.to_str()).unwrap_or("config");
+        let lock_path = config_path.with_file_name(format!("{file_name}.lock"));
+        for attempt in 0..100 {
+            match acquire_state_lock(&lock_path) {
+                Ok(guard) => return Ok(guard),
+                Err(CompatibilityError::LockHeld(_)) if attempt < 99 => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(err) => return Err(ConfigError::persistence(err.to_string())),
+            }
+        }
+        Err(ConfigError::persistence(format!(
+            "state lock remained held at {}",
+            lock_path.display()
+        )))
+    }
+
     fn parse_set_pair(&self, raw_pair: &str) -> Result<(String, String), ConfigError> {
         if !raw_pair.contains('=') {
             return Err(ConfigError::validation("Invalid argument: KEY=VALUE required"));
@@ -126,6 +149,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
         let (key, value) = self.parse_set_pair(raw_pair)?;
         let mut values = self.load_map()?;
         values.insert(key.clone(), value.clone());
+        let _guard = self.config_lock()?;
         self.repository.save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "updated",
@@ -139,6 +163,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
         let key = normalize_key(raw_key)?;
         let mut values = self.load_map()?;
         let removed = values.remove(&key).is_some();
+        let _guard = self.config_lock()?;
         self.repository.save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "deleted",
@@ -150,6 +175,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn clear_all(&self) -> Result<Value, ConfigError> {
         let removed_keys = self.load_map()?.len();
+        let _guard = self.config_lock()?;
         let removed_file = self.repository.remove(self.path_provider.config_path())?;
         Ok(json!({
             "status": "cleared",
@@ -197,6 +223,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
             )));
         }
         let values = self.repository.load(source_path)?;
+        let _guard = self.config_lock()?;
         self.repository.save(self.path_provider.config_path(), &values)?;
         Ok(json!({
             "status": "loaded",

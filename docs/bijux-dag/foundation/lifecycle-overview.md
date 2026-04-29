@@ -9,24 +9,27 @@ last_reviewed: 2026-04-06
 
 # Lifecycle Overview
 
-The DAG lifecycle is evidence-first: define graph, execute run, persist
-artifacts, then classify replay/diff outcomes before promotion decisions.
+This page explains the shortest path a DAG follows from definition to
+comparison-ready evidence.
 
-## Visual Summary
+The point of the lifecycle is simple: DAG work is not finished when nodes run.
+It is finished when the run can be inspected, replayed, and compared honestly.
+
+## Lifecycle Flow
 
 ```mermaid
 sequenceDiagram
     participant Author
-    participant Core as dag-core
-    participant Runtime as dag-runtime
-    participant Artifacts as dag-artifacts
+    participant Core
+    participant Runtime
+    participant Artifacts
     participant Operator
 
-    Author->>Core: submit dag definition
-    Core->>Runtime: validated and canonical graph
-    Runtime->>Artifacts: write run and artifact evidence
-    Operator->>Runtime: replay and diff requests
-    Runtime-->>Operator: equivalent drift incomplete classifications
+    Author->>Core: define graph
+    Core->>Runtime: validated plan
+    Runtime->>Artifacts: write run evidence
+    Operator->>Runtime: replay or diff request
+    Runtime-->>Operator: comparison result
 ```
 
 ## Lifecycle Stages
@@ -45,6 +48,12 @@ sequenceDiagram
 - `crates/bijux-dag-artifacts/src/storage/`
 - `crates/bijux-dag-app/src/replay/`
 - `crates/bijux-dag-app/src/routes/`
+
+## Reading Rule
+
+Use this page when a DAG problem is visible in the final result but it is not
+yet clear whether the break is in definition, execution, evidence capture, or
+comparison.
 
 ## Next Reads
 

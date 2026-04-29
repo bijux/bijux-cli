@@ -9,18 +9,22 @@ last_reviewed: 2026-04-06
 
 # Change Management
 
-Change management ensures behavior changes are reviewed with explicit scope,
-verification evidence, and documentation updates.
+This page explains how repository changes move from proposal to merge without
+losing ownership or evidence along the way.
 
-## Visual Summary
+The point is not ceremony. The point is to keep scope, proof, and
+documentation attached to the same change so the repository does not create
+another debugging round later.
+
+## Change Flow
 
 ```mermaid
 flowchart LR
-    proposal[change proposal] --> scope[classify ownership and impact]
-    scope --> implement[implement in owning crate]
-    implement --> validate[validate with tests and contracts]
-    validate --> document[update docs and risks]
-    document --> merge[merge decision]
+    proposal["change proposal"] --> scope["classify ownership and impact"]
+    scope --> implement["implement in owning crate"]
+    implement --> validate["validate with tests and contracts"]
+    validate --> document["update docs and risks"]
+    document --> merge["merge decision"]
 ```
 
 ## Required Steps
@@ -45,6 +49,11 @@ Attach this minimum bundle for cross-program changes:
 2. command/test evidence from owning crates
 3. compatibility impact note (`none`, `additive`, or `breaking`)
 4. documentation updates linked to changed behavior
+
+## Reading Rule
+
+Use this page when a change is already real work and the main question is how
+to carry it through review without losing scope or evidence.
 
 ## Code Anchors
 

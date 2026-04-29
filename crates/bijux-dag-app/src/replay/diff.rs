@@ -18,6 +18,25 @@ pub struct NodeDiff {
     pub status_b: Option<Value>,
     pub fp_a: Option<Value>,
     pub fp_b: Option<Value>,
+    pub branch_decision_a: Option<Value>,
+    pub branch_decision_b: Option<Value>,
+    pub container_image_a: Option<Value>,
+    pub container_image_b: Option<Value>,
+    pub container_digest_a: Option<Value>,
+    pub container_digest_b: Option<Value>,
+    pub adapter_binary_sha256_a: Option<Value>,
+    pub adapter_binary_sha256_b: Option<Value>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ReplaySafetyLevel {
+    Equivalent,
+    SafeWithDrift,
+    Risky,
+    Forbidden,
+    IncompleteEvidence,
+    Unsupported,
 }
 
 #[derive(Debug, Serialize)]
@@ -30,9 +49,14 @@ pub struct OutputDiff {
 #[derive(Debug, Serialize)]
 pub struct ReplayEquivalenceReport {
     pub equivalent: bool,
+    pub safety_level: ReplaySafetyLevel,
     pub reasons: Vec<String>,
     pub reason_report: ReplayReasonReport,
     pub cause_groups: BTreeMap<String, usize>,
+    pub evidence_gaps: Vec<String>,
+    pub branch_decision_drift_nodes: Vec<String>,
+    pub container_digest_drift_nodes: Vec<String>,
+    pub adapter_binary_drift_nodes: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -87,6 +111,10 @@ pub fn build_run_diff(
     };
 
     let mut node_diff: BTreeMap<String, NodeDiff> = BTreeMap::new();
+    let mut node_outcome_diff_count = 0usize;
+    let mut branch_decision_drift_nodes = Vec::new();
+    let mut container_digest_drift_nodes = Vec::new();
+    let mut adapter_binary_drift_nodes = Vec::new();
     let mut all_nodes: BTreeSet<String> = BTreeSet::new();
     for k in nodes_a.keys() {
         all_nodes.insert(k.clone());
@@ -101,8 +129,56 @@ pub fn build_run_diff(
         let status_b = b.and_then(|v| v.get("status")).cloned();
         let fp_a = a.and_then(|v| v.get("fingerprint")).cloned();
         let fp_b = b.and_then(|v| v.get("fingerprint")).cloned();
-        if status_a != status_b || fp_a != fp_b {
-            node_diff.insert(node_id, NodeDiff { status_a, status_b, fp_a, fp_b });
+        let branch_decision_a = a.and_then(|v| v.get("branch_decision")).cloned();
+        let branch_decision_b = b.and_then(|v| v.get("branch_decision")).cloned();
+        let container_image_a =
+            a.and_then(|v| v.get("container")).and_then(|v| v.get("image")).cloned();
+        let container_image_b =
+            b.and_then(|v| v.get("container")).and_then(|v| v.get("image")).cloned();
+        let container_digest_a =
+            a.and_then(|v| v.get("container")).and_then(|v| v.get("image_digest")).cloned();
+        let container_digest_b =
+            b.and_then(|v| v.get("container")).and_then(|v| v.get("image_digest")).cloned();
+        let adapter_binary_sha256_a = a.and_then(|v| v.get("adapter_binary_sha256")).cloned();
+        let adapter_binary_sha256_b = b.and_then(|v| v.get("adapter_binary_sha256")).cloned();
+        let outcome_drift = status_a != status_b || fp_a != fp_b;
+        let branch_drift = branch_decision_a != branch_decision_b;
+        let container_digest_drift = container_image_a == container_image_b
+            && container_image_a.is_some()
+            && container_digest_a != container_digest_b;
+        let adapter_binary_drift = adapter_binary_sha256_a.is_some()
+            && adapter_binary_sha256_b.is_some()
+            && adapter_binary_sha256_a != adapter_binary_sha256_b;
+        if outcome_drift {
+            node_outcome_diff_count += 1;
+        }
+        if branch_drift {
+            branch_decision_drift_nodes.push(node_id.clone());
+        }
+        if container_digest_drift {
+            container_digest_drift_nodes.push(node_id.clone());
+        }
+        if adapter_binary_drift {
+            adapter_binary_drift_nodes.push(node_id.clone());
+        }
+        if outcome_drift || branch_drift || container_digest_drift || adapter_binary_drift {
+            node_diff.insert(
+                node_id,
+                NodeDiff {
+                    status_a,
+                    status_b,
+                    fp_a,
+                    fp_b,
+                    branch_decision_a,
+                    branch_decision_b,
+                    container_image_a,
+                    container_image_b,
+                    container_digest_a,
+                    container_digest_b,
+                    adapter_binary_sha256_a,
+                    adapter_binary_sha256_b,
+                },
+            );
         }
     }
 
@@ -157,11 +233,13 @@ pub fn build_run_diff(
 
     let mut reasons = Vec::new();
     let mut cause_groups: BTreeMap<String, usize> = BTreeMap::new();
+    let evidence_gaps = Vec::new();
     let compared_dimensions = vec![
         "manifest".to_string(),
         "graph_fingerprint".to_string(),
         "nodes".to_string(),
         "outputs".to_string(),
+        "branch_decisions".to_string(),
     ];
     let mut mismatch_dimensions = Vec::new();
     if !manifest_diff.is_empty() {
@@ -174,10 +252,25 @@ pub fn build_run_diff(
         mismatch_dimensions.push("graph_fingerprint".to_string());
         cause_groups.insert("graph_semantics".to_string(), 1);
     }
-    if !node_diff.is_empty() {
+    if node_outcome_diff_count > 0 {
         reasons.push("node status or fingerprint differs".to_string());
         mismatch_dimensions.push("nodes".to_string());
-        cause_groups.insert("node_outcomes".to_string(), node_diff.len());
+        cause_groups.insert("node_outcomes".to_string(), node_outcome_diff_count);
+    }
+    if !branch_decision_drift_nodes.is_empty() {
+        reasons.push("branch decision differs".to_string());
+        mismatch_dimensions.push("branch_decisions".to_string());
+        cause_groups.insert("branch_decisions".to_string(), branch_decision_drift_nodes.len());
+    }
+    if !container_digest_drift_nodes.is_empty() {
+        reasons.push("container image digest differs".to_string());
+        mismatch_dimensions.push("container_digests".to_string());
+        cause_groups.insert("container_digest".to_string(), container_digest_drift_nodes.len());
+    }
+    if !adapter_binary_drift_nodes.is_empty() {
+        reasons.push("adapter binary hash differs".to_string());
+        mismatch_dimensions.push("adapter_binary_sha256".to_string());
+        cause_groups.insert("adapter_binary".to_string(), adapter_binary_drift_nodes.len());
     }
     if !out_diff.is_empty() {
         reasons.push("output content differs".to_string());
@@ -189,6 +282,22 @@ pub fn build_run_diff(
     } else {
         "runs are not semantically equivalent under replay contract".to_string()
     };
+    let safety_level = if !evidence_gaps.is_empty() {
+        ReplaySafetyLevel::IncompleteEvidence
+    } else if graph_fingerprint.is_some() {
+        ReplaySafetyLevel::Forbidden
+    } else if !branch_decision_drift_nodes.is_empty()
+        || !container_digest_drift_nodes.is_empty()
+        || !adapter_binary_drift_nodes.is_empty()
+        || node_outcome_diff_count > 0
+        || !out_diff.is_empty()
+    {
+        ReplaySafetyLevel::Risky
+    } else if !manifest_diff.is_empty() {
+        ReplaySafetyLevel::SafeWithDrift
+    } else {
+        ReplaySafetyLevel::Equivalent
+    };
 
     RunDiff {
         manifest: manifest_diff,
@@ -197,9 +306,14 @@ pub fn build_run_diff(
         outputs: out_diff,
         replay_equivalence: ReplayEquivalenceReport {
             equivalent: reasons.is_empty(),
+            safety_level,
             reasons,
             reason_report: ReplayReasonReport { summary, compared_dimensions, mismatch_dimensions },
             cause_groups,
+            evidence_gaps,
+            branch_decision_drift_nodes,
+            container_digest_drift_nodes,
+            adapter_binary_drift_nodes,
         },
     }
 }
@@ -257,6 +371,7 @@ mod tests {
             "runs are semantically equivalent under replay contract"
         );
         assert!(diff.replay_equivalence.cause_groups.is_empty());
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Equivalent);
     }
 
     #[test]
@@ -281,6 +396,7 @@ mod tests {
         assert!(!diff.replay_equivalence.equivalent);
         assert!(!diff.replay_equivalence.reasons.is_empty());
         assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload").copied(), Some(1));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Risky);
     }
 
     #[test]
@@ -327,6 +443,7 @@ mod tests {
         );
         assert!(!diff.replay_equivalence.equivalent);
         assert_eq!(diff.replay_equivalence.cause_groups.get("manifest_drift"), Some(&1usize));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::SafeWithDrift);
     }
 
     #[test]
@@ -369,6 +486,115 @@ mod tests {
         );
         assert!(!diff.replay_equivalence.equivalent);
         assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1usize));
+    }
+
+    #[test]
+    fn replay_diff_reports_branch_decision_drift_as_risky() {
+        let mut nodes_a = HashMap::new();
+        let mut nodes_b = HashMap::new();
+        nodes_a.insert(
+            "decide".to_string(),
+            json!({"status":"success","fingerprint":"fp","branch_decision":"left"}),
+        );
+        nodes_b.insert(
+            "decide".to_string(),
+            json!({"status":"success","fingerprint":"fp","branch_decision":"right"}),
+        );
+
+        let diff = build_run_diff(
+            json!({}),
+            json!({}),
+            "fp".to_string(),
+            "fp".to_string(),
+            &nodes_a,
+            &nodes_b,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        let branch = diff.nodes.get("decide").expect("branch diff");
+        assert_eq!(branch.branch_decision_a, Some(json!("left")));
+        assert_eq!(branch.branch_decision_b, Some(json!("right")));
+        assert_eq!(diff.replay_equivalence.branch_decision_drift_nodes, vec!["decide"]);
+        assert_eq!(diff.replay_equivalence.cause_groups.get("branch_decisions"), Some(&1usize));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Risky);
+    }
+
+    #[test]
+    fn replay_diff_reports_container_digest_drift_as_risky() {
+        let mut nodes_a = HashMap::new();
+        let mut nodes_b = HashMap::new();
+        nodes_a.insert(
+            "container-step".to_string(),
+            json!({
+                "status":"success",
+                "fingerprint":"fp",
+                "container":{"image":"alpine:3.19","image_digest":"sha256:aaa"}
+            }),
+        );
+        nodes_b.insert(
+            "container-step".to_string(),
+            json!({
+                "status":"success",
+                "fingerprint":"fp",
+                "container":{"image":"alpine:3.19","image_digest":"sha256:bbb"}
+            }),
+        );
+
+        let diff = build_run_diff(
+            json!({}),
+            json!({}),
+            "fp".to_string(),
+            "fp".to_string(),
+            &nodes_a,
+            &nodes_b,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        let node = diff.nodes.get("container-step").expect("container diff");
+        assert_eq!(node.container_digest_a, Some(json!("sha256:aaa")));
+        assert_eq!(node.container_digest_b, Some(json!("sha256:bbb")));
+        assert_eq!(diff.replay_equivalence.container_digest_drift_nodes, vec!["container-step"]);
+        assert_eq!(diff.replay_equivalence.cause_groups.get("container_digest"), Some(&1usize));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Risky);
+    }
+
+    #[test]
+    fn replay_diff_reports_adapter_binary_drift_as_risky() {
+        let mut nodes_a = HashMap::new();
+        let mut nodes_b = HashMap::new();
+        nodes_a.insert(
+            "external-step".to_string(),
+            json!({
+                "status":"success",
+                "fingerprint":"fp",
+                "adapter_binary_sha256":"sha256:old"
+            }),
+        );
+        nodes_b.insert(
+            "external-step".to_string(),
+            json!({
+                "status":"success",
+                "fingerprint":"fp",
+                "adapter_binary_sha256":"sha256:new"
+            }),
+        );
+
+        let diff = build_run_diff(
+            json!({}),
+            json!({}),
+            "fp".to_string(),
+            "fp".to_string(),
+            &nodes_a,
+            &nodes_b,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        let node = diff.nodes.get("external-step").expect("adapter diff");
+        assert_eq!(node.adapter_binary_sha256_a, Some(json!("sha256:old")));
+        assert_eq!(node.adapter_binary_sha256_b, Some(json!("sha256:new")));
+        assert_eq!(diff.replay_equivalence.adapter_binary_drift_nodes, vec!["external-step"]);
+        assert_eq!(diff.replay_equivalence.cause_groups.get("adapter_binary"), Some(&1usize));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Risky);
     }
 
     #[test]
@@ -417,6 +643,7 @@ mod tests {
         assert_eq!(diff.replay_equivalence.cause_groups.get("graph_semantics"), Some(&1));
         assert_eq!(diff.replay_equivalence.cause_groups.get("node_outcomes"), Some(&1));
         assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1));
+        assert_eq!(diff.replay_equivalence.safety_level, ReplaySafetyLevel::Forbidden);
     }
 
     #[test]
@@ -439,7 +666,7 @@ mod tests {
         );
         assert_eq!(
             diff.replay_equivalence.reason_report.compared_dimensions,
-            vec!["manifest", "graph_fingerprint", "nodes", "outputs"]
+            vec!["manifest", "graph_fingerprint", "nodes", "outputs", "branch_decisions"]
         );
     }
 }

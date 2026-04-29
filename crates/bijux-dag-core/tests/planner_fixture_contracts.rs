@@ -82,7 +82,11 @@ fn planner_capability_restrictions_and_dependency_closure_are_enforced() {
         PlanOptions { supported_kinds: only_const, ..PlanOptions::default() },
     )
     .expect_err("shell node should be rejected when shell is unsupported");
-    assert!(matches!(err, PlannerError::UnsupportedNodeKind(kind) if kind == "shell"));
+    assert!(matches!(
+        err,
+        PlannerError::UnsupportedNodeKinds(ref nodes)
+            if nodes == &vec!["replay_check:shell".to_string()]
+    ));
 
     let mut selected = BTreeSet::new();
     selected.insert("source".to_string());

@@ -38,6 +38,7 @@ pub(crate) fn run_write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
     replay_provenance: Option<ReplayProvenance>,
@@ -57,6 +58,7 @@ pub(crate) fn run_write_trace(
         adapter_outputs_schema_version,
         container_meta,
         adapter_binary_sha256,
+        branch_decision,
         skip_reason,
         transition_cause,
         replay_provenance,
@@ -132,18 +134,18 @@ pub(crate) fn count_terminal_nodes(status_map: &HashMap<String, NodeStatus>) -> 
 
 pub(crate) fn guard_terminal_node_status(to: &NodeStatus) -> Result<(), RuntimeError> {
     use crate::state_machine::{node_transition_allowed, NodeLifecycleState as S};
-    let target = match to {
-        NodeStatus::Success => S::Succeeded,
-        NodeStatus::Failed => S::Failed,
-        NodeStatus::Skipped => S::Skipped,
-        NodeStatus::Cached => S::Cached,
+    let (from, target) = match to {
+        NodeStatus::Success => (S::Running, S::Succeeded),
+        NodeStatus::Failed => (S::Running, S::Failed),
+        NodeStatus::Skipped => (S::Ready, S::Skipped),
+        NodeStatus::Cached => (S::Running, S::Cached),
     };
-    if node_transition_allowed(S::Running, target) {
+    if node_transition_allowed(from, target) {
         Ok(())
     } else {
         Err(RuntimeError::Executor(format!(
-            "illegal node terminal transition from running to {:?}",
-            to
+            "illegal node terminal transition from {:?} to {:?}",
+            from, to
         )))
     }
 }

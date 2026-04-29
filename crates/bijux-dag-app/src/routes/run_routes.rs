@@ -1,9 +1,14 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
+use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
 use crate::routes::preconditions::require_file;
 use crate::run_data::map_materialize_mode;
 use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
-use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
+use bijux_dag_runtime::{
+    build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
+    RuntimeConfig,
+};
 use serde_json::json;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 pub(crate) struct RunRouteRequest<'a> {
@@ -26,6 +31,24 @@ pub(crate) struct RunRouteRequest<'a> {
     pub cache: CacheModeArg,
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
+    pub preflight_only: bool,
+    pub explain_scheduling: bool,
+}
+
+fn cache_preflight(cache_mode: CacheModeArg, cache_dir: &Option<PathBuf>) -> serde_json::Value {
+    if matches!(cache_mode, CacheModeArg::Off) {
+        return json!({"status":"disabled"});
+    }
+    let Some(dir) = cache_dir.as_ref() else {
+        return json!({"status":"implicit"});
+    };
+    if fs::create_dir_all(dir).is_err() {
+        return json!({"status":"error","path":dir,"writable":false});
+    }
+    let probe = dir.join(".__bijux_preflight_probe");
+    let writable = fs::write(&probe, b"ok").is_ok();
+    let _ = fs::remove_file(&probe);
+    json!({"status": if writable { "ok" } else { "error" }, "path": dir, "writable": writable})
 }
 
 pub(crate) fn handle_run_command(
@@ -40,6 +63,8 @@ pub(crate) fn handle_run_command(
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
     let deny_env = req.deny_env;
     let selectors = parse_selectors(req.select, req.exclude)?;
+    let cache_dir = req.cache_dir.clone();
+    let remote_cache_dir = req.remote_cache_dir.clone();
     let options = RuntimeConfig {
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
@@ -51,14 +76,57 @@ pub(crate) fn handle_run_command(
             CacheModeArg::Read => CacheMode::Read,
             CacheModeArg::Readwrite => CacheMode::ReadWrite,
         },
-        cache_dir: req.cache_dir,
-        remote_cache_dir: req.remote_cache_dir,
+        cache_dir: cache_dir.clone(),
+        remote_cache_dir,
         run_id: req.run_id,
         latest_symlink: req.latest,
         policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
         selectors,
         ..RuntimeConfig::default()
     };
+    let scheduling = if req.preflight_only || req.explain_scheduling {
+        Some(
+            build_planner_analysis(
+                &graph,
+                &options,
+                &options.selectors,
+                &PlannerGuardrails { allow_semantic_optimizations: true },
+            )
+            .map_err(|_| ExitCode::from(3))?,
+        )
+    } else {
+        None
+    };
+    if req.preflight_only {
+        let payload = json!({
+            "dag": req.dag,
+            "adapters": registered_adapters(),
+            "cache": cache_preflight(req.cache, &cache_dir),
+            "policy": {
+                "deny_network": options.policy.deny_network,
+                "deny_env": options.policy.deny_env,
+                "deny_clock": options.policy.deny_clock,
+                "clean_env": options.policy.clean_env,
+            },
+            "selectors": {
+                "include": req.select,
+                "exclude": req.exclude,
+            },
+            "scheduling": scheduling.as_ref().map(plan_explain_payload),
+        });
+        if cli.json {
+            return emit_json(
+                cli,
+                "dag.run.preflight",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            );
+        }
+        println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+        return Ok(ExitCode::SUCCESS);
+    }
     let run_path = runtime.run(&graph, req.out, options).map_err(|_| ExitCode::from(3))?;
 
     if cli.json {
@@ -66,10 +134,18 @@ pub(crate) fn handle_run_command(
             cli,
             "dag.run",
             true,
-            json!({"run_dir": run_path}),
+            json!({
+                "run_dir": run_path,
+                "scheduling": scheduling.as_ref().map(plan_explain_payload),
+            }),
             Vec::new(),
             ExitCode::SUCCESS,
         );
+    }
+    if let Some(scheduling) = scheduling.as_ref() {
+        for line in concise_plan_lines(scheduling) {
+            println!("{line}");
+        }
     }
     if !cli.quiet {
         println!("run dir: {}", run_path.display());
@@ -93,7 +169,8 @@ fn effective_policy_flags(
 
 #[cfg(test)]
 mod tests {
-    use super::effective_policy_flags;
+    use super::{cache_preflight, effective_policy_flags};
+    use crate::commands::CacheModeArg;
 
     #[test]
     fn hermetic_forces_isolation_flags() {
@@ -103,5 +180,10 @@ mod tests {
     #[test]
     fn non_hermetic_preserves_network_clock_and_normalizes_clean_env() {
         assert_eq!(effective_policy_flags(true, false, false, false), (true, false, true));
+    }
+
+    #[test]
+    fn cache_preflight_reports_disabled_when_cache_is_off() {
+        assert_eq!(cache_preflight(CacheModeArg::Off, &None)["status"], "disabled");
     }
 }

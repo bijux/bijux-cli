@@ -9,19 +9,20 @@ last_reviewed: 2026-04-12
 
 # Automation Surfaces
 
-The repository exposes automation through a small set of root surfaces. They
-should be named explicitly so readers can move from documentation to the exact
-entrypoint file.
+This page explains where repository automation actually begins.
+
+The aim is not to name every helper script. It is to make the durable
+entrypoints obvious so a reader can move from docs to the exact file that owns
+the workflow.
+
+## Automation Map
 
 ```mermaid
-flowchart TD
-    automation[Repository automation surfaces]
-    automation --> makefile[Makefile and makes/]
-    automation --> workflows[.github/workflows/]
-    automation --> docs_auto[docs/automation/]
-    automation --> artifacts[artifacts/ outputs]
-
-    hidden[undocumented ad hoc commands] -. avoid .-> automation
+flowchart LR
+    automation["repository automation"] --> makefile["make entrypoints"]
+    automation --> workflows["github workflows"]
+    automation --> docs_auto["docs automation"]
+    automation --> artifacts["artifacts outputs"]
 ```
 
 ## Root Surfaces
@@ -35,6 +36,11 @@ flowchart TD
 
 Prefer documented entrypoints over bespoke shell commands. A repeated workflow
 that bypasses root entrypoints is a documentation and maintenance bug.
+
+## Reading Rule
+
+Use this page when the question is where a repeated repository workflow should
+start, not how one helper happens to implement it.
 
 ## Next Reads
 

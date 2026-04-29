@@ -1,10 +1,18 @@
 use crate::{NodeResult, RunContext, RuntimeError};
 use bijux_dag_core::{Effect, Node};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AdapterOrigin {
     BuiltIn,
     External,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CacheCompatibilityMode {
+    FingerprintExact,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,7 +21,7 @@ pub struct AdapterId {
     pub version: String,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EffectSet {
     pub filesystem: bool,
     pub env: bool,
@@ -42,7 +50,7 @@ pub struct NodeCtx<'a> {
     pub params: &'a serde_json::Value,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AdapterDescriptor {
     pub id: String,
     pub version: String,
@@ -50,6 +58,11 @@ pub struct AdapterDescriptor {
     pub required_effects: EffectSet,
     pub produces_outputs_schema_version: String,
     pub origin: AdapterOrigin,
+    pub protocol_version: String,
+    pub cache_compatibility: CacheCompatibilityMode,
+    pub supports_timeout: bool,
+    pub supports_cancel: bool,
+    pub binary_hash: Option<String>,
 }
 
 pub trait Adapter: Send + Sync {
@@ -57,6 +70,18 @@ pub trait Adapter: Send + Sync {
     fn supported_kinds(&self) -> Vec<String>;
     fn required_effects(&self) -> EffectSet;
     fn produces_outputs_schema_version(&self) -> String;
+    fn protocol_version(&self) -> String {
+        "bijux-dag-adapter/v1".to_string()
+    }
+    fn cache_compatibility(&self) -> CacheCompatibilityMode {
+        CacheCompatibilityMode::FingerprintExact
+    }
+    fn supports_timeout(&self) -> bool {
+        true
+    }
+    fn supports_cancel(&self) -> bool {
+        false
+    }
     fn origin(&self) -> AdapterOrigin {
         AdapterOrigin::BuiltIn
     }
@@ -69,6 +94,11 @@ pub trait Adapter: Send + Sync {
             required_effects: self.required_effects(),
             produces_outputs_schema_version: self.produces_outputs_schema_version(),
             origin: self.origin(),
+            protocol_version: self.protocol_version(),
+            cache_compatibility: self.cache_compatibility(),
+            supports_timeout: self.supports_timeout(),
+            supports_cancel: self.supports_cancel(),
+            binary_hash: self.binary_hash(),
         }
     }
     fn binary_hash(&self) -> Option<String> {
@@ -132,5 +162,9 @@ mod tests {
         assert_eq!(descriptor.supported_kinds, vec!["const".to_string()]);
         assert_eq!(descriptor.produces_outputs_schema_version, "v0.1");
         assert_eq!(descriptor.origin, AdapterOrigin::External);
+        assert_eq!(descriptor.protocol_version, "bijux-dag-adapter/v1");
+        assert_eq!(descriptor.cache_compatibility, CacheCompatibilityMode::FingerprintExact);
+        assert!(descriptor.supports_timeout);
+        assert!(!descriptor.supports_cancel);
     }
 }

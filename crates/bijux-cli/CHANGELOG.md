@@ -7,6 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+### Added
+- Added a crate-native mounted-app SDK with `ProductMount`, `BijuxApp`, `CommandContext`, `CommandResult`, diagnostics builders, output-envelope helpers, an in-process harness, and snapshot helpers for Rust app authors.
+- Added Python-callable mount manifest fields (`module`, `function`) plus compatibility windows to the product-mount descriptor contract and published schema snapshot.
+- Added `bijux apps doctor <namespace>` as a focused runtime/import diagnostic for mounted apps with Python interpreter provenance.
+- Added a unified root `bijux doctor` surface with severity-ranked checks, fix suggestions, and machine-readable topic reports for routing, state paths, legacy shims, and focused official-app diagnostics.
+- Added layered config registry, validate, explain, repair, and portable import/export surfaces with profile overlays and project `.bijux/config.{toml,json}` discovery.
+- Added `bijux doctor python` and `bijux doctor --bundle` so operators can inspect Python bridge health and export a reproducible diagnostics bundle.
+- Added `bijux config docs` plus a checked-in generated config reference derived from the built-in schema registry.
+- Added dedicated CLI handbook pages for root architecture, app integration, migration, config, diagnostics, Python bridge behavior, and examples.
+
+### Changed
+- Switched `bijux apps scaffold` to generate its manifest contract through the same mounted-app SDK builder used by the new Rust app-author surface.
+- Switched Python app scaffolds and runtime delegation to use callable-aware mount descriptors, interpreter discovery, and shared Rust/Python JSON envelope helpers.
+- Extended PATH diagnostics so runtime health checks can inventory legacy `bijux-<app>` shim binaries alongside canonical `bijux` installs.
+- Hardened config persistence with explicit state locks, backup-on-repair behavior, and secret-aware portable bundle rendering.
+
 ---
 
 <!-- towncrier start -->

@@ -71,6 +71,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         planned_nodes,
         planned_dependencies,
         order,
+        branch_paths,
         mut diagnostics,
     ) = match lowered {
         Ok(plan) => {
@@ -96,16 +97,29 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .map(|node| PlannedNode {
                         id: node.id.clone(),
                         kind: node.kind.clone(),
+                        executor_kind: node.executor_kind.clone(),
+                        semantic_kind: node.semantic_kind.clone(),
                         deps: node.deps.clone(),
                         io_contract: node.io_contract.clone(),
                         outputs: node.outputs.clone(),
+                        side_effects: node.side_effects.clone(),
                         retry: node.retry.clone(),
+                        trigger_rule: node.trigger_rule.clone(),
                         timeout_ms: node.timeout_ms,
+                        resources: node.resources.clone(),
+                        branch: node.branch.as_ref().map(|branch| bijux_dag_core::BranchSpec {
+                            decisions: branch.decisions.clone(),
+                            default_decision: branch.default_decision.clone(),
+                            decision_output: branch.decision_output.clone(),
+                        }),
                     })
                     .collect::<Vec<_>>(),
                 plan.edges
                     .iter()
                     .map(|edge| PlannedDependency {
+                        id: edge.id.clone(),
+                        kind: edge.kind.clone(),
+                        decision: edge.decision.clone(),
                         from: edge.from.clone(),
                         from_port: edge.from_port.clone(),
                         to: edge.to.clone(),
@@ -113,6 +127,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     })
                     .collect::<Vec<_>>(),
                 plan.ordering,
+                plan.branch_paths,
                 {
                     diagnostics.sort();
                     diagnostics
@@ -136,6 +151,8 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     .map(|node| PlannedNode {
                         id: node.id.clone(),
                         kind: node.kind.as_str().to_string(),
+                        executor_kind: node.kind.as_str().to_string(),
+                        semantic_kind: node.semantic_kind.clone(),
                         deps: dep_map
                             .get(&node.id)
                             .cloned()
@@ -151,14 +168,21 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                             }
                         }),
                         outputs: node.outputs.clone(),
+                        side_effects: node.effects.clone(),
                         retry: node.retry.clone(),
+                        trigger_rule: node.trigger_rule.clone(),
                         timeout_ms: node.timeout_ms,
+                        resources: node.resources.clone(),
+                        branch: node.branch.clone(),
                     })
                     .collect::<Vec<_>>(),
                 canonical
                     .edges
                     .iter()
                     .map(|edge| PlannedDependency {
+                        id: edge.id.clone(),
+                        kind: edge.kind.clone(),
+                        decision: edge.decision.clone(),
                         from: edge.from.node_id.clone(),
                         from_port: edge.from.port.clone(),
                         to: edge.to.node_id.clone(),
@@ -166,6 +190,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                     })
                     .collect::<Vec<_>>(),
                 canonical.nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>(),
+                Vec::new(),
                 diagnostics,
             )
         }
@@ -194,6 +219,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
         planned_nodes,
         planned_dependencies,
+        branch_paths,
         diagnostics,
         nodes: graph.nodes.clone(),
         order,
@@ -319,6 +345,7 @@ mod tests {
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                     params: Default::default(),
@@ -330,10 +357,13 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                     params: Default::default(),
@@ -345,6 +375,8 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![],

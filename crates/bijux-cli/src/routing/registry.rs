@@ -54,6 +54,7 @@ impl Default for RouteRegistry {
             .collect::<BTreeMap<_, _>>();
 
         let mut reserved = BTreeSet::from([
+            "apps".to_string(),
             "cli".to_string(),
             "help".to_string(),
             "version".to_string(),

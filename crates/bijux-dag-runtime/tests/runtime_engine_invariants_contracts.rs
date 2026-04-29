@@ -206,7 +206,7 @@ fn runtime_event_ordering_is_stable_and_required_names_are_present() {
         ev("node_attempt_started", 4, Some("a")),
         ev("node_attempt_finished", 5, Some("a")),
         ev("node_scheduled", 6, Some("a")),
-        ev("node_failed", 7, Some("a")),
+        ev("node_finished", 7, Some("a")),
         ev("run_finished", 8, None),
     ];
 

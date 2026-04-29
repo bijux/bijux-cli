@@ -9,19 +9,22 @@ last_reviewed: 2026-04-06
 
 # Data Contracts
 
-`bijux-cli` contract types define stable payload semantics for command paths,
-execution policy, envelopes, diagnostics, config state, and plugin manifests.
+This page explains the data shapes that let the CLI speak consistently to users,
+scripts, plugins, and tests.
 
-## Visual Summary
+The main question is not where a struct lives. It is what kind of promise that
+struct makes once it leaves one function boundary and becomes observable.
+
+## Contract Map
 
 ```mermaid
-flowchart TD
-    contracts["contracts mod"] --> command["command and namespace contracts"]
-    contracts --> execution["execution policy contracts"]
-    contracts --> envelope["output and error envelopes"]
-    contracts --> config["config mutation and state contracts"]
-    contracts --> plugin["plugin manifest and compatibility contracts"]
-    contracts --> diagnostics["diagnostics report contracts"]
+flowchart LR
+    contracts["cli contracts"] --> command["command and namespace"]
+    contracts --> execution["execution policy"]
+    contracts --> envelope["success and error envelopes"]
+    contracts --> config["config state and mutation"]
+    contracts --> plugin["plugin manifests"]
+    contracts --> diagnostics["diagnostics records"]
 ```
 
 ## Contract Families
@@ -48,6 +51,11 @@ flowchart TD
 - keep schema-bearing structs serializable and reviewable
 - treat field removals/renames as compatibility-impacting changes
 - keep examples and docs aligned with actual struct behavior
+
+## Reading Rule
+
+Use this page when a CLI change starts crossing process, file, plugin, or test
+boundaries and the question becomes which payload promise is being changed.
 
 ## Next Reads
 

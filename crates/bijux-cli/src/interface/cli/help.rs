@@ -2,9 +2,10 @@
 
 use anyhow::Result;
 
+use crate::contracts::known_bijux_tools;
 use crate::routing::model::{
-    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_INTERACTION_COMMANDS,
-    ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
+    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_APPS_SUBCOMMANDS,
+    ROOT_INTERACTION_COMMANDS, ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
 };
 use crate::routing::parser::root_command;
 
@@ -95,6 +96,10 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     if let Some(grouped) = help_grouped_guide(path) {
         sections.push(grouped);
     }
+    if path.is_empty() {
+        sections.push(render_official_apps_section());
+        sections.push(render_installed_plugins_section());
+    }
     if let Some(subcommands) = help_subcommand_guide(path) {
         sections.push(subcommands);
     }
@@ -119,11 +124,30 @@ fn format_command_group_row(name: &str, commands: &[&str]) -> String {
     format!("{name:<12} {}", commands.join(", "))
 }
 
+fn render_official_apps_section() -> String {
+    let mut out = String::from("Official apps:\n");
+    for tool in known_bijux_tools() {
+        let aliases = if tool.aliases.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", tool.aliases.join(", "))
+        };
+        out.push_str(&format!("  {:<12} {}{}\n", tool.namespace, tool.help_summary, aliases));
+    }
+    out.trim_end().to_string()
+}
+
+fn render_installed_plugins_section() -> String {
+    "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory."
+        .to_string()
+}
+
 fn help_grouped_guide(path: &[&str]) -> Option<String> {
     match path {
         [] => Some(format!(
             "Management Commands:\n\
   {}\n\
+  apps         apps\n\
   config       config\n\
   plugins      plugins\n\
   {}\n\
@@ -156,6 +180,11 @@ fn config_subcommand_help(command: &str) -> &'static str {
         "unset" => "Remove one key",
         "clear" => "Remove all keys",
         "reload" => "Validate and reload current file",
+        "validate" => "Validate layered config and project discovery",
+        "schema" => "Show the config schema registry",
+        "docs" => "Generate markdown config reference from the schema",
+        "explain" => "Explain the effective value and source of one key",
+        "repair" => "Recover a malformed config file and write a backup",
         "export" => "Write config to a target path",
         "load" => "Load config from a source path",
         _ => "Configuration command",
@@ -195,6 +224,37 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
             "self-test  Deterministic runtime self-checks".to_string(),
             "plugins    Canonical plugin lifecycle namespace".to_string(),
         ])),
+        ["apps"] => {
+            let rows = ROOT_APPS_SUBCOMMANDS
+                .iter()
+                .map(|command| match *command {
+                    "list" => {
+                        "list         List known official apps and resolution health".to_string()
+                    }
+                    "doctor" => {
+                        "doctor       Diagnose official app mounts and discovery status".to_string()
+                    }
+                    "which" => {
+                        "which        Show the exact resolved runtime entrypoint".to_string()
+                    }
+                    "version" => {
+                        "version      Report manifest or probed runtime version".to_string()
+                    }
+                    "capabilities" => {
+                        "capabilities Show declared app capability contract".to_string()
+                    }
+                    "schema" => {
+                        "schema       Show the app mount descriptor JSON schema".to_string()
+                    }
+                    "validate-manifest" => {
+                        "validate-manifest Validate one app mount manifest on disk".to_string()
+                    }
+                    "scaffold" => "scaffold     Generate a starter mounted app project".to_string(),
+                    other => format!("{other:<12} App command"),
+                })
+                .collect::<Vec<_>>();
+            Some(render_subcommand_guide(&rows))
+        }
         ["config"] | ["cli", "config"] => {
             let rows = CLI_CONFIG_SUBCOMMANDS
                 .iter()
@@ -227,6 +287,8 @@ fn help_examples(path: &[&str]) -> Vec<String> {
     match path {
         [] => vec![
             "bijux status".to_string(),
+            "bijux apps list".to_string(),
+            "bijux dag --help".to_string(),
             "bijux install atlas --dry-run".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
@@ -246,12 +308,30 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux install dev-cli --dry-run".to_string(),
             "bijux install atlas --dry-run".to_string(),
         ],
-        ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
+        ["apps"] => vec![
+            "bijux apps list".to_string(),
+            "bijux apps doctor".to_string(),
+            "bijux apps which dag".to_string(),
+            "bijux apps capabilities dag".to_string(),
+            "bijux apps schema".to_string(),
+            "bijux apps validate-manifest ./.bijux/apps/sample.mount.json".to_string(),
+            "bijux apps scaffold python sample --path ./sample-app".to_string(),
+        ],
+        ["doctor"] => vec![
+            "bijux doctor".to_string(),
+            "bijux doctor --bundle".to_string(),
+            "bijux doctor paths".to_string(),
+            "bijux doctor python".to_string(),
+            "bijux doctor routing --format json".to_string(),
+            "bijux doctor dag".to_string(),
+            "bijux doctor shims".to_string(),
+        ],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],
         ["config"] => vec![
             "bijux config list".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
+            "bijux config docs cli".to_string(),
             "bijux config export ./bijux.env".to_string(),
         ],
         ["plugins"] => vec![

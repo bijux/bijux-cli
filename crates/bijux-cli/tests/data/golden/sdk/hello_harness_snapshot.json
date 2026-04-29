@@ -1,0 +1,31 @@
+{
+  "envelope": {
+    "envelope": {
+      "data": {
+        "argv": [
+          "status"
+        ],
+        "cwd": "/sdk/workspace",
+        "namespace": "hello",
+        "status": "ok"
+      },
+      "meta": {
+        "command": {
+          "segments": [
+            "hello",
+            "status"
+          ]
+        },
+        "timestamp": "1970-01-01T00:00:00Z",
+        "version": "v1"
+      },
+      "status": "ok"
+    },
+    "kind": "success"
+  },
+  "exit_code": "Success",
+  "matched_namespace": "hello",
+  "query": "hola",
+  "stderr": "",
+  "stdout": "{\n  \"data\": {\n    \"argv\": [\n      \"status\"\n    ],\n    \"cwd\": \"/sdk/workspace\",\n    \"namespace\": \"hello\",\n    \"status\": \"ok\"\n  },\n  \"meta\": {\n    \"command\": {\n      \"segments\": [\n        \"hello\",\n        \"status\"\n      ]\n    },\n    \"timestamp\": \"1970-01-01T00:00:00Z\",\n    \"version\": \"v1\"\n  },\n  \"status\": \"ok\"\n}\n"
+}

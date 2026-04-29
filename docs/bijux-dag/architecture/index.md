@@ -10,17 +10,18 @@ last_reviewed: 2026-04-06
 # DAG Architecture
 
 The architecture section explains how DAG behavior is implemented across crates:
-semantic kernel, runtime engine, artifact persistence, and orchestration routes.
+semantic kernel, runtime engine, artifact persistence, and orchestration
+routes.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-flowchart TD
-    modules["module map"] --> deps["dependency direction"]
-    deps --> execution["execution model"]
-    execution --> state["state and persistence"]
-    state --> seams["integration seams and extensibility"]
-    seams --> risk["architecture risks"]
+flowchart LR
+    architecture["DAG architecture"] --> modules["module map"]
+    architecture --> deps["dependency direction"]
+    architecture --> execution["execution model"]
+    architecture --> state["state and persistence"]
+    architecture --> seams["integration seams"]
 ```
 
 ## Architecture Scope
@@ -49,3 +50,9 @@ flowchart TD
 - [Extensibility Model](extensibility-model.md)
 - [Code Navigation](code-navigation.md)
 - [Architecture Risks](architecture-risks.md)
+
+## Reading Rule
+
+Start here when the graph model is clear but the crate layout is not. Move to
+Interfaces when the next question is about operator-visible contracts rather
+than internal execution structure.

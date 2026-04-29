@@ -1,4 +1,4 @@
-"""Python facade for Rust-backed bijux-cli runtime."""
+"""Python facade and app-author helpers for bijux-cli."""
 
 from __future__ import annotations
 
@@ -10,21 +10,31 @@ from ._exceptions import (
     UsageError,
     ValidationError,
 )
-from ._facade import (
-    check_python_runtime_supported,
-    command_tree_introspection,
-    config_resolution_helpers,
-    ensure_native_extension,
-    error_to_exception,
-    execution_facade,
-    execution_facade_with_status,
-    install_path_helpers,
-    migration_warnings,
-    plugin_registry_inspection,
-    post_install_diagnostics,
-    version,
+from .app_sdk import (
+    CommandResult,
+    CompatibilityWindow,
+    build_python_mount_manifest,
+    compatibility_report,
+    failure,
+    run_json_app,
+    success,
 )
-from .compat import get_command_tree, get_version, run_cli
+
+_FACADE_EXPORTS = {
+    "check_python_runtime_supported",
+    "command_tree_introspection",
+    "config_resolution_helpers",
+    "ensure_native_extension",
+    "error_to_exception",
+    "execution_facade",
+    "execution_facade_with_status",
+    "install_path_helpers",
+    "migration_warnings",
+    "plugin_registry_inspection",
+    "post_install_diagnostics",
+    "version",
+}
+_COMPAT_EXPORTS = {"get_command_tree", "get_version", "run_cli"}
 
 __all__ = [
     "BijuxPythonError",
@@ -48,4 +58,23 @@ __all__ = [
     "get_command_tree",
     "run_cli",
     "ensure_native_extension",
+    "CommandResult",
+    "CompatibilityWindow",
+    "success",
+    "failure",
+    "run_json_app",
+    "build_python_mount_manifest",
+    "compatibility_report",
 ]
+
+
+def __getattr__(name: str):
+    if name in _FACADE_EXPORTS:
+        from . import _facade
+
+        return getattr(_facade, name)
+    if name in _COMPAT_EXPORTS:
+        from . import compat
+
+        return getattr(compat, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

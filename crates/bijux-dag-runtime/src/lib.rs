@@ -123,6 +123,8 @@ mod runtime;
 #[cfg(test)]
 #[path = "internal/testing/runtime_boundary_tests.rs"]
 mod runtime_boundary_tests;
+#[path = "internal/control/runtime_controls.rs"]
+mod runtime_controls;
 pub mod runtime_core;
 #[cfg(test)]
 #[path = "internal/testing/runtime_policy_trace_tests.rs"]
@@ -173,35 +175,48 @@ mod upgrade_compatibility;
 #[path = "internal/workflow/workflow_product.rs"]
 mod workflow_product;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
+pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
+pub use adapter_conformance::{
+    build_adapter_conformance_suite, generate_adapter_reference_markdown,
+    validate_output_schema_compatibility, AdapterConformanceSuiteReport,
+    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument, AdapterScenarioResult,
+    AdapterScenarioStatus,
+};
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
 pub use async_adapter::AsyncAdapter;
+pub use backend::fake::{
+    fake_batch_backend_reference, fake_batch_executor_contract, FakeBatchExecutor,
+    FakeBatchExecutorContract, FakeBatchJobRecord, FakeBatchJobStatus,
+};
 pub use backend_cluster::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
     capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
     effective_hpc_retry_policy, equivalent_to_local, hpc_array_job_supported,
     hpc_environment_fingerprint, hpc_log_collection_semantics, hpc_poll_response_recovered,
     hpc_replay_fidelity_from_module_fingerprints, hpc_resource_fingerprint,
-    hpc_scratch_staging_semantics, k8s_capability_declaration, map_node_policy_to_k8s_job,
-    map_node_resources_to_k8s, map_node_to_hpc_queue_partition, map_timeout_to_hpc_walltime,
-    matches_placement_policy, normalize_backend_failure, outputs_logs_equivalent,
-    quota_saturation_percent, reconcile_k8s_watch_stream,
+    hpc_scratch_staging_semantics, k8s_capability_declaration, kubernetes_adapter_contract,
+    map_node_policy_to_k8s_job, map_node_resources_to_k8s, map_node_to_hpc_queue_partition,
+    map_timeout_to_hpc_walltime, matches_placement_policy, normalize_backend_failure,
+    outputs_logs_equivalent, quota_saturation_percent, reconcile_k8s_watch_stream,
     reject_unsupported_hpc_scheduler_features, reject_unsupported_k8s_fields,
-    replay_allowed_across_backends, scratch_retention_required, staged_input_cleanup_required,
-    validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
-    BackendCapabilityDescriptor, BackendCleanupGuarantee, BackendConformanceSuite,
-    BackendFailureMappingRule, BackendLogCollectionContract, BackendMaintenanceMode,
-    BackendOutageSimulationFixture, BackendProductionReadinessChecklist, BackendQuotaMetrics,
-    BackendReadinessProbe, CrossBackendReplayRule, GenericBatchExecutorContract,
-    HpcFailureClassification, HpcLogCollectionSemantics, HpcNodeExecutionContract,
-    HpcQueuePartitionMapping, HpcReplayFidelity, HpcResourceFingerprintInput,
-    HpcRetryPolicyDecision, HpcSchedulerVersionMetadata, HpcScratchStagingSemantics,
-    ImageResolutionProvenance, K8sBackendVersionMetadata, K8sCapabilityDeclaration,
-    K8sFailureClass, K8sInjectionAvailability, K8sInjectionRequest, K8sJobPolicyMapping,
-    K8sResourceMapping, K8sResourceRequest, K8sWatchEvent, KubernetesExecutorContractV2,
-    NodeAffinityHint, NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
-    RemoteArtifactStagingProtocol, SlurmExecutorContract, WorkdirSemantics, WorkdirVolumeKind,
+    replay_allowed_across_backends, scratch_retention_required, slurm_adapter_design_contract,
+    staged_input_cleanup_required, validate_k8s_injection, workdir_semantics,
+    AdapterExecutionOutcome, ArtifactCollectionState, BackendCapabilityDescriptor,
+    BackendCleanupGuarantee, BackendConformanceSuite, BackendFailureMappingRule,
+    BackendLogCollectionContract, BackendMaintenanceMode, BackendOutageSimulationFixture,
+    BackendProductionReadinessChecklist, BackendQuotaMetrics, BackendReadinessProbe,
+    CrossBackendReplayRule, GenericBatchExecutorContract, HpcFailureClassification,
+    HpcLogCollectionSemantics, HpcNodeExecutionContract, HpcQueuePartitionMapping,
+    HpcReplayFidelity, HpcResourceFingerprintInput, HpcRetryPolicyDecision,
+    HpcSchedulerVersionMetadata, HpcScratchStagingSemantics, ImageResolutionProvenance,
+    K8sBackendVersionMetadata, K8sCapabilityDeclaration, K8sFailureClass, K8sInjectionAvailability,
+    K8sInjectionRequest, K8sJobPolicyMapping, K8sResourceMapping, K8sResourceRequest,
+    K8sWatchEvent, KubernetesAdapterContractReport, KubernetesExecutorContractV2, NodeAffinityHint,
+    NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
+    RemoteArtifactStagingProtocol, SlurmAdapterDesignContractReport, SlurmExecutorContract,
+    WorkdirSemantics, WorkdirVolumeKind,
 };
 pub use batch_execution::{
     cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
@@ -226,7 +241,9 @@ pub use cache::{
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
-    container_env_isolated, map_local_path_to_container, validate_container_contract,
+    container_engine_discovery, container_env_isolated, container_network_policy_args,
+    container_volume_contract, map_local_path_to_container, supported_container_engines,
+    validate_container_contract, validate_container_mount_contract,
     validate_container_relative_path, ContainerExecutionContract, ContainerMount,
 };
 pub use coordination::{
@@ -252,6 +269,9 @@ pub use extension_catalog::{
     PluginBoundaryKind, PluginConformanceSuiteResult, PluginIsolationPolicy, PluginLifecycleState,
     PluginLoadingMode, PluginMetadata, PluginTrustPolicy,
 };
+pub use external_adapter::{
+    probe_external_adapters, ExternalAdapterHandshakeReport, ExternalAdapterHandshakeStatus,
+};
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
@@ -271,11 +291,12 @@ use io::{Fs, StdFs};
 pub use local_executor::LocalExecutor;
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
-    event_contains_sensitive_material, event_names_emitted_once, required_event_fields_present,
-    summarize_failure_root_causes, validate_required_event_names, write_timeline_export,
-    EventCategory, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind, StdoutEventSink,
-    TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
+    event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
+    required_event_fields_present, summarize_failure_root_causes, validate_required_event_names,
+    verify_event_log_completeness, write_timeline_export, EventCategory,
+    EventLogCompletenessReport, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry,
+    MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind,
+    StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 pub use observability_deep::{
     build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,
@@ -323,23 +344,34 @@ pub use remote_executor::{
 pub use run_state::{
     imported_run_distinguishable, node_transition_invariant_id, run_transition_invariant_id,
     terminal_transition_audit_events, validate_node_transition, validate_run_transition,
-    verify_post_run_state_consistency, NodeState, NodeTransition, ReplayNodeAction,
-    ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId, RunSnapshot,
-    RunState, RunSummaryV2, RunTransition, StateConsistencyReport, TransitionAuditEvent,
-    TransitionCause, INV_NODE_TERMINAL_NO_REVERT, INV_RUN_FAILED_CAUSAL_FAILURE,
+    verify_post_run_state_consistency, NodeState, NodeTransition, PartialRerunContract,
+    ReplayNodeAction, ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId,
+    RunSnapshot, RunState, RunSummaryV2, RunTransition, StateConsistencyReport,
+    TransitionAuditEvent, TransitionCause, INV_NODE_TERMINAL_NO_REVERT,
+    INV_RUN_FAILED_CAUSAL_FAILURE,
+};
+pub use runtime_controls::{
+    audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
+    build_execution_isolation_report, build_heartbeat_audit_report,
+    build_manual_intervention_audit_report, build_pause_resume_audit_report,
+    build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
+    CancellationAuditReport, DispatchAuditReport, DispatchKeyRecord, EventLogAuditReport,
+    ExecutionIsolationNodeReport, ExecutionIsolationReport, HeartbeatAuditReport,
+    ManualInterventionAuditReport, PauseResumeAuditReport, RetryDecisionReport, TimeoutAuditReport,
+    TransitionAuditReport,
 };
 pub use runtime_semantics::*;
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
-    failure_allows_downstream_readiness, failure_mode_name, scheduler_contract_profile,
-    scheduler_debug_event_log, scheduler_invariants_hold, validate_cron_expression,
-    validate_schedule_policy_combination, validate_schedule_registry, BackfillRequest,
-    CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter, DeterministicScheduler,
-    ExecutionCheckpoint, ExecutionSubmissionRequest, FailurePropagationMode,
-    NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
-    ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview,
-    ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, Scheduler,
-    SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
+    failure_allows_downstream_readiness, failure_mode_name, replay_scheduler_checkpoint,
+    scheduler_contract_profile, scheduler_debug_event_log, scheduler_invariant_violations,
+    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
+    validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
+    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
+    FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,
+    QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition,
+    ScheduleDryRunPreview, ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission,
+    Scheduler, SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
     SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
     SchedulerUnit, ThroughputScheduler, TriggerSpec,
 };
@@ -385,10 +417,11 @@ use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 pub use task_contract::{
-    build_task_contract, default_forced_cleanup, validate_task_contracts,
+    build_task_contract, default_forced_cleanup, validate_task_contracts, BackoffStrategy,
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
-    RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
-    TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
+    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
+    TimeoutPolicy,
 };
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
@@ -608,6 +641,7 @@ impl Adapter for ShellAdapter {
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
+        let exit_code = output.status.code();
         let failure = if success {
             None
         } else {
@@ -615,7 +649,7 @@ impl Adapter for ShellAdapter {
                 kind: "Execution".to_string(),
                 code: "EXEC_FAIL".to_string(),
                 message: "command failed".to_string(),
-                details: None,
+                details: Some(serde_json::json!({ "exit_code": exit_code })),
             })
         };
 
@@ -662,8 +696,10 @@ impl Adapter for ContainerAdapter {
             .ok_or_else(|| RuntimeError::Executor("missing container spec".to_string()))?;
 
         let node_dir = exec.run_dir.node_dir(&node.id);
+        let inputs_dir = exec.run_dir.node_inputs_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
+        exec.fs.create_dir_all(&inputs_dir)?;
         exec.fs.create_dir_all(&outputs_dir)?;
         exec.fs.create_dir_all(&node_dir)?;
         exec.fs.create_dir_all(&work_dir)?;
@@ -671,27 +707,54 @@ impl Adapter for ContainerAdapter {
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
         let engine = spec.engine.as_str();
-        let engine_version = engine_version(engine);
-        if engine_version.is_none() {
+        let engine_version = match container_execution::container_engine_discovery(engine) {
+            Ok(version) => version,
+            Err(message) => {
+                exec.fs.write(&stdout_path, b"")?;
+                exec.fs.write(&stderr_path, message.as_bytes())?;
+                return Ok(NodeResult {
+                    status: NodeStatus::Failed,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    failure: Some(FailureInfo {
+                        kind: "Infrastructure".to_string(),
+                        code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
+                        message: message.clone(),
+                        details: Some(serde_json::json!({ "engine": engine })),
+                    }),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: Some(container_trace(spec, engine, None, None)),
+                    adapter_binary_sha256: None,
+                });
+            }
+        };
+        let mounts = container_execution::container_volume_contract(&node_dir);
+        if let Err(message) =
+            container_execution::validate_container_mount_contract(&mounts, &node_dir)
+        {
             exec.fs.write(&stdout_path, b"")?;
-            exec.fs.write(
-                &stderr_path,
-                format!("container engine not available: {}", engine).as_bytes(),
-            )?;
+            exec.fs.write(&stderr_path, message.as_bytes())?;
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
                 failure: Some(FailureInfo {
-                    kind: "Infrastructure".to_string(),
-                    code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
-                    message: format!("container engine not available: {}", engine),
+                    kind: "Execution".to_string(),
+                    code: "CONTAINER_VOLUME_CONTRACT_INVALID".to_string(),
+                    message,
                     details: Some(serde_json::json!({ "engine": engine })),
                 }),
                 attempts: 1,
                 attempt_events: Vec::new(),
-                container_meta: Some(container_trace(spec, engine, None, engine_version)),
+                container_meta: Some(container_trace(
+                    spec,
+                    engine,
+                    None,
+                    Some(engine_version.clone()),
+                )),
                 adapter_binary_sha256: None,
             });
         }
@@ -699,11 +762,45 @@ impl Adapter for ContainerAdapter {
         let mut cmd = subprocess::command(engine);
         cmd.arg("run").arg("--rm");
 
-        if !node.effects.contains(&Effect::Network) || exec.policy.deny_network {
-            cmd.args(["--network", "none"]);
+        let deny_network = !node.effects.contains(&Effect::Network) || exec.policy.deny_network;
+        let network_args =
+            match container_execution::container_network_policy_args(engine, deny_network) {
+                Ok(args) => args,
+                Err(message) => {
+                    exec.fs.write(&stdout_path, b"")?;
+                    exec.fs.write(&stderr_path, message.as_bytes())?;
+                    return Ok(NodeResult {
+                        status: NodeStatus::Failed,
+                        stdout_path: stdout_path.display().to_string(),
+                        stderr_path: stderr_path.display().to_string(),
+                        outputs_dir: outputs_dir.display().to_string(),
+                        failure: Some(FailureInfo {
+                            kind: "Policy".to_string(),
+                            code: "POLICY_UNENFORCEABLE".to_string(),
+                            message,
+                            details: Some(
+                                serde_json::json!({ "engine": engine, "effect": "network" }),
+                            ),
+                        }),
+                        attempts: 1,
+                        attempt_events: Vec::new(),
+                        container_meta: Some(container_trace(
+                            spec,
+                            engine,
+                            None,
+                            Some(engine_version.clone()),
+                        )),
+                        adapter_binary_sha256: None,
+                    });
+                }
+            };
+        for arg in network_args {
+            cmd.arg(arg);
         }
-
-        cmd.args(["-v", &format!("{}:/bijux/node", node_dir.display())]);
+        for mount in &mounts {
+            let mode = if mount.readonly { "ro" } else { "rw" };
+            cmd.args(["-v", &format!("{}:{}:{}", mount.local_path, mount.container_path, mode)]);
+        }
 
         let workdir = spec.workdir.clone().unwrap_or_else(|| "/bijux/node/work".to_string());
         cmd.args(["--workdir", &workdir]);
@@ -737,7 +834,7 @@ impl Adapter for ContainerAdapter {
                     spec,
                     engine,
                     exit_code,
-                    engine_version.clone(),
+                    Some(engine_version.clone()),
                 )),
                 adapter_binary_sha256: None,
             });
@@ -765,7 +862,7 @@ impl Adapter for ContainerAdapter {
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
-            container_meta: Some(container_trace(spec, engine, exit_code, engine_version)),
+            container_meta: Some(container_trace(spec, engine, exit_code, Some(engine_version))),
             adapter_binary_sha256: None,
         })
     }
@@ -969,6 +1066,7 @@ fn write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
     replay_provenance: Option<ReplayProvenance>,
@@ -1005,6 +1103,7 @@ fn write_trace(
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         container: container_meta,
         cache_proof,
+        branch_decision,
         skip_reason,
         failure,
         transition_cause,
@@ -1054,6 +1153,7 @@ pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
         | "not_selected_by_include_selector"
         | "excluded_by_selector"
         | "not_selected_by_dependency_closure" => "SelectionFiltered",
+        "branch_decision_not_selected" => "BranchDecisionFiltered",
         "upstream_failed" => "DependencyFailed",
         "cancelled" => "CancelRequested",
         _ => "SelectionFiltered",
@@ -1313,6 +1413,22 @@ fn cache_key_input_for_run(
     }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct AdapterAdmissionEntry {
+    pub node_id: String,
+    pub node_kind: String,
+    pub supported: bool,
+    pub adapter_id: Option<String>,
+    pub adapter_version: Option<String>,
+    pub reasons: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct AdapterAdmissionReport {
+    pub supported: bool,
+    pub entries: Vec<AdapterAdmissionEntry>,
+}
+
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
@@ -1321,6 +1437,110 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     ])
     .unwrap_or_else(|_| AdapterRegistry::new());
     registry.list()
+}
+
+pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
+    let registry = build_registry(vec![
+        Arc::new(ConstAdapter),
+        Arc::new(ShellAdapter),
+        Arc::new(ContainerAdapter),
+    ])
+    .unwrap_or_else(|_| AdapterRegistry::new());
+    registry.descriptors()
+}
+
+pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>, RuntimeError> {
+    let mut descriptors = registered_adapter_descriptors();
+    for handshake in probe_external_adapters()? {
+        if let Some(descriptor) = handshake.descriptor {
+            descriptors.push(descriptor);
+        }
+    }
+    descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
+    Ok(descriptors
+        .into_iter()
+        .map(|descriptor| build_adapter_conformance_suite(&descriptor))
+        .collect())
+}
+
+pub fn registered_adapter_reference_document() -> AdapterReferenceDocument {
+    let mut descriptors = registered_adapter_descriptors();
+    descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
+    let conformance = descriptors.iter().map(build_adapter_conformance_suite).collect::<Vec<_>>();
+    AdapterReferenceDocument {
+        descriptors,
+        conformance,
+        slurm: slurm_adapter_design_contract(),
+        kubernetes: kubernetes_adapter_contract(),
+        fake_batch: fake_batch_executor_contract(),
+    }
+}
+
+pub fn adapter_admission_matrix(graph: &Graph) -> AdapterAdmissionReport {
+    let descriptors = registered_adapter_descriptors();
+    let mut by_kind = std::collections::BTreeMap::new();
+    for descriptor in &descriptors {
+        for kind in &descriptor.supported_kinds {
+            by_kind.insert(kind.clone(), descriptor.clone());
+        }
+    }
+
+    let mut entries = Vec::new();
+    for node in &graph.nodes {
+        let kind = node.kind.as_str().to_string();
+        let descriptor = by_kind.get(&kind);
+        let mut reasons = Vec::new();
+        if descriptor.is_none() {
+            reasons.push(format!("no registered adapter supports node kind {}", kind));
+        }
+        if let Some(descriptor) = descriptor {
+            let conformance = adapter_conformance::validate_descriptor(descriptor);
+            reasons.extend(conformance.violations);
+            if matches!(node.kind, NodeKind::Container) {
+                let Some(spec) = node.container.as_ref() else {
+                    reasons.push("container node missing container spec".to_string());
+                    entries.push(AdapterAdmissionEntry {
+                        node_id: node.id.clone(),
+                        node_kind: kind,
+                        supported: reasons.is_empty(),
+                        adapter_id: Some(descriptor.id.clone()),
+                        adapter_version: Some(descriptor.version.clone()),
+                        reasons,
+                    });
+                    continue;
+                };
+                if let Err(error) = container_execution::container_engine_discovery(&spec.engine) {
+                    reasons.push(error);
+                }
+                if let Err(error) = container_execution::container_network_policy_args(
+                    &spec.engine,
+                    !node.effects.contains(&Effect::Network),
+                ) {
+                    reasons.push(error);
+                }
+                let mounts = container_execution::container_volume_contract(Path::new(
+                    "/synthetic-node-root",
+                ));
+                if let Err(error) = container_execution::validate_container_mount_contract(
+                    &mounts,
+                    Path::new("/synthetic-node-root"),
+                ) {
+                    reasons.push(error);
+                }
+            }
+        }
+        let supported = reasons.is_empty();
+        entries.push(AdapterAdmissionEntry {
+            node_id: node.id.clone(),
+            node_kind: kind,
+            supported,
+            adapter_id: descriptor.map(|value| value.id.clone()),
+            adapter_version: descriptor.map(|value| value.version.clone()),
+            reasons,
+        });
+    }
+    let supported = entries.iter().all(|entry| entry.supported);
+    AdapterAdmissionReport { supported, entries }
 }
 
 pub fn adapter_registry_dump() -> serde_json::Value {
@@ -1599,9 +1819,17 @@ fn verify_cache_entry(
     {
         return Ok(false);
     }
-    if meta.get("produces_outputs_schema_version").and_then(|v| v.as_str())
-        != Some(expected_input.output_schema_version.as_str())
-    {
+    let produced_output_schema_version = meta
+        .get("produces_outputs_schema_version")
+        .and_then(|v| v.as_str())
+        .or_else(|| meta.get("output_schema_version").and_then(|v| v.as_str()))
+        .unwrap_or_default();
+    let schema_compatibility = validate_output_schema_compatibility(
+        CacheCompatibilityMode::FingerprintExact,
+        produced_output_schema_version,
+        expected_input.output_schema_version.as_str(),
+    );
+    if !schema_compatibility.compatible {
         return Ok(false);
     }
     if meta.get("policy_fingerprint").and_then(|v| v.as_str())
@@ -1910,21 +2138,6 @@ fn container_trace(
         engine_version,
         exit_code,
     }
-}
-
-fn engine_version(engine: &str) -> Option<String> {
-    subprocess::output(engine, &["--version"]).ok().and_then(|out| {
-        if out.status.success() {
-            let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if v.is_empty() {
-                None
-            } else {
-                Some(v)
-            }
-        } else {
-            None
-        }
-    })
 }
 
 fn collect_outputs_summary(

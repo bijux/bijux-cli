@@ -16,6 +16,7 @@ pub(crate) fn handle_replay_command(
     run_dir: &Path,
     out: &Path,
     dry_run: bool,
+    sandbox: bool,
     prove: bool,
     reuse_cache: bool,
     cache: CacheModeArg,
@@ -62,17 +63,18 @@ pub(crate) fn handle_replay_command(
     if dry_run {
         let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
         let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
-        let plan = json!({
-            "source_run_dir": run_dir,
-            "target_out_dir": out,
-            "selectors": {
-                "select": dry_select,
-                "exclude": dry_exclude
-            },
-            "cache_mode": format!("{cache_mode:?}"),
-            "jobs": jobs,
-            "prove_requested": prove
-        });
+        let plan = crate::replay_service::replay_dry_run_plan(
+            run_dir,
+            out,
+            &snapshot,
+            source_run_id.as_deref(),
+            &dry_select,
+            &dry_exclude,
+            &format!("{cache_mode:?}"),
+            jobs,
+            prove,
+            sandbox,
+        )?;
         let response = ReplayCommandResponse {
             run_dir: None,
             dry_run_plan: Some(plan.clone()),
@@ -90,6 +92,9 @@ pub(crate) fn handle_replay_command(
         }
         println!("{}", serde_json::to_string_pretty(&plan).unwrap());
         return Ok(ExitCode::SUCCESS);
+    }
+    if sandbox && out.starts_with(run_dir) {
+        return Err(ExitCode::from(3));
     }
     let options = RuntimeConfig {
         jobs,
@@ -115,14 +120,29 @@ pub(crate) fn handle_replay_command(
     let run_path = runtime.run(&snapshot.graph, out, options).map_err(|_| ExitCode::from(3))?;
     let replay_proof = if prove {
         let diff = crate::replay_service::run_diff_from_dirs(run_dir, &run_path)?;
+        let source_evidence_gaps = crate::replay_service::replay_evidence_gaps(run_dir);
+        let replay_evidence_gaps = crate::replay_service::replay_evidence_gaps(&run_path);
+        let safety_level = if !source_evidence_gaps.is_empty() || !replay_evidence_gaps.is_empty() {
+            "incomplete_evidence".to_string()
+        } else {
+            serde_json::to_value(diff.replay_equivalence.safety_level)
+                .ok()
+                .and_then(|value| value.as_str().map(ToOwned::to_owned))
+                .unwrap_or_else(|| "unsupported".to_string())
+        };
         Some(json!({
             "fidelity_level": if diff.replay_equivalence.equivalent { "strict_equivalent" } else { "diverged" },
             "equivalent": diff.replay_equivalence.equivalent,
+            "safety_level": safety_level,
             "reasons": diff.replay_equivalence.reasons,
             "reason_report": diff.replay_equivalence.reason_report,
             "cause_groups": diff.replay_equivalence.cause_groups,
+            "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
+            "source_evidence_gaps": source_evidence_gaps,
+            "replay_evidence_gaps": replay_evidence_gaps,
             "source_run_id": read_run_id(run_dir)?,
-            "replay_run_id": read_run_id(&run_path)?
+            "replay_run_id": read_run_id(&run_path)?,
+            "sandbox_mode": if sandbox { "isolated" } else { "standard" }
         }))
     } else {
         None

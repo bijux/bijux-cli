@@ -9,21 +9,20 @@ last_reviewed: 2026-04-06
 
 # Artifact and Contract Flow
 
-Artifact and contract flow defines how outputs are generated, validated,
-published, and consumed across programs.
+This page explains how behavior, contracts, and generated artifacts stay in
+sync across the repository.
 
-## Visual Summary
+The flow matters because code, snapshots, docs, and release surfaces should all
+describe the same verified state rather than drifting independently.
+
+## Flow Map
 
 ```mermaid
-flowchart TD
-    behavior[package public behavior] --> contracts[tracked contracts and schemas]
-    contracts --> pinned[pinned snapshots and digests]
-    pinned --> checks[drift and compatibility checks]
-    checks --> review[review and merge decision]
+flowchart LR
+    behavior["public behavior"] --> contracts["tracked contracts and schemas"]
+    contracts --> checks["drift and compatibility checks"]
+    checks --> review["review and merge"]
     review --> behavior
-
-    mismatch_code[behavior changed without contract update] --> checks
-    mismatch_contract[contract changed without stated intent] --> checks
 ```
 
 ## Flow Stages
@@ -39,6 +38,11 @@ flowchart TD
 - CLI output and route contracts
 - maintainer evidence schemas and registry outputs
 - documentation layout and link contracts
+
+## Reading Rule
+
+Use this page when a change crosses from implementation into contracts,
+snapshots, or generated evidence.
 
 ## Code Anchors
 

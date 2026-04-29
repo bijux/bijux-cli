@@ -12,15 +12,15 @@ last_reviewed: 2026-04-06
 DAG operations focus on repeatable execution, artifact evidence, and predictable
 recovery under change.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    setup[installation and setup] --> run[common run workflows]
-    run --> observe[observability and diagnostics]
-    observe --> recover[failure recovery]
-    recover --> release[release and versioning]
-    release --> safety[security and safety]
+    operations["DAG operations"] --> setup["installation and setup"]
+    operations --> run["common run workflows"]
+    operations --> observe["observability and diagnostics"]
+    operations --> recover["failure recovery"]
+    operations --> release["release and versioning"]
 ```
 
 ## Operating Priorities
@@ -49,3 +49,9 @@ flowchart LR
 
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Change Validation](../quality/change-validation.md)
+
+## Reading Rule
+
+Use this section when the question is about executing, diagnosing, or recovering
+graph runs in practice. Move back to Interfaces or Quality when the next
+question is about contracts or proof rather than operations.

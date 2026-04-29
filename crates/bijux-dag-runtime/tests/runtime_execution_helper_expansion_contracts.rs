@@ -8,10 +8,11 @@ use bijux_dag_runtime::{
     build_scheduler, classify_failure, compute_partial_run_closure, deduplicate_trigger_events,
     deterministic_schedule_order, diff_plans, evaluate_sla_metrics, explain_plan,
     failure_allows_downstream_readiness, fingerprint_plan, run_batches, scheduler_contract_profile,
-    scheduler_invariants_hold, validate_cron_expression, validate_schedule_registry,
-    BackfillThrottlingPolicy, FailurePropagationMode, PlannerGuardrails, PlannerPhase,
-    PriorityClass, QueueIsolationPolicy, ReadyNode, RetryPolicySemantics, RunBatchPolicy,
-    RuntimeConfig, ScheduleDefinition, ScheduleRegistry, ScheduleSubmissionStatus,
+    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
+    validate_schedule_registry, BackfillRequest, BackfillThrottlingPolicy, CatchUpPolicy,
+    ConcurrencyPolicyLayers, FailurePropagationMode, PlannerGuardrails, PlannerPhase,
+    PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode, RetryPolicySemantics,
+    RunBatchPolicy, RuntimeConfig, ScheduleDefinition, ScheduleRegistry, ScheduleSubmissionStatus,
     ScheduledSubmission, SchedulerFairness, SchedulerPolicy, SelectorSet, TriggerSpec,
 };
 use bijux_dag_testkit as _;
@@ -182,7 +183,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         priority: PriorityClass::Standard,
         concurrency: bijux_dag_runtime::ConcurrencyPolicyLayers {
             per_dag: Some(1),
-            per_queue: None,
+            per_queue: Some(1),
             per_tenant: None,
             per_node_group: None,
         },
@@ -209,7 +210,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
     assert!(failure_allows_downstream_readiness(FailurePropagationMode::ContinueIndependent));
 
     let graph = tiny_graph();
@@ -217,6 +218,84 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
     let state = bijux_dag_runtime::SchedulerState::from_plan(&plan);
     assert!(scheduler_invariants_hold(&state));
     let _ = scheduler;
+}
+
+#[test]
+fn schedule_validation_rejects_blank_queue_and_noncron_catchup() {
+    let schedule = ScheduleDefinition {
+        id: "manual-catchup".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Manual,
+        queue: QueueIdentity {
+            queue_name: "   ".to_string(),
+            tenant: Some("tenant-a".to_string()),
+        },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 1 },
+    };
+
+    let err = validate_schedule_policy_combination(&schedule).expect_err("invalid schedule");
+    assert!(err.contains("queue_name") || err.contains("catch-up"));
+}
+
+#[test]
+fn schedule_validation_rejects_zero_or_inconsistent_concurrency_layers() {
+    let schedule = ScheduleDefinition {
+        id: "zero-cap".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Cron {
+            expression: "* * * * *".to_string(),
+            timezone: "UTC".to_string(),
+        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(0),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_policy_combination(&schedule).expect_err("invalid concurrency");
+    assert!(err.contains("greater than zero"));
+}
+
+#[test]
+fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
+    let schedule = ScheduleDefinition {
+        id: "backfill-over-cap".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 100,
+            window_end_unix_ms: 200,
+            partition_by: Some("sample".to_string()),
+            max_parallelism: 4,
+            failure_policy: "continue".to_string(),
+        }),
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::High,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(2),
+            per_queue: Some(2),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_policy_combination(&schedule).expect_err("invalid backfill");
+    assert!(err.contains("exceeds queue concurrency cap"));
 }
 
 #[test]
