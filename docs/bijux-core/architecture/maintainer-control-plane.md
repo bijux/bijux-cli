@@ -7,34 +7,18 @@ owner: bijux-core-docs
 last_reviewed: 2026-04-06
 ---
 
-# Maintainer Control Plane
+# Maintainer Surface
 
-Maintainer control-plane capabilities are isolated from end-user runtime paths
-so governance automation does not distort product command behavior.
+Maintainer capabilities are isolated from end-user runtime paths so governance
+automation does not distort product command behavior.
 
-## Visual Summary
+## Separation Map
 
 ```mermaid
 flowchart LR
-    subgraph ProductRuntime
-        cli[bijux and bijux dag commands]
-        runtime[product runtime contracts]
-    end
-
-    subgraph MaintainerPlane
-        dev_cli[bijux-dev CLI commands]
-        dev_dag[bijux-dev DAG commands]
-        reports[evidence and governance reports]
-    end
-
-    maintainer[maintainer workflows] --> dev_cli
-    maintainer --> dev_dag
-    dev_cli --> reports
-    dev_dag --> reports
-    cli --> runtime
-    dev_cli --> runtime
-    dev_dag --> runtime
-    runtime -. no reverse dependency .-> dev_cli
+    product["Product runtime"] --> contracts["runtime contracts"]
+    maintainer["Maintainer surface"] --> evidence["evidence and governance reports"]
+    maintainer --> contracts
 ```
 
 ## Control-Plane Responsibilities
@@ -64,6 +48,11 @@ order:
 1. update owning program handbook (`bijux-cli` or `bijux-dag`)
 2. add contract/test evidence in the owning crate
 3. update maintainer workflows that consume the new evidence
+
+## Reading Rule
+
+Use this page when the question is about repository governance machinery rather
+than user-facing runtime behavior.
 
 ## Code Anchors
 

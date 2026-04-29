@@ -9,10 +9,12 @@ last_reviewed: 2026-04-06
 
 # Public Imports
 
-Prefer crate-root exports for DAG integrations so code remains aligned with
-intended ownership boundaries.
+This page records the import paths DAG integrations should prefer.
 
-## Visual Summary
+Using the crate-root exports keeps downstream code aligned with the public
+surface instead of tying it to internal module layout.
+
+## Import Map
 
 ```mermaid
 flowchart LR
@@ -21,7 +23,6 @@ flowchart LR
     facade --> stable_types[stable types]
     facade --> stable_functions[stable functions]
     facade -. hides .-> internals[private internals]
-    internals --> impl[implementation modules]
 ```
 
 ## Preferred Imports
@@ -30,6 +31,11 @@ flowchart LR
 - `bijux_dag_runtime::{Runtime, RuntimeConfig, build_plan}`
 - `bijux_dag_artifacts::{RunDir, verify_run_dir, write_outputs_index}`
 - `bijux_dag_app::{dag_command, dag_run}` for CLI wiring integrations
+
+## Reading Rule
+
+Use this page when an integration needs DAG types or functions but the correct
+crate-root boundary is still unclear.
 
 ## Code Anchors
 

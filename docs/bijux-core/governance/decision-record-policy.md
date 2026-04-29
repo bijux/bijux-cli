@@ -9,17 +9,21 @@ last_reviewed: 2026-04-06
 
 # Decision Record Policy
 
-Decision records capture high-impact architecture and governance choices so
-future work can evaluate intent, tradeoffs, and rollback options.
+Decision records preserve the reasoning behind the choices that reshape this
+repository.
 
-## Visual Summary
+They matter when a later change needs more than the final answer. A good record
+shows what pressure existed at the time, what alternatives were considered, and
+what would need to change before the decision should be reopened.
+
+## Decision Flow
 
 ```mermaid
 flowchart TD
-    decision[architecture or policy decision] --> context[context and constraints]
-    context --> options[options considered]
-    options --> outcome[selected direction]
-    outcome --> consequences[expected consequences and review trigger]
+    decision["architecture or policy question"] --> context["context and constraints"]
+    decision --> options["alternatives considered"]
+    decision --> outcome["selected direction"]
+    outcome --> review["review or rollback trigger"]
 ```
 
 ## When a Record Is Required
@@ -34,6 +38,11 @@ flowchart TD
 - alternatives considered and rejection reasons
 - migration or rollback plan when relevant
 - verification criteria for future review
+
+## Reading Rule
+
+Use this page when a change touches architecture, compatibility, or governance
+and the repository needs a durable explanation rather than a passing PR note.
 
 ## Code Anchors
 

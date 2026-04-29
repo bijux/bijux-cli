@@ -9,25 +9,21 @@ last_reviewed: 2026-04-12
 
 # Core Packages
 
-`bijux-core` ships one workspace, but it does not ship one idea. The crate
-split is the repository contract: runtime command ownership lives in CLI,
-deterministic graph and execution ownership live in DAG, and repository
-governance lives in Maintainer.
+This page is the quickest way to answer a simple question: which package owns
+this behavior?
 
-Use this page when you need the fastest honest answer to "which package owns
-this behavior?"
+The workspace stays readable because the split is deliberate. Command and
+runtime surfaces live in CLI, graph and execution truth live in DAG, and
+repository proof lives in Maintainer.
 
-This page is the detailed package inventory behind the shorter routing summary
-in [Foundation / Package Map](../foundation/package-map.md).
-
-## Visual Summary
+## Package Map
 
 ```mermaid
 flowchart TB
     repo["bijux-core workspace"]
-    repo --> cli["CLI packages"]
-    repo --> dag["DAG packages"]
-    repo --> dev["Maintainer package"]
+    repo --> cli["CLI"]
+    repo --> dag["DAG"]
+    repo --> dev["Maintainer"]
     cli --> cli_runtime["bijux-cli"]
     cli --> cli_python["bijux-cli-python"]
     dag --> dag_core["bijux-dag-core"]
@@ -39,7 +35,7 @@ flowchart TB
     dev --> dev_pkg["bijux-dev"]
 ```
 
-## Workspace Map
+## Workspace Table
 
 | Package | Area | Owns | Open Next |
 | --- | --- | --- | --- |
@@ -55,14 +51,14 @@ flowchart TB
 
 ## Reading Rule
 
-- open [CLI](../../bijux-cli/index.md) when the question is about the `bijux`
-  command, plugin behavior, REPL semantics, or Python installation surfaces
-- open [DAG](../../bijux-dag/index.md) when the question is about graph truth,
-  execution planning, runtime policy, artifacts, or DAG command behavior
-- open [Maintainer](../../bijux-dev/index.md) when the question is about
-  repository health, release proof, docs gates, or evidence collection
+- open [CLI](../../bijux-cli/index.md) for `bijux` command behavior, plugin
+  routing, REPL semantics, and Python distribution surfaces
+- open [DAG](../../bijux-dag/index.md) for graph truth, execution planning,
+  runtime policy, artifacts, and DAG command behavior
+- open [Maintainer](../../bijux-dev/index.md) for repository health, release
+  proof, docs gates, and evidence collection
 - stay in the [Repository Handbook](../index.md) only when the question crosses
-  those ownership boundaries
+  those boundaries
 
 ## Related Root Pages
 
@@ -83,8 +79,8 @@ flowchart TB
 - `crates/bijux-dag-testkit/README.md`
 - `crates/bijux-dev/README.md`
 
-## Review Lens
+## Why This Split Holds
 
-- every published package in the workspace should appear here exactly once
-- package ownership should route to one handbook branch without ambiguity
-- this page should explain the split without duplicating package-local detail
+- every published package in the workspace appears here once
+- each package routes to one handbook branch without ambiguity
+- the table explains ownership without duplicating package-local detail

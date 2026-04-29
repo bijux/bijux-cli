@@ -12,19 +12,15 @@ last_reviewed: 2026-04-06
 DAG quality defines the proof required for behavior changes, compatibility
 claims, and operational trust.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-  Q[Quality] --> Validate[Change Validation]
-  Q --> Done[Definition of Done]
-  Q --> Deps[Dependency Governance]
-  Q --> Docs[Documentation Standards]
-  Q --> Inv[Invariants]
-  Q --> Limits[Known Limitations]
-  Q --> Review[Review Checklist]
-  Q --> Risk[Risk Register]
-  Q --> Tests[Test Strategy]
+  quality["DAG quality"] --> validate["Change validation"]
+  quality --> tests["Test strategy"]
+  quality --> invariants["Invariants"]
+  quality --> review["Review checklist"]
+  quality --> risk["Risk register"]
 ```
 
 ## Quality Goals
@@ -48,3 +44,9 @@ flowchart LR
 - [Risk Register](risk-register.md)
 - [Known Limitations](known-limitations.md)
 - [Documentation Standards](documentation-standards.md)
+
+## Reading Rule
+
+Use this section when the question is about what evidence must exist before DAG
+behavior can be trusted. Move back to Operations when the next question is how
+to run the checks rather than what they must establish.

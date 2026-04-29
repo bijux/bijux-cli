@@ -10,23 +10,16 @@ last_reviewed: 2026-04-12
 # Core Foundation
 
 The foundation section explains why `bijux-core` exists in this shape before it
-explains how the workspace is operated. A reader should leave this section able
-to answer a stable set of questions: why the workspace is split, where
-authority changes hands, which names stay durable across docs and code, and
-which repository rules should not drift.
+explains how the workspace is operated. Start here when you need the split,
+the vocabulary, and the ownership model to make sense before you read deeper
+architecture or operations pages.
 
 ```mermaid
-mindmap
-  root((Core Foundation))
-    Platform Overview
-    Repository Scope
-    Workspace Layout
-    Package Map
-    Ownership Model
-    Domain Language
-    Documentation System
-    Change Principles
-    Decision Rules
+flowchart LR
+    foundation["Core foundation"] --> shape["why the workspace is split"]
+    foundation --> ownership["where authority changes hands"]
+    foundation --> language["which names stay durable"]
+    foundation --> rules["which repository rules should not drift"]
 ```
 
 ## Pages In This Section
@@ -41,11 +34,7 @@ mindmap
 - [Change Principles](change-principles.md)
 - [Decision Rules](decision-rules.md)
 
-## Purpose
+## Reading Rule
 
-This page gives readers a stable route into the repository foundation.
-
-## Stability
-
-Keep it aligned with the root topics that explain the workspace split and the
-repository boundary.
+Use Foundation first when the question is still about shape and ownership. Move
+to Architecture or Operations once the repository split is already clear.

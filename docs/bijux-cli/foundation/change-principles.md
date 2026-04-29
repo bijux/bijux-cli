@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # Change Principles
 
-`bijux-cli` evolves frequently, but contract-bearing behavior should move under
-explicit rules. These principles keep command stability and docs trust intact.
+This page explains the rules that keep CLI change moving without making the
+runtime harder to trust.
 
-## Visual Summary
+The principles matter because the CLI changes often, but the parts people
+script against should not shift by surprise.
+
+## Change Flow
 
 ```mermaid
 flowchart LR
-    change["Proposed change"] --> classify["classify: contract or internal"]
-    classify --> evidence["add tests and docs evidence"]
-    evidence --> review["review boundary and compatibility impact"]
-    review --> release["ship with explicit release notes"]
+    change["proposed change"] --> classify["classify contract impact"]
+    classify --> evidence["tests and docs evidence"]
+    evidence --> review["boundary and compatibility review"]
+    review --> release["explicit release note if needed"]
 ```
 
 ## Principles
@@ -50,6 +53,11 @@ flowchart LR
 If a scriptable behavior changes, update the docs page that defines it, add or
 update the related test, and include explicit compatibility notes in the same
 review thread.
+
+## Reading Rule
+
+Use this page when a CLI change feels straightforward in code but might carry
+contract pressure for users, scripts, or plugins.
 
 ## Next Reads
 

@@ -9,17 +9,19 @@ last_reviewed: 2026-04-06
 
 # Common Workflows
 
-This page captures the most frequent runtime workflows used by operators and
-maintainers in day-to-day CLI usage.
+This page collects the CLI workflows people reach for most often.
 
-## Visual Summary
+The goal is not to list every command. It is to show the routine paths that
+help someone move from a quick health check to a deliberate state change.
+
+## Workflow Map
 
 ```mermaid
 flowchart TB
-    status["status and doctor"] --> config["config workflows"]
-    config --> memory["memory and history workflows"]
+    status["status and doctor"] --> config["config changes"]
+    config --> memory["memory and history"]
     memory --> plugins["plugin workflows"]
-    plugins --> verify["audit and final verification"]
+    plugins --> verify["audit and verification"]
 ```
 
 ## Workflow Set
@@ -53,6 +55,11 @@ bijux plugins list
 - prefer explicit options over implicit defaults in automation
 - validate plugin health after each lifecycle mutation
 - keep state changes observable with status and diagnostics checks
+
+## Reading Rule
+
+Use this page when the question is not "what command exists?" but "what is the
+normal sequence for getting this done safely?"
 
 ## Next Reads
 

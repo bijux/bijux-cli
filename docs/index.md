@@ -24,22 +24,20 @@ last_reviewed: 2026-04-12
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is a deliberately split workspace for command runtime,
-deterministic DAG execution, and repository control-plane work. The split is
-the design, not a packaging afterthought. Readers should be able to see where
-authority changes hands before they start reading source files or workflow
-logs.
+`bijux-core` is the shared runtime backbone of the Bijux repository family. It
+brings together the `bijux` command runtime, the DAG execution system, and the
+repository machinery that keeps both products governed, testable, and
+releasable from one source tree.
 
-Start here when you need repository-level orientation. The job of this page is
-to show which handbook branch owns the current question, which package family
-likely carries the implementation, and which repository-only surfaces sit above
-the product handbooks.
+Start here when you need fast orientation: which handbook owns the current
+question, which package family carries the implementation, and which
+repository-level surfaces sit above the product handbooks.
 
-<div class="bijux-callout"><strong>Start with ownership, not just the crate list.</strong>
-Repository docs explain cross-workspace policy. CLI docs own the <code>bijux</code>
-command product and Python bridge. DAG docs own graph truth, runtime policy,
-artifacts, and DAG command orchestration. Maintainer docs own release proof,
-repository gates, and governance tooling.</div>
+<div class="bijux-callout"><strong>Start with the surface you care about.</strong>
+Repository docs explain workspace rules and release boundaries. CLI docs own
+the <code>bijux</code> command product. DAG docs own graph truth, execution,
+replay, and artifacts. Maintainer docs own repository gates, diagnostics, and
+release proof.</div>
 
 <div class="bijux-panel-grid">
   <div class="bijux-panel"><h3>Repository</h3><p>Use the repository handbook when the question crosses package boundaries, release policy, or shared ownership rules.</p></div>
@@ -55,31 +53,14 @@ repository gates, and governance tooling.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
-## Visual Summary
+## Handbook Map
 
 ```mermaid
-flowchart TB
-    page["Bijux Core<br/>clarifies: repository handbook | product handbooks | maintainer handbook"]
-    classDef page fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a,stroke-width:2px;
-    classDef anchor fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
-    classDef action fill:#fef3c7,stroke:#d97706,color:#7c2d12;
-    anchor1["why the workspace is split"]
-    anchor2["which handbook branch owns the question"]
-    anchor3["which package family carries the implementation"]
-    anchor4["which concerns stay at the repository root"]
-    anchor1 --> page
-    anchor2 --> page
-    anchor3 --> page
-    anchor4 --> page
-    next1["repository handbook"]
-    next2["CLI or DAG handbook"]
-    next3["maintainer handbook"]
-    page --> next1
-    page --> next2
-    page --> next3
-    class page page;
-    class anchor1,anchor2,anchor3,anchor4 anchor;
-    class next1,next2,next3 action;
+flowchart LR
+    home["Bijux Core"] --> repo["Repository handbook"]
+    home --> cli["CLI handbook"]
+    home --> dag["DAG handbook"]
+    home --> dev["Maintainer handbook"]
 ```
 
 ## Start Here
@@ -102,27 +83,9 @@ flowchart TB
 | [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
 | [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev.md) | the issue is repository diagnostics, release proof, or control-plane automation |
 
-## Documentation Scope
+## Reading Rule
 
-- the repository handbook under [bijux-core](bijux-core/index.md)
-- the product handbooks under [bijux-cli](bijux-cli/index.md) and
-  [bijux-dag](bijux-dag/index.md)
-- the maintainer handbook under [bijux-dev](bijux-dev/index.md)
-
-## Navigation Rule
-
-Start from the handbook that owns the question, then use its package tabs when
-you need the exact implementation boundary. If two handbook branches seem to
-own the same behavior, treat that as a docs bug and verify the answer from the
+Start from the handbook that owns the question, then move into its package
+pages when you need the exact implementation boundary. If two branches seem to
+own the same behavior, verify the split from the
 [Repository Handbook](bijux-core/index.md).
-
-## Purpose
-
-Use this page to get oriented quickly, choose the right handbook branch, and
-move to the checked-in files that carry the detailed proof.
-
-## Stability
-
-Keep this page aligned with the published handbook roots, the current workspace
-package split, and the repository-only surfaces that actually exist in
-`bijux-core`.

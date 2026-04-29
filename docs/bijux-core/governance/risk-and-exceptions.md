@@ -9,17 +9,21 @@ last_reviewed: 2026-04-06
 
 # Risk and Exceptions
 
-Risk and exception policy keeps urgent decisions explicit instead of silently
-weakening quality gates.
+This page explains how the repository handles risk without quietly lowering its
+standards.
 
-## Visual Summary
+Exceptions exist for situations where work cannot wait, not as a way to leave
+gaps unexplained. The important part is that the exception stays named, owned,
+and time-bounded.
+
+## Exception Flow
 
 ```mermaid
 flowchart LR
-    risk[identify risk] --> classify[classify severity and scope]
-    classify --> exception[exception request when needed]
-    exception --> mitigate[mitigation and expiry]
-    mitigate --> verify[follow-up verification]
+    risk["identify risk"] --> classify["classify severity and scope"]
+    classify --> exception["exception request"]
+    exception --> mitigate["mitigation and expiry"]
+    mitigate --> verify["follow-up verification"]
 ```
 
 ## Risk Categories
@@ -44,6 +48,11 @@ Use this structure for every exception request:
 - `reason`: why the standard gate cannot pass now
 - `mitigation`: immediate controls while exception is active
 - `expiry`: specific date for revalidation or removal
+
+## Reading Rule
+
+Use this page when a gate really cannot pass yet and the remaining question is
+how to keep that exception explicit instead of normalizing drift.
 
 ## Code Anchors
 

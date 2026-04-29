@@ -9,21 +9,21 @@ last_reviewed: 2026-04-12
 
 # Testing and Validation
 
-Repository validation combines package-local tests, root make gates, and docs
-checks into one reviewable evidence model.
+This page explains how repository-level validation turns local work into
+reviewable proof.
+
+Package tests are only part of that story. The repository branch also cares
+about root gates, docs checks, and the signals that prove the change still fits
+the whole workspace.
+
+## Validation Map
 
 ```mermaid
-flowchart TB
-    confidence[Repository confidence]
-    confidence --> package_tests[package test layers]
-    confidence --> root_checks[root make gates]
-    confidence --> contracts[contract/schema checks]
-    confidence --> docs_checks[docs and navigation checks]
-
-    package_tests --> evidence[reviewable evidence set]
-    root_checks --> evidence
-    contracts --> evidence
-    docs_checks --> evidence
+flowchart LR
+    package_tests["package tests"] --> evidence["reviewable evidence"]
+    root_checks["root make gates"] --> evidence
+    contracts["contract and schema checks"] --> evidence
+    docs_checks["docs and navigation checks"] --> evidence
 ```
 
 ## Canonical Commands
@@ -38,6 +38,11 @@ make docs-check
 
 Run the owning package checks and the root checks that prove the repository
 still publishes, routes, and documents the change honestly.
+
+## Reading Rule
+
+Use this page when the code change is clear but the remaining question is which
+root-level checks are needed to support review.
 
 ## Next Reads
 

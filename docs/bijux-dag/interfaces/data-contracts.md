@@ -9,22 +9,21 @@ last_reviewed: 2026-04-06
 
 # Data Contracts
 
-DAG data contracts cover graph definitions, execution plans, run traces,
-artifact indices, and replay/diff classifications.
+This page explains the data shapes that let DAG definitions, runs, artifacts,
+and comparisons stay inspectable across tools and time.
 
-## Visual Summary
+The important split is not model count. It is whether a contract describes the
+graph itself, execution evidence, artifact evidence, or comparison outcomes.
+
+## Contract Map
 
 ```mermaid
-flowchart TD
-    contracts[Data contracts]
-    contracts --> inputs[input models]
-    contracts --> plans[plan and execution models]
-    contracts --> state[state and trace models]
-    contracts --> results[result envelopes]
-    contracts --> diagnostics[diagnostic models]
-
-    results --> success[success envelope]
-    results --> failure[failure envelope]
+flowchart LR
+    contracts["dag contracts"] --> graph["graph and validation models"]
+    contracts --> plans["plan and execution models"]
+    contracts --> state["run and trace models"]
+    contracts --> artifacts["artifact and lineage models"]
+    contracts --> compare["replay and diff outcomes"]
 ```
 
 ## Contract Families
@@ -48,6 +47,11 @@ flowchart TD
 - contract-bearing fields should stay explicit and test-covered
 - identity-related field semantics require compatibility review
 - classification states must remain machine-parseable
+
+## Reading Rule
+
+Use this page when a DAG change crosses graph, run, artifact, or diff
+boundaries and the hard part is deciding which observable contract is at stake.
 
 ## Next Reads
 

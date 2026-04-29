@@ -9,27 +9,22 @@ last_reviewed: 2026-04-06
 
 # Core Architecture
 
-This section defines the repository-level architecture that coordinates CLI,
-DAG, Python bridge, and maintainer control-plane responsibilities.
+This section covers the repository-level architecture that coordinates CLI,
+DAG, the Python bridge, and the maintainer surface.
 
 Use [Foundation](../foundation/index.md) first when the repository split itself
 is still unclear. Use this section when the ownership model is already clear
 and the remaining question is structural.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-mindmap
-  root((Core Architecture))
-    System Overview
-    Workspace Topology
-    Dependency Direction
-    Runtime Surfaces
-    State and Configuration
-    Distribution Model
-    Maintainer Control Plane
-    Artifact and Contract Flow
-    Architecture Risks
+flowchart LR
+    architecture["Core architecture"] --> topology["workspace topology"]
+    architecture --> dependencies["dependency direction"]
+    architecture --> runtime["runtime surfaces"]
+    architecture --> state["state and configuration"]
+    architecture --> flow["artifact and contract flow"]
 ```
 
 ## Architecture Priorities
@@ -56,3 +51,8 @@ mindmap
 - [Maintainer Control Plane](maintainer-control-plane.md)
 - [Artifact and Contract Flow](artifact-and-contract-flow.md)
 - [Architecture Risks](architecture-risks.md)
+
+## Reading Rule
+
+Start with System Overview when you need the whole workspace shape, then move to
+the narrower pages once the main split is already clear.

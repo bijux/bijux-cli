@@ -9,17 +9,21 @@ last_reviewed: 2026-04-06
 
 # Release Operations
 
-Release operations coordinate verification, compatibility review, tagging, and
-publishing across programs.
+This page explains how `bijux-core` moves from a verified commit to a released
+artifact.
 
-## Visual Summary
+The release path is intentionally conservative. Each step exists to make sure
+the tagged result still matches the behavior, compatibility notes, and docs the
+repository is prepared to stand behind.
+
+## Release Flow
 
 ```mermaid
 flowchart LR
-    verify[verify candidate commit] --> review[compatibility and docs review]
-    review --> tag[tag approved release]
-    tag --> publish[publish artifacts]
-    publish --> monitor[post-release monitoring]
+    verify["verify candidate commit"] --> review["compatibility and docs review"]
+    review --> tag["tag approved release"]
+    tag --> publish["publish artifacts"]
+    publish --> monitor["post-release monitoring"]
 ```
 
 ## Release Workflow Rules
@@ -56,6 +60,13 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-p
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- release
 make docs-check
 ```
+
+## Reading Rule
+
+Use this page when the repository is close to a release boundary and the next
+question is sequence and proof, not implementation. Move to Contract
+Governance or Testing and Validation when the release question is still blocked
+by unresolved behavior.
 
 ## Code Anchors
 

@@ -9,23 +9,15 @@ last_reviewed: 2026-04-12
 
 # Platform Overview
 
-`bijux-core` is one workspace that publishes and governs more than one
-behavioral surface. The repository exists so CLI runtime behavior, DAG
-execution behavior, and repository-health automation can evolve together
-without pretending they are one package.
+`bijux-core` is one workspace with more than one public surface. It keeps CLI
+runtime behavior, DAG execution behavior, and repository-health automation in
+one governed repository without pretending they are one package.
 
 ```mermaid
 flowchart LR
-    cli[bijux-cli and bijux-cli-python\noperator runtime surface]
-    dag[bijux-dag package family\ngraph execution surface]
-    dev[bijux-dev\nrepository-health automation]
-    root[Repository root\nshared contracts and rules]
-
-    cli --> root
-    dag --> root
-    dev --> root
-    root -. coordinates shared policy for .-> cli
-    root -. coordinates shared policy for .-> dag
+    root["bijux-core repository root"] --> cli["CLI runtime surface"]
+    root --> dag["DAG execution surface"]
+    root --> dev["Maintainer surface"]
 ```
 
 ## What The Repository Is Organizing
@@ -42,6 +34,12 @@ flowchart LR
 - release and documentation evidence must stay reviewable above both products
 - maintainer automation should stay explicit instead of leaking into product
   packages
+
+## Reading Rule
+
+Use this page to understand the top-level split. Move to Package Map when you
+need the owning package family, and move to Architecture when the question is
+about crate boundaries or dependency direction.
 
 ## Next Reads
 

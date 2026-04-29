@@ -9,17 +9,19 @@ last_reviewed: 2026-04-06
 
 # Contract Governance
 
-Contract governance keeps command, schema, and evidence contracts aligned with
-actual runtime behavior.
+This page explains how `bijux-dev` keeps contract files honest.
 
-## Visual Summary
+The rule is straightforward: contract text, executable checks, and released
+behavior must keep telling the same story.
+
+## Contract Flow
 
 ```mermaid
 flowchart LR
-    behavior[implementation behavior] --> contract[contract definition]
-    contract --> tests[contract tests]
-    tests --> docs[docs alignment]
-    docs --> release[release trust]
+    behavior["runtime behavior"] --> contract["contract definition"]
+    behavior --> tests["contract checks"]
+    contract --> release["release trust"]
+    tests --> release
 ```
 
 ## Governance Rules
@@ -33,6 +35,12 @@ flowchart LR
 - CLI command and output contracts
 - DAG replay, diff, and artifact contracts
 - maintainer evidence and reporting contracts
+
+## Reading Rule
+
+Use this page when behavior, contract text, and verification no longer line up,
+or when a change is about to introduce a new contract surface that must stay
+reviewable over time.
 
 ## Code Anchors
 

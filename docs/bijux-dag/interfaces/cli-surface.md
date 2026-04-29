@@ -9,25 +9,22 @@ last_reviewed: 2026-04-06
 
 # CLI Surface
 
-The DAG command surface is organized around lifecycle intent: validate
-definitions, execute runs, inspect evidence, classify replay/diff, and manage
-portability/configuration concerns.
+This page explains how the DAG command surface groups work by intent rather than
+by crate layout.
 
-## Visual Summary
+The useful split is not the full command count. It is whether the operator is
+defining work, running it, inspecting evidence, comparing outcomes, or managing
+the environment around it.
+
+## Route Map
 
 ```mermaid
-flowchart TD
-    dag[bijux dag]
-    dag --> validate[validate canonicalize lint]
-    dag --> execute[run replay prove verify]
-    dag --> inspect[status explain node artifact-inspect]
-    dag --> compare[diff why-rerun why-cache-missed]
-    dag --> ops[cache adapters export import config policy]
-
-    execute --> inputs[inputs and run settings]
-    execute --> output_mode[output mode and reporting]
-    inspect --> run_state[run and node state]
-    inspect --> artifacts[artifact evidence]
+flowchart LR
+    dag["bijux dag"] --> define["define and validate"]
+    dag --> execute["execute and replay"]
+    dag --> inspect["inspect runs and artifacts"]
+    dag --> compare["compare outcomes"]
+    dag --> operate["manage cache and policy"]
 ```
 
 ## Command Families
@@ -55,6 +52,11 @@ flowchart TD
 - command additions require docs and contract test updates
 - classification commands must preserve explicit outcome vocabulary
 - hidden or deprecated paths should remain tested until removal is intentional
+
+## Reading Rule
+
+Use this page when the question is which command family should own a DAG task
+before you inspect one concrete route or crate.
 
 ## Next Reads
 

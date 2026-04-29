@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # CLI Surface
 
-`bijux-cli` exposes a route-oriented command surface where global flags apply
-across commands and aliases normalize toward canonical forms.
+This page explains how the CLI is organized when you approach it as a command
+surface rather than as source code.
 
-## Visual Summary
+The important idea is simple: many commands exist, but they still collapse into
+a small set of route groups with one shared flag model.
+
+## Route Map
 
 ```mermaid
-flowchart TD
-    root["bijux root"] --> runtime["status audit docs install"]
-    root --> state["config history memory"]
-    root --> plugins["plugins and cli plugins namespace"]
-    root --> interaction["repl completion help version"]
+flowchart LR
+    root["bijux"] --> runtime["runtime checks"]
+    root --> state["state management"]
+    root --> plugins["plugin lifecycle"]
+    root --> interaction["interactive and help routes"]
 ```
 
 ## Stable Route Groups
@@ -51,6 +54,11 @@ flowchart TD
 - help output should match parser model and route catalog
 - command additions require docs update and route test coverage
 - root and `cli` prefixed forms must remain coherent
+
+## Reading Rule
+
+Use this page when the question is which command family owns a behavior before
+you narrow the search to one concrete route.
 
 ## Next Reads
 

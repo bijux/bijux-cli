@@ -9,16 +9,20 @@ last_reviewed: 2026-04-06
 
 # Evidence Collection
 
-Evidence collection transforms test and contract outcomes into reviewable records
-for release and governance decisions.
+This page explains how `bijux-core` turns verification output into something
+worth reviewing later.
 
-## Visual Summary
+The repository does not treat raw command output as enough on its own. Useful
+evidence has to stay tied to the exact commit, the exact command, and the exact
+decision it supports.
+
+## Evidence Flow
 
 ```mermaid
 flowchart LR
-    tests[test and suite runs] --> outputs[command outputs]
-    outputs --> reports[generated evidence reports]
-    reports --> review[review and release decisions]
+    tests["tests and suite runs"] --> outputs["command outputs"]
+    outputs --> reports["evidence reports"]
+    reports --> review["review and release decisions"]
 ```
 
 ## Evidence Sources
@@ -33,6 +37,11 @@ flowchart LR
 - evidence must reference the exact commit under review
 - generated reports are auditable artifacts, not policy replacements
 - missing evidence is treated as unresolved risk, not assumed success
+
+## Reading Rule
+
+Use this page when the work is already verified once but the proof still needs
+to be carried into review, release, or follow-up decisions.
 
 ## Code Anchors
 

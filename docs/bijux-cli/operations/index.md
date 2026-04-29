@@ -9,17 +9,18 @@ last_reviewed: 2026-04-06
 
 # CLI Operations
 
-The operations section describes how to run, validate, diagnose, and release
+The operations section explains how to run, validate, diagnose, and release
 `bijux-cli` in daily engineering and automation workflows.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    setup["installation and setup"] --> dev["local development"]
-    dev --> workflows["common workflows"]
-    workflows --> diagnostics["observability and diagnostics"]
-    diagnostics --> release["release and recovery practices"]
+    operations["CLI operations"] --> setup["installation and setup"]
+    operations --> dev["local development"]
+    operations --> workflows["common workflows"]
+    operations --> diagnostics["observability and diagnostics"]
+    operations --> release["release and recovery"]
 ```
 
 ## Operational Scope
@@ -50,3 +51,9 @@ flowchart LR
 - [Release and Versioning](release-and-versioning.md)
 - [Security and Safety](security-and-safety.md)
 - [Deployment Boundaries](deployment-boundaries.md)
+
+## Reading Rule
+
+Use this section when the question is about running or supporting the CLI in
+practice. Move back to Interfaces when the next question is about stable caller
+contracts instead of operating behavior.

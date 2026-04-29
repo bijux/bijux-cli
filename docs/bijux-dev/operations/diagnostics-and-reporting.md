@@ -9,16 +9,19 @@ last_reviewed: 2026-04-06
 
 # Diagnostics and Reporting
 
-Diagnostics and reporting workflows convert raw test and runtime signals into
-actionable maintainer decisions.
+This page explains how `bijux-dev` turns noisy runtime output into something a
+reviewer can act on.
 
-## Visual Summary
+The key step is not generating more text. It is preserving enough signal to
+decide what failed, who owns it, and what should happen next.
+
+## Diagnostic Flow
 
 ```mermaid
 flowchart TD
-    signals[test and runtime signals] --> aggregate[aggregate report commands]
-    aggregate --> classify[classify risk and ownership]
-    classify --> actions[remediation actions]
+    signals["test and runtime signals"] --> aggregate["report commands"]
+    aggregate --> classify["risk and ownership"]
+    classify --> actions["next actions"]
 ```
 
 ## Diagnostic Surfaces
@@ -44,6 +47,12 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- status --format json --no-prett
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-pretty
 make docs-check
 ```
+
+## Reading Rule
+
+Use this page when the repository is already telling you something is wrong but
+the raw output is still too scattered to trust. Move to Incident Response once
+the evidence is stable and the remaining question is containment or recovery.
 
 ## Code Anchors
 

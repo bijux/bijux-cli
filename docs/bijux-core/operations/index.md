@@ -9,22 +9,16 @@ last_reviewed: 2026-04-12
 
 # Core Operations
 
-The operations section explains how repository-wide work is carried out after
-the ownership model is already clear. These pages are about repeatable root
-work, not package-local runtime behavior.
+The operations section explains how repository-wide work is carried out once the
+ownership model is already clear. These pages cover repeatable root workflows,
+not package-local runtime behavior.
 
 ```mermaid
-mindmap
-  root((Core Operations))
-    Local Development
-    Testing and Validation
-    Release and Versioning
-    API and Schema Governance
-    Contributor Workflows
-    Automation Surfaces
-    Artifact Governance
-    Review Expectations
-    Change Management
+flowchart LR
+    operations["Core operations"] --> local["local development"]
+    operations --> testing["testing and validation"]
+    operations --> release["release and versioning"]
+    operations --> review["review and change flow"]
 ```
 
 ## Pages In This Section
@@ -39,11 +33,8 @@ mindmap
 - [Review Expectations](review-expectations.md)
 - [Change Management](change-management.md)
 
-## Purpose
+## Reading Rule
 
-This page gives maintainers the shortest route into repository-wide operational
-guidance.
-
-## Stability
-
-Keep it aligned with the operational topics that actually matter at the root.
+Use this section when the question is about repeatable repository work. Switch
+back to the CLI or DAG handbooks when the problem is product behavior instead of
+root workflow.

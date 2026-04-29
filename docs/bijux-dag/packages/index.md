@@ -1,6 +1,21 @@
 # DAG Packages
 
-This section is the package ownership map for DAG behavior. Use it to locate the right package before making changes to graph modeling, execution policy, artifact contracts, or DAG command orchestration.
+Use this page when the DAG surface is clear but the owning package is not.
+
+The split is practical: `bijux-dag-core` holds graph truth,
+`bijux-dag-runtime` holds execution policy, the app and CLI packages shape the
+user-facing command surface, and the artifact and testkit packages support the
+runtime around that center.
+
+## Section Map
+
+```mermaid
+flowchart LR
+    dag["DAG packages"] --> core["core truth"]
+    dag --> runtime["runtime policy"]
+    dag --> entrypoints["app and cli"]
+    dag --> support["artifacts and testkit"]
+```
 
 ## Package Map
 
@@ -13,6 +28,8 @@ This section is the package ownership map for DAG behavior. Use it to locate the
 | [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | Artifact identity, integrity semantics, and artifact lifecycle helpers | the issue is artifact schema, identity, storage contract, or integrity checks |
 | [`bijux-dag-testkit`](bijux-dag-testkit.md) | Shared deterministic fixtures and test support surfaces | the issue is shared fixtures, deterministic test inputs, or common test helpers |
 
-## Navigation Rule
+## Reading Rule
 
-Choose the package page based on ownership first. If a change touches two rows in the table, treat it as an explicit cross-package boundary change and validate both contracts.
+Choose the package page by ownership first. If a change touches two rows in
+the table, treat it as an explicit cross-package boundary change and validate
+both contracts.

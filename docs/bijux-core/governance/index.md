@@ -9,22 +9,22 @@ last_reviewed: 2026-04-06
 
 # Core Governance
 
-Core governance defines repository-wide policies that apply across CLI, DAG,
-Python bridge, and maintainer control-plane work.
+Core governance defines the repository-wide rules that apply across CLI, DAG,
+the Python bridge, and the maintainer surface.
 
 This section remains the policy detail layer. Use
 [Operations](../operations/index.md) when the question is primarily about how a
 repository workflow is executed rather than which rule justifies it.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
 flowchart LR
-    scope[repository scope] --> ownership[package ownership]
-    ownership --> change[change management]
-    change --> tests[testing and validation]
-    tests --> release[release and versioning]
-    release --> risk[risk and exceptions]
+    governance["Core governance"] --> scope["repository scope"]
+    governance --> ownership["package ownership"]
+    governance --> change["change management"]
+    governance --> release["release and versioning"]
+    governance --> risk["risk and exceptions"]
 ```
 
 ## Governance Objectives
@@ -51,3 +51,9 @@ flowchart LR
 - [Documentation Standards](documentation-standards.md)
 - [Decision Record Policy](decision-record-policy.md)
 - [Risk and Exceptions](risk-and-exceptions.md)
+
+## Reading Rule
+
+Use this section when the question is about which rule applies, why it exists,
+or where an exception would need to be justified. Use Operations when the rule
+is already clear and the next question is how to carry it out.

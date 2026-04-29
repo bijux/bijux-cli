@@ -9,18 +9,21 @@ last_reviewed: 2026-04-06
 
 # API Surface
 
-The `src/api` module tree is the intentional Rust-facing surface for invoking
-runtime behavior without importing deep internal module paths.
+This page explains the Rust-facing entrypoints that matter when code wants CLI
+behavior without depending on internal modules.
 
-## Visual Summary
+The public surface is small on purpose: call through the facade, not through
+deep implementation paths.
+
+## API Map
 
 ```mermaid
 flowchart LR
-    callers["callers and tests"] --> api_mod["api facade modules"]
-    api_mod --> runtime["runtime run_app run_cli_from_env"]
-    api_mod --> routing["parser and routing facade"]
-    api_mod --> diagnostics["diagnostics and install facade"]
-    api_mod --> repl["repl facade and contracts"]
+    callers["rust callers"] --> api_mod["api facade"]
+    api_mod --> runtime["runtime entrypoints"]
+    api_mod --> routing["routing helpers"]
+    api_mod --> diagnostics["diagnostics and install helpers"]
+    api_mod --> repl["repl contracts"]
 ```
 
 ## Public API Modules
@@ -45,6 +48,11 @@ flowchart LR
 - prefer importing from `api` modules over internal implementation paths
 - API facades should stay thin and explicit about ownership boundaries
 - when facade exports change, update this page and public import guidance
+
+## Reading Rule
+
+Use this page when Rust code needs CLI behavior and the real question is which
+facade module owns the call.
 
 ## Next Reads
 

@@ -9,25 +9,27 @@ last_reviewed: 2026-04-06
 
 # Lifecycle Overview
 
-A `bijux` run follows one deterministic lifecycle from argv intake to stream
-emission. Understanding this lifecycle is the fastest way to debug behavior and
-review compatibility impact.
+This page explains the shortest path a CLI invocation takes from argv to exit
+code.
 
-## Visual Summary
+That lifecycle is useful because most CLI surprises happen at one of a few
+handoff points: parsing, route resolution, handler execution, or output shaping.
+
+## Lifecycle Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Parser as routing::parser
-    participant Dispatch as interface::cli::dispatch
-    participant Handler as command handler
-    participant Output as shared output
+    participant Parser
+    participant Routing
+    participant Handler
+    participant Output
 
     User->>Parser: argv
-    Parser->>Dispatch: parsed and normalized intent
-    Dispatch->>Handler: route execution
-    Handler->>Output: payload or process result
-    Output-->>User: stdout/stderr and exit code
+    Parser->>Routing: parsed intent
+    Routing->>Handler: chosen route
+    Handler->>Output: payload or failure
+    Output-->>User: streams and exit code
 ```
 
 ## Lifecycle Stages
@@ -53,6 +55,11 @@ sequenceDiagram
 - one route decision before handler execution
 - one final exit code surfaced to the process host
 - help and usage failures use explicit short-circuit paths
+
+## Reading Rule
+
+Use this page when a CLI behavior feels wrong but it is not yet clear whether
+the problem belongs to parsing, routing, handler logic, or output formatting.
 
 ## Next Reads
 

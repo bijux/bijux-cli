@@ -9,17 +9,20 @@ last_reviewed: 2026-04-06
 
 # Artifact Contracts
 
-Artifact contracts define the files and schemas that outlive a single process
-run and are consumed by tooling, reviewers, or plugin authors.
+This page explains which CLI artifacts outlive a single process run and why
+they matter.
 
-## Visual Summary
+These files become part of the review and tooling surface. That means their
+shape has to stay as deliberate as the runtime behavior that produced them.
+
+## Artifact Map
 
 ```mermaid
 flowchart LR
-    contracts["contract structs"] --> schema["generated schema artifacts"]
+    contracts["contract structs"] --> schema["generated schemas"]
     schema --> docs["docs and examples"]
-    schema --> tooling["tests and integration tooling"]
-    plugin_artifacts["plugin manifests and registry files"] --> tooling
+    schema --> tooling["tests and tooling"]
+    plugin_artifacts["plugin manifests"] --> tooling
 ```
 
 ## Contract Artifacts
@@ -44,6 +47,11 @@ flowchart LR
 - docs and examples must track current schema field semantics
 - generated contract assets should be reproducible from source contracts
 - plugin manifest requirements must stay aligned with runtime validators
+
+## Reading Rule
+
+Use this page when the change affects files, schemas, or manifests that another
+tool or reviewer will consume after the command exits.
 
 ## Next Reads
 

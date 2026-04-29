@@ -9,20 +9,24 @@ last_reviewed: 2026-04-06
 
 # Package Ownership
 
-Package ownership keeps responsibilities stable and prevents hidden coupling
-between product and maintainer layers.
+This page explains how `bijux-core` keeps ownership stable as the workspace
+grows.
 
-## Visual Summary
+Each package family carries a different kind of responsibility. The point of
+the split is simple: changes stay easier to review when command behavior, graph
+behavior, Python distribution, and repository proof do not drift into one
+another.
+
+## Ownership Map
 
 ```mermaid
 flowchart LR
-    cli_pkg[bijux-cli] --> cli_docs[cli handbook ownership]
-    dag_pkg[bijux-dag-*] --> dag_docs[dag handbook ownership]
-    dev_pkg[bijux-dev] --> dev_docs[maintainer handbook ownership]
-    core_docs[repository handbook] --> all[shared policy and boundaries]
+    workspace["bijux-core"] --> cli_pkg["CLI packages"]
+    workspace --> dag_pkg["DAG packages"]
+    workspace --> dev_pkg["maintainer package"]
 ```
 
-## Ownership Map
+## Package Boundaries
 
 - `crates/bijux-cli`: CLI command runtime and plugin behavior
 - `crates/bijux-dag-*`: DAG parse/run/replay/diff and artifact behavior
@@ -34,6 +38,12 @@ flowchart LR
 - ownership claims must map to real crate/module paths
 - cross-crate changes require coordination in all owning docs
 - packages must not silently redefine another package's public contract
+
+## Reading Rule
+
+Open the CLI or DAG handbooks when the feature boundary is already clear. Stay
+here when the change crosses package families and the first job is to decide
+who owns the behavior.
 
 ## Code Anchors
 

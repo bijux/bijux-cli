@@ -9,19 +9,21 @@ last_reviewed: 2026-04-06
 
 # Artifact Contracts
 
-Artifact contracts tie payload bytes, metadata, identity, and lineage into one
-verifiable evidence surface.
+This page explains the DAG artifact files that carry evidence across runs,
+reviews, and replay work.
 
-## Visual Summary
+Their value comes from continuity: the bytes, metadata, and lineage records
+have to stay meaningful after the original process is gone.
+
+## Artifact Map
 
 ```mermaid
 flowchart LR
-    producer[core producer] --> schema[artifact schema]
-    schema --> file[artifact payload and files]
-    file --> consumer[consumer]
-    schema --> version[version marker]
-    version --> compatibility[compatibility rule]
-    consumer --> validation[contract validation]
+    producer["runtime producer"] --> schema["artifact schema"]
+    schema --> file["artifact files"]
+    file --> consumer["consumer"]
+    schema --> validation["contract validation"]
+    consumer --> validation
 ```
 
 ## Contract Surfaces
@@ -44,6 +46,11 @@ flowchart LR
 - hash and lineage mismatches must be surfaced explicitly
 - missing required evidence must not be treated as equivalent
 - schema-bearing artifact files require compatibility review on shape changes
+
+## Reading Rule
+
+Use this page when the change affects persistent run evidence rather than
+ephemeral command output.
 
 ## Next Reads
 

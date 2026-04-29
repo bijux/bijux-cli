@@ -9,18 +9,18 @@ last_reviewed: 2026-04-06
 
 # CLI Foundation
 
-The foundation section answers first-order questions about `bijux-cli` ownership:
-what it is, what it is not, where it fits in `bijux-core`, and which principles
-keep command behavior stable as the repository evolves.
+The foundation section answers the first questions about `bijux-cli`: what it
+is, what it is not, where it fits in `bijux-core`, and which principles keep
+command behavior stable as the repository evolves.
 
-## Visual Summary
+## Section Map
 
 ```mermaid
-flowchart TD
-    identity["Package identity"] --> boundaries["Ownership boundaries"]
-    boundaries --> capability["Capability map"]
-    capability --> lifecycle["Lifecycle model"]
-    lifecycle --> principles["Change principles"]
+flowchart LR
+    foundation["CLI foundation"] --> identity["package identity"]
+    foundation --> boundaries["ownership boundaries"]
+    foundation --> capability["capability map"]
+    foundation --> lifecycle["lifecycle and change rules"]
 ```
 
 ## What This Section Covers
@@ -50,3 +50,9 @@ flowchart TD
 - [Lifecycle Overview](lifecycle-overview.md)
 - [Dependencies and Adjacencies](dependencies-and-adjacencies.md)
 - [Change Principles](change-principles.md)
+
+## Reading Rule
+
+Start here when the command surface itself is still unclear. Move to
+Architecture or Interfaces once the package role and boundaries already make
+sense.

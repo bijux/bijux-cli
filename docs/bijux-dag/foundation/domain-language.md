@@ -9,10 +9,13 @@ last_reviewed: 2026-04-06
 
 # Domain Language
 
-DAG decision quality depends on precise vocabulary. These terms are canonical
-across docs, tests, and command output.
+This page explains the terms that carry the most meaning across DAG docs, tests,
+and command output.
 
-## Visual Summary
+If these terms drift, replay, diff, and release discussions become harder than
+they need to be.
+
+## Language Path
 
 ```mermaid
 flowchart LR
@@ -44,6 +47,11 @@ flowchart LR
 - `crates/bijux-dag-runtime/src/replay/`
 - `crates/bijux-dag-app/src/routes/diff_routes.rs`
 - `crates/bijux-dag-artifacts/src/integrity/`
+
+## Reading Rule
+
+Use this page when a DAG review keeps moving between graph meaning, run truth,
+artifact identity, and diff outcomes and the terms are starting to overlap.
 
 ## Next Reads
 

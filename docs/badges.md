@@ -9,27 +9,30 @@ last_reviewed: 2026-04-12
 
 # Badge Catalog
 
-`docs/badges.md` is the single source of truth for shared badge templates across
-the repository README and documentation landing surfaces.
+This page defines the shared badge language for the repository README, the docs
+home page, and the public package surfaces.
 
-Update the named templates here, then run `make sync-badges` so the root README,
-the docs landing page, and every public package README publish the same badge
-contract.
+Edit the templates here, then run `make sync-badges` so the root README, the
+docs landing page, and every public package README stay aligned.
 
 Do not hand-edit generated badge sections inside README or docs package pages.
 Those surfaces consume the templates below through generated badge blocks.
 
-The root README package map tracks public release families, while package
-README and docs surfaces can still render package-specific badge sets for
-implementation boundaries such as the Python bridge.
+The repository summary badges describe the public release surface. Package
+surfaces can still render package-specific badge sets for narrower boundaries
+such as the Python bridge.
 
-Generated badge sections always render in this order:
+## Badge Order
+
+Generated badge sections render in this order:
 
 1. surface summary badges
 2. one line of release-channel badges in this order: `crates.io`, `PyPI`, `GHCR`
 3. one line of documentation badges in this order: repository docs, package docs, Rust docs
 
-Link policy for GHCR badges is fixed here as part of the contract:
+## Link Policy
+
+GHCR badge links are fixed here as part of the contract:
 
 - the repository-wide GHCR summary badge links to
   `https://github.com/bijux?tab=packages&repo_name=bijux-core`

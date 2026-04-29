@@ -13,7 +13,10 @@ Configuration behavior is exposed through `config` and `cli config` routes with
 normalized keys, layered precedence, profile overlays, redaction-aware explain
 surfaces, and deterministic import/export behavior.
 
-## Visual Summary
+The important contract is not just that keys exist. It is that configuration
+stays inspectable, importable, and predictable across machines.
+
+## Configuration Flow
 
 ```mermaid
 flowchart LR
@@ -64,6 +67,11 @@ flowchart LR
 - `crates/bijux-cli/src/features/config/schema.rs`
 - `crates/bijux-cli/src/features/config/validation.rs`
 - `crates/bijux-cli/src/contracts/config.rs`
+
+## Reading Rule
+
+Use this page when CLI behavior depends on saved settings and the real question
+is whether the issue is in config input, validation, storage, or import/export.
 
 ## Next Reads
 

@@ -9,25 +9,21 @@ last_reviewed: 2026-04-06
 
 # API Surface
 
-DAG Rust APIs are exposed through crate roots and explicit re-exports, allowing
-consumers to use semantic, runtime, and artifact capabilities without importing
-internal module paths.
+This page explains the Rust-facing DAG surfaces that matter when another crate
+needs graph, runtime, or artifact behavior.
 
-## Visual Summary
+The boundary is straightforward: depend on crate-root exports and documented
+types, not on internal module paths.
+
+## API Map
 
 ```mermaid
-sequenceDiagram
-    participant Client as Rust caller
-    participant API as Crate-root exports
-    participant Core as Core/runtime/artifact logic
-    participant Contracts as Data contracts
-
-    Client->>API: call public function
-    API->>Contracts: validate request shape
-    API->>Core: invoke operation
-    Core-->>API: result or typed error
-    API->>Contracts: format response payload
-    API-->>Client: stable response surface
+flowchart LR
+    caller["rust caller"] --> roots["crate-root exports"]
+    roots --> core["graph semantics"]
+    roots --> runtime["runtime and replay"]
+    roots --> artifacts["artifact persistence"]
+    roots --> app["command orchestration"]
 ```
 
 ## API Surfaces by Crate
@@ -49,6 +45,11 @@ sequenceDiagram
 - favor crate-root exports for external integration code
 - avoid coupling to internal modules outside documented contracts
 - update interface docs when root export behavior changes
+
+## Reading Rule
+
+Use this page when Rust integration code needs DAG behavior and the main
+question is which crate root owns the public call.
 
 ## Next Reads
 

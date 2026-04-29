@@ -13,6 +13,19 @@ The `makes/` section explains the shared command surface that ties local work,
 CI validation, docs publication, DAG governance, and release automation
 together.
 
+Use it when the question is about which root make target owns a workflow, how
+targets are grouped, or where repository-wide commands are defined.
+
+## Section Map
+
+```mermaid
+flowchart LR
+    makes["Dev make system"] --> entrypoints["root entrypoints"]
+    makes --> dispatch["package dispatch"]
+    makes --> ci["CI targets"]
+    makes --> release["release surfaces"]
+```
+
 ## Pages In This Section
 
 - [Make System Overview](make-system-overview.md)
@@ -25,11 +38,8 @@ together.
 - [Release Surfaces](release-surfaces.md)
 - [Authoring Rules](authoring-rules.md)
 
-## Purpose
+## Reading Rule
 
-This page routes maintainers into the make-system documentation without forcing
-them to infer structure from filenames alone.
-
-## Stability
-
-Keep it aligned with the make surfaces that the repository actually exposes.
+Start here when the root command surface is still unclear. Move to GitHub
+workflows when the next question is about hosted automation rather than local
+or repository-level command entrypoints.
