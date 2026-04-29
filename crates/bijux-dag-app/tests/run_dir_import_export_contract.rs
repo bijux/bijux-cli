@@ -1,4 +1,5 @@
-use base64 as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine;
 use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
@@ -88,6 +89,93 @@ fn standard_verify_tolerates_missing_optional_provenance_file() {
     let (code, _stdout, _stderr) =
         run_dag(&["verify", "--json", &output_path_string(&run_dir)], &root);
     assert_eq!(code, 0, "standard verify should tolerate missing optional artifacts");
+}
+
+#[test]
+fn strict_verify_reports_evidence_and_event_completeness() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+
+    let run = run_json(
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let report = run_json(&["verify", "--json", &output_path_string(&run_dir), "--strict"], &root);
+    assert_eq!(report["ok"], true);
+    assert_eq!(report["data"]["artifacts_checked"]["schema_index"], true);
+    assert_eq!(report["data"]["artifacts_checked"]["manifest_finalized"], true);
+    assert_eq!(report["data"]["artifacts_checked"]["run_complete_marker"], true);
+    assert_eq!(
+        report["data"]["evidence_completeness"]["missing_root_files"],
+        serde_json::json!([])
+    );
+    assert_eq!(report["data"]["event_log_completeness"]["complete"], true);
+}
+
+#[test]
+fn verify_detects_post_finalize_output_mutation_and_redacted_export_stays_structural() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+
+    let run = run_json(
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let outputs_index: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("outputs").join("index.json"))
+            .expect("read outputs index"),
+    )
+    .expect("parse outputs index");
+    let output_file = outputs_index["files"][0]["path"].as_str().expect("output path");
+    fs::write(run_dir.join(output_file), b"mutated after finalize").expect("mutate output");
+    let (verify_code, _stdout, _stderr) =
+        run_dag(&["verify", "--json", &output_path_string(&run_dir), "--deep"], &root);
+    assert_ne!(verify_code, 0, "deep verify must fail after output mutation");
+
+    let clean_run = run_json(
+        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
+        &root,
+    );
+    let clean_run_dir = extract_run_dir(&clean_run);
+    let bundle = temp.path().join("bundle-redacted.json");
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            &output_path_string(&clean_run_dir),
+            "--out",
+            &output_path_string(&bundle),
+            "--with-files",
+            "--redact",
+        ],
+        &root,
+    );
+    let exported: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle).expect("read redacted bundle"))
+            .expect("parse redacted bundle");
+    assert_eq!(exported["redaction"]["irreversible"], true);
+    assert_eq!(exported["provenance"]["source_run_dir"], "[redacted]");
+    let redacted_file = exported["files"]
+        .as_object()
+        .and_then(|files| files.values().next())
+        .and_then(Value::as_object)
+        .and_then(|node_files| node_files.values().next())
+        .and_then(Value::as_str)
+        .expect("redacted file payload");
+    let decoded = BASE64.decode(redacted_file).expect("decode redacted payload");
+    assert_eq!(decoded, b"[redacted]");
+
+    let imported =
+        run_json(&["import", "--json", "--verify-only", &output_path_string(&bundle)], &root);
+    assert_eq!(imported["ok"], true);
 }
 
 #[test]

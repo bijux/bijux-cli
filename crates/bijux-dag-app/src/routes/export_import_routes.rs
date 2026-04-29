@@ -1,10 +1,82 @@
 use crate::commands::DagCli;
 use crate::run_data::{collect_output_files, read_node_traces, read_outputs_indexes};
 use crate::{emit_json, read_file, verify_bundle_invariants, ExitCode, Value};
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
+fn apply_export_redaction(bundle: &mut serde_json::Value) {
+    let mut fields_redacted = Vec::new();
+    if let Some(provenance) = bundle.get_mut("provenance").and_then(Value::as_object_mut) {
+        if provenance.contains_key("source_run_dir") {
+            provenance
+                .insert("source_run_dir".to_string(), Value::String("[redacted]".to_string()));
+            fields_redacted.push("provenance.source_run_dir".to_string());
+        }
+    }
+    if let Some(run_metadata) = bundle
+        .get_mut("manifest")
+        .and_then(Value::as_object_mut)
+        .and_then(|manifest| manifest.get_mut("run_metadata"))
+        .and_then(Value::as_object_mut)
+    {
+        if run_metadata.contains_key("environment_summary") {
+            run_metadata
+                .insert("environment_summary".to_string(), Value::String("[redacted]".to_string()));
+            fields_redacted.push("manifest.run_metadata.environment_summary".to_string());
+        }
+        if run_metadata.contains_key("environment_summary_sha256") {
+            run_metadata.insert(
+                "environment_summary_sha256".to_string(),
+                Value::String("[redacted]".to_string()),
+            );
+            fields_redacted.push("manifest.run_metadata.environment_summary_sha256".to_string());
+        }
+    }
+    if let Some(node_traces) = bundle.get_mut("node_traces").and_then(Value::as_object_mut) {
+        for trace in node_traces.values_mut() {
+            if let Some(trace_object) = trace.as_object_mut() {
+                if trace_object.contains_key("resolved_params") {
+                    trace_object.insert(
+                        "resolved_params".to_string(),
+                        Value::String("[redacted]".to_string()),
+                    );
+                    fields_redacted.push("node_traces.*.resolved_params".to_string());
+                }
+                if let Some(failure) =
+                    trace_object.get_mut("failure").and_then(Value::as_object_mut)
+                {
+                    if failure.contains_key("details") {
+                        failure
+                            .insert("details".to_string(), Value::String("[redacted]".to_string()));
+                        fields_redacted.push("node_traces.*.failure.details".to_string());
+                    }
+                }
+            }
+        }
+    }
+    if let Some(files) = bundle.get_mut("files").and_then(Value::as_object_mut) {
+        let redacted_payload = Value::String(BASE64.encode("[redacted]"));
+        for node_files in files.values_mut() {
+            if let Some(node_file_map) = node_files.as_object_mut() {
+                for payload in node_file_map.values_mut() {
+                    *payload = redacted_payload.clone();
+                }
+            }
+        }
+        fields_redacted.push("files.*.*".to_string());
+    }
+    fields_redacted.sort();
+    fields_redacted.dedup();
+    bundle["redaction"] = json!({
+        "policy_version": "export-redaction/v0.1",
+        "irreversible": true,
+        "fields_redacted": fields_redacted,
+    });
+}
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_export_command(
@@ -63,15 +135,13 @@ pub(crate) fn handle_export_command(
     } else {
         "manifest-only"
     };
-    let source_run_dir =
-        if redact { Value::String("[redacted]".to_string()) } else { json!(resolved_run_dir) };
-    let bundle = json!({
+    let mut bundle = json!({
         "bundle_version": "export-bundle/v0.1",
         "export_mode": export_mode,
         "provenance": {
             "source": "native-run",
             "imported": false,
-            "source_run_dir": source_run_dir,
+            "source_run_dir": resolved_run_dir,
         },
         "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
         "graph_snapshot": serde_json::from_str::<serde_json::Value>(&snapshot).ok(),
@@ -79,6 +149,9 @@ pub(crate) fn handle_export_command(
         "outputs": outputs,
         "files": files,
     });
+    if redact {
+        apply_export_redaction(&mut bundle);
+    }
     let bundle_invariant_violations = verify_bundle_invariants(&bundle);
     if !bundle_invariant_violations.is_empty() {
         return Err(ExitCode::from(3));

@@ -65,7 +65,9 @@ pub(crate) fn trace_node_payload(
         .and_then(|value| value.get("nodes"))
         .and_then(|value| value.as_array())
         .and_then(|nodes| {
-            nodes.iter().find(|candidate| candidate.get("id").and_then(|value| value.as_str()) == Some(node_id))
+            nodes.iter().find(|candidate| {
+                candidate.get("id").and_then(|value| value.as_str()) == Some(node_id)
+            })
         })
         .cloned()
         .ok_or(ExitCode::from(3))?;
@@ -73,9 +75,10 @@ pub(crate) fn trace_node_payload(
         read_file(&run_dir.join("nodes").join(node_id).join("trace.json")).and_then(|raw| {
             serde_json::from_str::<serde_json::Value>(&raw).map_err(|_| ExitCode::from(3))
         })?;
-    let outputs_index = read_file(&run_dir.join("nodes").join(node_id).join("outputs").join("index.json"))
-        .ok()
-        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok());
+    let outputs_index =
+        read_file(&run_dir.join("nodes").join(node_id).join("outputs").join("index.json"))
+            .ok()
+            .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok());
     let deps = snapshot
         .get("graph")
         .and_then(|value| value.get("edges"))
@@ -209,8 +212,7 @@ mod tests {
             .expect("write node index");
             fs::write(
                 run.join("nodes/extract/trace.json"),
-                serde_json::to_vec_pretty(&json!({"status":"success","attempt":1}))
-                    .expect("trace"),
+                serde_json::to_vec_pretty(&json!({"status":"success","attempt":1})).expect("trace"),
             )
             .expect("write trace");
         }
@@ -232,7 +234,10 @@ mod tests {
         let why = why_rerun_payload(&run_a, &run_b, None).expect("why rerun");
         assert!(why.get("root_cause_summary").is_some());
         let trace = trace_artifact_payload(&run_a, "extract:data.txt").expect("trace artifact");
-        assert_eq!(trace["artifact_id"], "extract:data.txt");
+        assert!(trace["artifact_id"]
+            .as_str()
+            .expect("canonical artifact id")
+            .starts_with("run=run-a;node=extract;path=nodes/extract/outputs/data.txt;sha256="));
         let node = trace_node_payload(&run_a, "extract").expect("trace node");
         assert_eq!(node["node_id"], "extract");
     }

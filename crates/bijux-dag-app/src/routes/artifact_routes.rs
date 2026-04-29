@@ -1,12 +1,10 @@
 use crate::commands::{ArtifactCommands, DagCli};
 use crate::routes::run_lookup::read_manifest_json;
 use crate::{emit_json, inspect_artifact, read_file, ExitCode};
-use bijux_dag_artifacts::platform::{
-    compact_lineage, lineage_dependencies, lineage_dependents,
-};
-use bijux_dag_artifacts::retention::RetentionPolicy;
 use bijux_dag_artifacts::lineage::ArtifactLineageSnapshot;
-use bijux_dag_artifacts::{ArtifactCleanupPlan, RunOutputsIndex};
+use bijux_dag_artifacts::platform::{compact_lineage, lineage_dependencies, lineage_dependents};
+use bijux_dag_artifacts::retention::RetentionPolicy;
+use bijux_dag_artifacts::{build_artifact_identity, ArtifactCleanupPlan, RunOutputsIndex};
 use serde::Serialize;
 use serde_json::json;
 use std::collections::BTreeSet;
@@ -16,6 +14,7 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize)]
 struct RegistryArtifactEntry {
     artifact_id: String,
+    legacy_artifact_id: String,
     node_id: String,
     node_fingerprint: String,
     path: String,
@@ -70,7 +69,15 @@ fn artifact_registry_report(run_dir: &Path) -> Result<ArtifactRegistryReport, Ex
             let payload_path = run_dir.join(&file.path);
             let metadata = fs::metadata(&payload_path);
             RegistryArtifactEntry {
-                artifact_id: format!(
+                artifact_id: build_artifact_identity(
+                    run_id,
+                    &file.node_id,
+                    &file.path,
+                    &file.node_fingerprint,
+                    &file.sha256,
+                )
+                .canonical_artifact_id,
+                legacy_artifact_id: format!(
                     "{}:{}",
                     file.node_id,
                     Path::new(&file.path)
@@ -100,10 +107,14 @@ fn artifact_registry_report(run_dir: &Path) -> Result<ArtifactRegistryReport, Ex
     })
 }
 
-fn artifact_payload_path(run_dir: &Path, artifact_id: &str) -> Result<std::path::PathBuf, ExitCode> {
+fn artifact_payload_path(
+    run_dir: &Path,
+    artifact_id: &str,
+) -> Result<std::path::PathBuf, ExitCode> {
     let (node_id, file_name) = artifact_id.split_once(':').ok_or(ExitCode::from(2))?;
     let index_raw = read_file(&run_dir.join("outputs").join("index.json"))?;
-    let index = serde_json::from_str::<serde_json::Value>(&index_raw).map_err(|_| ExitCode::from(3))?;
+    let index =
+        serde_json::from_str::<serde_json::Value>(&index_raw).map_err(|_| ExitCode::from(3))?;
     let relative = index
         .get("files")
         .and_then(|value| value.as_array())
@@ -188,11 +199,19 @@ pub(crate) fn handle_artifact_command(
                             "message":"artifact registry references missing payload files",
                         })]
                     },
-                    if report.missing_payloads == 0 { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                    if report.missing_payloads == 0 {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(3)
+                    },
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if report.missing_payloads == 0 { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if report.missing_payloads == 0 {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         ArtifactCommands::Lineage { run_dir, artifact_id } => {
             let snapshot = read_lineage_snapshot(run_dir)?;
@@ -252,7 +271,9 @@ pub(crate) fn handle_artifact_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{artifact_registry_report, handle_artifact_command, handle_artifact_inspect_command};
+    use super::{
+        artifact_registry_report, handle_artifact_command, handle_artifact_inspect_command,
+    };
     use crate::commands::{ArtifactCommands, Commands, DagCli};
     use crate::ExitCode;
     use clap::Parser;
@@ -274,7 +295,8 @@ mod tests {
             r#"{"files":[{"node_id":"extract","node_fingerprint":"fp-node","sha256":"abc","path":"nodes/extract/outputs/report.json"}]}"#,
         )
         .expect("outputs index");
-        std::fs::create_dir_all(run.join("nodes").join("extract").join("outputs")).expect("node outputs");
+        std::fs::create_dir_all(run.join("nodes").join("extract").join("outputs"))
+            .expect("node outputs");
         std::fs::write(
             run.join("nodes").join("extract").join("outputs").join("report.json"),
             b"{}",
